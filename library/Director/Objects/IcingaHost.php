@@ -2,15 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Data\Db\DbObject;
-
-class IcingaHost extends DbObject
+class IcingaHost extends IcingaObject
 {
     protected $table = 'icinga_host';
-
-    protected $keyName = 'id';
-
-    protected $autoincKeyName = 'id';
 
     protected $defaultProperties = array(
         'id'                    => null,

@@ -88,6 +88,11 @@ abstract class DbObject
         $this->beforeInit();
     }
 
+    public function getTableName()
+    {
+        return $this->table;
+    }
+
     /**
      * Kann überschrieben werden, um Kreuz-Checks usw vor dem Speichern durch-
      * zuführen - die Funktion ist aber public und erlaubt jederzeit, die Kon-
@@ -482,6 +487,11 @@ abstract class DbObject
         $this->loadedProperties = $this->properties;
         $this->hasBeenModified = false;
         return $this;
+    }
+
+    public function getOriginalProperties()
+    {
+        return $this->loadedProperties;
     }
 
     public function hasBeenLoadedFromDb()
