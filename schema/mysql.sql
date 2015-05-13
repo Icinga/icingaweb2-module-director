@@ -7,7 +7,7 @@ CREATE TABLE director_dbversion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_activity_log (
-  id BIGINT(20) UNSIGNED NOT NULL,
+  id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_type VARCHAR(64) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   action_name ENUM('create', 'delete', 'modify') NOT NULL,
