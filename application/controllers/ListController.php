@@ -37,6 +37,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function usersAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add User'),
+            'director/object/user'
+        );
+        $this->view->title = $this->translate('Icinga Users');
+        $this->view->table = $this->loadTable('icingaUser')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function zonesAction()
     {
         $this->view->addLink = $this->view->qlink(

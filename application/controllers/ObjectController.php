@@ -52,6 +52,22 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function userAction()
+    {
+        $this->view->form = $this->loadForm('icingaUser')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/users');
+
+        if ($id = $this->params->get('id')) {
+            $this->view->form->loadObject($id);
+            $this->view->title = $this->translate('Modify Icinga User');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga User');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function zoneAction()
     {
         $this->view->form = $this->loadForm('icingaZone')
