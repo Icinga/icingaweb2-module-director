@@ -49,8 +49,9 @@ class IcingaEndpointForm extends DirectorObjectForm
         ));
 
         $this->addElement('select', 'zone_id', array(
-            'label' => $this->translate('Cluster Zone'),
-            'description' => $this->translate('Check this host in this specific Icinga cluster zone')
+            'label'       => $this->translate('Cluster Zone'),
+            'description' => $this->translate('Check this host in this specific Icinga cluster zone'),
+            'required'    => true
         ));
 
         $this->addElement('submit', $this->translate('Store'));
