@@ -487,6 +487,7 @@ CREATE TABLE icinga_user (
   enable_notifications ENUM('y', 'n') DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_user_zone
