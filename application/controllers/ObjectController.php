@@ -40,7 +40,7 @@ class Director_ObjectController extends ActionController
     {
         $this->view->form = $this->loadForm('icingaCommandArgument')
             ->setDb($this->db())
-            ->setSuccessUrl('director/list/commandargument');
+            ->setSuccessUrl('director/list/commandarguments');
 
         if ($id = $this->params->get('id')) {
             $this->view->form->loadObject($id);
