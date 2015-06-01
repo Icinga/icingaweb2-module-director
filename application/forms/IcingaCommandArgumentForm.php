@@ -24,6 +24,9 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             'label' => $this->translate('Value'),
             'description' => $this->translate('e.g. 5%, $hostname$, $lower$%:$upper$%')
         ));
+
+        $this->addHidden('value_format', 'string'); // expression, json?
+
 /*
         $this->optionalBoolean(
             'required',
