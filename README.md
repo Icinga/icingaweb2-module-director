@@ -26,10 +26,10 @@ resource.
 Given that you named your resource `directordb` the `config.ini` for the module
 could look as follows:
 
-@@@ini
+```ini
 [db]
 resource = directordb
-@@@
+```
 
 This file is to be found in <ICINGAWEB_CONFIGDIR>/modules/director/, where
 ICINGAWEB_CONFIGDIR usually means /etc/icingaweb2.
