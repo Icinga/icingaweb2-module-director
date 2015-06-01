@@ -7,6 +7,8 @@ $section->add($this->translate('Zones'))
     ->setUrl('director/list/zones');
 $section->add($this->translate('Commands'))
     ->setUrl('director/list/commands');
+$section->add($this->translate('Command Arguments'))
+    ->setUrl('director/list/commandarguments');
 $section->add($this->translate('Hosts'))
     ->setUrl('director/list/hosts');
 $section->add($this->translate('Activity Log'))
