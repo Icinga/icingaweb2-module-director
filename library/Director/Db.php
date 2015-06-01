@@ -38,6 +38,16 @@ class Db extends DbConnection
         return $this->db()->fetchPairs($select);
     }
 
+    public function enumCommands()
+    {
+        $select = $this->db()->select()->from('icinga_command', array(
+            'id',
+            'object_name',
+        ))
+          ->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
     public function enumZones()
     {
         $select = $this->db()->select()->from('icinga_zone', array(
