@@ -410,7 +410,7 @@ CREATE TABLE icinga_host_service (
 ) ENGINE=InnoDB;
 
 
---- TODO: service-set
+-- TODO: service-set
 
 CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
@@ -602,3 +602,71 @@ CREATE TABLE icinga_usergroup_parent (
 -- dependencies
 -- notifications
 -- scheduled downtimes
+
+
+CREATE TABLE sync_source (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  source_name VARCHAR(64) NOT NULL,
+  provider_class VARCHAR(72) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE sync_source_setting (
+  source_id INT(10) UNSIGNED NOT NULL,
+  setting_name VARCHAR(64) NOT NULL,
+  setting_value VARCHAR(255) NOT NULL,
+  PRIMARY KEY (source_id, setting_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE sync_run (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  source_id INT(10) UNSIGNED NOT NULL,
+  start_time DATETIME NOT NULL,
+  end_time DATETIME DEFAULT NULL,
+  succeeded ENUM('y', 'n') DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE synced_row (
+  row_id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
+  run_id INT(10) UNSIGNED NOT NULL,
+  object_name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (row_id),
+  UNIQUE KEY run_object (run_id, object_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE synced_property (
+  row_id BIGINT(20) UNSIGNED NOT NULL,
+  property_name VARCHAR(64) NOT NULL,
+  property_value TEXT NOT NULL,
+  format enum ('string', 'expression', 'json'),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE sync_rule (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  source_id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  source_expression TEXT NOT NULL,
+  destination_field VARCHAR(64),
+  destination enum(host, service ...)
+  priority
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE sync_rule_filter (
+rule_id
+filter_expression
+priority
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE sync_rule_modifier (
+id
+rule_id
+provider_class
+method_name
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE sync_rule_modifier_param (
+modifier_id
+param_name
+param_value
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
