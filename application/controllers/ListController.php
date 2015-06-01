@@ -26,6 +26,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function commandargumentsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Command Argument'),
+            'director/object/commandargument'
+        );
+        $this->view->title = $this->translate('Icinga Command Arguments');
+        $this->view->table = $this->loadTable('icingaCommandArgument')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function zonesAction()
     {
         $this->view->addLink = $this->view->qlink(
