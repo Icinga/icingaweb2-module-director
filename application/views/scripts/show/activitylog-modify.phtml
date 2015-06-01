@@ -1,0 +1,34 @@
+<h2><?= sprintf(
+    '%s "%s" has been modified',
+    ucfirst(preg_replace('/^icinga_/', '', $entry->object_type)),
+    $entry->object_name
+) ?></h2>
+
+<h3><?= $this->translate('Properties') ?></h3>
+
+<table class="log-properties">
+<?php
+$old = json_decode($entry->old_properties);
+$new = json_decode($entry->new_properties);
+
+foreach ($old as $key => $value) {
+    if ($key === 'id') continue;
+
+    $modified = array_key_exists($key, $new);
+
+    if ($value === null && ! $modified) continue;
+    echo ' <tr><th>' . $this->escape($key) . '</th><td>';
+    if ($modified) {
+        printf(
+            '<span class="old">%s</span> <span class="new">%s</span>',
+            $this->escape($value),
+            $this->escape($new->$key)
+        );
+    } else {
+        echo $this->escape($value);
+    }
+    echo "</td></tr>\n";
+}
+?>
+</table>
+

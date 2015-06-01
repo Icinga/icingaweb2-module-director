@@ -1,0 +1,24 @@
+<h2><?= sprintf(
+    '%s "%s" has been created',
+    ucfirst(preg_replace('/^icinga_/', '', $entry->object_type)),
+    $entry->object_name
+) ?></h2>
+
+<h3><?= $this->translate('Properties') ?></h3>
+
+<table class="log-properties">
+<?php
+$new = json_decode($entry->new_properties);
+
+foreach ($new as $key => $value) {
+    if ($key === 'id') continue;
+
+    if ($value === null) continue;
+
+    echo ' <tr><th>' . $this->escape($key) . '</th><td>';
+    echo $this->escape($value);
+    echo "</td></tr>\n";
+}
+?>
+</table>
+

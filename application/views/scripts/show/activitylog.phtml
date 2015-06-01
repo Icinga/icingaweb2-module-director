@@ -1,0 +1,23 @@
+<div class="controls">
+<?= $this->tabs ?>
+</div>
+
+<div class="content">
+<?php
+
+switch ($entry->action_name) {
+case 'create':
+    echo $this->render('show/activitylog-create.phtml');
+    break;
+case 'modify':
+    echo $this->render('show/activitylog-modify.phtml');
+    break;
+case 'delete':
+    echo $this->render('show/activitylog-delete.phtml');
+    break;
+default:
+    echo 'Invalid action';
+}
+
+?>
+</div>

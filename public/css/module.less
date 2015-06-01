@@ -28,3 +28,31 @@ table.simple {
         text-align: right;
     }
 }
+
+table.log-properties {
+
+    width: 100%;
+    th {
+        width: 12em;
+        text-align: left;
+    }
+
+    td {
+        font-family: monospace;
+    }
+
+    span {
+        padding: 0.3em 1em;
+    }
+
+    .old {
+        background-color: @colorCriticalHandled;
+        color: white;
+        text-decoration: stroken;
+    }
+
+    .new {
+        background-color: @colorOk;
+        color: white;
+    }
+}
