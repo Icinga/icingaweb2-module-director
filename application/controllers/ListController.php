@@ -36,4 +36,11 @@ class Director_ListController extends ActionController
         $this->view->table = $this->loadTable('icingaZone')->setConnection($this->db());
         $this->render('table');
     }
+
+    public function activitylogAction()
+    {
+        $this->view->title = $this->translate('Activity Log');
+        $this->view->table = $this->loadTable('activityLog')->setConnection($this->db());
+        $this->render('table');
+    }
 }
