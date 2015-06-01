@@ -16,9 +16,9 @@ class IcingaHostTable extends QuickTable
         );
     }
 
-    protected function getActionLinks($id)
+    protected function getActionUrl($row)
     {
-        return $this->view()->qlink('Edit', 'director/object/host', array('id' => $id));
+        return $this->url('director/object/host', array('id' => $row->id));
     }
 
     public function getTitles()

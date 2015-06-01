@@ -13,24 +13,51 @@ abstract class QuickTable
 
     protected $connection;
 
-    protected function renderRow($row)
+    protected function renderRow($row, $actionColumn = false)
     {
         $htm = "  <tr>\n";
         $idKey = key($row);
-        $id = $row->$idKey;
-        unset($row->$idKey);
+        $firstRow = true;
 
         foreach ($row as $key => $val) {
-            $htm .= '    <td>' . ($val === null ? '-' : $this->view()->escape($val)) . "</td>\n";
+            $value = null;
+            if ($key === $idKey) continue;
+
+            if ($firstRow) {
+                if ($val !== null && $url = $this->getActionUrl($row)) {
+                    $value = $this->view()->qlink($val, $this->getActionUrl($row));
+                }
+                $firstRow = false;
+            }
+
+            if ($value === null) {
+                $value = $val === null ? '-' : $this->view()->escape($val);
+            }
+
+            $htm .= '    <td>' . $value . "</td>\n";
         }
-        $htm .= '    <td class="actions">' . $this->getActionLinks($id) . "</td>\n";
+
+        if ($this->hasAdditionalActions()) {
+            $htm .= '    <td class="actions">' . $this->renderAdditionalActions($row) . "</td>\n";
+        }
+
         return $htm . "  </tr>\n";
+    }
+
+    protected function getActionUrl($row)
+    {
+        return false;
     }
 
     public function setConnection(Selectable $connection)
     {
         $this->connection = $connection;
         return $this;
+    }
+
+    public function hasAdditionalActions()
+    {
+        return method_exists($this, 'renderAdditionalActions');
     }
 
     protected function connection()
@@ -43,11 +70,21 @@ abstract class QuickTable
     {
         $view = $this->view;
         $htm = "<thead>\n  <tr>\n";
+
         foreach ($row as $title) {
             $htm .= '    <th>' . $view->escape($title) . "</th>\n";
         }
-        $htm .= '    <th class="actions">' . $view->translate('Actions') . "</th>\n";
+
+        if ($this->hasAdditionalActions()) {
+            $htm .= '    <th class="actions">' . $view->translate('Actions') . "</th>\n";
+        }
+
         return $htm . "  </tr>\n</thead>\n";
+    }
+
+    protected function url($url, $params)
+    {
+        return Url::fromPath($url, $params);
     }
 
     public function render()

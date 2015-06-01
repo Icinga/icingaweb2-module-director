@@ -16,9 +16,9 @@ class IcingaCommandTable extends QuickTable
         );
     }
 
-    protected function getActionLinks($id)
+    protected function getActionUrl($row)
     {
-        return $this->view()->qlink('Edit', 'director/object/command', array('id' => $id));
+        return $this->url('director/object/command', array('id' => $row->id));
     }
 
     public function getTitles()

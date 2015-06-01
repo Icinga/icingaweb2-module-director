@@ -14,9 +14,9 @@ class IcingaZoneTable extends QuickTable
         );
     }
 
-    protected function getActionLinks($id)
+    protected function getActionUrl($row)
     {
-        return $this->view()->qlink('Edit', 'director/object/zone', array('id' => $id));
+        return $this->url('director/object/zone', array('id' => $row->id));
     }
 
     public function getTitles()

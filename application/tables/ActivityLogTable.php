@@ -16,9 +16,9 @@ class ActivityLogTable extends QuickTable
         );
     }
 
-    protected function getActionLinks($id)
+    protected function getActionUrl($row)
     {
-        return $this->view()->qlink('Show', 'director/show/activitylog', array('id' => $id));
+        return $this->url('director/show/activitylog', array('id' => $row->id));
     }
 
     public function getTitles()
