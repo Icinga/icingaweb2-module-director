@@ -195,6 +195,7 @@ CREATE TABLE icinga_command_argument (
   set_if_format ENUM('string', 'expression', 'json') DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX sort_idx (command_id, sort_order),
+  UNIQUE KEY unique_idx (command_id, argument_name),
   CONSTRAINT icinga_command_argument_command
     FOREIGN KEY command (command_id)
     REFERENCES icinga_command (id)
