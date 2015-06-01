@@ -10,7 +10,7 @@ Create Icinga Director database
 -------------------------------
 
     mysql < "CREATE DATABASE director;" \
-        " GRANT SELECT, INSERT, UPDATE, DELETE ON director.*"
+        " GRANT SELECT, INSERT, UPDATE, DELETE ON director.*" \
         " TO director@localhost IDENTIFIED BY 'some-password';"
 
     mysql director < schema/mysql.sql
