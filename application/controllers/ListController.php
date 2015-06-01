@@ -48,6 +48,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function endpointsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Endpoint'),
+            'director/object/endpoint'
+        );
+        $this->view->title = $this->translate('Icinga Endpoints');
+        $this->view->table = $this->loadTable('icingaEndpoint')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function zonesAction()
     {
         $this->view->addLink = $this->view->qlink(

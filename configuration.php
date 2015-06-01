@@ -13,6 +13,8 @@ $section->add($this->translate('Hosts'))
     ->setUrl('director/list/hosts');
 $section->add($this->translate('Users'))
     ->setUrl('director/list/users');
+$section->add($this->translate('Endpoints'))
+    ->setUrl('director/list/endpoints');
 $section->add($this->translate('Activity Log'))
     ->setUrl('director/list/activitylog')
     ->setPriority(900);

@@ -68,6 +68,22 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function endpointAction()
+    {
+        $this->view->form = $this->loadForm('icingaEndpoint')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/endpoints');
+
+        if ($id = $this->params->get('id')) {
+            $this->view->form->loadObject($id);
+            $this->view->title = $this->translate('Modify Icinga Endpoint');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga Endpoint');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function zoneAction()
     {
         $this->view->form = $this->loadForm('icingaZone')
