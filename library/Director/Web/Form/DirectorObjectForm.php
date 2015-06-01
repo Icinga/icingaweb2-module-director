@@ -112,6 +112,10 @@ abstract class DirectorObjectForm extends QuickForm
             $this->getElement('check_command_id')
                 ->setMultiOptions($this->optionalEnum($db->enumCheckCommands()));
         }
+        if ($this->hasElement('command_id')) {
+            $this->getElement('command_id')
+                ->setMultiOptions($this->optionalEnum($db->enumCommands()));
+        }
         return $this;
     }
 
