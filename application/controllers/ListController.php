@@ -70,6 +70,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function usergroupsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Usergroup'),
+            'director/object/usergroup'
+        );
+        $this->view->title = $this->translate('Icinga Usergroups');
+        $this->view->table = $this->loadTable('icingaUsergroup')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function endpointsAction()
     {
         $this->view->addLink = $this->view->qlink(

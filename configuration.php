@@ -17,6 +17,8 @@ $section->add($this->translate('Servicegroups'))
     ->setUrl('director/list/servicegroups');
 $section->add($this->translate('Users'))
     ->setUrl('director/list/users');
+$section->add($this->translate('Usergroups'))
+    ->setUrl('director/list/usergroups');
 $section->add($this->translate('Endpoints'))
     ->setUrl('director/list/endpoints');
 $section->add($this->translate('Activity Log'))

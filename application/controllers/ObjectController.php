@@ -100,6 +100,22 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function usergroupAction()
+    {
+        $this->view->form = $this->loadForm('icingaUsergroup')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/usergroups');
+
+        if ($id = $this->params->get('id')) {
+            $this->view->form->loadObject($id);
+            $this->view->title = $this->translate('Modify Icinga Usergroup');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga Usergroup');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function endpointAction()
     {
         $this->view->form = $this->loadForm('icingaEndpoint')
