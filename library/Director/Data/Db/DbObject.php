@@ -426,9 +426,20 @@ abstract class DbObject
     public function getId()
     {
         // TODO: Doesn't work for array() / multicol key
-        if (isset($this->properties[$this->keyName]))
-        {
-            return $this->properties[$this->keyName];
+        if (is_array($this->keyName)) {
+            $id = array();
+            foreach ($this->keyName as $key) {
+                if (! isset($this->properties[$key])) {
+                    return null; // Really?
+                }
+                $id[$key] = $this->properties[$key];
+            }
+            return $id;
+         } else {
+            if (isset($this->properties[$this->keyName]))
+            {
+                return $this->properties[$this->keyName];
+            }
         }
         return null;
     }
@@ -633,8 +644,8 @@ abstract class DbObject
     {
         $keyname = $this->getKeyName();
         if (is_array($keyname)) {
-            foreach ($keyname as $idx => $k) {
-                $this->set($k, $key[$idx]);
+            foreach ($keyname as $k) {
+                $this->set($k, $key[$k]);
             }
         } else {
             $this->set($keyname, $key);
@@ -653,13 +664,20 @@ abstract class DbObject
     protected function createWhere()
     {
         $key = $this->getKeyName();
-        if (is_array($key) && ! is_empty($key)) {
+        if (is_array($key) && ! empty($key)) {
             $where = array();
-            foreach($key as $k) {
-                $where[] = $this->db->quoteInto(
-                    sprintf('%s = ?', $k),
-                    $this->properties[$k]
-                );
+            foreach ($key as $k) {
+                if ($this->hasBeenLoadedFromDb()) {
+                    $where[] = $this->db->quoteInto(
+                        sprintf('%s = ?', $k),
+                        $this->loadedProperties[$k]
+                    );
+                } else {
+                    $where[] = $this->db->quoteInto(
+                        sprintf('%s = ?', $k),
+                        $this->properties[$k]
+                    );
+                }
             }
             return implode(' AND ', $where);
         } else {
