@@ -11,8 +11,8 @@ class IcingaEndpointTable extends QuickTable
         return array(
             'id'        => 'e.id',
             'endpoint'  => 'e.object_name',
-            'zone'      => 'z.object_name',
             'address'   => 'e.address',
+            'zone'      => 'z.object_name',
         );
     }
 
