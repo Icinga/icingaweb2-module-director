@@ -417,6 +417,7 @@ CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   display_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
