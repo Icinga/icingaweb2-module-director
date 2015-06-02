@@ -9,10 +9,10 @@ class IcingaEndpointTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'        => 'e.id',
-            'endpoint'  => 'e.object_name',
-            'address'   => 'e.address',
-            'zone'      => 'z.object_name',
+            'id'       => 'e.id',
+            'endpoint' => 'e.object_name',
+            'address'  => 'e.address',
+            'zone'     => 'z.object_name',
         );
     }
 
@@ -25,9 +25,9 @@ class IcingaEndpointTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'host'    => $view->translate('Endpoint'),
-            'address' => $view->translate('Address'),
-            'zone'    => $view->translate('Zone'),
+            'endpoint' => $view->translate('Endpoint'),
+            'address'  => $view->translate('Address'),
+            'zone'     => $view->translate('Zone'),
         );
     }
 
