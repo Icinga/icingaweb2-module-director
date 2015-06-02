@@ -15,6 +15,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function hostgroupsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Hostgroup'),
+            'director/object/hostgroup'
+        );
+        $this->view->title = $this->translate('Icinga Hostgroups');
+        $this->view->table = $this->loadTable('icingaHostgroup')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function commandsAction()
     {
         $this->view->addLink = $this->view->qlink(
