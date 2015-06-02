@@ -25,9 +25,9 @@ class IcingaCommandTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            $view->translate('Command'),
-            $view->translate('Command line'),
-            $view->translate('Zone'),
+            'command'      => $view->translate('Command'),
+            'command_line' => $view->translate('Command line'),
+            'zone'         => $view->translate('Zone'),
         );
     }
 

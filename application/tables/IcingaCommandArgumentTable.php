@@ -26,9 +26,9 @@ class IcingaCommandArgumentTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            $view->translate('Command'),
-            $view->translate('Argument'),
-            $view->translate('Value'),
+            'command'        => $view->translate('Command'),
+            'argument_name'  => $view->translate('Argument'),
+            'argument_value' => $view->translate('Value'),
         );
     }
 

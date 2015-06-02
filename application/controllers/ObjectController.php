@@ -36,6 +36,29 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function hostgroupmemberAction()
+    {
+        $this->view->form = $this->loadForm('icingaHostgroupMember')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/hostgroupmembers');
+
+        if (($host_id = $this->params->get('host_id'))
+            && ($hostgroup_id = $this->params->get('hostgroup_id'))) {
+
+            $this->view->form->loadObject(
+                array(
+                    'host_id'      => $host_id,
+                    'hostgroup_id' => $hostgroup_id,
+                )
+            );
+            $this->view->title = $this->translate('Modify Icinga Hostgroup Member');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga Hostgroup Member');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function servicegroupAction()
     {
         $this->view->form = $this->loadForm('icingaServicegroup')
