@@ -36,6 +36,22 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function servicegroupAction()
+    {
+        $this->view->form = $this->loadForm('icingaServicegroup')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/servicegroups');
+
+        if ($id = $this->params->get('id')) {
+            $this->view->form->loadObject($id);
+            $this->view->title = $this->translate('Modify Icinga Servicegroup');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga Servicegroup');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function commandAction()
     {
         $this->view->form = $this->loadForm('icingaCommand')
