@@ -315,7 +315,7 @@ CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) DEFAULT NULL,
   varvalue TEXT DEFAULT NULL,
-  format enum ('string', 'json', 'expression'),
+  format enum ('string', 'json', 'expression'), -- immer string vorerst
   PRIMARY KEY (host_id, varname),
   key search_idx (varname),
   CONSTRAINT icinga_host_var_host
