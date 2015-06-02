@@ -13,15 +13,14 @@ abstract class QuickTable
 
     protected $connection;
 
-    protected function renderRow($row, $actionColumn = false)
+    protected function renderRow($row)
     {
         $htm = "  <tr>\n";
-        $idKey = key($row);
         $firstRow = true;
 
-        foreach ($row as $key => $val) {
+        foreach ($this->getTitles() as $key => $title) {
+            $val = $row->$key;
             $value = null;
-            if ($key === $idKey) continue;
 
             if ($firstRow) {
                 if ($val !== null && $url = $this->getActionUrl($row)) {
@@ -43,6 +42,8 @@ abstract class QuickTable
 
         return $htm . "  </tr>\n";
     }
+
+    abstract protected function getTitles();
 
     protected function getActionUrl($row)
     {
