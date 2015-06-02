@@ -92,7 +92,9 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $class = $this->getObjectClassname();
         $this->object = $class::load($id, $this->db);
-        $this->addHidden('id');
+        if (! is_array($id)) {
+            $this->addHidden('id');
+        }
         $this->setDefaults($this->object->getProperties());
         return $this;
     }
