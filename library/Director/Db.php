@@ -65,4 +65,13 @@ class Db extends DbConnection
         ))->where('object_type', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
+
+    public function enumHostgroups()
+    {
+        $select = $this->db()->select()->from('icinga_hostgroup', array(
+            'id',
+            'object_name',
+        ))->where('object_type', 'object')->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
 }
