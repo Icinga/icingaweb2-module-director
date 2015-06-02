@@ -106,6 +106,14 @@ abstract class DirectorObjectForm extends QuickForm
             $this->getElement('parent_zone_id')
                 ->setMultiOptions($this->optionalEnum($db->enumZones()));
         }
+        if ($this->hasElement('host_id')) {
+            $this->getElement('host_id')
+                ->setMultiOptions($this->optionalEnum($db->enumHosts()));
+        }
+        if ($this->hasElement('hostgroup_id')) {
+            $this->getElement('hostgroup_id')
+                ->setMultiOptions($this->optionalEnum($db->enumHostgroups()));
+        }
         if ($this->hasElement('zone_id')) {
             $this->getElement('zone_id')
                 ->setMultiOptions($this->optionalEnum($db->enumZones()));
