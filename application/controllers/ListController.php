@@ -81,6 +81,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function servicegroupmembersAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Servicegroup Member'),
+            'director/object/servicegroupmember'
+        );
+        $this->view->title = $this->translate('Icinga Servicegroup Members');
+        $this->view->table = $this->loadTable('icingaServicegroupMember')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function commandsAction()
     {
         $this->view->addLink = $this->view->qlink(
