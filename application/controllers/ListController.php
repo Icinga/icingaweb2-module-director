@@ -37,6 +37,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function hostvarsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Host Variable'),
+            'director/object/hostvar'
+        );
+        $this->view->title = $this->translate('Icinga Host Variables');
+        $this->view->table = $this->loadTable('icingaHostVar')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function servicegroupsAction()
     {
         $this->view->addLink = $this->view->qlink(

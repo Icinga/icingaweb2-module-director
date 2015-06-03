@@ -15,6 +15,8 @@ $section->add($this->translate('Hostgroups'))
     ->setUrl('director/list/hostgroups');
 $section->add($this->translate('Hostgroup Members'))
     ->setUrl('director/list/hostgroupmembers');
+$section->add($this->translate('Host Vars'))
+    ->setUrl('director/list/hostvars');
 $section->add($this->translate('Servicegroups'))
     ->setUrl('director/list/servicegroups');
 $section->add($this->translate('Users'))
