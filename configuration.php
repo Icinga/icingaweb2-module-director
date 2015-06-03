@@ -9,6 +9,8 @@ $section->add($this->translate('Commands'))
     ->setUrl('director/list/commands');
 $section->add($this->translate('Command Arguments'))
     ->setUrl('director/list/commandarguments');
+$section->add($this->translate('Timeperiods'))
+    ->setUrl('director/list/timeperiods');
 $section->add($this->translate('Hosts'))
     ->setUrl('director/list/hosts');
 $section->add($this->translate('Hostgroups'))

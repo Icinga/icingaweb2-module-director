@@ -48,6 +48,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function timeperiodsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Timeperiod'),
+            'director/object/timeperiod'
+        );
+        $this->view->title = $this->translate('Icinga Timeperiods');
+        $this->view->table = $this->loadTable('icingaTimeperiod')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function servicegroupsAction()
     {
         $this->view->addLink = $this->view->qlink(

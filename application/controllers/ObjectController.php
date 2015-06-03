@@ -175,6 +175,22 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function timeperiodAction()
+    {
+        $this->view->form = $this->loadForm('icingaTimeperiod')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/timeperiods');
+
+        if ($id = $this->params->get('id')) {
+            $this->view->form->loadObject($id);
+            $this->view->title = $this->translate('Modify Icinga Timeperiod');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga Timeperiod');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function zoneAction()
     {
         $this->view->form = $this->loadForm('icingaZone')
