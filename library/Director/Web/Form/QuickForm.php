@@ -112,6 +112,10 @@ abstract class QuickForm extends Zend_Form
         return $this->hasBeenSent();
     }
 
+    protected function beforeValidation($data = array())
+    {
+    }
+
     public function handleRequest(Request $request = null)
     {
         if ($request !== null) {
@@ -121,6 +125,7 @@ abstract class QuickForm extends Zend_Form
         if ($this->hasBeenSent()) {
             $post = $this->getRequest()->getPost();
             if ($this->hasBeenSubmitted()) {
+                $this->beforeValidation($post);
                 if ($this->isValid($post)) {
                     $this->onSuccess();
                 } else {

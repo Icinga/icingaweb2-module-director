@@ -96,6 +96,9 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addHidden('id');
         }
         $this->setDefaults($this->object->getProperties());
+        if (! $this->hasBeenSubmitted()) {
+            $this->beforeValidation($this->object->getProperties());
+        }
         return $this;
     }
 
