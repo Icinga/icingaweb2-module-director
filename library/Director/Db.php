@@ -8,6 +8,10 @@ class Db extends DbConnection
 {
     protected $modules = array();
 
+    protected static $zoneCache;
+
+    protected static $commandCache;
+
     protected function db()
     {
         return $this->getDbAdapter();
@@ -40,21 +44,42 @@ class Db extends DbConnection
 
     public function enumCommands()
     {
-        $select = $this->db()->select()->from('icinga_command', array(
-            'id',
-            'object_name',
-        ))
-          ->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        if (self::$commandCache === null) {
+            $select = $this->db()->select()->from('icinga_command', array(
+                'id',
+                'object_name',
+            ))
+              ->order('object_name ASC');
+
+            self::$commandCache = $this->db()->fetchPairs($select);
+        }
+        return self::$commandCache;
     }
 
     public function enumZones()
     {
-        $select = $this->db()->select()->from('icinga_zone', array(
-            'id',
-            'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        if (self::$zoneCache === null) {
+            $select = $this->db()->select()->from('icinga_zone', array(
+                'id',
+                'object_name',
+            ))->where('object_type', 'object')->order('object_name ASC');
+
+            self::$zoneCache = $this->db()->fetchPairs($select);
+        }
+
+        return self::$zoneCache;
+    }
+
+    public function getZoneName($id)
+    {
+        $objects = $this->enumZones();
+        return $objects[$id];
+    }
+
+    public function getCommandName($id)
+    {
+        $objects = $this->enumCommands();
+        return $objects[$id];
     }
 
     public function enumHosts()
@@ -91,5 +116,17 @@ class Db extends DbConnection
             'object_name',
         ))->where('object_type', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
+    }
+
+    public function clearZoneCache()
+    {
+        // TODO: wipe cache on update/insert/delete
+        self::$zoneCache = null;
+    }
+
+    public function clearCommandCache()
+    {
+        // TODO: wipe cache on update/insert/delete
+        self::$commandCache = null;
     }
 }
