@@ -562,6 +562,7 @@ CREATE TABLE icinga_usergroup (
   object_name VARCHAR(255) NOT NULL,
   display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
   KEY search_idx (display_name)
