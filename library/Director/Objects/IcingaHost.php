@@ -34,4 +34,9 @@ class IcingaHost extends IcingaObject
         'icon_image_alt'        => null,
         'object_type'           => null,
     );
+
+    protected function renderCheck_command_id()
+    {
+        return $this->renderCommandProperty($this->check_command_id);
+    }
 }
