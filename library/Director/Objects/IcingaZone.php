@@ -15,6 +15,6 @@ class IcingaZone extends IcingaObject
 
     protected function renderParent_zone_id()
     {
-        return $this->renderZoneProperty('parent_zone', $this->parent_zone_id)
+        return $this->renderZoneProperty('parent_zone', $this->parent_zone_id);
     }
 }
