@@ -41,4 +41,9 @@ class IcingaHost extends IcingaObject
     {
         return $this->renderCommandProperty($this->check_command_id);
     }
+
+    protected function renderEnable_active_checks()
+    {
+        return $this->renderBooleanProperty('enable_active_checks');
+    }
 }
