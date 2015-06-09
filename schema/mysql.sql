@@ -1,4 +1,10 @@
 -- TODO: everywhere: ctime, mtime!
+-- apply_rules
+-- features
+-- implicit ApiListener
+-- dependencies
+-- notifications
+-- scheduled downtimes
 
 SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER';
 
