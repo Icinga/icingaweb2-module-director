@@ -92,6 +92,17 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function servicevarsAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Service Variable'),
+            'director/object/servicevar'
+        );
+        $this->view->title = $this->translate('Icinga Service Variables');
+        $this->view->table = $this->loadTable('icingaServiceVar')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function commandsAction()
     {
         $this->view->addLink = $this->view->qlink(

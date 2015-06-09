@@ -134,6 +134,26 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
+    public function servicevarAction()
+    {
+        $this->view->form = $this->loadForm('icingaServiceVar')
+            ->setDb($this->db())
+            ->setSuccessUrl('director/list/servicevars');
+
+        if (($host_id = $this->params->get('service_id'))
+            && ($varname = $this->params->get('varname'))) {
+            $this->view->form->loadObject(array(
+                'service_id'      => $host_id,
+                'varname' => $varname,
+            ));
+            $this->view->title = $this->translate('Modify Icinga Service Variable');
+        } else {
+            $this->view->title = $this->translate('Add new Icinga Service Variable');
+        }
+        $this->view->form->handleRequest();
+        $this->render('form');
+    }
+
     public function commandAction()
     {
         $this->view->form = $this->loadForm('icingaCommand')
