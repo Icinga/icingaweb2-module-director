@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Web\Table\QuickTable;
 
-class IcingaTimeperiodTable extends QuickTable
+class IcingaTimePeriodTable extends QuickTable
 {
     public function getColumns()
     {

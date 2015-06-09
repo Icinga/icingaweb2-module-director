@@ -55,7 +55,7 @@ class Director_ListController extends ActionController
             'director/object/timeperiod'
         );
         $this->view->title = $this->translate('Icinga Timeperiods');
-        $this->view->table = $this->loadTable('icingaTimeperiod')->setConnection($this->db());
+        $this->view->table = $this->loadTable('icingaTimePeriod')->setConnection($this->db());
         $this->render('table');
     }
 

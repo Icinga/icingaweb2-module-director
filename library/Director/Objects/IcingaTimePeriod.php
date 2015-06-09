@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaTimeperiod extends IcingaObject
+class IcingaTimePeriod extends IcingaObject
 {
     protected $table = 'icinga_timeperiod';
 

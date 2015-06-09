@@ -216,7 +216,7 @@ class Director_ObjectController extends ActionController
 
     public function timeperiodAction()
     {
-        $this->view->form = $this->loadForm('icingaTimeperiod')
+        $this->view->form = $this->loadForm('icingaTimePeriod')
             ->setDb($this->db())
             ->setSuccessUrl('director/list/timeperiods');
 
