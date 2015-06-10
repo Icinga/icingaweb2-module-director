@@ -5,6 +5,11 @@
 -- dependencies
 -- notifications
 -- scheduled downtimes
+-- icinga_command_allowed_var -> datatype, validator?!
+-- icinga_validator
+-- icinga_validator_rule
+-- service-set
+
 
 SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER';
 
@@ -209,10 +214,6 @@ CREATE TABLE icinga_command_argument (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- TODO: icinga_command_allowed_var -> datatype, validator?!
--- icinga_validator
--- icinga_validator_rule
-
 CREATE TABLE icinga_command_var (
   command_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) DEFAULT NULL,
@@ -416,9 +417,6 @@ CREATE TABLE icinga_host_service (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
-
--- TODO: service-set
-
 CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
@@ -606,14 +604,7 @@ CREATE TABLE icinga_usergroup_parent (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- TODO:
--- apply_rules
--- features
--- implicit ApiListener
--- dependencies
--- notifications
--- scheduled downtimes
-
+-- TODO: unfinished:
 
 CREATE TABLE sync_source (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
