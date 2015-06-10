@@ -110,6 +110,12 @@ abstract class IcingaObject extends DbObject
         return "}\n";
     }
 
+    /**
+     * TODO: take care for reserved words, because we need them escaped
+     * http://docs.icinga.org/icinga2/snapshot/doc/module/icinga2/chapter/language-reference#reserved-keywords
+     *
+     * @return string
+     */
     protected function renderCustomVars()
     {
         if ($this->supportsCustomVars()) {
