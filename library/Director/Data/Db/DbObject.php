@@ -183,7 +183,6 @@ abstract class DbObject
      */
     protected function onDelete() {}
 
-
     /**
      * Set DB adapter
      *
@@ -246,9 +245,7 @@ abstract class DbObject
     public function set($key, $value)
     {
         $key = (string) $key;
-        if ($value === '') {
-            $value = null;
-        }
+
         if (! $this->hasProperty($key)) {
             throw new Exception(sprintf('Trying to set invalid key %s', $key));
         }
