@@ -44,40 +44,26 @@ abstract class CustomVariable
         return $this->key;
     }
 
-    public function getValue()
-    {
-        return $this->value;
-    }
-
-    public function setValue($value)
-    {
-        if ($value instanceof CustomVariable) {
-            if (! $this->equals($value)) {
-                $this->reallySetValue($value);
-            }
-        } elseif ($value !== $this->value) {
-            $this->reallySetValue($value);
-        }
-
-        return $this;
-    }
-
-    protected function reallySetValue($value)
-    {
-        $this->modified = true;
-        $this->value = $value;
-    }
+    abstract public function setValue($value);
 
     public function hasBeenModified()
     {
         return $this->modified;
     }
 
+    public function setModified($modified = true)
+    {
+        $this->modified = $modified;
+        if (! $this->modified) {
+            $this->storedValue = clone($this->value);
+        }
+
+        return $this;
+    }
+
     public function setUnmodified()
     {
-        $this->modified = false;
-        $this->storedValue = clone($this->value);
-        return $this;
+        return $this->setModified(false);
     }
 
     abstract public function equals(CustomVariable $var);
@@ -87,6 +73,15 @@ abstract class CustomVariable
     public function differsFrom(CustomVariable $var)
     {
         return ! $this->equals($var);
+    }
+
+    public static function wantCustomVariable($key, $value)
+    {
+        if ($value instanceof CustomVariable) {
+            return $value;
+        }
+
+        return self::create($key, $value);
     }
 
     public static function create($key, $value)

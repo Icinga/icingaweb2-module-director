@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Icinga\Module\Director\IcingaConfigHelper as c;
+
 class CustomVariables
 {
     protected $storedVars = array();
@@ -62,7 +64,11 @@ class CustomVariables
         $out = '';
 
         foreach ($this->vars as $key => $var) {
-            $out .= $var->toConfigString();
+            $out .= c::renderKeyValue(
+                c::escapeIfReserved($key),
+                $var->toConfigString(),
+                '    vars.'
+            );
         }
 
         return $out;

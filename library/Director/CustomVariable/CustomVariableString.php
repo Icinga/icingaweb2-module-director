@@ -11,11 +11,27 @@ class CustomVariableString extends CustomVariable
         return $var->getValue() === $this->getValue();
     }
 
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    public function setValue($value)
+    {
+        if (! is_string($value)) {
+            $value = (string) $value;
+        }
+
+        if ($value !== $this->value) {
+            $this->value = $value;
+            $this->setModified();
+        }
+
+        return $this;
+    } 
+
     public function toConfigString()
     {
-        return c::renderKeyValue(
-            c::escapeIfReserved($this->getKey()),
-            c::renderString($this->getValue())
-        );
+        return c::renderString($this->getValue());
     }
 }
