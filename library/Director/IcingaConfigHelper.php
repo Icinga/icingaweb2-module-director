@@ -38,7 +38,7 @@ class IcingaConfigHelper
     public static function renderKeyValue($key, $value, $prefix = '')
     {
         return sprintf(
-            "%s    %s = %s\n",
+            "%s%s = %s\n",
             $prefix,
             $key,
             $value
