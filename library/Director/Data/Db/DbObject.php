@@ -738,6 +738,26 @@ abstract class DbObject
         return $obj;
     }
 
+    public static function loadAll(DbConnection $connection)
+    {
+        $objects = array();
+        $class = get_called_class();
+        $db = $connection->getConnection();
+
+        $dummy = new $class();
+        $select = $db->select()->from($dummy->table);
+        $rows = $db->fetchAll($select);
+
+        foreach ($rows as $row) {
+            $obj = new $class();
+            $obj->connection = $connection;
+            $obj->setDb($db)->setDbProperties($row);
+            $objects[] = $obj;
+        }
+
+        return $objects;
+    }
+
     public static function exists($id, DbConnection $connection)
     {
         $class = get_called_class();
