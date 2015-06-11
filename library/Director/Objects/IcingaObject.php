@@ -116,7 +116,7 @@ abstract class IcingaObject extends DbObject
 
     protected function renderSuffix()
     {
-        return "}\n";
+        return "}\n\n";
     }
 
     /**
