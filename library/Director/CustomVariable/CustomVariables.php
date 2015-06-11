@@ -22,6 +22,7 @@ class CustomVariables
     {
         $key = (string) $key;
 
+        // TODO: add support for null values
         if ($value === null) {
             unset($this->$key);
         }
@@ -47,6 +48,17 @@ class CustomVariables
         $this->storedVars = $this->vars;
         return $this;
     }   
+
+    public function toConfigString()
+    {
+        $out = '';
+
+        foreach ($this->vars as $key => $var) {
+            $out .= $var->toConfigString()
+        }
+
+        return $out;
+    }
 
     public function __get($key)
     {
@@ -89,5 +101,16 @@ class CustomVariables
         $this->properties[$key] = $this->defaultProperties[$key];
     }
 
-
+    public function __toString()
+    {
+        try {
+            return $this->toConfigString();
+        } catch (Exception $e) {
+            trigger_error($e);
+            $previousHandler = set_exception_handler(function () {});
+            restore_error_handler();
+            call_user_func($previousHandler, $e);
+            die();
+        }
+    }
 }
