@@ -35,14 +35,19 @@ class IcingaConfigHelper
         'in',
     );
 
-    public static function renderKeyValue($key, $value, $prefix = '')
+    public static function renderKeyValue($key, $value, $prefix = '    ')
     {
-        return sprintf(
-            "%s%s = %s\n",
-            $prefix,
+        $string = sprintf(
+            "%s = %s",
             $key,
             $value
         );
+
+        if ($prefix && strpos($string, "\n") !== false) {
+            return $prefix . implode("\n" . $prefix, explode("\n", $string)) . "\n";
+        }
+
+        return $prefix . $string . "\n";
     }
 
     public static function renderBoolean($value)

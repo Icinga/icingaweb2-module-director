@@ -65,9 +65,8 @@ class CustomVariables
 
         foreach ($this->vars as $key => $var) {
             $out .= c::renderKeyValue(
-                c::escapeIfReserved($key),
-                $var->toConfigString(),
-                '    vars.'
+                'vars.' . c::escapeIfReserved($key),
+                $var->toConfigString()
             );
         }
 

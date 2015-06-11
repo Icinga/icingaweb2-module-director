@@ -21,6 +21,6 @@ class IcingaCommand extends IcingaObject
     protected function renderMethods_execute()
     {
         // Execute is a reserved word in SQL, column name was prefixed
-        return c::renderKeyValue('execute', $this->methods_execute, '    ');
+        return c::renderKeyValue('execute', $this->methods_execute);
     }
 }
