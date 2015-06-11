@@ -50,3 +50,7 @@ $section->add($this->translate('Endpoints'))
 $section->add($this->translate('Activity Log'))
     ->setUrl('director/list/activitylog')
     ->setPriority(900);
+$section->add($this->translate('Show config'))
+    ->setUrl('director/show/config')
+    ->setPriority(902);
+

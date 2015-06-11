@@ -1,0 +1,12 @@
+<div class="controls">
+<?= $this->tabs ?>
+</div>
+
+<div class="content">
+<?php foreach ($this->files as $file => $content): ?>
+<h2><?= $this->escape($file) ?></h2>
+<pre>
+<?= $this->escape($content) ?>
+</pre>
+<?php endforeach ?>
+</div>
