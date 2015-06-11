@@ -39,14 +39,24 @@ abstract class CustomVariable
         return $this->type;
     }
 
+    public function getKey()
+    {
+        return $this->key;
+    }
+
+    public function getValue()
+    {
+        return $this->value;
+    }
+
     public function setValue($value)
     {
         if ($value instanceof CustomVariable) {
             if (! $this->equals($value)) {
-                $this->reallySet($value);
+                $this->reallySetValue($value);
             }
         } elseif ($value !== $this->value) {
-            $this->reallySet($value);
+            $this->reallySetValue($value);
         }
 
         return $this;
@@ -87,7 +97,7 @@ abstract class CustomVariable
 
         } elseif (is_array($value)) {
 
-            foreach (array_keys($value) as & $key) {
+            foreach (array_keys($value) as $key) {
                 if (! is_int($key) || ctype_digit($key)) {
                     return new CustomVariableDictionary($key, $value);
                 }

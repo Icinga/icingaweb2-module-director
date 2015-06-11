@@ -22,12 +22,11 @@ class CustomVariables
     {
         $key = (string) $key;
 
-        // TODO: add support for null values
-        if ($value === null) {
-            unset($this->$key);
+        if (! $value instanceof CustomVariable) {
+            $value = CustomVariable::create($key, $value);
         }
 
-        if ($value === $this->get($key)) {
+        if (isset($this->$key) && $value->equals($this->get($key))) {
             return $this;
         }
 
@@ -35,6 +34,15 @@ class CustomVariables
         $this->modified = true;
 
         return $this;
+    }
+
+    public function get($key)
+    {
+        if (array_key_exists($key, $this->vars)) {
+            return $this->vars[$key];
+        }
+
+        return null;
     }
 
     public function hasBeenModified()
@@ -54,7 +62,7 @@ class CustomVariables
         $out = '';
 
         foreach ($this->vars as $key => $var) {
-            $out .= $var->toConfigString()
+            $out .= $var->toConfigString();
         }
 
         return $out;
@@ -85,7 +93,7 @@ class CustomVariables
      */
     public function __isset($key)
     {
-        return array_key_exists($key, $this->properties);
+        return array_key_exists($key, $this->vars);
     }
 
     /**

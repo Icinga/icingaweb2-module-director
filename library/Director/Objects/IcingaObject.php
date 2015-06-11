@@ -18,6 +18,8 @@ abstract class IcingaObject extends DbObject
 
     private $type;
 
+    private $vars;
+
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
@@ -98,6 +100,10 @@ abstract class IcingaObject extends DbObject
             } else {
                 $out .= c::renderKeyValue($key, c::renderString($value));
             }
+        }
+
+        if ($this->supportsCustomVars()) {
+            $out .= $this->vars()->toConfigString();
         }
 
         return $out;
