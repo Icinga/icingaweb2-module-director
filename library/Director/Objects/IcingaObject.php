@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
@@ -20,6 +21,28 @@ abstract class IcingaObject extends DbObject
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
+    }
+
+    protected function assertCustomVarsSupport()
+    {
+        if (! $this->supportsCustomVars()) {
+            throw new ProgrammingError(
+                'Objects of type "%s" have no custom vars',
+                $this->getType()
+            );
+        }
+
+        return $this;
+    }
+
+    public function vars()
+    {
+        $this->assertCustomVarsSupport();
+        if ($this->vars === null) {
+            $this->vars = new CustomVariables();
+        }
+
+        return $this->vars;
     }
 
     public function isTemplate()
