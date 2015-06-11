@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Countable;
+
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
     public function equals(CustomVariable $var)
@@ -47,5 +49,10 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function __get($key)
     {
         // ...
+    }
+
+    public function toConfigString()
+    {
+        // TODO: Implement toConfigString() method.
     }
 }

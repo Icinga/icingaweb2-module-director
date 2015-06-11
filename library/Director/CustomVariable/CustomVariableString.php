@@ -15,7 +15,7 @@ class CustomVariableString extends CustomVariable
     {
         return c::renderKeyValue(
             c::escapeIfReserved($this->getKey()),
-            c::renderString($this->getValue()
+            c::renderString($this->getValue())
         );
     }
 }

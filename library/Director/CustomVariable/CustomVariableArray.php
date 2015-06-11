@@ -12,4 +12,10 @@ class CustomVariableArray extends CustomVariable
 
         return $var->getValue() === $this->getValue();
     }
+
+    public function toConfigString()
+    {
+        // TODO: Implement toConfigString() method.
+    }
+
 }
