@@ -477,14 +477,19 @@ abstract class DbObject
     protected function loadFromDb()
     {
         $select = $this->db->select()->from($this->table)->where($this->createWhere());
-        $props  = $this->db->fetchRow($select);
+        $properties = $this->db->fetchRow($select);
 
-        if (empty($props)) {
+        if (empty($properties)) {
             $msg = sprintf('Got no "%s" data for: %s', $this->table, $this->getId());
             throw new Exception($msg);
         }
 
-        foreach ($props as $key => $val) {
+        return $this->setDbProperties($properties);
+    }
+
+    protected function setDbProperties($properties)
+    {
+        foreach ($properties as $key => $val) {
             if (! array_key_exists($key, $this->properties)) {
                 throw new Exception(sprintf(
                     'Trying to set invalid %s key "%s". DB schema change?',
