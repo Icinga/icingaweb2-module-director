@@ -98,7 +98,7 @@ abstract class IcingaObject extends DbObject
             if (method_exists($this, $method)) {
                 $out .= $this->$method($value);
             } else {
-                $out .= c::renderKeyValue($key, c::renderString($value));
+                $out .= c::renderKeyValue($key, c::renderString($value), '    ');
             }
         }
 
@@ -111,7 +111,7 @@ abstract class IcingaObject extends DbObject
 
     protected function renderBooleanProperty($key)
     {
-        return c::renderKeyValue($key, c::renderBoolean($this->$key));
+        return c::renderKeyValue($key, c::renderBoolean($this->$key), '    ');
     }
 
     protected function renderSuffix()
@@ -135,7 +135,8 @@ abstract class IcingaObject extends DbObject
     {
         return c::renderKeyValue(
             $propertyName,
-            c::renderString($this->connection->getCommandName($commandId))
+            c::renderString($this->connection->getCommandName($commandId)),
+            '    '
         );
     }
 
@@ -143,7 +144,8 @@ abstract class IcingaObject extends DbObject
     {
         return c::renderKeyValue(
             $propertyName,
-            c::renderString($this->connection->getZoneName($zoneId))
+            c::renderString($this->connection->getZoneName($zoneId)),
+            '    '
         );
     }
 
