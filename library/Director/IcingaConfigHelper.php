@@ -72,7 +72,7 @@ class IcingaConfigHelper
         );
 
         $replace = array(
-            '\\\\',
+            '\\\\\\',
             '\\"',
             '\\$',
             '\\t',
