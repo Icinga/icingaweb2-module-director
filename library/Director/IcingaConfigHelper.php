@@ -56,12 +56,35 @@ class IcingaConfigHelper
         }
     }
 
+    // TODO: Find out how to allow multiline {{{...}}} strings.
+    //       Parameter? Dedicated method? Always if \n is found?
     public static function renderString($string)
     {
-        $string = preg_replace('~\\\~', '\\\\', $string);
-        $string = preg_replace('~"~', '\\"', $string);
+        $special = array(
+            '/\\\/',
+            '/"/',
+            '/\$/',
+            '/\t/',
+            '/\r/',
+            '/\n/',
+            // '/\b/', -> doesn't work
+            '/\f/'
+        );
 
-        return sprintf('"%s"', $string);
+        $replace = array(
+            '\\\\',
+            '\\"',
+            '\\$',
+            '\\t',
+            '\\r',
+            '\\n',
+            // '\\b',
+            '\\f',
+        );
+
+        $string = preg_replace($special, $replace, $string);
+
+        return '"' . $string . '"';
     }
 
     public static function isReserved($string)
