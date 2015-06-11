@@ -38,7 +38,7 @@ class CustomVariables
 
     public function hasBeenModified()
     {
-        return $this->modifiec;
+        return $this->modified;
     }
 
     public function setUnmodified()
