@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Director;
+namespace Icinga\Module\Director\IcingaConfig;
 
 class IcingaConfigHelper
 {

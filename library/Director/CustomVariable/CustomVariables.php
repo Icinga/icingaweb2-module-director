@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
-use Icinga\Module\Director\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class CustomVariables
 {

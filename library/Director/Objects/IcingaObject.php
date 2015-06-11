@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
 use Exception;
 
