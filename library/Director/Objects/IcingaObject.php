@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
 use Exception;
 
@@ -72,37 +73,16 @@ abstract class IcingaObject extends DbObject
             if (method_exists($this, $method)) {
                 $out .= $this->$method($value);
             } else {
-                $out .= $this->renderKeyValue($key, $this->renderString($value));
+                $out .= c::renderKeyValue($key, c::renderString($value));
             }
         }
 
         return $out;
     }
 
-    protected function renderKeyValue($key, $value, $prefix = '')
-    {
-        return sprintf(
-            "%s    %s = %s\n",
-            $prefix,
-            $key,
-            $value
-        );
-    }
-
-    protected function renderBoolean($value)
-    {
-        if ($value === 'y') {
-            return 'true';
-        } elseif ($value === 'n') {
-            return 'false';
-        } else {
-            throw new ProgrammingError('%s is not a valid boolean', $value);
-        }
-    }
-
     protected function renderBooleanProperty($key)
     {
-        return $this->renderKeyValue($key, $this->renderBoolean($this->$key));
+        return c::renderKeyValue($key, c::renderBoolean($this->$key));
     }
 
     protected function renderSuffix()
@@ -127,17 +107,17 @@ abstract class IcingaObject extends DbObject
 
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
-        return $this->renderKeyValue(
+        return c::renderKeyValue(
             $propertyName,
-            $this->renderString($this->connection->getCommandName($commandId))
+            c::renderString($this->connection->getCommandName($commandId))
         );
     }
 
     protected function renderZoneProperty($zoneId, $propertyName = 'zone')
     {
-        return $this->renderKeyValue(
+        return c::renderKeyValue(
             $propertyName,
-            $this->renderString($this->connection->getZoneName($zoneId))
+            c::renderString($this->connection->getZoneName($zoneId))
         );
     }
 
@@ -152,7 +132,7 @@ abstract class IcingaObject extends DbObject
             "%s %s %s {\n",
             $this->getObjectTypeName(),
             $this->getType(),
-            $this->renderString($this->getObjectName())
+            c::renderString($this->getObjectName())
         );
     }
 
@@ -165,14 +145,6 @@ abstract class IcingaObject extends DbObject
             $this->renderCustomVars(),
             $this->renderSuffix()
         ));
-    }
-
-    protected function renderString($string)
-    {
-        $string = preg_replace('~\\\~', '\\\\', $string);
-        $string = preg_replace('~"~', '\\"', $string);
-
-        return sprintf('"%s"', $string);
     }
 
     protected function getType()
