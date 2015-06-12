@@ -42,8 +42,38 @@ class IcingaHost extends IcingaObject
         return $this->renderCommandProperty($this->check_command_id);
     }
 
+    protected function renderEnable_notifications()
+    {
+        return $this->renderBooleanProperty('enable_notifications');
+    }
+
     protected function renderEnable_active_checks()
     {
         return $this->renderBooleanProperty('enable_active_checks');
+    }
+
+    protected function renderEnable_passive_checks()
+    {
+        return $this->renderBooleanProperty('enable_passive_checks');
+    }
+
+    protected function renderEnable_event_handler()
+    {
+        return $this->renderBooleanProperty('enable_event_handler');
+    }
+
+    protected function renderEnable_flapping()
+    {
+        return $this->renderBooleanProperty('enable_passive_checks');
+    }
+
+    protected function renderEnable_perfdata()
+    {
+        return $this->renderBooleanProperty('enable_perfdata');
+    }
+
+    protected function rendervolatile()
+    {
+        return $this->renderBooleanProperty('volatile');
     }
 }
