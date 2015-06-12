@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaHostgroupMember extends IcingaObject
+class IcingaHostGroupMember extends IcingaObject
 {
     protected $keyName = array('host_id', 'hostgroup_id');
 
