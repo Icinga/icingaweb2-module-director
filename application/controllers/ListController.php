@@ -77,7 +77,7 @@ class Director_ListController extends ActionController
             'director/object/servicegroup'
         );
         $this->view->title = $this->translate('Icinga Servicegroups');
-        $this->view->table = $this->loadTable('icingaServicegroup')->setConnection($this->db());
+        $this->view->table = $this->loadTable('icingaServiceGroup')->setConnection($this->db());
         $this->render('table');
     }
 
@@ -88,7 +88,7 @@ class Director_ListController extends ActionController
             'director/object/servicegroupmember'
         );
         $this->view->title = $this->translate('Icinga Servicegroup Members');
-        $this->view->table = $this->loadTable('icingaServicegroupMember')->setConnection($this->db());
+        $this->view->table = $this->loadTable('icingaServiceGroupMember')->setConnection($this->db());
         $this->render('table');
     }
 

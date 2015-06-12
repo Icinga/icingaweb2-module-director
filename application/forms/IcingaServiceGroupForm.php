@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
-class IcingaServicegroupForm extends DirectorObjectForm
+class IcingaServiceGroupForm extends DirectorObjectForm
 {
     public function setup()
     {

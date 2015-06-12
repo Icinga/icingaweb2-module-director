@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaServicegroup extends IcingaObject
+class IcingaServiceGroup extends IcingaObject
 {
     protected $table = 'icinga_servicegroup';
 

@@ -97,7 +97,7 @@ class Director_ObjectController extends ActionController
 
     public function servicegroupAction()
     {
-        $this->view->form = $this->loadForm('icingaServicegroup')
+        $this->view->form = $this->loadForm('icingaServiceGroup')
             ->setDb($this->db())
             ->setSuccessUrl('director/list/servicegroups');
 
@@ -113,7 +113,7 @@ class Director_ObjectController extends ActionController
 
     public function servicegroupmemberAction()
     {
-        $this->view->form = $this->loadForm('icingaServicegroupMember')
+        $this->view->form = $this->loadForm('icingaServiceGroupMember')
             ->setDb($this->db())
             ->setSuccessUrl('director/list/servicegroupmembers');
 

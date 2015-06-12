@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaServicegroupMember extends IcingaObject
+class IcingaServiceGroupMember extends IcingaObject
 {
     protected $keyName = array('service_id', 'servicegroup_id');
 
