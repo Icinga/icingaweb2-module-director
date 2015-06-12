@@ -33,6 +33,7 @@ class IcingaConfig
             ->createFileFromDb('command')
             ->createFileFromDb('host')
             ->createFileFromDb('service')
+            ->createFileFromDb('user')
             ;
         return $this;
     }
