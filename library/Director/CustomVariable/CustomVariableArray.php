@@ -12,7 +12,8 @@ class CustomVariableArray extends CustomVariable
             return false;
         }
 
-        return $var->getValue() === $this->getValue();
+        // TODO: better var handlig, fix this
+        return $var->value === $this->value;
     }
 
     public function setValue($value)
