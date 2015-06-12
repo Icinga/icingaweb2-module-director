@@ -35,6 +35,7 @@ class IcingaConfig
             ->createFileFromDb('service')
             ->createFileFromDb('user')
             ;
+
         return $this;
     }
 
