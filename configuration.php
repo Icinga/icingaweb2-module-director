@@ -39,6 +39,8 @@ $section->add($this->translate('Users'))
     ->setUrl('director/list/users');
 $section->add($this->translate('Usergroups'))
     ->setUrl('director/list/usergroups');
+$section->add($this->translate('Usergroup Members'))
+    ->setUrl('director/list/usergroupmembers');
 
 // HA
 $section->add($this->translate('Zones'))
