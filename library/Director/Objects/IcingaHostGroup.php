@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaHostgroup extends IcingaObject
+class IcingaHostGroup extends IcingaObject
 {
     protected $table = 'icinga_hostgroup';
 

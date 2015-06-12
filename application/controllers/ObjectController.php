@@ -22,7 +22,7 @@ class Director_ObjectController extends ActionController
 
     public function hostgroupAction()
     {
-        $this->view->form = $this->loadForm('icingaHostgroup')
+        $this->view->form = $this->loadForm('icingaHostGroup')
             ->setDb($this->db())
             ->setSuccessUrl('director/list/hostgroups');
 
@@ -58,7 +58,7 @@ class Director_ObjectController extends ActionController
 
     public function hostgroupmemberAction()
     {
-        $this->view->form = $this->loadForm('icingaHostgroupMember')
+        $this->view->form = $this->loadForm('icingaHostGroupMember')
             ->setDb($this->db())
             ->setSuccessUrl('director/list/hostgroupmembers');
 

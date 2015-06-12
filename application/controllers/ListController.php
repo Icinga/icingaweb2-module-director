@@ -22,7 +22,7 @@ class Director_ListController extends ActionController
             'director/object/hostgroup'
         );
         $this->view->title = $this->translate('Icinga Hostgroups');
-        $this->view->table = $this->loadTable('icingaHostgroup')->setConnection($this->db());
+        $this->view->table = $this->loadTable('icingaHostGroup')->setConnection($this->db());
         $this->render('table');
     }
 
@@ -33,7 +33,7 @@ class Director_ListController extends ActionController
             'director/object/hostgroupmember'
         );
         $this->view->title = $this->translate('Icinga Hostgroup Members');
-        $this->view->table = $this->loadTable('icingaHostgroupMember')->setConnection($this->db());
+        $this->view->table = $this->loadTable('icingaHostGroupMember')->setConnection($this->db());
         $this->render('table');
     }
 
