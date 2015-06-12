@@ -229,11 +229,11 @@ CREATE TABLE icinga_command_var (
 
 CREATE TABLE icinga_endpoint (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-  zone_id INT(10) UNSIGNED NOT NULL,
+  zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   address VARCHAR(255) DEFAULT NULL COMMENT 'IP address / hostname of remote node',
-  port SMALLINT UNSIGNED NOT NULL DEFAULT 5665,
-  log_duration VARCHAR(32) NOT NULL DEFAULT '1d',
+  port SMALLINT UNSIGNED DEFAULT NULL COMMENT '5665 if not set',
+  log_duration VARCHAR(32) DEFAULT NULL COMMENT '1d if not set',
   object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
@@ -348,7 +348,7 @@ CREATE TABLE icinga_service (
   enable_flapping ENUM('y', 'n') DEFAULT NULL,
   enable_perfdata ENUM('y', 'n') DEFAULT NULL,
   event_command_id INT(10) UNSIGNED DEFAULT NULL,
-  flapping_threshold SMALLINT UNSIGNED default null,
+  flapping_threshold SMALLINT UNSIGNED DEFAULT NULL,
   volatile ENUM('y', 'n') DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   command_endpoint_id INT(10) UNSIGNED DEFAULT NULL,
