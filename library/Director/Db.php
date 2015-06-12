@@ -118,6 +118,24 @@ class Db extends DbConnection
         return $this->db()->fetchPairs($select);
     }
 
+    public function enumUsers()
+    {
+        $select = $this->db()->select()->from('icinga_user', array(
+            'id',
+            'object_name',
+        ))->where('object_type', 'object')->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
+    public function enumUsergroups()
+    {
+        $select = $this->db()->select()->from('icinga_usergroup', array(
+            'id',
+            'object_name',
+        ))->where('object_type', 'object')->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
     public function clearZoneCache()
     {
         // TODO: wipe cache on update/insert/delete
