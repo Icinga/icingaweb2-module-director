@@ -17,4 +17,9 @@ class IcingaUser extends IcingaObject
         'zone_id'               => null,
         'object_type'           => null,
     );
+
+    protected function renderEnable_notifications()
+    {
+        return $this->renderBooleanProperty('enable_notifications');
+    }
 }
