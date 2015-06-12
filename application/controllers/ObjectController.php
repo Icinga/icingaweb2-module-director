@@ -204,7 +204,7 @@ class Director_ObjectController extends ActionController
 
     public function usergroupAction()
     {
-        $this->view->form = $this->loadForm('icingaUsergroup')
+        $this->view->form = $this->loadForm('icingaUserGroup')
             ->setDb($this->db())
             ->setSuccessUrl('director/list/usergroups');
 

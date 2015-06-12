@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaUsergroup extends IcingaObject
+class IcingaUserGroup extends IcingaObject
 {
     protected $table = 'icinga_usergroup';
 

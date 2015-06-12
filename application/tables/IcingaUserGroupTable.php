@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Web\Table\QuickTable;
 
-class IcingaUsergroupTable extends QuickTable
+class IcingaUserGroupTable extends QuickTable
 {
     public function getColumns()
     {

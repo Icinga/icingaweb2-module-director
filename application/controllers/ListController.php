@@ -143,7 +143,7 @@ class Director_ListController extends ActionController
             'director/object/usergroup'
         );
         $this->view->title = $this->translate('Icinga Usergroups');
-        $this->view->table = $this->loadTable('icingaUsergroup')->setConnection($this->db());
+        $this->view->table = $this->loadTable('icingaUserGroup')->setConnection($this->db());
         $this->render('table');
     }
 
