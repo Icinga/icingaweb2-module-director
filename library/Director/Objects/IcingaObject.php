@@ -102,10 +102,6 @@ abstract class IcingaObject extends DbObject
             }
         }
 
-        if ($this->supportsCustomVars()) {
-            $out .= $this->vars()->toConfigString();
-        }
-
         return $out;
     }
 
@@ -125,10 +121,10 @@ abstract class IcingaObject extends DbObject
     protected function renderCustomVars()
     {
         if ($this->supportsCustomVars()) {
-            // TODO
+            return $this->vars()->toConfigString();
+        } else {
+            return '';
         }
-
-        return '';
     }
 
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
