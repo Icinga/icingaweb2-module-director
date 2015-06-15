@@ -72,7 +72,7 @@ class IcingaHost extends IcingaObject
         return $this->renderBooleanProperty('enable_perfdata');
     }
 
-    protected function rendervolatile()
+    protected function renderVolatile()
     {
         return $this->renderBooleanProperty('volatile');
     }
