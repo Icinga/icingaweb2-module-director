@@ -224,8 +224,12 @@ abstract class IcingaObject extends DbObject
             trigger_error($e);
             $previousHandler = set_exception_handler(function () {});
             restore_error_handler();
-            call_user_func($previousHandler, $e);
-            die();
+            if ($previousHandler !== null) {
+                call_user_func($previousHandler, $e);
+                die();
+            } else {
+                die($e->getMessage());
+            }
         }
     }
 }
