@@ -92,6 +92,20 @@ class IcingaConfigHelper
         return '"' . $string . '"';
     }
 
+    // Requires an array of CustomVariable objects
+    public static function renderArray($array)
+    {
+        $str = '[ ' . implode(', ', $array) . ' ]';
+
+        if (strlen($str) < 60) {
+            return $str;
+        }
+
+        // Prefix for toConfigString?
+        return "[\n    " . implode(",\n    ", $array) . "\n]";
+
+    }
+
     public static function isReserved($string)
     {
         return in_array($string, self::$reservedWords);

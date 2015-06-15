@@ -37,13 +37,6 @@ class CustomVariableArray extends CustomVariable
 
     public function toConfigString()
     {
-        $str = '[ ' . implode(', ', $this->value) . ' ]';
-
-        if (strlen($str) < 60) {
-            return $str;
-        }
-
-        // Prefix for toConfigString?
-        return "[\n    " . implode(",\n    ", $this->value) . "\n]";
+        return c::renderArray($this->value);
     }
 }
