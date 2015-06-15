@@ -4,14 +4,55 @@ namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Iterator;
+use Countable;
 
-class CustomVariables
+class CustomVariables implements Iterator, Countable
 {
     protected $storedVars = array();
 
     protected $vars = array();
 
     protected $modified = false;
+
+    private $position = 0;
+
+    protected $idx = array();
+
+    public function count()
+    {
+        return count($this->vars);
+    }
+
+    public function rewind()
+    {
+        $this->position = 0;
+    }
+
+    public function current()
+    {
+        if (! $this->valid()) {
+            return null;
+        }
+
+        return $this->vars[$this->idx[$this->position]];
+    }
+
+    public function key()
+    {
+        return $this->idx[$this->position];
+    }
+
+    public function next()
+    {
+        ++$this->position;
+    }
+
+    public function valid()
+    {
+        return array_key_exists($this->position, $this->idx);
+    }
+
 
     /**
      * Generic setter
@@ -35,8 +76,14 @@ class CustomVariables
 
         $this->vars[$key] = $value;
         $this->modified = true;
+        $this->refreshIndex();
 
         return $this;
+    }
+
+    protected function refreshIndex()
+    {
+        $this->idx = array_keys($this->vars);
     }
 
     public static function loadForStoredObject(IcingaObject $object)
@@ -56,8 +103,46 @@ class CustomVariables
         foreach ($db->fetchAll($query) as $row) {
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
+        $vars->refreshIndex();
 
         return $vars;
+    }
+
+    public function storeToDb(IcingaObject $object)
+    {
+        $db            = $object->getDb();
+        $table         = $object->getVarsTableName();
+        $foreignColumn = $object->getVarsIdColumn();
+        $foreignId     = $object->getId();
+
+
+        foreach ($this->vars as $var) {
+            if ($var->isNew()) {
+                $db->insert(
+                    $table,
+                    array(
+                        $foreignColumn => $foreignId,
+                        'varname'      => $var->getKey(),
+                        'varvalue'     => $var->getDbValue(),
+                        'format'       => $var->getDbFormat()
+                    )
+                );
+                continue;
+            }
+
+            $where = $db->quoteInto(sprintf('%s = ?', $foreignColumn), $foreignId)
+                   . $this->quoteInto(' AND varname = ?', $var->getKey());
+
+            if ($var->hasBeenDeleted()) {
+                $db->delete($table, $where);
+            } elseif ($var->hasBeenModified()) {
+                $db->update(
+                    $table,
+                    array('varvalue' => $var->getValueForDb()),
+                    $where
+                );
+            }
+        }
     }
 
     public function get($key)
@@ -130,10 +215,13 @@ class CustomVariables
      */
     public function __unset($key)
     {
-        if (! array_key_exists($key, $this->properties)) {
+        if (! array_key_exists($key, $this->vars)) {
             throw new Exception('Trying to unset invalid key');
         }
-        $this->properties[$key] = $this->defaultProperties[$key];
+
+        unset($this->vars[$key]);
+
+        $this->refreshIndex();
     }
 
     public function __toString()
