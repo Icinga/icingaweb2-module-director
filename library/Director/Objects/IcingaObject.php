@@ -41,10 +41,25 @@ abstract class IcingaObject extends DbObject
     {
         $this->assertCustomVarsSupport();
         if ($this->vars === null) {
-            $this->vars = new CustomVariables();
+            if ($this->hasBeenLoadedFromDb()) {
+                $this->vars = CustomVariables::loadForStoredObject($this);
+            } else {
+                $this->vars = new CustomVariables();
+            }
         }
 
         return $this->vars;
+    }
+
+    public function getVarsTableName()
+    {
+        return $this->getTableName() . '_var';
+    }
+
+    public function getVarsIdColumn()
+    {
+        // strlen('icinga_') = 7
+        return substr($this->getTableName(), 7) . '_id';
     }
 
     public function isTemplate()

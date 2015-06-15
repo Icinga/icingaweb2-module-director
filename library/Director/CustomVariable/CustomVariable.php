@@ -109,6 +109,25 @@ abstract class CustomVariable
         }
     }
 
+    public static function fromDbRow($row)
+    {
+        switch($row->format) {
+            case 'string':
+                return new CustomVariableString($row->varname, $row->varvalue);
+            case 'json':
+                return self::create($row->varname, json_decode($row->varvalue));
+            case 'expression':
+                throw new ProgrammingError(
+                    'Icinga code expressions are not yet supported'
+                );
+            default:
+                throw new ProgrammingError(
+                    '%s is not a supported custom variable format',
+                    $row->format
+                );
+        }
+    }
+
     public function __toString()
     {
         try {

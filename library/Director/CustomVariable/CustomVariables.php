@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\Objects\IcingaObject;
 
 class CustomVariables
 {
@@ -36,6 +37,27 @@ class CustomVariables
         $this->modified = true;
 
         return $this;
+    }
+
+    public static function loadForStoredObject(IcingaObject $object)
+    {
+        $db    = $object->getDb();
+
+        $query = $db->select()->from(
+            array('v' => $object->getVarsTableName()),
+            array(
+                'v.varname',
+                'v.varvalue',
+                'v.format',
+            )
+        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->getId());
+
+        $vars = new CustomVariables;
+        foreach ($db->fetchAll($query) as $row) {
+            $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
+        }
+
+        return $vars;
     }
 
     public function get($key)
