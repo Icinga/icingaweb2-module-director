@@ -96,10 +96,25 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addHidden('id');
         }
         $this->setDefaults($this->object->getProperties());
+
+        if ($this->object->supportsCustomVars()) {
+            foreach ($this->object->vars() as $key => $value) {
+                $this->addCustomVar($key, $value);
+            }
+        }
+
         if (! $this->hasBeenSubmitted()) {
             $this->beforeValidation($this->object->getProperties());
         }
         return $this;
+    }
+
+    protected function addCustomVar($key, $var)
+    {
+        $this->addElement('text', 'var_' . $key, array(
+            'label' => 'vars.' . $key,
+            'value' => $var->getValue()
+        ));
     }
 
     public function setDb($db)
