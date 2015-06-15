@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Countable;
 
 class CustomVariableDictionary extends CustomVariable implements Countable
@@ -25,6 +26,25 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         }
 
         return true;
+    }
+
+    public function setValue($value)
+    {
+        $new = array();
+
+        foreach ($value as $key => $val) {
+            $new[$key] = self::wantCustomVariable($key, $val);
+        }
+
+        // WTF?
+        if ($this->value === $new) {
+            return $this;
+        }
+
+        $this->value = $new;
+        $this->setModified();
+
+        return $this;
     }
 
     public function listKeys()
@@ -53,6 +73,6 @@ class CustomVariableDictionary extends CustomVariable implements Countable
 
     public function toConfigString()
     {
-        // TODO: Implement toConfigString() method.
+        return c::renderDictionary($this->value);
     }
 }

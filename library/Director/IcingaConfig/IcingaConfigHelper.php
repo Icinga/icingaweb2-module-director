@@ -106,6 +106,18 @@ class IcingaConfigHelper
 
     }
 
+    public static function renderDictionary($dictionary)
+    {
+        $vals = array();
+        foreach ($dictionary as $key => $value) {
+            $vals[] = rtrim(self::renderKeyValue(self::renderString($key), $value));
+        }
+
+        // Prefix for toConfigString?
+        return "{\n" . implode("\n", $vals) . "\n}";
+
+    }
+
     public static function isReserved($string)
     {
         return in_array($string, self::$reservedWords);
