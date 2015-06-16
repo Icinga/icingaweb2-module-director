@@ -359,7 +359,7 @@ CREATE TABLE icinga_service (
   icon_image_alt VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE INDEX object_name (object_name, zone_id),
+  -- UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_service_zone
     FOREIGN KEY zone (zone_id)
     REFERENCES icinga_zone (id)
