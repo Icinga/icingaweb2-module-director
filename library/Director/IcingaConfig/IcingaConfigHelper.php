@@ -92,17 +92,25 @@ class IcingaConfigHelper
         return '"' . $string . '"';
     }
 
-    // Requires an array of CustomVariable objects
+    // Requires an array
     public static function renderArray($array)
     {
-        $str = '[ ' . implode(', ', $array) . ' ]';
+        $data = array();
+        foreach ($array as $entry) {
+            if ($entry instanceof IcingaConfigRenderer) {
+                $data[] = $entry;
+            } else {
+                $data[] = self::renderString($entry);
+            }
+        }
+        $str = '[ ' . implode(', ', $data) . ' ]';
 
         if (strlen($str) < 60) {
             return $str;
         }
 
         // Prefix for toConfigString?
-        return "[\n    " . implode(",\n    ", $array) . "\n]";
+        return "[\n    " . implode(",\n    ", $data) . "\n]";
 
     }
 
