@@ -468,6 +468,10 @@ abstract class DbObject
         return $this->db;
     }
 
+    public function getConnection()
+    {
+        return $this->connection;
+    }
     /**
      * Lädt einen Datensatz aus der Datenbank und setzt die entsprechenden
      * Eigenschaften dieses Objekts
@@ -738,21 +742,29 @@ abstract class DbObject
         return $obj;
     }
 
-    public static function loadAll(DbConnection $connection)
+    public static function loadAll(DbConnection $connection, $query = null, $keyColumn = null)
     {
         $objects = array();
         $class = get_called_class();
-        $db = $connection->getConnection();
+        $db = $connection->getDbAdapter();
 
-        $dummy = new $class();
-        $select = $db->select()->from($dummy->table);
+        if ($query === null) {
+            $dummy = new $class();
+            $select = $db->select()->from($dummy->table);
+        } else {
+            $select = $query;
+        }
         $rows = $db->fetchAll($select);
 
         foreach ($rows as $row) {
             $obj = new $class();
             $obj->connection = $connection;
             $obj->setDb($db)->setDbProperties($row);
-            $objects[] = $obj;
+            if ($keyColumn === null) {
+                $objects[] = $obj;
+            } else {
+                $objects[$row->$keyColumn] = $obj;
+            }
         }
 
         return $objects;

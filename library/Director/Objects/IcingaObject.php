@@ -4,11 +4,12 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
 use Exception;
 
-abstract class IcingaObject extends DbObject
+abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
     protected $keyName = 'id';
 
@@ -16,13 +17,36 @@ abstract class IcingaObject extends DbObject
 
     protected $supportsCustomVars = false;
 
+    protected $supportsGroups = false;
+
     private $type;
 
     private $vars;
 
+    private $groups;
+
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
+    }
+
+    public function supportsGroups()
+    {
+        return $this->supportsGroups;
+    }
+
+    public function groups()
+    {
+        $this->assertGroupsSupport();
+        if ($this->groups === null) {
+            if ($this->hasBeenLoadedFromDb()) {
+                $this->groups = IcingaObjectGroups::loadForStoredObject($this);
+            } else {
+                $this->groups = new IcingaObjectGroups($this);
+            }
+        }
+
+        return $this->groups;
     }
 
     protected function assertCustomVarsSupport()
@@ -30,6 +54,18 @@ abstract class IcingaObject extends DbObject
         if (! $this->supportsCustomVars()) {
             throw new ProgrammingError(
                 'Objects of type "%s" have no custom vars',
+                $this->getType()
+            );
+        }
+
+        return $this;
+    }
+
+    protected function assertGroupsSupport()
+    {
+        if (! $this->supportsGroups()) {
+            throw new ProgrammingError(
+                'Objects of type "%s" have no groups',
                 $this->getType()
             );
         }
@@ -56,10 +92,15 @@ abstract class IcingaObject extends DbObject
         return $this->getTableName() . '_var';
     }
 
-    public function getVarsIdColumn()
+    public function getShortTableName()
     {
         // strlen('icinga_') = 7
-        return substr($this->getTableName(), 7) . '_id';
+        return substr($this->getTableName(), 7);
+    }
+
+    public function getVarsIdColumn()
+    {
+        return $this->getShortTableName() . '_id';
     }
 
     public function isTemplate()
@@ -142,6 +183,18 @@ abstract class IcingaObject extends DbObject
         }
     }
 
+    /**
+     * @return string
+     */
+    protected function renderGroups()
+    {
+        if ($this->supportsGroups()) {
+            return $this->groups()->toConfigString();
+        } else {
+            return '';
+        }
+    }
+
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
         return c::renderKeyValue(
@@ -179,6 +232,7 @@ abstract class IcingaObject extends DbObject
             $this->renderObjectHeader(),
             $this->renderImports(),
             $this->renderProperties(),
+            $this->renderGroups(),
             $this->renderCustomVars(),
             $this->renderSuffix()
         ));

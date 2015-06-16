@@ -14,8 +14,15 @@ abstract class DirectorObjectForm extends QuickForm
 
     public function onSuccess()
     {
+        $values = $this->getValues();
+
+        if ($this->object->supportsGroups()) {
+            unset($values['groups']);
+        }
+
         if ($this->object) {
-            $this->object->setProperties($this->getValues())->store();
+            $this->object->setProperties($values)->store();
+            $this->storeGroupMembership();
             $this->redirectOnSuccess(
                 sprintf(
                     $this->translate('The Icinga %s has successfully been stored'),
@@ -24,7 +31,8 @@ abstract class DirectorObjectForm extends QuickForm
             );
         } else {
             $class = $this->getObjectClassname();
-            $class::create($this->getValues())->store($this->db);
+            $this->object = $class::create($values)->store($this->db);
+            $this->storeGroupMembership();
             $this->redirectOnSuccess(
                 sprintf(
                     $this->translate('A new Icinga %s has successfully been created'),
@@ -32,6 +40,17 @@ abstract class DirectorObjectForm extends QuickForm
                 )
             );
         }
+    }
+
+    protected function storeGroupMembership()
+    {
+        if (! $this->object->supportsGroups()) {
+            return;
+        }
+
+        $this->object->groups()->set(
+            preg_split('/\s*,\s*/', $this->getValue('groups'), -1, PREG_SPLIT_NO_EMPTY)
+        )->store();
     }
 
     protected function optionalEnum($enum)

@@ -3,11 +3,12 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Iterator;
 use Countable;
 
-class CustomVariables implements Iterator, Countable
+class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 {
     protected $storedVars = array();
 
@@ -164,7 +165,7 @@ class CustomVariables implements Iterator, Countable
         $this->modified = false;
         $this->storedVars = $this->vars;
         return $this;
-    }   
+    }
 
     public function toConfigString()
     {

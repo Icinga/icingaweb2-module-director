@@ -85,11 +85,23 @@ class IcingaHostForm extends DirectorObjectForm
             $this->translate('Whether this check is volatile.')
         );
 
+        $this->addElement('text', 'groups', array(
+            'label' => $this->translate('Hostgroups'),
+            'description' => $this->translate('One or more comma separated hostgroup names')
+        ));
+
         $this->addElement('select', 'zone_id', array(
             'label' => $this->translate('Cluster Zone'),
             'description' => $this->translate('Check this host in this specific Icinga cluster zone')
         ));
 
         $this->addElement('submit', $this->translate('Store'));
+    }
+
+    public function loadObject($id)
+    {
+        parent::loadObject($id);
+        $this->getElement('groups')->setValue(implode(', ', $this->object->groups()->listGroupNames()));
+        return $this;
     }
 }
