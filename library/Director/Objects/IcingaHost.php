@@ -37,6 +37,8 @@ class IcingaHost extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsGroups = true;
+
     protected function renderCheck_command_id()
     {
         return $this->renderCommandProperty($this->check_command_id);
