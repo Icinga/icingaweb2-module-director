@@ -345,7 +345,9 @@ abstract class DbObject
      */
     public function setProperties($props)
     {
-        if (! is_array($props)) throw new Exception('Array required, got ' . gettype($props));
+        if (! is_array($props)) {
+            throw new Exception('Array required, got ' . gettype($props));
+        }
         foreach ($props as $key => $value) {
             $this->set($key, $value);
         }

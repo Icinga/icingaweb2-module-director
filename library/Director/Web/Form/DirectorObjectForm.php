@@ -16,7 +16,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $values = $this->getValues();
 
-        if (array_key_exists('group', $values)) {
+        if (array_key_exists('groups', $values)) {
             unset($values['groups']);
         }
 
