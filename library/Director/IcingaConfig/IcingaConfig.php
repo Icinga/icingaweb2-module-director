@@ -30,9 +30,13 @@ class IcingaConfig
         $this->db = $db;
         $this
             ->createFileFromDb('zone')
+            ->createFileFromDb('endpoint')
             ->createFileFromDb('command')
+            ->createFileFromDb('hostGroup')
             ->createFileFromDb('host')
+            ->createFileFromDb('serviceGroup')
             ->createFileFromDb('service')
+            ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ;
 
@@ -53,7 +57,7 @@ class IcingaConfig
                 $file->prepend("library \"methods\"\n\n");
             }
             $file->addObjects($objects);
-            $this->files[$type . 's.conf'] = $file;
+            $this->files[strtolower($type) . 's.conf'] = $file;
         }
 
         return $this;
