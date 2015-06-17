@@ -120,7 +120,7 @@ abstract class DirectorObjectForm extends QuickForm
             $this->getElement('groups')->setValue(
                 implode(', ', $this->object->groups()->listGroupNames())
             );
-        ]
+        }
 
         if ($this->object->supportsCustomVars()) {
             foreach ($this->object->vars() as $key => $value) {
