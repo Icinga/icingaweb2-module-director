@@ -19,7 +19,7 @@ class IcingaConfig
         return $this->files;
     }
 
-    public static function fromDb(DbConnection $db)
+    public static function generate(DbConnection $db)
     {
         $config = new static;
         return $config->loadFromDb($db);

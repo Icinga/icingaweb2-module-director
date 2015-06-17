@@ -16,7 +16,7 @@ class Director_ShowController extends ActionController
 
     public function configAction()
     {
-        $config = IcingaConfig::fromDb($this->db());
+        $config = IcingaConfig::generate($this->db());
         $this->view->files = array();
 
         foreach ($config->getFiles() as $filename => $config) {
