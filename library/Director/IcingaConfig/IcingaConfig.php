@@ -48,7 +48,10 @@ class IcingaConfig
             $class = 'Icinga\\Module\\Director\\IcingaConfig\\Icinga'
                    . ucfirst($type)
                    . 'sConfigFile';
-            $file = new $class();
+            $file = new IcingaConfigFile();
+            if ($type === 'command') {
+                $file->prepend("library \"methods\"\n\n");
+            }
             $file->addObjects($objects);
             $this->files[$type . 's.conf'] = $file;
         }

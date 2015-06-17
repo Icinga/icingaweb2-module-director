@@ -8,6 +8,12 @@ class IcingaConfigFile
 {
     protected $content;
 
+    public function prepend($content)
+    {
+        $this->content = $content . $this->content;
+        return $this;
+    }
+
     public function getContent()
     {
         return $this->content;
