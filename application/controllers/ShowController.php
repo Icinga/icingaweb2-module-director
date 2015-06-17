@@ -13,14 +13,4 @@ class Director_ShowController extends ActionController
             $this->view->title = $this->translate('Activity');
         }
     }
-
-    public function configAction()
-    {
-        $config = IcingaConfig::generate($this->db());
-        $this->view->files = array();
-
-        foreach ($config->getFiles() as $filename => $config) {
-            $this->view->files[$filename] = $config->getContent();
-        }
-    }
 }
