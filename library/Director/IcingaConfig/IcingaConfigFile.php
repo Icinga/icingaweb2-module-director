@@ -6,6 +6,9 @@ use Icinga\Module\Director\Objects\IcingaObject;
 
 class IcingaConfigFile
 {
+    public static $table = 'director_generated_file';
+    public static $keyName = 'checksum';
+
     protected $content;
 
     public function prepend($content)
@@ -19,9 +22,14 @@ class IcingaConfigFile
         return $this->content;
     }
 
-    public function getChecksum()
+    public function getHexChecksum()
     {
         return sha1($this->content);
+    }
+
+    public function getChecksum()
+    {
+        return sha1($this->content, true);
     }
 
     public function addObjects($objects)
