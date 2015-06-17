@@ -116,6 +116,11 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addHidden('id');
         }
         $this->setDefaults($this->object->getProperties());
+        if ($this->object->supportsGroups()) {
+            $this->getElement('groups')->setValue(
+                implode(', ', $this->object->groups()->listGroupNames())
+            );
+        ]
 
         if ($this->object->supportsCustomVars()) {
             foreach ($this->object->vars() as $key => $value) {

@@ -80,6 +80,11 @@ class IcingaServiceForm extends DirectorObjectForm
             'description' => $this->translate('Check this host in this specific Icinga cluster zone')
         ));
 
+        $this->addElement('text', 'groups', array(
+            'label' => $this->translate('Servicegroups'),
+            'description' => $this->translate('One or more comma separated servicegroup names')
+        ));
+
         $this->addElement('submit', $this->translate('Store'));
     }
 }

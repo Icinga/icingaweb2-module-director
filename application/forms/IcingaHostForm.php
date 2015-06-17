@@ -97,11 +97,4 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addElement('submit', $this->translate('Store'));
     }
-
-    public function loadObject($id)
-    {
-        parent::loadObject($id);
-        $this->getElement('groups')->setValue(implode(', ', $this->object->groups()->listGroupNames()));
-        return $this;
-    }
 }
