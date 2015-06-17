@@ -16,7 +16,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $values = $this->getValues();
 
-        if ($this->object->supportsGroups()) {
+        if (array_key_exists('group', $values)) {
             unset($values['groups']);
         }
 
@@ -31,7 +31,8 @@ abstract class DirectorObjectForm extends QuickForm
             );
         } else {
             $class = $this->getObjectClassname();
-            $this->object = $class::create($values)->store($this->db);
+            $this->object = $class::create($values);
+            $this->object->store($this->db);
             $this->storeGroupMembership();
             $this->redirectOnSuccess(
                 sprintf(
