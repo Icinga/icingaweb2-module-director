@@ -36,16 +36,12 @@ CREATE TABLE director_activity_log (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_generated_config (
-  id BIGINT(20) UNSIGNED NOT NULL,
-  author VARCHAR(64) NOT NULL,
+  checksum VARBINARY(20) NOT NULL COMMENT 'SHA1(last_activity_checksum;file_path=checksum;file_path=checksum;...)',
   director_version VARCHAR(64) DEFAULT NULL,
   director_db_version INT(10) DEFAULT NULL,
   duration INT(10) UNSIGNED DEFAULT NULL COMMENT 'Config generation duration (ms)',
   last_activity_checksum VARBINARY(20) NOT NULL,
-  checksum VARBINARY(20) NOT NULL COMMENT 'SHA1(file_path=checksum;file_path=checksum;...)',
-  ctime DATETIME NOT NULL,
-  PRIMARY KEY (id),
-  INDEX sort_idx (ctime),
+  PRIMARY KEY (checksum),
   CONSTRAINT director_generated_config_activity
     FOREIGN KEY activity_checksum (last_activity_checksum)
     REFERENCES director_activity_log (checksum)
@@ -60,12 +56,12 @@ CREATE TABLE director_generated_file (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_generated_config_file (
-  config_id BIGINT(20) UNSIGNED NOT NULL,
+  config_checksum VARBINARY(20) NOT NULL,
   file_checksum VARBINARY(20) NOT NULL,
   file_path VARCHAR(64) NOT NULL COMMENT 'e.g. zones/nafta/hosts.conf',
   CONSTRAINT director_generated_config_file_config
-    FOREIGN KEY config (config_id)
-    REFERENCES director_generated_config (id)
+    FOREIGN KEY config (config_checksum)
+    REFERENCES director_generated_config (checksum)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT director_generated_config_file_file
@@ -73,7 +69,7 @@ CREATE TABLE director_generated_config_file (
     REFERENCES director_generated_file (checksum)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
-  PRIMARY KEY (config_id, file_path),
+  PRIMARY KEY (config_checksum, file_path),
   INDEX search_idx (file_checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
