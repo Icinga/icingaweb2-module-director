@@ -53,8 +53,8 @@ $section->add($this->translate('Activity Log'))
     ->setUrl('director/list/activitylog')
     ->setPriority(900);
 $section->add($this->translate('Show config'))
-    ->setUrl('director/conf/show')
+    ->setUrl('director/config/show')
     ->setPriority(902);
 $section->add($this->translate('Store config'))
-    ->setUrl('director/conf/store')
+    ->setUrl('director/config/store')
     ->setPriority(902);

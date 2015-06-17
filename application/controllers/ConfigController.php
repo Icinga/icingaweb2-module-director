@@ -21,7 +21,6 @@ class Director_ConfigController extends ActionController
     {
         /** @var IcingaConfig $config */
         $config = IcingaConfig::generate($this->db());
-
-        $config->store();
+        $this->view->id = $config->getHexChecksum();
     }
 }
