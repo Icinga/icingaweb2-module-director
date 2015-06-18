@@ -3,8 +3,9 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 
-abstract class CustomVariable
+abstract class CustomVariable implements IcingaConfigRenderer
 {
     protected $key;
 
