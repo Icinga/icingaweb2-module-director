@@ -186,4 +186,11 @@ class Director_ListController extends ActionController
         $this->view->table = $this->loadTable('activityLog')->setConnection($this->db());
         $this->render('table');
     }
+
+    public function generatedconfigAction()
+    {
+        $this->view->title = $this->translate('Generated Configs');
+        $this->view->table = $this->loadTable('generatedConfig')->setConnection($this->db());
+        $this->render('table');
+    }
 }

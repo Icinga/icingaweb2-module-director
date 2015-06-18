@@ -7,13 +7,17 @@ use Icinga\Module\Director\Objects\IcingaObject;
 class IcingaConfigFile
 {
     public static $table = 'director_generated_file';
+
     public static $keyName = 'checksum';
 
     protected $content;
 
+    protected $checksum;
+
     public function prepend($content)
     {
         $this->content = $content . $this->content;
+        $this->checksum = null;
         return $this;
     }
 
@@ -22,14 +26,25 @@ class IcingaConfigFile
         return $this->content;
     }
 
+    public function setContent($content)
+    {
+        $this->content = $content;
+        $this->checksum = null;
+        return $this;
+    }
+
     public function getHexChecksum()
     {
-        return sha1($this->content);
+        return current(unpack('H*', $this->getChecksum()));
     }
 
     public function getChecksum()
     {
-        return sha1($this->content, true);
+        if ($this->checksum === null) {
+            $this->checksum = sha1($this->content, true);
+        }
+
+        return $this->checksum;
     }
 
     public function addObjects($objects)
@@ -44,5 +59,7 @@ class IcingaConfigFile
     public function addObject(IcingaObject $object)
     {
         $this->content .= $object->toConfigString();
+        $this->checksum = null;
+        return $this;
     }
 }

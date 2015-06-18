@@ -60,6 +60,13 @@ class IcingaConfig
         return $files;
     }
 
+    public static function fromDb($checksum, DbConnection $connection)
+    {
+        $config = new static($connection);
+        $config->loadFromDb($checksum);
+        return $config;
+    }
+
     public static function generate(DbConnection $connection)
     {
         $config = new static($connection);
@@ -183,6 +190,36 @@ class IcingaConfig
             ;
 
         $this->generationTime = (microtime(true) - $start) * 1000;
+
+        return $this;
+    }
+
+    protected function loadFromDb($checksum)
+    {
+        $query = $this->db->select()->from(
+            self::$table,
+            array('checksum', 'last_activity_checksum')
+        )->where('checksum = ?', $checksum);
+        $result = $this->db->fetchRow($query);
+        $this->checksum = $result->checksum;
+        $this->last_activity_checksum = $result->last_activity_checksum;
+        $query = $this->db->select()->from(
+            array('cf' => 'director_generated_config_file'),
+            array(
+                'file_path' => 'cf.file_path',
+                'checksum'  => 'f.checksum',
+                'content'   => 'f.content',
+            )
+        )->join(
+            array('f' => 'director_generated_file'),
+            'cf.file_checksum = f.checksum',
+            array()
+        )->where('cf.config_checksum = ?', $checksum);
+
+        foreach ($this->db->fetchAll($query) as $row) {
+            $file = new IcingaConfigFile();
+            $this->files[$row->file_path] = $file->setContent($row->content);
+        }
 
         return $this;
     }

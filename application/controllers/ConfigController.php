@@ -8,13 +8,7 @@ class Director_ConfigController extends ActionController
 {
     public function showAction()
     {
-        /** @var IcingaConfig $config */
-        $config = IcingaConfig::generate($this->db());
-        $this->view->files = array();
-
-        foreach ($config->getFiles() as $filename => $config) {
-            $this->view->files[$filename] = $config->getContent();
-        }
+        $this->view->config = IcingaConfig::fromDb(pack('H*', $this->params->get('checksum')), $this->db());
     }
 
     public function storeAction()
