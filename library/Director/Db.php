@@ -17,11 +17,18 @@ class Db extends DbConnection
         return $this->getDbAdapter();
     }
 
-    public function fetchActivityLogEntry($id)
+    public function fetchActivityLogEntryById($id)
     {
         $sql = 'SELECT * FROM director_activity_log WHERE id = ' . (int) $id;
 
         return $this->db()->fetchRow($sql);
+    }
+
+    public function fetchActivityLogEntry($checksum)
+    {   
+        $sql = 'SELECT * FROM director_activity_log WHERE checksum = ?';
+
+        return $this->db()->fetchRow($sql, $checksum);
     }
 
     public function getLastActivityChecksum()

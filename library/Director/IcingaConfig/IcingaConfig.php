@@ -202,7 +202,7 @@ class IcingaConfig
         )->where('checksum = ?', $checksum);
         $result = $this->db->fetchRow($query);
         $this->checksum = $result->checksum;
-        $this->last_activity_checksum = $result->last_activity_checksum;
+        $this->lastActivityChecksum = $result->last_activity_checksum;
         $query = $this->db->select()->from(
             array('cf' => 'director_generated_config_file'),
             array(
