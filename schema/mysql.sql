@@ -174,7 +174,7 @@ CREATE TABLE icinga_command (
   command VARCHAR(255) DEFAULT NULL,
   -- env text DEFAULT NULL,
   -- vars text DEFAULT NULL,
-  timeout MEDIUMINT(10) UNSIGNED DEFAULT NULL,
+  timeout SMALLINT UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL
     COMMENT 'external_object is an attempt to work with existing commands',
