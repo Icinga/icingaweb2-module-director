@@ -451,7 +451,6 @@ CREATE TABLE icinga_host_inheritance (
 );
 
 CREATE UNIQUE INDEX host_inheritance_unique_order ON icinga_host_inheritance (host_id, weight);
--- TODO: drop one of them?
 CREATE INDEX host_inheritance_host ON icinga_host_inheritance (host_id);
 CREATE INDEX host_inheritance_host_parent ON icinga_host_inheritance (parent_host_id);
 
@@ -673,15 +672,14 @@ CREATE TABLE icinga_hostgroup_parent (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_hostgroup_parent_parent
-  FOREIGN KEY (hostgroup_id)
+  FOREIGN KEY (parent_hostgroup_id)
     REFERENCES icinga_hostgroup (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
 
 CREATE INDEX hostgroup_parent_hostgroup ON icinga_hostgroup_parent (hostgroup_id);
--- TODO: drop one of them?
-CREATE INDEX hostgroup_parent_parent ON icinga_hostgroup_parent (hostgroup_id);
+CREATE INDEX hostgroup_parent_parent ON icinga_hostgroup_parent (parent_hostgroup_id);
 
 --
 -- Table structure for table icinga_user
@@ -821,15 +819,14 @@ CREATE TABLE icinga_usergroup_parent (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_usergroup_parent_parent
-  FOREIGN KEY (usergroup_id)
+  FOREIGN KEY (parent_usergroup_id)
     REFERENCES icinga_usergroup (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
 
 CREATE INDEX usergroup_parent_usergroup ON icinga_usergroup_parent (usergroup_id);
--- TODO: drop one of them?
-CREATE INDEX usergroup_parent_parent ON icinga_usergroup_parent (usergroup_id);
+CREATE INDEX usergroup_parent_parent ON icinga_usergroup_parent (parent_usergroup_id);
 
 --
 -- TODO: unfinished: see mysql.sql schema from sync_*
