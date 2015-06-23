@@ -475,7 +475,7 @@ CREATE TABLE icinga_hostgroup_parent (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_hostgroup_parent_parent
-    FOREIGN KEY parent (hostgroup_id)
+    FOREIGN KEY parent (parent_hostgroup_id)
     REFERENCES icinga_hostgroup (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
@@ -594,7 +594,7 @@ CREATE TABLE icinga_usergroup_parent (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_usergroup_parent_parent
-    FOREIGN KEY parent (usergroup_id)
+    FOREIGN KEY parent (parent_usergroup_id)
     REFERENCES icinga_usergroup (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
