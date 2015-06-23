@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Util;
 use Icinga\Authentication\Manager as Auth;
 
 class DirectorActivityLog extends DbObject
@@ -51,7 +52,7 @@ class DirectorActivityLog extends DbObject
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = pack('H*', $data['parent_checksum']);
+        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
         return self::create($data)->store($db);
     }
 
@@ -69,7 +70,7 @@ class DirectorActivityLog extends DbObject
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = pack('H*', $data['parent_checksum']);
+        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
         return self::create($data)->store($db);
     }
 
@@ -86,7 +87,7 @@ class DirectorActivityLog extends DbObject
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = pack('H*', $data['parent_checksum']);
+        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
         return self::create($data)->store($db);
     }
 

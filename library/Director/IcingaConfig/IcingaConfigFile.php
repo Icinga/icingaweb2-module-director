@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Util;
 
 class IcingaConfigFile
 {
@@ -35,7 +36,7 @@ class IcingaConfigFile
 
     public function getHexChecksum()
     {
-        return current(unpack('H*', $this->getChecksum()));
+        return Util::binary2hex($this->getChecksum());
     }
 
     public function getChecksum()

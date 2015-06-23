@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 
@@ -38,7 +39,7 @@ class IcingaConfig
 
     public function getHexChecksum()
     {
-        return current(unpack('H*', $this->checksum));
+        return Util::binary2hex($this->checksum);
     }
 
     public function getFiles()
@@ -243,7 +244,7 @@ class IcingaConfig
 
     public function getLastActivityHexChecksum()
     {
-        return current(unpack('H*', $this->getLastActivityChecksum()));
+        return Util::binary2hex($this->getLastActivityChecksum());
     }
 
     /**

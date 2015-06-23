@@ -9,6 +9,8 @@
 namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\Util;
+
 use Exception;
 
 /**
@@ -557,7 +559,7 @@ abstract class DbObject
         if ($this->connection->getDbType() === 'pgsql') {
             foreach ($properties as $key => $value) {
                 if (preg_match('/checksum$/', $key)) {
-                    $properties[$key] = new \Zend_Db_Expr("'" . pg_escape_bytea($value) . "'");
+                    $properties[$key] = Util::pgBinEscape($value);
                 }
             }
         }
