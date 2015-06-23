@@ -148,7 +148,7 @@ class IcingaConfig
                 $this->db->insert(
                     $fileTable,
                     array(
-                        $fileKey  => $checksum,
+                        $fileKey  => $this->dbBin($checksum),
                         'content' => $file->getContent()
                     )
                 );
