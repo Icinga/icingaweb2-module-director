@@ -200,7 +200,7 @@ class IcingaConfig
             ->createFileFromDb('user')
             ;
 
-        $this->generationTime = (microtime(true) - $start) * 1000;
+        $this->generationTime = (int) ((microtime(true) - $start) * 1000);
 
         return $this;
     }
