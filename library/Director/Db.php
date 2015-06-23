@@ -69,7 +69,7 @@ class Db extends DbConnection
             $select = $this->db()->select()->from('icinga_zone', array(
                 'id',
                 'object_name',
-            ))->where('object_type', 'object')->order('object_name ASC');
+            ))->where('object_type = ?', 'object')->order('object_name ASC');
 
             self::$zoneCache = $this->db()->fetchPairs($select);
         }
@@ -94,7 +94,7 @@ class Db extends DbConnection
         $select = $this->db()->select()->from('icinga_host', array(
             'id',
             'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
+        ))->where('object_type = ?', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
@@ -103,7 +103,7 @@ class Db extends DbConnection
         $select = $this->db()->select()->from('icinga_hostgroup', array(
             'id',
             'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
+        ))->where('object_type = ?', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
@@ -112,7 +112,7 @@ class Db extends DbConnection
         $select = $this->db()->select()->from('icinga_service', array(
             'id',
             'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
+        ))->where('object_type = ?', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
@@ -121,7 +121,7 @@ class Db extends DbConnection
         $select = $this->db()->select()->from('icinga_servicegroup', array(
             'id',
             'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
+        ))->where('object_type = ?', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
@@ -130,7 +130,7 @@ class Db extends DbConnection
         $select = $this->db()->select()->from('icinga_user', array(
             'id',
             'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
+        ))->where('object_type = ?', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
@@ -139,7 +139,7 @@ class Db extends DbConnection
         $select = $this->db()->select()->from('icinga_usergroup', array(
             'id',
             'object_name',
-        ))->where('object_type', 'object')->order('object_name ASC');
+        ))->where('object_type = ?', 'object')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
