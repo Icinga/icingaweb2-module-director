@@ -550,7 +550,11 @@ abstract class DbObject
      */
     protected function insertIntoDb()
     {
-        return $this->db->insert($this->table, $this->getProperties());
+        $properties = $this->getProperties();
+        if ($this->autoincKeyName !== null) {
+            unset($properties[$this->autoincKeyName]);
+        }
+        return $this->db->insert($this->table, $properties);
     }
 
     /**
