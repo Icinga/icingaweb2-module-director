@@ -6,6 +6,7 @@ use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Exception;
 
 class IcingaConfig
 {
@@ -157,8 +158,8 @@ class IcingaConfig
                 self::$table,
                 array(
                     'duration'                  => $this->generationTime,
-                    'last_activity_checksum'    => $this->getLastActivityChecksum(),
-                    'checksum'                  => $this->getChecksum(),
+                    'last_activity_checksum'    => $this->dbBin($this->getLastActivityChecksum()),
+                    'checksum'                  => $this->dbBin($this->getChecksum()),
                 )
             );
 
@@ -167,15 +168,15 @@ class IcingaConfig
                 $this->db->insert(
                     'director_generated_config_file',
                     array(
-                        'config_checksum'     => $this->getChecksum(),
-                        'file_checksum' => $file->getChecksum(),
-                        'file_path'     => $name,
+                        'config_checksum' => $this->dbBin($this->getChecksum()),
+                        'file_checksum'   => $this->dbBin($file->getChecksum()),
+                        'file_path'       => $name,
                     )
                 );
             }
 
             $this->db->commit();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->db->rollBack();
             var_dump($e->getMessage());
         }
