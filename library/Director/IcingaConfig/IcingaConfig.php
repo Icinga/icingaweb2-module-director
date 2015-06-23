@@ -258,6 +258,11 @@ class IcingaConfig
                 ->limit(1);
 
             $this->lastActivityChecksum = $this->db->fetchOne($query);
+
+            // PgSQL workaround:
+            if (is_resource($this->lastActivityChecksum)) {
+                $this->lastActivityChecksum = stream_get_contents($this->lastActivityChecksum);
+            }
         }
 
         return $this->lastActivityChecksum;
