@@ -18,6 +18,6 @@ class Util
 
     public static function binary2hex($hex)
     {
-        return end(unpack('H*', $hex));
+        return current(unpack('H*', $hex));
     }
 }
