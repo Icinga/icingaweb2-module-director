@@ -505,7 +505,13 @@ abstract class DbObject
                     $key
                 ));
             }
-            $this->properties[$key] = $val;
+            if ($val === null) {
+                $this->properties[$key] = null;
+            } elseif (is_resource($val)) {
+                $this->properties[$key] = stream_get_contents($val);
+            } else {
+                $this->properties[$key] = (string) $val;
+            }
         }
         $this->loadedFromDb = true;
         $this->loadedProperties = $this->properties;
