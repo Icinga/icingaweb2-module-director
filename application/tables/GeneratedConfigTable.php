@@ -8,13 +8,19 @@ class GeneratedConfigTable extends QuickTable
 {
     public function getColumns()
     {
-        return array(
+        $columns = array(
             'checksum'            => 'LOWER(HEX(c.checksum))',
             'duration'            => "c.duration || 'ms'",
             'files'               => 'COUNT(cf.file_checksum)',
             'last_related_change' => 'l.change_time',
             'activity_log_id'     => 'l.id'
         );
+
+        if ($this->db->getDbType() === 'psql') {
+            $columns['checksum'] = "LOWER(ENCODE(c.checksum, 'hex'))";
+        }
+
+        return $columns;
     }
 
     protected function getActionUrl($row)

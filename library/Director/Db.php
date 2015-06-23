@@ -33,7 +33,11 @@ class Db extends DbConnection
 
     public function getLastActivityChecksum()
     {
-        $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, LOWER(HEX(checksum)) AS checksum FROM director_activity_log ORDER BY change_time DESC LIMIT 1) a UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
+        if ($this->getDbType() === 'psql') {
+            $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, LOWER(HEX(checksum)) AS checksum FROM director_activity_log ORDER BY change_time DESC LIMIT 1) a UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
+        } else {
+            $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, LOWER(ENCODE(checksum, 'hex')) AS checksum FROM director_activity_log ORDER BY change_time DESC LIMIT 1) a UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
+        }
 
         return $this->db()->fetchOne($select);
     }
