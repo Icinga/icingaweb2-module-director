@@ -16,7 +16,7 @@ class GeneratedConfigTable extends QuickTable
             'activity_log_id'     => 'l.id'
         );
 
-        if ($this->db->getDbType() === 'psql') {
+        if ($this->connection->getDbType() === 'pgsql') {
             $columns['checksum'] = "LOWER(ENCODE(c.checksum, 'hex'))";
         }
 
@@ -53,7 +53,7 @@ class GeneratedConfigTable extends QuickTable
             array('cf' => 'director_generated_config_file'),
             'cf.config_checksum = c.checksum',
             array()
-        )->group('c.checksum')->order('l.change_time DESC');
+        )->group('c.checksum')->group('l.id')->order('l.change_time DESC');
 
         return $db->fetchAll($query);
     }
