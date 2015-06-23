@@ -554,6 +554,14 @@ abstract class DbObject
         if ($this->autoincKeyName !== null) {
             unset($properties[$this->autoincKeyName]);
         }
+        if ($this->connection->getDbType() === 'pgsql') {
+            foreach ($properties as $key => $value) {
+                if (preg_match('/checksum$/', $key)) {
+                    $properties[$key] = new \Zend_Db_Expr("'" . pg_escape_bytea($value) . "'");
+                }
+            }
+        }
+
         return $this->db->insert($this->table, $properties);
     }
 
