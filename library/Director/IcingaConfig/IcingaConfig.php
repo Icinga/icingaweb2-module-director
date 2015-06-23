@@ -214,6 +214,15 @@ class IcingaConfig
         $result = $this->db->fetchRow($query);
         $this->checksum = $result->checksum;
         $this->lastActivityChecksum = $result->last_activity_checksum;
+
+        if (is_resource($this->checksum)) {
+            $this->checksum = stream_get_contents($this->checksum);
+        }
+
+        if (is_resource($this->lastActivityChecksum)) {
+            $this->lastActivityChecksum = stream_get_contents($this->lastActivityChecksum);
+        }
+
         $query = $this->db->select()->from(
             array('cf' => 'director_generated_config_file'),
             array(
