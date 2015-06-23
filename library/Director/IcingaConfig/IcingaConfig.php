@@ -79,12 +79,21 @@ class IcingaConfig
         $this->generateFromDb();
         $checksum = $this->calculateChecksum();
         $exists = $this->db->fetchOne(
-            $this->db->select()->from(self::$table, 'COUNT(*)')->where('checksum = ?', $checksum)
+            $this->db->select()->from(self::$table, 'COUNT(*)')->where('checksum = ?', $this->dbBin($checksum))
         );
         if ((int) $exists === 0) {
             $this->store();
         }
         return $this;
+    }
+
+    protected function dbBin($binary)
+    {
+        if ($this->connection->getDbType() === 'pgsql') {
+            return Util::pgBinEscape($binary);
+        } else {
+            return $binary;
+        }
     }
 
     protected function calculateChecksum()
@@ -123,7 +132,7 @@ class IcingaConfig
         try {
             $existingQuery = $this->db->select()
                 ->from($fileTable, 'checksum')
-                ->where('checksum IN (?)', $this->getFilesChecksums());
+                ->where('checksum IN (?)', array_map(array($this, 'dbBin'),  $this->getFilesChecksums()));
 
             $existing = $this->db->fetchCol($existingQuery);
 
@@ -200,7 +209,7 @@ class IcingaConfig
         $query = $this->db->select()->from(
             self::$table,
             array('checksum', 'last_activity_checksum')
-        )->where('checksum = ?', $checksum);
+        )->where('checksum = ?', $this->dbBin($checksum));
         $result = $this->db->fetchRow($query);
         $this->checksum = $result->checksum;
         $this->lastActivityChecksum = $result->last_activity_checksum;
@@ -215,7 +224,7 @@ class IcingaConfig
             array('f' => 'director_generated_file'),
             'cf.file_checksum = f.checksum',
             array()
-        )->where('cf.config_checksum = ?', $checksum);
+        )->where('cf.config_checksum = ?', $this->dbBin($checksum));
 
         foreach ($this->db->fetchAll($query) as $row) {
             $file = new IcingaConfigFile();
