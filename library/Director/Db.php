@@ -26,6 +26,10 @@ class Db extends DbConnection
 
     public function fetchActivityLogEntry($checksum)
     {   
+        if ($this->getDbType() === 'pgsql') {
+            $checksum = Util::pgBinEscape($checksum);
+        }
+
         $sql = 'SELECT * FROM director_activity_log WHERE checksum = ?';
 
         return $this->db()->fetchRow($sql, $checksum);
