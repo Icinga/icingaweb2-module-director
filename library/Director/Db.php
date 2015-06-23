@@ -25,14 +25,23 @@ class Db extends DbConnection
     }
 
     public function fetchActivityLogEntry($checksum)
-    {   
+    {
         if ($this->getDbType() === 'pgsql') {
-            $checksum = Util::pgBinEscape($checksum);
+            $checksum = new \Zend_Db_Expr("\\x" . bin2hex($checksum));
         }
 
         $sql = 'SELECT * FROM director_activity_log WHERE checksum = ?';
+        $ret = $this->db()->fetchRow($sql, $checksum);
 
-        return $this->db()->fetchRow($sql, $checksum);
+        if (is_resource($ret->checksum)) {
+            $ret->checksum = stream_get_contents($ret->checksum);
+        }
+
+        if (is_resource($ret->parent_checksum)) {
+            $ret->checksum = stream_get_contents($ret->parent_checksum);
+        }
+
+        return $ret;
     }
 
     public function getLastActivityChecksum()

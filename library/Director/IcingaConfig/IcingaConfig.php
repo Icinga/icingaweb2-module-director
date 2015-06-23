@@ -133,9 +133,14 @@ class IcingaConfig
         try {
             $existingQuery = $this->db->select()
                 ->from($fileTable, 'checksum')
-                ->where('checksum IN (?)', array_map(array($this, 'dbBin'),  $this->getFilesChecksums()));
+                ->where('checksum IN (?)', array_map(array($this, 'dbBin'), $this->getFilesChecksums()));
 
             $existing = $this->db->fetchCol($existingQuery);
+            foreach ($existing as $key => $val) {
+                if (is_resource($val)) {
+                    $existing[$key] = stream_get_contents($val);
+                }
+            }
 
             $missing = array_diff($this->getFilesChecksums(), $existing);
 
