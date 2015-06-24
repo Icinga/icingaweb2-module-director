@@ -9,11 +9,22 @@ Installation
 Create Icinga Director database
 -------------------------------
 
+    MySQL:
+
     mysql -e "CREATE DATABASE director2;
        GRANT SELECT, INSERT, UPDATE, DELETE ON director.* TO director@localhost
        IDENTIFIED BY 'some-password';"
 
     mysql director < schema/mysql.sql
+
+    PostgreSQL:
+
+    CREATE DATABASE director WITH ENCODING 'UTF8';
+    CREATE USER director WITH PASSWORD 'some-password';
+    GRANT ALL PRIVILEGES ON DATABASE director TO director;
+
+    psql director < schema/pgsql.sql
+
 
 Configure Icinga Web 2
 ----------------------
