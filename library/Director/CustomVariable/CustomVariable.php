@@ -17,6 +17,10 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     protected $modified = false;
 
+    protected $loadedFromDb = false;
+
+    protected $deleted = false;
+
     protected function __construct($key, $value = null)
     {
         $this->key = $key;
@@ -40,12 +44,36 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->type;
     }
 
+    // TODO: implement delete()
+
+    public function hasBeenDeleted()
+    {
+        return $this->deleted;
+    }
+
+    // TODO: abstract
+    public function getDbValue()
+    {
+        return $this->getValue();
+    }
+
+    // TODO: abstract
+    public function getDbFormat()
+    {
+        return 'string';
+    }
+
     public function getKey()
     {
         return $this->key;
     }
 
     abstract public function setValue($value);
+
+    public function isNew()
+    {
+        return ! $this->loadedFromDb;
+    }
 
     public function hasBeenModified()
     {
@@ -114,9 +142,11 @@ abstract class CustomVariable implements IcingaConfigRenderer
     {
         switch($row->format) {
             case 'string':
-                return new CustomVariableString($row->varname, $row->varvalue);
+                $var = new CustomVariableString($row->varname, $row->varvalue);
+                break;
             case 'json':
-                return self::create($row->varname, json_decode($row->varvalue));
+                $var = self::create($row->varname, json_decode($row->varvalue));
+                break;
             case 'expression':
                 throw new ProgrammingError(
                     'Icinga code expressions are not yet supported'
@@ -127,6 +157,9 @@ abstract class CustomVariable implements IcingaConfigRenderer
                     $row->format
                 );
         }
+
+        $var->loadedFromDb = true;
+        return $var;
     }
 
     public function __toString()
