@@ -44,14 +44,18 @@ abstract class DirectorObjectForm extends QuickForm
     public function onSuccess()
     {
         $values = $this->getValues();
-        $vars = array();
-
-        if (array_key_exists('groups', $values)) {
-            unset($values['groups']);
-        }
-
         $object = $this->object();
         $handled = array();
+
+        if ($object->supportsGroups()) {
+
+            if (array_key_exists('groups', $values)) {
+                $object->groups()->set(
+                   preg_split('/\s*,\s*/', $values['groups'], -1, PREG_SPLIT_NO_EMPTY)
+                );
+                $handled['groups'] = true;
+            }
+        }
 
         if ($this->object->supportsCustomVars()) {
             $vars = array();
@@ -95,7 +99,6 @@ abstract class DirectorObjectForm extends QuickForm
         );
 
         $object->store($this->db);
-        $this->storeGroupMembership();
         $this->redirectOnSuccess($msg);
     }
 

@@ -37,6 +37,11 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $this->position = 0;
     }
 
+    public function hasBeenModified()
+    {
+        return $this->modified;
+    }
+
     public function current()
     {
         if (! $this->valid()) {
@@ -72,8 +77,24 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
     public function set($group)
     {
-        $this->groups = array();
+        $existing = array_keys($this->groups);
+        $new = array();
+        $class = $this->getGroupClass();
+        foreach ($group as $g) {
 
+            if ($group instanceof $class) {
+                $new[] = $group->object_name;
+            } else {
+                $new[] = $group;
+            }
+        }
+        sort($existing);
+        sort($new);
+        if ($existing === $new) {
+            return $this;
+        }
+
+        $this->groups = array();
         return $this->add($group);
     }
 
@@ -93,6 +114,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             unset($this->groups[$group]);
         }
 
+        $this->modified = true;
         $this->refreshIndex();
     }
 

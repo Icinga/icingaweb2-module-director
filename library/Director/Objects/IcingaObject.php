@@ -41,6 +41,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
+        if ($this->supportsGroups() && $this->groups !== null && $this->groups()->hasBeenModified()) {
+            return true;
+        }
+
         return parent::hasBeenModified();
     }
 
@@ -126,20 +130,29 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function onInsert()
     {
-        $this->storeCustomVars();
+        $this->storeCustomVars()->storeGroups();
         DirectorActivityLog::logCreation($this, $this->connection);
     }
 
     public function onUpdate()
     {
-        $this->storeCustomVars();
+        $this->storeCustomVars()->storeGroups();
         DirectorActivityLog::logModification($this, $this->connection);
     }
 
     protected function storeCustomVars()
     {
         if ($this->supportsCustomVars()) {
-            $this->vars()->storeToDb($this);
+            $this->vars !== null && $this->vars()->storeToDb($this);
+        }
+
+        return $this;
+    }
+
+    protected function storeGroups()
+    {
+        if ($this->supportsGroups()) {
+            $this->groups !== null && $this->groups()->store();
         }
 
         return $this;
