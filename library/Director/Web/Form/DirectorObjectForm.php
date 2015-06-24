@@ -12,35 +12,91 @@ abstract class DirectorObjectForm extends QuickForm
 
     private $className;
 
+    protected function object($values = array())
+    {
+        if ($this->object === null) {
+            $class = $this->getObjectClassname();
+            $this->object = $class::create($values);
+        } else {
+            $this->object->setProperties($values);
+        }
+
+        return $this->object;
+    }
+
+    protected function onSetup()
+    {
+        if ($this->object()->supportsCustomVars()) {
+            $this->addElement('note', '_newvar_hint', array('label' => 'New custom variable'));
+            $this->addElement('text', '_newvar_name', array(
+                'label' => 'Name'
+            ));
+            $this->addElement('text', '_newvar_value', array(
+                'label' => 'Value'
+            ));
+            $this->addElement('select', '_newvar_format', array(
+                'label'        => 'Type',
+                'multiOptions' => array('string' => $this->translate('String'))
+            ));
+        }
+    }
+
     public function onSuccess()
     {
         $values = $this->getValues();
+        $vars = array();
 
         if (array_key_exists('groups', $values)) {
             unset($values['groups']);
         }
 
-        if ($this->object) {
-            $this->object->setProperties($values)->store();
-            $this->storeGroupMembership();
-            $this->redirectOnSuccess(
-                sprintf(
-                    $this->translate('The Icinga %s has successfully been stored'),
-                    $this->translate($this->getObjectName())
-                )
+        $object = $this->object();
+        $handled = array();
+
+        if ($this->object->supportsCustomVars()) {
+            $vars = array();
+            $newvar = array(
+                'type'  => 'string',
+                'name'  => null,
+                'value' => null,
             );
-        } else {
-            $class = $this->getObjectClassname();
-            $this->object = $class::create($values);
-            $this->object->store($this->db);
-            $this->storeGroupMembership();
-            $this->redirectOnSuccess(
-                sprintf(
-                    $this->translate('A new Icinga %s has successfully been created'),
-                    $this->translate($this->getObjectName())
-                )
-            );
+
+            foreach ($values as $key => $value) {
+                if (substr($key, 0, 4) === 'var_') {
+                    $vars[substr($key, 4)] = $value;
+                    $handled[$key] = true;
+                }
+
+                if (substr($key, 0, 8) === '_newvar_') {
+                    $newvar[substr($key, 8)] = $value;
+                    $handled[$key] = true;
+                }
+            }
+
+            foreach ($vars as $k => $v) {
+                $this->object->vars()->$k = $v;
+            }
+
+            if ($newvar['name'] && $newvar['value']) {
+                $this->object->vars()->{$newvar['name']} = $newvar['value'];
+            }
         }
+
+        foreach ($handled as $key => $value) {
+            unset($values[$key]);
+        }
+
+        $object->setProperties($values);
+        $msg = sprintf(
+            $object->hasBeenLoadedFromDb()
+            ? 'The Icinga %s has successfully been stored'
+            : 'A new Icinga %s has successfully been created',
+            $this->translate($this->getObjectName())
+        );
+
+        $object->store($this->db);
+        $this->storeGroupMembership();
+        $this->redirectOnSuccess($msg);
     }
 
     protected function storeGroupMembership()
