@@ -82,10 +82,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $class = $this->getGroupClass();
         foreach ($group as $g) {
 
-            if ($group instanceof $class) {
-                $new[] = $group->object_name;
+            if ($g instanceof $class) {
+                $new[] = $g->object_name;
             } else {
-                $new[] = $group;
+                $new[] = $g;
             }
         }
         sort($existing);
