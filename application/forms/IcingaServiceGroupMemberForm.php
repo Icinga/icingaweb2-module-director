@@ -4,6 +4,9 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
+/**
+ * @deprecated
+ */
 class IcingaServiceGroupMemberForm extends DirectorObjectForm
 {
     public function setup()

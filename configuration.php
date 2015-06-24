@@ -19,24 +19,18 @@ $section->add($this->translate('Hosts'))
     ->setUrl('director/list/hosts');
 $section->add($this->translate('Hostgroups'))
     ->setUrl('director/list/hostgroups');
-$section->add($this->translate('Hostgroup Members'))
-    ->setUrl('director/list/hostgroupmembers');
 
 // SERVICE
 $section->add($this->translate('Services'))
     ->setUrl('director/list/services');
 $section->add($this->translate('Servicegroups'))
     ->setUrl('director/list/servicegroups');
-$section->add($this->translate('Serviceroup Members'))
-    ->setUrl('director/list/servicegroupmembers');
 
 // USER
 $section->add($this->translate('Users'))
     ->setUrl('director/list/users');
 $section->add($this->translate('Usergroups'))
     ->setUrl('director/list/usergroups');
-$section->add($this->translate('Usergroup Members'))
-    ->setUrl('director/list/usergroupmembers');
 
 // HA
 $section->add($this->translate('Zones'))
