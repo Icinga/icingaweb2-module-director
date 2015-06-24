@@ -126,6 +126,7 @@ CREATE TABLE icinga_zone (
   parent_zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template') NOT NULL,
+  is_global ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_zone_parent_zone

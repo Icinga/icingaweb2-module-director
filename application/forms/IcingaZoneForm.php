@@ -23,6 +23,16 @@ class IcingaZoneForm extends DirectorObjectForm
             'description' => $this->translate('Name for the Icinga zone (templat) you are going to create')
         ));
 
+        $this->addElement('select', 'is_global', array(
+            'label' => 'Global zone',
+            'description' => 'Whether this zone should be available everywhere',
+            'multiOptions' => array(
+                'n'  => $this->translate('No'),
+                'y'  => $this->translate('Yes'),
+            ),
+            'required' => true,
+        ));
+
         $this->addElement('select', 'parent_zone_id', array(
             'label' => $this->translate('Parent Zone'),
             'description' => $this->translate('Chose an (optional) parent zone')
