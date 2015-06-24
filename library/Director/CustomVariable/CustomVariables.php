@@ -71,11 +71,16 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $value = CustomVariable::create($key, $value);
         }
 
-        if (isset($this->$key) && $value->equals($this->get($key))) {
-            return $this;
+        if (isset($this->$key)) {
+            if ($value->equals($this->get($key))) {
+                return $this;
+            } else {
+                $this->vars[$key]->setValue($value->getValue());
+            }
+        } else {
+            $this->vars[$key] = $value;
         }
 
-        $this->vars[$key] = $value;
         $this->modified = true;
         $this->refreshIndex();
 
@@ -105,7 +110,6 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
         $vars->refreshIndex();
-
         return $vars;
     }
 
