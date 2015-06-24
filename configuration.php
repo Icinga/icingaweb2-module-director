@@ -21,8 +21,6 @@ $section->add($this->translate('Hostgroups'))
     ->setUrl('director/list/hostgroups');
 $section->add($this->translate('Hostgroup Members'))
     ->setUrl('director/list/hostgroupmembers');
-$section->add($this->translate('Host Vars'))
-    ->setUrl('director/list/hostvars');
 
 // SERVICE
 $section->add($this->translate('Services'))
@@ -31,8 +29,6 @@ $section->add($this->translate('Servicegroups'))
     ->setUrl('director/list/servicegroups');
 $section->add($this->translate('Serviceroup Members'))
     ->setUrl('director/list/servicegroupmembers');
-$section->add($this->translate('Service Vars'))
-    ->setUrl('director/list/servicevars');
 
 // USER
 $section->add($this->translate('Users'))
