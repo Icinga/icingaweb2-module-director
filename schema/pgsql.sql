@@ -25,17 +25,11 @@ CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply');
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
 CREATE TYPE enum_type_name AS ENUM('DowntimeStart', 'DowntimeEnd', 'DowntimeRemoved', 'Custom', 'Acknowledgement', 'Problem', 'Recovery', 'FlappingStart', 'FlappingEnd');
 
---
--- Table structure for table director_dbversion
---
 
 CREATE TABLE director_dbversion (
   schema_version INTEGER NOT NULL
 );
 
---
--- Table structure for table director_activity_log
---
 
 CREATE TABLE director_activity_log (
   id bigserial,
@@ -54,13 +48,9 @@ CREATE TABLE director_activity_log (
 CREATE INDEX activity_log_sort_idx ON director_activity_log (change_time);
 CREATE INDEX activity_log_search_idx ON director_activity_log (object_name);
 CREATE INDEX activity_log_search_idx2 ON director_activity_log (object_type, object_name, change_time);
-
 COMMENT ON COLUMN director_activity_log.old_properties IS 'Property hash, JSON';
 COMMENT ON COLUMN director_activity_log.new_properties IS 'Property hash, JSON';
 
---
--- Table structure for table director_generated_config
---
 
 CREATE TABLE director_generated_config (
   checksum bytea CHECK(LENGTH(checksum) = 20),
@@ -77,13 +67,9 @@ CREATE TABLE director_generated_config (
 );
 
 CREATE INDEX activity_checksum ON director_generated_config (last_activity_checksum);
-
 COMMENT ON COLUMN director_generated_config.checksum IS 'SHA1(last_activity_checksum;file_path=checksum;file_path=checksum;...)';
 COMMENT ON COLUMN director_generated_config.duration IS 'Config generation duration (ms)';
 
---
--- Table structure for table director_generated_file
---
 
 CREATE TABLE director_generated_file (
   checksum bytea CHECK(LENGTH(checksum) = 20),
@@ -93,9 +79,6 @@ CREATE TABLE director_generated_file (
 
 COMMENT ON COLUMN director_generated_file.checksum IS 'SHA1(content)';
 
---
--- Table structure for table director_generated_config_file
---
 
 CREATE TABLE director_generated_config_file (
   config_checksum bytea CHECK(LENGTH(config_checksum) = 20),
@@ -116,12 +99,8 @@ CREATE TABLE director_generated_config_file (
 
 CREATE INDEX config ON director_generated_config_file (config_checksum);
 CREATE INDEX checksum ON director_generated_config_file (file_checksum);
-
 COMMENT ON COLUMN director_generated_config_file.file_path IS 'e.g. zones/nafta/hosts.conf';
 
---
--- Table structure for table director_deployment_log
---
 
 CREATE TABLE director_deployment_log (
   id bigserial,
@@ -144,9 +123,6 @@ COMMENT ON COLUMN director_deployment_log.duration_connection IS 'The time it to
 COMMENT ON COLUMN director_deployment_log.duration_dump IS 'Time spent dumping the config (ms)';
 COMMENT ON COLUMN director_deployment_log.username IS 'The user that triggered this deployment';
 
---
--- Table structure for table director_deployment_log
---
 
 CREATE TABLE director_datalist (
   id serial,
@@ -157,9 +133,6 @@ CREATE TABLE director_datalist (
 
 CREATE UNIQUE INDEX datalist_list_name ON director_datalist (list_name);
 
---
--- Table structure for table director_datalist_value
---
 
 CREATE TABLE director_datalist_value (
   list_id integer NOT NULL,
@@ -176,9 +149,6 @@ CREATE TABLE director_datalist_value (
 
 CREATE INDEX datalist_value_datalist ON director_datalist_value (list_id);
 
---
--- Table structure for table director_datatype
---
 
 CREATE TABLE director_datatype (
   id serial,
@@ -189,9 +159,6 @@ CREATE TABLE director_datatype (
 
 CREATE UNIQUE INDEX datatype_name ON director_datatype (datatype_name);
 
---
--- Table structure for table icinga_zone
---
 
 CREATE TABLE icinga_zone (
   id serial,
@@ -208,9 +175,6 @@ CREATE TABLE icinga_zone (
 
 CREATE INDEX zone_parent ON icinga_zone (parent_zone_id);
 
---
--- Table structure for table icinga_timeperiod
---
 
 CREATE TABLE icinga_timeperiod (
   id serial,
@@ -229,12 +193,8 @@ CREATE TABLE icinga_timeperiod (
 
 CREATE UNIQUE INDEX timeperiod_object_name ON icinga_timeperiod (object_name, zone_id);
 CREATE INDEX timeperiod_zone ON icinga_timeperiod (zone_id);
-
 COMMENT ON COLUMN icinga_timeperiod.update_method IS 'Usually LegacyTimePeriod';
 
---
--- Table structure for table icinga_timeperiod_range
---
 
 CREATE TABLE icinga_timeperiod_range (
   timeperiod_id serial,
@@ -251,15 +211,11 @@ CREATE TABLE icinga_timeperiod_range (
 );
 
 CREATE INDEX timeperiod_range_timeperiod ON icinga_timeperiod_range (timeperiod_id);
-
 COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_key IS 'monday, ...';
 COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_value IS '00:00-24:00, ...';
 COMMENT ON COLUMN icinga_timeperiod_range.range_type IS 'include -> ranges {}, exclude ranges_ignore {} - not yet';
 COMMENT ON COLUMN icinga_timeperiod_range.merge_behaviour IS 'set -> = {}, add -> += {}, substract -> -= {}';
 
---
--- Table structure for table icinga_command
---
 
 CREATE TABLE icinga_command (
   id serial,
@@ -281,12 +237,8 @@ CREATE TABLE icinga_command (
 
 CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name, zone_id);
 CREATE INDEX command_zone ON icinga_command (zone_id);
-
 COMMENT ON COLUMN icinga_command.object_type IS 'external_object is an attempt to work with existing commands';
 
---
--- Table structure for table icinga_command_argument
---
 
 CREATE TABLE icinga_command_argument (
   id serial,
@@ -312,14 +264,10 @@ CREATE TABLE icinga_command_argument (
 CREATE UNIQUE INDEX command_argument_sort_idx ON icinga_command_argument (command_id, sort_order);
 CREATE UNIQUE INDEX command_argument_unique_idx ON icinga_command_argument (command_id, argument_name);
 CREATE INDEX command_argument_command ON icinga_command_argument (command_id);
-
 COMMENT ON COLUMN icinga_command_argument.argument_name IS '-x, --host';
 COMMENT ON COLUMN icinga_command_argument.key_string IS 'Overrides name';
 COMMENT ON COLUMN icinga_command_argument.repeat_key IS 'Useful with array values';
 
---
--- Table structure for table icinga_command_var
---
 
 CREATE TABLE icinga_command_var (
   command_id integer NOT NULL,
@@ -336,9 +284,6 @@ CREATE TABLE icinga_command_var (
 
 CREATE INDEX command_var_command ON icinga_command_var (command_id);
 
---
--- Table structure for table icinga_endpoint
---
 
 CREATE TABLE icinga_endpoint (
   id serial,
@@ -358,14 +303,10 @@ CREATE TABLE icinga_endpoint (
 
 CREATE UNIQUE INDEX endpoint_object_name ON icinga_endpoint (object_name);
 CREATE INDEX endpoint_zone ON icinga_endpoint (zone_id);
-
 COMMENT ON COLUMN icinga_endpoint.address IS 'IP address / hostname of remote node';
 COMMENT ON COLUMN icinga_endpoint.port IS '5665 if not set';
 COMMENT ON COLUMN icinga_endpoint.log_duration IS '1d if not set';
 
---
--- Table structure for table icinga_host
---
 
 CREATE TABLE icinga_host (
   id serial,
@@ -429,9 +370,6 @@ CREATE INDEX host_check_command ON icinga_host (check_command_id);
 CREATE INDEX host_event_command ON icinga_host (event_command_id);
 CREATE INDEX host_command_endpoint ON icinga_host (command_endpoint_id);
 
---
--- Table structure for table icinga_host_inheritance
---
 
 CREATE TABLE icinga_host_inheritance (
   host_id integer NOT NULL,
@@ -454,9 +392,6 @@ CREATE UNIQUE INDEX host_inheritance_unique_order ON icinga_host_inheritance (ho
 CREATE INDEX host_inheritance_host ON icinga_host_inheritance (host_id);
 CREATE INDEX host_inheritance_host_parent ON icinga_host_inheritance (parent_host_id);
 
---
--- Table structure for table icinga_host_var
---
 
 CREATE TABLE icinga_host_var (
   host_id integer NOT NULL,
@@ -474,9 +409,6 @@ CREATE TABLE icinga_host_var (
 CREATE INDEX host_var_search_idx ON icinga_host_var (varname);
 CREATE INDEX host_var_host ON icinga_host_var (host_id);
 
---
--- Table structure for table icinga_service
---
 
 CREATE TABLE icinga_service (
   id serial,
@@ -539,9 +471,6 @@ CREATE INDEX service_check_command ON icinga_service (check_command_id);
 CREATE INDEX service_event_command ON icinga_service (event_command_id);
 CREATE INDEX service_command_endpoint ON icinga_service (command_endpoint_id);
 
---
--- Table structure for table icinga_service_var
---
 
 CREATE TABLE icinga_service_var (
   service_id integer NOT NULL,
@@ -559,9 +488,6 @@ CREATE TABLE icinga_service_var (
 CREATE INDEX service_var_search_idx ON icinga_service_var (varname);
 CREATE INDEX service_var_service ON icinga_service_var (service_id);
 
---
--- Table structure for table icinga_host_service
---
 
 CREATE TABLE icinga_host_service (
   host_id integer NOT NULL,
@@ -582,9 +508,6 @@ CREATE TABLE icinga_host_service (
 CREATE INDEX host_service_host ON icinga_host_service (host_id);
 CREATE INDEX host_service_service ON icinga_host_service (service_id);
 
---
--- Table structure for table icinga_hostgroup
---
 
 CREATE TABLE icinga_hostgroup (
   id serial,
@@ -597,9 +520,6 @@ CREATE TABLE icinga_hostgroup (
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
 CREATE INDEX hostgroup_search_idx ON icinga_hostgroup (display_name);
 
---
--- Table structure for table icinga_servicegroup
---
 
 CREATE TABLE icinga_servicegroup (
   id serial,
@@ -612,9 +532,6 @@ CREATE TABLE icinga_servicegroup (
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);
 CREATE INDEX servicegroup_search_idx ON icinga_servicegroup (display_name);
 
---
--- Table structure for table icinga_servicegroup_service
---
 
 CREATE TABLE icinga_servicegroup_service (
   servicegroup_id integer NOT NULL,
@@ -635,9 +552,6 @@ CREATE TABLE icinga_servicegroup_service (
 CREATE INDEX servicegroup_service_service ON icinga_servicegroup_service (service_id);
 CREATE INDEX servicegroup_service_servicegroup ON icinga_servicegroup_service (servicegroup_id);
 
---
--- Table structure for table icinga_hostgroup_host
---
 
 CREATE TABLE icinga_hostgroup_host (
   hostgroup_id integer NOT NULL,
@@ -658,9 +572,6 @@ CREATE TABLE icinga_hostgroup_host (
 CREATE INDEX hostgroup_host_host ON icinga_hostgroup_host (host_id);
 CREATE INDEX hostgroup_host_hostgroup ON icinga_hostgroup_host (hostgroup_id);
 
---
--- Table structure for table icinga_hostgroup_parent
---
 
 CREATE TABLE icinga_hostgroup_parent (
   hostgroup_id integer NOT NULL,
@@ -681,9 +592,6 @@ CREATE TABLE icinga_hostgroup_parent (
 CREATE INDEX hostgroup_parent_hostgroup ON icinga_hostgroup_parent (hostgroup_id);
 CREATE INDEX hostgroup_parent_parent ON icinga_hostgroup_parent (parent_hostgroup_id);
 
---
--- Table structure for table icinga_user
---
 
 CREATE TABLE icinga_user (
   id serial,
@@ -706,9 +614,6 @@ CREATE TABLE icinga_user (
 CREATE UNIQUE INDEX user_object_name ON icinga_user (object_name, zone_id);
 CREATE INDEX user_zone ON icinga_user (zone_id);
 
---
--- Table structure for table icinga_user_filter_state
---
 
 CREATE TABLE icinga_user_filter_state (
   user_id integer NOT NULL,
@@ -723,12 +628,8 @@ CREATE TABLE icinga_user_filter_state (
 );
 
 CREATE INDEX user_filter_state_user ON icinga_user_filter_state (user_id);
-
 COMMENT ON COLUMN icinga_user_filter_state.merge_behaviour IS 'set: = [], add: += [], substract: -= []';
 
---
--- Table structure for table icinga_user_filter_type
---
 
 CREATE TABLE icinga_user_filter_type (
   user_id integer NOT NULL,
@@ -743,12 +644,8 @@ CREATE TABLE icinga_user_filter_type (
 );
 
 CREATE INDEX user_filter_type_user ON icinga_user_filter_type (user_id);
-
 COMMENT ON COLUMN icinga_user_filter_type.merge_behaviour IS 'set: = [], add: += [], substract: -= []';
 
---
--- Table structure for table icinga_user_var
---
 
 CREATE TABLE icinga_user_var (
   user_id integer NOT NULL,
@@ -766,9 +663,6 @@ CREATE TABLE icinga_user_var (
 CREATE INDEX user_var_search_idx ON icinga_user_var (varname);
 CREATE INDEX user_var_user ON icinga_user_var (user_id);
 
---
--- Table structure for table icinga_usergroup
---
 
 CREATE TABLE icinga_usergroup (
   id serial,
@@ -782,9 +676,6 @@ CREATE TABLE icinga_usergroup (
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
 CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name, zone_id);
 
---
--- Table structure for table icinga_usergroup_user
---
 
 CREATE TABLE icinga_usergroup_user (
   usergroup_id integer NOT NULL,
@@ -805,9 +696,6 @@ CREATE TABLE icinga_usergroup_user (
 CREATE INDEX usergroup_user_user ON icinga_usergroup_user (user_id);
 CREATE INDEX usergroup_user_usergroup ON icinga_usergroup_user (usergroup_id);
 
---
--- Table structure for table icinga_usergroup_parent
---
 
 CREATE TABLE icinga_usergroup_parent (
   usergroup_id integer NOT NULL,
