@@ -36,6 +36,8 @@ class IcingaService extends IcingaObject
 
     protected $supportsGroups = true;
 
+    protected $supportsCustomVars = true;
+
     protected function renderCheck_command_id()
     {
         return $this->renderCommandProperty($this->check_command_id);
