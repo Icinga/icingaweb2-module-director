@@ -50,7 +50,5 @@ class IcingaCommandForm extends DirectorObjectForm
                 'template' => $this->translate('Command template'),
             ))
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

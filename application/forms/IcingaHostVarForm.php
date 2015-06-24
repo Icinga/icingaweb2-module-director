@@ -11,7 +11,6 @@ class IcingaHostVarForm extends DirectorObjectForm
 {
     public function setup()
     {
-
         $this->addElement('select', 'host_id', array(
             'label'       => $this->translate('Host'),
             'description' => $this->translate('The name of the host'),
@@ -32,7 +31,5 @@ class IcingaHostVarForm extends DirectorObjectForm
             'label' => $this->translate('Format'),
             'description' => $this->translate('value format')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

@@ -37,7 +37,5 @@ class IcingaHostGroupForm extends DirectorObjectForm
             'label' => $this->translate('Display Name'),
             'description' => $this->translate('The name which should displayed.')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

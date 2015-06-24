@@ -31,7 +31,5 @@ class IcingaServiceVarForm extends DirectorObjectForm
             'label' => $this->translate('Format'),
             'description' => $this->translate('value format')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

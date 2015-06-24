@@ -47,7 +47,6 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             $this->translate('Whether this is a mandatory parameter')
         );
 */
-        $this->addElement('submit', $this->translate('Store'));
     }
 
     protected function addCustomVariable($varname)

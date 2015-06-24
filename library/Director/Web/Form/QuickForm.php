@@ -46,6 +46,8 @@ abstract class QuickForm extends Zend_Form
 
     protected $successMessage;
 
+    protected $submitLabel;
+
     public function __construct($options = null)
     {
         parent::__construct($options);
@@ -55,6 +57,14 @@ abstract class QuickForm extends Zend_Form
         $this->regenerateCsrfToken();
         $this->setup();
         $this->onSetup();
+        $this->addSubmitButtonIfSet();
+    }
+
+    protected function addSubmitButtonIfSet()
+    {
+        if (false !== ($label = $this->getSubmitLabel())) {
+            $this->addElement('submit', $label);
+        }
     }
 
     protected function createIdElement()
@@ -62,6 +72,21 @@ abstract class QuickForm extends Zend_Form
         $this->detectName();
         $this->addHidden(self::ID, $this->getName());
         $this->getElement(self::ID)->setIgnore(true);
+    }
+
+    public function getSubmitLabel()
+    {
+        if ($this->submitLabel === null) {
+            return $this->translate('Submit');
+        }
+
+        return $this->submitLabel;
+    }
+
+    public function setSubmitLabel($label)
+    {
+        $this->submitLabel = $label;
+        return $this;
     }
 
     public function regenerateCsrfToken()
@@ -114,7 +139,22 @@ abstract class QuickForm extends Zend_Form
 
     public function hasBeenSubmitted()
     {
-        return $this->hasBeenSent();
+        if ($this->hasBeenSubmitted === null) {
+            $req = $this->getRequest();
+            if ($req->isPost()) {
+                $post = $req->getPost();
+                $label = $this->getSubmitLabel();
+                if ($label === false) {
+                    $this->hasBeenSubmitted = $this->hasBeenSent();
+                }
+                $this->hasBeenSubmitted = array_key_exists($label, $post) &&
+                    $post[$label] === $label;
+            } else {
+                $this->hasBeenSubmitted === false;
+            }
+        }
+
+        return $this->hasBeenSubmitted;
     }
 
     protected function beforeValidation($data = array())

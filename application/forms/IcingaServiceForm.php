@@ -84,7 +84,5 @@ class IcingaServiceForm extends DirectorObjectForm
             'label' => $this->translate('Servicegroups'),
             'description' => $this->translate('One or more comma separated servicegroup names')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

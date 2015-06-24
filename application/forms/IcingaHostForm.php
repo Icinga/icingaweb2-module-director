@@ -94,7 +94,5 @@ class IcingaHostForm extends DirectorObjectForm
             'label' => $this->translate('Cluster Zone'),
             'description' => $this->translate('Check this host in this specific Icinga cluster zone')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

@@ -20,7 +20,5 @@ class IcingaUserGroupMemberForm extends DirectorObjectForm
             'label' => $this->translate('User'),
             'description' => $this->translate('The name of the user')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }

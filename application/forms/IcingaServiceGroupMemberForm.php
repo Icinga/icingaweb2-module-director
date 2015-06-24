@@ -20,7 +20,5 @@ class IcingaServiceGroupMemberForm extends DirectorObjectForm
             'label' => $this->translate('Service'),
             'description' => $this->translate('The name of the service')
         ));
-
-        $this->addElement('submit', $this->translate('Store'));
     }
 }
