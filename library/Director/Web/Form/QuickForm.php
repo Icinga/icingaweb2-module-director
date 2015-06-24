@@ -54,6 +54,7 @@ abstract class QuickForm extends Zend_Form
         $this->createIdElement();
         $this->regenerateCsrfToken();
         $this->setup();
+        $this->onSetup();
     }
 
     protected function createIdElement()
@@ -96,6 +97,10 @@ abstract class QuickForm extends Zend_Form
     }
 
     public function setup()
+    {
+    }
+
+    protected function onSetup()
     {
     }
 
