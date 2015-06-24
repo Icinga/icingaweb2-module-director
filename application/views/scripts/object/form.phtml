@@ -4,7 +4,10 @@
 
 <div class="content">
 <?= $this->form ?>
-<pre>
-<?= $this->escape($form->getObject()) ?>
-</pre>
+<?php
+$object = $form->getObject();
+if ($object->hasBeenLoadedFromDb()) {
+    echo '<pre>' . $this->escape($object) . '</pre>';
+}
+?>
 </div>
