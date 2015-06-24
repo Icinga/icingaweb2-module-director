@@ -165,6 +165,7 @@ CREATE TABLE icinga_zone (
   parent_zone_id integer DEFAULT NULL,
   object_name character varying(255) NOT NULL UNIQUE,
   object_type enum_object_type NOT NULL,
+  is_global enum_boolean NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   CONSTRAINT icinga_zone_parent_zone
   FOREIGN KEY (parent_zone_id)
