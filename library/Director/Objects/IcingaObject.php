@@ -35,6 +35,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsGroups;
     }
 
+    public function hasBeenModified()
+    {
+        if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
+            return true;
+        }
+
+        return parent::hasBeenModified();
+    }
+
     public function groups()
     {
         $this->assertGroupsSupport();
@@ -117,12 +126,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function onInsert()
     {
+        $this->storeCustomVars();
         DirectorActivityLog::logCreation($this, $this->connection);
     }
 
     public function onUpdate()
     {
+        $this->storeCustomVars();
         DirectorActivityLog::logModification($this, $this->connection);
+    }
+
+    protected function storeCustomVars()
+    {
+        if ($this->supportsCustomVars()) {
+            $this->vars()->storeToDb($this);
+        }
+
+        return $this;
     }
 
     public function onDelete()
