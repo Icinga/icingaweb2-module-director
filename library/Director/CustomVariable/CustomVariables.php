@@ -136,14 +136,14 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             }
 
             $where = $db->quoteInto(sprintf('%s = ?', $foreignColumn), $foreignId)
-                   . $this->quoteInto(' AND varname = ?', $var->getKey());
+                   . $db->quoteInto(' AND varname = ?', $var->getKey());
 
             if ($var->hasBeenDeleted()) {
                 $db->delete($table, $where);
             } elseif ($var->hasBeenModified()) {
                 $db->update(
                     $table,
-                    array('varvalue' => $var->getValueForDb()),
+                    array('varvalue' => $var->getDbValue()),
                     $where
                 );
             }
