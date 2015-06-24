@@ -4,6 +4,9 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
+/**
+ * @deprecated
+ */
 class IcingaHostVarForm extends DirectorObjectForm
 {
     public function setup()
