@@ -56,29 +56,6 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
-    public function hostgroupmemberAction()
-    {
-        $this->view->form = $this->loadForm('icingaHostGroupMember')
-            ->setDb($this->db())
-            ->setSuccessUrl('director/list/hostgroupmembers');
-
-        if (($host_id = $this->params->get('host_id'))
-            && ($hostgroup_id = $this->params->get('hostgroup_id'))
-        ) {
-            $this->view->form->loadObject(
-                array(
-                    'host_id'      => $host_id,
-                    'hostgroup_id' => $hostgroup_id,
-                )
-            );
-            $this->view->title = $this->translate('Modify Icinga Hostgroup Member');
-        } else {
-            $this->view->title = $this->translate('Add new Icinga Hostgroup Member');
-        }
-        $this->view->form->handleRequest();
-        $this->render('form');
-    }
-
     public function serviceAction()
     {
         $this->view->form = $this->loadForm('icingaService')
@@ -106,29 +83,6 @@ class Director_ObjectController extends ActionController
             $this->view->title = $this->translate('Modify Icinga Servicegroup');
         } else {
             $this->view->title = $this->translate('Add new Icinga Servicegroup');
-        }
-        $this->view->form->handleRequest();
-        $this->render('form');
-    }
-
-    public function servicegroupmemberAction()
-    {
-        $this->view->form = $this->loadForm('icingaServiceGroupMember')
-            ->setDb($this->db())
-            ->setSuccessUrl('director/list/servicegroupmembers');
-
-        if (($service_id = $this->params->get('service_id'))
-            && ($servicegroup_id = $this->params->get('servicegroup_id'))
-        ) {
-            $this->view->form->loadObject(
-                array(
-                    'service_id' => $service_id,
-                    'servicegroup_id' => $servicegroup_id,
-                )
-            );
-            $this->view->title = $this->translate('Modify Icinga Servicegroup Member');
-        } else {
-            $this->view->title = $this->translate('Add new Icinga Servicegroup Member');
         }
         $this->view->form->handleRequest();
         $this->render('form');
@@ -213,29 +167,6 @@ class Director_ObjectController extends ActionController
             $this->view->title = $this->translate('Modify Icinga Usergroup');
         } else {
             $this->view->title = $this->translate('Add new Icinga Usergroup');
-        }
-        $this->view->form->handleRequest();
-        $this->render('form');
-    }
-
-    public function usergroupmemberAction()
-    {
-        $this->view->form = $this->loadForm('icingaUserGroupMember')
-            ->setDb($this->db())
-            ->setSuccessUrl('director/list/usergroupmembers');
-
-        if (($user_id = $this->params->get('user_id'))
-            && ($usergroup_id = $this->params->get('usergroup_id'))
-        ) {
-            $this->view->form->loadObject(
-                array(
-                    'user_id' => $user_id,
-                    'usergroup_id' => $usergroup_id,
-                )
-            );
-            $this->view->title = $this->translate('Modify Icinga Usergroup Member');
-        } else {
-            $this->view->title = $this->translate('Add new Icinga Usergroup Member');
         }
         $this->view->form->handleRequest();
         $this->render('form');
