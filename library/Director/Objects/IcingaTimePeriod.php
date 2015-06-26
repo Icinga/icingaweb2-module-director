@@ -14,4 +14,6 @@ class IcingaTimePeriod extends IcingaObject
         'update_method'         => null,
         'object_type'           => null,
     );
+
+    protected $supportsImports = true;
 }
