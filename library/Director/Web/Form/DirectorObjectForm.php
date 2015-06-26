@@ -56,15 +56,6 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        if ($object->supportsImports()) {
-            if (array_key_exists('imports', $values)) {
-                $object->imports()->set(
-                    preg_split('/\s*,\s*/', $values['imports'], -1, PREG_SPLIT_NO_EMPTY)
-                );
-                $handled['imports'] = true;
-            }
-        }
-
         if ($this->object->supportsCustomVars()) {
             $vars = array();
             $newvar = array(
@@ -91,6 +82,15 @@ abstract class DirectorObjectForm extends QuickForm
 
             if ($newvar['name'] && $newvar['value']) {
                 $this->object->vars()->{$newvar['name']} = $newvar['value'];
+            }
+        }
+
+        if ($object->supportsImports()) {
+            if (array_key_exists('imports', $values)) {
+                $object->imports()->set(
+                    preg_split('/\s*,\s*/', $values['imports'], -1, PREG_SPLIT_NO_EMPTY)
+                );
+                $handled['imports'] = true;
             }
         }
 
