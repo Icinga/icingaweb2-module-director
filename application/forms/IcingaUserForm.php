@@ -59,5 +59,10 @@ class IcingaUserForm extends DirectorObjectForm
             'label' => $this->translate('Usergroups'),
             'description' => $this->translate('One or more comma separated usergroup names')
         ));
+
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited user template names')
+        ));
     }
 }

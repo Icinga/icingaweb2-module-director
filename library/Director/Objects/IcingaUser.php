@@ -22,6 +22,8 @@ class IcingaUser extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsImports = true;
+
     protected function renderEnable_notifications()
     {
         return $this->renderBooleanProperty('enable_notifications');
