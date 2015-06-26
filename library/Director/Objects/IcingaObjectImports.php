@@ -88,8 +88,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
                 $new[] = $i;
             }
         }
-        sort($existing);
-        sort($new);
+
         if ($existing === $new) {
             return $this;
         }
@@ -120,7 +119,6 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     protected function refreshIndex()
     {
-        ksort($this->imports);
         $this->idx = array_keys($this->imports);
     }
 
@@ -156,7 +154,6 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        var_dump($imports);die;
         $this->imports[$import] = $imports[$import];
 
         $this->modified = true;
@@ -209,47 +206,29 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
-    /**
-     * Modification TODO
-     *
-     * @return $this
-     */
     public function store()
     {
-        $storedGroups = array_keys($this->storedGroups);
-        $groups = array_keys($this->groups);
-
         $objectId = $this->object->id;
         $type = $this->getType();
 
         $objectCol = $type . '_id';
-        $groupCol = $type . 'group_id';
+        $importCol = 'parent_' . $type . '_id';
 
-        $toDelete = array_diff($storedGroups, $groups);
-        foreach ($toDelete as $group) {
-            $where = sprintf(
-                $objectCol . ' = %d AND ' . $groupCol . ' = %d',
-                $objectId,
-                $this->storedGroups[$group]->id
-            );
+        $this->object->db->delete($this->getImportTableName(), $objectCol . ' = ' . $objectId);
 
-            $this->object->db->delete(
-                $this->getGroupMemberTableName(),
-                $where
-            );
-        }
-
-        $toAdd = array_diff($groups, $storedGroups);
-        foreach ($toAdd as $group) {
+        $weight = 1;
+        foreach ($this->imports as $import) {
             $this->object->db->insert(
-                $this->getGroupMemberTableName(),
+                $this->getImportTableName(),
                 array(
                     $objectCol => $objectId,
-                    $groupCol => $this->groups[$group]->id
+                    $importCol => $import->id,
+                    'weight'   => $weight++
                 )
             );
         }
-        $this->storedGroups = $this->groups;
+
+        $this->storedImports = $this->imports;
 
         return $this;
     }
