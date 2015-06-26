@@ -797,7 +797,7 @@ abstract class DbObject
         $class = get_called_class();
         $obj = new $class();
         $obj->connection = $connection;
-        $obj->setDb($connection->getDb())->setKey($id);
+        $obj->setDb($connection->getDbAdapter())->setKey($id);
         return $obj->existsInDb();
     }
 }
