@@ -48,12 +48,20 @@ abstract class DirectorObjectForm extends QuickForm
         $handled = array();
 
         if ($object->supportsGroups()) {
-
             if (array_key_exists('groups', $values)) {
                 $object->groups()->set(
                    preg_split('/\s*,\s*/', $values['groups'], -1, PREG_SPLIT_NO_EMPTY)
                 );
                 $handled['groups'] = true;
+            }
+        }
+
+        if ($object->supportsImports()) {
+            if (array_key_exists('imports', $values)) {
+                $object->imports()->set(
+                    preg_split('/\s*,\s*/', $values['imports'], -1, PREG_SPLIT_NO_EMPTY)
+                );
+                $handled['imports'] = true;
             }
         }
 
@@ -178,6 +186,12 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->object->supportsGroups()) {
             $this->getElement('groups')->setValue(
                 implode(', ', $this->object->groups()->listGroupNames())
+            );
+        }
+
+        if ($this->object->supportsImports()) {
+            $this->getElement('imports')->setValue(
+                implode(', ', $this->object->imports()->listImportNames())
             );
         }
 

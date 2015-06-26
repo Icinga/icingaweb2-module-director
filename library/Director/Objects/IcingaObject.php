@@ -19,11 +19,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsGroups = false;
 
+    protected $supportsImports = false;
+
     private $type;
 
     private $vars;
 
     private $groups;
+
+    private $imports;
 
     public function supportsCustomVars()
     {
@@ -35,6 +39,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsGroups;
     }
 
+    public function supportsImports()
+    {
+        return $this->supportsImports;
+    }
+
     public function hasBeenModified()
     {
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
@@ -42,6 +51,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->supportsGroups() && $this->groups !== null && $this->groups()->hasBeenModified()) {
+            return true;
+        }
+
+        if ($this->supportsImports() && $this->imports !== null && $this->imports()->hasBeenModified()) {
             return true;
         }
 
@@ -62,6 +75,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->groups;
     }
 
+    public function imports()
+    {
+        $this->assertImportsSupport();
+        if ($this->imports === null) {
+            if ($this->hasBeenLoadedFromDb()) {
+                $this->imports = IcingaObjectImports::loadForStoredObject($this);
+            } else {
+                $this->imports = new IcingaObjectImports($this);
+            }
+        }
+
+        return $this->imports;
+    }
+
     protected function assertCustomVarsSupport()
     {
         if (! $this->supportsCustomVars()) {
@@ -79,6 +106,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if (! $this->supportsGroups()) {
             throw new ProgrammingError(
                 'Objects of type "%s" have no groups',
+                $this->getType()
+            );
+        }
+
+        return $this;
+    }
+
+    protected function assertImportsSupport()
+    {
+        if (! $this->supportsImports()) {
+            throw new ProgrammingError(
+                'Objects of type "%s" have no imports',
                 $this->getType()
             );
         }
@@ -166,7 +205,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderImports()
     {
         // TODO: parent_host ORDERed by weigth...
-        return '';
+        if ($this->supportsImports()) {
+            return $this->imports()->toConfigString();
+        } else {
+            return '';
+        }
     }
 
     protected function renderProperties()

@@ -90,6 +90,11 @@ class IcingaHostForm extends DirectorObjectForm
             'description' => $this->translate('One or more comma separated hostgroup names')
         ));
 
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited host template names')
+        ));
+
         $this->addElement('select', 'zone_id', array(
             'label' => $this->translate('Cluster Zone'),
             'description' => $this->translate('Check this host in this specific Icinga cluster zone')
