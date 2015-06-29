@@ -105,7 +105,12 @@ abstract class ActionController extends Controller
     protected function db()
     {
         if ($this->db === null) {
-            $this->db = Db::fromResourceName($this->Config()->get('db', 'resource'));
+            $resourceName = $this->Config()->get('db', 'resource');
+            if ($resourceName) {
+                $this->db = Db::fromResourceName($resourceName);
+            } else {
+                $this->redirectNow('director/welcome');
+            }
         }
 
         return $this->db;
