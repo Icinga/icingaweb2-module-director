@@ -6,6 +6,8 @@ class IcingaServiceGroup extends IcingaObject
 {
     protected $table = 'icinga_servicegroup';
 
+    protected $supportsImports = true;
+
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
