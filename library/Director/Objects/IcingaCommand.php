@@ -20,6 +20,8 @@ class IcingaCommand extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsImports = true;
+
     protected function renderMethods_execute()
     {
         // Execute is a reserved word in SQL, column name was prefixed

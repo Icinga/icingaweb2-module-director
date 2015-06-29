@@ -50,5 +50,10 @@ class IcingaCommandForm extends DirectorObjectForm
                 'template' => $this->translate('Command template'),
             ))
         ));
+
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited command template names')
+        ));
     }
 }
