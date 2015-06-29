@@ -3,6 +3,11 @@
 // Sample permission:
 $this->providePermission('director/templates', 'Allow to modify templates');
 
+$this->provideConfigTab('config', array(
+    'title' => 'Configuration',
+    'url'   => 'settings'
+));
+
 $section = $this->menuSection(
     $this->translate('Icinga Director')
 )->setIcon('cubes');
