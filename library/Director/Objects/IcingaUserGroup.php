@@ -6,6 +6,8 @@ class IcingaUserGroup extends IcingaObject
 {
     protected $table = 'icinga_usergroup';
 
+    protected $supportsImports = true;
+
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,

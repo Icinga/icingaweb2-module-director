@@ -42,5 +42,10 @@ class IcingaUserGroupForm extends DirectorObjectForm
             'label' => $this->translate('Cluster Zone'),
             'description' => $this->translate('Check this usergroup in this specific Icinga cluster zone')
         ));
+
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited usergroup template names')
+        ));
     }
 }
