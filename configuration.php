@@ -20,8 +20,6 @@ $section->add($this->translate('Timeperiods'))
 // HOST
 $section->add($this->translate('Hosts'))
     ->setUrl('director/list/hosts');
-$section->add($this->translate('Hostgroups'))
-    ->setUrl('director/list/hostgroups');
 
 // SERVICE
 $section->add($this->translate('Services'))

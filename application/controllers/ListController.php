@@ -6,6 +6,7 @@ class Director_ListController extends ActionController
 {
     public function hostsAction()
     {
+        $this->setHostTabs()->activate('hosts');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Host'),
             'director/object/host'
@@ -17,34 +18,13 @@ class Director_ListController extends ActionController
 
     public function hostgroupsAction()
     {
+        $this->setHostTabs()->activate('hostgroups');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Hostgroup'),
             'director/object/hostgroup'
         );
         $this->view->title = $this->translate('Icinga Hostgroups');
         $this->view->table = $this->loadTable('icingaHostGroup')->setConnection($this->db());
-        $this->render('table');
-    }
-
-    public function hostgroupmembersAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add Hostgroup Member'),
-            'director/object/hostgroupmember'
-        );
-        $this->view->title = $this->translate('Icinga Hostgroup Members');
-        $this->view->table = $this->loadTable('icingaHostGroupMember')->setConnection($this->db());
-        $this->render('table');
-    }
-
-    public function hostvarsAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add Host Variable'),
-            'director/object/hostvar'
-        );
-        $this->view->title = $this->translate('Icinga Host Variables');
-        $this->view->table = $this->loadTable('icingaHostVar')->setConnection($this->db());
         $this->render('table');
     }
 

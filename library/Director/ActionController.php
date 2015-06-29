@@ -45,6 +45,19 @@ abstract class ActionController extends Controller
         return $this->view->tabs;
     }
 
+    protected function setHostTabs()
+    {
+        $this->view->tabs = Widget::create('tabs')->add('hosts', array(
+            'label' => $this->translate('Hosts'),
+            'url'   => 'director/list/hosts')
+        )->add('hostgroups', array(
+            'label' => $this->translate('Hostgroups'),
+            'url'   => 'director/list/hostgroups')
+        );
+        return $this->view->tabs;
+    }
+
+
     protected function setIcingaTabs()
     {
         $this->view->tabs = Widget::create('tabs')->add('services', array(
