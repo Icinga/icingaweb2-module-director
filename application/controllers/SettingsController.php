@@ -19,7 +19,7 @@ class Director_SettingsController extends ActionController
         $form->addElement('select', 'resource', array(
             'required'      => true,
             'label'         => $this->translate('DB Resource'),
-            'multiOptions'  => $this->getResources(),
+            'multiOptions'  => array(null => $this->translate('- please choose -')) + $this->getResources(),
             'value'         => $resource
         ));
         $form->setSubmitLabel($this->translate('Save'));
