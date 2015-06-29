@@ -37,5 +37,10 @@ class IcingaHostGroupForm extends DirectorObjectForm
             'label' => $this->translate('Display Name'),
             'description' => $this->translate('The name which should displayed.')
         ));
+
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited hostgroup template names')
+        ));
     }
 }

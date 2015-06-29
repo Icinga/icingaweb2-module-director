@@ -3,7 +3,7 @@ CREATE TABLE icinga_timeperiod_inheritance (
   parent_timeperiod_id integer NOT NULL,
   weight integer DEFAULT NULL,
   PRIMARY KEY (timeperiod_id, parent_timeperiod_id),
-  CONSTRAINT icinga_timeperiod_inheritance_timeperiodr
+  CONSTRAINT icinga_timeperiod_inheritance_timeperiod
   FOREIGN KEY (timeperiod_id)
   REFERENCES icinga_timeperiod (id)
   ON DELETE CASCADE
