@@ -41,7 +41,7 @@ class Director_ListController extends ActionController
 
     public function servicesAction()
     {
-        $this->setHostTabs()->activate('services');
+        $this->setServiceTabs()->activate('services');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Service'),
             'director/object/service'
@@ -53,7 +53,7 @@ class Director_ListController extends ActionController
 
     public function servicegroupsAction()
     {
-        $this->setHostTabs()->activate('servicegroups');
+        $this->setServiceTabs()->activate('servicegroups');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Servicegroup'),
             'director/object/servicegroup'

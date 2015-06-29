@@ -60,7 +60,7 @@ abstract class ActionController extends Controller
     protected function setServiceTabs()
     {
         $this->view->tabs = Widget::create('tabs')->add('services', array(
-            'label' => $this->translate('Hosts'),
+            'label' => $this->translate('Services'),
             'url'   => 'director/list/services')
         )->add('servicegroups', array(
             'label' => $this->translate('Servicegroups'),
