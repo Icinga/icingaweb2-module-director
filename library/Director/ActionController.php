@@ -33,6 +33,18 @@ abstract class ActionController extends Controller
         return TableLoader::load($name, $this->Module());
     }
 
+    protected function setConfigTabs()
+    {
+        $this->view->tabs = Widget::create('tabs')->add('generatedconfig', array(
+            'label' => $this->translate('Configs'),
+            'url'   => 'director/list/generatedconfig')
+        )->add('activitylog', array(
+            'label' => $this->translate('Activity Log'),
+            'url'   => 'director/list/activitylog')
+        );
+        return $this->view->tabs;
+    }
+
     protected function setIcingaTabs()
     {
         $this->view->tabs = Widget::create('tabs')->add('services', array(

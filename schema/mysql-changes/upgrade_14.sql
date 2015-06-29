@@ -15,3 +15,4 @@ CREATE TABLE icinga_timeperiod_inheritance (
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

@@ -1,5 +1,8 @@
 <?php
 
+// Sample permission:
+$this->providePermission('director/templates', 'Allow to modify templates');
+
 $section = $this->menuSection($this->translate('Icinga Director'));
 
 $section->setIcon('cubes');
@@ -39,12 +42,7 @@ $section->add($this->translate('Endpoints'))
     ->setUrl('director/list/endpoints');
 
 // INTERNAL
-$section->add($this->translate('Activity Log'))
-    ->setUrl('director/list/activitylog')
-    ->setPriority(900);
-$section->add($this->translate('Show configs'))
+$section->add($this->translate('Config'))
     ->setUrl('director/list/generatedconfig')
     ->setPriority(902);
-$section->add($this->translate('Store config'))
-    ->setUrl('director/config/store')
-    ->setPriority(902);
+
