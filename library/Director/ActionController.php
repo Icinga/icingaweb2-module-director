@@ -57,6 +57,17 @@ abstract class ActionController extends Controller
         return $this->view->tabs;
     }
 
+    protected function setServiceTabs()
+    {
+        $this->view->tabs = Widget::create('tabs')->add('services', array(
+            'label' => $this->translate('Hosts'),
+            'url'   => 'director/list/services')
+        )->add('servicegroups', array(
+            'label' => $this->translate('Servicegroups'),
+            'url'   => 'director/list/servicegroups')
+        );
+        return $this->view->tabs;
+    }
 
     protected function setIcingaTabs()
     {

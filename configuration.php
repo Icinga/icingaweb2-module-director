@@ -24,8 +24,6 @@ $section->add($this->translate('Hosts'))
 // SERVICE
 $section->add($this->translate('Services'))
     ->setUrl('director/list/services');
-$section->add($this->translate('Servicegroups'))
-    ->setUrl('director/list/servicegroups');
 
 // USER
 $section->add($this->translate('Users'))

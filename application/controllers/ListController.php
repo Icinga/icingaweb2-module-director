@@ -41,6 +41,7 @@ class Director_ListController extends ActionController
 
     public function servicesAction()
     {
+        $this->setHostTabs()->activate('services');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Service'),
             'director/object/service'
@@ -52,34 +53,13 @@ class Director_ListController extends ActionController
 
     public function servicegroupsAction()
     {
+        $this->setHostTabs()->activate('servicegroups');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Servicegroup'),
             'director/object/servicegroup'
         );
         $this->view->title = $this->translate('Icinga Servicegroups');
         $this->view->table = $this->loadTable('icingaServiceGroup')->setConnection($this->db());
-        $this->render('table');
-    }
-
-    public function servicegroupmembersAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add Servicegroup Member'),
-            'director/object/servicegroupmember'
-        );
-        $this->view->title = $this->translate('Icinga Servicegroup Members');
-        $this->view->table = $this->loadTable('icingaServiceGroupMember')->setConnection($this->db());
-        $this->render('table');
-    }
-
-    public function servicevarsAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add Service Variable'),
-            'director/object/servicevar'
-        );
-        $this->view->title = $this->translate('Icinga Service Variables');
-        $this->view->table = $this->loadTable('icingaServiceVar')->setConnection($this->db());
         $this->render('table');
     }
 
