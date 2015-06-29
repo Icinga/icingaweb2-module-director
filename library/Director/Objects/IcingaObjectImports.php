@@ -93,6 +93,10 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
+        if (count($new) === 0) {
+            return $this->clear();
+        }
+
         $this->imports = array();
         return $this->add($import);
     }
@@ -107,6 +111,16 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return array_key_exists($import, $this->imports);
     }
 
+    public function clear()
+    {
+        $this->imports = array();
+
+        $this->modified = true;
+        $this->refreshIndex();
+
+        return $this;
+    }
+
     public function remove($import)
     {
         if (array_key_exists($import, $this->imports)) {
@@ -115,6 +129,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         $this->modified = true;
         $this->refreshIndex();
+
+        return $this;
     }
 
     protected function refreshIndex()
