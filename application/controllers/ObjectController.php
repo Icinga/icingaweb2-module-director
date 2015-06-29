@@ -36,26 +36,6 @@ class Director_ObjectController extends ActionController
         $this->render('form');
     }
 
-    public function hostvarAction()
-    {
-        $this->view->form = $this->loadForm('icingaHostVar')
-            ->setDb($this->db())
-            ->setSuccessUrl('director/list/hostvars');
-
-        if (($host_id = $this->params->get('host_id'))
-            && ($varname = $this->params->get('varname'))) {
-            $this->view->form->loadObject(array(
-                'host_id'      => $host_id,
-                'varname' => $varname,
-            ));
-            $this->view->title = $this->translate('Modify Icinga Host Variable');
-        } else {
-            $this->view->title = $this->translate('Add new Icinga Host Variable');
-        }
-        $this->view->form->handleRequest();
-        $this->render('form');
-    }
-
     public function serviceAction()
     {
         $this->view->form = $this->loadForm('icingaService')
@@ -83,26 +63,6 @@ class Director_ObjectController extends ActionController
             $this->view->title = $this->translate('Modify Icinga Servicegroup');
         } else {
             $this->view->title = $this->translate('Add new Icinga Servicegroup');
-        }
-        $this->view->form->handleRequest();
-        $this->render('form');
-    }
-
-    public function servicevarAction()
-    {
-        $this->view->form = $this->loadForm('icingaServiceVar')
-            ->setDb($this->db())
-            ->setSuccessUrl('director/list/servicevars');
-
-        if (($host_id = $this->params->get('service_id'))
-            && ($varname = $this->params->get('varname'))) {
-            $this->view->form->loadObject(array(
-                'service_id'      => $host_id,
-                'varname' => $varname,
-            ));
-            $this->view->title = $this->translate('Modify Icinga Service Variable');
-        } else {
-            $this->view->title = $this->translate('Add new Icinga Service Variable');
         }
         $this->view->form->handleRequest();
         $this->render('form');
