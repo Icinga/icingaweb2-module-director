@@ -30,6 +30,7 @@ class Director_ListController extends ActionController
 
     public function timeperiodsAction()
     {
+        $this->setGlobalTabs()->activate('timeperiods');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Timeperiod'),
             'director/object/timeperiod'
@@ -65,6 +66,7 @@ class Director_ListController extends ActionController
 
     public function commandsAction()
     {
+        $this->setGlobalTabs()->activate('commands');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Command'),
             'director/object/command'
@@ -76,6 +78,7 @@ class Director_ListController extends ActionController
 
     public function commandargumentsAction()
     {
+        $this->setGlobalTabs()->activate('commandarguments');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Command Argument'),
             'director/object/commandargument'
@@ -87,6 +90,7 @@ class Director_ListController extends ActionController
 
     public function usersAction()
     {
+        $this->setUserTabs()->activate('users');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add User'),
             'director/object/user'
@@ -98,6 +102,7 @@ class Director_ListController extends ActionController
 
     public function usergroupsAction()
     {
+        $this->setUserTabs()->activate('usergroups');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Usergroup'),
             'director/object/usergroup'
@@ -107,19 +112,9 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
-    public function usergroupmembersAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add Usergroup Member'),
-            'director/object/usergroupmember'
-        );
-        $this->view->title = $this->translate('Icinga Usergroup Members');
-        $this->view->table = $this->loadTable('icingaUserGroupMember')->setConnection($this->db());
-        $this->render('table');
-    }
-
     public function endpointsAction()
     {
+        $this->setGlobalTabs()->activate('endpoints');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Endpoint'),
             'director/object/endpoint'
@@ -131,6 +126,7 @@ class Director_ListController extends ActionController
 
     public function zonesAction()
     {
+        $this->setGlobalTabs()->activate('zones');
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add Zone'),
             'director/object/zone'
