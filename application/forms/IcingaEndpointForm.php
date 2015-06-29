@@ -53,5 +53,10 @@ class IcingaEndpointForm extends DirectorObjectForm
             'description' => $this->translate('Check this host in this specific Icinga cluster zone'),
             'required'    => true
         ));
+
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited endpoint template names')
+        ));
     }
 }

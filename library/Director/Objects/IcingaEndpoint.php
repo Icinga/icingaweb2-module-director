@@ -6,6 +6,8 @@ class IcingaEndpoint extends IcingaObject
 {
     protected $table = 'icinga_endpoint';
 
+    protected $supportsImports = true;
+
     protected $defaultProperties = array(
         'id'                    => null,
         'zone_id'               => null,
