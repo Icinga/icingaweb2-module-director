@@ -97,8 +97,6 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     abstract public function equals(CustomVariable $var);
 
-    abstract public function toConfigString();
-
     public function differsFrom(CustomVariable $var)
     {
         return ! $this->equals($var);
