@@ -16,6 +16,8 @@ class IcingaZone extends IcingaObject
         'is_global'      => 'n',
     );
 
+    protected $supportsImports = true;
+
     protected function renderParent_zone_id()
     {
         return $this->renderZoneProperty($this->parent_zone_id, 'parent_zone');

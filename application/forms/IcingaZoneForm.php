@@ -37,5 +37,10 @@ class IcingaZoneForm extends DirectorObjectForm
             'label' => $this->translate('Parent Zone'),
             'description' => $this->translate('Chose an (optional) parent zone')
         ));
+
+        $this->addElement('text', 'imports', array(
+            'label' => $this->translate('Imports'),
+            'description' => $this->translate('The inherited zone template names')
+        ));
     }
 }
