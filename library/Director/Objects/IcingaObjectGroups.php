@@ -251,7 +251,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
         $this->storedGroups = $this->groups;
 
-        return $this;
+        return true;
     }
 
     protected function getGroupClass()
