@@ -183,6 +183,11 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addHidden('id');
         }
         $this->setDefaults($this->object->getProperties());
+
+        if ($submit = $this->getElement('submit')) {
+            $this->removeElement('submit');
+        }
+
         if ($this->object->supportsGroups()) {
             $this->getElement('groups')->setValue(
                 implode(', ', $this->object->groups()->listGroupNames())
@@ -199,6 +204,10 @@ abstract class DirectorObjectForm extends QuickForm
             foreach ($this->object->vars() as $key => $value) {
                 $this->addCustomVar($key, $value);
             }
+        }
+
+        if ($submit) {
+            $this->addElement($submit);
         }
 
         if (! $this->hasBeenSubmitted()) {
