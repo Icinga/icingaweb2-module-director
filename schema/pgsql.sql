@@ -134,20 +134,20 @@ CREATE TABLE director_datalist (
 CREATE UNIQUE INDEX datalist_list_name ON director_datalist (list_name);
 
 
-CREATE TABLE director_datalist_value (
+CREATE TABLE director_datalist_entry (
   list_id integer NOT NULL,
-  value_name character varying(255) DEFAULT NULL,
-  value_expression text DEFAULT NULL,
+  entry_name character varying(255) DEFAULT NULL,
+  entry_value text DEFAULT NULL,
   format enum_property_format,
-  PRIMARY KEY (list_id, value_name),
-  CONSTRAINT director_datalist_value_datalist
+  PRIMARY KEY (list_id, entry_name),
+  CONSTRAINT director_datalist_entry_datalist
   FOREIGN KEY (list_id)
     REFERENCES director_datalist (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 );
 
-CREATE INDEX datalist_value_datalist ON director_datalist_value (list_id);
+CREATE INDEX datalist_entry_datalist ON director_datalist_entry (list_id);
 
 
 CREATE TABLE director_datatype (

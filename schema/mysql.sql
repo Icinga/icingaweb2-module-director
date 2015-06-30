@@ -100,12 +100,12 @@ CREATE TABLE director_datalist (
   UNIQUE KEY list_name (list_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE director_datalist_value (
+CREATE TABLE director_datalist_entry (
   list_id INT(10) UNSIGNED NOT NULL,
-  value_name VARCHAR(255) DEFAULT NULL,
-  value_expression TEXT DEFAULT NULL,
+  entry_name VARCHAR(255) DEFAULT NULL,
+  entry_value TEXT DEFAULT NULL,
   format enum ('string', 'expression', 'json'),
-  PRIMARY KEY (list_id, value_name),
+  PRIMARY KEY (list_id, entry_name),
   CONSTRAINT director_datalist_value_datalist
     FOREIGN KEY datalist (list_id)
     REFERENCES director_datalist (id)
