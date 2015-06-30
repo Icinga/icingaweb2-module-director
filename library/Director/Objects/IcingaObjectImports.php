@@ -230,7 +230,14 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $objectCol = $type . '_id';
         $importCol = 'parent_' . $type . '_id';
 
-        $this->object->db->delete($this->getImportTableName(), $objectCol . ' = ' . $objectId);
+        if (! $this->hasBeenModified()) {
+            return true;
+        }
+
+        if ($this->object->hasBeenLoadedFromDb()) {
+
+            $this->object->db->delete($this->getImportTableName(), $objectCol . ' = ' . $objectId);
+        }
 
         $weight = 1;
         foreach ($this->imports as $import) {
@@ -246,7 +253,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         $this->storedImports = $this->imports;
 
-        return $this;
+        return true;
     }
 
     protected function getImportClass()
