@@ -1,6 +1,6 @@
 <?php
 
-use Icinga\Module\Director\ActionController;
+use Icinga\Module\Director\Web\Controller\ActionController;
 
 class Director_WelcomeController extends ActionController
 {

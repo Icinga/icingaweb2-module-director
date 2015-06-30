@@ -1,9 +1,8 @@
 <?php
 
-use Icinga\Module\Director\ActionController;
-
-use Icinga\Forms\ConfigForm;
 use Icinga\Data\ResourceFactory;
+use Icinga\Forms\ConfigForm;
+use Icinga\Module\Director\Web\Controller\ActionController;
 
 class Director_SettingsController extends ActionController
 {

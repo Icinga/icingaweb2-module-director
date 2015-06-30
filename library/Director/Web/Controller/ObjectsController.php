@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Module\Director\ActionController;
-
 abstract class ObjectsController extends ActionController
 {
     protected $dummy;

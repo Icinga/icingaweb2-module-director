@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Module\Director\ActionController;
 use Icinga\Web\Url;
 
 abstract class ObjectController extends ActionController

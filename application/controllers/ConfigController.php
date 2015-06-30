@@ -1,9 +1,8 @@
 <?php
 
-use Icinga\Module\Director\ActionController;
-
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Web\Url;
 
 class Director_ConfigController extends ActionController

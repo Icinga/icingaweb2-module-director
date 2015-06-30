@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Director;
+namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Application\Icinga;
 use Icinga\Module\Director\Db;
