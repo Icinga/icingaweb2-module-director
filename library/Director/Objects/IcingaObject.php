@@ -323,6 +323,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ));
     }
 
+    public function isGroup()
+    {
+        return substr($this->getType(), -5) === 'Group';
+    }
+
     protected function getType()
     {
         if ($this->type === null) {

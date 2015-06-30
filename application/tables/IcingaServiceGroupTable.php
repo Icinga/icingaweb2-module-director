@@ -17,15 +17,15 @@ class IcingaServiceGroupTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/object/servicegroup', array('id' => $row->id));
+        return $this->url('director/servicegroup', array('id' => $row->id));
     }
 
     public function getTitles()
     {
         $view = $this->view();
         return array(
-            'servicegroup'         => $view->translate('Servicegroup'),
-            'display_name'      => $view->translate('Display Name'),
+            'servicegroup' => $view->translate('Servicegroup'),
+            'display_name' => $view->translate('Display Name'),
         );
     }
 

@@ -6,6 +6,8 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ActivityLogTable extends QuickTable
 {
+    protected $filters = array();
+
     public function getColumns()
     {
         return array(
@@ -31,6 +33,14 @@ class ActivityLogTable extends QuickTable
         );
     }
 
+    public function filterObject($type, $name)
+    {
+        $this->filters[] = array('l.object_type = ?', $type);
+        $this->filters[] = array('l.object_name = ?', $name);
+
+        return $this;
+    }
+
     public function fetchData()
     {
         $db = $this->connection()->getConnection();
@@ -39,6 +49,10 @@ class ActivityLogTable extends QuickTable
             array('l' => 'director_activity_log'),
             $this->getColumns()
         )->order('change_time DESC');
+
+        foreach ($this->filters as $filter) {
+            $query->where($filter[0], $filter[1]);
+        }
 
         return $db->fetchAll($query);
     }

@@ -17,6 +17,7 @@ abstract class ActionController extends Controller
 
     public function init()
     {
+        // TODO: this is obsolete I guess
         $m = Icinga::app()->getModuleManager();
         if (! $m->hasLoaded('monitoring') && $m->hasInstalled('monitoring')) {
             $m->loadModule('monitoring');

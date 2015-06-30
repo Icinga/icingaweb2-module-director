@@ -18,7 +18,7 @@ class IcingaEndpointTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/object/endpoint', array('id' => $row->id));
+        return $this->url('director/endpoint', array('id' => $row->id));
     }
 
     public function getTitles()
