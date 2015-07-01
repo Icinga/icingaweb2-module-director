@@ -39,6 +39,18 @@ abstract class DirectorObjectForm extends QuickForm
                 'multiOptions' => array('string' => $this->translate('String'))
             ));
         }
+
+        if (false && $this->object()->supportsRanges()) {
+            /* TODO implement when new logic is there
+            $this->addElement('note', '_newrange_hint', array('label' => 'New range'));
+            $this->addElement('text', '_newrange_name', array(
+                'label' => 'Name'
+            ));
+            $this->addElement('text', '_newrange_value', array(
+                'label' => 'Value'
+            ));
+            */
+        }
     }
 
     public function onSuccess()
@@ -92,6 +104,14 @@ abstract class DirectorObjectForm extends QuickForm
                 );
                 $handled['imports'] = true;
             }
+        }
+
+        if ($object->supportsRanges()) {
+            $object->ranges()->set(array(
+                'monday' => 'eins',
+                'tuesday' => '00:00-24:00',
+                'sunday'    => 'zwei',
+            ));
         }
 
         foreach ($handled as $key => $value) {
@@ -201,17 +221,33 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
+        if ($this->object->supportsRanges()) {
+            /* TODO implement when new logic for customvars is there
+            foreach ($this->object->ranges()->getRanges() as $key => $value) {
+                $this->addRange($key, $value);
+            }
+            */
+        }
+
         if (! $this->hasBeenSubmitted()) {
             $this->beforeValidation($this->object->getProperties());
         }
         return $this;
     }
 
-    protected function addCustomVar($key, $var)
+    protected function addCustomVar($key, $range)
     {
         $this->addElement('text', 'var_' . $key, array(
-            'label' => 'vars.' . $key,
-            'value' => $var->getValue()
+            'label' => 'ranges.' . $key,
+            'value' => $range->getValue()
+        ));
+    }
+
+    protected function addRange($key, $range)
+    {
+        $this->addElement('text', 'range_' . $key, array(
+            'label' => 'range.' . $key,
+            'value' => $range->timeperiod_value
         ));
     }
 

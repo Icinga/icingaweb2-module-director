@@ -19,6 +19,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsGroups = false;
 
+    protected $supportsRanges = false;
+
     protected $supportsImports = false;
 
     private $type;
@@ -29,6 +31,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $imports;
 
+    private $ranges;
+
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
@@ -37,6 +41,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsGroups()
     {
         return $this->supportsGroups;
+    }
+
+    public function supportsRanges()
+    {
+        return $this->supportsRanges;
     }
 
     public function supportsImports()
@@ -58,6 +67,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
+        if ($this->supportsRanges() && $this->ranges !== null && $this->ranges()->hasBeenModified()) {
+            return true;
+        }
+
         return parent::hasBeenModified();
     }
 
@@ -73,6 +86,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->groups;
+    }
+
+    public function ranges()
+    {
+        $this->assertRangesSupport();
+        if ($this->ranges === null) {
+            if ($this->hasBeenLoadedFromDb()) {
+                $this->ranges = IcingaTimePeriodRanges::loadForStoredObject($this);
+            } else {
+                $this->ranges = new IcingaTimePeriodRanges($this);
+            }
+        }
+
+        return $this->ranges;
     }
 
     public function imports()
@@ -106,6 +133,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if (! $this->supportsGroups()) {
             throw new ProgrammingError(
                 'Objects of type "%s" have no groups',
+                $this->getType()
+            );
+        }
+
+        return $this;
+    }
+
+    protected function assertRangesSupport()
+    {
+        if (! $this->supportsRanges()) {
+            throw new ProgrammingError(
+                'Objects of type "%s" have no ranges',
                 $this->getType()
             );
         }
@@ -169,13 +208,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function onInsert()
     {
-        $this->storeCustomVars()->storeGroups()->storeImports();
+        $this->storeCustomVars()->storeGroups()->storeImports()->storeRanges();
         DirectorActivityLog::logCreation($this, $this->connection);
     }
 
     public function onUpdate()
     {
-        $this->storeCustomVars()->storeGroups()->storeImports();
+        $this->storeCustomVars()->storeGroups()->storeImports()->storeRanges();
         DirectorActivityLog::logModification($this, $this->connection);
     }
 
@@ -192,6 +231,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         if ($this->supportsGroups()) {
             $this->groups !== null && $this->groups()->store();
+        }
+
+        return $this;
+    }
+
+    protected function storeRanges()
+    {
+        if ($this->supportsRanges()) {
+            $this->ranges !== null && $this->ranges()->store();
         }
 
         return $this;
@@ -280,6 +328,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    /**
+     * @return string
+     */
+    protected function renderRanges()
+    {
+        if ($this->supportsRanges()) {
+            return $this->ranges()->toConfigString();
+        } else {
+            return '';
+        }
+    }
+
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
         return c::renderKeyValue(
@@ -317,6 +377,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderObjectHeader(),
             $this->renderImports(),
             $this->renderProperties(),
+            $this->renderRanges(),
             $this->renderGroups(),
             $this->renderCustomVars(),
             $this->renderSuffix()
