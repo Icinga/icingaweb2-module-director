@@ -640,6 +640,9 @@ abstract class DbObject
             }
 
         } catch (Exception $e) {
+            if (is_array($id)) {
+                $id = print_r($id, 1);
+            }
             throw new Exception(
                 sprintf(
                     'Storing %s[%s] failed: %s {%s}',
