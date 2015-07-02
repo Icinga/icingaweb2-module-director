@@ -17,7 +17,7 @@ class IcingaServiceGroupTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/servicegroup', array('id' => $row->id));
+        return $this->url('director/servicegroup', array('name' => $row->servicegroup));
     }
 
     public function getTitles()

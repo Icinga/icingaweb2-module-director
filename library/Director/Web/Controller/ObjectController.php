@@ -13,8 +13,8 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
         $ltype = strtolower($type);
         $params = array();
-        if ($id = $this->params->get('id')) {
-            $params['id'] = $id;
+        if ($name = $this->params->get('name')) {
+            $params['name'] = $name;
 
             $this->getTabs()->add($type, array(
                 'url'       => sprintf('director/%s', $ltype),
@@ -54,11 +54,11 @@ abstract class ObjectController extends ActionController
         $this->view->form = $form = $this->loadForm(
             'icinga' . ucfirst($type)
         )->setDb($this->db());
-        $form->loadObject($this->params->get('id'));
+        $form->loadObject($this->params->get('name'));
 
         $url = Url::fromPath(
             sprintf('director/%s', $ltype),
-            array('id' => $form->getObject()->id)
+            array('name' => $form->getObject()->object_name)
         );
         $form->setSuccessUrl($url);
 
@@ -114,8 +114,8 @@ abstract class ObjectController extends ActionController
 
     protected function object()
     {
-        if ($id = $this->params->get('id')) {
-            $this->object = $this->loadObject($id);
+        if ($name = $this->params->get('name')) {
+            $this->object = $this->loadObject($name);
         }
 
         return $this->object;

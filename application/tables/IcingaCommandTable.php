@@ -18,7 +18,7 @@ class IcingaCommandTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/command', array('id' => $row->id));
+        return $this->url('director/command', array('name' => $row->command));
     }
 
     public function getTitles()

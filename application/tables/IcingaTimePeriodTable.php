@@ -18,7 +18,7 @@ class IcingaTimePeriodTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/timeperiod', array('id' => $row->id));
+        return $this->url('director/timeperiod', array('name' => $row->timeperiod));
     }
 
     public function getTitles()

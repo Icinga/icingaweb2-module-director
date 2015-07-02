@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Objects;
 
 class IcingaCommandArgument extends IcingaObject
 {
+    protected $keyName = 'id';
+
     protected $table = 'icinga_command_argument';
 
     protected $defaultProperties = array(

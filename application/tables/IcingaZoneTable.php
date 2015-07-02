@@ -23,7 +23,7 @@ class IcingaZoneTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/zone', array('id' => $row->id));
+        return $this->url('director/zone', array('name' => $row->zone));
     }
 
     public function getTitles()

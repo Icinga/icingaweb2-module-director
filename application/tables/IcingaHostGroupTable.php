@@ -17,7 +17,7 @@ class IcingaHostGroupTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/hostgroup', array('id' => $row->id));
+        return $this->url('director/hostgroup', array('name' => $row->hostgroup));
     }
 
     public function getTitles()

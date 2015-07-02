@@ -22,7 +22,7 @@ class IcingaUserTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/user', array('id' => $row->id));
+        return $this->url('director/user', array('name' => $row->user));
     }
 
     public function getTitles()

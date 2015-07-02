@@ -11,7 +11,7 @@ use Exception;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
-    protected $keyName = 'id';
+    protected $keyName = 'object_name';
 
     protected $autoincKeyName = 'id';
 
