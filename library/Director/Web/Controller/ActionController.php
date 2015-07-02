@@ -42,7 +42,10 @@ abstract class ActionController extends Controller
         )->add('activitylog', array(
             'label' => $this->translate('Activity Log'),
             'url'   => 'director/list/activitylog')
-        );
+        )->add('datalist', array(
+            'label' => $this->translate('Data lists'),
+            'url'   => 'director/list/datalist')
+        );;
         return $this->view->tabs;
     }
 

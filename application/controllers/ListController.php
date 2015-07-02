@@ -12,6 +12,14 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function datalistAction()
+    {
+        $this->setConfigTabs()->activate('datalist');
+        $this->view->title = $this->translate('Data lists');
+        $this->view->table = $this->loadTable('datalist')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function generatedconfigAction()
     {
         $this->view->addLink = $this->view->qlink(
