@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
+use Icinga\Application\Modules\Module;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
@@ -48,8 +49,18 @@ abstract class QuickForm extends Zend_Form
 
     protected $submitLabel;
 
+    /**
+     * The Icinga module this form belongs to. Usually only set if the
+     * form is initialized through the FormLoader
+     */
+    protected $icingaModule;
+
     public function __construct($options = null)
     {
+        if (array_key_exists('icingaModule', $options)) {
+            $this->icingaModule = $options['icingaModule'];
+            unset($options['icingaModule']);
+        }
         parent::__construct($options);
         $this->setMethod('post');
         $this->setAction(Url::fromRequest());
@@ -87,6 +98,15 @@ abstract class QuickForm extends Zend_Form
     {
         $this->submitLabel = $label;
         return $this;
+    }
+
+    protected function loadForm($name, Module $module = null)
+    {
+        if ($module === null) {
+            $module = $this->icingaModule;
+        }
+
+        return FormLoader::load($name, $module);
     }
 
     public function regenerateCsrfToken()
@@ -135,6 +155,12 @@ abstract class QuickForm extends Zend_Form
             $action = Url::fromPath($action);
         }
         return parent::setAction((string) $action);
+    }
+
+    public function setIcingaModule(Module $module)
+    {
+        $this->icingaModule = $module;
+        return $this;
     }
 
     public function hasBeenSubmitted()
