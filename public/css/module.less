@@ -3,9 +3,21 @@ form dt label {
     width: auto;
 }
 
-dd {
+form dd {
+    display: inline;
     margin: 0;
 }
+
+form dt {
+    display: inline-block;
+    min-width: 16em;
+}
+
+form dd:after {
+    display: block;
+    content: '';
+}
+
 /* END of Forms */
 
 table.simple {
