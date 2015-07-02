@@ -24,7 +24,12 @@ class FormLoader
             if (file_exists($file)) {
                 require_once($file);
                 $class = $ns . $class;
-                return new $class();
+                $options = array();
+                if ($module !== null) {
+                    $options['icingaModule'] = $module;
+                }
+
+                return new $class($options);
             }
         }
         throw new ProgrammingError(sprintf('Cannot load %s (%s), no such form', $name, $file));
