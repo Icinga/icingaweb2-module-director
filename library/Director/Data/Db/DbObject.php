@@ -212,7 +212,8 @@ abstract class DbObject
         if (substr($func, -2) === '[]') {
             $func = substr($func, 0, -2);
         }
-        if (method_exists($this, $func)) {
+        // TODO: id check avoids collision with getId. Rethink this.
+        if ($property !== 'id' && method_exists($this, $func)) {
             return $this->$func();
         }
 
