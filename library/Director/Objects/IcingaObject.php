@@ -31,6 +31,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $imports;
 
+    private $importedObjects;
+
     private $ranges;
 
     public function supportsCustomVars()
@@ -114,6 +116,53 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->imports;
+    }
+
+    // TODO: what happens if imports change at runtime?
+    public function importedObjects()
+    {
+        $this->assertImportsSupport();
+        if ($this->importedObjects === null) {
+            $this->importedObjects = array();
+            foreach ($this->imports()->listImportNames() as $import) {
+                $this->importedObjects[$import] = self::load($import, $this->connection);
+            }
+        }
+
+        return $this->importedObjects;
+    }
+
+    public function getResolvedProperties()
+    {
+        $res = $this->resolveProperties();
+        return $res['_MERGED_'];
+    }
+
+    public function resolveProperties()
+    {
+        $props = array();
+        $props['_MERGED_'] = (object) array();
+        $objects = $this->importedObjects();
+
+        $objects[$this->object_name] = $this;
+        $blacklist = array('id', 'object_type', 'object_name');
+        foreach ($objects as $name => $object) {
+            $props[$name] = (object) array();
+            if ($name === $this->object_name) {
+                $pprops = $object->getProperties();
+            } else {
+                $pprops = $object->getResolvedProperties();
+            }
+            foreach ($pprops as $key => $value) {
+                if (in_array($key, $blacklist)) continue;
+                if ($value !== null) {
+                    $props[$name]->$key = $value;
+                    $props['_MERGED_']->$key = $value;
+                }
+            }
+        }
+
+        return $props;
     }
 
     protected function assertCustomVarsSupport()
