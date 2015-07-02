@@ -247,7 +247,7 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addCustomVar($key, $range)
     {
         $this->addElement('text', 'var_' . $key, array(
-            'label' => 'ranges.' . $key,
+            'label' => 'vars.' . $key,
             'value' => $range->getValue()
         ));
     }
@@ -255,7 +255,7 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addRange($key, $range)
     {
         $this->addElement('text', 'range_' . $key, array(
-            'label' => 'range.' . $key,
+            'label' => 'ranges.' . $key,
             'value' => $range->timeperiod_value
         ));
     }
