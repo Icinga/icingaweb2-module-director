@@ -497,7 +497,7 @@ CREATE TABLE icinga_host_field (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_host_field_datatype
-  FOREIGN KEY datatype (datatype_id)
+  FOREIGN KEY (datatype_id)
   REFERENCES director_datatype (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
@@ -505,6 +505,7 @@ CREATE TABLE icinga_host_field (
 
 CREATE UNIQUE INDEX host_field_key ON icinga_host_field (host_id, fieldname);
 CREATE INDEX host_field_search_idx ON icinga_host_field (fieldname);
+CREATE INDEX host_field_datatype ON icinga_host_field (datatype);
 CREATE INDEX host_field_host ON icinga_host_field (host_id);
 COMMENT ON COLUMN icinga_host_field.host_id IS 'Makes only sense for templates';
 
@@ -625,7 +626,7 @@ CREATE TABLE icinga_service_field (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_service_field_datatype
-  FOREIGN KEY datatype (datatype_id)
+  FOREIGN KEY (datatype_id)
   REFERENCES director_datatype (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
@@ -634,6 +635,7 @@ CREATE TABLE icinga_service_field (
 CREATE UNIQUE INDEX service_field_key ON icinga_service_field (service_id, fieldname);
 CREATE INDEX service_field_search_idx ON icinga_service_field (fieldname);
 CREATE INDEX service_field_service ON icinga_service_field (service_id);
+CREATE INDEX service_field_datatype ON icinga_service_field (datatype);
 COMMENT ON COLUMN icinga_service_field.service_id IS 'Makes only sense for templates';
 
 
