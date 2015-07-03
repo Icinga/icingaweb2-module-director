@@ -16,7 +16,7 @@ class Director_ListController extends ActionController
     {
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add list'),
-            'director/datalist'
+            'director/datalist/add'
         );
 
         $this->setConfigTabs()->activate('datalist');
@@ -29,7 +29,7 @@ class Director_ListController extends ActionController
     {
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add field'),
-            'director/datafield'
+            'director/datafield/add'
         );
 
         $this->setConfigTabs()->activate('datafield');
