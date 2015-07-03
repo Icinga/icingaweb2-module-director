@@ -20,6 +20,14 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function datafieldAction()
+    {
+        $this->setConfigTabs()->activate('datafield');
+        $this->view->title = $this->translate('Data fields');
+        $this->view->table = $this->loadTable('datafield')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function generatedconfigAction()
     {
         $this->view->addLink = $this->view->qlink(
