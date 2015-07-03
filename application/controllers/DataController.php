@@ -14,6 +14,9 @@ class Director_DataController extends ActionController
         ))->activate('addfield');
 
         $form = new DirectorDatafieldForm();
+        $form->setDb($this->db());
+
+        $form->handleRequest();
 
         $this->view->title = $title;
         $this->view->form = $form;
