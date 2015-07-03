@@ -16,7 +16,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         if ($this->object === null) {
             $class = $this->getObjectClassname();
-            $this->object = $class::create($values);
+            $this->object = $class::create($values, $this->db);
         } else {
             $this->object->setProperties($values);
         }
@@ -252,6 +252,9 @@ abstract class DirectorObjectForm extends QuickForm
     public function setDb($db)
     {
         $this->db = $db;
+        if ($this->object !== null) {
+            $this->object->setConnection($db);
+        }
         if ($this->hasElement('parent_zone_id')) {
             $this->getElement('parent_zone_id')
                 ->setMultiOptions($this->optionalEnum($db->enumZones()));

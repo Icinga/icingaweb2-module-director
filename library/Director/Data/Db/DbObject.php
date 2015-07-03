@@ -10,7 +10,6 @@ namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Util;
-
 use Exception;
 
 /**
@@ -24,7 +23,7 @@ abstract class DbObject
     protected $connection;
 
     /**
-     * Zend_Db_Adapter: DB Handle
+     * Zend_Db_Adapter_Abstract: DB Handle
      */
     protected $db;
 
@@ -185,17 +184,17 @@ abstract class DbObject
      */
     protected function onDelete() {}
 
-
     /**
-     * Set DB adapter
+     * Set database connection
      *
-     * @param Zend_Db_Adapter $db DB adapter
+     * @param DbConnection $connection Database connection
      *
      * @return self
      */
-    public function setDb($db)
+    public function setConnection(DbConnection $connection)
     {
-        $this->db = $db;
+        $this->connection = $connection;
+        $this->db = $connection->getDbAdapter();
         return $this;
     }
 
@@ -582,8 +581,7 @@ abstract class DbObject
     public function store(DbConnection $db = null)
     {
         if ($db !== null) {
-            $this->connection = $db;
-            $this->db = $db->getConnection();
+            $this->setConnection($db);
         }
 
         if ($this->validate() !== true) {
@@ -752,8 +750,7 @@ abstract class DbObject
         $class = get_called_class();
         $obj = new $class();
         if ($connection !== null) {
-            $obj->connection = $connection;
-            $obj->setDb($connection->getDb());
+            $obj->setConnection($connection);
         }
         $obj->setProperties($properties);
         return $obj;
@@ -763,8 +760,7 @@ abstract class DbObject
     {
         $class = get_called_class();
         $obj = new $class();
-        $obj->connection = $connection;
-        $obj->setDb($connection->getConnection())->setKey($id)->loadFromDb();
+        $obj->setConnection($connection)->setKey($id)->loadFromDb();
         return $obj;
     }
 
@@ -784,8 +780,7 @@ abstract class DbObject
 
         foreach ($rows as $row) {
             $obj = new $class();
-            $obj->connection = $connection;
-            $obj->setDb($db)->setDbProperties($row);
+            $obj->setConnection($connection)->setDbProperties($row);
             if ($keyColumn === null) {
                 $objects[] = $obj;
             } else {
@@ -800,8 +795,7 @@ abstract class DbObject
     {
         $class = get_called_class();
         $obj = new $class();
-        $obj->connection = $connection;
-        $obj->setDb($connection->getDbAdapter())->setKey($id);
+        $obj->setConnection($connection)->setKey($id);
         return $obj->existsInDb();
     }
 }
