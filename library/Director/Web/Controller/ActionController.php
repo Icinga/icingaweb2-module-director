@@ -45,7 +45,7 @@ abstract class ActionController extends Controller
         )->add('datalist', array(
             'label' => $this->translate('Data lists'),
             'url'   => 'director/list/datalist')
-        );;
+        );
         return $this->view->tabs;
     }
 
