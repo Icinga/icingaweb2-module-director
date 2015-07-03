@@ -57,7 +57,7 @@ abstract class QuickForm extends Zend_Form
 
     public function __construct($options = null)
     {
-        if (array_key_exists('icingaModule', $options)) {
+        if ($options !== null && array_key_exists('icingaModule', $options)) {
             $this->icingaModule = $options['icingaModule'];
             unset($options['icingaModule']);
         }
