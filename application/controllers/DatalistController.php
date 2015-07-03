@@ -16,17 +16,31 @@ class Director_DatalistController extends ActionController
 
     public function indexAction()
     {
-        $this->view->title = $this->translate('Add list');
-        $this->getTabs()->add('addlist', array(
-            'url'       => 'director/datalist/add',
-            'label'     => $this->view->title,
-        ))->activate('addlist');
+        $edit = false;
+
+        if($id = $this->params->get('id')) {
+            $edit = true;
+        }
+
+        if ($edit) {
+            $this->view->title = $this->translate('Edit list');
+            $this->getTabs()->add('editlist', array(
+                'url'       => 'director/datalist/edit' . '?id=' . $id,
+                'label'     => $this->view->title,
+            ))->activate('editlist');
+        } else {
+            $this->view->title = $this->translate('Add list');
+            $this->getTabs()->add('addlist', array(
+                'url'       => 'director/datalist/add',
+                'label'     => $this->view->title,
+            ))->activate('addlist');
+        }
 
         $form = $this->view->form = $this->loadForm('directorDatalist')
             ->setSuccessUrl('director/list/datalist')
             ->setDb($this->db());
 
-        if ($id = $this->params->get('id')) {
+        if ($edit) {
             $form->loadObject($id);
         }
 
