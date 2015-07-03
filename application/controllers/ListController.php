@@ -24,10 +24,9 @@ class Director_ListController extends ActionController
     {
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add field'),
-            'director/data/addfield'
+            'director/datafield'
         );
 
-        $this->setConfigTabs()->activate('generatedconfig');
         $this->setConfigTabs()->activate('datafield');
         $this->view->title = $this->translate('Data fields');
         $this->view->table = $this->loadTable('datafield')->setConnection($this->db());

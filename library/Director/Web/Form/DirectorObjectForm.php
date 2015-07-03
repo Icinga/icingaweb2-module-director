@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Module\Director\Objects\IcingaObject;
+
 abstract class DirectorObjectForm extends QuickForm
 {
     protected $db;
@@ -26,7 +28,13 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function onSetup()
     {
-        if ($this->object()->supportsCustomVars()) {
+        $object = $this->object();
+
+        if (! $object instanceof IcingaObject) {
+            return;
+        }
+
+        if ($object->supportsCustomVars()) {
             $this->addElement('note', '_newvar_hint', array('label' => 'New custom variable'));
             $this->addElement('text', '_newvar_name', array(
                 'label' => 'Name'
@@ -40,7 +48,7 @@ abstract class DirectorObjectForm extends QuickForm
             ));
         }
 
-        if (false && $this->object()->supportsRanges()) {
+        if (false && $object->supportsRanges()) {
             /* TODO implement when new logic is there
             $this->addElement('note', '_newrange_hint', array('label' => 'New range'));
             $this->addElement('text', '_newrange_name', array(
@@ -53,9 +61,8 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
-    public function onSuccess()
+    protected function handleIcingaObject(& $values)
     {
-        $values = $this->getValues();
         $object = $this->object();
         $handled = array();
 
@@ -117,7 +124,15 @@ abstract class DirectorObjectForm extends QuickForm
         foreach ($handled as $key => $value) {
             unset($values[$key]);
         }
+    }
 
+    public function onSuccess()
+    {
+        $object = $this->object;
+        $values = $this->getValues();
+        if ($object instanceof IcingaObject) {
+            $this->handleIcingaObject($values);
+        }
         $object->setProperties($values);
         $msg = sprintf(
             $object->hasBeenLoadedFromDb()
@@ -192,6 +207,9 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addHidden('id');
         }
         $this->setDefaults($this->object->getProperties());
+        if (! $this->object instanceof IcingaObject) {
+            return $this;
+        }
 
         if ($submit = $this->getElement('submit')) {
             $this->removeElement('submit');

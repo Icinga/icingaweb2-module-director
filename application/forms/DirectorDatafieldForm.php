@@ -2,13 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
-class DirectorDatafieldForm extends QuickForm
+class DirectorDatafieldForm extends DirectorObjectForm
 {
-    protected $db;
-    protected $successUrl = 'director/list/datafield';
-
     public function setup()
     {
         $this->addElement('text', 'varname', array(
@@ -36,28 +33,5 @@ class DirectorDatafieldForm extends QuickForm
             'label' => $this->translate('Format'),
             'description' => $this->translate('Field format (string, json, expression)')
         ));
-    }
-
-    public function onSuccess()
-    {
-        $values = $this->getValues();
-
-        $this->db->insert(
-            'director_datafield',
-            array(
-                'varname'       => $values['varname'],
-                'caption'       => $values['caption'],
-                'description'   => $values['description'],
-                'datatype'      => $values['datatype'],
-                'format'        => $values['format'],
-            )
-        );
-
-        parent::onSuccess('Ding dong');
-    }
-
-    public function setDb($db)
-    {
-        $this->db = $db;
     }
 }
