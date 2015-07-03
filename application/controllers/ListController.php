@@ -23,7 +23,7 @@ class Director_ListController extends ActionController
     public function datafieldAction()
     {
         $this->view->addLink = $this->view->qlink(
-            $this->translate('Add'),
+            $this->translate('Add field'),
             'director/data/addfield'
         );
 

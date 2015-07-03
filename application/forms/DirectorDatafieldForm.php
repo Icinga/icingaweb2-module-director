@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
 
-class DirectorDatafieldForm extends DirectorObjectForm
+class DirectorDatafieldForm extends QuickForm
 {
     public function setup()
     {
