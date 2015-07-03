@@ -4,6 +4,16 @@ use Icinga\Module\Director\Web\Controller\ActionController;
 
 class Director_DatafieldController extends ActionController
 {
+    public function addAction()
+    {
+        $this->forward('index', 'datafield', 'director');
+    }
+
+    public function editAction()
+    {
+        $this->forward('index', 'datafield', 'director');
+    }
+
     public function indexAction()
     {
         $this->view->title = $this->translate('Add field');
@@ -19,6 +29,7 @@ class Director_DatafieldController extends ActionController
         if ($id = $this->params->get('id')) {
             $form->loadObject($id);
         }
+
         $form->handleRequest();
 
         $this->render('object/form', null, true);
