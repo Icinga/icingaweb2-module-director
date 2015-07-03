@@ -130,17 +130,6 @@ abstract class DirectorObjectForm extends QuickForm
         $this->redirectOnSuccess($msg);
     }
 
-    protected function storeGroupMembership()
-    {
-        if (! $this->object->supportsGroups()) {
-            return;
-        }
-
-        $this->object->groups()->set(
-            preg_split('/\s*,\s*/', $this->getValue('groups'), -1, PREG_SPLIT_NO_EMPTY)
-        )->store();
-    }
-
     protected function optionalEnum($enum)
     {
         return array(
