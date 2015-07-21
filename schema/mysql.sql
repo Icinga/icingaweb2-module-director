@@ -805,8 +805,10 @@ CREATE TABLE icinga_usergroup_parent (
 CREATE TABLE import_source (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_name VARCHAR(64) NOT NULL,
+  key_column VARCHAR(64) NOT NULL,
   provider_class VARCHAR(72) NOT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  INDEX search_idx (key_column)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE import_source_setting (
