@@ -516,6 +516,7 @@ abstract class DbObject
         $this->loadedFromDb = true;
         $this->loadedProperties = $this->properties;
         $this->hasBeenModified = false;
+        $this->onLoadFromDb();
         return $this;
     }
 
