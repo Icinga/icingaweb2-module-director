@@ -78,6 +78,16 @@ abstract class QuickForm extends Zend_Form
         }
     }
 
+    // TODO: This is ugly, we need to defer button creation
+    protected function moveSubmitToBottom()
+    {
+        $label = $this->getSubmitLabel();
+        if ($submit = $this->getElement($label)) {
+            $this->removeElement($label);
+            $this->addElement($submit);
+        }
+    }
+
     protected function createIdElement()
     {
         $this->detectName();
