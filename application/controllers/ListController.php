@@ -25,6 +25,19 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function importsourceAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add import source'),
+            'director/importsource/add'
+        );
+
+        $this->setConfigTabs()->activate('importsource');
+        $this->view->title = $this->translate('Import source');
+        $this->view->table = $this->loadTable('importsource')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function datafieldAction()
     {
         $this->view->addLink = $this->view->qlink(

@@ -46,8 +46,11 @@ abstract class ActionController extends Controller
             'label' => $this->translate('Data lists'),
             'url'   => 'director/list/datalist')
         )->add('datafield', array(
-                    'label' => $this->translate('Data fields'),
-                    'url'   => 'director/list/datafield')
+            'label' => $this->translate('Data fields'),
+            'url'   => 'director/list/datafield')
+        )->add('importsource', array(
+            'label' => $this->translate('Import source'),
+            'url'   => 'director/list/importsource')
         );
         return $this->view->tabs;
     }
