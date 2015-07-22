@@ -27,6 +27,9 @@ class Director_DatalistController extends ActionController
             $this->getTabs()->add('editlist', array(
                 'url'       => 'director/datalist/edit' . '?id=' . $id,
                 'label'     => $this->view->title,
+            ))->add('entries', array(
+                'url'       => 'director/list/datalistentry' . '?list_id=' . $id,
+                'label'     => $this->translate('List entries'),
             ))->activate('editlist');
         } else {
             $this->view->title = $this->translate('Add list');
