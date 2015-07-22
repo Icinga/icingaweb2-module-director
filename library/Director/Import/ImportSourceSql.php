@@ -24,7 +24,7 @@ class ImportSourceSql extends ImportSourceHook
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('text', 'resource', array(
-            'label'    => 'Resouce name',
+            'label'    => 'Resource name',
             'required' => true,
         ));
         $form->addElement('textarea', 'query', array(
