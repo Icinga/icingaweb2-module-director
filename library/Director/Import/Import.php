@@ -105,7 +105,7 @@ class Import
             'import_run',
             array(
                 'source_id' => $source->id,
-                'imported_rowset_checksum' => $rowset,
+                'rowset_checksum' => $rowset,
                 'start_time' => date('Y-m-d H:i:s'),
                 'succeeded' => 'y'
             )

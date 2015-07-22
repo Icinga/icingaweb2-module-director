@@ -46,7 +46,7 @@ class ImportrunTable extends QuickTable
             array()
         )->joinLeft(
             array('rs' => 'imported_rowset'),
-            'rs.checksum = r.imported_rowset_checksum',
+            'rs.checksum = r.rowset_checksum',
             array()
         )->joinLeft(
             array('rsr' => 'imported_rowset_row'),

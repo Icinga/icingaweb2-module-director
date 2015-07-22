@@ -831,7 +831,7 @@ CREATE TABLE imported_rowset (
 CREATE TABLE import_run (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_id INT(10) UNSIGNED NOT NULL,
-  imported_rowset_checksum VARBINARY(20) DEFAULT NULL,
+  rowset_checksum VARBINARY(20) DEFAULT NULL,
   start_time DATETIME NOT NULL,
   end_time DATETIME DEFAULT NULL,
   succeeded ENUM('y', 'n') DEFAULT NULL,
@@ -842,7 +842,7 @@ CREATE TABLE import_run (
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT import_run_rowset
-    FOREIGN KEY rowset (imported_rowset_checksum)
+    FOREIGN KEY rowset (rowset_checksum)
     REFERENCES imported_rowset (checksum)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
