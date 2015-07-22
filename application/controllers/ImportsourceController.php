@@ -1,8 +1,11 @@
 <?php
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-
 use Icinga\Module\Director\Web\Hook\ImportSourceHook;
+use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Import\Import;
+use Icinga\Exception\InvalidPropertyException;
+use Icinga\Web\Notification;
 
 class Director_ImportsourceController extends ActionController
 {
@@ -14,6 +17,15 @@ class Director_ImportsourceController extends ActionController
     public function editAction()
     {
         $this->forward('index', 'importsource', 'director');
+    }
+
+    public function runAction()
+    {
+        if ($runId = Import::run($id = ImportSource::load($this->params->get('id'), $this->db()))) {
+            Notification::success('adf' . $runId);
+            $this->redirectNow('director/list/importrun');
+        } else {
+        }
     }
 
     public function indexAction()

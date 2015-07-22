@@ -48,9 +48,18 @@ abstract class ActionController extends Controller
         )->add('datafield', array(
             'label' => $this->translate('Data fields'),
             'url'   => 'director/list/datafield')
-        )->add('importsource', array(
+        );
+        return $this->view->tabs;
+    }
+
+    protected function setImportTabs()
+    {
+        $this->view->tabs = Widget::create('tabs')->add('importsource', array(
             'label' => $this->translate('Import source'),
             'url'   => 'director/list/importsource')
+        )->add('importrun', array(
+            'label' => $this->translate('Import run'),
+            'url'   => 'director/list/importrun')
         );
         return $this->view->tabs;
     }

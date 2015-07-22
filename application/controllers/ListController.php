@@ -32,9 +32,17 @@ class Director_ListController extends ActionController
             'director/importsource/add'
         );
 
-        $this->setConfigTabs()->activate('importsource');
+        $this->setImportTabs()->activate('importsource');
         $this->view->title = $this->translate('Import source');
         $this->view->table = $this->loadTable('importsource')->setConnection($this->db());
+        $this->render('table');
+    }
+
+    public function importrunAction()
+    {
+        $this->setImportTabs()->activate('importrun');
+        $this->view->title = $this->translate('Import runs');
+        $this->view->table = $this->loadTable('importrun')->setConnection($this->db());
         $this->render('table');
     }
 
