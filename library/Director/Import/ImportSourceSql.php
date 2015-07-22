@@ -27,7 +27,7 @@ class ImportSourceSql extends ImportSourceHook
             'label'    => 'Resouce name',
             'required' => true,
         ));
-        $form->addElement('text', 'query', array(
+        $form->addElement('textarea', 'query', array(
             'label'    => 'DB Query',
             'required' => true,
         ));
