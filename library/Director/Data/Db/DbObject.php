@@ -600,6 +600,11 @@ abstract class DbObject
         $this->beforeStore();
         $table = $this->table;
         $id = $this->getId();
+        if (is_array($id)) {
+            $logId = json_encode($id);
+        } else {
+            $logId = $id;
+        }
         $result = false;
 
         try {
@@ -612,12 +617,12 @@ abstract class DbObject
                     $this->onUpdate();
                 } else {
                     throw new Exception(
-                        sprintf('FAILED storing %s "%s"', $table, $id));
+                        sprintf('FAILED storing %s "%s"', $table, $logId));
                 }
             } else {
                 if ($id && $this->existsInDb()) {
                     throw new Exception(
-                        sprintf('Trying to recreate %s (%s)', $table, $id)
+                        sprintf('Trying to recreate %s (%s)', $table, $logId)
                     );
                 }
 
@@ -634,20 +639,17 @@ abstract class DbObject
                     $result = true;
                 } else {
                     throw new Exception(
-                        sprintf('FAILED to store new %s "%s"', $table, $id)
+                        sprintf('FAILED to store new %s "%s"', $table, $logId)
                     );
                 }
             }
 
         } catch (Exception $e) {
-            if (is_array($id)) {
-                $id = print_r($id, 1);
-            }
             throw new Exception(
                 sprintf(
                     'Storing %s[%s] failed: %s {%s}',
                     $this->table,
-                    $id,
+                    $logId,
                     $e->getMessage(),
                     print_r($this->getProperties(), 1)
                 )
