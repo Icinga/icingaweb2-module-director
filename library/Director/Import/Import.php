@@ -76,29 +76,30 @@ class Import
             $newRows = $this->newChecksums('imported_row', $rowSums);
             $newProperties = $this->newChecksums('imported_property', array_keys($props));
 
-            if (! empty($newProperties) || ! empty($newRows)) {
-                foreach ($newProperties as $checksum) {
-                    $db->insert('imported_property', $props[$checksum]);
-                }
+            $db->insert('imported_rowset', array('checksum' => $rowset));
 
-                $db->insert('imported_rowset', array('checksum' => $rowset));
+            foreach ($newProperties as $checksum) {
+                $db->insert('imported_property', $props[$checksum]);
+            }
 
-                foreach ($newRows as $checksum) {
-                    $db->insert('imported_row', $rows[$checksum]);
-                    $db->insert(
-                        'imported_rowset_row',
-                        array(
-                            'rowset_checksum' => $rowset,
-                            'row_checksum'    => $checksum
-                        )
-                    );
-                    foreach ($rowsProps[$checksum] as $propChecksum) {
-                        $db->insert('imported_row_property', array(
-                            'row_checksum'      => $checksum,
-                            'property_checksum' => $propChecksum
-                        ));
-                    }
+            foreach ($newRows as $checksum) {
+                $db->insert('imported_row', $rows[$checksum]);
+                foreach ($rowsProps[$checksum] as $propChecksum) {
+                    $db->insert('imported_row_property', array(
+                        'row_checksum'      => $checksum,
+                        'property_checksum' => $propChecksum
+                    ));
                 }
+            }
+
+            foreach (array_keys($rows) as $checksum) {
+                $db->insert(
+                    'imported_rowset_row',
+                    array(
+                        'rowset_checksum' => $rowset,
+                        'row_checksum'    => $checksum
+                    )
+                );
             }
         }
         $db->insert(
