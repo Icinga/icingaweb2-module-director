@@ -55,6 +55,88 @@ class Db extends DbConnection
         return $this->db()->fetchOne($select);
     }
 
+    public function fetchLatestImportedRows($source, $columns = null)
+    {
+        $db = $this->db();
+        $lastRun = $db->select()->from('import_run', array('rowset_checksum'));
+
+        if (is_int($source) || ctype_digit($source)) {
+            $lastRun->where('source_id = ?', $source);
+        } else {
+            $lastRun->where('source_name = ?', $source);
+        }
+
+        $lastRun->order('start_time DESC')->limit(1);
+        $checksum = $db->fetchOne($lastRun);
+
+        return $this->fetchImportedRowsetRows($checksum, $columns);
+    }
+
+    public function listImportedRowsetColumnNames($checksum)
+    {
+        $db = $this->db();
+
+        $query = $db->select()->distinct()->from(
+            array('p' => 'imported_property'),
+            'property_name'
+        )->join(
+            array('rp' => 'imported_row_property'),
+            'rp.property_checksum = p.checksum',
+            array()
+        )->join(
+            array('rsr' => 'imported_rowset_row'),
+            'rsr.row_checksum = rp.row_checksum',
+            array()
+        )->where('rsr.rowset_checksum = ?', $checksum);
+
+        return $db->fetchCol($query);
+    }
+
+    public function fetchImportedRowsetRows($checksum, $columns = null)
+    {
+        $db = $this->db();
+
+        $query = $db->select()->from(
+            array('r' => 'imported_row'),
+            array()
+        )->join(
+            array('rsr' => 'imported_rowset_row'),
+            'rsr.row_checksum = r.checksum',
+            array()
+        )->where('rsr.rowset_checksum = ?', $checksum);
+
+        $propertyQuery = $db->select()->from(
+            array('rp' => 'imported_row_property'),
+            array(
+                'property_value' => 'p.property_value',
+                'row_checksum'   => 'rp.row_checksum'
+            )
+        )->join(
+            array('p' => 'imported_property'),
+            'rp.property_checksum = p.checksum',
+            array()
+        );
+
+        $fetchColumns = array('object_name' => 'r.object_name');
+        if ($columns === null) {
+            $columns = $this->listImportedRowsetColumnNames($checksum);
+        }
+
+        foreach ($columns as $c) {
+            $fetchColumns[$c] = sprintf('p_%s.property_value', $c);
+            $p = clone($propertyQuery);
+            $query->joinLeft(
+                array(sprintf('p_' . $c) => $p->where('p.property_name = ?', $c)),
+                sprintf('p_%s.row_checksum = r.checksum', $c),
+                array()
+            );
+        }
+
+        $query->columns($fetchColumns);
+
+        return $db->fetchAll($query);
+    }
+
     public function enumCheckcommands()
     {
         $select = $this->db()->select()->from('icinga_command', array(
