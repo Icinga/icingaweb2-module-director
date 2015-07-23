@@ -67,6 +67,14 @@ abstract class PropertyModifierHook
      */
     abstract public function listColumns();
 
+
+    /**
+     * Methode to transform the given value
+     *
+     * @return value
+     */
+    abstract public function transfrom();
+
     /**
      * Override this method if you want to extend the settings form
      *
