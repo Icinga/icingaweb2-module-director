@@ -4,12 +4,12 @@ namespace Icinga\Module\Director\PropertyModifier;
 
 use Icinga\Module\Director\Web\Hook\PropertyModifierHook;
 
-class PropertyModifierLowercase extends PropertyModifierHook
+class PropertyModifierReplace PropertyModifierHook
 {
 
     public function transform($value)
     {
-        return strtolower($value);
+        return str_replace($this->settings['string'], $this->settings['replacement'], $value);
     }
 
 }
