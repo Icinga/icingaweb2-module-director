@@ -15,7 +15,7 @@ class SyncRuleForm extends DirectorObjectForm
         ));
 
         $this->addElement('select', 'object_type', array(
-            'label' => $this->translate('Please select a object type'),
+            'label' => $this->translate('Object Type'),
             'description' => $this->translate('This must be a column from the source'),
             'required'    => true,
             'multiOptions' => array( 
