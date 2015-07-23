@@ -46,6 +46,19 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function syncruleAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add sync rule'),
+            'director/syncrule/add'
+        );
+
+        $this->setImportTabs()->activate('syncrule');
+        $this->view->title = $this->translate('Sync rule');
+        $this->view->table = $this->loadTable('syncrule')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function datalistentryAction()
     {
         $listId = $this->params->get('list_id');

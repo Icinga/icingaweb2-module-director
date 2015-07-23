@@ -60,6 +60,9 @@ abstract class ActionController extends Controller
         )->add('importrun', array(
             'label' => $this->translate('Import run'),
             'url'   => 'director/list/importrun')
+        )->add('syncrule', array(
+            'label' => $this->translate('Sync rule'),
+            'url'   => 'director/list/syncrule')
         );
         return $this->view->tabs;
     }
