@@ -81,7 +81,7 @@ abstract class PropertyModifierHook
      * @param  QuickForm $form QuickForm that should be extended
      * @return QuickForm
      */
-    public static function addPropertiesFormFields(QuickForm $form)
+    public static function addSettingsFormFields(QuickForm $form)
     {
         return $form;
     }
