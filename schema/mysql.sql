@@ -927,7 +927,7 @@ CREATE TABLE sync_property (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE sync_modifier (
+CREATE TABLE import_row_modifier (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   property_id INT(10) UNSIGNED NOT NULL,
   provider_class VARCHAR(72) NOT NULL,
@@ -939,10 +939,10 @@ CREATE TABLE sync_modifier (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE sync_modifier_param (
+CREATE TABLE import_row_modifier_settings (
   modifier_id INT UNSIGNED NOT NULL,
-  param_name VARCHAR(64) NOT NULL,
-  param_value TEXT DEFAULT NULL,
+  settings_name VARCHAR(64) NOT NULL,
+  settings_value TEXT DEFAULT NULL,
   PRIMARY KEY (modifier_id, param_name),
   CONSTRAINT sync_modifier_param_modifier
     FOREIGN KEY modifier (modifier_id)
@@ -950,4 +950,3 @@ CREATE TABLE sync_modifier_param (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
