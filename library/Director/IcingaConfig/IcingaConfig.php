@@ -172,9 +172,9 @@ class IcingaConfig
             $this->db->insert(
                 self::$table,
                 array(
-                    'duration'                  => $this->generationTime,
-                    'last_activity_checksum'    => $this->dbBin($this->getLastActivityChecksum()),
-                    'checksum'                  => $this->dbBin($this->getChecksum()),
+                    'duration'               => $this->generationTime,
+                    'last_activity_checksum' => $this->dbBin($this->getLastActivityChecksum()),
+                    'checksum'               => $this->dbBin($this->getChecksum()),
                 )
             );
 
