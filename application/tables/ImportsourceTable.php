@@ -38,15 +38,15 @@ class ImportsourceTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
             array('s' => 'import_source'),
-            $this->getColumns()
+            array()
         )->order('source_name ASC');
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

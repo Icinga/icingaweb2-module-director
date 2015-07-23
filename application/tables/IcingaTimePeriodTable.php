@@ -31,18 +31,18 @@ class IcingaTimePeriodTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('t' => 'icinga_timeperiod'),
-            $this->getColumns()
+            array()
         )->joinLeft(
             array('z' => 'icinga_zone'),
             't.zone_id = z.id',
             array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

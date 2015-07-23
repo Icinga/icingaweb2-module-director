@@ -35,18 +35,18 @@ class IcingaZoneTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('z' => 'icinga_zone'),
-            $this->getColumns()
+            array()
         )->joinLeft(
             array('e' => 'icinga_endpoint'),
             'z.id = e.zone_id',
             array()
         )->group('z.id');
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

@@ -48,6 +48,16 @@ class IcingaConfig
         return $this->files;
     }
 
+    public function getFileContents()
+    {
+        $result = array();
+        foreach ($this->files as $name => $file) {
+            $result[$name] = $file->getContent();
+        }
+
+        return $result;
+    }
+
     public function getFileNames()
     {
         return array_keys($this->files);
@@ -162,9 +172,9 @@ class IcingaConfig
             $this->db->insert(
                 self::$table,
                 array(
-                    'duration'                  => $this->generationTime,
-                    'last_activity_checksum'    => $this->dbBin($this->getLastActivityChecksum()),
-                    'checksum'                  => $this->dbBin($this->getChecksum()),
+                    'duration'               => $this->generationTime,
+                    'last_activity_checksum' => $this->dbBin($this->getLastActivityChecksum()),
+                    'checksum'               => $this->dbBin($this->getChecksum()),
                 )
             );
 

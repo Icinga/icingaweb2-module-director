@@ -37,15 +37,15 @@ class DatalistEntryTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
             array('l' => 'director_datalist_entry'),
-            $this->getColumns()
+            array()
         )->where('l.list_id = ?', $this->getListId())->order('l.entry_name ASC');
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

@@ -32,18 +32,18 @@ class IcingaCommandArgumentTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('ca' => 'icinga_command_argument'),
-            $this->getColumns()
+            array()
         )->joinLeft(
             array('c' => 'icinga_command'),
             'ca.command_id = c.id',
             array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

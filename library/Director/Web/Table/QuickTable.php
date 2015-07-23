@@ -4,14 +4,19 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Application\Icinga;
 use Icinga\Data\Selectable;
-use Icinga\Web\Request;
+use Icinga\Data\Paginatable;
 use Icinga\Web\Url;
+use Icinga\Web\Widget\Paginator;
 
-abstract class QuickTable
+abstract class QuickTable implements Paginatable
 {
     protected $view;
 
     protected $connection;
+
+    protected $limit;
+
+    protected $offset;
 
     protected function renderRow($row)
     {
@@ -54,6 +59,63 @@ abstract class QuickTable
     {
         $this->connection = $connection;
         return $this;
+    }
+
+    abstract protected function getBaseQuery();
+
+    public function fetchData()
+    {
+        $db = $this->connection()->getConnection();
+        $query = $this->getBaseQuery()->columns($this->getColumns());
+
+        if ($this->hasLimit() || $this->hasOffset()) {
+            $query->limit($this->getLimit(), $this->getOffset());
+        }
+
+        return $db->fetchAll($query);
+    }
+
+    public function getPaginator()
+    {
+        $paginator = new Paginator();
+        $paginator->setQuery($this);
+
+        return $paginator;
+    }
+
+    public function count()
+    {
+        $db = $this->connection()->getConnection();
+
+        return $db->fetchOne($this->getBaseQuery()->columns(array('COUNT(*)')));
+    }
+
+    public function limit($count = null, $offset = null)
+    {
+        $this->limit = $count;
+        $this->offset = $offset;
+
+        return $this;
+    }
+
+    public function hasLimit()
+    {
+        return $this->limit !== null;
+    }
+
+    public function getLimit()
+    {
+        return $this->limit;
+    }
+
+    public function hasOffset()
+    {
+        return $this->offset !== null;
+    }
+
+    public function getOffset()
+    {
+        return $this->offset;
     }
 
     public function hasAdditionalActions()

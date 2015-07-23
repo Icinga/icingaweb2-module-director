@@ -29,14 +29,14 @@ class IcingaServiceGroupTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('sg' => 'icinga_servicegroup'),
-            $this->getColumns()
+            array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

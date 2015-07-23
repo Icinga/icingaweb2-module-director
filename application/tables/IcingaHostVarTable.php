@@ -35,18 +35,16 @@ class IcingaHostVarTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $db->select()->from(
             array('hv' => 'icinga_host_var'),
-            $this->getColumns()
+            array()
         )->join(
             array('h' => 'icinga_host'),
             'hv.host_id = h.id',
             array()
         );
-
-        return $db->fetchAll($query);
     }
 }

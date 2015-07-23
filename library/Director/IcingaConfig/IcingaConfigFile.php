@@ -63,4 +63,9 @@ class IcingaConfigFile
         $this->checksum = null;
         return $this;
     }
+
+    public function __toString()
+    {
+        return $this->getContent();
+    }
 }

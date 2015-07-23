@@ -95,10 +95,10 @@ abstract class ObjectController extends ActionController
         $this->getTabs()->activate('history');
         $object = $this->object();
         $this->view->title = $this->translate('Activity Log');
-        $this->view->table = $this->loadTable('activityLog')
-            ->setConnection($this->db())
+        $this->view->table = $this->applyPaginationLimits(
+            $this->loadTable('activityLog')->setConnection($this->db())
             ->filterObject('icinga_' . $type, $object->object_name)
-            ;
+        );
         $this->render('object/history', null, true);
     }
 

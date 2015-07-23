@@ -29,14 +29,14 @@ class IcingaHostGroupTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('hg' => 'icinga_hostgroup'),
-            $this->getColumns()
+            array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }
