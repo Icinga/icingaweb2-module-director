@@ -31,18 +31,18 @@ class IcingaCommandTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('c' => 'icinga_command'),
-            $this->getColumns()
+            array()
         )->joinLeft(
             array('z' => 'icinga_zone'),
             'c.zone_id = z.id',
             array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

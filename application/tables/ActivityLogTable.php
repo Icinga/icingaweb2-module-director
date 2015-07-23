@@ -41,19 +41,19 @@ class ActivityLogTable extends QuickTable
         return $this;
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
             array('l' => 'director_activity_log'),
-            $this->getColumns()
+            array()
         )->order('change_time DESC');
 
         foreach ($this->filters as $filter) {
             $query->where($filter[0], $filter[1]);
         }
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

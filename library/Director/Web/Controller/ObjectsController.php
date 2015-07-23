@@ -81,8 +81,10 @@ abstract class ObjectsController extends ActionController
             'director/' . $ltype . '/add'
         );
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
-        $this->view->table = $this->loadTable('icinga' . ucfirst($type))
-            ->setConnection($this->db());
+        $this->view->table = $this->applyPaginationLimits(
+            $this->loadTable('icinga' . ucfirst($type))->setConnection($this->db())
+        );
+
         $this->render('objects/table', null, true);
     }
 

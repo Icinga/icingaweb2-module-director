@@ -31,18 +31,18 @@ class IcingaUserGroupTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('ug' => 'icinga_usergroup'),
-            $this->getColumns()
+            array()
         )->joinLeft(
             array('z' => 'icinga_zone'),
             'ug.zone_id = z.id',
             array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

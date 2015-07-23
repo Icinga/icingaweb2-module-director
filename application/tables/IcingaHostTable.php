@@ -2,10 +2,12 @@
 
 namespace Icinga\Module\Director\Tables;
 
+use Icinga\Data\Limitable;
 use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaHostTable extends QuickTable
 {
+
     public function getColumns()
     {
         return array(
@@ -31,18 +33,18 @@ class IcingaHostTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('h' => 'icinga_host'),
-            $this->getColumns()
+            array()
         )->joinLeft(
             array('z' => 'icinga_zone'),
             'h.zone_id = z.id',
             array()
         );
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

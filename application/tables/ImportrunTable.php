@@ -33,13 +33,13 @@ class ImportrunTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
             array('s' => 'import_source'),
-            $this->getColumns()
+            array()
         )->join(
             array('r' => 'import_run'),
             'r.source_id = s.id',
@@ -54,6 +54,6 @@ class ImportrunTable extends QuickTable
             array()
         )->group('r.id')->order('r.start_time DESC');
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

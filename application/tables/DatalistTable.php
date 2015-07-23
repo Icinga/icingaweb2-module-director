@@ -29,15 +29,15 @@ class DatalistTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
             array('l' => 'director_datalist'),
-            $this->getColumns()
+            array()
         )->order('list_name ASC');
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

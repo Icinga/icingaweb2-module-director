@@ -38,13 +38,13 @@ class GeneratedConfigTable extends QuickTable
         );
     }
 
-    public function fetchData()
+    public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
             array('l' => 'director_activity_log'),
-            $this->getColumns()
+            array()
         )->joinRight(
             array('c' => 'director_generated_config'),
             'c.last_activity_checksum = l.checksum',
@@ -55,6 +55,6 @@ class GeneratedConfigTable extends QuickTable
             array()
         )->group('c.checksum')->group('l.id')->order('l.change_time DESC');
 
-        return $db->fetchAll($query);
+        return $query;
     }
 }

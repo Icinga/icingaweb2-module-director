@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Application\Icinga;
+use Icinga\Data\Paginatable;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Table\TableLoader;
@@ -22,6 +23,16 @@ abstract class ActionController extends Controller
         if (! $m->hasLoaded('monitoring') && $m->hasInstalled('monitoring')) {
             $m->loadModule('monitoring');
         }
+    }
+
+    protected function applyPaginationLimits(Paginatable $paginatable, $limit = 25, $offset = null)
+    {
+        $limit = $this->params->get('limit', $limit);
+        $page = $this->params->get('page', $offset);
+
+        $paginatable->limit($limit, $page > 0 ? ($page - 1) * $limit : 0);
+
+        return $paginatable;
     }
 
     public function loadForm($name)
