@@ -26,8 +26,8 @@ class SyncRuleForm extends DirectorObjectForm
         ));
 
         $this->addElement('select', 'update_policy', array(
-            'label' => $this->translate('Destination field'),
-            'description' => $this->translate('The value of the source will be transformed to the given attribute'),
+            'label' => $this->translate('Update Policity'),
+            'description' => $this->translate('Whether the field should be merged, overriden or ignored'),
             'required'    => true,
             'multiOptions' => array( 
                 'null'     => '- please choose -',
@@ -37,9 +37,9 @@ class SyncRuleForm extends DirectorObjectForm
             )
         ));
 
-        $this->addElement('text', 'purge_existing', array(
-            'label' => $this->translate('Priority'),
-            'description' => $this->translate('This allows to prioritize the import of a field, synced from different sources for the same object'),
+        $this->addElement('select', 'purge_existing', array(
+            'label' => $this->translate('Purge'),
+            'description' => $this->translate('Purge existing values.'),
             'required'    => true,
             'multiOptions' => array( 
                 'null' => '- please choose -',
@@ -48,10 +48,9 @@ class SyncRuleForm extends DirectorObjectForm
             )
         ));
 
-        $this->addElement('text', 'filter', array(
+        $this->addElement('text', 'filter_expression', array(
             'label' => $this->translate('Filter Expression'),
-            'description' => $this->translate('This allows to filter for specific parts within the given source field'),
-            'required'    => true,
+            'description' => $this->translate('This allows to filter for specific parts.'),
         ));
     }
 

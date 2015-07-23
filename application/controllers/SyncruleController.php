@@ -20,9 +20,9 @@ class Director_SyncruleController extends ActionController
 
     public function runAction()
     {
-        if ($runId = Import::run($id = ImportSource::load($this->params->get('id'), $this->db()))) {
+        if ($runId = Import::run($id = SyncRule::load($this->params->get('id'), $this->db()))) {
             Notification::success('adf' . $runId);
-            $this->redirectNow('director/list/importrun');
+            $this->redirectNow('director/list/syncrule');
         } else {
         }
     }
@@ -36,21 +36,21 @@ class Director_SyncruleController extends ActionController
         }
 
         if ($edit) {
-            $this->view->title = $this->translate('Edit import source');
+            $this->view->title = $this->translate('Edit sync rule');
             $this->getTabs()->add('edit', array(
-                'url'       => 'director/importsource/edit' . '?id=' . $id,
+                'url'       => 'director/syncrule/edit' . '?id=' . $id,
                 'label'     => $this->view->title,
             ))->activate('edit');
         } else {
-            $this->view->title = $this->translate('Add import source');
+            $this->view->title = $this->translate('Add sync rule');
             $this->getTabs()->add('add', array(
-                'url'       => 'director/importsource/add',
+                'url'       => 'director/syncrule/add',
                 'label'     => $this->view->title,
             ))->activate('add');
         }
 
-        $form = $this->view->form = $this->loadForm('importSource')
-            ->setSuccessUrl('director/list/importsource')
+        $form = $this->view->form = $this->loadForm('syncRule')
+            ->setSuccessUrl('director/list/syncrule')
             ->setDb($this->db());
 
         if ($edit) {

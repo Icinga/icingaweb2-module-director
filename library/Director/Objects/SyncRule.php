@@ -21,7 +21,7 @@ class SyncRule extends DbObject
 	'filter_expression'	=> null,
     );
 
-    /*
+    /**
     protected $properties = array();
 
     public function set($key, $value)
@@ -78,9 +78,9 @@ class SyncRule extends DbObject
             $del[$key] = $key;
         }
 
-	$modifier = $db->fetchRow(
+	$sync_rule = $db->fetchRow(
             $db->select()->from(
-                'sync_modifier',
+                'sync_rule',
                 array('id')
             )->where('property_id = ?', $property_id)
         )	
@@ -134,5 +134,6 @@ class SyncRule extends DbObject
     protected function onLoadFromDb()
     {
         $this->settings = $this->fetchSettingsFromDb();
-    } */
+    } 
+    */
 }
