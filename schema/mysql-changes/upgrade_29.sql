@@ -1,5 +1,5 @@
-DROP TABLE sync_modifier IF EXISTS;
-DROP TABLE sync_modifier_param IF EXISTS;
+DROP TABLE sync_modifier;
+DROP TABLE sync_modifier_param;
 
 CREATE TABLE import_row_modifier (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
