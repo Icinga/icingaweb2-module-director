@@ -901,7 +901,7 @@ CREATE TABLE sync_rule (
   object_type ENUM('host', 'user') NOT NULL,
   update_policy ENUM('merge', 'override', 'ignore') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
-  filter_expression TEXT NOT NULL,
+  filter_expression TEXT DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
