@@ -23,6 +23,16 @@ class SyncruleTable extends QuickTable
         return $this->url('director/syncrule/add', array('id' => $row->id));
     }
 
+    protected function renderAdditionalActions($row)
+    {
+        return $this->view->qlink(
+            'Run',
+            'director/syncrule/run',
+            array('id' => $row->id),
+            array('data-base-target' => '_main')
+        );
+    }
+
     public function getTitles()
     {
         $view = $this->view();
