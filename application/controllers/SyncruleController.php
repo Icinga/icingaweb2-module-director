@@ -2,7 +2,7 @@
 
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
-use Icinga\Module\Director\Sync\Sync;
+use Icinga\Module\Director\Import\Sync;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Web\Notification;
 
@@ -20,8 +20,8 @@ class Director_SyncruleController extends ActionController
 
     public function runAction()
     {
-        if ($runId = Import::run($id = SyncRule::load($this->params->get('id'), $this->db()))) {
-            Notification::success('adf' . $runId);
+        if ($runId = Sync::run(SyncRule::load($this->params->get('id'), $this->db()))) {
+            Notification::success('Just testing');
             $this->redirectNow('director/list/syncrule');
         } else {
         }
