@@ -67,6 +67,19 @@ class Director_ListController extends ActionController
         $this->render('table');
     }
 
+    public function syncpropertyAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add sync property rule'),
+            'director/syncproperty/add'
+        );
+
+        $this->setImportTabs()->activate('syncproperty');
+        $this->view->title = $this->translate('Sync property');
+        $this->view->table = $this->loadTable('syncproperty')->setConnection($this->db());
+        $this->render('table');
+    }
+
     public function datalistentryAction()
     {
         $listId = $this->params->get('list_id');

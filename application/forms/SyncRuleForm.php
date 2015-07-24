@@ -11,12 +11,13 @@ class SyncRuleForm extends DirectorObjectForm
     {
         $this->addElement('text', 'rule_name', array(
             'label' => $this->translate('Rule name'),
+	    'description' => $this->translate('Please provide a rule name'),
             'required'    => true,
         ));
 
         $this->addElement('select', 'object_type', array(
             'label' => $this->translate('Object Type'),
-            'description' => $this->translate('This must be a column from the source'),
+            'description' => $this->translate('Choose a object type'),
             'required'    => true,
             'multiOptions' => array( 
                         'null'     => '- please choose -',

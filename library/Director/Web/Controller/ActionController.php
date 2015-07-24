@@ -74,9 +74,13 @@ abstract class ActionController extends Controller
         )->add('syncrule', array(
             'label' => $this->translate('Sync rule'),
             'url'   => 'director/list/syncrule')
+        )->add('syncproperty', array(
+            'label' => $this->translate('Sync Property'),
+            'url'   => 'director/list/syncproperty')
         );
         return $this->view->tabs;
     }
+
 
     protected function db()
     {

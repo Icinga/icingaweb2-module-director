@@ -197,6 +197,16 @@ class Db extends DbConnection
         return $this->db()->fetchPairs($select);
     }
 
+    public function enumSyncRule()
+    {
+        $select = $this->db()->select()->from('sync_rule', array(
+	   'id',
+           'rule_name'
+        ))->order('rule_name ASC');
+
+	return $this->db()->fetchPairs($select);
+    }
+
     public function enumHostgroups()
     {
         $select = $this->db()->select()->from('icinga_hostgroup', array(
@@ -230,6 +240,15 @@ class Db extends DbConnection
             'id',
             'object_name',
         ))->where('object_type = ?', 'object')->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
+    public function enumImportSource()
+    {
+        $select = $this->db()->select()->from('import_source', array(
+            'id',
+            'source_name',
+        ))->order('source_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
