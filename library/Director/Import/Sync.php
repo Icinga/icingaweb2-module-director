@@ -161,5 +161,7 @@ class Sync
 
             $dba->commit();
         }
+
+        return 42; // We have no sync_run history table yet
     }
 }
