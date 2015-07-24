@@ -144,12 +144,17 @@ class Sync
                 }
 
                 if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
-                    /*
-                    // TODO: Check against ALL sources
-                    if (! array_key_exists($object->object_name, $imported[$sourceId])) {
+                    $found = false;
+                    foreach ($sources as $source) {
+                        if (array_key_exists($object->object_name, $imported[$source->id])) {
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    if (! $found) {
                         $object->delete();
                     }
-                    */
                 }
                 $object->store($db);
             }
