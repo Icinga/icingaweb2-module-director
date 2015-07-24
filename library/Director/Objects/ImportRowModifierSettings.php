@@ -13,9 +13,9 @@ class ImportRowModifierSettings  extends DbObject
     protected $autoincKeyName = 'id';
 
     protected $defaultProperties = array(
-        'modifier_id'        	=> null,
-	'setting_name'		=> null,
-	'setting_value'		=> null,
+        'modifier_id'   => null,
+        'setting_name'  => null,
+        'setting_value' => null,
     );
 
     /*
