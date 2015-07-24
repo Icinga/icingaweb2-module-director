@@ -64,6 +64,13 @@ class Sync
             $key = $source->key_column;
             $imported[$sourceId] = array();
             foreach ($rows as $row) {
+                if (! property_exists($row, $key)) {
+                    throw new \Exception(
+                        sprintf(
+                            'There is no key column "%s" in this row from "%s": %s', $key, $source->source_name, json_encode($row)
+                        )
+                    );
+                }
                 $imported[$sourceId][$row->$key] = $row;
             }
         }
