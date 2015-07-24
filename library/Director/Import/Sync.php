@@ -130,6 +130,19 @@ class Sync
             $dba = $db->getDbAdapter();
             $dba->beginTransaction();
             foreach ($objects as $object) {
+                if ($object->isTemplate()) {
+                    if ($object->hasBeenModified()) {
+                        throw new \Exception(
+                            sprintf(
+                                'Sync is not allowed to modify template "%s"',
+                                $object->object_name
+                            )
+                        );
+                    }
+
+                    continue;
+                }
+
                 if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
                     /*
                     // TODO: Check against ALL sources
