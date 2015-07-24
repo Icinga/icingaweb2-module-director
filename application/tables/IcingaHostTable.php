@@ -43,7 +43,7 @@ class IcingaHostTable extends QuickTable
             array('z' => 'icinga_zone'),
             'h.zone_id = z.id',
             array()
-        );
+        )->order('h.object_name');
 
         return $query;
     }
