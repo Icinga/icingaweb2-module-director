@@ -16,9 +16,9 @@ class SyncRule extends DbObject
         'id'             	=> null,
         'rule_name'        	=> null,
         'object_type' 		=> null,
-        'update_policy'         => null,
-	'purge_existing'	=> null,
-	'filter_expression'	=> null,
+        'update_policy'     => null,
+	    'purge_existing'	=> null,
+	    'filter_expression'	=> null,
     );
 
     /**
