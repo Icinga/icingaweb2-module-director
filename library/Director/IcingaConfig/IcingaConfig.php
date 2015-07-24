@@ -227,6 +227,11 @@ class IcingaConfig
             array('checksum', 'last_activity_checksum')
         )->where('checksum = ?', $this->dbBin($checksum));
         $result = $this->db->fetchRow($query);
+
+        if (empty($result)) {
+            throw new Exception(sprintf('Got no config for %s', Util::binary2hex($checksum)));
+        }
+
         $this->checksum = $result->checksum;
         $this->lastActivityChecksum = $result->last_activity_checksum;
 
