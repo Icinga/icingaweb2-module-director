@@ -103,7 +103,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 'v.varvalue',
                 'v.format',
             )
-        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->getId());
+        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->id);
 
         $vars = new CustomVariables;
         foreach ($db->fetchAll($query) as $row) {
@@ -118,7 +118,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $db            = $object->getDb();
         $table         = $object->getVarsTableName();
         $foreignColumn = $object->getVarsIdColumn();
-        $foreignId     = $object->getId();
+        $foreignId     = $object->id;
 
 
         foreach ($this->vars as $var) {
@@ -148,6 +148,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 );
             }
         }
+
+        $this->setUnmodified();
     }
 
     public function get($key)
