@@ -814,7 +814,7 @@ CREATE TABLE import_source (
 CREATE TABLE import_source_setting (
   source_id INT(10) UNSIGNED NOT NULL,
   setting_name VARCHAR(64) NOT NULL,
-  setting_value VARCHAR(255) NOT NULL,
+  setting_value TEXT NOT NULL,
   PRIMARY KEY (source_id, setting_name),
   CONSTRAINT import_source_settings_source
     FOREIGN KEY source (source_id)
