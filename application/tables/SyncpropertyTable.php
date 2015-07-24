@@ -9,14 +9,16 @@ class SyncpropertyTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'                => 's.id',
-            'rule_id'           => 's.rule_id',
-            'source_id'         => 's.source_id',
-            'source_expression' => 's.source_expression',
-            'destination_field' => 's.destination_field',
-            'priority'          => 's.priority',
-            'filter_expression' => 's.filter_expression',
-            'merge_policy'	=> 's.merge_policy'
+            'id'                => 'p.id',
+            'rule_id'           => 'p.rule_id',
+            'rule_name'         => 'r.rule_name',
+            'source_id'         => 'p.source_id',
+            'source_name'       => 's.source_name',
+            'source_expression' => 'p.source_expression',
+            'destination_field' => 'p.destination_field',
+            'priority'          => 'p.priority',
+            'filter_expression' => 'p.filter_expression',
+            'merge_policy'      => 'p.merge_policy'
         );
     }
 
@@ -29,9 +31,10 @@ class SyncpropertyTable extends QuickTable
     {
         $view = $this->view();
         return array(
-	    'source_id' => $view->translate('Source id'),
+            'rule_name'         => $view->translate('Rule name'),
+            'source_name'       => $view->translate('Source name'),
             'source_expression' => $view->translate('Source field'),
-            'destination_field'  => $view->translate('Destination')
+            'destination_field' => $view->translate('Destination')
         );
     }
 
@@ -40,8 +43,16 @@ class SyncpropertyTable extends QuickTable
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
-             array('s' => 'sync_property'),
-	     array()
+            array('r' => 'sync_rule'),
+            array()
+        )->join(
+            array('p' => 'sync_property'),
+            'r.id = p.rule_id',
+            array()
+        )->join(
+            array('s' => 'import_source'),
+            's.id = p.source_id',
+            array()
         )->order('id');
 
         return $query;
