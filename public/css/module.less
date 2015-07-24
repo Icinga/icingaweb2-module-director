@@ -22,7 +22,7 @@ textarea {
 }
 
 /* END of Forms */
-
+/*
 table.simple {
     width: 100%;
     table-layout: auto !important;
@@ -43,6 +43,7 @@ table.simple {
         text-align: right;
     }
 }
+*/
 
 table.log-properties {
 
@@ -83,3 +84,75 @@ p.error {
         font-weight: bold;
     }
 }
+
+/* Simple table, test */
+
+table.simple {
+  width: 100%;
+  border-collapse: separate;
+  font-size: 0.857em;
+  border-spacing: 0 1px;
+
+  caption {
+    caption-side: bottom;
+    text-align: right;
+    font-style: italic;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  thead {
+    th {
+      text-align: left;
+      border-bottom: 1px solid #888;
+      font-weight: normal;
+      padding: 0.3em 0.5em;
+    }
+  }
+
+  tbody {
+    tr {
+      padding: 0;
+      margin: 0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #e6e6e6;
+    }
+
+    th {
+      text-align: left;
+      margin: 0;
+      padding: 0;
+    }
+
+    td {
+      padding: 0.1em;
+      margin: 0;
+      white-space: nowrap;
+
+      a {
+        padding: 0.3em 0.5em;
+        text-decoration: none;
+        display: block;
+      }
+    }
+
+    td.ok {
+      background-color: @colorOk;
+    }
+
+    td.nok {
+      background-color: @colorCritical;
+    }
+  }
+}
+
+/* END of Simple table, test */
