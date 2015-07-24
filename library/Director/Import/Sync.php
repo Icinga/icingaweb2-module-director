@@ -127,6 +127,8 @@ class Sync
                 }
             }
 
+            $dba = $db->getDbAdapter();
+            $dba->beginTransaction();
             foreach ($objects as $object) {
                 if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
                     /*
@@ -138,6 +140,8 @@ class Sync
                 }
                 $object->store($db);
             }
+
+            $dba->commit();
         }
     }
 }
