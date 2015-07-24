@@ -33,6 +33,17 @@ class ImportrunTable extends QuickTable
         );
     }
 
+    public function count()
+    {
+        $db = $this->connection()->getConnection();
+        return $db->fetchOne(
+            $db->select()->from(
+                array('sub' => $this->getBaseQuery()->columns($this->getColumns())),
+                'COUNT(*)'
+           )
+        );
+    }
+
     public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
