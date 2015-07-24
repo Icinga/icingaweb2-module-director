@@ -40,6 +40,12 @@ class Import
             sort($keys);
 
             foreach ($keys as $key) {
+
+                // TODO: Specify how to treat NULL values. Ignoring for now.
+                if ($row->$key === null) {
+                    continue;
+                }
+
                 $checksum = sha1($key . '=' . json_encode((string) $row->$key), true);
 
                 if (! array_key_exists($checksum, $props)) {
