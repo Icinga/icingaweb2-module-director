@@ -21,6 +21,17 @@ class SyncRule extends DbObject
 	    'filter_expression'	=> null,
     );
 
+    public function fetchSyncProperties()
+    {
+        $db = $this->getDb();
+        return SyncProperty::loadAll(
+            $this->getConnection(),
+            $db->select()->from('sync_property')->where('rule_id = ?', $this->id)
+        );
+
+        return $this->syncProperties;
+    }
+
     /**
     protected $properties = array();
 
