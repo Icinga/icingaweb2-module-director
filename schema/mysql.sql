@@ -51,7 +51,7 @@ CREATE TABLE director_generated_config (
 
 CREATE TABLE director_generated_file (
   checksum VARBINARY(20) NOT NULL COMMENT 'SHA1(content)',
-  content TEXT NOT NULL,
+  content MEDIUMTEXT NOT NULL,
   PRIMARY KEY (checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
