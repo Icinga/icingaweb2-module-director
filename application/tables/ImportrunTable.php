@@ -20,7 +20,7 @@ class ImportrunTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/now/where', array('id' => $row->id));
+        return $this->url('director/importrun', array('id' => $row->id));
     }
 
     public function getTitles()
