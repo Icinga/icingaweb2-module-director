@@ -102,7 +102,7 @@ class Db extends DbConnection
         return $db->fetchCol($query);
     }
 
-    public function fetchImportedRowsetRows($checksum, $columns = null)
+    public function createImportedRowsetRowsQuery($checksum, $columns = null)
     {
         $db = $this->db();
 
@@ -144,7 +144,14 @@ class Db extends DbConnection
 
         $query->columns($fetchColumns);
 
-        return $db->fetchAll($query);
+        return $query;
+    }
+
+    public function fetchImportedRowsetRows($checksum, $columns = null)
+    {
+        return $this->db()->fetchAll(
+            $this->createImportedRowsetRowsQuery($checksum, $columns)
+        );
     }
 
     public function enumCheckcommands()
