@@ -32,8 +32,16 @@ class Import
         foreach (ImportSourceHook::loadByName($source->source_name, $connection)->fetchData() as $row) {
             // TODO: Check for name collision
             if (! isset($row->$keyColumn)) {
-                die('Depp');
+continue;
+                throw new \Exception(
+                    sprintf(
+                        'No key column "%s" in row: %s',
+                        $keyColumn,
+                        json_encode($row)
+                    )
+                );
             }
+
             $object_name = $row->$keyColumn;
             $rowChecksums = array();
             $keys = array_keys((array) $row);
