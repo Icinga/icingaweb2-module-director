@@ -28,6 +28,22 @@ class Director_ImportsourceController extends ActionController
         }
     }
 
+    public function previewAction()
+    {
+        $source = ImportSource::load($this->params->get('id'), $this->db());
+        $this->view->title = sprintf(
+            $this->translate('Import source preview: "%s"'),
+            $source->source_name
+        );
+
+        $this->view->table = $this->applyPaginationLimits(
+            $this->loadTable('importsourceHook')
+                ->setConnection($this->db())
+                ->setImportSource($source)
+        );
+        $this->render('list/table', null, true);
+    }
+
     public function indexAction()
     {
         $edit = false;

@@ -23,6 +23,10 @@ class ImportsourceTable extends QuickTable
     protected function renderAdditionalActions($row)
     {
         return $this->view->qlink(
+            'Preview',
+            'director/importsource/preview',
+            array('id' => $row->id)
+        ) . ' ' . $this->view->qlink(
             'Run',
             'director/importsource/run',
             array('id' => $row->id),
