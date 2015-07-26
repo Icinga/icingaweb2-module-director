@@ -60,8 +60,10 @@ class Sync
         $imported = array();
         foreach ($sources as $source) {
             $sourceId = $source->id;
-            $rows = $db->fetchLatestImportedRows($sourceId, $sourceColumns[$sourceId]);
             $key = $source->key_column;
+            $sourceColumns[$sourceId][$key] = $key;
+            $rows = $db->fetchLatestImportedRows($sourceId, $sourceColumns[$sourceId]);
+
             $imported[$sourceId] = array();
             foreach ($rows as $row) {
                 if (! property_exists($row, $key)) {
@@ -78,54 +80,63 @@ class Sync
         // TODO: Filter auf object, nicht template
         $objects = IcingaHost::loadAll($db, null, 'object_name');
 
-        // TODO: "hardcoded" single sourceId, fix this!
-        foreach ($imported[$sourceId] as $key => $row) {
-            $newProps = array(
-                'object_type' => 'object',
-                'object_name' => $key
-            );
+        foreach ($sources as $source) {
+            $sourceId = $source->id;
 
-            $newVars = array();
+            foreach ($imported[$sourceId] as $key => $row) {
+                $newProps = array(
+                    'object_type' => 'object',
+                    'object_name' => $key
+                );
 
-            foreach ($properties as $p) {
-                $prop = $p->destination_field;
-                $val = $this->fillVariables($p->source_expression, $row);
+                $newVars = array();
 
-                if (substr($prop, 0, 5) === 'vars.') {
-                    $newVars[substr($prop, 5)] = $val;
+                foreach ($properties as $p) {
+                    if ($p->source_id !== $sourceId) continue;
+
+                    $prop = $p->destination_field;
+                    $val = $this->fillVariables($p->source_expression, $row);
+
+                    if (substr($prop, 0, 5) === 'vars.') {
+                        $newVars[substr($prop, 5)] = $val;
+                    } else {
+                        $newProps[$prop] = $val;
+                    }
+                }
+
+                if (array_key_exists($key, $objects)) {
+                    switch ($rule->update_policy) {
+                        case 'override':
+                            $objects[$key] = IcingaHost::create($newProps);
+                            foreach ($newVars as $prop => $var) {
+                                $objects[$key]->vars()->$prop = $var;
+                            }
+                            break;
+
+                        case 'merge':
+                            $object = $objects[$key];
+                            foreach ($newProps as $prop => $value) {
+                                // TODO: data type? 
+                                $object->set($prop, $value);
+                            }
+                            foreach ($newVars as $prop => $var) {
+                                // TODO: property merge policy
+                                $object->vars()->$prop = $var;
+                            }
+                            break;
+
+                        default:
+                            // policy 'ignore', no action
+                    }
                 } else {
-                    $newProps[$prop] = $val;
+                    $objects[$key] = IcingaHost::create($newProps);
+                    foreach ($newVars as $prop => $var) {
+                        $objects[$key]->vars()->$prop = $var;
+                    }
                 }
             }
 
-            if (array_key_exists($key, $objects)) {
-                switch ($rule->update_policy) {
-                    case 'override':
-                        $objects[$key] = IcingaHost::create($newProps);
-                        foreach ($newVars as $prop => $var) {
-                            $objects[$key]->vars()->$prop = $var;
-                        }
-                        break;
-                    case 'merge':
-                        $object = $objects[$key];
-                        foreach ($newProps as $prop => $value) {
-                            // TODO: data type? 
-                            $object->set($prop, $value);
-                        }
-                        foreach ($newVars as $prop => $var) {
-                            // TODO: property merge policy
-                            $object->vars()->$prop = $var;
-                        }
-                        break;
-                    default:
-                        // policy 'ignore', no action
-                }
-            } else {
-                $objects[$key] = IcingaHost::create($newProps);
-                foreach ($newVars as $prop => $var) {
-                    $objects[$key]->vars()->$prop = $var;
-                }
-            }
+        }
 
             $dba = $db->getDbAdapter();
             $dba->beginTransaction();
@@ -156,12 +167,13 @@ class Sync
                         $object->delete();
                     }
                 }
+if (! $object->object_name) {
+continue;
+}
                 $object->store($db);
             }
 
             $dba->commit();
-        }
-
         return 42; // We have no sync_run history table yet
     }
 }
