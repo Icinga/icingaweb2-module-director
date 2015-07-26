@@ -55,6 +55,16 @@ class Db extends DbConnection
         return $this->db()->fetchOne($select);
     }
 
+    public function getImportrunRowsetChecksum($id)
+    {
+        $db = $this->db();
+        $query = $db->select()
+            ->from('import_run', 'rowset_checksum')
+            ->where('id = ?', $id);
+
+        return $db->fetchOne($query);
+    }
+
     public function fetchLatestImportedRows($source, $columns = null)
     {
         $db = $this->db();
