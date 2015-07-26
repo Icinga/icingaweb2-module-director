@@ -131,7 +131,7 @@ abstract class QuickTable implements Paginatable
 
     protected function renderTitles($row)
     {
-        $view = $this->view;
+        $view = $this->view();
         $htm = "<thead>\n  <tr>\n";
 
         foreach ($row as $title) {
