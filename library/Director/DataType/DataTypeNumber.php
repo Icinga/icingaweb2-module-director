@@ -7,18 +7,10 @@ use Icinga\Module\Director\Web\Hook\DataTypeHook;
 
 class DataTypeNumber extends DataTypeHook
 {
-    public function getFormElement(QuickForm $form)
+    public function getFormElement($name, QuickForm $form)
     {
-        $element = $form->createElement('text', 'foo', array(
-            'label' => $this->translate('Number Element..'),
-            'required'    => true,
-        ));
+        $element = $form->createElement('text', $name);
 
         return $element;
-    }
-
-    public static function getFormat()
-    {
-        return 'json';
     }
 }

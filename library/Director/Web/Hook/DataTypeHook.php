@@ -26,5 +26,5 @@ abstract class DataTypeHook
         return 'string';
     }
 
-    abstract public function getFormElement(QuickForm $form);
+    abstract public function getFormElement($name, QuickForm $form);
 }

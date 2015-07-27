@@ -7,12 +7,9 @@ use Icinga\Module\Director\Web\Hook\DataTypeHook;
 
 class DataTypeString extends DataTypeHook
 {
-    public function getFormElement(QuickForm $form)
+    public function getFormElement($name, QuickForm $form)
     {
-        $element = $form->createElement('text', 'foo', array(
-            'label' => $this->translate('String Element..'),
-            'required'    => true,
-        ));
+        $element = $form->createElement('text', $name);
 
         return $element;
     }
