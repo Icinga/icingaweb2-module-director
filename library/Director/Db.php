@@ -55,6 +55,26 @@ class Db extends DbConnection
         return $this->db()->fetchOne($select);
     }
 
+    public function fetchImportStatistics()
+    {
+        $query = "SELECT 'imported_properties' AS stat_name, COUNT(*) AS stat_value"
+          . "   FROM import_run i"
+          . "   JOIN imported_rowset_row rs ON i.rowset_checksum = rs.rowset_checksum"
+          . "   JOIN imported_row_property rp ON rp.row_checksum = rs.row_checksum"
+          . "  UNION ALL"
+          . " SELECT 'imported_rows' AS stat_name, COUNT(*) AS stat_value"
+          . "   FROM import_run i"
+          . "   JOIN imported_rowset_row rs ON i.rowset_checksum = rs.rowset_checksum"
+          . "  UNION ALL"
+          . " SELECT 'unique_rows' AS stat_name, COUNT(*) AS stat_value"
+          . "   FROM imported_row"
+          . "  UNION ALL"
+          . " SELECT 'unique_properties' AS stat_name, COUNT(*) AS stat_value"
+          . "   FROM imported_property"
+          ;
+        return $this->db()->fetchPairs($query);
+    }
+
     public function getImportrunRowsetChecksum($id)
     {
         $db = $this->db();
