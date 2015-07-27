@@ -6,6 +6,8 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 abstract class DataTypeHook
 {
+    protected $settings = array();
+
     public function getName()
     {
         $parts = explode('\\', get_class($this));
@@ -27,4 +29,15 @@ abstract class DataTypeHook
     }
 
     abstract public function getFormElement($name, QuickForm $form);
+
+    public static function addSettingsFormFields(QuickForm $form)
+    {
+        return $form;
+    }
+
+    public function setSettings($settings)
+    {
+        $this->settings = $settings;
+        return $this;
+    }
 }
