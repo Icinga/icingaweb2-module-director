@@ -32,6 +32,25 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'multiOptions'  => $this->enumDataTypes(),
             'class'         => 'autosubmit'
         ));
+
+        // TODO: Form needs to provide a better way for doing this
+        if (isset($_POST['datatype'])) {
+            $class = $_POST['datatype'];
+            if ($class && array_key_exists($class, $this->enumDataTypes())) {
+                $this->addSettings($class);
+            }
+        }
+    }
+
+    protected function addSettings($class = null)
+    {
+        if ($class === null) {
+            if ($class = $this->getValue('datatype')) {
+                $class::addSettingsFormFields($this);
+            }
+        } else {
+            $class::addSettingsFormFields($this);
+        }
     }
 
     public function onSuccess()
