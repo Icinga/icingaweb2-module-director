@@ -5,3 +5,4 @@ $this->registerHook('Director\\ImportSource', '\\Icinga\\Module\\Director\\Impor
 
 $this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeString', 'string');
 $this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeNumber', 'number');
+$this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeTime', 'time');
