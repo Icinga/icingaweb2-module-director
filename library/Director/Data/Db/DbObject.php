@@ -472,10 +472,16 @@ abstract class DbObject
         return $this->db;
     }
 
+    public function hasConnection()
+    {
+        return $this->connection !== null;
+    }
+
     public function getConnection()
     {
         return $this->connection;
     }
+
     /**
      * Lädt einen Datensatz aus der Datenbank und setzt die entsprechenden
      * Eigenschaften dieses Objekts
