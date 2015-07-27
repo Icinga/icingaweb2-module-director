@@ -32,17 +32,18 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'multiOptions'  => $this->enumDataTypes(),
             'class'         => 'autosubmit'
         ));
+    }
 
-        $this->addElement('hidden', 'format',
-            array('decorators' => array('ViewHelper'))
-        );
-
+    public function onSuccess()
+    {
         if (isset($_POST['datatype'])) {
             $class = $_POST['datatype'];
             if ($class && array_key_exists($class, $this->enumDataTypes())) {
-                $this->getElement('format')->setValue($class::getFormat());
+                $this->addHidden('format', $class::getFormat());
             }
         }
+
+        parent::onSuccess();
     }
 
     protected function enumDataTypes()
