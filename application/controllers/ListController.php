@@ -48,10 +48,10 @@ class Director_ListController extends ActionController
     {
         $this->setImportTabs()->activate('importrun');
         $this->view->title = $this->translate('Import runs');
+        $this->view->stats = $this->db()->fetchImportStatistics();
         $this->view->table = $this->applyPaginationLimits(
             $this->loadTable('importrun')->setConnection($this->db())
         );
-        $this->render('table');
     }
 
     public function syncruleAction()

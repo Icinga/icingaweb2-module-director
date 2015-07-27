@@ -1,0 +1,38 @@
+<div class="controls">
+<?= $this->tabs ?>
+<?php
+
+$loc = localeconv();
+$pt = $loc['thousands_sep'];
+
+?><h1><?= $this->escape($this->title) ?></h1>
+<table class="tinystats">
+<thead>
+ <tr>
+  <th></th>
+  <th>Rows</th>
+  <th>Props</th>
+ </tr>
+</thead>
+<tbody>
+ <tr>
+  <th>Imported</th>
+  <td><?= number_format($this->stats['imported_rows'], 0, null, $pt) ?></td>
+  <td><?= number_format($this->stats['imported_properties'], 0, null, $pt) ?></td>
+ </tr>
+ <tr>
+  <th>Unique</th>
+  <td><?= number_format($this->stats['unique_rows'], 0, null, $pt) ?></td>
+  <td><?= number_format($this->stats['unique_properties'], 0, null, $pt) ?></td>
+ </tr>
+</tbody>
+</table>
+<span data-base-target="_next">
+<?= $this->addLink ?>
+</span><br />
+<?= $this->table->getPaginator() ?>
+</div>
+
+<div class="content" data-base-target="_next">
+<?= $this->table->render() ?>
+</div>
