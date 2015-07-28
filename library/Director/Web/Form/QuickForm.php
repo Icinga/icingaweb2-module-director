@@ -213,9 +213,7 @@ abstract class QuickForm extends Zend_Form
                     $this->onFailure();
                 }
             } else {
-                if ($this->isValidPartial($post)) {
-                    // Nothing to do, just want to see the errors
-                }
+                $this->setDefaults($post);
             }
         } else {
             // Well...
