@@ -74,9 +74,10 @@ class SyncPropertyForm extends DirectorObjectForm
     public function setDb($db) 
     {
         parent::setDb($db);
-	$this->getElement('rule_id')->setMultiOptions($this->optionalEnum($db->enumSyncRule()));
-	$this->getElement('source_id')->setMultiOptions($this->optionalEnum($db->enumImportSource()));
-	return $this;
+        $this->prepareElements();
+        $this->getElement('rule_id')->setMultiOptions($this->optionalEnum($db->enumSyncRule()));
+        $this->getElement('source_id')->setMultiOptions($this->optionalEnum($db->enumImportSource()));
+        return $this;
     }
     
 }
