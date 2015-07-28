@@ -289,6 +289,15 @@ class Db extends DbConnection
         return $this->db()->fetchPairs($select);
     }
 
+    public function enumDatalist()
+    {
+        $select = $this->db()->select()->from('director_datalist', array(
+            'id',
+            'list_name',
+        ))->order('list_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
     public function enumUsergroups()
     {
         $select = $this->db()->select()->from('icinga_usergroup', array(
