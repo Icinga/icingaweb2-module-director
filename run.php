@@ -7,3 +7,4 @@ $this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\
 $this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeNumber', 'number');
 $this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeTime', 'time');
 $this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeDatalist', 'datalist');
+$this->registerHook('Director\\DataType', '\\Icinga\\Module\\Director\\DataType\\DataTypeSqlQuery', 'sqlquery');
