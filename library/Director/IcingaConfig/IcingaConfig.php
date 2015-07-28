@@ -281,6 +281,16 @@ class IcingaConfig
         return $this;
     }
 
+    protected function configFile($name)
+    {
+        $filename = $name . '.conf';
+        if (! array_key_exists($filename, $this->files)) {
+            $this->files[$filename] = new IcingaConfigFile();
+        }
+
+        return $this->files[$filename];
+    }
+
     public function getLastActivityHexChecksum()
     {
         return Util::binary2hex($this->getLastActivityChecksum());
