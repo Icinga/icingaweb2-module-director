@@ -276,13 +276,30 @@ class IcingaConfig
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         $objects = $class::loadAll($this->connection);
 
-        if (! empty($objects)) {
-            $file = new IcingaConfigFile();
+        foreach ($objects as $object) {
+            if ($object->isTemplate()) {
+                $filename = strtolower($type) . '_templates';
+                $zone = 'master';
+            } else {
+                $filename = strtolower($type) . 's';
+                $zone = 'global';
+            }
+
+            if ($type === 'zone') {
+                $this->zoneMap[$object->id] = $object->object_name;
+                $zone = 'global'; // which one?
+            } elseif ($object->hasProperty('zone_id') && ($zone_id = $object->zone_id)) {
+                $zone = $this->getZoneName($zone_id);
+            } else {
+                $zone = 'master';
+            }
+
+            $filename = $zone . '/' . $filename;
+            $file = $this->configFile($filename);
             if ($type === 'command') {
                 $file->prepend("library \"methods\"\n\n");
             }
-            $file->addObjects($objects);
-            $this->files[strtolower($type) . 's.conf'] = $file;
+            $file->addObject($object);
         }
 
         return $this;
