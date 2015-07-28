@@ -9,9 +9,24 @@ class DataTypeDatalist extends DataTypeHook
 {
     public function getFormElement($name, QuickForm $form)
     {
-        $element = $form->createElement('select', $name);
+        $element = $form->createElement('select', $name, array(
+            'multiOptions' => array(null => '- please choose -') +
+                $this->getEntries($form),
+        ));
 
         return $element;
+    }
+
+    protected function getEntries($form)
+    {
+        $db = $form->getDb()->getDbAdapter();
+
+        $select = $db->select()
+            ->from('director_datalist_entry', array('entry_name', 'entry_value'))
+            ->where('list_id = ?', $this->settings['datalist_id'])
+            ->order('entry_value ASC');
+
+        return $db->fetchPairs($select);
     }
 
     public static function addSettingsFormFields(QuickForm $form)
