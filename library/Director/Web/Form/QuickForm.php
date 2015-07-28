@@ -97,6 +97,17 @@ abstract class QuickForm extends Zend_Form
         $this->getElement(self::ID)->setIgnore(true);
     }
 
+    protected function getSentValue($name, $default = null)
+    {
+        $request = $this->getRequest();
+
+        if ($request->isPost()) {
+            return $request->getPost($name);
+        } else {
+            return $default;
+        }
+    }
+
     public function getSubmitLabel()
     {
         if ($this->submitLabel === null) {
