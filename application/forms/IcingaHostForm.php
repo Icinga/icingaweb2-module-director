@@ -120,10 +120,13 @@ class IcingaHostForm extends DirectorObjectForm
             $datatype = new $field->datatype;
             $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
             $datatype->setSettings($datafield->getSettings());
-            $el = $datatype->getFormElement('var_' . $datafield->varname, $this);
+            $varname = $datafield->varname;
+            $el = $datatype->getFormElement('var_' . $varname, $this);
             $el->setLabel($field->caption);
             $el->setDescription($field->description);
-            $el->setValue($vars->{$datafield->varname}->getValue());
+            if (isset($vars->$varname)) {
+                $el->setValue($vars->{$varname}->getValue());
+            }
 
             if ($field->is_required === 'y')
             {
