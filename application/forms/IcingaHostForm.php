@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostForm extends DirectorObjectForm
@@ -99,5 +100,37 @@ class IcingaHostForm extends DirectorObjectForm
             'label' => $this->translate('Cluster Zone'),
             'description' => $this->translate('Check this host in this specific Icinga cluster zone')
         ));
+    }
+
+    public function loadObject($id)
+    {
+        parent::loadObject($id);
+
+        $this->addFields();
+
+        $this->moveSubmitToBottom();
+    }
+
+    public function addFields()
+    {
+        $fields = $this->getObject()->getFields($this);
+        $vars = $this->getObject()->vars();
+
+        foreach ($fields as $field) {
+            $datatype = new $field->datatype;
+            $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
+            $datatype->setSettings($datafield->getSettings());
+            $el = $datatype->getFormElement('var_' . $datafield->varname, $this);
+            $el->setLabel($field->caption);
+            $el->setDescription($field->description);
+            $el->setValue($vars->{$datafield->varname}->getValue());
+
+            if ($field->is_required === 'y')
+            {
+                $el->setRequired(true);
+            }
+
+            $this->addElement($el);
+        }
     }
 }
