@@ -33,7 +33,9 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'class'         => 'autosubmit'
         ));
 
-        if ($class = $this->getSentValue('datatype')) {
+        if ($class = $this->object()->datatype) {
+            $this->addSettings($class);
+        } elseif ($class = $this->getSentValue('datatype')) {
             if ($class && array_key_exists($class, $this->enumDataTypes())) {
                 $this->addSettings($class);
             }
@@ -60,6 +62,21 @@ class DirectorDatafieldForm extends DirectorObjectForm
         }
 
         parent::onSuccess();
+    }
+
+    public function loadObject($id)
+    {
+        parent::loadObject($id);
+
+        $this->addSettings();
+        foreach ($this->object()->getSettings() as $key => $val) {
+            if ($el = $this->getElement($key)) {
+                $el->setValue($val);
+            }
+        }
+        $this->moveSubmitToBottom();
+
+        return $this;
     }
 
     protected function enumDataTypes()
