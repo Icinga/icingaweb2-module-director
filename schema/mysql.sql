@@ -406,7 +406,7 @@ CREATE TABLE icinga_host_inheritance (
 CREATE TABLE icinga_host_field (
   host_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
-  is_required ENUM('y', 'n') DEFAULT NULL,
+  is_required ENUM('y', 'n') NOT NULL,
   PRIMARY KEY (host_id, datafield_id),
   CONSTRAINT icinga_host_field_host
   FOREIGN KEY host(host_id)
@@ -524,7 +524,7 @@ CREATE TABLE icinga_service_var (
 CREATE TABLE icinga_service_field (
   service_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
-  is_required ENUM('y', 'n') DEFAULT NULL,
+  is_required ENUM('y', 'n') NOT NULL,
   PRIMARY KEY (service_id, datafield_id),
   CONSTRAINT icinga_service_field_service
   FOREIGN KEY service(service_id)
