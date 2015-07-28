@@ -16,14 +16,13 @@ class DataTypeDatalist extends DataTypeHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
-        $form->addElement('select', 'datalist', array(
+        $db = $form->getDb();
+
+        $form->addElement('select', 'datalist_id', array(
             'label'    => 'List name',
             'required' => true,
-            'multiOptions' => array(
-                null            => '- please choose -',
-                'Foo'           => 'Dummy Foo',
-                'Bar'           => 'Dummy Bar'
-            ),
+            'multiOptions' => array(null => '- please choose -') +
+                $db->enumDatalist(),
         ));
         return $form;
     }
