@@ -234,6 +234,15 @@ class Db extends DbConnection
         return $this->db()->fetchPairs($select);
     }
 
+    public function enumHostTemplates()
+    {
+        $select = $this->db()->select()->from('icinga_host', array(
+            'id',
+            'object_name',
+        ))->where('object_type = ?', 'template')->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
     public function enumSyncRule()
     {
         $select = $this->db()->select()->from('sync_rule', array(
@@ -259,6 +268,15 @@ class Db extends DbConnection
             'id',
             'object_name',
         ))->where('object_type = ?', 'object')->order('object_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
+    public function enumServiceTemplates()
+    {
+        $select = $this->db()->select()->from('icinga_service', array(
+            'id',
+            'object_name',
+        ))->where('object_type = ?', 'template')->order('object_name ASC');
         return $this->db()->fetchPairs($select);
     }
 
@@ -295,6 +313,16 @@ class Db extends DbConnection
             'id',
             'list_name',
         ))->order('list_name ASC');
+        return $this->db()->fetchPairs($select);
+    }
+
+    public function enumDatafields()
+    {
+        $select = $this->db()->select()->from('director_datafield', array(
+            'id',
+            'varname',
+            'caption',
+        ))->order('varname ASC');
         return $this->db()->fetchPairs($select);
     }
 
