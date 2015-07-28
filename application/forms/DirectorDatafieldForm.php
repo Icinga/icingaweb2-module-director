@@ -33,9 +33,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'class'         => 'autosubmit'
         ));
 
-        // TODO: Form needs to provide a better way for doing this
-        if (isset($_POST['datatype'])) {
-            $class = $_POST['datatype'];
+        if ($class = $this->getSentValue('datatype')) {
             if ($class && array_key_exists($class, $this->enumDataTypes())) {
                 $this->addSettings($class);
             }
@@ -55,9 +53,8 @@ class DirectorDatafieldForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        if (isset($_POST['datatype'])) {
-            $class = $_POST['datatype'];
-            if ($class && array_key_exists($class, $this->enumDataTypes())) {
+        if ($class = $this->getValue('datatype')) {
+            if (array_key_exists($class, $this->enumDataTypes())) {
                 $this->addHidden('format', $class::getFormat());
             }
         }
