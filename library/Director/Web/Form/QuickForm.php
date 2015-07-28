@@ -77,6 +77,7 @@ abstract class QuickForm extends Zend_Form
     {
         if (false !== ($label = $this->getSubmitLabel())) {
             $this->addElement('submit', $label);
+            $this->getElement($label)->setLabel($label);
         }
     }
 
@@ -195,9 +196,11 @@ abstract class QuickForm extends Zend_Form
                 $label = $this->getSubmitLabel();
                 if ($label === false) {
                     $this->hasBeenSubmitted = $this->hasBeenSent();
+                } else {
+                    $elementName = $this->getElement($label)->getName();
+                    $this->hasBeenSubmitted = array_key_exists($elementName, $post)
+                         && $post[$elementName] === $label;
                 }
-                $this->hasBeenSubmitted = array_key_exists($label, $post) &&
-                    $post[$label] === $label;
             } else {
                 $this->hasBeenSubmitted === false;
             }
