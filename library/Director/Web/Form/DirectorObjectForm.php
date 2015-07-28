@@ -204,6 +204,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     public function loadObject($id)
     {
+        $this->prepareElements();
         $class = $this->getObjectClassname();
         $this->object = $class::load($id, $this->db);
         if (! is_array($id)) {
