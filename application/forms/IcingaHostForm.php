@@ -56,19 +56,19 @@ class IcingaHostForm extends DirectorObjectForm
         );
 
         $this->optionalBoolean(
-            'enable_active_checks', 
+            'enable_active_checks',
             $this->translate('Execute active checks'),
             $this->translate('Whether to actively check this host')
         );
 
         $this->optionalBoolean(
-            'enable_passive_checks', 
+            'enable_passive_checks',
             $this->translate('Accept passive checks'),
             $this->translate('Whether to accept passive check results for this host')
         );
 
         $this->optionalBoolean(
-            'enable_event_handler', 
+            'enable_event_handler',
             $this->translate('Enable event handler'),
             $this->translate('Whether to enable event handlers this host')
         );
