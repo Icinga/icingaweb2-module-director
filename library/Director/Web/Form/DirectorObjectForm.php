@@ -271,6 +271,11 @@ abstract class DirectorObjectForm extends QuickForm
         ));
     }
 
+    public function getDb()
+    {
+        return $this->db;
+    }
+
     public function setDb($db)
     {
         $this->db = $db;
