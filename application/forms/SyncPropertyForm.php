@@ -10,13 +10,15 @@ class SyncPropertyForm extends DirectorObjectForm
     public function setup()
     {
         $this->addElement('select', 'rule_id', array(
-            'label'    => $this->translate('Rule Name'),
-            'required' => true,
+            'label'        => $this->translate('Rule Name'),
+            'multiOptions' => $this->optionalEnum($this->db->enumSyncRule()),
+            'required'     => true,
         ));
 
         $this->addElement('select', 'source_id', array(
-            'label'    => $this->translate('Source Name'),
-            'required' => true,
+            'label'        => $this->translate('Source Name'),
+            'multiOptions' => $this->optionalEnum($this->db->enumImportSource()),
+            'required'     => true,
         ));
 
        $this->addElement('text', 'source_expression', array(
@@ -46,28 +48,11 @@ class SyncPropertyForm extends DirectorObjectForm
             'description'  => $this->translate('Whether you want to merge or override the destination field'),
             'required'     => true,
             'multiOptions' => array(
-            'null'         => '- please choose -',
-            'merge'        => 'merge',
-            'override'     => 'override'
-        )
+                'null'     => '- please choose -',
+                'merge'    => 'merge',
+                'override' => 'override'
+            )
         ));
 
     }
-
-    public function loadObject($id)
-    {
-        
-        parent::loadObject($id);
-        return $this;
-    }
-
-    public function setDb($db) 
-    {
-        parent::setDb($db);
-        $this->prepareElements();
-        $this->getElement('rule_id')->setMultiOptions($this->optionalEnum($db->enumSyncRule()));
-        $this->getElement('source_id')->setMultiOptions($this->optionalEnum($db->enumImportSource()));
-        return $this;
-    }
-    
 }
