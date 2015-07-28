@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+
 class IcingaHost extends IcingaObject
 {
     protected $table = 'icinga_host';
@@ -79,5 +81,23 @@ class IcingaHost extends IcingaObject
     protected function renderVolatile()
     {
         return $this->renderBooleanProperty('volatile');
+    }
+
+    public function getFields(DirectorObjectForm $form)
+    {
+        $db = $this->getDb();
+
+        $query = $db->select()
+        ->from(
+            array('df' => 'director_datafield')
+        )
+        ->join(
+            array('hf' => 'icinga_host_field'),
+            'df.id = hf.datafield_id'
+        )
+        ->where('hf.host_id = ?', (int) $this->id)
+        ->order('df.caption ASC');
+
+        return $db->fetchAll($query);
     }
 }
