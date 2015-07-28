@@ -24,6 +24,10 @@ abstract class ObjectController extends ActionController
                 'url'       => sprintf('director/%s/edit', $ltype),
                 'urlParams' => $params,
                 'label'     => $this->translate('Modify')
+            ))->add('delete', array(
+                'url'       => sprintf('director/%s/delete', $ltype),
+                'urlParams' => $params,
+                'label'     => $this->translate('Delete')
             ))->add('history', array(
                 'url'       => sprintf('director/%s/history', $ltype),
                 'urlParams' => $params,
@@ -43,6 +47,27 @@ abstract class ObjectController extends ActionController
         $this->getTabs()->activate($type);
         $this->view->object = $this->object();
         $this->render('object/show', null, true);
+    }
+
+    public function deleteAction()
+    {
+        $this->getTabs()->activate('delete');
+        $type = $this->getType();
+        $ltype = strtolower($type);
+
+        $this->view->form = $form = $this->loadForm(
+            'icingaDeleteObject'
+        )->setObject($this->object());
+
+        $url = Url::fromPath(sprintf('director/%ss', $ltype));
+        $form->setSuccessUrl($url);
+
+        $this->view->title = sprintf(
+            $this->translate('Delete Icinga %s'),
+            ucfirst($ltype)
+        );
+        $this->view->form->handleRequest();
+        $this->render('object/form', null, true);
     }
 
     public function editAction()
