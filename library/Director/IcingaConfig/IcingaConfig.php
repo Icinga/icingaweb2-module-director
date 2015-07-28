@@ -14,6 +14,8 @@ class IcingaConfig
 
     protected $checksum;
 
+    protected $zoneMap = array();
+
     protected $lastActivityChecksum;
 
     /**
@@ -131,6 +133,11 @@ class IcingaConfig
         }
 
         return $checksums;
+    }
+
+    protected function getZoneName($id)
+    {
+        return $this->zoneMap[$id];
     }
 
     protected function store()
