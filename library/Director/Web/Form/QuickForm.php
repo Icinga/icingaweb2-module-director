@@ -50,6 +50,11 @@ abstract class QuickForm extends Zend_Form
     protected $submitLabel;
 
     /**
+     * Whether form elements have already been created
+     */
+    protected $didSetup = false;
+
+    /**
      * The Icinga module this form belongs to. Usually only set if the
      * form is initialized through the FormLoader
      */
@@ -66,9 +71,6 @@ abstract class QuickForm extends Zend_Form
         $this->setAction(Url::fromRequest());
         $this->createIdElement();
         $this->regenerateCsrfToken();
-        $this->setup();
-        $this->onSetup();
-        $this->addSubmitButtonIfSet();
     }
 
     protected function addSubmitButtonIfSet()
@@ -197,11 +199,25 @@ abstract class QuickForm extends Zend_Form
     {
     }
 
+    public function prepareElements()
+    {
+        if (! $this->didSetup) {
+            $this->setup();
+            $this->onSetup();
+            $this->addSubmitButtonIfSet();
+            $this->didSetup = true;
+        }
+
+        return $this;
+    }
+
     public function handleRequest(Request $request = null)
     {
         if ($request !== null) {
             $this->request = $request;
         }
+
+        $this->prepareElements();
 
         if ($this->hasBeenSent()) {
             $post = $this->getRequest()->getPost();
