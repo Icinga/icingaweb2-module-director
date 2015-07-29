@@ -7,6 +7,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaHostTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'host',
+    );
+
     public function getColumns()
     {
         return array(

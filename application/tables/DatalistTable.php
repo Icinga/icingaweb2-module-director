@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class DatalistTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'list_name',
+    );
+
     public function getColumns()
     {
         return array(

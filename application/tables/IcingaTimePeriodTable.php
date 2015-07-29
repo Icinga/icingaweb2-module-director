@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaTimePeriodTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'timeperiod',
+    );
+
     public function getColumns()
     {
         return array(

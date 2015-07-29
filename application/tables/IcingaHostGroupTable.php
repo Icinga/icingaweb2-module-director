@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaHostGroupTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'hostgroup',
+    );
+
     public function getColumns()
     {
         return array(

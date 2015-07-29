@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaEndpointTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'endpoint',
+    );
+
     public function getColumns()
     {
         return array(

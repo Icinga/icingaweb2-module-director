@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ImportsourceTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'source_name',
+    );
+
     public function getColumns()
     {
         return array(

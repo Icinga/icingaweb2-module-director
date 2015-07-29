@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaZoneTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'zone',
+    );
+
     public function getColumns()
     {
         if ($this->connection()->getDbType() === 'pgsql') {

@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaCommandArgumentTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'command',
+    );
+
     public function getColumns()
     {
         return array(

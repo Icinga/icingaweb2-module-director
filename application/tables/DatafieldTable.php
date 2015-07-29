@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class DatafieldTable extends QuickTable
 {
+    protected $searchColumns = array(
+        'varname',
+    );
+
     public function getColumns()
     {
         return array(
