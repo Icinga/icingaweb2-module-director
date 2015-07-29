@@ -220,43 +220,19 @@ class Db extends DbConnection
         );
     }
 
-    public function enumCheckcommands()
-    {
-        $select = $this->db()->select()->from('icinga_command', array(
-            'id',
-            'object_name',
-        ))->where('object_type IN (?)', array('object', 'external_object'))
-          ->where('methods_execute IN (?)', array('PluginCheck', 'IcingaCheck'))
-          ->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
-    }
-
     public function enumCommands()
     {
-        if (self::$commandCache === null) {
-            $select = $this->db()->select()->from('icinga_command', array(
-                'id',
-                'object_name',
-            ))
-              ->order('object_name ASC');
-
-            self::$commandCache = $this->db()->fetchPairs($select);
-        }
-        return self::$commandCache;
+        return $this->enumIcingaObjects('command');
     }
 
-    public function enumZones()
+    public function enumCheckcommands()
     {
-        if (self::$zoneCache === null) {
-            $select = $this->db()->select()->from('icinga_zone', array(
-                'id',
-                'object_name',
-            ))->where('object_type = ?', 'object')->order('object_name ASC');
-
-            self::$zoneCache = $this->db()->fetchPairs($select);
-        }
-
-        return self::$zoneCache;
+        $filters = array(
+            'object_type IN (?)' => array('object', 'external_object'),
+            'methods_execute IN (?)' => array('PluginCheck', 'IcingaCheck'),
+            
+        );
+        return $this->enumIcingaObjects('command', $filters);
     }
 
     public function getZoneName($id)
@@ -271,125 +247,107 @@ class Db extends DbConnection
         return $objects[$id];
     }
 
+    public function enumZones()
+    {
+        return $this->enumIcingaObjects('zone');
+    }
+
+    public function enumZoneTemplates()
+    {
+        return $this->enumIcingaTemplates('zone');
+    }
+
     public function enumHosts()
     {
-        $select = $this->db()->select()->from('icinga_host', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'object')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaObjects('host');
     }
 
     public function enumHostTemplates()
     {
-        $select = $this->db()->select()->from('icinga_host', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'template')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
-    }
-
-    public function enumSyncRule()
-    {
-        $select = $this->db()->select()->from('sync_rule', array(
-            'id',
-            'rule_name'
-        ))->order('rule_name ASC');
-
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaTemplates('host');
     }
 
     public function enumHostgroups()
     {
-        $select = $this->db()->select()->from('icinga_hostgroup', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'object')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaObjects('hostgroup');
     }
 
     public function enumServices()
     {
-        $select = $this->db()->select()->from('icinga_service', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'object')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaObjects('service');
     }
 
     public function enumServiceTemplates()
     {
-        $select = $this->db()->select()->from('icinga_service', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'template')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaTemplates('service');
     }
 
     public function enumServicegroups()
     {
-        $select = $this->db()->select()->from('icinga_servicegroup', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'object')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaObjects('servicegroup');
     }
 
     public function enumUsers()
     {
-        $select = $this->db()->select()->from('icinga_user', array(
-            'id',
-            'object_name',
-        ))->where('object_type = ?', 'object')->order('object_name ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaObjects('user');
     }
 
-    public function enumImportSource()
+    public function enumUserTemplates()
     {
-        $select = $this->db()->select()->from('import_source', array(
-            'id',
-            'source_name',
-        ))->order('source_name ASC');
-        return $this->db()->fetchPairs($select);
-    }
-
-    public function enumDatalist()
-    {
-        $select = $this->db()->select()->from('director_datalist', array(
-            'id',
-            'list_name',
-        ))->order('list_name ASC');
-        return $this->db()->fetchPairs($select);
-    }
-
-    public function enumDatafields()
-    {
-        $select = $this->db()->select()->from('director_datafield', array(
-            'id',
-            'varname',
-            'caption',
-        ))->order('varname ASC');
-        return $this->db()->fetchPairs($select);
+        return $this->enumIcingaTemplates('user');
     }
 
     public function enumUsergroups()
     {
-        $select = $this->db()->select()->from('icinga_usergroup', array(
+        return $this->enumIcingaObjects('usergroup');
+    }
+
+    public function enumSyncRule()
+    {
+        return $this->enum('sync_rule', array('id', 'rule_name'));
+    }
+
+    public function enumImportSource()
+    {
+        return $this->enum('source_name', array('id', 'source_name'));
+    }
+
+    public function enumDatalist()
+    {
+        return $this->enum('director_datalist', array('id', 'list_name'));
+    }
+
+    public function enumDatafields()
+    {
+        return $this->enum('director_datafield', array(
             'id',
-            'object_name',
-        ))->where('object_type = ?', 'object')->order('object_name ASC');
+            "caption || ' (' || varname || ')'",
+        ));
+    }
+
+    public function enum($table, $columns = null, $filters = array())
+    {
+        if ($columns === null) {
+            $columns = array('id', 'object_name');
+        }
+
+        $select = $this->db()->select()->from($table, $columns)->order($columns[1]);
+        foreach ($filters as $key => $val) {
+            $select->where($key, $val);
+        }
+
         return $this->db()->fetchPairs($select);
     }
 
-    public function clearZoneCache()
+    public function enumIcingaObjects($type, $filters = array())
     {
-        // TODO: wipe cache on update/insert/delete
-        self::$zoneCache = null;
+        $filters = array('object_type = ?' => 'object') + $filters;
+        return $this->enum('icinga_' . $type, null, $filters);
     }
 
-    public function clearCommandCache()
+    public function enumIcingaTemplates($type, $filters = array())
     {
-        // TODO: wipe cache on update/insert/delete
-        self::$commandCache = null;
+        $filters = array('object_type = ?' => 'template') + $filters;
+        return $this->enum('icinga_' . $type, null, $filters);
     }
 }
