@@ -8,9 +8,11 @@ class Director_ListController extends ActionController
     {
         $this->setConfigTabs()->activate('activitylog');
         $this->view->title = $this->translate('Activity Log');
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('activityLog')->setConnection($this->db())
-        );
+
+        $table = $this->loadTable('activityLog')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
+
         $this->render('table');
     }
 
@@ -23,9 +25,11 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('datalist');
         $this->view->title = $this->translate('Data lists');
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('datalist')->setConnection($this->db())
-        );
+
+        $table = $this->loadTable('datalist')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
+
         $this->render('table');
     }
 
@@ -38,9 +42,11 @@ class Director_ListController extends ActionController
 
         $this->setImportTabs()->activate('importsource');
         $this->view->title = $this->translate('Import source');
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('importsource')->setConnection($this->db())
-        );
+
+        $table = $this->loadTable('importsource')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
+
         $this->render('table');
     }
 
@@ -49,9 +55,10 @@ class Director_ListController extends ActionController
         $this->setImportTabs()->activate('importrun');
         $this->view->title = $this->translate('Import runs');
         $this->view->stats = $this->db()->fetchImportStatistics();
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('importrun')->setConnection($this->db())
-        );
+
+        $table = $this->loadTable('importrun')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
     }
 
     public function syncruleAction()
@@ -99,9 +106,10 @@ class Director_ListController extends ActionController
             'label'     => $this->view->title,
         ))->activate('datalistentry');
 
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('datalistEntry')->setConnection($this->db())
-        );
+        $table = $this->loadTable('datalistEntry')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
+
         $this->render('table');
     }
 
@@ -114,9 +122,11 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('datafield');
         $this->view->title = $this->translate('Data fields');
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('datafield')->setConnection($this->db())
-        );
+
+        $table = $this->loadTable('datafield')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
+
         $this->render('table');
     }
 
@@ -129,9 +139,11 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('generatedconfig');
         $this->view->title = $this->translate('Generated Configs');
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('generatedConfig')->setConnection($this->db())
-        );
+
+        $table = $this->loadTable('generatedConfig')->setConnection($this->db());
+        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->table = $this->applyPaginationLimits($table);
+
         $this->render('table');
     }
 }
