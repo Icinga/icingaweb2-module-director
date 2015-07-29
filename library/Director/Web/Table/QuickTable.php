@@ -3,9 +3,16 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Application\Icinga;
+use Icinga\Data\Filter\FilterAnd;
+use Icinga\Data\Filter\FilterChain;
+use Icinga\Data\Filter\FilterNot;
+use Icinga\Data\Filter\FilterOr;
 use Icinga\Data\Selectable;
 use Icinga\Data\Paginatable;
+use Icinga\Exception\QueryException;
+use Icinga\Web\Request;
 use Icinga\Web\Url;
+use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
 
 abstract class QuickTable implements Paginatable
@@ -17,6 +24,10 @@ abstract class QuickTable implements Paginatable
     protected $limit;
 
     protected $offset;
+
+    protected $filter;
+
+    protected $searchColumns = array();
 
     protected function renderRow($row)
     {
@@ -70,6 +81,10 @@ abstract class QuickTable implements Paginatable
 
         if ($this->hasLimit() || $this->hasOffset()) {
             $query->limit($this->getLimit(), $this->getOffset());
+        }
+
+        if ($this->filter && ! $this->filter->isEmpty()) {
+            $query->where($this->renderFilter($this->filter));
         }
 
         return $db->fetchAll($query);
@@ -129,6 +144,11 @@ abstract class QuickTable implements Paginatable
         return $this->connection;
     }
 
+    protected function db()
+    {
+        return $this->connection()->getConnection();
+    }
+
     protected function renderTitles($row)
     {
         $view = $this->view();
@@ -180,5 +200,175 @@ abstract class QuickTable implements Paginatable
     public function __toString()
     {
         return $this->render();
+    }
+
+    protected function getSearchColumns()
+    {
+        return $this->searchColumns;
+    }
+
+    public function setFilter($filter)
+    {
+        $this->filter = $filter;
+        return $this;
+    }
+
+    public function getFilterEditor(Request $request)
+    {
+        $filterEditor = Widget::create('filterEditor')
+            ->setQuery($this)
+            ->setSearchColumns($this->getSearchColumns())
+            ->preserveParams('limit', 'sort', 'dir', 'view', 'backend')
+            ->ignoreParams('page')
+            ->handleRequest($request);
+
+        $filter = $filterEditor->getFilter();
+        $this->setFilter($filter);
+
+        return $filterEditor;
+    }
+
+    protected function mapFilterColumn($col)
+    {
+        $cols = $this->getColumns();
+        return $cols[$col];
+    }
+
+    protected function renderFilter($filter, $level = 0)
+    {
+        $str = '';
+        if ($filter instanceof FilterChain) {
+            if ($filter instanceof FilterAnd) {
+                $op = ' AND ';
+            } elseif ($filter instanceof FilterOr) {
+                $op = ' OR ';
+            } elseif ($filter instanceof FilterNot) {
+                $op = ' AND ';
+                $str .= ' NOT ';
+            } else {
+                throw new QueryException(
+                    'Cannot render filter: %s',
+                    $filter
+                );
+            }
+            $parts = array();
+            if (! $filter->isEmpty()) {
+                foreach ($filter->filters() as $f) {
+                    $filterPart = $this->renderFilter($f, $level + 1);
+                    if ($filterPart !== '') {
+                        $parts[] = $filterPart;
+                    }
+                }
+                if (! empty($parts)) {
+                    if ($level > 0) {
+                        $str .= ' (' . implode($op, $parts) . ') ';
+                    } else {
+                        $str .= implode($op, $parts);
+                    }
+                }
+            }
+        } else {
+            $str .= $this->whereToSql($this->mapFilterColumn($filter->getColumn()), $filter->getSign(), $filter->getExpression());
+        }
+
+        return $str;
+    }
+
+    protected function escapeForSql($value)
+    {
+        // bindParam? bindValue?
+        if (is_array($value)) {
+            $ret = array();
+            foreach ($value as $val) {
+                $ret[] = $this->escapeForSql($val);
+            }
+            return implode(', ', $ret);
+        } else {
+            //if (preg_match('/^\d+$/', $value)) {
+            //    return $value;
+            //} else {
+            return $this->db()->quote($value);
+            //}
+        }
+    }
+
+    protected function escapeWildcards($value)
+    {
+        return preg_replace('/\*/', '%', $value);
+    }
+
+    protected function valueToTimestamp($value)
+    {
+        // We consider integers as valid timestamps. Does not work for URL params
+        if (ctype_digit($value)) {
+            return $value;
+        }
+        $value = strtotime($value);
+        if (! $value) {
+            /*
+            NOTE: It's too late to throw exceptions, we might finish in __toString
+            throw new QueryException(sprintf(
+                '"%s" is not a valid time expression',
+                $value
+            ));
+            */
+        }
+        return $value;
+    }
+
+    protected function timestampForSql($value)
+    {
+        // TODO: do this db-aware
+        return $this->escapeForSql(date('Y-m-d H:i:s', $value));
+    }
+
+    /**
+     * Check for timestamp fields
+     *
+     * TODO: This is not here to do automagic timestamp stuff. One may
+     *       override this function for custom voodoo, IdoQuery right now
+     *       does. IMO we need to split whereToSql functionality, however
+     *       I'd prefer to wait with this unless we understood how other
+     *       backends will work. We probably should also rename this
+     *       function to isTimestampColumn().
+     *
+     * @param  string $field Field Field name to checked
+     * @return bool          Whether this field expects timestamps
+     */
+    public function isTimestamp($field)
+    {
+        return false;
+    }
+
+    public function whereToSql($col, $sign, $expression)
+    {
+        if ($this->isTimestamp($col)) {
+            $expression = $this->valueToTimestamp($expression);
+        }
+
+        if (is_array($expression) && $sign === '=') {
+            // TODO: Should we support this? Doesn't work for blub*
+            return $col . ' IN (' . $this->escapeForSql($expression) . ')';
+        } elseif ($sign === '=' && strpos($expression, '*') !== false) {
+            if ($expression === '*') {
+                // We'll ignore such filters as it prevents index usage and because "*" means anything, anything means
+                // all whereas all means that whether we use a filter to match anything or no filter at all makes no
+                // difference, except for performance reasons...
+                return '';
+            }
+
+            return $col . ' LIKE ' . $this->escapeForSql($this->escapeWildcards($expression));
+        } elseif ($sign === '!=' && strpos($expression, '*') !== false) {
+            if ($expression === '*') {
+                // We'll ignore such filters as it prevents index usage and because "*" means nothing, so whether we're
+                // using a real column with a valid comparison here or just an expression which cannot be evaluated to
+                // true makes no difference, except for performance reasons...
+                return $this->escapeForSql(0);
+            }
+
+            return $col . ' NOT LIKE ' . $this->escapeForSql($this->escapeWildcards($expression));
+        } else {
+            return $col . ' ' . $sign . ' ' . $this->escapeForSql($expression);
+        }
     }
 }
