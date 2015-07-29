@@ -207,6 +207,14 @@ abstract class QuickTable implements Paginatable
         return $this->searchColumns;
     }
 
+    abstract public function getColumns();
+
+    public function getFilterColumns()
+    {
+        $keys = array_keys($this->getColumns());
+        return array_combine($keys, $keys);
+    }
+
     public function setFilter($filter)
     {
         $this->filter = $filter;
@@ -216,7 +224,7 @@ abstract class QuickTable implements Paginatable
     public function getFilterEditor(Request $request)
     {
         $filterEditor = Widget::create('filterEditor')
-            ->setQuery($this)
+            ->setColumns(array_keys($this->getColumns()))
             ->setSearchColumns($this->getSearchColumns())
             ->preserveParams('limit', 'sort', 'dir', 'view', 'backend')
             ->ignoreParams('page')
