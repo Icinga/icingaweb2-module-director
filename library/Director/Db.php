@@ -85,6 +85,52 @@ class Db extends DbConnection
         return $db->fetchOne($query);
     }
 
+    public function fetchHostTemplateTree()
+    {
+        $db = $this->db();
+        $query = $db->select()->from(
+            array('ph' => 'icinga_host'),
+            array(
+                'host'   => 'h.object_name',
+                'parent' => 'ph.object_name'
+            )
+        )->join(
+            array('hi' => 'icinga_host_inheritance'),
+            'ph.id = hi.parent_host_id',
+            array()
+        )->join(
+            array('h' => 'icinga_host'),
+            'h.id = hi.host_id',
+            array()
+        )->where("h.object_type = 'template'")
+         ->order('ph.object_name')
+         ->order('h.object_name');
+
+        $relations = $db->fetchAll($query);
+        $children = array();
+        $hosts = array();
+        foreach ($relations as $rel) {
+            foreach (array('host', 'parent') as $col) {
+                if (! array_key_exists($rel->$col, $hosts)) {
+                    $hosts[$rel->$col] = (object) array(
+                        'name'     => $rel->$col,
+                        'children' => array()
+                    );
+                }
+            }
+        }
+        foreach ($relations as $rel) {
+            $hosts[$rel->parent]->children[$rel->host] = $hosts[$rel->host];
+            $children[$rel->host] = $rel->parent;
+        }
+
+        foreach ($children as $name => $host) {
+            unset($hosts[$name]);
+        }
+
+        return $hosts;
+    }
+
     public function fetchLatestImportedRows($source, $columns = null)
     {
         $db = $this->db();
