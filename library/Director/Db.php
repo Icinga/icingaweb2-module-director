@@ -292,11 +292,11 @@ class Db extends DbConnection
     public function enumSyncRule()
     {
         $select = $this->db()->select()->from('sync_rule', array(
-	   'id',
-           'rule_name'
+            'id',
+            'rule_name'
         ))->order('rule_name ASC');
 
-	return $this->db()->fetchPairs($select);
+        return $this->db()->fetchPairs($select);
     }
 
     public function enumHostgroups()
