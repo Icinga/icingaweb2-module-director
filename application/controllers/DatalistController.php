@@ -6,12 +6,12 @@ class Director_DatalistController extends ActionController
 {
     public function addAction()
     {
-        $this->forward('index', 'datalist', 'director');
+        $this->indexAction();
     }
 
     public function editAction()
     {
-        $this->forward('index', 'datalist', 'director');
+        $this->indexAction();
     }
 
     public function indexAction()

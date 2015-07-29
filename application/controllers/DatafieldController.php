@@ -6,12 +6,12 @@ class Director_DatafieldController extends ActionController
 {
     public function addAction()
     {
-        $this->forward('index', 'datafield', 'director');
+        $this->indexAction();
     }
 
     public function editAction()
     {
-        $this->forward('index', 'datafield', 'director');
+        $this->indexAction();
     }
 
     public function indexAction()

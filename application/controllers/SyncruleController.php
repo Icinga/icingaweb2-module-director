@@ -10,12 +10,12 @@ class Director_SyncruleController extends ActionController
 {
     public function addAction()
     {
-        $this->forward('index', 'syncrule', 'director');
+        $this->indexAction();
     }
 
     public function editAction()
     {
-        $this->forward('index', 'syncrule', 'director');
+        $this->indexAction();
     }
 
     public function runAction()

@@ -10,12 +10,12 @@ class Director_SyncpropertyController extends ActionController
 {
     public function addAction()
     {
-        $this->forward('index', 'syncproperty', 'director');
+        $this->indexAction();
     }
 
     public function editAction()
     {
-        $this->forward('index', 'syncproperty', 'director');
+        $this->indexAction();
     }
 
     public function runAction()

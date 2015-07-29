@@ -6,15 +6,15 @@ class Director_DatalistentryController extends ActionController
 {
     public function addAction()
     {
-        $this->forward('index', 'datalistentry', 'director');
+        $this->indexAction();
     }
 
     public function editAction()
     {
-        $this->forward('index', 'datalistentry', 'director', array('edit' => true));
+        $this->indexAction();
     }
 
-    public function indexAction()
+    public function indexAction($edit = false)
     {
         $request = $this->getRequest();
 

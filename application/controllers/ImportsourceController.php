@@ -11,12 +11,12 @@ class Director_ImportsourceController extends ActionController
 {
     public function addAction()
     {
-        $this->forward('index', 'importsource', 'director');
+        $this->indexAction();
     }
 
     public function editAction()
     {
-        $this->forward('index', 'importsource', 'director');
+        $this->indexAction();
     }
 
     public function runAction()
