@@ -66,23 +66,37 @@ abstract class ObjectsController extends ActionController
     {
         $type = $this->getType();
         $ltype = strtolower($type);
-
+        $dummy = $this->dummyObject();
 
         if (! in_array($type, $this->globalTypes)) {
-            if ($this->dummyObject()->isGroup()) {
+            if ($dummy->isGroup()) {
                 $this->getTabs()->activate('objectgroups');
+                $table = 'icinga' . ucfirst($type);
+            } elseif ($dummy->isTemplate()) {
+                $this->getTabs()->activate('objecttemplates');
+                $table = 'icinga' . ucfirst($type);
+                $this->loadTable($table);
+                $table = 'icinga' . ucfirst($type) . 'Template';
             } else {
                 $this->getTabs()->activate('objects');
             }
         }
 
+        if ($dummy->isTemplate()) {
+            $addParams = array('type' => 'template');
+            $addTitle = $this->translate('Add %s template');
+        } else {
+            $addParams = array();
+            $addTitle = $this->translate('Add %s');
+        }
+
         $this->view->addLink = $this->view->qlink(
-            $this->translate('Add ' . ucfirst($ltype)),
-            'director/' . $ltype . '/add'
+            sprintf($addTitle, $this->translate(ucfirst($ltype))),
+            'director/' . $ltype .'/add',
+            $addParams
         );
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
-
-        $table = $this->loadTable('icinga' . ucfirst($type))->setConnection($this->db());
+        $table = $this->loadTable($table)->setConnection($this->db());
         $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
         $this->view->table = $this->applyPaginationLimits($table);
 
@@ -94,6 +108,13 @@ abstract class ObjectsController extends ActionController
         if ($this->dummy === null) {
             $class = $this->getObjectClassname();
             $this->dummy = $class::create(array());
+            if ($this->dummy->hasProperty('object_type')) {
+                if (false === strpos($this->getRequest()->getControllerName(), 'template')) {
+                    $this->dummy->object_type = 'object';
+                } else {
+                    $this->dummy->object_type = 'template';
+                }
+            }
         }
 
         return $this->dummy;
@@ -105,7 +126,11 @@ abstract class ObjectsController extends ActionController
         return preg_replace(
             array('/group$/', '/period$/', '/argument$/'),
             array('Group', 'Period', 'Argument'),
-            substr($this->getRequest()->getControllerName(), 0, -1)
+            str_replace(
+                'template',
+                '', 
+                substr($this->getRequest()->getControllerName(), 0, -1)
+            )
         );
     }
 
