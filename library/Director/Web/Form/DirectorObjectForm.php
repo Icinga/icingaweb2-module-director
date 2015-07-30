@@ -307,6 +307,11 @@ $inherited = null; // Just testing
             return $this;
         }
 
+        $inherited = $this->object->getInheritedProperties();
+
+        foreach ($props as $k => $v) {
+            $i = property_exists($inherited, $k) ? $inherited->$k : null;
+            $this->setElementValue($k, $v, $i);
         }
 
         if ($object->supportsGroups()) {
