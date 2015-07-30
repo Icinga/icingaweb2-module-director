@@ -333,46 +333,6 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->object !== null) {
             $this->object->setConnection($db);
         }
-        if ($this->hasElement('parent_zone_id')) {
-            $this->getElement('parent_zone_id')
-                ->setMultiOptions($this->optionalEnum($db->enumZones()));
-        }
-        if ($this->hasElement('host_id')) {
-            $this->getElement('host_id')
-                ->setMultiOptions($this->optionalEnum($db->enumHosts()));
-        }
-        if ($this->hasElement('hostgroup_id')) {
-            $this->getElement('hostgroup_id')
-                ->setMultiOptions($this->optionalEnum($db->enumHostgroups()));
-        }
-        if ($this->hasElement('service_id')) {
-            $this->getElement('service_id')
-                ->setMultiOptions($this->optionalEnum($db->enumServices()));
-        }
-        if ($this->hasElement('servicegroup_id')) {
-            $this->getElement('servicegroup_id')
-                ->setMultiOptions($this->optionalEnum($db->enumServicegroups()));
-        }
-        if ($this->hasElement('user_id')) {
-            $this->getElement('user_id')
-                ->setMultiOptions($this->optionalEnum($db->enumUsers()));
-        }
-        if ($this->hasElement('usergroup_id')) {
-            $this->getElement('usergroup_id')
-                ->setMultiOptions($this->optionalEnum($db->enumUsergroups()));
-        }
-        if ($this->hasElement('zone_id')) {
-            $this->getElement('zone_id')
-                ->setMultiOptions($this->optionalEnum($db->enumZones()));
-        }
-        if ($this->hasElement('check_command_id')) {
-            $this->getElement('check_command_id')
-                ->setMultiOptions($this->optionalEnum($db->enumCheckCommands()));
-        }
-        if ($this->hasElement('command_id')) {
-            $this->getElement('command_id')
-                ->setMultiOptions($this->optionalEnum($db->enumCommands()));
-        }
 
         return $this;
     }
