@@ -365,7 +365,96 @@ abstract class DirectorObjectForm extends QuickForm
             $this->getElement('command_id')
                 ->setMultiOptions($this->optionalEnum($db->enumCommands()));
         }
+
         return $this;
+    }
+
+    protected function addZoneElement()
+    {
+        $this->addElement('select', 'zone_id', array(
+            'label' => $this->translate('Cluster Zone'),
+            'description'  => $this->translate('Icinga cluster zone'),
+            'multiOptions' => $this->optionalEnum($this->db->enumZones())
+        ));
+
+        return $this;
+    }
+
+    protected function addCheckCommandElement()
+    {
+        $this->addElement('select', 'check_command_id', array(
+            'label' => $this->translate('Check command'),
+            'description'  => $this->translate('Check command definition'),
+            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands())
+        ));
+
+        return $this;
+    }
+
+    protected function addImportsElement()
+    {
+        $this->addElement('multiselect', 'imports', array(
+            'label'        => $this->translate('Imports'),
+            'description'  => $this->translate('Importable templates'),
+            'multiOptions' => $this->enumAllowedTemplates(),
+            'class'        => 'autosubmit'
+        ));
+
+        return $this;
+    }
+
+    protected function addCheckFlagElements()
+    {
+        $this->optionalBoolean(
+            'enable_active_checks', 
+            $this->translate('Execute active checks'),
+            $this->translate('Whether to actively check this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_passive_checks', 
+            $this->translate('Accept passive checks'),
+            $this->translate('Whether to accept passive check results for this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_notifications',
+            $this->translate('Send notifications'),
+            $this->translate('Whether to send notifications for this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_event_handler',
+            $this->translate('Enable event handler'),
+            $this->translate('Whether to enable event handlers this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_perfdata',
+            $this->translate('Process performance data'),
+            $this->translate('Whether to process performance data provided by this object')
+        );
+
+        $this->optionalBoolean(
+            'volatile',
+            $this->translate('Volatile'),
+            $this->translate('Whether this check is volatile.')
+        );
+
+        return $this;
+    }
+
+    protected function enumAllowedTemplates()
+    {
+        $object = $this->object();
+        $tpl = $this->db->enumIcingaTemplates($object->getShortTableName());
+        $tpl = array_combine($tpl, $tpl);
+        $id = $object->object_name;
+
+        if (array_key_exists($id, $tpl)) {
+            unset($tpl[$id]);
+        }
+        return $tpl;
     }
 
     private function dummyForTranslation()
