@@ -88,7 +88,9 @@ class ConfigForm extends QuickForm
                 );
                 $link = $this->getView()->qlink(
                     $this->translate('database schema'),
-                    'director/schema/' . $resource->getDbType()
+                    'director/schema/' . $resource->getDbType(),
+                    null,
+                    array('data-base-target' => '_next')
                 );
                 $this->addHtmlHint(sprintf($hint, $link));
                 $this->moveSubmitToBottom();
