@@ -131,9 +131,9 @@ abstract class DirectorObjectForm extends QuickForm
 
         if ($object->supportsRanges()) {
             $object->ranges()->set(array(
-                'monday' => 'eins',
+                'monday'  => 'eins',
                 'tuesday' => '00:00-24:00',
-                'sunday'    => 'zwei',
+                'sunday'  => 'zwei',
             ));
         }
 
