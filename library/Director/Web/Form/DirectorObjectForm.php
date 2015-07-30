@@ -471,6 +471,7 @@ abstract class DirectorObjectForm extends QuickForm
         $this->translate('Service');
         $this->translate('Zone');
         $this->translate('Command');
+        $this->translate('User');
         // ... TBC
     }
 }
