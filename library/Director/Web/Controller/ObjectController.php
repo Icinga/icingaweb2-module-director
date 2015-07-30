@@ -102,15 +102,19 @@ abstract class ObjectController extends ActionController
         $ltype = strtolower($type);
 
         $url = sprintf('director/%ss', $ltype);
-        $this->view->form = $this->loadForm('icinga' . ucfirst($type))
+        $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
             ->setSuccessUrl($url);
 
-        $this->view->title = sprintf(
-            $this->translate('Add new Icinga %s'),
-            ucfirst($ltype)
-        );
-        $this->view->form->handleRequest();
+        if ($this->params->get('type') === 'template') {
+            $form->setObjectType('template');
+            $title = $this->translate('Add new Icinga %s');
+        } else {
+            $title = $this->translate('Add new Icinga %s template');
+        }
+
+        $this->view->title = sprintf($title, ucfirst($ltype));
+        $form->handleRequest();
         $this->render('object/form', null, true);
     }
 
