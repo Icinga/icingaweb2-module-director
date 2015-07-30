@@ -484,7 +484,7 @@ CREATE INDEX host_inheritance_host_parent ON icinga_host_inheritance (parent_hos
 CREATE TABLE icinga_host_field (
   host_id integer NOT NULL,
   datafield_id integer NOT NULL,
-  is_required enum_boolean DEFAULT NOT NULL,
+  is_required enum_boolean NOT NULL,
   PRIMARY KEY (host_id, datafield_id),
   CONSTRAINT icinga_host_field_host
   FOREIGN KEY (host_id)
@@ -608,7 +608,7 @@ CREATE INDEX service_inheritance_service_parent ON icinga_service_inheritance (p
 CREATE TABLE icinga_service_field (
   service_id integer NOT NULL,
   datafield_id integer NOT NULL,
-  is_required enum_boolean DEFAULT NOT NULL,
+  is_required enum_boolean NOT NULL,
   PRIMARY KEY (service_id, datafield_id),
   CONSTRAINT icinga_service_field_service
   FOREIGN KEY (service_id)
@@ -1141,4 +1141,3 @@ CREATE TABLE director_datafield_setting (
 );
 
 CREATE INDEX director_datafield_datafield ON director_datafield_setting (datafield_id);
-

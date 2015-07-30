@@ -1,6 +1,6 @@
 ALTER TABLE director_generated_file ALTER COLUMN content SET DEFAULT NULL;
-ALTER TABLE icinga_host_field ALTER COLUMN is_required SET DEFAULT NOT NULL;
-ALTER TABLE icinga_service_field ALTER COLUMN is_required SET DEFAULT NOT NULL;
+ALTER TABLE icinga_host_field ALTER COLUMN is_required SET NOT NULL;
+ALTER TABLE icinga_service_field ALTER COLUMN is_required SET NOT NULL;
 
 CREATE TABLE import_source (
   id serial,
