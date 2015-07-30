@@ -129,6 +129,35 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
+    protected function setElementValue($name, $value = null, $inherited = null)
+    {
+        $el = $this->getElement($name);
+        if (! $el) {
+            return;
+        }
+
+        if ($value !== null) {
+            $el->setValue($value);
+        }
+
+        if ($inherited === null) {
+            return;
+        }
+
+        $strInherited = $this->translate('(inherited)');
+        if ($el instanceof Zf_Select) {
+            $multi = $el->getMultiOptions();
+            if (array_key_exists($inherited, $multi)) {
+                $multi[null] = $multi[$inherited] . ' ' . $strInherited;
+            } else {
+                $multi[null] = $strInherited;
+            }
+            $el->setMultiOptions($multi);
+        } else {
+            $el->setAttrib('placeholder', $inherited . ' ' . $strInherited);
+        }
+    }
+
     public function onSuccess()
     {
         $object = $this->object;
