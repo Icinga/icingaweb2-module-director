@@ -148,13 +148,6 @@ abstract class DirectorObjectForm extends QuickForm
         $this->redirectOnSuccess($msg);
     }
 
-    protected function optionalEnum($enum)
-    {
-        return array(
-            null => $this->translate('- please choose -')
-        ) + $enum;
-    }
-
     protected function optionalBoolean($key, $label, $description)
     {
         return $this->addElement('select', $key, array(

@@ -162,6 +162,13 @@ abstract class QuickForm extends Zend_Form
         return $this;
     }
 
+    public function optionalEnum($enum)
+    {
+        return array(
+            null => $this->translate('- please choose -')
+        ) + $enum;
+    }
+
     public function setSuccessUrl($url)
     {
         $this->successUrl = $url;
