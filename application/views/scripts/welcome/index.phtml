@@ -7,5 +7,25 @@
 <?php if ($this->errorMessage): ?>
 <p class="error"><?= $this->errorMessage ?></p>
 <?php endif ?>
-Nothing to see here yet. We will point you to the most common tasks later on.
+<?php
+$actions = array(
+    array('cloud',    $this->translate('Monitoring Nodes'), 'director/commands'),
+    array('host',     $this->translate('Host objecs'), 'director/hosts'),
+    array('services', $this->translate('Monitored Services'), 'director/services'),
+    array('users',    $this->translate('Users / Contacts'), 'director/users'),
+    array('chat',     $this->translate('Alarms and notifications'), 'director/notificatios'),
+    array('database', $this->translate('Sync / Import'), 'director/list/importsource'),
+    array('wrench',   $this->translate('Configuration'), 'director/list/generatedconfig'),
+);
+?>
+<ul class="main-actions">
+<?php foreach ($actions as $a): ?>
+ <li>
+  <a href="<?= $this->url($a[2]) ?>">
+  <?= $this->icon($a[0]) ?>
+  <?= $this->escape($a[1]) ?>
+  </a>
+ </li>
+<?php endforeach ?>
+</ul>
 </div>
