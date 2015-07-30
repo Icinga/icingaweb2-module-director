@@ -49,20 +49,11 @@ class IcingaUserForm extends DirectorObjectForm
             $this->translate('Whether to send notifications for this user')
         );
 
-
-        $this->addElement('select', 'zone_id', array(
-            'label' => $this->translate('Cluster Zone'),
-            'description' => $this->translate('Check this user in this specific Icinga cluster zone')
-        ));
-
         $this->addElement('text', 'groups', array(
             'label' => $this->translate('Usergroups'),
             'description' => $this->translate('One or more comma separated usergroup names')
         ));
 
-        $this->addElement('text', 'imports', array(
-            'label' => $this->translate('Imports'),
-            'description' => $this->translate('The inherited user template names')
-        ));
+        $this->addImportsElement();
     }
 }
