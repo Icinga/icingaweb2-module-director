@@ -1,7 +1,20 @@
 <?php
 
-// Sample permission:
-$this->providePermission('director/templates', 'Allow to modify templates');
+$this->providePermission('director/hosts/read', $this->translate('Allow to configure hosts'));
+$this->providePermission('director/hosts/write', $this->translate('Allow to configure hosts'));
+$this->providePermission('director/templates/read', $this->translate('Allow to see template details'));
+$this->providePermission('director/templates/write', $this->translate('Allow to configure templates'));
+
+$this->provideRestriction(
+    'director/hosttemplates/filter',
+    $this->translate('Allow to use only host templates matching this filter')
+);
+
+$this->provideRestriction(
+    'director/dbresources/use',
+    $this->translate('Allow to use only these db resources (comma separated list)')
+);
+
 
 $this->provideConfigTab('config', array(
     'title' => 'Configuration',
