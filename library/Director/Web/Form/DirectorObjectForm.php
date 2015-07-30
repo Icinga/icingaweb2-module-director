@@ -14,6 +14,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     private $className;
 
+    private $objectType = 'object';
+
     protected function object($values = array())
     {
         if ($this->object === null) {
@@ -62,6 +64,11 @@ abstract class DirectorObjectForm extends QuickForm
             ));
             */
         }
+    }
+
+    protected function isTemplate()
+    {
+        return $this->objectType === 'template';
     }
 
     protected function handleIcingaObject(& $values)
@@ -129,6 +136,12 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
+    public function setObjectType($type)
+    {
+        $this->objectType = $type;
+        return $this;
+    }
+
     protected function setElementValue($name, $value = null, $inherited = null)
     {
         $el = $this->getElement($name);
@@ -164,8 +177,12 @@ abstract class DirectorObjectForm extends QuickForm
         $values = $this->getValues();
         if ($object instanceof IcingaObject) {
             $this->handleIcingaObject($values);
+            if (! array_key_exists('object_type', $values)) {
+                $object->object_type = $this->objectType;
+            }
         }
         $object->setProperties($values);
+
         $msg = sprintf(
             $object->hasBeenLoadedFromDb()
             ? 'The Icinga %s has successfully been stored'
@@ -228,7 +245,11 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->prepareElements();
         $class = $this->getObjectClassname();
-        $this->object = $class::load($id, $this->db);
+        $object = $this->object = $class::load($id, $this->db);
+        if ($object instanceof IcingaObject) {
+            $this->objectType = $object->object_type;
+        }
+
         if (! is_array($id)) {
             $this->addHidden('id');
         }
