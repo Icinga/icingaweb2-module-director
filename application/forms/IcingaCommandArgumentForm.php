@@ -8,10 +8,10 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
 {
     public function setup()
     {
-
         $this->addElement('select', 'command_id', array(
-            'label' => $this->translate('Check command'),
-            'description' => $this->translate('Check command definition')
+            'label'        => $this->translate('Check command'),
+            'description'  => $this->translate('Check command definition'),
+            'multiOptions' => $this->optionalEnum($this->db->enumCommands())
         ));
 
         $this->addElement('text', 'argument_name', array(
@@ -26,7 +26,6 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         ));
 
         $this->addHidden('value_format', 'string'); // expression, json?
-
     }
 
 
