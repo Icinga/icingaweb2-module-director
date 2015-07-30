@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Module\Director\Objects\IcingaObject;
+use Zend_Form_Element_Select as Zf_Select;
 
 abstract class DirectorObjectForm extends QuickForm
 {
