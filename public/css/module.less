@@ -17,8 +17,21 @@ form dd:after {
     display: block;
     content: '';
 }
-textarea {
-    height: 10em;
+
+form textarea {
+    height: auto;
+}
+
+form dd ul.errors {
+    list-style-type: none;
+    padding-left: 0.3em;
+    font-size: 0.857em;
+
+    li {
+        color: @colorCritical;
+        padding: 0.3em;
+    }
+}
 }
 
 /* END of Forms */
