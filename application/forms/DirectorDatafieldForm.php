@@ -10,19 +10,20 @@ class DirectorDatafieldForm extends DirectorObjectForm
     public function setup()
     {
         $this->addElement('text', 'varname', array(
-            'required' => true,
-            'label' => $this->translate('Field name'),
-            'description' => $this->translate('The unique name of the field')
+            'label'       => $this->translate('Field name'),
+            'description' => $this->translate('The unique name of the field'),
+            'required'    => true,
         ));
 
         $this->addElement('text', 'caption', array(
-            'label' => $this->translate('Caption'),
+            'label'       => $this->translate('Caption'),
             'description' => $this->translate('The caption which should be displayed')
         ));
 
         $this->addElement('textarea', 'description', array(
-            'label' => $this->translate('Description'),
-            'description' => $this->translate('A description about the field')
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate('A description about the field'),
+            'rows'        => '3',
         ));
 
         $this->addElement('select', 'datatype', array(
@@ -30,7 +31,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'description'   => $this->translate('Field type'),
             'required'      => true,
             'multiOptions'  => $this->enumDataTypes(),
-            'class'         => 'autosubmit'
+            'class'         => 'autosubmit',
         ));
 
         if ($class = $this->object()->datatype) {
