@@ -307,8 +307,6 @@ $inherited = null; // Just testing
             return $this;
         }
 
-        if ($submit = $this->getElement('submit')) {
-            $this->removeElement('submit');
         }
 
         if ($object->supportsGroups()) {
@@ -339,9 +337,7 @@ $inherited = null; // Just testing
             */
         }
 
-        if ($submit) {
-            $this->addElement($submit);
-        }
+        $this->moveSubmitToBottom();
 
         if (! $this->hasBeenSubmitted()) {
             $this->beforeValidation($this->object->getProperties());
