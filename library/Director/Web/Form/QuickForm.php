@@ -60,10 +60,13 @@ abstract class QuickForm extends Zend_Form
      */
     protected $icingaModule;
 
+    protected $icingaModuleName;
+
     public function __construct($options = null)
     {
         if ($options !== null && array_key_exists('icingaModule', $options)) {
             $this->icingaModule = $options['icingaModule'];
+            $this->icingaModuleName = $this->icingaModule->getName();
             unset($options['icingaModule']);
         }
         parent::__construct($options);
@@ -254,8 +257,11 @@ abstract class QuickForm extends Zend_Form
 
     public function translate($string)
     {
-        // TODO: A module should use it's own domain
-        return t($string);
+        if ($this->icingaModuleName === null) {
+            return t($string);
+        } else {
+            return mt($this->icingaModuleName, $string);
+        }
     }
 
     public function onSuccess()
