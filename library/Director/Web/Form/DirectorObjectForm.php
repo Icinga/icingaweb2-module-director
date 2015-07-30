@@ -344,9 +344,6 @@ $inherited = null; // Just testing
 
         $this->moveSubmitToBottom();
 
-        if (! $this->hasBeenSubmitted()) {
-            $this->beforeValidation($this->object->getProperties());
-        }
         return $this;
     }
 
