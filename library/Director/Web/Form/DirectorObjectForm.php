@@ -249,7 +249,6 @@ abstract class DirectorObjectForm extends QuickForm
 
     public function loadObject($id)
     {
-        $this->prepareElements();
         $class = $this->getObjectClassname();
         $object = $this->object = $class::load($id, $this->db);
         if ($object instanceof IcingaObject) {
@@ -259,8 +258,11 @@ abstract class DirectorObjectForm extends QuickForm
         if (! is_array($id)) {
             $this->addHidden('id');
         }
-        $this->setDefaults($this->object->getProperties());
-        if (! $this->object instanceof IcingaObject) {
+        $this->prepareElements();
+
+        $props = $object->getProperties();
+        if (! $object instanceof IcingaObject) {
+            $this->setDefaults($props);
             return $this;
         }
 
