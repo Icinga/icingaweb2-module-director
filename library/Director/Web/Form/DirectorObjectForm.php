@@ -86,7 +86,8 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        if ($this->object->supportsCustomVars()) {
+        if ($object->supportsCustomVars()) {
+
             $vars = array();
             $newvar = array(
                 'type'  => 'string',
@@ -271,9 +272,9 @@ abstract class DirectorObjectForm extends QuickForm
             $this->removeElement('submit');
         }
 
-        if ($this->object->supportsGroups()) {
+        if ($object->supportsGroups()) {
             $this->getElement('groups')->setValue(
-                implode(', ', $this->object->groups()->listGroupNames())
+                implode(', ', $object->groups()->listGroupNames())
             );
         }
 
@@ -285,13 +286,13 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        if ($this->object->supportsCustomVars()) {
+        if ($object->supportsFields() && ! $object->isTemplate()) {
             foreach ($this->object->vars() as $key => $value) {
                 $this->addCustomVar($key, $value);
             }
         }
 
-        if ($this->object->supportsRanges()) {
+        if ($object->supportsRanges()) {
             /* TODO implement when new logic for customvars is there
             foreach ($this->object->ranges()->getRanges() as $key => $value) {
                 $this->addRange($key, $value);
