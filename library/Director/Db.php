@@ -310,7 +310,7 @@ class Db extends DbConnection
 
     public function enumImportSource()
     {
-        return $this->enum('source_name', array('id', 'source_name'));
+        return $this->enum('import_source', array('id', 'source_name'));
     }
 
     public function enumDatalist()
