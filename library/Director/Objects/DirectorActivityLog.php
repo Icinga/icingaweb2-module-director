@@ -39,6 +39,19 @@ class DirectorActivityLog extends DbObject
         }
     }
 
+    protected static function prepareNewObjectProperties(DbObject $object)
+    {
+        $props = $object->getProperties();
+        if ($object->supportsCustomVars()) {
+            // $props->vars = $object->vars()->toJson();
+        }
+        if ($object->supportsGroups()) {
+            $props['groups'] = $object->groups()->listGroupNames();
+        }
+
+        return json_encode($props);
+    }
+
     public static function logCreation(DbObject $object, Db $db)
     {
         $data = array(
@@ -46,7 +59,7 @@ class DirectorActivityLog extends DbObject
             'action_name'     => 'create',
             'author'          => self::username(),
             'object_type'     => $object->getTableName(),
-            'new_properties'  => json_encode($object->getProperties()),
+            'new_properties'  => self::prepareNewObjectProperties($object),
             'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
             'parent_checksum' => $db->getLastActivityChecksum()
         );
