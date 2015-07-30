@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Zend_Form_Element_Select as Zf_Select;
 
 abstract class DirectorObjectForm extends QuickForm
@@ -148,6 +149,44 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->objectType = $type;
         return $this;
+    }
+
+    public function addFields()
+    {
+        $object = $this->object();
+        $fields = $object->getResolvedFields();
+        $vars   = $object->vars();
+
+        foreach ($fields as $field) {
+            $varname = $field->varname;
+            if (isset($vars->$varname)) {
+                $value = $vars->{$varname}->getValue();
+            } else {
+                $value = null;
+            }
+$inherited = null; // Just testing
+            $this->addField($field, $value, $inherited);
+        }
+    }
+
+    protected function addField($field, $value = null, $inherited = null)
+    {
+        $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
+        $datatype = new $datafield->datatype;
+        $datatype->setSettings($datafield->getSettings());
+
+        $name = 'var_' . $datafield->varname;
+        $el = $datatype->getFormElement($name, $this);
+
+        $el->setLabel($datafield->caption);
+        $el->setDescription($datafield->description);
+
+        if ($field->is_required === 'y') {
+            $el->setRequired(true);
+        }
+
+        $this->addElement($el);
+        $this->setElementValue($name, $value, $inherited);
     }
 
     protected function setElementValue($name, $value = null, $inherited = null)
