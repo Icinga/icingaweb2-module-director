@@ -16,18 +16,18 @@ abstract class ObjectController extends ActionController
         if ($name = $this->params->get('name')) {
             $params['name'] = $name;
 
-            $this->getTabs()->add($type, array(
-                'url'       => sprintf('director/%s', $ltype),
-                'urlParams' => $params,
-                'label'     => $this->translate(ucfirst($ltype)),
-            ))->add('modify', array(
+            $this->getTabs()->add('modify', array(
                 'url'       => sprintf('director/%s/edit', $ltype),
                 'urlParams' => $params,
-                'label'     => $this->translate('Modify')
+                'label'     => $this->translate(ucfirst($ltype))
             ))->add('delete', array(
                 'url'       => sprintf('director/%s/delete', $ltype),
                 'urlParams' => $params,
                 'label'     => $this->translate('Delete')
+            ))->add('render', array(
+                'url'       => sprintf('director/%s/render', $ltype),
+                'urlParams' => $params,
+                'label'     => $this->translate('Preview'),
             ))->add('history', array(
                 'url'       => sprintf('director/%s/history', $ltype),
                 'urlParams' => $params,
@@ -35,7 +35,7 @@ abstract class ObjectController extends ActionController
             ));
         } else {
             $this->getTabs()->add('add', array(
-                'url'       => sprintf('director/%s', $type),
+                'url'       => sprintf('director/%s/add', $type),
                 'label'     => sprintf($this->translate('Add %s'), ucfirst($type)),
             ));
         }
@@ -43,8 +43,13 @@ abstract class ObjectController extends ActionController
 
     public function indexAction()
     {
+        return $this->editAction();
+    }
+
+    public function renderAction()
+    {
         $type = $this->getType();
-        $this->getTabs()->activate($type);
+        $this->getTabs()->activate('render');
         $this->view->object = $this->object();
         $this->render('object/show', null, true);
     }
