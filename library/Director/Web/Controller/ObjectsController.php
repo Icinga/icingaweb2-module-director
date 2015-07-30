@@ -16,14 +16,12 @@ abstract class ObjectsController extends ActionController
 
     public function init()
     {
+        $tabs = $this->getTabs();
         $type = $this->getType();
-        $ltype = strtolower($type);
-
-        $object = $this->dummyObject();
 
         if (in_array(ucfirst($type), $this->globalTypes)) {
+            $ltype = strtolower($type);
 
-            $tabs = $this->getTabs();
             foreach ($this->globalTypes as $tabType) {
                 $ltabType = strtolower($tabType);
                 $tabs->add($ltabType, array(
@@ -60,6 +58,11 @@ abstract class ObjectsController extends ActionController
             }
 
         }
+
+        $tabs->add('tree', array(
+            'url'   => sprintf('director/%stemplates/tree', $type),
+            'label' => $this->translate('Tree'),
+        ));
     }
 
     public function indexAction()
@@ -101,6 +104,12 @@ abstract class ObjectsController extends ActionController
         $this->view->table = $this->applyPaginationLimits($table);
 
         $this->render('objects/table', null, true);
+    }
+
+    public function treeAction()
+    {
+        $this->getTabs()->activate('tree');
+        $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
     }
 
     protected function dummyObject()
