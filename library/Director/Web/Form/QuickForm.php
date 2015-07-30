@@ -338,10 +338,21 @@ abstract class QuickForm extends Zend_Form
         Icinga::app()->getFrontController()->getResponse()->redirectAndExit($url);
     }
 
+    protected function onRequest()
+    {
+    }
+
+    public function setRequest(Request $request)
+    {
+        $this->request = $request;
+        $this->onRequest();
+        return $this;
+    }
+
     public function getRequest()
     {
         if ($this->request === null) {
-            $this->request = Icinga::app()->getFrontController()->getRequest();
+            $this->setRequest(Icinga::app()->getFrontController()->getRequest());
         }
         return $this->request;
     }
