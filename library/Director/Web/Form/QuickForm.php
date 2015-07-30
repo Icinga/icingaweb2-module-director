@@ -62,6 +62,8 @@ abstract class QuickForm extends Zend_Form
 
     protected $icingaModuleName;
 
+    protected $hintCount = 0;
+
     public function __construct($options = null)
     {
         if ($options !== null && array_key_exists('icingaModule', $options)) {
@@ -159,6 +161,18 @@ abstract class QuickForm extends Zend_Form
         if ($value !== null) {
             $this->setDefault($name, $value);
         }
+        return $this;
+    }
+
+    public function addHtmlHint($html, $options = array())
+    {
+        $name = '_HINT' . ++$this->hintCount;
+        $this->addElement('note', $name, $options);
+        $this->getElement($name)
+            ->setValue('<div class="hint">' . $html . '</div>')
+            ->setIgnore(true)
+            ->removeDecorator('Label');
+
         return $this;
     }
 
