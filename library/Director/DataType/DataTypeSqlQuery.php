@@ -2,9 +2,10 @@
 
 namespace Icinga\Module\Director\DataType;
 
+use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Web\Hook\DataTypeHook;
-use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\Util;
 
 class DataTypeSqlQuery extends DataTypeHook
 {
@@ -36,17 +37,13 @@ class DataTypeSqlQuery extends DataTypeHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
-        $db = $form->getDb();
-
-        $form->addElement('text', 'resource', array(
-            'label'    => 'Resource name',
-            'required' => true,
-        ));
+        Util::addDbResourceFormElement($form, 'resource');
 
         $form->addElement('textarea', 'query', array(
             'label'       => 'DB Query',
             'description' => 'This query should return exactly two columns, value and label',
             'required'    => true,
+            'rows'        => 10,
         ));
 
         return $form;
