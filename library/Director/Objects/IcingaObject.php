@@ -250,6 +250,39 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->getShortTableName() . '_id';
     }
 
+    public function getFields()
+    {
+        $fields = (object) array();
+
+        if (! $this->supportsFields()) {
+            return $fields;
+        }
+
+        $db = $this->getDb();
+
+        $query = $db->select()->from(
+            array('df' => 'director_datafield'),
+            array(
+                'datafield_id' => 'f.datafield_id',
+                'is_required'  => 'f.is_required',
+                'varname'      => 'df.varname'
+            )
+        )->join(
+            array('f' => $this->getTableName() . '_field'),
+            'df.id = f.datafield_id',
+            array()
+        )->where('f.host_id = ?', (int) $this->id)
+         ->order('df.caption ASC');
+
+        $res = $db->fetchAll($query);
+
+        foreach ($res as $r) {
+            $fields->{$r->varname} = $r;
+        }
+
+        return $fields;
+    }
+
     public function isTemplate()
     {
         return $this->hasProperty('object_type')
