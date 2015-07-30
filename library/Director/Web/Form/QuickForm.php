@@ -66,16 +66,26 @@ abstract class QuickForm extends Zend_Form
 
     public function __construct($options = null)
     {
-        if ($options !== null && array_key_exists('icingaModule', $options)) {
-            $this->icingaModule = $options['icingaModule'];
-            $this->icingaModuleName = $this->icingaModule->getName();
-            unset($options['icingaModule']);
-        }
-        parent::__construct($options);
+        parent::__construct($this->handleOptions($options));
         $this->setMethod('post');
         $this->setAction(Url::fromRequest());
         $this->createIdElement();
         $this->regenerateCsrfToken();
+    }
+
+    protected function handleOptions($options = null)
+    {
+        if ($options === null) {
+            return $options;
+        }
+
+        if (array_key_exists('icingaModule', $options)) {
+            $this->icingaModule = $options['icingaModule'];
+            $this->icingaModuleName = $this->icingaModule->getName();
+            unset($options['icingaModule']);
+        }
+
+        return $options;
     }
 
     protected function addSubmitButtonIfSet()
