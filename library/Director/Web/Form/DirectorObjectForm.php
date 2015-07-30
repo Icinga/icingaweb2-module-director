@@ -116,10 +116,16 @@ abstract class DirectorObjectForm extends QuickForm
 
         if ($object->supportsImports()) {
             if (array_key_exists('imports', $values)) {
-                $object->imports()->set(
-                    preg_split('/\s*,\s*/', $values['imports'], -1, PREG_SPLIT_NO_EMPTY)
-                );
+                $value = $values['imports'];
+
+                // TODO: Compat for comma separated string, check if still needed
+                if (! is_array($value)) {
+                    $value = preg_split('/\s*,\s*/', $value, -1, PREG_SPLIT_NO_EMPTY);
+                }
+
+                $object->imports()->set($value);
                 $handled['imports'] = true;
+                $object->clearImportedObjects();
             }
         }
 
@@ -268,10 +274,12 @@ abstract class DirectorObjectForm extends QuickForm
             );
         }
 
-        if ($this->object->supportsImports()) {
-            $this->getElement('imports')->setValue(
-                implode(', ', $this->object->imports()->listImportNames())
-            );
+        if ($object->supportsImports()) {
+            $el = $this->getElement('imports');
+            if ($el) {
+                $el->setMultiOptions($this->enumAllowedTemplates());
+                $el->setValue($object->imports()->listImportNames());
+            }
         }
 
         if ($this->object->supportsCustomVars()) {
