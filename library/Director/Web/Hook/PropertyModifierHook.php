@@ -73,7 +73,7 @@ abstract class PropertyModifierHook
      *
      * @return value
      */
-    abstract public function transfrom();
+    abstract public function transform($value);
 
     /**
      * Override this method if you want to extend the settings form
