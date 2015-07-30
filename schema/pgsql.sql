@@ -9,11 +9,6 @@
 -- INSERT INTO director_activity_log (object_type, object_name, action_name, author, change_time, checksum) VALUES('object', 'foo', 'create', 'alex', CURRENT_TIMESTAMP, decode('cf23df2207d99a74fbe169e3eba035e633b65d94', 'hex'));
 --
 
---
--- Enumerable Types
---
--- TODO: what about translation of the strings?
-
 CREATE TYPE enum_activity_action AS ENUM('create', 'delete', 'modify');
 CREATE TYPE enum_boolean AS ENUM('y', 'n');
 CREATE TYPE enum_property_format AS ENUM('string', 'expression', 'json');
@@ -24,6 +19,9 @@ CREATE TYPE enum_command_object_type AS ENUM('object', 'template', 'external_obj
 CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply');
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
 CREATE TYPE enum_type_name AS ENUM('DowntimeStart', 'DowntimeEnd', 'DowntimeRemoved', 'Custom', 'Acknowledgement', 'Problem', 'Recovery', 'FlappingStart', 'FlappingEnd');
+CREATE TYPE enum_sync_rule_object_type AS ENUM('host', 'user');
+CREATE TYPE enum_sync_rule_update_policy AS ENUM('merge', 'override', 'ignore');
+CREATE TYPE enum_sync_property_merge_policy AS ENUM('override', 'merge');
 
 
 CREATE TABLE director_dbversion (
@@ -73,7 +71,7 @@ COMMENT ON COLUMN director_generated_config.duration IS 'Config generation durat
 
 CREATE TABLE director_generated_file (
   checksum bytea CHECK(LENGTH(checksum) = 20),
-  content text NOT NULL,
+  content text DEFAULT NULL,
   PRIMARY KEY (checksum)
 );
 
@@ -486,7 +484,7 @@ CREATE INDEX host_inheritance_host_parent ON icinga_host_inheritance (parent_hos
 CREATE TABLE icinga_host_field (
   host_id integer NOT NULL,
   datafield_id integer NOT NULL,
-  is_required enum_boolean DEFAULT NULL,
+  is_required enum_boolean DEFAULT NOT NULL,
   PRIMARY KEY (host_id, datafield_id),
   CONSTRAINT icinga_host_field_host
   FOREIGN KEY (host_id)
@@ -610,7 +608,7 @@ CREATE INDEX service_inheritance_service_parent ON icinga_service_inheritance (p
 CREATE TABLE icinga_service_field (
   service_id integer NOT NULL,
   datafield_id integer NOT NULL,
-  is_required enum_boolean DEFAULT NULL,
+  is_required enum_boolean DEFAULT NOT NULL,
   PRIMARY KEY (service_id, datafield_id),
   CONSTRAINT icinga_service_field_service
   FOREIGN KEY (service_id)
@@ -963,6 +961,184 @@ CREATE TABLE icinga_usergroup_parent (
 CREATE INDEX usergroup_parent_usergroup ON icinga_usergroup_parent (usergroup_id);
 CREATE INDEX usergroup_parent_parent ON icinga_usergroup_parent (parent_usergroup_id);
 
---
--- TODO: unfinished: see mysql.sql schema from sync_*
---
+
+CREATE TABLE import_source (
+  id serial,
+  source_name character varying(64) NOT NULL,
+  key_column character varying(64) NOT NULL,
+  provider_class character varying(72) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE INDEX import_source_search_idx ON import_source (key_column);
+
+
+CREATE TABLE import_source_setting (
+  source_id integer NOT NULL,
+  setting_name character varying(64) NOT NULL,
+  setting_value text NOT NULL,
+  PRIMARY KEY (source_id, setting_name),
+  CONSTRAINT import_source_settings_source
+  FOREIGN KEY (source_id)
+  REFERENCES import_source (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
+
+CREATE INDEX import_source_setting_source ON import_source_setting (source_id);
+
+
+CREATE TABLE imported_rowset (
+  checksum bytea CHECK(LENGTH(checksum) = 20),
+  PRIMARY KEY (checksum)
+);
+
+
+CREATE TABLE import_run (
+  id serial,
+  source_id integer NOT NULL,
+  rowset_checksum bytea CHECK(LENGTH(rowset_checksum) = 20),
+  start_time timestamp with time zone NOT NULL,
+  end_time timestamp with time zone NOT NULL,
+  succeeded enum_boolean DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT import_run_source
+  FOREIGN KEY (source_id)
+  REFERENCES import_source (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE,
+  CONSTRAINT import_run_rowset
+  FOREIGN KEY (rowset_checksum)
+  REFERENCES imported_rowset (checksum)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE
+);
+
+CREATE INDEX import_run_import_source ON import_run (source_id);
+CREATE INDEX import_run_rowset ON import_run (rowset_checksum);
+
+
+CREATE TABLE imported_row (
+  checksum bytea CHECK(LENGTH(checksum) = 20),
+  object_name character varying(255) NOT NULL,
+  PRIMARY KEY (checksum)
+);
+
+COMMENT ON COLUMN imported_row.checksum IS 'sha1(object_name;property_checksum;...)';
+
+
+CREATE TABLE imported_rowset_row (
+  rowset_checksum bytea CHECK(LENGTH(checksum) = 20),
+  row_checksum bytea CHECK(LENGTH(checksum) = 20),
+  PRIMARY KEY (rowset_checksum, row_checksum),
+  CONSTRAINT imported_rowset_row_rowset
+  FOREIGN KEY (rowset_checksum)
+  REFERENCES imported_rowset (checksum)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+  CONSTRAINT imported_rowset_row_row
+  FOREIGN KEY (row_checksum)
+  REFERENCES imported_row (checksum)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE
+);
+
+CREATE INDEX imported_rowset_row_rowset_checksum ON imported_rowset_row (rowset_checksum);
+CREATE INDEX imported_rowset_row_row_checksum ON imported_rowset_row (row_checksum);
+
+CREATE TABLE imported_property (
+  checksum bytea CHECK(LENGTH(checksum) = 20),
+  property_name character varying(64) NOT NULL,
+  property_value text NOT NULL,
+  format enum_property_format,
+  PRIMARY KEY (checksum)
+);
+
+CREATE INDEX imported_property_search_idx ON imported_property (property_name);
+
+CREATE TABLE imported_row_property (
+  row_checksum bytea CHECK(LENGTH(row_checksum) = 20),
+  property_checksum bytea CHECK(LENGTH(property_checksum) = 20),
+  PRIMARY KEY (row_checksum, property_checksum),
+  CONSTRAINT imported_row_property_row
+  FOREIGN KEY (row_checksum)
+  REFERENCES imported_row (checksum)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+  CONSTRAINT imported_row_property_property
+  FOREIGN KEY (property_checksum)
+  REFERENCES imported_property (checksum)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE
+);
+
+CREATE INDEX imported_row_property_row_checksum ON imported_row_property (row_checksum);
+CREATE INDEX imported_row_property_property_checksum ON imported_row_property (property_checksum);
+
+CREATE TABLE sync_rule (
+  id serial,
+  rule_name character varying(255) NOT NULL,
+  object_type enum_sync_rule_object_type NOT NULL,
+  update_policy enum_sync_rule_update_policy NOT NULL,
+  purge_existing enum_boolean NOT NULL DEFAULT 'n',
+  filter_expression text DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+
+CREATE TABLE sync_property (
+  id serial,
+  rule_id integer NOT NULL,
+  source_id integer NOT NULL,
+  source_expression character varying(255) NOT NULL,
+  destination_field character varying(64),
+  priority smallint NOT NULL,
+  filter_expression text DEFAULT NULL,
+  merge_policy enum_sync_property_merge_policy NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT sync_property_rule
+  FOREIGN KEY (rule_id)
+  REFERENCES sync_rule (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+  CONSTRAINT sync_property_source
+  FOREIGN KEY (source_id)
+  REFERENCES import_source (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE
+);
+
+CREATE INDEX sync_property_rule ON sync_property (rule_id);
+CREATE INDEX sync_property_source ON sync_property (source_id);
+
+
+CREATE TABLE import_row_modifier (
+  id serial,
+  property_id integer NOT NULL,
+  provider_class character varying(72) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+
+CREATE TABLE import_row_modifier_setting (
+  modifier_id integer NOT NULL,
+  setting_name character varying(64) NOT NULL,
+  setting_value text DEFAULT NULL,
+  PRIMARY KEY (modifier_id)
+);
+
+
+CREATE TABLE director_datafield_setting (
+  datafield_id integer NOT NULL,
+  setting_name character varying(64) NOT NULL,
+  setting_value text NOT NULL,
+  PRIMARY KEY (datafield_id, setting_name),
+  CONSTRAINT datafield_id_settings
+  FOREIGN KEY (datafield_id)
+  REFERENCES director_datafield (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
+
+CREATE INDEX director_datafield_datafield ON director_datafield_setting (datafield_id);
+
