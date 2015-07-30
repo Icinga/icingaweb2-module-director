@@ -23,6 +23,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsImports = false;
 
+    protected $supportsFields = false;
+
     private $type;
 
     private $vars;
@@ -53,6 +55,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsImports()
     {
         return $this->supportsImports;
+    }
+
+    public function supportsFields()
+    {
+        return $this->supportsFields;
     }
 
     public function hasBeenModified()
