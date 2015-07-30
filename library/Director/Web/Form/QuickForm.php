@@ -82,7 +82,7 @@ abstract class QuickForm extends Zend_Form
     {
         if (false !== ($label = $this->getSubmitLabel())) {
             $this->addElement('submit', $label);
-            $this->getElement($label)->setLabel($label);
+            $this->getElement($label)->setLabel($label)->removeDecorator('Label');
         }
     }
 
