@@ -241,8 +241,8 @@ abstract class QuickForm extends Zend_Form
     {
         if (! $this->didSetup) {
             $this->setup();
-            $this->onSetup();
             $this->addSubmitButtonIfSet();
+            $this->onSetup();
             $this->didSetup = true;
         }
 
