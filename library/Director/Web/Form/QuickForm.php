@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
@@ -155,6 +156,7 @@ abstract class QuickForm extends Zend_Form
             $element = $this->getElement(self::CSRF);
         }
         $element->setValue(CsrfToken::generate())->setIgnore(true);
+
         return $this;
     }
 
@@ -262,7 +264,7 @@ abstract class QuickForm extends Zend_Form
     public function handleRequest(Request $request = null)
     {
         if ($request !== null) {
-            $this->request = $request;
+            $this->setRequest($request);
         }
 
         $this->prepareElements();
@@ -354,6 +356,10 @@ abstract class QuickForm extends Zend_Form
 
     public function setRequest(Request $request)
     {
+        if ($this->request !== null) {
+            throw new ProgrammingError('Unable to set request twice');
+        }
+
         $this->request = $request;
         $this->onRequest();
         return $this;
