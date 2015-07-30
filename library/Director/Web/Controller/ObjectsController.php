@@ -31,32 +31,28 @@ abstract class ObjectsController extends ActionController
             }
             $tabs->activate($ltype);
 
-        } elseif ($object->isGroup()) {
+            return;
+        }
 
-            $singleType = substr($type, 0, -5);
-            $tabs = $this->getTabs()->add('objects', array(
-                'url'   => sprintf('director/%ss', $singleType),
-                'label' => $this->translate(ucfirst($singleType) . 's'),
-            ));
 
+        $object = $this->dummyObject();
+        if ($object->isGroup()) {
+            $type = substr($type, 0, -5);
+        }
+
+        $tabs = $this->getTabs()->add('objects', array(
+            'url'   => sprintf('director/%ss', strtolower($type)),
+            'label' => $this->translate(ucfirst($type) . 's'),
+        ));
+        $tabs = $this->getTabs()->add('objecttemplates', array(
+            'url'   => sprintf('director/%stemplates', strtolower($type)),
+            'label' => $this->translate('Templates'),
+        ));
+        if ($object->supportsGroups() || $object->isGroup()) {
             $tabs->add('objectgroups', array(
-                'url'   => sprintf('director/%ss', strtolower($type)),
-                'label' => $this->translate(ucfirst(strtolower($type)) . 's')
+                'url'   => sprintf('director/%sgroups', $type),
+                'label' => $this->translate('Groups')
             ));
-
-        } else {
-
-            $tabs = $this->getTabs()->add('objects', array(
-                'url'   => sprintf('director/%ss', strtolower($type)),
-                'label' => $this->translate(ucfirst($type) . 's'),
-            ));
-            if ($object->supportsGroups()) {
-                $tabs->add('objectgroups', array(
-                    'url'   => sprintf('director/%sgroups', $type),
-                    'label' => $this->translate(ucfirst($type) . 'groups')
-                ));
-            }
-
         }
 
         $tabs->add('tree', array(
@@ -82,7 +78,10 @@ abstract class ObjectsController extends ActionController
                 $table = 'icinga' . ucfirst($type) . 'Template';
             } else {
                 $this->getTabs()->activate('objects');
+                $table = 'icinga' . ucfirst($type);
             }
+        } else {
+            $table = 'icinga' . ucfirst($type);
         }
 
         if ($dummy->isTemplate()) {
