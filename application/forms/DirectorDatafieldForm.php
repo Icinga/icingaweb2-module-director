@@ -9,6 +9,10 @@ class DirectorDatafieldForm extends DirectorObjectForm
 {
     public function setup()
     {
+        $this->addHtmlHint(
+            $this->translate('Data fields allow you to customize input controls your custom variables.')
+        );
+
         $this->addElement('text', 'varname', array(
             'label'       => $this->translate('Field name'),
             'description' => $this->translate('The unique name of the field'),
