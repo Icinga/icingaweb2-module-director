@@ -85,17 +85,21 @@ abstract class ObjectController extends ActionController
             'icinga' . ucfirst($type)
         )->setDb($this->db());
         $form->loadObject($this->params->get('name'));
+        $object = $form->getObject();
 
         $url = Url::fromPath(
             sprintf('director/%s', $ltype),
-            array('name' => $form->getObject()->object_name)
+            array('name' => $object->object_name)
         );
         $form->setSuccessUrl($url);
 
-        $this->view->title = sprintf(
-            $this->translate('Modify Icinga %s'),
-            ucfirst($ltype)
-        );
+        if ($object->isTemplate()) {
+            $title = $this->translate('Modify Icinga %s template');
+        } else {
+            $title = $this->translate('Modify Icinga %s');
+        }
+
+        $this->view->title = sprintf($title, ucfirst($ltype));
         $this->view->form->handleRequest();
         $this->render('object/form', null, true);
     }
