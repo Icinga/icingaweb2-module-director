@@ -1,3 +1,45 @@
+input, select, select option, textarea {
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+}
+
+select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
+    display: none;
+}
+
+select {
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+input, textarea {
+    border: 1px solid transparent;
+    padding-left: 0.5em;
+}
+
+select:hover, input:hover, textarea:hover, select:focus, input:focus, textarea:focus {
+    border: 1px solid #ddd;
+}
+
+select[value=""] {
+    color: blue;
+}
+
+select option {
+    color: inherit;
+    padding-left: 0.5em;
+}
+
+select option[value=""] {
+    color: #aaa;
+}
+
+/* TEMP */
+p.description {
+display: none;
+}
+
 
 ul.main-actions {
   margin: 0;
@@ -39,6 +81,11 @@ ul.main-actions {
 /* BEGIN Forms */
 form dt label {
     width: auto;
+    font-weight: normal;
+
+    &.required {
+        font-weight: bold;
+    }
 }
 
 form dd {
@@ -48,7 +95,8 @@ form dd {
 
 form dt {
     display: inline-block;
-    min-width: 16em;
+    min-width: 12em;
+    width: 30%;
 }
 
 form dd:after {
