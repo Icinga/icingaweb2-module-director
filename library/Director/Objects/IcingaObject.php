@@ -155,6 +155,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->getInherited('Properties');
     }
 
+    public function getOriginsProperties()
+    {
+        return $this->getOrigins('Properties');
+    }
+
     public function resolveProperties()
     {
         return $this->resolve('Properties');
@@ -168,6 +173,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getInheritedFields()
     {
         return $this->getInherited('Fields');
+    }
+
+    public function getOriginsFields()
+    {
+        return $this->getOrigins('Fields');
     }
 
     public function resolveFields()
@@ -188,6 +198,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function resolveVars()
     {
         return $this->resolve('Vars');
+    }
+
+    public function getOriginsVars()
+    {
+        return $this->getOrigins('Vars');
     }
 
     public function getVars()
@@ -214,41 +229,50 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $res['_INHERITED_'];
     }
 
+    protected function getOrigins($what)
+    {
+        $func = 'resolve' . $what;
+        $res = $this->$func();
+        return $res['_ORIGINS_'];
+    }
+
     protected function resolve($what)
     {
         $vals = array();
-        $vals['_MERGED_'] = (object) array();
+        $vals['_MERGED_']    = (object) array();
         $vals['_INHERITED_'] = (object) array();
+        $vals['_ORIGINS_']   = (object) array();
         $objects = $this->importedObjects();
-        $objects[$this->object_name] = $this;
 
-        $get = 'get' . $what;
-        $getResolved = 'getResolved' . $what;
-
-        if ($what === 'Properties') {
-            $blacklist = array('id', 'object_type', 'object_name');
-        } else {
-            $blacklist = array();
-        }
+        $get          = 'get'         . $what;
+        $getInherited = 'getInherited' . $what;
+        $getOrigins   = 'getOrigins'  . $what;
 
         foreach ($objects as $name => $object) {
-            $vals[$name] = (object) array();
+            $origins = $object->$getOrigins();
 
-            if ($name === $this->object_name || $this->object_name === null) {
-                $pvals = $object->$get();
-            } else {
-                $pvals = $object->$getResolved();
+            foreach ($object->$getInherited() as $key => $value) {
+                // $vals[$name]->$key = $value;
+                $vals['_MERGED_']->$key = $value;
+                $vals['_INHERITED_']->$key = $value;
+                $vals['_ORIGINS_']->$key = $origins->$key;
             }
-            foreach ($pvals as $key => $value) {
-                if (in_array($key, $blacklist)) continue;
-                if ($value !== null) {
-                    $vals[$name]->$key = $value;
-                    $vals['_MERGED_']->$key = $value;
-                    if ($name !== $this->object_name) {
-                        $vals['_INHERITED_']->$key = $value;
-                    }
-                }
+
+            foreach ($object->$get() as $key => $value) {
+                if ($value === null) continue;
+                $vals['_MERGED_']->$key = $value;
+                $vals['_INHERITED_']->$key = $value;
+                $vals['_ORIGINS_']->$key = $name;
             }
+        }
+
+        $blacklist = array('id', 'object_type', 'object_name');
+        foreach ($this->$get() as $key => $value) {
+            if ($value === null) continue;
+            if (in_array($key, $blacklist)) continue;
+
+            // $vals[$this->object_name]->$key = $value;
+            $vals['_MERGED_']->$key = $value;
         }
 
         return $vals;
