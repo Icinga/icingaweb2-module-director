@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director;
 
-use Icinga\Authentication\Manager;
+use Icinga\Authentication\Auth;
 use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Web\Url;
@@ -32,7 +32,7 @@ class Util
     public static function auth()
     {
         if (self::$auth === null) {
-            self::$auth = Manager::getInstance();
+            self::$auth = Auth::getInstance();
         }
         return self::$auth;
     }
