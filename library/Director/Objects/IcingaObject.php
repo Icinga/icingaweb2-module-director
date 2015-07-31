@@ -377,7 +377,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             array('f' => $this->getTableName() . '_field'),
             'df.id = f.datafield_id',
             array()
-        )->where('f.host_id = ?', (int) $this->id)
+        )->where('f.' . $this->getShortTableName() . '_id = ?', (int) $this->id)
          ->order('df.caption ASC');
 
         $res = $db->fetchAll($query);
