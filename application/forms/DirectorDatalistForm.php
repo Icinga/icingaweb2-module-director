@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Authentication\Manager as Auth;
+use Icinga\Authentication\Auth;
 
 class DirectorDatalistForm extends DirectorObjectForm
 {
