@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\DataType;
 
+use Exception;
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Web\Hook\DataTypeHook;
@@ -17,10 +18,21 @@ class DataTypeSqlQuery extends DataTypeHook
 
     public function getFormElement($name, QuickForm $form)
     {
+        try {
+            $data = $this->fetchData();
+            $error = false;
+        } catch (Exception $e) {
+            $data = array();
+            $error = sprintf($form->translate('Unable to fetch data: %s'), $e->getMessage());
+        }
+
         $element = $form->createElement('select', $name, array(
-            'multiOptions' => array(null => '- please choose -') +
-                $this->fetchData(),
+            'multiOptions' => $form->optionalEnum($data),
         ));
+
+        if ($error) {
+            $element->addError($error);
+        }
 
         return $element;
     }
