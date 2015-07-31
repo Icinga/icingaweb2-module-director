@@ -178,6 +178,11 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    public function getOriginalVars()
+    {
+        return $this->storedVars;
+    }
+
     public function toConfigString()
     {
         $out = '';
