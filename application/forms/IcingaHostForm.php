@@ -27,10 +27,12 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addImportsElement();
 
+        /*
         $this->addElement('text', 'groups', array(
             'label' => $this->translate('Hostgroups'),
             'description' => $this->translate('One or more comma separated hostgroup names')
         ));
+        */
 
         if ($this->isTemplate()) {
             $this->addElement('text', 'address', array(

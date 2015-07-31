@@ -14,10 +14,13 @@ class IcingaServiceForm extends DirectorObjectForm
             'description' => $this->translate('Name for the Icinga object you are going to create')
         ));
 
+        /*
         $this->addElement('text', 'groups', array(
             'label' => $this->translate('Servicegroups'),
             'description' => $this->translate('One or more comma separated servicegroup names')
         ));
+        */
+
         $this->addImportsElement();
 
         if ($this->isTemplate()) {
