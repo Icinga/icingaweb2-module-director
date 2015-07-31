@@ -174,7 +174,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     public function setUnmodified()
     {
         $this->modified = false;
-        $this->storedVars = $this->vars;
+        $this->storedVars = array();
+        foreach ($this->vars as $key => $var) {
+            $this->storedVars[$key] = clone($var);
+        }
         return $this;
     }
 
