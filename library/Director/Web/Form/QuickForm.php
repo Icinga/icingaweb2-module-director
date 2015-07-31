@@ -178,10 +178,15 @@ abstract class QuickForm extends Zend_Form
 
     public function addHtmlHint($html, $options = array())
     {
+        return $this->addHtml('<div class="hint">' . $html . '</div>', $options);
+    }
+
+    public function addHtml($html, $options = array())
+    {
         $name = '_HINT' . ++$this->hintCount;
         $this->addElement('note', $name, $options);
         $this->getElement($name)
-            ->setValue('<div class="hint">' . $html . '</div>')
+            ->setValue($html)
             ->setIgnore(true)
             ->removeDecorator('Label');
 
