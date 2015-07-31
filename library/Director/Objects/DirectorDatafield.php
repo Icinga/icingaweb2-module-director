@@ -33,6 +33,7 @@ class DirectorDatafield extends DbObject
         if (! array_key_exists($key, $this->settings) || $value !== $this->settings[$key]) {
             $this->hasBeenModified = true;
         }
+
         $this->settings[$key] = $value;
         return $this;
     }

@@ -383,6 +383,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $object = $this->object();
         $values = array();
+
         if ($this->hasBeenSent()) {
             $post = $this->getRequest()->getPost();
             foreach ($post as $key => $value) {
