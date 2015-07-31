@@ -7,6 +7,8 @@ use Icinga\Web\Hook;
 
 class DirectorDatafieldForm extends DirectorObjectForm
 {
+    protected $objectName = 'Data field';
+
     public function setup()
     {
         $this->addHtmlHint(

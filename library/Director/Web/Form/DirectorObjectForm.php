@@ -12,7 +12,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $object;
 
-    private $objectName;
+    protected $objectName;
 
     private $className;
 
@@ -321,8 +321,8 @@ abstract class DirectorObjectForm extends QuickForm
 
             $msg = sprintf(
                 $object->hasBeenLoadedFromDb()
-                ? $this->translate('The Icinga %s has successfully been stored')
-                : $this->translate('A new Icinga %s has successfully been created'),
+                ? $this->translate('The %s has successfully been stored')
+                : $this->translate('A new %s has successfully been created'),
                 $this->translate($this->getObjectName())
             );
             $object->store($this->db);
