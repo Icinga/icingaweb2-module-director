@@ -9,21 +9,22 @@ select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
 }
 
 select {
-    border: 1px solid transparent;
+    border: 1px solid #f9f9f9;
     cursor: pointer;
 }
 
 input, textarea {
-    border: 1px solid transparent;
+    border: 1px solid #f9f9f9;
     padding-left: 0.5em;
 }
 
 select:hover, input:hover, textarea:hover, select:focus, input:focus, textarea:focus {
-    border: 1px solid #ddd;
+    border: 1px solid #666;
 }
 
 select[value=""] {
     color: blue;
+    border: 1px solid #666;
 }
 
 select option {
@@ -34,12 +35,6 @@ select option {
 select option[value=""] {
     color: #aaa;
 }
-
-/* TEMP */
-p.description {
-display: none;
-}
-
 
 ul.main-actions {
   margin: 0;
@@ -259,10 +254,30 @@ table.simple {
     tr {
       padding: 0;
       margin: 0;
+
+      td:first-child {
+        border-left: 0.5em solid transparent;
+      }
+
+      td:last-child {
+        border-right: 0.5em solid transparent;
+      }
+      background-color: #fafcfe;
     }
 
     tr:nth-child(even) {
-      background-color: #e6e6e6;
+      background-color: #f6f8fa;
+    }
+
+    tr:hover {
+      background-color: #888;
+      td {
+        color: white;
+      }
+    }
+
+    tr.active td {
+      border-color: black;
     }
 
     th {
@@ -272,7 +287,7 @@ table.simple {
     }
 
     td {
-      padding: 0.1em;
+      padding: 0.1em 1em;
       margin: 0;
       white-space: nowrap;
     }
