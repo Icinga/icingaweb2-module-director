@@ -6,6 +6,8 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class DirectorDatalistEntryForm extends DirectorObjectForm
 {
+    protected $listId;
+
     public function setup()
     {
         $this->addElement('text', 'entry_name', array(
@@ -18,9 +20,17 @@ class DirectorDatalistEntryForm extends DirectorObjectForm
             'label'        => 'Type',
             'multiOptions' => array('string' => $this->translate('String'))
         ));
+    }
 
-        $this->addElement('hidden', 'list_id', array(
-            'value' => $this->getRequest()->getParam('list_id'),
-        ));
+    public function onSuccess()
+    {
+        $this->object()->list_id = $this->listId;
+        parent::onSuccess();
+    }
+
+    public function setListId($id)
+    {
+        $this->listId = $id;
+        return $this;
     }
 }

@@ -40,6 +40,7 @@ class Director_DatalistentryController extends ActionController
         }
 
         $form = $this->view->form = $this->loadForm('directorDatalistentry')
+            ->setListId($listId)
             ->setSuccessUrl('director/datalistentry' . '?list_id=' . $listId)
             ->setDb($this->db());
 
