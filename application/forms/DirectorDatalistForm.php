@@ -17,7 +17,7 @@ class DirectorDatalistForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        $this->addHidden('owner', self::username());
+        $this->object()->owner = self::username();
         parent::onSuccess();
     }
 
