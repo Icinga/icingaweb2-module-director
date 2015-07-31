@@ -23,6 +23,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
 
         $this->addElement('text', 'caption', array(
             'label'       => $this->translate('Caption'),
+            'required'    => true,
             'description' => $this->translate('The caption which should be displayed')
         ));
 
@@ -40,11 +41,19 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'class'         => 'autosubmit',
         ));
 
-        if ($class = $this->object()->datatype) {
-            $this->addSettings($class);
-        } elseif ($class = $this->getSentValue('datatype')) {
+
+        if ($class = $this->getSentValue('datatype')) {
             if ($class && array_key_exists($class, $this->enumDataTypes())) {
                 $this->addSettings($class);
+            }
+        } elseif ($class = $this->object()->datatype) {
+            $this->addSettings($class);
+        }
+
+        $this->addSettings();
+        foreach ($this->object()->getSettings() as $key => $val) {
+            if ($el = $this->getElement($key)) {
+                $el->setValue($val);
             }
         }
     }
@@ -60,8 +69,31 @@ class DirectorDatafieldForm extends DirectorObjectForm
         }
     }
 
+    protected function clearOutdatedSettings()
+    {
+        $names = array();
+        $object = $this->object();
+        $global = array('varname', 'description', 'caption', 'datatype');
+
+        foreach ($this->getElements() as $el) {
+            if ($el->getIgnore()) continue;
+            $name = $el->getName();
+            if (in_array($name, $global)) continue;
+            $names[$name] = $name;
+        }
+
+
+        foreach ($object->getSettings() as $setting => $value) {
+            if (! array_key_exists($setting, $names)) {
+                unset($object->$setting);
+            }
+        }
+    }
+
     public function onSuccess()
     {
+        $this->clearOutdatedSettings();
+
         if ($class = $this->getValue('datatype')) {
             if (array_key_exists($class, $this->enumDataTypes())) {
                 $this->addHidden('format', $class::getFormat());
@@ -69,21 +101,6 @@ class DirectorDatafieldForm extends DirectorObjectForm
         }
 
         parent::onSuccess();
-    }
-
-    public function loadObject($id)
-    {
-        parent::loadObject($id);
-
-        $this->addSettings();
-        foreach ($this->object()->getSettings() as $key => $val) {
-            if ($el = $this->getElement($key)) {
-                $el->setValue($val);
-            }
-        }
-        $this->moveSubmitToBottom();
-
-        return $this;
     }
 
     protected function enumDataTypes()
