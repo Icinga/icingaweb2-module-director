@@ -272,8 +272,6 @@ abstract class QuickForm extends Zend_Form
             $this->setRequest($request);
         }
 
-        $this->prepareElements();
-
         if ($this->hasBeenSent()) {
             $post = $this->getRequest()->getPost();
             if ($this->hasBeenSubmitted()) {
@@ -366,6 +364,7 @@ abstract class QuickForm extends Zend_Form
         }
 
         $this->request = $request;
+        $this->prepareElements();
         $this->onRequest();
         return $this;
     }
