@@ -95,6 +95,7 @@ abstract class ObjectController extends ActionController
 
         if ($object->isTemplate()) {
             $title = $this->translate('Modify Icinga %s template');
+            $form->setObjectType('template'); // WHY??
         } else {
             $title = $this->translate('Modify Icinga %s');
         }
