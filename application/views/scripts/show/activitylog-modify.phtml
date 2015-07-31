@@ -17,12 +17,19 @@ foreach ($old as $key => $value) {
     $modified = array_key_exists($key, $new);
 
     if ($value === null && ! $modified) continue;
+
+    if (is_array($value)) $value = implode(', ', $value);
+    if (is_object($value)) $value = json_encode($value);
+
     echo ' <tr><th>' . $this->escape($key) . '</th><td>';
     if ($modified) {
+        $newval = $new->$key;
+        if (is_array($newval))  $newval = implode(', ', $newval);
+        if (is_object($newval)) $newval = json_encode($newval);
         printf(
             '<span class="old">%s</span> <span class="new">%s</span>',
             $this->escape($value),
-            $this->escape($new->$key)
+            $this->escape($newval)
         );
     } else {
         echo $this->escape($value);
