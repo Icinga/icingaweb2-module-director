@@ -43,7 +43,7 @@ class IcingaHostForm extends DirectorObjectForm
                 'description' => $this->translate('Usually your hosts main IPv6 address')
             ));
 
-            $this->addCheckCommandElement()->addCheckFlagElements();
+            $this->addCheckExecutionElements();
         } else {
             $this->getElement('imports')->setRequired();
         }

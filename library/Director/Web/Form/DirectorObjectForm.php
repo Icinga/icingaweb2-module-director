@@ -464,17 +464,6 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckCommandElement()
-    {
-        $this->addElement('select', 'check_command_id', array(
-            'label' => $this->translate('Check command'),
-            'description'  => $this->translate('Check command definition'),
-            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands())
-        ));
-
-        return $this;
-    }
-
     protected function addImportsElement()
     {
         $this->addElement('multiselect', 'imports', array(
@@ -487,8 +476,16 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckFlagElements()
+    protected function addCheckExecutionElements()
     {
+        $this->addHtml('<h3>Check execution</h3>');
+
+        $this->addElement('select', 'check_command_id', array(
+            'label' => $this->translate('Check command'),
+            'description'  => $this->translate('Check command definition'),
+            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands())
+        ));
+
         $this->optionalBoolean(
             'enable_active_checks', 
             $this->translate('Execute active checks'),
