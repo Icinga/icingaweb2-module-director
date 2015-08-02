@@ -438,8 +438,8 @@ abstract class DirectorObjectForm extends QuickForm
         $this->object = $class::load($id, $this->db);
 
         // TODO: hmmmm...
-        if (! is_array($id)) {
-            $this->addHidden('id');
+        if (! is_array($id) && $this->object->getKeyName() === 'id') {
+            $this->addHidden('id', $id);
         }
 
         return $this;
