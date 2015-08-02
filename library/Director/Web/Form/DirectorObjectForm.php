@@ -403,7 +403,6 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function onRequest()
     {
-        $object = $this->object();
         $values = array();
 
         if ($this->hasBeenSent()) {
@@ -415,6 +414,8 @@ abstract class DirectorObjectForm extends QuickForm
                 }
             }
         }
+
+        $object = $this->object();
 
         if ($object instanceof IcingaObject) {
             if (! $object->hasBeenLoadedFromDb()) {
