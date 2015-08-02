@@ -133,7 +133,7 @@ abstract class DirectorObjectForm extends QuickForm
 
         foreach ($props as $k => $v) {
             if (property_exists($inherited, $k)) {
-            $this->setElementValue($k, $v, $inherited->$k, $origins->$k);
+                $this->setElementValue($k, $v, $inherited->$k, $origins->$k);
             } else {
                 $this->setElementValue($k, $v);
             }
@@ -291,16 +291,17 @@ abstract class DirectorObjectForm extends QuickForm
             return;
         }
 
+        $txtInherited = $this->translate(' (inherited from "%s")');
         if ($el instanceof Zf_Select) {
             $multi = $el->getMultiOptions();
             if (array_key_exists($inherited, $multi)) {
-                $multi[null] = $multi[$inherited] . sprintf(' (%s)', $inheritedFrom);
+                $multi[null] = $multi[$inherited] . sprintf($txtInherited, $inheritedFrom);
             } else {
-                $multi[null] = $this->translate('- inherited -');
+                $multi[null] = $this->translate($this->translate('- inherited -'));
             }
             $el->setMultiOptions($multi);
         } else {
-            $el->setAttrib('placeholder', $inherited . sprintf(' (%s)', $inheritedFrom));
+            $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
         }
     }
 
