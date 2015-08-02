@@ -34,7 +34,7 @@ class CsrfToken
     public static function generate()
     {
         $seed = mt_rand();
-        list ($seed, $token) = hash('sha256', self::getSessionId() . $seed);
+        $token = hash('sha256', self::getSessionId() . $seed);
 
         return sprintf('%s|%s', $seed, $token);
     }
