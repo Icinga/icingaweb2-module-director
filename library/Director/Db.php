@@ -85,7 +85,7 @@ class Db extends DbConnection
         return $db->fetchOne($query);
     }
 
-    public function fetchTemplateTree($type)
+    protected function fetchTemplateRelations($type)
     {
         $db = $this->db();
         $query = $db->select()->from(
@@ -106,7 +106,12 @@ class Db extends DbConnection
          ->order('p.object_name')
          ->order('o.object_name');
 
-        $relations = $db->fetchAll($query);
+        return $db->fetchAll($query);
+    }
+
+    public function fetchTemplateTree($type)
+    {
+        $relations = $this->fetchTemplateRelations($type);
         $children = array();
         $objects = array();
         foreach ($relations as $rel) {
