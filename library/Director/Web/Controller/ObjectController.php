@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Web\Url;
+use Icinga\Module\Director\Objects\IcingaObject;
 
 abstract class ObjectController extends ActionController
 {
@@ -13,8 +14,7 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
         $ltype = strtolower($type);
         $params = array();
-        if ($name = $this->params->get('name')) {
-            $params['name'] = $name;
+        if ($object = $this->loadObject()) {
 
             $this->getTabs()->add('modify', array(
                 'url'       => sprintf('director/%s/edit', $ltype),
@@ -151,31 +151,16 @@ abstract class ObjectController extends ActionController
         );
     }
 
-    protected function object()
+    protected function loadObject()
     {
         if ($name = $this->params->get('name')) {
-            $this->object = $this->loadObject($name);
+            $this->object = IcingaObject::loadByType(
+                $this->getType(),
+                $name,
+                $this->db()
+            );
         }
 
         return $this->object;
-    }
-
-    protected function getObjectClassname()
-    {
-        return 'Icinga\\Module\\Director\\Objects\\Icinga'
-            . ucfirst($this->getType());
-    }
-
-    protected function loadObject($id)
-    {
-        $class = $this->getObjectClassname();
-        $object = $class::load($id, $this->db());
-        $this->view->title = sprintf(
-            '%s "%s"',
-            $this->translate(ucfirst(strtolower($this->getType()))),
-            $object->object_name
-        );
-
-        return $object;
     }
 }
