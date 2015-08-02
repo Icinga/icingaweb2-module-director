@@ -23,6 +23,11 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->object === null) {
             $class = $this->getObjectClassname();
             $this->object = $class::create($values, $this->db);
+            foreach ($this->getValues() as $key => $value) {
+                if ($this->object->hasProperty($key)) {
+                    $this->object->$key = $value;
+                }
+            }
         } else {
             if (! $this->object->hasConnection()) {
                 $this->object->setConnection($this->db);
