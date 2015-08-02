@@ -12,26 +12,41 @@ abstract class ObjectController extends ActionController
     public function init()
     {
         $type = $this->getType();
-        $ltype = strtolower($type);
+
         $params = array();
         if ($object = $this->loadObject()) {
 
-            $this->getTabs()->add('modify', array(
-                'url'       => sprintf('director/%s/edit', $ltype),
+            $params['name'] = $object->object_name;
+
+            $tabs = $this->getTabs()->add('modify', array(
+                'url'       => sprintf('director/%s/edit', $type),
                 'urlParams' => $params,
-                'label'     => $this->translate(ucfirst($ltype))
-            ))->add('delete', array(
-                'url'       => sprintf('director/%s/delete', $ltype),
-                'urlParams' => $params,
-                'label'     => $this->translate('Delete')
-            ))->add('render', array(
-                'url'       => sprintf('director/%s/render', $ltype),
+                'label'     => $this->translate(ucfirst($type))
+            ));
+
+            if ($object->hasBeenLoadedFromDb()
+                && $object->supportsFields()
+                && $object->isTemplate()
+            ) {
+                $tabs->add('fields', array(
+                    'url'       => sprintf('director/%s/fields', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate('Fields')
+                ));
+            }
+
+            $tabs->add('render', array(
+                'url'       => sprintf('director/%s/render', $type),
                 'urlParams' => $params,
                 'label'     => $this->translate('Preview'),
             ))->add('history', array(
-                'url'       => sprintf('director/%s/history', $ltype),
+                'url'       => sprintf('director/%s/history', $type),
                 'urlParams' => $params,
                 'label'     => $this->translate('History')
+            ))->add('delete', array(
+                'url'       => sprintf('director/%s/delete', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('Delete')
             ));
         } else {
             $this->getTabs()->add('add', array(
@@ -57,19 +72,17 @@ abstract class ObjectController extends ActionController
     public function deleteAction()
     {
         $this->getTabs()->activate('delete');
-        $type = $this->getType();
-        $ltype = strtolower($type);
 
         $this->view->form = $form = $this->loadForm(
             'icingaDeleteObject'
-        )->setObject($this->object());
+        )->setObject($this->object);
 
-        $url = Url::fromPath(sprintf('director/%ss', $ltype));
+        $url = Url::fromPath(sprintf('director/%ss', $type));
         $form->setSuccessUrl($url);
 
         $this->view->title = sprintf(
             $this->translate('Delete Icinga %s'),
-            ucfirst($ltype)
+            ucfirst($type)
         );
         $this->view->form->handleRequest();
         $this->render('object/form', null, true);
@@ -77,18 +90,17 @@ abstract class ObjectController extends ActionController
 
     public function editAction()
     {
+        $object = $this->object;
         $this->getTabs()->activate('modify');
-        $type = $this->getType();
-        $ltype = strtolower($type);
+        $ltype = $this->getType();
+        $type = ucfirst($ltype);
 
-        $this->view->form = $form = $this->loadForm(
-            'icinga' . ucfirst($type)
-        )->setDb($this->db());
-        $form->loadObject($this->params->get('name'));
-        $object = $form->getObject();
+        $formName = 'icinga' . $type;
+        $this->view->form = $form = $this->loadForm($formName)->setDb($this->db());
+        $form->setObject($object);
 
         $url = Url::fromPath(
-            sprintf('director/%s', $ltype),
+            sprintf('director/%s', $type),
             array('name' => $object->object_name)
         );
         $form->setSuccessUrl($url);
@@ -102,6 +114,7 @@ abstract class ObjectController extends ActionController
 
         $this->view->title = sprintf($title, ucfirst($ltype));
         $this->view->form->handleRequest();
+
         $this->render('object/form', null, true);
     }
 
