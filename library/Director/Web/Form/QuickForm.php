@@ -155,10 +155,10 @@ abstract class QuickForm extends Zend_Form
     public function regenerateCsrfToken()
     {
         if (! $element = $this->getElement(self::CSRF)) {
-            $this->addHidden(self::CSRF);
+            $this->addHidden(self::CSRF, CsrfToken::generate());
             $element = $this->getElement(self::CSRF);
         }
-        $element->setValue(CsrfToken::generate())->setIgnore(true);
+        $element->setIgnore(true);
 
         return $this;
     }
