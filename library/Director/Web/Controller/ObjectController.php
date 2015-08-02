@@ -128,6 +128,32 @@ abstract class ObjectController extends ActionController
         $this->render('object/form', null, true);
     }
 
+    public function fieldsAction()
+    {
+        $object = $this->object;
+        $type = $this->getType();
+
+        $this->getTabs()->activate('fields');
+        $title = $this->translate('%s template "%s": custom fields');
+        $this->view->title = sprintf(
+            $title,
+            $this->translate(ucfirst($type)),
+            $object->object_name
+        );
+
+        $this->view->form = $this
+            ->loadForm('icingaObjectField')
+            ->setDb($this->db)
+            ->setIcingaObject($object)
+            ->handleRequest();
+
+        $this->view->table = $this
+            ->loadTable('icingaObjectDatafield')
+            ->setObject($object);
+
+        $this->render('object/fields', null, true);
+    }
+
     public function historyAction()
     {
         $type = $this->getType();
