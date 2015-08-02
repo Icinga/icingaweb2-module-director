@@ -323,19 +323,40 @@ abstract class DirectorObjectForm extends QuickForm
         $this->redirectOnSuccess($msg);
     }
 
+    protected function addBoolean($key, $options, $default = null)
+    {
+        $map = array(
+            false => 'n',
+            true  => 'y',
+            'n'   => 'n',
+            'y'   => 'y',
+        );
+        if ($default !== null) {
+            $options['multiOptions'] = $this->enumBoolean();
+        } else {
+            $options['multiOptions'] = $this->optionalEnum($this->enumBoolean());
+        }
+
+        $res = $this->addElement('select', $key, $options);
+
+        if ($default !== null) {
+            $this->getElement($key)->setValue($map[$default]);
+        }
+
+        return $res;
+    }
+
     protected function optionalBoolean($key, $label, $description)
     {
-        return $this->addElement('select', $key, array(
-            'label' => $label,
-            'description' => $description,
-            'multiOptions' => $this->selectBoolean()
+        return $this->addBoolean($key, array(
+            'label'       => $label,
+            'description' => $description
         ));
     }
 
-    protected function selectBoolean()
+    protected function enumBoolean()
     {
         return array(
-            null => $this->translate('- not set -'),
             'y'  => $this->translate('Yes'),
             'n'  => $this->translate('No'),
         );
