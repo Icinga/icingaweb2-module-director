@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
@@ -614,6 +615,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // TODO: replace with an exception once finished
             return 'ERROR: NO NAME';
         }
+    }
+
+    public static function loadByType($type, $id, Db $connection)
+    {
+        $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
+
+        return $class::load($id, $connection);
     }
 
     public function __toString()
