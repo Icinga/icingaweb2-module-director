@@ -65,7 +65,7 @@ abstract class ObjectController extends ActionController
     {
         $type = $this->getType();
         $this->getTabs()->activate('render');
-        $this->view->object = $this->object();
+        $this->view->object = $this->object;
         $this->render('object/show', null, true);
     }
 
@@ -171,11 +171,10 @@ abstract class ObjectController extends ActionController
     {
         $type = $this->getType();
         $this->getTabs()->activate('history');
-        $object = $this->object();
         $this->view->title = $this->translate('Activity Log');
         $this->view->table = $this->applyPaginationLimits(
             $this->loadTable('activityLog')->setConnection($this->db())
-            ->filterObject('icinga_' . $type, $object->object_name)
+            ->filterObject('icinga_' . $type, $this->object->object_name)
         );
         $this->render('object/history', null, true);
     }
