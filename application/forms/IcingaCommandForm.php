@@ -36,24 +36,6 @@ class IcingaCommandForm extends DirectorObjectForm
             'description' => $this->translate('Optional command timeout')
         ));
 
-        $this->addElement('select', 'zone_id', array(
-            'label' => $this->translate('Cluster Zone'),
-            'description' => $this->translate('Provide this command only to this specific Icinga cluster zone')
-        ));
-
-        $this->addElement('select', 'object_type', array(
-            'label' => $this->translate('Object type'),
-            'required'     => true,
-            'description'  => $this->translate('Whether to create a command template or a command object'),
-            'multiOptions' => $this->optionalEnum(array(
-                'object'   => $this->translate('Command object'),
-                'template' => $this->translate('Command template'),
-            ))
-        ));
-
-        $this->addElement('text', 'imports', array(
-            'label' => $this->translate('Imports'),
-            'description' => $this->translate('The inherited command template names')
-        ));
+        $this->addImportsElement();
     }
 }
