@@ -33,16 +33,6 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->object;
     }
 
-    protected function onSetup()
-    {
-        $object = $this->object();
-
-        if (! $object instanceof IcingaObject) {
-            return;
-        }
-
-    }
-
     protected function isTemplate()
     {
         return $this->objectType === 'template';
