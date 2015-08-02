@@ -425,6 +425,8 @@ abstract class DbObject
     /**
      * Return the unique identifier
      *
+     * // TODO: may conflict with ->id
+     *
      * @return string
      */
     public function getId()
