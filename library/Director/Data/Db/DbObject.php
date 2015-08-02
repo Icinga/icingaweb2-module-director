@@ -751,9 +751,14 @@ abstract class DbObject
 
     public function __clone()
     {
+        $this->onClone();
         $this->autoincKeyName  = null;
         $this->loadedFromDb    = false;
         $this->hasBeenModified = true;
+    }
+
+    protected function onClone()
+    {
     }
 
     public static function create($properties, DbConnection $connection = null)
