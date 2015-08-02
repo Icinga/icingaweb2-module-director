@@ -493,6 +493,7 @@ abstract class DirectorObjectForm extends QuickForm
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate('Importable templates'),
             'multiOptions' => $this->enumAllowedTemplates(),
+            'size'         => 10,
             'class'        => 'autosubmit'
         ));
 
