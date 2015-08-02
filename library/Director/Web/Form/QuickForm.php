@@ -172,10 +172,13 @@ abstract class QuickForm extends Zend_Form
     public function addHidden($name, $value = null)
     {
         $this->addElement('hidden', $name);
-        $this->getElement($name)->setDecorators(array('ViewHelper'));
+        $el = $this->getElement($name);
+        $el->setDecorators(array('ViewHelper'));
         if ($value !== null) {
             $this->setDefault($name, $value);
+            $el->setValue($value);
         }
+    
         return $this;
     }
 
