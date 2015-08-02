@@ -28,7 +28,6 @@ $section = $this->menuSection(
 $section->add($this->translate('Overview'))->setUrl('director/welcome')->setPriority(20);
 $section->add($this->translate('Global'))->setUrl('director/commands');
 $section->add($this->translate('Hosts'))->setUrl('director/hosts');
-$section->add($this->translate('Fields'))->setUrl('director/field/host')->setPriority(903);
 $section->add($this->translate('Services'))->setUrl('director/services');
 $section->add($this->translate('Users'))->setUrl('director/users');
 $section->add($this->translate('Import / Sync'))
