@@ -14,9 +14,9 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $objectName;
 
-    private $className;
+    protected $className;
 
-    private $objectType = 'object';
+    protected $objectType = 'object';
 
     protected function object($values = array())
     {
