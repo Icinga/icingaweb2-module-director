@@ -422,7 +422,7 @@ abstract class DirectorObjectForm extends QuickForm
                 $object->object_type = $this->objectType;
             }
             $this->handleImports($object, $values);
-            $this->handleCustomVars($object, $values);
+            $this->handleCustomVars($object, $post);
             $this->handleGroups($object, $values);
             $this->handleRanges($object, $values);
         }
