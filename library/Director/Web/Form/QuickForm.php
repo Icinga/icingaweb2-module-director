@@ -50,6 +50,8 @@ abstract class QuickForm extends Zend_Form
 
     protected $submitLabel;
 
+    protected $submitButtonName;
+
     /**
      * Whether form elements have already been created
      */
@@ -92,17 +94,18 @@ abstract class QuickForm extends Zend_Form
     protected function addSubmitButtonIfSet()
     {
         if (false !== ($label = $this->getSubmitLabel())) {
-            $this->addElement('submit', $label);
-            $this->getElement($label)->setLabel($label)->removeDecorator('Label');
+            $el = $this->createElement('submit', $label)->setLabel($label)->removeDecorator('Label');
+            $this->submitButtonName = $el->getName();
+            $this->addElement($el);
         }
     }
 
     // TODO: This is ugly, we need to defer button creation
     protected function moveSubmitToBottom()
     {
-        $label = $this->getSubmitLabel();
-        if ($submit = $this->getElement($label)) {
-            $this->removeElement($label);
+        $name = $this->submitButtonName;
+        if ($name && ($submit = $this->getElement($name))) {
+            $this->removeElement($name);
             $this->addElement($submit);
         }
     }
@@ -234,13 +237,14 @@ abstract class QuickForm extends Zend_Form
             $req = $this->getRequest();
             if ($req->isPost()) {
                 $post = $req->getPost();
-                $label = $this->getSubmitLabel();
-                if ($label === false) {
+                $name  = $this->submitButtonName;
+
+                if ($name === null) {
                     $this->hasBeenSubmitted = $this->hasBeenSent();
                 } else {
-                    $elementName = $this->getElement($label)->getName();
-                    $this->hasBeenSubmitted = array_key_exists($elementName, $post)
-                         && $post[$elementName] === $label;
+                    $el = $this->getElement($name);
+                    $this->hasBeenSubmitted = array_key_exists($name, $post)
+                         && $post[$name] === $this->getSubmitLabel();
                 }
             } else {
                 $this->hasBeenSubmitted === false;
