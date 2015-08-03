@@ -2,39 +2,70 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaCommandArgumentForm extends DirectorObjectForm
 {
+    protected $commandObject;
+
+    public function setCommandObject(IcingaCommand $object)
+    {
+        $this->commandObject = $object;
+        $this->setDb($object->getConnection());
+        return $this;
+    }
+
     public function setup()
     {
-        $this->addElement('select', 'command_id', array(
-            'label'        => $this->translate('Check command'),
-            'description'  => $this->translate('Check command definition'),
-            'multiOptions' => $this->optionalEnum($this->db->enumCommands())
-        ));
+        $this->addHidden('command_id', $this->commandObject->id);
 
         $this->addElement('text', 'argument_name', array(
             'label'       => $this->translate('Argument name'),
-            'required'    => true,
             'description' => $this->translate('e.g. -H or --hostname, empty means "skip_key"')
         ));
 
-        $this->addElement('text', 'argument_value', array(
-            'label' => $this->translate('Value'),
-            'description' => $this->translate('e.g. 5%, $hostname$, $lower$%:$upper$%')
+        if ($this->getRequest()->getPost('argument_format') === 'expression') {
+            $this->addElement('textarea', 'argument_value', array(
+                'label'       => $this->translate('Value'),
+                'description' => $this->translate('e.g. 5%, $hostname$, $lower$%:$upper$%'),
+                'rows'        => 3
+            ));
+        } else {
+            $this->addElement('text', 'argument_value', array(
+                'label'       => $this->translate('Value'),
+                'description' => $this->translate('e.g. ')
+            ));
+        }
+
+        $this->addElement('select', 'argument_format', array(
+            'label' => $this->translate('Value type'),
+            'multiOptions' => array(
+                'string'     => $this->translate('String'),
+                // 'expression' => $this->translate('Icinga DSL')
+            ),
+            'class' => 'autosubmit',
         ));
 
-        $this->addHidden('value_format', 'string'); // expression, json?
-    }
+        $this->addElement('text', 'set_if', array(
+            'label'       => $this->translate('Condition (set_if)'),
+        ));
 
+        $this->addElement('select', 'set_if_format', array(
+            'label' => $this->translate('Condition format'),
+            'multiOptions' => array(
+                'string'     => $this->translate('String'),
+                // 'expression' => $this->translate('Icinga DSL')
+            )
+        ));
+    }
 
     protected function beforeValidation($data = array())
     {
         if (isset($data['argument_value']) && $value = $data['argument_value']) {
             if (preg_match_all('/\$([a-z0-9_]+)\$/',  $value, $m, PREG_PATTERN_ORDER)) {
                 foreach ($m[1] as $var) {
-                    $this->addCustomVariable($var);
+                    // $this->addCustomVariable($var);
                 }
             }
         }
