@@ -429,7 +429,7 @@ abstract class DirectorObjectForm extends QuickForm
         $object = $this->object();
 
         if ($object instanceof IcingaObject) {
-            if (! $object->hasBeenLoadedFromDb()) {
+            if (! $object->hasBeenLoadedFromDb() && $object->hasProperty('object_type')) {
                 $object->object_type = $this->objectType;
             }
             $this->handleImports($object, $values);
