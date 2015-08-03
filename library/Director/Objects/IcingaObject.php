@@ -22,6 +22,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsRanges = false;
 
+    protected $supportsArguments = false;
+
     protected $supportsImports = false;
 
     protected $supportsFields = false;
@@ -38,6 +40,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $ranges;
 
+    private $arguments;
+
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
@@ -51,6 +55,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsRanges()
     {
         return $this->supportsRanges;
+    }
+
+    public function supportsArguments()
+    {
+        return $this->supportsArguments;
     }
 
     public function supportsImports()
@@ -110,6 +119,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->ranges;
+    }
+
+    public function arguments()
+    {
+        $this->assertArgumentsSupport();
+        if ($this->arguments === null) {
+            if ($this->hasBeenLoadedFromDb()) {
+                $this->arguments = IcingaArguments::loadForStoredObject($this);
+            } else {
+                $this->arguments = new IcingaArguments($this);
+            }
+        }
+
+        return $this->arguments;
     }
 
     public function imports()
@@ -315,6 +338,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    protected function assertArgumentsSupport()
+    {
+        if (! $this->supportsArguments()) {
+            throw new ProgrammingError(
+                'Objects of type "%s" have no arguments',
+                $this->getType()
+            );
+        }
+
+        return $this;
+    }
+
     protected function assertImportsSupport()
     {
         if (! $this->supportsImports()) {
@@ -402,15 +437,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             && $this->object_type === 'apply';
     }
 
+    protected function storeRelatedObjects()
+    {
+        $this
+            ->storeCustomVars()
+            ->storeGroups()
+            ->storeImports()
+            ->storeRanges()
+            ->storeArguments();
+    }
+
     public function onInsert()
     {
-        $this->storeCustomVars()->storeGroups()->storeImports()->storeRanges();
+        $this->storeRelatedObjects();
         DirectorActivityLog::logCreation($this, $this->connection);
     }
 
     public function onUpdate()
     {
-        $this->storeCustomVars()->storeGroups()->storeImports()->storeRanges();
+        $this->storeRelatedObjects();
         DirectorActivityLog::logModification($this, $this->connection);
     }
 
@@ -436,6 +481,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         if ($this->supportsRanges()) {
             $this->ranges !== null && $this->ranges()->store();
+        }
+
+        return $this;
+    }
+
+    protected function storeArguments()
+    {
+        if ($this->supportsArguments()) {
+            $this->arguments !== null && $this->arguments()->store();
         }
 
         return $this;
@@ -536,6 +590,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+
+    /**
+     * @return string
+     */
+    protected function renderArguments()
+    {
+        if ($this->supportsArguments()) {
+            return $this->arguments()->toConfigString();
+        } else {
+            return '';
+        }
+    }
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
         return c::renderKeyValue(
@@ -574,6 +640,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderImports(),
             $this->renderProperties(),
             $this->renderRanges(),
+            $this->renderArguments(),
             $this->renderGroups(),
             $this->renderCustomVars(),
             $this->renderSuffix()
