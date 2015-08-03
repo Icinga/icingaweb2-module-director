@@ -71,6 +71,7 @@ abstract class ObjectController extends ActionController
 
     public function deleteAction()
     {
+        $type = $this->getType();
         $this->getTabs()->activate('delete');
 
         $this->view->form = $form = $this->loadForm(
