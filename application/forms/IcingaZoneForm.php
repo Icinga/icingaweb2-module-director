@@ -8,14 +8,7 @@ class IcingaZoneForm extends DirectorObjectForm
 {
     public function setup()
     {
-        $this->addElement('select', 'object_type', array(
-            'label' => $this->translate('Object type'),
-            'description'  => $this->translate('Whether this should be a template'),
-            'multiOptions' => $this->optionalEnum(array(
-                'object'   => $this->translate('Zone object'),
-                'template' => $this->translate('Zone template'),
-            )),
-        ));
+        $this->addHidden('object_type', 'object');
 
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Zone (template) name'),
@@ -39,9 +32,6 @@ class IcingaZoneForm extends DirectorObjectForm
             'multiOptions' => $this->optionalEnum($this->db->enumZones())
         ));
 
-        $this->addElement('text', 'imports', array(
-            'label'       => $this->translate('Imports'),
-            'description' => $this->translate('The inherited zone template names')
-        ));
+        // $this->addImportsElement();
     }
 }
