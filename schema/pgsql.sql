@@ -311,14 +311,14 @@ CREATE TABLE icinga_command_argument (
   command_id integer NOT NULL,
   argument_name character varying(64) DEFAULT NULL,
   argument_value text DEFAULT NULL,
+  argument_format enum_property_format NOT NULL DEFAULT 'string',
   key_string character varying(64) DEFAULT NULL,
   description text DEFAULT NULL,
   skip_key enum_boolean DEFAULT NULL,
   set_if character varying(255) DEFAULT NULL, -- (string expression, must resolve to a numeric value)
+  set_if_format enum_property_format DEFAULT NULL,
   sort_order smallint DEFAULT NULL, -- -> order
   repeat_key enum_boolean DEFAULT NULL,
-  value_format enum_property_format NOT NULL DEFAULT 'string',
-  set_if_format enum_property_format DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_command_argument_command
   FOREIGN KEY (command_id)

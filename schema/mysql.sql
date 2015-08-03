@@ -263,14 +263,14 @@ CREATE TABLE icinga_command_argument (
   command_id INT(10) UNSIGNED NOT NULL,
   argument_name VARCHAR(64) DEFAULT NULL COMMENT '-x, --host',
   argument_value TEXT DEFAULT NULL,
+  argument_format ENUM('string', 'expression', 'json') NOT NULL DEFAULT 'string',
   key_string VARCHAR(64) DEFAULT NULL COMMENT 'Overrides name',
   description TEXT DEFAULT NULL,
   skip_key ENUM('y', 'n') DEFAULT NULL,
   set_if VARCHAR(255) DEFAULT NULL, -- (string expression, must resolve to a numeric value)
+  set_if_format ENUM('string', 'expression', 'json') DEFAULT NULL,
   sort_order SMALLINT DEFAULT NULL, -- -> order
   repeat_key ENUM('y', 'n') DEFAULT NULL COMMENT 'Useful with array values',
-  value_format ENUM('string', 'expression', 'json') NOT NULL DEFAULT 'string',
-  set_if_format ENUM('string', 'expression', 'json') DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX sort_idx (command_id, sort_order),
   UNIQUE KEY unique_idx (command_id, argument_name),
