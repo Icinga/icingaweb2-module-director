@@ -32,8 +32,6 @@ class IcingaHostTable extends QuickTable
         $view = $this->view();
         return array(
             'host'    => $view->translate('Hostname'),
-            'address' => $view->translate('Address'),
-            'zone'    => $view->translate('Zone'),
             'parents' => $view->translate('Imports'),
         );
     }
