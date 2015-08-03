@@ -23,59 +23,37 @@ class ImportSourceForm extends DirectorObjectForm
         $this->addElement('select', 'provider_class', array(
             'label'       => $this->translate('Source Type'),
             'required'    => true,
-            'multiOptions' => $this->enumSourceTypes(),
+            'multiOptions' => $this->optionalEnum($this->enumSourceTypes()),
             'class'       => 'autosubmit'
         ));
 
-        // TODO: Form needs to provide a better way for doing this
-        if (isset($_POST['provider_class'])) {
-            $class = $_POST['provider_class'];
-            if ($class && array_key_exists($class, $this->enumSourceTypes())) {
-                $this->addSettings($class);
-            }
-        }
+        $this->addSettings();
     }
 
     protected function addSettings($class = null)
     {
-        if ($class === null) {
-            if ($class = $this->getValue('provider_class')) {
-                $class::addSettingsFormFields($this);
-            }
+        if ($this->hasBeenSent()) {
+            $class = $this->getRequest()->getPost('provider_class');
         } else {
-            $class::addSettingsFormFields($this);
-        }
-    }
-
-    public function loadObject($id)
-    {
-        
-        parent::loadObject($id);
-        $this->addSettings();
-        foreach ($this->object()->getSettings() as $key => $val) {
-            if ($el = $this->getElement($key)) {
-                $el->setValue($val);
+            if (! ($class = $this->object()->provider_class)) {
+                return;
             }
         }
-        $this->moveSubmitToBottom();
 
-        return $this;
-    }
-
-    public function onSuccess()
-    {
-/*
-        $this->getElement('owner')->setValue(
-            self::username()
-        );
-*/
-        parent::onSuccess();
+        if (array_key_exists($class, $this->enumSourceTypes())) {
+            $class::addSettingsFormFields($this);
+            foreach ($this->object()->getSettings() as $key => $val) {
+                if ($el = $this->getElement($key)) {
+                    $el->setValue($val);
+                }
+            }
+        }
     }
 
     protected function enumSourceTypes()
     {
         $hooks = Hook::all('Director\\ImportSource');
-        $enum = array(null => '- please choose -');
+        $enum = array();
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
         }
