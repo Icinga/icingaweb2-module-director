@@ -7,8 +7,6 @@ abstract class ObjectsController extends ActionController
     protected $dummy;
 
     protected $globalTypes = array(
-        'Command',
-        'CommandArgument',
         'TimePeriod',
         'Zone',
         'Endpoint'
@@ -33,7 +31,6 @@ abstract class ObjectsController extends ActionController
 
             return;
         }
-
 
         $object = $this->dummyObject();
         if ($object->isGroup()) {
