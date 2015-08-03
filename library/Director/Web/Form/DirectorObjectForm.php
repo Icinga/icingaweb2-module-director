@@ -143,7 +143,7 @@ abstract class DirectorObjectForm extends QuickForm
         $origins   = $object->getOriginsProperties();
 
         foreach ($props as $k => $v) {
-            if (property_exists($inherited, $k)) {
+            if ($k !== 'object_name' && property_exists($inherited, $k)) {
                 $this->setElementValue($k, $v, $inherited->$k, $origins->$k);
             } else {
                 $this->setElementValue($k, $v);
