@@ -90,6 +90,7 @@ class Sync
                 );
 
                 $newVars = array();
+                $imports = array();
 
                 foreach ($properties as $p) {
                     if ($p->source_id !== $sourceId) continue;
@@ -100,7 +101,11 @@ class Sync
                     if (substr($prop, 0, 5) === 'vars.') {
                         $newVars[substr($prop, 5)] = $val;
                     } else {
-                        $newProps[$prop] = $val;
+                        if ($prop === 'import') {
+                            $imports[] = $val;
+                        } else {
+                            $newProps[$prop] = $val;
+                        }
                     }
                 }
 
@@ -110,6 +115,9 @@ class Sync
                             $objects[$key] = IcingaHost::create($newProps);
                             foreach ($newVars as $prop => $var) {
                                 $objects[$key]->vars()->$prop = $var;
+                            }
+                            if (! empty($imports)) {
+                                $objects[$key]->imports()->set($imports);
                             }
                             break;
 
@@ -122,6 +130,10 @@ class Sync
                             foreach ($newVars as $prop => $var) {
                                 // TODO: property merge policy
                                 $object->vars()->$prop = $var;
+                            }
+                            if (! empty($imports)) {
+                                // TODO: merge imports ?!
+                                $objects[$key]->imports()->set($imports);
                             }
                             break;
 
