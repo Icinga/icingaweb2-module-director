@@ -192,7 +192,7 @@ abstract class ObjectController extends ActionController
 
     protected function loadObject()
     {
-        if ($name = $this->params->get('name')) {
+        if ($this->object === null && $name = $this->params->get('name')) {
             $this->object = IcingaObject::loadByType(
                 $this->getType(),
                 $name,
