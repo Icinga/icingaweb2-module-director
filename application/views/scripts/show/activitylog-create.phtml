@@ -16,6 +16,7 @@ foreach ($new as $key => $value) {
     if ($value === null) continue;
 
     if (is_array($value)) $value = implode(', ', $value);
+    if (is_object($value)) $value = json_encode($value);
 
     echo ' <tr><th>' . $this->escape($key) . '</th><td>';
     echo $this->escape($value);
