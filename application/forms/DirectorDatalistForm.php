@@ -3,22 +3,21 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Authentication\Manager as Auth;
+use Icinga\Authentication\Auth;
 
 class DirectorDatalistForm extends DirectorObjectForm
 {
     public function setup()
     {
         $this->addElement('text', 'list_name', array(
-            'label' => $this->translate('List name')
+            'label'    => $this->translate('List name'),
+            'required' => true,
         ));
-
-        $this->addElement('hidden', 'owner');
     }
 
     public function onSuccess()
     {
-        $this->addHidden('owner', self::username());
+        $this->object()->owner = self::username();
         parent::onSuccess();
     }
 

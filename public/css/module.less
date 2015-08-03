@@ -1,6 +1,90 @@
+form p.description {
+  display: none;
+}
+
+input, select, select option, textarea {
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+}
+
+select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
+    display: none;
+}
+
+select {
+    border: 1px solid #f9f9f9;
+    cursor: pointer;
+}
+
+input, textarea {
+    border: 1px solid #f9f9f9;
+    padding-left: 0.5em;
+}
+
+select:hover, input:hover, textarea:hover, select:focus, input:focus, textarea:focus {
+    border: 1px solid #666;
+}
+
+select[value=""] {
+    color: blue;
+    border: 1px solid #666;
+}
+
+select option {
+    color: inherit;
+    padding-left: 0.5em;
+}
+
+select option[value=""] {
+    color: #aaa;
+}
+
+ul.main-actions {
+  margin: 0;
+  li {
+    list-style-type: none;
+    width: 20em;
+    height: 20em;
+    text-align: center;
+    display: block;
+    padding: 0;
+    float: left;
+
+    a {
+        i {
+            width: 100%;
+            height: 1.3em;
+            font-size: 8em;
+            display: inline-block;
+            line-height: 1em;
+        }
+
+        border: 1px solid #666;
+        padding: 1em;
+        margin: 0.5em;
+        font-size: 1.1em;
+        color: #666;
+        font-weight: bold;
+        display: block;
+
+        &:hover {
+            background-color: #666;
+            color: white;
+            text-decoration: none;
+        }
+    }
+  }
+}
+
 /* BEGIN Forms */
 form dt label {
     width: auto;
+    font-weight: normal;
+
+    &.required {
+        font-weight: bold;
+    }
 }
 
 form dd {
@@ -10,15 +94,44 @@ form dd {
 
 form dt {
     display: inline-block;
-    min-width: 16em;
+    min-width: 12em;
+    width: 30%;
 }
 
 form dd:after {
     display: block;
     content: '';
 }
-textarea {
-    height: 10em;
+
+form textarea {
+    height: auto;
+}
+
+form dd ul.errors {
+    list-style-type: none;
+    padding-left: 0.3em;
+    font-size: 0.857em;
+
+    li {
+        color: @colorCritical;
+        padding: 0.3em;
+    }
+}
+
+form div.hint {
+    font-size: 0.857em;
+    padding: 1em;
+    background-color: #f2f4fd;
+    border: 1px solid lightgrey;
+    margin: 1em 0;
+
+    pre {
+        font-style: normal;
+        background-color: white;
+        font-size: 1.25em;
+        margin: 0;
+        padding: 1em;
+    }
 }
 
 /* END of Forms */
@@ -145,10 +258,30 @@ table.simple {
     tr {
       padding: 0;
       margin: 0;
+
+      td:first-child {
+        border-left: 0.5em solid transparent;
+      }
+
+      td:last-child {
+        border-right: 0.5em solid transparent;
+      }
+      background-color: #fafcfe;
     }
 
     tr:nth-child(even) {
-      background-color: #e6e6e6;
+      background-color: #f6f8fa;
+    }
+
+    tr:hover {
+      background-color: #888;
+      td {
+        color: white;
+      }
+    }
+
+    tr.active td {
+      border-color: black;
     }
 
     th {
@@ -158,7 +291,7 @@ table.simple {
     }
 
     td {
-      padding: 0.1em;
+      padding: 0.1em 1em;
       margin: 0;
       white-space: nowrap;
     }

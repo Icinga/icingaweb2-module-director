@@ -23,6 +23,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsImports = false;
 
+    protected $supportsFields = false;
+
     private $type;
 
     private $vars;
@@ -53,6 +55,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsImports()
     {
         return $this->supportsImports;
+    }
+
+    public function supportsFields()
+    {
+        return $this->supportsFields;
     }
 
     public function hasBeenModified()
@@ -132,37 +139,143 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->importedObjects;
     }
 
+    public function clearImportedObjects()
+    {
+        $this->importedObjects = null;
+        return $this;
+    }
+
     public function getResolvedProperties()
     {
-        $res = $this->resolveProperties();
-        return $res['_MERGED_'];
+        return $this->getResolved('Properties');
+    }
+
+    public function getInheritedProperties()
+    {
+        return $this->getInherited('Properties');
+    }
+
+    public function getOriginsProperties()
+    {
+        return $this->getOrigins('Properties');
     }
 
     public function resolveProperties()
     {
-        $props = array();
-        $props['_MERGED_'] = (object) array();
+        return $this->resolve('Properties');
+    }
+
+    public function getResolvedFields()
+    {
+        return $this->getResolved('Fields');
+    }
+
+    public function getInheritedFields()
+    {
+        return $this->getInherited('Fields');
+    }
+
+    public function getOriginsFields()
+    {
+        return $this->getOrigins('Fields');
+    }
+
+    public function resolveFields()
+    {
+        return $this->resolve('Fields');
+    }
+
+    public function getResolvedVars()
+    {
+        return $this->getResolved('Vars');
+    }
+
+    public function getInheritedVars()
+    {
+        return $this->getInherited('Vars');
+    }
+
+    public function resolveVars()
+    {
+        return $this->resolve('Vars');
+    }
+
+    public function getOriginsVars()
+    {
+        return $this->getOrigins('Vars');
+    }
+
+    public function getVars()
+    {
+        $vars = (object) array();
+        foreach ($this->vars() as $key => $var) {
+            $vars->$key = $var->getValue();
+        }
+
+        return $vars;
+    }
+
+    protected function getResolved($what)
+    {
+        $func = 'resolve' . $what;
+        $res = $this->$func();
+        return $res['_MERGED_'];
+    }
+
+    protected function getInherited($what)
+    {
+        $func = 'resolve' . $what;
+        $res = $this->$func();
+        return $res['_INHERITED_'];
+    }
+
+    protected function getOrigins($what)
+    {
+        $func = 'resolve' . $what;
+        $res = $this->$func();
+        return $res['_ORIGINS_'];
+    }
+
+    protected function resolve($what)
+    {
+        $vals = array();
+        $vals['_MERGED_']    = (object) array();
+        $vals['_INHERITED_'] = (object) array();
+        $vals['_ORIGINS_']   = (object) array();
         $objects = $this->importedObjects();
 
-        $objects[$this->object_name] = $this;
-        $blacklist = array('id', 'object_type', 'object_name');
+        $get          = 'get'         . $what;
+        $getInherited = 'getInherited' . $what;
+        $getOrigins   = 'getOrigins'  . $what;
+
         foreach ($objects as $name => $object) {
-            $props[$name] = (object) array();
-            if ($name === $this->object_name) {
-                $pprops = $object->getProperties();
-            } else {
-                $pprops = $object->getResolvedProperties();
+            $origins = $object->$getOrigins();
+
+            foreach ($object->$getInherited() as $key => $value) {
+                // $vals[$name]->$key = $value;
+                $vals['_MERGED_']->$key = $value;
+                $vals['_INHERITED_']->$key = $value;
+                $vals['_ORIGINS_']->$key = $origins->$key;
             }
-            foreach ($pprops as $key => $value) {
-                if (in_array($key, $blacklist)) continue;
-                if ($value !== null) {
-                    $props[$name]->$key = $value;
-                    $props['_MERGED_']->$key = $value;
-                }
+
+            foreach ($object->$get() as $key => $value) {
+                if ($value === null) continue;
+                $vals['_MERGED_']->$key = $value;
+                $vals['_INHERITED_']->$key = $value;
+                $vals['_ORIGINS_']->$key = $name;
             }
         }
 
-        return $props;
+        $blacklist = array('id', 'object_type', 'object_name');
+        foreach ($this->$get() as $key => $value) {
+            if ($value === null) continue;
+            if (in_array($key, $blacklist)) continue;
+
+            // $vals[$this->object_name]->$key = $value;
+            $vals['_MERGED_']->$key = $value;
+        }
+
+        return $vals;
     }
 
     protected function assertCustomVarsSupport()
@@ -241,6 +354,39 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getVarsIdColumn()
     {
         return $this->getShortTableName() . '_id';
+    }
+
+    public function getFields()
+    {
+        $fields = (object) array();
+
+        if (! $this->supportsFields()) {
+            return $fields;
+        }
+
+        $db = $this->getDb();
+
+        $query = $db->select()->from(
+            array('df' => 'director_datafield'),
+            array(
+                'datafield_id' => 'f.datafield_id',
+                'is_required'  => 'f.is_required',
+                'varname'      => 'df.varname'
+            )
+        )->join(
+            array('f' => $this->getTableName() . '_field'),
+            'df.id = f.datafield_id',
+            array()
+        )->where('f.' . $this->getShortTableName() . '_id = ?', (int) $this->id)
+         ->order('df.caption ASC');
+
+        $res = $db->fetchAll($query);
+
+        foreach ($res as $r) {
+            $fields->{$r->varname} = $r;
+        }
+
+        return $fields;
     }
 
     public function isTemplate()

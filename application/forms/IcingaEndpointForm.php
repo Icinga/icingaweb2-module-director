@@ -8,7 +8,8 @@ class IcingaEndpointForm extends DirectorObjectForm
 {
     public function setup()
     {
-        $isTemplate = isset($_POST['object_type']) && $_POST['object_type'] === 'template';
+        $isTemplate = $this->getSentValue('object_type') === 'template';
+
         $this->addElement('select', 'object_type', array(
             'label' => $this->translate('Object type'),
             'description' => $this->translate('Whether this should be a template'),
@@ -48,15 +49,7 @@ class IcingaEndpointForm extends DirectorObjectForm
             'description' => $this->translate('The log duration time.')
         ));
 
-        $this->addElement('select', 'zone_id', array(
-            'label'       => $this->translate('Cluster Zone'),
-            'description' => $this->translate('Check this host in this specific Icinga cluster zone'),
-            'required'    => true
-        ));
-
-        $this->addElement('text', 'imports', array(
-            'label' => $this->translate('Imports'),
-            'description' => $this->translate('The inherited endpoint template names')
-        ));
+        $this->addZoneElement()
+            ->addImportsElement();
     }
 }

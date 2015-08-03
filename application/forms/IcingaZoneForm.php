@@ -10,7 +10,7 @@ class IcingaZoneForm extends DirectorObjectForm
     {
         $this->addElement('select', 'object_type', array(
             'label' => $this->translate('Object type'),
-            'description' => $this->translate('Whether this should be a template'),
+            'description'  => $this->translate('Whether this should be a template'),
             'multiOptions' => $this->optionalEnum(array(
                 'object'   => $this->translate('Zone object'),
                 'template' => $this->translate('Zone template'),
@@ -24,22 +24,23 @@ class IcingaZoneForm extends DirectorObjectForm
         ));
 
         $this->addElement('select', 'is_global', array(
-            'label' => 'Global zone',
-            'description' => 'Whether this zone should be available everywhere',
+            'label'        => 'Global zone',
+            'description'  => 'Whether this zone should be available everywhere',
             'multiOptions' => array(
                 'n'  => $this->translate('No'),
                 'y'  => $this->translate('Yes'),
             ),
-            'required' => true,
+            'required'     => true,
         ));
 
         $this->addElement('select', 'parent_zone_id', array(
-            'label' => $this->translate('Parent Zone'),
-            'description' => $this->translate('Chose an (optional) parent zone')
+            'label'        => $this->translate('Parent Zone'),
+            'description'  => $this->translate('Chose an (optional) parent zone'),
+            'multiOptions' => $this->optionalEnum($this->db->enumZones())
         ));
 
         $this->addElement('text', 'imports', array(
-            'label' => $this->translate('Imports'),
+            'label'       => $this->translate('Imports'),
             'description' => $this->translate('The inherited zone template names')
         ));
     }

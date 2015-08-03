@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\DirectorDatafield;
+use Zend_Form_Element_Select as Zf_Select;
 
 abstract class DirectorObjectForm extends QuickForm
 {
@@ -10,9 +12,11 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $object;
 
-    private $objectName;
+    protected $objectName;
 
     private $className;
+
+    private $objectType = 'object';
 
     protected function object($values = array())
     {
@@ -37,49 +41,124 @@ abstract class DirectorObjectForm extends QuickForm
             return;
         }
 
-        if ($object->supportsCustomVars()) {
-            $this->addElement('note', '_newvar_hint', array('label' => 'New custom variable'));
-            $this->addElement('text', '_newvar_name', array(
-                'label' => 'Name'
-            ));
-            $this->addElement('text', '_newvar_value', array(
-                'label' => 'Value'
-            ));
-            $this->addElement('select', '_newvar_format', array(
-                'label'        => 'Type',
-                'multiOptions' => array('string' => $this->translate('String'))
-            ));
+    }
+
+    protected function isTemplate()
+    {
+        return $this->objectType === 'template';
+    }
+
+    protected function handleImports($object, & $values)
+    {
+        if (! $object->supportsImports()) {
+            return;
         }
 
-        if (false && $object->supportsRanges()) {
-            /* TODO implement when new logic is there
-            $this->addElement('note', '_newrange_hint', array('label' => 'New range'));
-            $this->addElement('text', '_newrange_name', array(
-                'label' => 'Name'
-            ));
-            $this->addElement('text', '_newrange_value', array(
-                'label' => 'Value'
-            ));
-            */
+        if (array_key_exists('imports', $values)) {
+            $value = $values['imports'];
+            unset($values['imports']);
+            $object->clearImportedObjects();
+            $object->imports()->set($value);
+        }
+
+        $el = $this->getElement('imports');
+        if ($el) {
+            $el->setMultiOptions($this->enumAllowedTemplates());
+            $el->setValue($object->imports()->listImportNames());
         }
     }
 
-    protected function handleIcingaObject(& $values)
+    protected function handleRanges($object, & $values)
     {
-        $object = $this->object();
-        $handled = array();
-
-        if ($object->supportsGroups()) {
-            if (array_key_exists('groups', $values)) {
-                $object->groups()->set(
-                   preg_split('/\s*,\s*/', $values['groups'], -1, PREG_SPLIT_NO_EMPTY)
-                );
-                $handled['groups'] = true;
-            }
+        if (! $object->supportsRanges()) {
+            return;
         }
 
-        if ($this->object->supportsCustomVars()) {
+        $key = 'ranges';
+        $object = $this->object();
+
+        /* Sample:
+
+        array(
+            'monday'  => 'eins',
+            'tuesday' => '00:00-24:00',
+            'sunday'  => 'zwei',
+        );
+
+        */
+        if (array_key_exists($key, $values)) {
+            $object->ranges()->set($values[$key]);
+            unset($values[$key]);
+        }
+
+        foreach ($object->ranges()->getRanges() as $key => $value) {
+            $this->addRange($key, $value);
+        }
+
+        /*
+        // TODO implement when new logic is there
+        $this->addElement('note', '_newrange_hint', array('label' => 'New range'));
+        $this->addElement('text', '_newrange_name', array(
+            'label' => 'Name'
+        ));
+        $this->addElement('text', '_newrange_value', array(
+            'label' => 'Value'
+        ));
+        */
+    }
+
+    protected function handleGroups($object, & $values)
+    {
+        if (! $object->supportsGroups()) {
+            return;
+        }
+
+        if (array_key_exists('groups', $values)) {
+            $value = $values['groups'];
+            unset($values['groups']);
+
+            // TODO: Drop this once we have arrays everwhere
+            if (is_string($value)) {
+                $value =  preg_split('/\s*,\s*/', $value, -1, PREG_SPLIT_NO_EMPTY);
+            }
+
+            $object->groups()->set($value);
+        }
+    }
+
+    protected function handleProperties($object, & $values)
+    {
+        if ($this->hasBeenSent()) {
+            $object->setProperties($values);
+        }
+
+        $props = $object->getProperties();
+        if (! $object instanceof IcingaObject) {
+            $this->setDefaults($props);
+            return $this;
+        }
+
+        $inherited = $object->getInheritedProperties();
+        $origins   = $object->getOriginsProperties();
+
+        foreach ($props as $k => $v) {
+            if (property_exists($inherited, $k)) {
+            $this->setElementValue($k, $v, $inherited->$k, $origins->$k);
+            } else {
+                $this->setElementValue($k, $v);
+            }
+        }
+    }
+
+    protected function handleCustomVars($object, & $values)
+    {
+        if (! $object->supportsCustomVars()) {
+            return;
+        }
+
+        if ($this->hasBeenSent()) {
             $vars = array();
+            $handled = array();
             $newvar = array(
                 'type'  => 'string',
                 'name'  => null,
@@ -99,60 +178,158 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
             foreach ($vars as $k => $v) {
-                $this->object->vars()->$k = $v;
+                if ($v === '' || $v === null) {
+                    unset($object->vars()->$k);
+                } else {
+                    $object->vars()->$k = $v;
+                }
             }
 
             if ($newvar['name'] && $newvar['value']) {
-                $this->object->vars()->{$newvar['name']} = $newvar['value'];
+                $object->vars()->{$newvar['name']} = $newvar['value'];
+            }
+
+            foreach ($handled as $key) {
+                unset($values[$key]);
             }
         }
 
-        if ($object->supportsImports()) {
-            if (array_key_exists('imports', $values)) {
-                $object->imports()->set(
-                    preg_split('/\s*,\s*/', $values['imports'], -1, PREG_SPLIT_NO_EMPTY)
-                );
-                $handled['imports'] = true;
+        $vars = $object->getVars();
+
+        $fields   = $object->getResolvedFields();
+        $inherits = $object->getInheritedVars();
+        $origins  = $object->getOriginsVars();
+
+        foreach ($fields as $field) {
+            $varname = $field->varname;
+
+            // Get value from the related varname if set:
+            if (property_exists($vars, $varname)) {
+                $value = $vars->$varname;
+            } else {
+                $value = null;
             }
+
+            if (property_exists($inherits, $varname)) {
+                $inheritedValue = $inherits->$varname;
+                $inheritFrom = $origins->$varname;
+                if ($inheritFrom === $object->object_name) {
+                    $inherited = false;
+                } else {
+                    $inherited = true;
+                }
+            } else {
+                $inheritedValue = null;
+                $inheritFrom = false;
+                $inherited = false;
+            }
+
+            $this->addField($field, $value, $inheritedValue, $inheritFrom);
         }
 
-        if ($object->supportsRanges()) {
-            $object->ranges()->set(array(
-                'monday' => 'eins',
-                'tuesday' => '00:00-24:00',
-                'sunday'    => 'zwei',
+        // Additional vars
+        foreach ($vars as $key => $value) {
+            // Did we already create a field for this var? Then skip it:
+            if (array_key_exists($key, $fields)) {
+                continue;
+            }
+
+            // Show inheritance information in case we inherited this var:
+            if (isset($inherited->$key)) {
+                $this->addCustomVar($key, $value, $inherited->$key, $origins->$key);            
+            } else {
+                $this->addCustomVar($key, $value);            
+            }
+
+        }
+
+        if ($object->isTemplate()) {
+            $this->addHtml('<h3>Add a custom variable</h3>');
+            $this->addElement('text', '_newvar_name', array(
+                'label' => 'Name'
+            ));
+            $this->addElement('text', '_newvar_value', array(
+                'label' => 'Value'
+            ));
+            $this->addElement('select', '_newvar_format', array(
+                'label'        => 'Type',
+                'multiOptions' => array('string' => $this->translate('String'))
             ));
         }
+    }
 
-        foreach ($handled as $key => $value) {
-            unset($values[$key]);
+    public function setObjectType($type)
+    {
+        $this->objectType = $type;
+        return $this;
+    }
+
+    protected function addField($field, $value = null, $inherited = null, $inheritedFrom = null)
+    {
+        $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
+        $datatype = new $datafield->datatype;
+        $datatype->setSettings($datafield->getSettings());
+
+        $name = 'var_' . $datafield->varname;
+        $el = $datatype->getFormElement($name, $this);
+
+        $el->setLabel($datafield->caption);
+        $el->setDescription($datafield->description);
+
+        if ($field->is_required === 'y' && ! $this->isTemplate()) {
+            $el->setRequired(true);
+        }
+
+        $this->addElement($el);
+        $this->setElementValue($name, $value, $inherited, $inheritedFrom);
+
+        return $el;
+    }
+
+    protected function setElementValue($name, $value = null, $inherited = null, $inheritedFrom = null)
+    {
+        $el = $this->getElement($name);
+        if (! $el) {
+            return;
+        }
+
+        if ($value !== null) {
+            $el->setValue($value);
+        }
+
+        if ($inherited === null || empty($inherited)) {
+            return;
+        }
+
+        if ($el instanceof Zf_Select) {
+            $multi = $el->getMultiOptions();
+            if (array_key_exists($inherited, $multi)) {
+                $multi[null] = $multi[$inherited] . sprintf(' (%s)', $inheritedFrom);
+            } else {
+                $multi[null] = $this->translate('- inherited -');
+            }
+            $el->setMultiOptions($multi);
+        } else {
+            $el->setAttrib('placeholder', $inherited . sprintf(' (%s)', $inheritedFrom));
         }
     }
 
     public function onSuccess()
     {
-        $object = $this->object;
-        $values = $this->getValues();
-        if ($object instanceof IcingaObject) {
-            $this->handleIcingaObject($values);
+        $object = $this->object();
+        if ($object->hasBeenModified()) {
+
+            $msg = sprintf(
+                $object->hasBeenLoadedFromDb()
+                ? $this->translate('The %s has successfully been stored')
+                : $this->translate('A new %s has successfully been created'),
+                $this->translate($this->getObjectName())
+            );
+            $object->store($this->db);
+        } else {
+            $msg = $this->translate('No action taken, object has not been modified');
         }
-        $object->setProperties($values);
-        $msg = sprintf(
-            $object->hasBeenLoadedFromDb()
-            ? 'The Icinga %s has successfully been stored'
-            : 'A new Icinga %s has successfully been created',
-            $this->translate($this->getObjectName())
-        );
-
-        $object->store($this->db);
         $this->redirectOnSuccess($msg);
-    }
-
-    protected function optionalEnum($enum)
-    {
-        return array(
-            null => $this->translate('- please choose -')
-        ) + $enum;
     }
 
     protected function optionalBoolean($key, $label, $description)
@@ -202,65 +379,55 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->objectName;
     }
 
+    protected function onRequest()
+    {
+        $object = $this->object();
+        $values = array();
+
+        if ($this->hasBeenSent()) {
+            $post = $this->getRequest()->getPost();
+            foreach ($post as $key => $value) {
+                $el = $this->getElement($key);
+                if ($el && ! $el->getIgnore()) {
+                    $values[$key] = $value;
+                }
+            }
+        }
+
+        if ($object instanceof IcingaObject) {
+            if (! $object->hasBeenLoadedFromDb()) {
+                $object->object_type = $this->objectType;
+            }
+            $this->handleImports($object, $values);
+            $this->handleCustomVars($object, $values);
+            $this->handleGroups($object, $values);
+            $this->handleRanges($object, $values);
+        }
+       
+        $this->handleProperties($object, $values);
+
+        $this->moveSubmitToBottom();
+    }
+
     public function loadObject($id)
     {
-        $this->prepareElements();
         $class = $this->getObjectClassname();
         $this->object = $class::load($id, $this->db);
+
+        // TODO: hmmmm...
         if (! is_array($id)) {
             $this->addHidden('id');
         }
-        $this->setDefaults($this->object->getProperties());
-        if (! $this->object instanceof IcingaObject) {
-            return $this;
-        }
 
-        if ($submit = $this->getElement('submit')) {
-            $this->removeElement('submit');
-        }
-
-        if ($this->object->supportsGroups()) {
-            $this->getElement('groups')->setValue(
-                implode(', ', $this->object->groups()->listGroupNames())
-            );
-        }
-
-        if ($this->object->supportsImports()) {
-            $this->getElement('imports')->setValue(
-                implode(', ', $this->object->imports()->listImportNames())
-            );
-        }
-
-        if ($this->object->supportsCustomVars()) {
-            foreach ($this->object->vars() as $key => $value) {
-                $this->addCustomVar($key, $value);
-            }
-        }
-
-        if ($this->object->supportsRanges()) {
-            /* TODO implement when new logic for customvars is there
-            foreach ($this->object->ranges()->getRanges() as $key => $value) {
-                $this->addRange($key, $value);
-            }
-            */
-        }
-
-        if ($submit) {
-            $this->addElement($submit);
-        }
-
-        if (! $this->hasBeenSubmitted()) {
-            $this->beforeValidation($this->object->getProperties());
-        }
         return $this;
     }
 
-    protected function addCustomVar($key, $range)
+    protected function addCustomVar($key, $value, $inherited = null, $inheritedFrom = null)
     {
-        $this->addElement('text', 'var_' . $key, array(
-            'label' => 'vars.' . $key,
-            'value' => $range->getValue()
-        ));
+        $label = 'vars.' . $key;
+        $key = 'var_' . $key;
+        $this->addElement('text', $key, array('label' => $label));
+        $this->setElementValue($key, $value, $inherited, $inheritedFrom);
     }
 
     protected function addRange($key, $range)
@@ -282,47 +449,93 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->object !== null) {
             $this->object->setConnection($db);
         }
-        if ($this->hasElement('parent_zone_id')) {
-            $this->getElement('parent_zone_id')
-                ->setMultiOptions($this->optionalEnum($db->enumZones()));
-        }
-        if ($this->hasElement('host_id')) {
-            $this->getElement('host_id')
-                ->setMultiOptions($this->optionalEnum($db->enumHosts()));
-        }
-        if ($this->hasElement('hostgroup_id')) {
-            $this->getElement('hostgroup_id')
-                ->setMultiOptions($this->optionalEnum($db->enumHostgroups()));
-        }
-        if ($this->hasElement('service_id')) {
-            $this->getElement('service_id')
-                ->setMultiOptions($this->optionalEnum($db->enumServices()));
-        }
-        if ($this->hasElement('servicegroup_id')) {
-            $this->getElement('servicegroup_id')
-                ->setMultiOptions($this->optionalEnum($db->enumServicegroups()));
-        }
-        if ($this->hasElement('user_id')) {
-            $this->getElement('user_id')
-                ->setMultiOptions($this->optionalEnum($db->enumUsers()));
-        }
-        if ($this->hasElement('usergroup_id')) {
-            $this->getElement('usergroup_id')
-                ->setMultiOptions($this->optionalEnum($db->enumUsergroups()));
-        }
-        if ($this->hasElement('zone_id')) {
-            $this->getElement('zone_id')
-                ->setMultiOptions($this->optionalEnum($db->enumZones()));
-        }
-        if ($this->hasElement('check_command_id')) {
-            $this->getElement('check_command_id')
-                ->setMultiOptions($this->optionalEnum($db->enumCheckCommands()));
-        }
-        if ($this->hasElement('command_id')) {
-            $this->getElement('command_id')
-                ->setMultiOptions($this->optionalEnum($db->enumCommands()));
-        }
+
         return $this;
+    }
+
+    protected function addZoneElement()
+    {
+        $this->addElement('select', 'zone_id', array(
+            'label' => $this->translate('Cluster Zone'),
+            'description'  => $this->translate('Icinga cluster zone'),
+            'multiOptions' => $this->optionalEnum($this->db->enumZones())
+        ));
+
+        return $this;
+    }
+
+    protected function addImportsElement()
+    {
+        $this->addElement('multiselect', 'imports', array(
+            'label'        => $this->translate('Imports'),
+            'description'  => $this->translate('Importable templates'),
+            'multiOptions' => $this->enumAllowedTemplates(),
+            'class'        => 'autosubmit'
+        ));
+
+        return $this;
+    }
+
+    protected function addCheckExecutionElements()
+    {
+        $this->addHtml('<h3>Check execution</h3>');
+
+        $this->addElement('select', 'check_command_id', array(
+            'label' => $this->translate('Check command'),
+            'description'  => $this->translate('Check command definition'),
+            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands())
+        ));
+
+        $this->optionalBoolean(
+            'enable_active_checks', 
+            $this->translate('Execute active checks'),
+            $this->translate('Whether to actively check this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_passive_checks', 
+            $this->translate('Accept passive checks'),
+            $this->translate('Whether to accept passive check results for this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_notifications',
+            $this->translate('Send notifications'),
+            $this->translate('Whether to send notifications for this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_event_handler',
+            $this->translate('Enable event handler'),
+            $this->translate('Whether to enable event handlers this object')
+        );
+
+        $this->optionalBoolean(
+            'enable_perfdata',
+            $this->translate('Process performance data'),
+            $this->translate('Whether to process performance data provided by this object')
+        );
+
+        $this->optionalBoolean(
+            'volatile',
+            $this->translate('Volatile'),
+            $this->translate('Whether this check is volatile.')
+        );
+
+        return $this;
+    }
+
+    protected function enumAllowedTemplates()
+    {
+        $object = $this->object();
+        $tpl = $this->db->enumIcingaTemplates($object->getShortTableName());
+        $tpl = array_combine($tpl, $tpl);
+        $id = $object->object_name;
+
+        if (array_key_exists($id, $tpl)) {
+            unset($tpl[$id]);
+        }
+        return $tpl;
     }
 
     private function dummyForTranslation()
@@ -331,6 +544,7 @@ abstract class DirectorObjectForm extends QuickForm
         $this->translate('Service');
         $this->translate('Zone');
         $this->translate('Command');
+        $this->translate('User');
         // ... TBC
     }
 }

@@ -16,14 +16,12 @@ abstract class ObjectsController extends ActionController
 
     public function init()
     {
+        $tabs = $this->getTabs();
         $type = $this->getType();
-        $ltype = strtolower($type);
-
-        $object = $this->dummyObject();
 
         if (in_array(ucfirst($type), $this->globalTypes)) {
+            $ltype = strtolower($type);
 
-            $tabs = $this->getTabs();
             foreach ($this->globalTypes as $tabType) {
                 $ltabType = strtolower($tabType);
                 $tabs->add($ltabType, array(
@@ -33,60 +31,84 @@ abstract class ObjectsController extends ActionController
             }
             $tabs->activate($ltype);
 
-        } elseif ($object->isGroup()) {
-
-            $singleType = substr($type, 0, -5);
-            $tabs = $this->getTabs()->add('objects', array(
-                'url'   => sprintf('director/%ss', $singleType),
-                'label' => $this->translate(ucfirst($singleType) . 's'),
-            ));
-
-            $tabs->add('objectgroups', array(
-                'url'   => sprintf('director/%ss', strtolower($type)),
-                'label' => $this->translate(ucfirst(strtolower($type)) . 's')
-            ));
-
-        } else {
-
-            $tabs = $this->getTabs()->add('objects', array(
-                'url'   => sprintf('director/%ss', strtolower($type)),
-                'label' => $this->translate(ucfirst($type) . 's'),
-            ));
-            if ($object->supportsGroups()) {
-                $tabs->add('objectgroups', array(
-                    'url'   => sprintf('director/%sgroups', $type),
-                    'label' => $this->translate(ucfirst($type) . 'groups')
-                ));
-            }
-
+            return;
         }
+
+
+        $object = $this->dummyObject();
+        if ($object->isGroup()) {
+            $type = substr($type, 0, -5);
+        }
+
+        $tabs = $this->getTabs()->add('objects', array(
+            'url'   => sprintf('director/%ss', strtolower($type)),
+            'label' => $this->translate(ucfirst($type) . 's'),
+        ));
+        $tabs = $this->getTabs()->add('objecttemplates', array(
+            'url'   => sprintf('director/%stemplates', strtolower($type)),
+            'label' => $this->translate('Templates'),
+        ));
+        if ($object->supportsGroups() || $object->isGroup()) {
+            $tabs->add('objectgroups', array(
+                'url'   => sprintf('director/%sgroups', $type),
+                'label' => $this->translate('Groups')
+            ));
+        }
+
+        $tabs->add('tree', array(
+            'url'   => sprintf('director/%stemplates/tree', $type),
+            'label' => $this->translate('Tree'),
+        ));
     }
 
     public function indexAction()
     {
         $type = $this->getType();
         $ltype = strtolower($type);
-
+        $dummy = $this->dummyObject();
 
         if (! in_array($type, $this->globalTypes)) {
-            if ($this->dummyObject()->isGroup()) {
+            if ($dummy->isGroup()) {
                 $this->getTabs()->activate('objectgroups');
+                $table = 'icinga' . ucfirst($type);
+            } elseif ($dummy->isTemplate()) {
+                $this->getTabs()->activate('objecttemplates');
+                $table = 'icinga' . ucfirst($type);
+                $this->loadTable($table);
+                $table = 'icinga' . ucfirst($type) . 'Template';
             } else {
                 $this->getTabs()->activate('objects');
+                $table = 'icinga' . ucfirst($type);
             }
+        } else {
+            $table = 'icinga' . ucfirst($type);
+        }
+
+        if ($dummy->isTemplate()) {
+            $addParams = array('type' => 'template');
+            $addTitle = $this->translate('Add %s template');
+        } else {
+            $addParams = array();
+            $addTitle = $this->translate('Add %s');
         }
 
         $this->view->addLink = $this->view->qlink(
-            $this->translate('Add ' . ucfirst($ltype)),
-            'director/' . $ltype . '/add'
+            sprintf($addTitle, $this->translate(ucfirst($ltype))),
+            'director/' . $ltype .'/add',
+            $addParams
         );
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
-
-        $table = $this->loadTable('icinga' . ucfirst($type))->setConnection($this->db());
+        $table = $this->loadTable($table)->setConnection($this->db());
         $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
         $this->view->table = $this->applyPaginationLimits($table);
 
         $this->render('objects/table', null, true);
+    }
+
+    public function treeAction()
+    {
+        $this->getTabs()->activate('tree');
+        $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
     }
 
     protected function dummyObject()
@@ -94,6 +116,13 @@ abstract class ObjectsController extends ActionController
         if ($this->dummy === null) {
             $class = $this->getObjectClassname();
             $this->dummy = $class::create(array());
+            if ($this->dummy->hasProperty('object_type')) {
+                if (false === strpos($this->getRequest()->getControllerName(), 'template')) {
+                    $this->dummy->object_type = 'object';
+                } else {
+                    $this->dummy->object_type = 'template';
+                }
+            }
         }
 
         return $this->dummy;
@@ -105,7 +134,11 @@ abstract class ObjectsController extends ActionController
         return preg_replace(
             array('/group$/', '/period$/', '/argument$/'),
             array('Group', 'Period', 'Argument'),
-            substr($this->getRequest()->getControllerName(), 0, -1)
+            str_replace(
+                'template',
+                '', 
+                substr($this->getRequest()->getControllerName(), 0, -1)
+            )
         );
     }
 

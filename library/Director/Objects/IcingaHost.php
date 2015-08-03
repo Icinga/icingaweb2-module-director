@@ -43,6 +43,8 @@ class IcingaHost extends IcingaObject
 
     protected $supportsImports = true;
 
+    protected $supportsFields = true;
+
     protected function renderCheck_command_id()
     {
         return $this->renderCommandProperty($this->check_command_id);
@@ -81,23 +83,5 @@ class IcingaHost extends IcingaObject
     protected function renderVolatile()
     {
         return $this->renderBooleanProperty('volatile');
-    }
-
-    public function getFields(DirectorObjectForm $form)
-    {
-        $db = $this->getDb();
-
-        $query = $db->select()
-        ->from(
-            array('df' => 'director_datafield')
-        )
-        ->join(
-            array('hf' => 'icinga_host_field'),
-            'df.id = hf.datafield_id'
-        )
-        ->where('hf.host_id = ?', (int) $this->id)
-        ->order('df.caption ASC');
-
-        return $db->fetchAll($query);
     }
 }

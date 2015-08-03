@@ -11,18 +11,12 @@ class Director_DatalistentryController extends ActionController
 
     public function editAction()
     {
-        $this->indexAction();
+        $this->indexAction(true);
     }
 
     public function indexAction($edit = false)
     {
         $request = $this->getRequest();
-
-        if ($request->getParam('edit')) {
-            $edit = true;
-        } else {
-            $edit = false;
-        }
 
         $listId = $this->params->get('list_id');
         $this->view->lastId = $listId;
@@ -46,6 +40,7 @@ class Director_DatalistentryController extends ActionController
         }
 
         $form = $this->view->form = $this->loadForm('directorDatalistentry')
+            ->setListId($listId)
             ->setSuccessUrl('director/datalistentry' . '?list_id=' . $listId)
             ->setDb($this->db());
 

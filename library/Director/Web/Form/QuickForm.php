@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
@@ -60,24 +61,39 @@ abstract class QuickForm extends Zend_Form
      */
     protected $icingaModule;
 
+    protected $icingaModuleName;
+
+    protected $hintCount = 0;
+
     public function __construct($options = null)
     {
-        if ($options !== null && array_key_exists('icingaModule', $options)) {
-            $this->icingaModule = $options['icingaModule'];
-            unset($options['icingaModule']);
-        }
-        parent::__construct($options);
+        parent::__construct($this->handleOptions($options));
         $this->setMethod('post');
         $this->setAction(Url::fromRequest());
         $this->createIdElement();
         $this->regenerateCsrfToken();
     }
 
+    protected function handleOptions($options = null)
+    {
+        if ($options === null) {
+            return $options;
+        }
+
+        if (array_key_exists('icingaModule', $options)) {
+            $this->icingaModule = $options['icingaModule'];
+            $this->icingaModuleName = $this->icingaModule->getName();
+            unset($options['icingaModule']);
+        }
+
+        return $options;
+    }
+
     protected function addSubmitButtonIfSet()
     {
         if (false !== ($label = $this->getSubmitLabel())) {
             $this->addElement('submit', $label);
-            $this->getElement($label)->setLabel($label);
+            $this->getElement($label)->setLabel($label)->removeDecorator('Label');
         }
     }
 
@@ -140,6 +156,7 @@ abstract class QuickForm extends Zend_Form
             $element = $this->getElement(self::CSRF);
         }
         $element->setValue(CsrfToken::generate())->setIgnore(true);
+
         return $this;
     }
 
@@ -157,6 +174,30 @@ abstract class QuickForm extends Zend_Form
             $this->setDefault($name, $value);
         }
         return $this;
+    }
+
+    public function addHtmlHint($html, $options = array())
+    {
+        return $this->addHtml('<div class="hint">' . $html . '</div>', $options);
+    }
+
+    public function addHtml($html, $options = array())
+    {
+        $name = '_HINT' . ++$this->hintCount;
+        $this->addElement('note', $name, $options);
+        $this->getElement($name)
+            ->setValue($html)
+            ->setIgnore(true)
+            ->removeDecorator('Label');
+
+        return $this;
+    }
+
+    public function optionalEnum($enum)
+    {
+        return array(
+            null => $this->translate('- please choose -')
+        ) + $enum;
     }
 
     public function setSuccessUrl($url)
@@ -217,8 +258,8 @@ abstract class QuickForm extends Zend_Form
     {
         if (! $this->didSetup) {
             $this->setup();
-            $this->onSetup();
             $this->addSubmitButtonIfSet();
+            $this->onSetup();
             $this->didSetup = true;
         }
 
@@ -228,10 +269,8 @@ abstract class QuickForm extends Zend_Form
     public function handleRequest(Request $request = null)
     {
         if ($request !== null) {
-            $this->request = $request;
+            $this->setRequest($request);
         }
-
-        $this->prepareElements();
 
         if ($this->hasBeenSent()) {
             $post = $this->getRequest()->getPost();
@@ -254,8 +293,11 @@ abstract class QuickForm extends Zend_Form
 
     public function translate($string)
     {
-        // TODO: A module should use it's own domain
-        return t($string);
+        if ($this->icingaModuleName === null) {
+            return t($string);
+        } else {
+            return mt($this->icingaModuleName, $string);
+        }
     }
 
     public function onSuccess()
@@ -311,10 +353,26 @@ abstract class QuickForm extends Zend_Form
         Icinga::app()->getFrontController()->getResponse()->redirectAndExit($url);
     }
 
+    protected function onRequest()
+    {
+    }
+
+    public function setRequest(Request $request)
+    {
+        if ($this->request !== null) {
+            throw new ProgrammingError('Unable to set request twice');
+        }
+
+        $this->request = $request;
+        $this->prepareElements();
+        $this->onRequest();
+        return $this;
+    }
+
     public function getRequest()
     {
         if ($this->request === null) {
-            $this->request = Icinga::app()->getFrontController()->getRequest();
+            $this->setRequest(Icinga::app()->getFrontController()->getRequest());
         }
         return $this->request;
     }

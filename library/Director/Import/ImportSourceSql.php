@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 use Icinga\Data\Db\DbConnection;
@@ -23,13 +24,11 @@ class ImportSourceSql extends ImportSourceHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
-        $form->addElement('text', 'resource', array(
-            'label'    => 'Resource name',
-            'required' => true,
-        ));
+        Util::addDbResourceFormElement($form, 'resource');
         $form->addElement('textarea', 'query', array(
             'label'    => 'DB Query',
             'required' => true,
+            'rows'     => 15,
         ));
         return $form;
     }

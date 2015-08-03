@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
-use Icinga\Authentication\Manager as Auth;
+use Icinga\Authentication\Auth;
 
 class DirectorActivityLog extends DbObject
 {
@@ -39,6 +39,59 @@ class DirectorActivityLog extends DbObject
         }
     }
 
+    protected static function prepareNewObjectProperties(DbObject $object)
+    {
+        $props = $object->getProperties();
+        if ($object->supportsCustomVars()) {
+            // $props->vars = $object->vars()->toJson();
+        }
+        if ($object->supportsGroups()) {
+            $props['groups'] = $object->groups()->listGroupNames();
+        }
+        if ($object->supportsCustomVars()) {
+            $props['vars'] = $object->getVars();
+        }
+
+        return json_encode($props);
+    }
+
+    protected static function prepareModifiedProperties(DbObject $object)
+    {
+        $props = $object->getModifiedProperties();
+        if ($object->supportsCustomVars()) {
+            $mod = array();
+            foreach ($object->vars() as $name => $var) {
+                if ($var->hasBeenModified()) {
+                    $mod[$name] = $var->getValue();
+                }
+            }
+            if (! empty($mod)) {
+                $props['vars'] = (object) $mod;
+            }
+        }
+        if ($object->supportsGroups()) {
+            // $props['groups'] = $object->groups()->listGroupNames();
+        }
+
+        return json_encode($props);
+    }
+
+    protected static function prepareOriginalProperties(DbObject $object)
+    {
+        $props = $object->getModifiedProperties();
+        if ($object->supportsCustomVars()) {
+            $props['vars'] = (object) array();
+            foreach ($object->vars()->getOriginalVars() as $name => $var) {
+                $props['vars']->$name = $var->getValue();
+            }
+        }
+        if ($object->supportsGroups()) {
+            // $props['groups'] = $object->groups()->listGroupNames();
+        }
+
+        return json_encode($props);
+    }
+
     public static function logCreation(DbObject $object, Db $db)
     {
         $data = array(
@@ -46,7 +99,7 @@ class DirectorActivityLog extends DbObject
             'action_name'     => 'create',
             'author'          => self::username(),
             'object_type'     => $object->getTableName(),
-            'new_properties'  => json_encode($object->getProperties()),
+            'new_properties'  => self::prepareNewObjectProperties($object),
             'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
             'parent_checksum' => $db->getLastActivityChecksum()
         );
@@ -63,8 +116,8 @@ class DirectorActivityLog extends DbObject
             'action_name'     => 'modify',
             'author'          => self::username(),
             'object_type'     => $object->getTableName(),
-            'old_properties'  => json_encode($object->getOriginalProperties()),
-            'new_properties'  => json_encode($object->getModifiedProperties()),
+            'old_properties'  => self::prepareOriginalProperties($object),
+            'new_properties'  => self::prepareModifiedProperties($object),
             'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
             'parent_checksum' => $db->getLastActivityChecksum()
         );

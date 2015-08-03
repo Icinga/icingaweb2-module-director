@@ -89,7 +89,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     protected function refreshIndex()
     {
-        $this->idx = array_keys($this->vars);
+        $this->idx = array();
+        foreach ($this->vars as $name => $var) {
+            if (! $var->hasBeenDeleted()) {
+                $this->idx[] = $name;
+            }
+        }
     }
 
     public static function loadForStoredObject(IcingaObject $object)
@@ -169,8 +174,16 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     public function setUnmodified()
     {
         $this->modified = false;
-        $this->storedVars = $this->vars;
+        $this->storedVars = array();
+        foreach ($this->vars as $key => $var) {
+            $this->storedVars[$key] = clone($var);
+        }
         return $this;
+    }
+
+    public function getOriginalVars()
+    {
+        return $this->storedVars;
     }
 
     public function toConfigString()
@@ -223,10 +236,11 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     public function __unset($key)
     {
         if (! array_key_exists($key, $this->vars)) {
-            throw new Exception('Trying to unset invalid key');
+            return;
         }
 
-        unset($this->vars[$key]);
+        $this->vars[$key]->delete();
+        $this->modified = true;
 
         $this->refreshIndex();
     }

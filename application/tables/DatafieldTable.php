@@ -13,9 +13,11 @@ class DatafieldTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'        => 'f.id',
-            'varname'   => 'f.varname',
-            'datatype'  => 'f.datatype',
+            'id'          => 'f.id',
+            'varname'     => 'f.varname',
+            'caption'     => 'f.caption',
+            'description' => 'f.description',
+            'datatype'    => 'f.datatype',
         );
     }
 
@@ -28,8 +30,8 @@ class DatafieldTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'varname'   => $view->translate('Field name'),
-            'datatype'  => $view->translate('Data type'),
+            'caption'     => $view->translate('Label'),
+            'varname'     => $view->translate('Field name'),
         );
     }
 
@@ -40,7 +42,7 @@ class DatafieldTable extends QuickTable
         $query = $db->select()->from(
             array('f' => 'director_datafield'),
             array()
-        )->order('varname ASC');
+        )->order('caption ASC');
 
         return $query;
     }

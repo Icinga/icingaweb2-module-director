@@ -158,19 +158,9 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         if ($import instanceof $class) {
             $this->imports[$import->object_name] = $import;
         } elseif (is_string($import)) {
-            $query = $this->object->getDb()->select()->from(
-                $this->object->getTableName()
-            )->where('object_name = ?', $import);
-            $imports = $class::loadAll($connection, $query, 'object_name');
+            $import = $class::load($import, $connection);
+            $this->imports[$import->object_name] = $import;
         }
-        if (! array_key_exists($import, $imports)) {
-            throw new ProgrammingError(
-                'The import "%s" doesn\'t exists.',
-                $import
-            );
-        }
-
-        $this->imports[$import] = $imports[$import];
 
         $this->modified = true;
         $this->refreshIndex();

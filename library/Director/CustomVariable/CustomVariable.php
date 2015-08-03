@@ -45,10 +45,15 @@ abstract class CustomVariable implements IcingaConfigRenderer
     }
 
     // TODO: implement delete()
-
     public function hasBeenDeleted()
     {
         return $this->deleted;
+    }
+
+    public function delete()
+    {
+        $this->deleted = true;
+        return $this;
     }
 
     // TODO: abstract

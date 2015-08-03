@@ -7,22 +7,30 @@ use Icinga\Web\Hook;
 
 class DirectorDatafieldForm extends DirectorObjectForm
 {
+    protected $objectName = 'Data field';
+
     public function setup()
     {
+        $this->addHtmlHint(
+            $this->translate('Data fields allow you to customize input controls your custom variables.')
+        );
+
         $this->addElement('text', 'varname', array(
-            'required' => true,
-            'label' => $this->translate('Field name'),
-            'description' => $this->translate('The unique name of the field')
+            'label'       => $this->translate('Field name'),
+            'description' => $this->translate('The unique name of the field'),
+            'required'    => true,
         ));
 
         $this->addElement('text', 'caption', array(
-            'label' => $this->translate('Caption'),
+            'label'       => $this->translate('Caption'),
+            'required'    => true,
             'description' => $this->translate('The caption which should be displayed')
         ));
 
         $this->addElement('textarea', 'description', array(
-            'label' => $this->translate('Description'),
-            'description' => $this->translate('A description about the field')
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate('A description about the field'),
+            'rows'        => '3',
         ));
 
         $this->addElement('select', 'datatype', array(
@@ -30,14 +38,22 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'description'   => $this->translate('Field type'),
             'required'      => true,
             'multiOptions'  => $this->enumDataTypes(),
-            'class'         => 'autosubmit'
+            'class'         => 'autosubmit',
         ));
 
-        if ($class = $this->object()->datatype) {
-            $this->addSettings($class);
-        } elseif ($class = $this->getSentValue('datatype')) {
+
+        if ($class = $this->getSentValue('datatype')) {
             if ($class && array_key_exists($class, $this->enumDataTypes())) {
                 $this->addSettings($class);
+            }
+        } elseif ($class = $this->object()->datatype) {
+            $this->addSettings($class);
+        }
+
+        $this->addSettings();
+        foreach ($this->object()->getSettings() as $key => $val) {
+            if ($el = $this->getElement($key)) {
+                $el->setValue($val);
             }
         }
     }
@@ -53,8 +69,31 @@ class DirectorDatafieldForm extends DirectorObjectForm
         }
     }
 
+    protected function clearOutdatedSettings()
+    {
+        $names = array();
+        $object = $this->object();
+        $global = array('varname', 'description', 'caption', 'datatype');
+
+        foreach ($this->getElements() as $el) {
+            if ($el->getIgnore()) continue;
+            $name = $el->getName();
+            if (in_array($name, $global)) continue;
+            $names[$name] = $name;
+        }
+
+
+        foreach ($object->getSettings() as $setting => $value) {
+            if (! array_key_exists($setting, $names)) {
+                unset($object->$setting);
+            }
+        }
+    }
+
     public function onSuccess()
     {
+        $this->clearOutdatedSettings();
+
         if ($class = $this->getValue('datatype')) {
             if (array_key_exists($class, $this->enumDataTypes())) {
                 $this->addHidden('format', $class::getFormat());
@@ -62,21 +101,6 @@ class DirectorDatafieldForm extends DirectorObjectForm
         }
 
         parent::onSuccess();
-    }
-
-    public function loadObject($id)
-    {
-        parent::loadObject($id);
-
-        $this->addSettings();
-        foreach ($this->object()->getSettings() as $key => $val) {
-            if ($el = $this->getElement($key)) {
-                $el->setValue($val);
-            }
-        }
-        $this->moveSubmitToBottom();
-
-        return $this;
     }
 
     protected function enumDataTypes()

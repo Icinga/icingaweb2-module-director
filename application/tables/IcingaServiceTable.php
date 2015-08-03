@@ -33,7 +33,7 @@ class IcingaServiceTable extends QuickTable
         );
     }
 
-    public function getBaseQuery()
+    public function getUnfilteredQuery()
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
@@ -46,5 +46,10 @@ class IcingaServiceTable extends QuickTable
         );
 
         return $query;
+    }
+
+    public function getBaseQuery()
+    {
+        return $this->getUnfilteredQuery()->where('s.object_type = ?', 'object');
     }
 }

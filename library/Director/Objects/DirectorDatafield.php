@@ -23,7 +23,6 @@ class DirectorDatafield extends DbObject
 
     protected $settings = array();
 
-
     public function set($key, $value)
     {
         if ($this->hasProperty($key)) {
@@ -33,6 +32,7 @@ class DirectorDatafield extends DbObject
         if (! array_key_exists($key, $this->settings) || $value !== $this->settings[$key]) {
             $this->hasBeenModified = true;
         }
+
         $this->settings[$key] = $value;
         return $this;
     }
@@ -48,6 +48,20 @@ class DirectorDatafield extends DbObject
         }
 
         return parent::get($key);
+    }
+
+    public function __unset($key)
+    {
+        if ($this->hasProperty($key)) {
+            return parent::__set($key, $value);
+        }
+
+        if (array_key_exists($key, $this->settings)) {
+            unset($this->settings[$key]);
+            $this->hasBeenModified = true;
+        }
+
+        return $this;
     }
 
     public function getSettings()
@@ -100,7 +114,7 @@ class DirectorDatafield extends DbObject
         }
 
         foreach ($del as $key) {
-            $db->update(
+            $db->delete(
                 'director_datafield_setting',
                 $db->quoteInto($where, $key)
             );

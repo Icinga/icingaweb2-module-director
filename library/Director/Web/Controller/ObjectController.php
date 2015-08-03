@@ -16,18 +16,18 @@ abstract class ObjectController extends ActionController
         if ($name = $this->params->get('name')) {
             $params['name'] = $name;
 
-            $this->getTabs()->add($type, array(
-                'url'       => sprintf('director/%s', $ltype),
-                'urlParams' => $params,
-                'label'     => $this->translate(ucfirst($ltype)),
-            ))->add('modify', array(
+            $this->getTabs()->add('modify', array(
                 'url'       => sprintf('director/%s/edit', $ltype),
                 'urlParams' => $params,
-                'label'     => $this->translate('Modify')
+                'label'     => $this->translate(ucfirst($ltype))
             ))->add('delete', array(
                 'url'       => sprintf('director/%s/delete', $ltype),
                 'urlParams' => $params,
                 'label'     => $this->translate('Delete')
+            ))->add('render', array(
+                'url'       => sprintf('director/%s/render', $ltype),
+                'urlParams' => $params,
+                'label'     => $this->translate('Preview'),
             ))->add('history', array(
                 'url'       => sprintf('director/%s/history', $ltype),
                 'urlParams' => $params,
@@ -35,7 +35,7 @@ abstract class ObjectController extends ActionController
             ));
         } else {
             $this->getTabs()->add('add', array(
-                'url'       => sprintf('director/%s', $type),
+                'url'       => sprintf('director/%s/add', $type),
                 'label'     => sprintf($this->translate('Add %s'), ucfirst($type)),
             ));
         }
@@ -43,8 +43,13 @@ abstract class ObjectController extends ActionController
 
     public function indexAction()
     {
+        return $this->editAction();
+    }
+
+    public function renderAction()
+    {
         $type = $this->getType();
-        $this->getTabs()->activate($type);
+        $this->getTabs()->activate('render');
         $this->view->object = $this->object();
         $this->render('object/show', null, true);
     }
@@ -80,17 +85,22 @@ abstract class ObjectController extends ActionController
             'icinga' . ucfirst($type)
         )->setDb($this->db());
         $form->loadObject($this->params->get('name'));
+        $object = $form->getObject();
 
         $url = Url::fromPath(
             sprintf('director/%s', $ltype),
-            array('name' => $form->getObject()->object_name)
+            array('name' => $object->object_name)
         );
         $form->setSuccessUrl($url);
 
-        $this->view->title = sprintf(
-            $this->translate('Modify Icinga %s'),
-            ucfirst($ltype)
-        );
+        if ($object->isTemplate()) {
+            $title = $this->translate('Modify Icinga %s template');
+            $form->setObjectType('template'); // WHY??
+        } else {
+            $title = $this->translate('Modify Icinga %s');
+        }
+
+        $this->view->title = sprintf($title, ucfirst($ltype));
         $this->view->form->handleRequest();
         $this->render('object/form', null, true);
     }
@@ -102,15 +112,19 @@ abstract class ObjectController extends ActionController
         $ltype = strtolower($type);
 
         $url = sprintf('director/%ss', $ltype);
-        $this->view->form = $this->loadForm('icinga' . ucfirst($type))
+        $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
             ->setSuccessUrl($url);
 
-        $this->view->title = sprintf(
-            $this->translate('Add new Icinga %s'),
-            ucfirst($ltype)
-        );
-        $this->view->form->handleRequest();
+        if ($this->params->get('type') === 'template') {
+            $form->setObjectType('template');
+            $title = $this->translate('Add new Icinga %s template');
+        } else {
+            $title = $this->translate('Add new Icinga %s');
+        }
+
+        $this->view->title = sprintf($title, ucfirst($ltype));
+        $form->handleRequest();
         $this->render('object/form', null, true);
     }
 

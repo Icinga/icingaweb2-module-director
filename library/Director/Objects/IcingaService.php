@@ -38,6 +38,8 @@ class IcingaService extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsFields = true;
+
     protected $supportsImports = true;
 
     protected function renderCheck_command_id()
