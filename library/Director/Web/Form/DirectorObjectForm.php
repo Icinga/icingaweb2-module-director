@@ -277,7 +277,7 @@ abstract class DirectorObjectForm extends QuickForm
         $el->setLabel($datafield->caption);
         $el->setDescription($datafield->description);
 
-        if ($field->is_required === 'y' && ! $this->isTemplate()) {
+        if ($field->is_required === 'y' && ! $this->isTemplate() && $inherited === null) {
             $el->setRequired(true);
         }
 
