@@ -128,9 +128,15 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         $props = $object->getProperties();
+
         if (! $object instanceof IcingaObject) {
             $this->setDefaults($props);
             return $this;
+        }
+
+        if (! $object->supportsImports()) {
+            $this->setDefaults($props);
+            return;
         }
 
         $inherited = $object->getInheritedProperties();
