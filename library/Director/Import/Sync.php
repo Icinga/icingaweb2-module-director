@@ -145,6 +145,10 @@ class Sync
                     foreach ($newVars as $prop => $var) {
                         $objects[$key]->vars()->$prop = $var;
                     }
+
+                    if (! empty($imports)) {
+                        $objects[$key]->imports()->set($imports);
+                    }
                 }
             }
 
