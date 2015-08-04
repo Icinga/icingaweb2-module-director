@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
-use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 
@@ -78,7 +78,9 @@ class Sync
         }
 
         // TODO: Filter auf object, nicht template
-        $objects = IcingaHost::loadAll($db, null, 'object_name');
+        $objects = IcingaObject::loadAllByType($rule->object_type, $db);
+        $dummy = IcingaObject::createByType($rule->object_type, array());
+        $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
 
         foreach ($sources as $source) {
             $sourceId = $source->id;
@@ -88,6 +90,10 @@ class Sync
                     'object_type' => 'object',
                     'object_name' => $key
                 );
+
+                if ($rule->object_type === 'datalistEntry') {
+                    $newProps = array();
+                }
 
                 $newVars = array();
                 $imports = array();
@@ -112,7 +118,12 @@ class Sync
                 if (array_key_exists($key, $objects)) {
                     switch ($rule->update_policy) {
                         case 'override':
-                            $objects[$key] = IcingaHost::create($newProps);
+                            $objects[$key] = IcingaObject::createByType(
+                                $rule->object_type,
+                                $newProps,
+                                $db
+                            );
+
                             foreach ($newVars as $prop => $var) {
                                 $objects[$key]->vars()->$prop = $var;
                             }
@@ -141,7 +152,7 @@ class Sync
                             // policy 'ignore', no action
                     }
                 } else {
-                    $objects[$key] = IcingaHost::create($newProps);
+                    $objects[$key] = IcingaObject::createByType($rule->object_type, $newProps, $db);
                     foreach ($newVars as $prop => $var) {
                         $objects[$key]->vars()->$prop = $var;
                     }
@@ -157,12 +168,12 @@ class Sync
             $dba = $db->getDbAdapter();
             $dba->beginTransaction();
             foreach ($objects as $object) {
-                if ($object->isTemplate()) {
+                if ($object instanceof IcingaObject && $object->isTemplate()) {
                     if ($object->hasBeenModified()) {
                         throw new \Exception(
                             sprintf(
                                 'Sync is not allowed to modify template "%s"',
-                                $object->object_name
+                                $object->$objectKey
                             )
                         );
                     }
@@ -173,7 +184,7 @@ class Sync
                 if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
                     $found = false;
                     foreach ($sources as $source) {
-                        if (array_key_exists($object->object_name, $imported[$source->id])) {
+                        if (array_key_exists($object->$objectKey, $imported[$source->id])) {
                             $found = true;
                             break;
                         }
@@ -183,7 +194,7 @@ class Sync
                         $object->delete();
                     }
                 }
-if (! $object->object_name) {
+if (! $object->$objectKey) {
 continue;
 }
                 $object->store($db);
