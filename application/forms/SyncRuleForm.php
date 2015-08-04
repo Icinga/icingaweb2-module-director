@@ -19,11 +19,18 @@ class SyncRuleForm extends DirectorObjectForm
             'label' => $this->translate('Object Type'),
             'description' => $this->translate('Choose a object type'),
             'required'    => true,
-            'multiOptions' => array( 
-                        'null'     => '- please choose -',
-                        'host'     => 'host',
-                        'user'     => 'user'
-            )
+            'multiOptions' => $this->optionalEnum(array( 
+                'host'             => $this->translate('Host'),
+                'host_template'    => $this->translate('Host Template'),
+                'service'          => $this->translate('Service'),
+                'service_template' => $this->translate('Service Template'),
+                'user'             => $this->translate('User'),
+                'user_template'    => $this->translate('User Template'),
+                'hostgroup'        => $this->translate('Hostgroup'),
+                'servicegroup'     => $this->translate('Servicegroup'),
+                'usergroup'        => $this->translate('Usergroup'),
+                'datalistEntry'    => $this->translate('Datalist entry'),
+            ))
         ));
 
         $this->addElement('select', 'update_policy', array(
