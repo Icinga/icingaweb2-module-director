@@ -684,11 +684,33 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
-    public static function loadByType($type, $id, Db $connection)
+    protected static function classByType($type)
     {
-        $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
+        if (strpos($type, 'data') === false) {
+            $prefix = 'Icinga';
+        } else {
+            $prefix = 'Director';
+        }
+        return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
+    }
 
-        return $class::load($id, $connection);
+    public static function createByType($type, $properties = array(), Db $db = null)
+    {
+        $class = self::classByType($type);
+        return $class::create($properties, $db);
+    }
+
+    public static function loadByType($type, $id, Db $db)
+    {
+        $class = self::classByType($type);
+        return $class::load($id, $db);
+    }
+
+    public static function loadAllByType($type, Db $db, $query = null, $keyColumn = 'object_name')
+    {
+        if ($type === 'datalistEntry') $keyColumn = 'entry_name';
+        $class = self::classByType($type);
+        return $class::loadAll($db, $query, $keyColumn);
     }
 
     public function __toString()
