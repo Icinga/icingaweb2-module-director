@@ -8,12 +8,7 @@ class Director_ListController extends ActionController
     {
         $this->setConfigTabs()->activate('activitylog');
         $this->view->title = $this->translate('Activity Log');
-
-        $table = $this->loadTable('activityLog')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
-        $this->view->table = $this->applyPaginationLimits($table);
-
-        $this->render('table');
+        $this->prepareAndRenderTable('activityLog');
     }
 
     public function datalistAction()
@@ -25,12 +20,7 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('datalist');
         $this->view->title = $this->translate('Data lists');
-
-        $table = $this->loadTable('datalist')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
-        $this->view->table = $this->applyPaginationLimits($table);
-
-        $this->render('table');
+        $this->prepareAndRenderTable('datalist');
     }
 
     public function importsourceAction()
@@ -42,12 +32,7 @@ class Director_ListController extends ActionController
 
         $this->setImportTabs()->activate('importsource');
         $this->view->title = $this->translate('Import source');
-
-        $table = $this->loadTable('importsource')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
-        $this->view->table = $this->applyPaginationLimits($table);
-
-        $this->render('table');
+        $this->prepareAndRenderTable('importsource');
     }
 
     public function importrunAction()
@@ -55,10 +40,7 @@ class Director_ListController extends ActionController
         $this->setImportTabs()->activate('importrun');
         $this->view->title = $this->translate('Import runs');
         $this->view->stats = $this->db()->fetchImportStatistics();
-
-        $table = $this->loadTable('importrun')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
-        $this->view->table = $this->applyPaginationLimits($table);
+        $this->prepareAndRenderTable('importrun');
     }
 
     public function syncruleAction()
@@ -106,11 +88,7 @@ class Director_ListController extends ActionController
             'label'     => $this->view->title,
         ))->activate('datalistentry');
 
-        $table = $this->loadTable('datalistEntry')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
-        $this->view->table = $this->applyPaginationLimits($table);
-
-        $this->render('table');
+        $this->prepareAndRenderTable('datalistEntry');
     }
 
     public function datafieldAction()
@@ -122,12 +100,7 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('datafield');
         $this->view->title = $this->translate('Data fields');
-
-        $table = $this->loadTable('datafield')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
-        $this->view->table = $this->applyPaginationLimits($table);
-
-        $this->render('table');
+        $this->prepareAndRenderTable('datafield');
     }
 
     public function generatedconfigAction()
@@ -139,11 +112,14 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('generatedconfig');
         $this->view->title = $this->translate('Generated Configs');
+        $this->prepareAndRenderTable('generatedConfig');
+    }
 
-        $table = $this->loadTable('generatedConfig')->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+    protected function prepareAndRenderTable($name)
+    {
+        $table = $this->loadTable($name)->setConnection($this->db());
+        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
         $this->view->table = $this->applyPaginationLimits($table);
-
         $this->render('table');
     }
 }
