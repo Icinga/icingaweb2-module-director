@@ -67,7 +67,7 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function __clone()
     {
         foreach ($this->value as $key => $value) {
-            $this->value->$key = clone($value);
+            $this->value[$key] = clone($value);
         }
     }
 
