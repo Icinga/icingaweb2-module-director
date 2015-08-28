@@ -642,6 +642,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderZoneProperty($zoneId, $propertyName = 'zone')
     {
+// TODO: set file info?
+return '';
         return c::renderKeyValue(
             $propertyName,
             c::renderString($this->connection->getZoneName($zoneId))
