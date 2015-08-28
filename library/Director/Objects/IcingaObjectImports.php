@@ -178,6 +178,11 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return array_keys($this->imports);
     }
 
+    public function listOriginalImportNames()
+    {
+        return array_keys($this->storedImports);
+    }
+
     public function getType()
     {
         return $this->object->getShortTableName();
@@ -207,8 +212,12 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         $class = $this->getImportClass();
         $this->imports = $class::loadAll($connection, $query, 'object_name');
-        $this->storedImports = $this->imports;
+        $this->storedImports = array();
+        foreach ($this->imports as $k => $v) {
+            $this->storedImports[$k] = clone($v);
+        }
 
+        $this->cloneStored();
         return $this;
     }
 
@@ -241,9 +250,17 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        $this->storedImports = $this->imports;
+        $this->cloneStored();
 
         return true;
+    }
+
+    protected function cloneStored()
+    {
+        $this->storedImports = array();
+        foreach ($this->imports as $k => $v) {
+            $this->storedImports[$k] = clone($v);
+        }
     }
 
     protected function getImportClass()
