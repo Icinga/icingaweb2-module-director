@@ -102,8 +102,17 @@ continue;
         $db->beginTransaction();
         if (! $this->rowSetExists($rowset)) {
 
-            $newRows = $this->newChecksums('imported_row', $rowSums);
-            $newProperties = $this->newChecksums('imported_property', array_keys($props));
+            if (empty($rowSums)) {
+                $newRows = array();
+            } else {
+                $newRows = $this->newChecksums('imported_row', $rowSums);
+            }
+
+            if (empty($rowSums)) {
+                $newProperties = array();
+            } else {
+                $newProperties = $this->newChecksums('imported_property', array_keys($props));
+            }
 
             $db->insert('imported_rowset', array('checksum' => $rowset));
 
