@@ -96,7 +96,7 @@ abstract class ObjectsController extends ActionController
         );
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
         $table = $this->loadTable($table)->setConnection($this->db());
-        $this->setupFilterControl($table->getFilterEditor($this->getRequest()));
+        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
         $this->view->table = $this->applyPaginationLimits($table);
 
         $this->render('objects/table', null, true);
