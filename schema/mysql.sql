@@ -84,6 +84,8 @@ CREATE TABLE director_deployment_log (
     COMMENT 'The time it took to connect to an Icinga node (ms)',
   duration_dump INT(10) UNSIGNED DEFAULT NULL
     COMMENT 'Time spent dumping the config (ms)',
+  stage_name VARCHAR(64) DEFAULT NULL,
+  stage_collected ENUM('y', 'n') DEFAULT NULL,
   connection_succeeded ENUM('y', 'n') DEFAULT NULL,
   dump_succeeded ENUM('y', 'n') DEFAULT NULL,
   startup_succeeded ENUM('y', 'n') DEFAULT NULL,
