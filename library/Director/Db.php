@@ -213,6 +213,7 @@ class Db extends DbConnection
             array('rp' => 'imported_row_property'),
             array(
                 'property_value' => 'p.property_value',
+                'format'         => 'p.format',
                 'row_checksum'   => 'rp.row_checksum'
             )
         )->join(
@@ -228,6 +229,7 @@ class Db extends DbConnection
 
         foreach ($columns as $c) {
             $fetchColumns[$c] = sprintf('p_%s.property_value', $c);
+            $fetchColumns[$c . '__f'] = sprintf('p_%s.format', $c);
             $p = clone($propertyQuery);
             $query->joinLeft(
                 array(sprintf('p_' . $c) => $p->where('p.property_name = ?', $c)),

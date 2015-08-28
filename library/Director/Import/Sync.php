@@ -29,6 +29,17 @@ class Sync
 
     protected function fillVariables($string, $row)
     {
+        if (preg_match('/^\${([A-Za-z0-9_-]+)}$/', $string, $m)) {
+            $var = $m[1];
+            if (! property_exists($row, $var)) {
+                return null;
+            }
+            if ($row->{$var . '__f'} === 'json') {
+                return json_decode($row->$var);
+            }
+            return $row->$var;
+        }
+
         $func = function ($match) use ($row) {
             return $row->{$match[1]};
         };
