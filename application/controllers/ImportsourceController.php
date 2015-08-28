@@ -6,6 +6,7 @@ use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Web\Notification;
+use Icinga\Web\Url;
 
 class Director_ImportsourceController extends ActionController
 {
@@ -22,9 +23,11 @@ class Director_ImportsourceController extends ActionController
     public function runAction()
     {
         if ($runId = Import::run($id = ImportSource::load($this->params->get('id'), $this->db()))) {
-            Notification::success('adf' . $runId);
-            $this->redirectNow('director/list/importrun');
+            Notification::success('Import succeeded');
+            $this->redirectNow(Url::fromPath('director/importrun', array('id' => $runId)));
         } else {
+            Notification::success('Import skipped, no changes detected');
+            $this->redirectNow('director/list/importrun');
         }
     }
 

@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Import;
 
 use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 
 class Import
@@ -83,6 +84,12 @@ continue;
 
         $rowSums = array_keys($rows);
         $rowset = sha1(implode(';', $rowSums), true);
+
+        if ($this->rowSetExists($rowset)) {
+            if ($connection->getLatestImportedChecksum($source->id) === Util::binary2hex($rowset)) {
+                return false;
+            }
+        }
 
         $db->beginTransaction();
         if (! $this->rowSetExists($rowset)) {
