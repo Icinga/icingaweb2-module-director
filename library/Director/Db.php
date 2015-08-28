@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director;
 
 use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Zend_Db_Expr;
 
 class Db extends DbConnection
@@ -379,5 +380,18 @@ class Db extends DbConnection
     {
         $filters = array('object_type = ?' => 'template') + $filters;
         return $this->enum('icinga_' . $type, null, $filters);
+    }
+
+    public function getUncollectedDeployments()
+    {
+        $db = $this->db();
+
+        $query = $db->select()
+            ->from('director_deployment_log')
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->order('stage_name');
+
+        return DirectorDeploymentLog::loadAll($this, $query, 'stage_name');
     }
 }
