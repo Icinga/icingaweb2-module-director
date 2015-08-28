@@ -200,6 +200,7 @@ class IcingaConfig
             $this->db->commit();
         } catch (Exception $e) {
             $this->db->rollBack();
+throw $e;
             var_dump($e->getMessage());
         }
 
@@ -275,6 +276,7 @@ class IcingaConfig
     {
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         $objects = $class::loadAll($this->connection);
+        $file = null;
 
         foreach ($objects as $object) {
             if ($object->isTemplate()) {
@@ -294,12 +296,22 @@ class IcingaConfig
                 $zone = 'master';
             }
 
-            $filename = $zone . '/' . $filename;
-            $file = $this->configFile($filename);
-            if ($type === 'command') {
-                $file->prepend("library \"methods\"\n\n");
+            if ($type === 'zone') {
+                $filename = 'conf.d/zones';
+continue;
+            } elseif ($type === 'endpoint') {
+                $filename = 'conf.d/endpoints';
+continue;
+            } elseif ($zone === 'master') {
+                $filename = 'conf.d/' . $filename;
+            } else {
+                $filename = 'zones.d/' . $zone . '/' . $filename;
             }
+            $file = $this->configFile($filename);
             $file->addObject($object);
+        }
+        if ($file && $type === 'command') {
+            $file->prepend("library \"methods\"\n\n");
         }
 
         return $this;
