@@ -28,7 +28,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsFields = false;
 
-    private $type;
+    protected $type;
 
     private $vars;
 
