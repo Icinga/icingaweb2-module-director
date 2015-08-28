@@ -13,13 +13,13 @@ class Director_ImportrunController extends ActionController
     public function indexAction()
     {
         $this->view->title = $this->translate('Import run');
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('importedrows')
-                ->setChecksum(
-                    $this->db()->getImportrunRowsetChecksum($this->params->get('id'))
-                )
-                ->setConnection($this->db())
-        );
+        $table = $this->loadTable('importedrows')
+            ->setConnection($this->db())
+            ->setChecksum(
+                $this->db()->getImportrunRowsetChecksum($this->params->get('id'))
+            );
+        $this->view->table = $this->applyPaginationLimits($table);
+        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
         $this->render('list/table', null, true);
     }
 }
