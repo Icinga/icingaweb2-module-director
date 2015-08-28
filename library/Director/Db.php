@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director;
 
 use Icinga\Data\Db\DbConnection;
+use Zend_Db_Expr;
 
 class Db extends DbConnection
 {
@@ -27,7 +28,7 @@ class Db extends DbConnection
     public function fetchActivityLogEntry($checksum)
     {
         if ($this->getDbType() === 'pgsql') {
-            $checksum = new \Zend_Db_Expr("\\x" . bin2hex($checksum));
+            $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
         }
 
         $sql = 'SELECT * FROM director_activity_log WHERE checksum = ?';
