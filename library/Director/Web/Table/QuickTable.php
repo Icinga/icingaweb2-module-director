@@ -53,7 +53,13 @@ abstract class QuickTable implements Paginatable
             }
 
             if ($value === null) {
-                $value = $val === null ? '-' : $this->view()->escape($val);
+                if ($val === null) {
+                    $value = '-';
+                } elseif (is_array($val)) {
+                    $value = nl2br($this->view()->escape(implode("\n", $val)));
+                } else {
+                    $value = $this->view()->escape($val);
+                } 
             }
 
             $htm .= '    <td>' . $value . "</td>\n";
