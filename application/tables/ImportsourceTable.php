@@ -33,8 +33,7 @@ class ImportsourceTable extends QuickTable
         ) . ' ' . $this->view->qlink(
             'Run',
             'director/importsource/run',
-            array('id' => $row->id),
-            array('data-base-target' => '_main')
+            array('id' => $row->id)
         );
     }
 
