@@ -27,6 +27,17 @@ class Sync
         }
     }
 
+    protected function wantArray($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        } elseif ($value === null) {
+            return array();
+        } else {
+            return array($value);
+        }
+    }
+
     protected function fillVariables($string, $row)
     {
         if (preg_match('/^\${([A-Za-z0-9_-]+)}$/', $string, $m)) {
@@ -116,7 +127,12 @@ class Sync
                     $val = $this->fillVariables($p->source_expression, $row);
 
                     if (substr($prop, 0, 5) === 'vars.') {
-                        $newVars[substr($prop, 5)] = $val;
+                        $varName = substr($prop, 5);
+                        if (substr($varName, -2) === '[]') {
+                            $varName = substr($varName, 0, -2);
+                            $val = $this->wantArray($val);
+                        }
+                        $newVars[$varName] = $val;
                     } else {
                         if ($prop === 'import') {
                             $imports[] = $val;
