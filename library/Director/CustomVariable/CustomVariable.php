@@ -128,8 +128,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
         } elseif (is_array($value)) {
 
-            foreach (array_keys($value) as $key) {
-                if (! is_int($key) || ctype_digit($key)) {
+            foreach (array_keys($value) as $k) {
+                if (! is_int($k) || ctype_digit($k)) {
                     return new CustomVariableDictionary($key, $value);
                 }
             }

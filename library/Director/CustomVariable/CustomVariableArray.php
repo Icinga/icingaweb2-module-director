@@ -39,8 +39,8 @@ class CustomVariableArray extends CustomVariable
     {
         $new = array();
 
-        foreach ($value as $key => $val) {
-            $new[$key] = self::wantCustomVariable($key, $val);
+        foreach ($value as $k => $v) {
+            $new[] = self::wantCustomVariable($k, $v);
         }
 
         // WTF?
