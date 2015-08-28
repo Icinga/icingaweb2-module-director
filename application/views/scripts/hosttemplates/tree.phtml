@@ -8,7 +8,8 @@ function dumpTree($tree, $self, $level = 0)
     if ($level === 0) {
         $class = 'root';
     } else {
-        $class = 'host';
+        //$class = 'host';
+        $class = $self->objectTypeName;
     }
 
     if ($hasChildren) {
@@ -27,10 +28,14 @@ function dumpTree($tree, $self, $level = 0)
         $html .= '<a name="Templates" class="root">' . $self->escape($tree->name) . '</a>';
     } else {
         $html .= $self->qlink(
-                $tree->name,
-                'director/host',
-                array('name' => $tree->name),
-                array('class' => $class)
+            $tree->name,
+            'director/' . $self->objectTypeName,
+            array('name' => $tree->name),
+            array('class' => $class)
+        ) . $self->qlink(
+            '=>',
+            'director/' . $self->objectTypeName . '/childlist',
+            array('name' => $tree->name)
         );
     }
 
@@ -48,7 +53,7 @@ function dumpTree($tree, $self, $level = 0)
 ?>
 <div class="controls">
 <?= $this->tabs ?>
-<h1><?= $this->translate('Host template tree') ?></h1>
+<h1><?= $this->translate('Template tree') ?></h1>
 </div>
 
 <div class="content">
