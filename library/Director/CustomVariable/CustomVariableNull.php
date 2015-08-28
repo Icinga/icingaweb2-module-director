@@ -1,0 +1,36 @@
+<?php
+
+namespace Icinga\Module\Director\CustomVariable;
+
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Exception\ProgrammingError;
+
+class CustomVariableNull extends CustomVariable
+{
+    public function equals(CustomVariable $var)
+    {
+        return $var->getValue() === $this->getValue();
+    }
+
+    public function getValue()
+    {
+        return null;
+    }
+
+    public function setValue($value)
+    {
+        if (! is_null($value)) {
+            throw new ProgrammingError(
+                'Null can only be null, got %s',
+                var_export($value, 1)
+            );
+        }
+
+        return $this;
+    } 
+
+    public function toConfigString()
+    {
+        return 'null';
+    }
+}

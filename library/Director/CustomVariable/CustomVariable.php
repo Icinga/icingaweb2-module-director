@@ -118,6 +118,10 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     public static function create($key, $value)
     {
+        if (is_null($value)) {
+            return new CustomVariableNull($key, $value);
+        }
+
         if (is_string($value)) {
 
             return new CustomVariableString($key, $value);
@@ -137,7 +141,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
             return new CustomVariableDictionary($key, $value);
 
         } else {
-            throw new ProgrammingError();
+            throw new ProgrammingError('WTF (%s): %s', $key, var_export($value, 1));
         }
     }
 
