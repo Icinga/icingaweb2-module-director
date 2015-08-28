@@ -47,6 +47,11 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         return $this;
     }
 
+    public function getValue()
+    {
+        return json_encode($this->value); // really?
+    }
+
     public function listKeys()
     {
         $keys = array_keys($this->value);
