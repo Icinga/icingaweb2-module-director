@@ -235,6 +235,9 @@ abstract class DirectorObjectForm extends QuickForm
                 continue;
             }
 
+            // TODO: handle structured vars
+            if (! is_string($value)) continue;
+
             // Show inheritance information in case we inherited this var:
             if (isset($inherited->$key)) {
                 $this->addCustomVar($key, $value, $inherited->$key, $origins->$key);            
