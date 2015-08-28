@@ -55,14 +55,22 @@ continue;
                     continue;
                 }
 
-                $checksum = sha1($key . '=' . json_encode((string) $row->$key), true);
+                $pval = $row->$key;
+                if (is_array($pval)) {
+                    $pval = json_encode($pval);
+                    $format = 'json';
+                } else {
+                    $format = 'string';
+                }
+
+                $checksum = sha1(sprintf('%s=(%s)%s', $key, $format, $pval), true);
 
                 if (! array_key_exists($checksum, $props)) {
                     $props[$checksum] = array(
                         'checksum'       => $checksum,
                         'property_name'  => $key,
-                        'property_value' => $row->$key,
-                        'format'         => 'string'
+                        'property_value' => $pval,
+                        'format'         => $format
                     );
                 }
 
