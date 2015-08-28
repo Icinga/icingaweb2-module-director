@@ -148,7 +148,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             } elseif ($var->hasBeenModified()) {
                 $db->update(
                     $table,
-                    array('varvalue' => $var->getDbValue()),
+                    array(
+                        'varvalue' => $var->getDbValue(),
+                        'format'   => $var->getDbFormat()
+                    ),
                     $where
                 );
             }
