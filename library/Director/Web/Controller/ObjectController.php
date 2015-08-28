@@ -66,6 +66,7 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
         $this->getTabs()->activate('render');
         $this->view->object = $this->object;
+        $this->view->title = sprintf($this->translate('Config preview: %s'), $this->object->object_name);
         $this->render('object/show', null, true);
     }
 
