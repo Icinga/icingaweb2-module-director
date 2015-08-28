@@ -479,14 +479,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function onInsert()
     {
-        $this->storeRelatedObjects();
         DirectorActivityLog::logCreation($this, $this->connection);
+        $this->storeRelatedObjects();
     }
 
     public function onUpdate()
     {
-        $this->storeRelatedObjects();
         DirectorActivityLog::logModification($this, $this->connection);
+        $this->storeRelatedObjects();
     }
 
     protected function storeCustomVars()
