@@ -35,7 +35,14 @@ abstract class QuickTable implements Paginatable
         $firstRow = true;
 
         foreach ($this->getTitles() as $key => $title) {
-            $val = $row->$key;
+
+            // Support missing columns
+            if (property_exists($row, $key)) {
+                $val = $row->$key;
+            } else {
+                $val = null;
+            }
+
             $value = null;
 
             if ($firstRow) {
