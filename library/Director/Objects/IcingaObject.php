@@ -93,6 +93,36 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::hasBeenModified();
     }
 
+    public function set($key, $value)
+    {
+        if ($key === 'groups') {
+            $this->groups()->set($value);
+            return $this;
+
+        } elseif ($key === 'imports') {
+            $this->imports()->set($value);
+            return $this;
+
+        } elseif ($key === 'vars') {
+            $value = (array) $value;
+            $unset = array();
+            foreach ($this->vars() as $k => $f) {
+                if (! array_key_exists($k, $value)) {
+                    $unset[] = $k;
+                }
+            }
+            foreach ($unset as $k) {
+                unset($this->vars()->$k);
+            }
+            foreach ($value as $k => $v) {
+                $this->vars()->set($k, $v);
+            }
+            return $this;
+        }
+
+        return parent::set($key, $value);
+    }
+
     public function groups()
     {
         $this->assertGroupsSupport();
