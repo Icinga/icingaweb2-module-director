@@ -14,6 +14,11 @@ class IcingaHostForm extends DirectorObjectForm
             'required'    => true,
             'description' => $this->translate('Icinga object name for this host')
         ));
+ 
+        $this->addElement('text', 'display_name', array(
+            'label' => $this->translate('Display name'),
+            'description' => $this->translate('Alternative name for this host')
+        ));
 
         $this->addElement('text', 'address', array(
             'label' => $this->translate('Host address'),

@@ -349,6 +349,7 @@ CREATE TABLE icinga_endpoint_inheritance (
 CREATE TABLE icinga_host (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
   address VARCHAR(64) DEFAULT NULL,
   address6 VARCHAR(45) DEFAULT NULL,
   check_command_id INT(10) UNSIGNED DEFAULT NULL,
@@ -375,6 +376,7 @@ CREATE TABLE icinga_host (
   object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
+  KEY search_idx (display_name),
   CONSTRAINT icinga_host_zone
     FOREIGN KEY zone (zone_id)
     REFERENCES icinga_zone (id)

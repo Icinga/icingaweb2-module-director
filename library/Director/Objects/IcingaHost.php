@@ -11,6 +11,7 @@ class IcingaHost extends IcingaObject
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
+        'display_name'          => null,
         'address'               => null,
         'address6'              => null,
         'check_command_id'      => null,
