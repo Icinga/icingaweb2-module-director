@@ -567,6 +567,10 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $object = $this->object();
         $tpl = $this->db->enumIcingaTemplates($object->getShortTableName());
+        if (empty($tpl)) {
+            return array();
+        }
+
         $tpl = array_combine($tpl, $tpl);
         $id = $object->object_name;
 
