@@ -18,15 +18,6 @@ class Director_SyncpropertyController extends ActionController
         $this->indexAction();
     }
 
-    public function runAction()
-    {
-        if ($runId = Import::run($id = SyncProperty::load($this->params->get('id'), $this->db()))) {
-            Notification::success('adf' . $runId);
-            $this->redirectNow('director/list/syncproperty');
-        } else {
-        }
-    }
-
     public function indexAction()
     {
         $edit = false;
