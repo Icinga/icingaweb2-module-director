@@ -180,6 +180,11 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return array_keys($this->groups);
     }
 
+    public function listOriginalGroupNames()
+    {
+        return array_keys($this->storedGroups);
+    }
+
     public function getType()
     {
         return $this->object->getShortTableName();
@@ -209,7 +214,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         $class = $this->getGroupClass();
         $this->groups = $class::loadAll($connection, $query, 'object_name');
-        $this->storedGroups = $this->groups;
+        $this->cloneStored();
 
         return $this;
     }
@@ -249,9 +254,17 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                 )
             );
         }
-        $this->storedGroups = $this->groups;
+        $this->cloneStored();
 
         return true;
+    }
+
+    protected function cloneStored()
+    {
+        $this->storedGroups = array();
+        foreach ($this->groups as $k => $v) {
+            $this->storedGroups[$k] = clone($v);
+        }
     }
 
     protected function getGroupClass()
