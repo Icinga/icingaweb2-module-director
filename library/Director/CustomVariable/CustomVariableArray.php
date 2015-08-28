@@ -12,8 +12,27 @@ class CustomVariableArray extends CustomVariable
             return false;
         }
 
-        // TODO: better var handlig, fix this
-        return $var->value === $this->value;
+        return $var->getDbValue() === $this->getDbValue();
+    }
+
+    public function getValue()
+    {
+        $ret = array();
+        foreach ($this->value as $var) {
+            $ret[] = $var->getValue();
+        }
+
+        return $ret;
+    }
+
+    public function getDbValue()
+    {
+        return json_encode($this->getValue());
+    }
+
+    public function getDbFormat()
+    {
+        return 'json';
     }
 
     public function setValue($value)
