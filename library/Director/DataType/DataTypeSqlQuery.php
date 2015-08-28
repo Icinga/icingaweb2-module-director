@@ -39,10 +39,11 @@ class DataTypeSqlQuery extends DataTypeHook
 
     protected function fetchData()
     {
-        if (self::$cachedResult === null || (time() - self::$cacheTime > 3)) {
+        // TODO: Hash _:)
+        //if (self::$cachedResult === null || (time() - self::$cacheTime > 3)) {
             self::$cachedResult = $this->db()->fetchPairs($this->settings['query']);
             self::$cacheTime = time();
-        }
+        // }
 
         return self::$cachedResult;
     }
