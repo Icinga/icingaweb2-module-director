@@ -43,13 +43,22 @@ class CustomVariableArray extends CustomVariable
             $new[] = self::wantCustomVariable($k, $v);
         }
 
-        // WTF?
-        if ($this->value === $new) {
-            return $this;
+        $equals = true;
+        if (is_array($this->value) && count($new) === count($this->value)) {
+            foreach ($this->value as $k => $v) {
+                if (! $new[$k]->equals($v)) {
+                    $equals = false;
+                    break;
+                }
+            }
+        } else {
+            $equals = false;
         }
 
-        $this->value = $new;
-        $this->setModified();
+        if (! $equals) {
+            $this->value = $new;
+            $this->setModified();
+        }
 
         return $this;
     }

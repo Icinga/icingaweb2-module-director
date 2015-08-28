@@ -100,6 +100,12 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->setModified(false);
     }
 
+    public function setLoadedFromDb($loaded = true)
+    {
+        $this->loadedFromDb = $loaded;
+        return $this;
+    }
+
     abstract public function equals(CustomVariable $var);
 
     public function differsFrom(CustomVariable $var)
@@ -166,6 +172,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
 
         $var->loadedFromDb = true;
+        $var->modified = false;
         return $var;
     }
 
