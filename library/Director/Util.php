@@ -12,7 +12,7 @@ class Util
 {
     protected static $auth;
 
-    protected static $allowedDbResources;
+    protected static $allowedResources;
 
     public static function pgBinEscape($binary)
     {
@@ -47,10 +47,10 @@ class Util
         return self::auth()->getRestrictions($name);
     }
 
-    public static function dbResourceIsAllowed($name)
+    public static function resourceIsAllowed($name)
     {
-        if (self::$allowedDbResources === null) {
-            $restrictions = self::getRestrictions('director/dbresources/use');
+        if (self::$allowedResources === null) {
+            $restrictions = self::getRestrictions('director/resources/use');
             $list = array();
             foreach ($restrictions as $restriction) {
                 foreach (preg_split('/\s*,\s*/', $restriction, -1, PREG_SPLIT_NO_EMPTY) as $key) {
@@ -58,9 +58,9 @@ class Util
                 }
             }
 
-            self::$allowedDbResources = $list;
+            self::$allowedResources = $list;
         } else {
-            $list = self::$allowedDbResources;
+            $list = self::$allowedResources;
         }
 
         if (empty($list) || array_key_exists($name, $list)) {
@@ -72,9 +72,19 @@ class Util
 
     public static function enumDbResources()
     {
+        return self::enumResources('db');
+    }
+
+    public static function enumLdapResources()
+    {
+        return self::enumResources('ldap');
+    }
+
+    protected static function enumResources($type)
+    {
         $resources = array();
         foreach (ResourceFactory::getResourceConfigs() as $name => $resource) {
-            if ($resource->type === 'db' && self::dbResourceIsAllowed($name)) {
+            if ($resource->type === $type && self::resourceIsAllowed($name)) {
                 $resources[$name] = $name;
             }
         }
@@ -84,7 +94,17 @@ class Util
 
     public static function addDbResourceFormElement(QuickForm $form, $name)
     {
-        $list = Util::enumDbResources();
+        return self::addResourceFormElement($form, $name, 'db');
+    }
+
+    public static function addLdapResourceFormElement(QuickForm $form, $name)
+    {
+        return self::addResourceFormElement($form, $name, 'ldap');
+    }
+
+    protected static function addResourceFormElement(QuickForm $form, $name, $type)
+    {
+        $list = self::enumResources($type);
 
         $form->addElement('select', $name, array(
             'label'        => 'Resource name',
@@ -94,7 +114,7 @@ class Util
 
         if (true && empty($list)) {
             if (self::hasPermission('config/application/resources')) {
-                $hint = $form->translate('Please click %s to create new DB resources');
+                $hint = $form->translate('Please click %s to create new resources');
                 $link = sprintf(
                     '<a href="' . Url::fromPath('config/resource') . '" data-base-target="_main">%s</a>',
                     $form->translate('here')
@@ -102,7 +122,7 @@ class Util
                 $form->addHtmlHint(sprintf($hint, $link));
                 $msg = $form->translate('No db resource available');
             } else {
-                $msg = $form->translate('Please ask an administrator to grant you access to DB resources');
+                $msg = $form->translate('Please ask an administrator to grant you access to resources');
             }
 
             $form->getElement($name)->addError($msg);
