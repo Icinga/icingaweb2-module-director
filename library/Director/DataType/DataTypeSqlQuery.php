@@ -66,6 +66,8 @@ class DataTypeSqlQuery extends DataTypeHook
     {
         if ($this->db === null) {
             $this->db = DbConnection::fromResourceName($this->settings['resource'])->getDbAdapter();
+            // TODO: should be handled by resources:
+            $this->db->exec("SET NAMES 'utf8'");
         }
 
         return $this->db;
