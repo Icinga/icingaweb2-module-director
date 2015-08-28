@@ -8,6 +8,8 @@ class IcingaCommand extends IcingaObject
 {
     protected $table = 'icinga_command';
 
+    protected $type = 'CheckCommand';
+
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
@@ -20,7 +22,11 @@ class IcingaCommand extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsFields = true;
+
     protected $supportsImports = true;
+
+    protected $supportsArguments = true;
 
     protected function renderMethods_execute()
     {
