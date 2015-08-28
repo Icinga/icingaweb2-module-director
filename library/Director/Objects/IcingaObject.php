@@ -718,11 +718,15 @@ return '';
 
     protected static function classByType($type)
     {
+        // allow for icinga_host and host
+        $type = preg_replace('/^icinga_/', '', $type);
+
         if (strpos($type, 'data') === false) {
             $prefix = 'Icinga';
         } else {
             $prefix = 'Director';
         }
+
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
     }
 
