@@ -51,6 +51,9 @@ class DirectorActivityLog extends DbObject
         if ($object->supportsCustomVars()) {
             $props['vars'] = $object->getVars();
         }
+        if ($object->supportsImports()) {
+            $props['imports'] = $object->imports()->listImportNames();
+        }
 
         return json_encode($props);
     }
@@ -70,15 +73,27 @@ class DirectorActivityLog extends DbObject
             }
         }
         if ($object->supportsGroups()) {
-            // $props['groups'] = $object->groups()->listGroupNames();
+            $old = $object->groups()->listOriginalGroupNames();
+            $new = $object->groups()->listGroupNames();
+            if ($old !== $new) {
+                $props['groups'] = $new;
+            }
         }
+        if ($object->supportsImports()) {
+            $old = $object->imports()->listOriginalImportNames();
+            $new = $object->imports()->listImportNames();
+            if ($old !== $new) {
+                $props['imports'] = $new;
+            }
+        }
+
 
         return json_encode($props);
     }
 
     protected static function prepareOriginalProperties(DbObject $object)
     {
-        $props = $object->getModifiedProperties();
+        $props = $object->getOriginalProperties();
         if ($object->supportsCustomVars()) {
             $props['vars'] = (object) array();
             foreach ($object->vars()->getOriginalVars() as $name => $var) {
@@ -86,7 +101,16 @@ class DirectorActivityLog extends DbObject
             }
         }
         if ($object->supportsGroups()) {
-            // $props['groups'] = $object->groups()->listGroupNames();
+            $groups = $object->groups()->listOriginalGroupNames();
+            if (! empty($groups)) {
+                $props['groups'] = $groups;
+            }
+        }
+        if ($object->supportsImports()) {
+            $imports = $object->groups()->listOriginalGroupNames();
+            if (! empty($imports)) {
+                $props['imports'] = $imports;
+            }
         }
 
         return json_encode($props);
