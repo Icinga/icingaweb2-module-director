@@ -140,7 +140,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 continue;
             }
 
-            $where = $db->quoteInto(sprintf('%s = ?', $foreignColumn), $foreignId)
+            $where = $db->quoteInto(sprintf('%s = ?', $foreignColumn), (int) $foreignId)
                    . $db->quoteInto(' AND varname = ?', $var->getKey());
 
             if ($var->hasBeenDeleted()) {
