@@ -4,38 +4,14 @@
     $entry->object_name
 ) ?></h2>
 
-<h3><?= $this->translate('Properties') ?></h3>
-
 <table class="log-properties">
-<?php
-$old = json_decode($entry->old_properties);
-$new = json_decode($entry->new_properties);
-
-foreach ($old as $key => $value) {
-    if ($key === 'id') continue;
-
-    $modified = array_key_exists($key, $new);
-
-    if ($value === null && ! $modified) continue;
-
-    if (is_array($value)) $value = implode(', ', $value);
-    if (is_object($value)) $value = json_encode($value);
-
-    echo ' <tr><th>' . $this->escape($key) . '</th><td>';
-    if ($modified) {
-        $newval = $new->$key;
-        if (is_array($newval))  $newval = implode(', ', $newval);
-        if (is_object($newval)) $newval = json_encode($newval);
-        printf(
-            '<span class="old">%s</span> <span class="new">%s</span>',
-            $this->escape($value),
-            $this->escape($newval)
-        );
-    } else {
-        echo $this->escape($value);
-    }
-    echo "</td></tr>\n";
-}
-?>
+<!-- TODO: diff, old/new class -->
+<tr><td style="vertical-align: top; width: 50%">
+<h3><?= $this->translate('Former state') ?></h3>
+<pre><?= $this->escape((string) $this->oldObject) ?></pre>
+</td><td style="vertical-align: top; width: 50%">
+<h3><?= $this->translate('New object') ?></h3>
+<pre><?= $this->escape((string) $this->newObject) ?></pre>
+</td></tr>
 </table>
 
