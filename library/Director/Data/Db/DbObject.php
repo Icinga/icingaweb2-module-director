@@ -366,6 +366,11 @@ abstract class DbObject
         return $this->properties;
     }
 
+    public function listProperties()
+    {
+        return array_keys($this->properties);
+    }
+
     /**
      * Return all properties that changed since object creation
      *
