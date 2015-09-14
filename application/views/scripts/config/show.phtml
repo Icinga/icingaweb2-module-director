@@ -4,12 +4,22 @@
 
 <table class="avp">
  <tr>
+  <th><?= $this->translate('Deploy to master') ?></th>
+  <td><?= $this->qlink(
+    $this->config->getHexChecksum(),
+    'director/config/deploy',
+    array('checksum' => $this->config->getHexChecksum())
+  ) ?></td>
+
+ </tr>
+ <tr>
   <th><?= $this->translate('Last related activity') ?></th>
   <td><?= $this->qlink(
     $this->config->getLastActivityHexChecksum(),
     'director/show/activitylog',
     array('checksum' => $this->config->getLastActivityHexChecksum())
   ) ?></td>
+
  </tr>
  <tr>
   <th><?= $this->translate('Generated files') ?></th>
