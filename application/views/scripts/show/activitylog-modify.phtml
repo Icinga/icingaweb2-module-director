@@ -5,13 +5,12 @@
 ) ?></h2>
 
 <table class="log-properties">
-<!-- TODO: diff, old/new class -->
 <tr><td style="vertical-align: top; width: 50%">
 <h3><?= $this->translate('Former state') ?></h3>
-<pre><?= $this->escape((string) $this->oldObject) ?></pre>
+<span class="diff old"><?= $this->diff ?></pre>
 </td><td style="vertical-align: top; width: 50%">
 <h3><?= $this->translate('New object') ?></h3>
-<pre><?= $this->escape((string) $this->newObject) ?></pre>
+<span class="diff new"><?= $this->diff ?></pre>
 </td></tr>
 </table>
 
