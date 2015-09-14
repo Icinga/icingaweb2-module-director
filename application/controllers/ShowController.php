@@ -2,6 +2,7 @@
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
@@ -28,6 +29,14 @@ class Director_ShowController extends ActionController
         } else {
             $old = null;
             $new = $this->createObject($entry->object_type, $entry->new_properties);
+        }
+
+        if ($old && $new) {
+            $d = ConfigDiff::create($old, $new);
+            $this->view->diff = strtr(
+                $d->renderHtml(),
+                array('\\n' => "\\n\n")
+            );
         }
 
         $this->view->entry = $entry;
