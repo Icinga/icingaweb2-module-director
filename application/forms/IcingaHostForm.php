@@ -55,6 +55,6 @@ class IcingaHostForm extends DirectorObjectForm
             $this->getElement('imports')->setRequired();
         }
 
-        $this->addZoneElement();
+        // $this->addZoneElement();
     }
 }
