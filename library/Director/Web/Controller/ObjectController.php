@@ -156,11 +156,16 @@ abstract class ObjectController extends ActionController
             $object->object_name
         );
 
-        $this->view->form = $this
+        $form = $this->view->form = $this
             ->loadForm('icingaObjectField')
             ->setDb($this->db)
-            ->setIcingaObject($object)
-            ->handleRequest();
+            ->setIcingaObject($object);
+
+        if ($id = $this->params->get('field_id')) {
+            $form->loadObject($id);
+        }
+
+        $form->handleRequest();
 
         $this->view->table = $this
             ->loadTable('icingaObjectDatafield')
