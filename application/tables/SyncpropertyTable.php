@@ -31,7 +31,7 @@ class SyncpropertyTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'rule_name'         => $view->translate('Rule name'),
+            //'rule_name'         => $view->translate('Rule name'),
             'source_name'       => $view->translate('Source name'),
             'source_expression' => $view->translate('Source field'),
             'destination_field' => $view->translate('Destination')
