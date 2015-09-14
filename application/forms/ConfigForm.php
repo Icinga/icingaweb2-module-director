@@ -13,6 +13,7 @@ class ConfigForm extends QuickForm
 
     public function setup()
     {
+        $config = $this->config();
         $resources = $this->enumResources();
 
         $this->addElement('select', 'resource', array(
@@ -20,7 +21,29 @@ class ConfigForm extends QuickForm
             'label'         => $this->translate('DB Resource'),
             'multiOptions'  => $this->optionalEnum($resources),
             'class'         => 'autosubmit',
-            'value'         => $this->config()->get('db', 'resource')
+            'value'         => $config->get('db', 'resource')
+        ));
+
+        $this->addHtml(sprintf('<h3>%s</h3>', $this->translate('Icinga 2 API')));
+
+        $this->addElement('text', 'api_address', array(
+            'label'         => $this->translate('Address'),
+            'value'         => $config->get('api', 'address', '127.0.0.1')
+        ));
+
+        $this->addElement('text', 'api_port', array(
+            'label'         => $this->translate('Port'),
+            'value'         => $config->get('api', 'port', '5665')
+        ));
+
+        $this->addElement('text', 'api_username', array(
+            'label'         => $this->translate('Username'),
+            'value'         => $config->get('api', 'username')
+        ));
+
+        $this->addElement('text', 'api_password', array(
+            'label'         => $this->translate('Password'),
+            'value'         => $config->get('api', 'password')
         ));
 
         if (empty($resources)) {
@@ -110,6 +133,16 @@ class ConfigForm extends QuickForm
         $value = $this->getValue('resource');
 
         $config->setSection('db', array('resource' => $value));
+
+        if ($user = $this->getValue('api_username')) {
+            $settings = array();
+            foreach (array('address', 'port', 'username', 'password') as $setting) {
+                if ($value = $this->getValue('api_' . $setting)) {
+                    $settings[$setting] = $value;
+                }
+            }
+            $config->setSection('api', $settings);
+        }
 
         try {
             $config->saveIni();
