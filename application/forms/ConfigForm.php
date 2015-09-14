@@ -16,6 +16,7 @@ class ConfigForm extends QuickForm
         $config = $this->config();
         $resources = $this->enumResources();
 
+        $this->addHtml(sprintf('<h3>%s</h3>', $this->translate('Database backend')));
         $this->addElement('select', 'resource', array(
             'required'      => true,
             'label'         => $this->translate('DB Resource'),
