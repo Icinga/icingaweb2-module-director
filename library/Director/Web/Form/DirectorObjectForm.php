@@ -505,7 +505,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->addElement('multiselect', 'imports', array(
             'label'        => $this->translate('Imports'),
-            'description'  => $this->translate('Importable templates'),
+            'description'  => $this->translate('Importable templates, choose one or more of them (CTRL/SHIFT click)'),
             'multiOptions' => $this->enumAllowedTemplates(),
             'size'         => 10,
             'class'        => 'autosubmit'
