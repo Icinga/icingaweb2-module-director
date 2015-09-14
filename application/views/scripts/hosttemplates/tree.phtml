@@ -32,11 +32,11 @@ function dumpTree($tree, $self, $level = 0)
             'director/' . $self->objectTypeName,
             array('name' => $tree->name),
             array('class' => $class)
-        ) . $self->qlink(
+        )/* . $self->qlink(
             '=>',
             'director/' . $self->objectTypeName . '/childlist',
             array('name' => $tree->name)
-        );
+        )*/;
     }
 
     if ($hasChildren) {
