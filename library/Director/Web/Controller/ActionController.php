@@ -58,7 +58,7 @@ abstract class ActionController extends Controller
             'label' => $this->translate('Import source'),
             'url'   => 'director/list/importsource')
         )->add('importrun', array(
-            'label' => $this->translate('Import run'),
+            'label' => $this->translate('Import history'),
             'url'   => 'director/list/importrun')
         )->add('syncrule', array(
             'label' => $this->translate('Sync rule'),
