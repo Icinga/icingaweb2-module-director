@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Web\Url;
 
 class IcingaObjectDatafieldTable extends QuickTable
 {
@@ -34,7 +35,7 @@ class IcingaObjectDatafieldTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/objectdatafield', array('id' => $row->id));
+        return Url::fromRequest()->with('field_id', $row->id);
     }
 
     public function getTitles()
