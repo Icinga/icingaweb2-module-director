@@ -184,17 +184,6 @@ table.log-properties {
     span {
         padding: 0.3em 1em;
     }
-
-    .old {
-        background-color: @colorCriticalHandled;
-        color: white;
-        text-decoration: stroken;
-    }
-
-    .new {
-        background-color: @colorOk;
-        color: white;
-    }
 }
 
 p.error {
@@ -336,4 +325,42 @@ table.simple {
 .tree a.host { background-image: url('../img/director/server.png'); }
 .tree a.service { background-image: url('../img/director/service.png'); }
 .tree a.command { background-image: url('../img/director/script.png'); }
+
+.diff {
+    font-family: monospace;
+    white-space: pre-wrap;
+
+
+    del, ins {
+        text-decoration: none;
+    }
+
+    del {
+        color: @colorCritical;
+        background-color: #fdd;
+    }
+
+    ins {
+        color: @colorOk;
+        background-color: #dfd;
+    }
+}
+
+div.diff {
+/*    line-height: 1.8em;
+    height: 1.8em;*/
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+
+.diff.old ins {
+  display: none;
+}
+
+.diff.new del {
+  display: none;
+}
+
 
