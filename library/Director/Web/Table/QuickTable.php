@@ -7,6 +7,7 @@ use Icinga\Data\Filter\FilterAnd;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterNot;
 use Icinga\Data\Filter\FilterOr;
+use Icinga\Data\Filter\Filter;
 use Icinga\Data\Selectable;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\QueryException;
@@ -26,6 +27,8 @@ abstract class QuickTable implements Paginatable
     protected $offset;
 
     protected $filter;
+
+    protected $enforcedFilters = array();
 
     protected $searchColumns = array();
 
@@ -96,8 +99,18 @@ abstract class QuickTable implements Paginatable
             $query->limit($this->getLimit(), $this->getOffset());
         }
 
+        $filter = null;
+        $enforced = $this->enforcedFilters;
         if ($this->filter && ! $this->filter->isEmpty()) {
-            $query->where($this->renderFilter($this->filter));
+            $filter = $this->filter;
+        } elseif (! empty($enforced)) {
+            $filter = array_shift($enforced);
+        }
+        if ($filter) {
+            foreach ($enforced as $f) {
+                $filter->andFilter($f);
+            }
+            $query->where($this->renderFilter($filter));
         }
 
         return $db->fetchAll($query);
@@ -231,6 +244,15 @@ abstract class QuickTable implements Paginatable
     public function setFilter($filter)
     {
         $this->filter = $filter;
+        return $this;
+    }
+
+    public function enforceFilter($filter, $expression = null)
+    {
+        if (! $filter instanceof Filter) {
+            $filter = Filter::where($filter, $expression);
+        }
+        $this->enforcedFilters[] = $filter;
         return $this;
     }
 
