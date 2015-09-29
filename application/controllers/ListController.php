@@ -1,6 +1,9 @@
 <?php
 
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\Core\CoreApi;
+use Exception;
 
 class Director_ListController extends ActionController
 {
@@ -113,6 +116,66 @@ class Director_ListController extends ActionController
         $this->setConfigTabs()->activate('generatedconfig');
         $this->view->title = $this->translate('Generated Configs');
         $this->prepareAndRenderTable('generatedConfig');
+    }
+
+    public function deploymentlogAction()
+    {
+	    $this->setAutorefreshInterval(5);
+        try {
+            $this->fetchLogs();
+        } catch (Exception $e) {
+            // No problem, Icinga might be reloading
+        }
+
+        $this->view->NOaddLink = $this->view->qlink(
+            $this->translate('Deploy'),
+            'director/config/deploy'
+        );
+
+        $this->setConfigTabs()->activate('deploymentlog');
+        $this->view->title = $this->translate('Deployments');
+        $this->prepareAndRenderTable('deploymentLog');
+    }
+
+    protected function fetchLogs()
+    {
+        $api = $this->api();
+        foreach ($this->db()->getUncollectedDeployments() as $deployment) {
+            $stage = $deployment->stage_name;
+            try {
+                $availableFiles = $api->listStageFiles($stage);
+            } catch (Exception $e) {
+                // This is not correct. We might miss logs as af an ongoing reload
+                $deployment->stage_collected = 'y';
+                $deployment->store();
+                continue;
+            }
+
+            if (in_array('startup.log', $availableFiles)
+                && in_array('status', $availableFiles))
+            {
+                if ($api->getStagedFile($stage, 'status') === '0') {
+                    $deployment->startup_succeeded = 'y';
+                } else {
+                    $deployment->startup_succeeded = 'n';
+                }
+                $deployment->startup_log = $this->api()->getStagedFile($stage, 'startup.log');
+            }
+
+            $deployment->store();
+        }
+
+        // Not correct, we might clear logs we formerly skipped
+        $api->wipeInactiveStages();
+    }
+
+    protected function api()
+    {
+        $apiconfig = $this->Config()->getSection('api');
+        $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
+        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
+        $api = new CoreApi($client);
+        return $api;
     }
 
     protected function prepareAndRenderTable($name)
