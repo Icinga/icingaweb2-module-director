@@ -390,6 +390,7 @@ class Db extends DbConnection
             ->from('director_deployment_log')
             ->where('stage_name IS NOT NULL')
             ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL')
             ->order('stage_name');
 
         return DirectorDeploymentLog::loadAll($this, $query, 'stage_name');
