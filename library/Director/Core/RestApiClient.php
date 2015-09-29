@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Core;
 
+use Exception;
+
 class RestApiClient
 {
     protected $version = 'v1';
@@ -59,7 +61,8 @@ class RestApiClient
                 'user_agent'       => 'Icinga Web 2.0 - Director',
                 'method'           => strtoupper($method),
                 'content'          => $body,
-                'header'           => $headers
+                'header'           => $headers,
+                'ignore_errors' => true
             ),
             'ssl' => array(
                 'verify_peer'   => false,
@@ -70,10 +73,14 @@ class RestApiClient
         );
         $context = stream_context_create($opts);
 
+        $res = file_get_contents($this->url($url), false, $context);
+        if (substr(array_shift($http_response_header), 0, 10) !== 'HTTP/1.1 2') {
+            throw new Exception($res);
+        }
         if ($raw) {
-            return file_get_contents($this->url($url), false, $context);
+            return $res;
         } else {
-            return RestApiResponse::fromJsonResult(file_get_contents($this->url($url), false, $context));
+            return RestApiResponse::fromJsonResult($res);
         }
     }
 
