@@ -36,7 +36,10 @@ abstract class ActionController extends Controller
 
     protected function setConfigTabs()
     {
-        $this->view->tabs = Widget::create('tabs')->add('generatedconfig', array(
+        $this->view->tabs = Widget::create('tabs')->add('deploymentlog', array(
+            'label' => $this->translate('Deployments'),
+            'url'   => 'director/list/deploymentlog')
+        )->add('generatedconfig', array(
             'label' => $this->translate('Configs'),
             'url'   => 'director/list/generatedconfig')
         )->add('activitylog', array(
