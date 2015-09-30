@@ -1,0 +1,15 @@
+<div class="controls">
+<?= $this->tabs ?>
+</div>
+
+<div class="content">
+<h1><?= $this->escape($this->title) ?></h1>
+<?php if ($this->deployment->startup_succeeded === 'y'): ?>
+<div style="color: green; font-weight: bold">Startup succeeded</div>
+<?php else: ?>
+<div style="color: red; font-weight: bold">Startup failed</div>
+<?php endif ?>
+<pre>
+<?= $this->escape($this->deployment->startup_log) ?>
+</pre>
+</div>
