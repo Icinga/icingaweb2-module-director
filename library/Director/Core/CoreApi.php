@@ -15,6 +15,28 @@ class CoreApi
         $this->client = $client;
     }
 
+    public function getTypes()
+    {
+        return $this->client->get('types')->getResult('name');
+    }
+
+    public function getType($type)
+    {
+        $res = $this->client->get('types', array('name' => $type))->getResult('name');
+        return $res[$type]; // TODO: error checking
+    }
+
+    public function listObjects($type, $pluralType)
+    {
+        // TODO: more abstraction needed
+        return $this->client->get(
+            'objects/' . $pluralType,
+            array(
+                'attrs' => array($type . '.__name', $type . '.name'),
+            )
+        )->getResult('__name');
+    }
+
     public function getModules()
     {
         return $this->client->get('config/packages')->getResult('name');
