@@ -5,7 +5,7 @@
 <table class="avp">
  <tr>
   <th><?= $this->translate('Deploy to master') ?></th>
-  <td><?= $this->qlink(
+  <td data-base-target="_main"><?= $this->qlink(
     $this->config->getHexChecksum(),
     'director/config/deploy',
     array('checksum' => $this->config->getHexChecksum())
