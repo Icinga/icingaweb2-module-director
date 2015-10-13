@@ -10,6 +10,7 @@ namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Util;
+use Icinga\Exception\IcingaException as IE;
 use Exception;
 
 /**
@@ -82,7 +83,7 @@ abstract class DbObject
             || $this->keyName === null
             || $this->defaultProperties === null
         ) {
-            throw new Exception("Someone extending this class didn't RTFM");
+            throw new IE("Someone extending this class didn't RTFM");
         }
 
         $this->properties = $this->defaultProperties;
@@ -217,7 +218,7 @@ abstract class DbObject
         }
 
         if (! array_key_exists($property, $this->properties)) {
-            throw new Exception(sprintf('Trying to get invalid property "%s"', $property));
+            throw new IE('Trying to get invalid property "%s"', $property);
         }
         return $this->properties[$property];
     }
@@ -252,13 +253,11 @@ abstract class DbObject
             $value = null;
         }
         if (! $this->hasProperty($key)) {
-            throw new Exception(sprintf('Trying to set invalid key %s', $key));
+            throw new IE('Trying to set invalid key %s', $key);
         }
         $func = 'validate' . ucfirst($key);
         if (method_exists($this, $func) && $this->$func($value) !== true) {
-            throw new Exception(
-                sprintf('Got invalid value "%s" for "%s"', $value, $key)
-            );
+            throw new IE('Got invalid value "%s" for "%s"', $value, $key);
         }
         $func = 'munge' . ucfirst($key);
         if (method_exists($this, $func)) {
@@ -268,7 +267,7 @@ abstract class DbObject
             return $this;
         }
         if ($key === $this->getKeyName() && $this->hasBeenLoadedFromDb()) {
-            throw new Exception('Changing primary key is not allowed');
+            throw new IE('Changing primary key is not allowed');
         }
         $func = 'set' . ucfirst($key);
         if (substr($func, -2) === '[]') {
@@ -333,7 +332,7 @@ abstract class DbObject
     public function __unset($key)
     {
         if (! array_key_exists($key, $this->properties)) {
-            throw new Exception('Trying to unset invalid key');
+            throw new IE('Trying to unset invalid key');
         }
         $this->properties[$key] = $this->defaultProperties[$key];
     }
@@ -348,7 +347,7 @@ abstract class DbObject
     public function setProperties($props)
     {
         if (! is_array($props)) {
-            throw new Exception('Array required, got ' . gettype($props));
+            throw new IE('Array required, got %s', gettype($props));
         }
         foreach ($props as $key => $value) {
             $this->set($key, $value);
@@ -501,8 +500,7 @@ abstract class DbObject
         $properties = $this->db->fetchRow($select);
 
         if (empty($properties)) {
-            $msg = sprintf('Got no "%s" data for: %s', $this->table, $this->getId());
-            throw new Exception($msg);
+            throw new IE('Got no "%s" data for: %s', $this->table, $this->getLogId());
         }
 
         return $this->setDbProperties($properties);
@@ -512,11 +510,11 @@ abstract class DbObject
     {
         foreach ($properties as $key => $val) {
             if (! array_key_exists($key, $this->properties)) {
-                throw new Exception(sprintf(
+                throw new IE(
                     'Trying to set invalid %s key "%s". DB schema change?',
                     $this->table,
                     $key
-                ));
+                );
             }
             if ($val === null) {
                 $this->properties[$key] = null;
@@ -599,11 +597,7 @@ abstract class DbObject
         }
 
         if ($this->validate() !== true) {
-            throw new Exception(sprintf(
-                '%s[%s] validation failed',
-                $this->table,
-                $this->getId()
-            ));
+            throw new IE('%s[%s] validation failed', $this->table, $this->getLogId());
         }
 
         if ($this->hasBeenLoadedFromDb() && ! $this->hasBeenModified()) {
@@ -613,29 +607,26 @@ abstract class DbObject
         $this->beforeStore();
         $table = $this->table;
         $id = $this->getId();
-        if (is_array($id)) {
-            $logId = json_encode($id);
-        } else {
-            $logId = $id;
-        }
         $result = false;
 
         try {
             if ($this->hasBeenLoadedFromDb()) {
                 if ($this->updateDb()) {
-                    /*throw new Exception(
-                        sprintf('%s "%s" has been modified', $table, $id)
-                    );*/
                     $result = true;
                     $this->onUpdate();
                 } else {
-                    throw new Exception(
-                        sprintf('FAILED storing %s "%s"', $table, $logId));
+                    throw new IE(
+                        'FAILED storing %s "%s"',
+                        $table,
+                        $this->getLogId()
+                    );
                 }
             } else {
                 if ($id && $this->existsInDb()) {
-                    throw new Exception(
-                        sprintf('Trying to recreate %s (%s)', $table, $logId)
+                    throw new IE(
+                        'Trying to recreate %s (%s)',
+                        $table,
+                        $this->getLogId()
                     );
                 }
 
@@ -651,21 +642,21 @@ abstract class DbObject
                     $this->onInsert();
                     $result = true;
                 } else {
-                    throw new Exception(
-                        sprintf('FAILED to store new %s "%s"', $table, $logId)
+                    throw new IE(
+                        'FAILED to store new %s "%s"',
+                        $table,
+                        $this->getLogId()
                     );
                 }
             }
 
         } catch (Exception $e) {
-            throw new Exception(
-                sprintf(
-                    'Storing %s[%s] failed: %s {%s}',
-                    $this->table,
-                    $logId,
-                    $e->getMessage(),
-                    print_r($this->getProperties(), 1)
-                )
+            throw new IE(
+                'Storing %s[%s] failed: %s {%s}',
+                $this->table,
+                $this->getLogId(),
+                $e->getMessage(),
+                print_r($this->getProperties(), 1)
             );
         }
         $this->modifiedProperties = array();
@@ -693,7 +684,20 @@ abstract class DbObject
     {
         $keyname = $this->getKeyName();
         if (is_array($keyname)) {
+            if (! is_array($key)) {
+                throw new IE(
+                    '%s has a multicolumn key, array required',
+                    $this->table
+                );
+            }
             foreach ($keyname as $k) {
+                if (! array_key_exists($k, $key)) {
+                    throw new IE(
+                        'Required key component "%s" is missing for "%s", got %s',
+                        $k,
+                        json_encode($key)
+                    );
+                }
                 $this->set($k, $key[$k]);
             }
         } else {
@@ -737,18 +741,46 @@ abstract class DbObject
         }
     }
 
+    protected function getLogId()
+    {
+        $id = $this->getId();
+        if (is_array($id)) {
+            $logId = json_encode($id);
+        } else {
+            $logId = $id;
+        }
+
+        return $logId;
+    }
+
     public function delete()
     {
         $table = $this->table;
-        $id = $this->getId();
-        if (! $this->hasBeenLoadedFromDb() || ! $this->existsInDb()) {
-            throw new Exception(sprintf('Cannot delete %s "%s" from Db', $table, $id));
+
+        if (! $this->hasBeenLoadedFromDb()) {
+            throw new IE(
+                'Cannot delete %s "%s", it has not been loaded from Db',
+                $table,
+                $this->getLogId()
+            );
+        }
+
+        if (! $this->existsInDb()) {
+            throw new IE(
+                'Cannot delete %s "%s", it does not exist',
+                $table,
+                $this->getLogId()
+            );
         }
         $this->beforeDelete();
         if (! $this->deleteFromDb()) {
-            throw new Exception(sprintf('Deleting %s (%s) FAILED', $table, $id));
+            throw new IE(
+                'Deleting %s (%s) FAILED',
+                $table,
+                $this->getLogId()
+            );
         }
-        // $this->log(sprintf('%s "%s" has been DELETED', $table, $id));
+        // $this->log(sprintf('%s "%s" has been DELETED', $table, this->getLogId()));
         $this->onDelete();
         $this->loadedFromDb = false;
         return true;
