@@ -162,7 +162,10 @@ abstract class ObjectController extends ActionController
             ->setIcingaObject($object);
 
         if ($id = $this->params->get('field_id')) {
-            $form->loadObject($id);
+            $form->loadObject(array(
+                $type . '_id' => $object->id,
+                'datafield_id' => $id
+            ));
         }
 
         $form->handleRequest();
