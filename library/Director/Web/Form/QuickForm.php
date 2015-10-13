@@ -120,8 +120,7 @@ abstract class QuickForm extends Zend_Form
     protected function getSentValue($name, $default = null)
     {
         $request = $this->getRequest();
-
-        if ($request->isPost()) {
+        if ($request->isPost() && $this->hasBeenSent()) {
             return $request->getPost($name);
         } else {
             return $default;
