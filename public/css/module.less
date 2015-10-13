@@ -1,15 +1,37 @@
+/* normalize 2.0 bs */
+.content {
+  line-height: normal;
+  font-size: 1em;
+}
+
+a {
+  font-weight: normal;
+}
+
+pre {
+  font-size: 0.8em;
+}
+
+table.avp th {
+    font-size: inherit;
+}
+
 form p.description {
 /*  display: none; */
    padding-bottom: 1em;
    color: #888;
-   padding-left: 2em;
+   padding-left: 32%;
+   font-size: 0.75em;
+   font-style: italic;
 }
 
+/*
 input, select, select option, textarea {
    -webkit-appearance: none;
    -moz-appearance: none;
    appearance: none;
 }
+*/
 
 select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
     display: none;
@@ -18,6 +40,7 @@ select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
 select {
     border: 1px solid #ddd;
     cursor: pointer;
+    background: none;
 }
 
 input, textarea {
@@ -90,6 +113,7 @@ ul.main-actions {
 form dt label {
     width: auto;
     font-weight: normal;
+    font-size: inherit;
 
     &.required {
         font-weight: bold;
