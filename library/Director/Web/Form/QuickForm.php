@@ -211,6 +211,16 @@ abstract class QuickForm extends Zend_Form
         return $this;
     }
 
+    public function getSuccessUrl()
+    {
+        $url = $this->successUrl ?: $this->getAction();
+        if (! $url instanceof Url) {
+            $url = Url::fromPath($url);
+        }
+
+        return $url;
+    }
+
     public function setup()
     {
     }
@@ -331,7 +341,7 @@ abstract class QuickForm extends Zend_Form
 
     public function redirectOnSuccess($message = null)
     {
-        $url = $this->successUrl ?: $this->getAction();
+        $url = $this->getSuccessUrl();
         $this->notifySuccess($this->getSuccessMessage($message));
         $this->redirectAndExit($url);
     }
