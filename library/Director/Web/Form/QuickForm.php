@@ -221,10 +221,11 @@ abstract class QuickForm extends Zend_Form
 
     public function setAction($action)
     {
-        if (! $action instanceof Url) {
-            $action = Url::fromPath($action);
+        if ($action instanceof Url) {
+            $action = $action->getAbsoluteUrl('&');
         }
-        return parent::setAction((string) $action);
+
+        return parent::setAction($action);
     }
 
     public function setIcingaModule(Module $module)
