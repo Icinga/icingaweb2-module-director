@@ -60,8 +60,28 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             )
         ));
 
-        $this->setSubmitLabel(
-            $this->translate('Add new field')
-        );
+        if ($this->object === null) {
+            $this->setSubmitLabel(
+                $this->translate('Add new field')
+            );
+        } else {
+            $this->setSubmitLabel(
+                $this->translate('Store')
+            );
+            $this->addElement('submit', 'delete', array(
+                'label' => $this->translate('Delete')
+            ));
+        }
+    }
+
+    protected function onRequest()
+    {
+        parent::onRequest();
+
+        if ($this->getSentValue('delete') === $this->translate('Delete')) {
+            $this->object()->delete();
+            $this->setSuccessUrl($this->getSuccessUrl()->without('field_id'));
+            $this->redirectOnSuccess($this->translate('Field has been removed'));
+        }
     }
 }
