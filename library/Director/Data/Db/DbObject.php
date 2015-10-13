@@ -798,7 +798,7 @@ abstract class DbObject
     {
     }
 
-    public static function create($properties, DbConnection $connection = null)
+    public static function create($properties = array(), DbConnection $connection = null)
     {
         $class = get_called_class();
         $obj = new $class();
