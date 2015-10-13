@@ -23,7 +23,7 @@ class Director_ConfigController extends ActionController
         } else {
             $url = Url::fromPath('director/config/show', array('checksum' => $checksum));
             Notification::success(
-                $this->translate('Config deployment has been failed')
+                $this->translate('Config deployment failed')
             );
             $this->redirectNow($url);
         }
