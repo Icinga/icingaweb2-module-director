@@ -39,17 +39,24 @@ class IcingaHostForm extends DirectorObjectForm
         ));
         */
 
+        $elements = array(
+            'object_name',
+            'display_name',
+            'address',
+            'address6',
+            'imports',
+        );
+        $this->addDisplayGroup($elements, 'object_definition', array(
+            'decorators' => array(
+                'FormElements',
+                'DtDdWrapper',
+                'Fieldset',
+            ),
+            'order' => 20,
+            'legend' => $this->translate('Host properties')
+        ));
+
         if ($this->isTemplate()) {
-            $this->addElement('text', 'address', array(
-                'label' => $this->translate('Host address'),
-                'description' => $this->translate('Host address. Usually an IPv4 address, but may be any kind of address your check plugin is able to deal with')
-            ));
-
-            $this->addElement('text', 'address6', array(
-                'label' => $this->translate('IPv6 address'),
-                'description' => $this->translate('Usually your hosts main IPv6 address')
-            ));
-
             $this->addCheckExecutionElements();
         } else {
             $this->getElement('imports')->setRequired();
