@@ -18,6 +18,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $objectType = 'object';
 
+    protected $fieldsDisplayGroup;
+
     protected function object($values = array())
     {
         if ($this->object === null) {
@@ -100,6 +102,35 @@ abstract class DirectorObjectForm extends QuickForm
             'label' => 'Value'
         ));
         */
+    }
+
+    protected function addToFieldsDisplayGroup($elements)
+    {
+        if (! is_array($elements)) {
+            $elements = array($elements);
+        }
+        foreach ($elements as $k => $v) {
+            if (is_string($v)) {
+                $elements[$k] = $this->getElement($v);
+            }
+        }
+
+        if ($this->fieldsDisplayGroup === null) {
+            $this->addDisplayGroup($elements, 'custom_fields', array(
+                'decorators' => array(
+                    'FormElements',
+                    'DtDdWrapper',
+                    'Fieldset',
+                ),
+                'order' => 50,
+                'legend' => $this->translate('Custom fields')
+            ));
+            $this->fieldsDisplayGroup = $this->getDisplayGroup('custom_fields');
+        } else {
+            $this->fieldsDisplayGroup->addElements($elements);
+        }
+
+        return $this->fieldsDisplayGroup;
     }
 
     protected function handleGroups($object, & $values)
@@ -294,6 +325,7 @@ abstract class DirectorObjectForm extends QuickForm
 
         $this->addElement($el);
         $this->setElementValue($name, $value, $inherited, $inheritedFrom);
+        $this->addToFieldsDisplayGroup($el);
 
         return $el;
     }
@@ -473,6 +505,7 @@ abstract class DirectorObjectForm extends QuickForm
         $key = 'var_' . $key;
         $this->addElement('text', $key, array('label' => $label));
         $this->setElementValue($key, $value, $inherited, $inheritedFrom);
+        $this->addToFieldsDisplayGroup($key);
     }
 
     protected function addRange($key, $range)
