@@ -426,6 +426,21 @@ abstract class DbObject
         return $this->autoincKeyName;
     }
 
+    public function getKeyParams()
+    {
+        $params = array();;
+        $key = $this->getKeyName();
+        if (is_array($key)) {
+            foreach ($key as $k) {
+                $params[$k] = $this->get($k);
+            }
+        } else {
+            $params[$key] = $this->get($this->keyName);
+        }
+
+        return $params;
+    }
+
     /**
      * Return the unique identifier
      *
