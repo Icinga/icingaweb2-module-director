@@ -16,6 +16,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $className;
 
+    protected $deleteButtonName;
+
     protected $objectType = 'object';
 
     protected $fieldsDisplayGroup;
@@ -482,8 +484,33 @@ abstract class DirectorObjectForm extends QuickForm
         }
        
         $this->handleProperties($object, $values);
+    }
 
-        $this->moveSubmitToBottom();
+    protected function addDeleteButton($label = null)
+    {
+        if ($label === null) {
+            $label = $this->translate('Delete');
+        }
+
+        $el = $this->createElement('submit', $label)->setLabel($label)->setDecorators(array('ViewHelper')); //->removeDecorator('Label');
+
+        $this->deleteButtonName = $el->getName();
+        $this->addElement($el);
+
+        return $this;
+    }
+
+    public function hasDeleteButton()
+    {
+        return $this->deleteButtonName !== null;
+    }
+
+    public function shouldBeDeleted()
+    {
+        if (! $this->hasDeleteButton()) return false;
+
+        $name = $this->deleteButtonName;
+        return $this->getSentValue($name) === $this->getElement($name)->getLabel();
     }
 
     public function loadObject($id)
