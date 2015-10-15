@@ -280,10 +280,9 @@ abstract class DirectorObjectForm extends QuickForm
 
         }
 
-        if ($object->isTemplate()) {
-            $this->addHtml('<h3>Add a custom variable</h3>');
+        if (/* TODO: add free var */false && $object->isTemplate()) {
             $this->addElement('text', '_newvar_name', array(
-                'label' => 'Name'
+                'label' => 'Add var'
             ));
             $this->addElement('text', '_newvar_value', array(
                 'label' => 'Value'
@@ -292,6 +291,13 @@ abstract class DirectorObjectForm extends QuickForm
                 'label'        => 'Type',
                 'multiOptions' => array('string' => $this->translate('String'))
             ));
+            $this->addToFieldsDisplayGroup(
+                array(
+                    '_newvar_name',
+                    '_newvar_value',
+                    '_newvar_format',
+                )
+            );
         }
     }
 
