@@ -317,9 +317,9 @@ continue;
         return $this;
     }
 
-    protected function configFile($name)
+    protected function configFile($name, $suffix = '.conf')
     {
-        $filename = $name . '.conf';
+        $filename = $name . $suffix;
         if (! array_key_exists($filename, $this->files)) {
             $this->files[$filename] = new IcingaConfigFile();
         }
