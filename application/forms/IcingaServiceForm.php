@@ -26,5 +26,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->isTemplate()) {
             $this->addCheckExecutionElements();
         }
+
+        $this->setButtons();
     }
 }
