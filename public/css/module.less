@@ -166,7 +166,9 @@ form dt label {
     font-size: inherit;
 
     &.required {
-        font-weight: bold;
+        &::after {
+            content: '*'
+        }
     }
 }
 
