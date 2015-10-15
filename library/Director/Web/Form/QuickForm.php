@@ -107,16 +107,18 @@ abstract class QuickForm extends Zend_Form
             $this->submitButtonName = $el->getName();
             $this->addElement($el);
         }
-    }
 
-    // TODO: This is ugly, we need to defer button creation
-    protected function moveSubmitToBottom()
-    {
-        $name = $this->submitButtonName;
-        if ($name && ($submit = $this->getElement($name))) {
-            $this->removeElement($name);
-            $this->addElement($submit);
-        }
+        $grp = array(
+            $this->submitButtonName,
+            $this->deleteButtonName
+        );
+        $this->addDisplayGroup($grp, 'buttons', array(
+            'decorators' => array(
+                'FormElements',
+                'DtDdWrapper',
+            ),
+            'order' => 1000,
+        ));
     }
 
     protected function createIdElement()
