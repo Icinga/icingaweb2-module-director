@@ -43,10 +43,6 @@ abstract class ObjectController extends ActionController
                 'url'       => sprintf('director/%s/history', $type),
                 'urlParams' => $params,
                 'label'     => $this->translate('History')
-            ))->add('delete', array(
-                'url'       => sprintf('director/%s/delete', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('Delete')
             ));
         } else {
             $this->getTabs()->add('add', array(
@@ -73,6 +69,7 @@ abstract class ObjectController extends ActionController
         $this->render('object/show', null, true);
     }
 
+    // TODO: Remove or leave here for API access only. Probably not needed.
     public function deleteAction()
     {
         $type = $this->getType();
