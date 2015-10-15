@@ -596,7 +596,7 @@ abstract class DirectorObjectForm extends QuickForm
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate('Importable templates, choose one or more of them (CTRL/SHIFT click)'),
             'multiOptions' => $this->enumAllowedTemplates(),
-            'size'         => 10,
+            'size'         => 8,
             'class'        => 'autosubmit'
         ));
 
@@ -605,8 +605,6 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addCheckExecutionElements()
     {
-        $this->addHtml('<h3>Check execution</h3>');
-
         $this->addElement('select', 'check_command_id', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
@@ -648,6 +646,26 @@ abstract class DirectorObjectForm extends QuickForm
             $this->translate('Volatile'),
             $this->translate('Whether this check is volatile.')
         );
+
+        $elements = array(
+            'check_command_id',
+            'enable_active_checks',
+            'enable_passive_checks',
+            'enable_notifications',
+            'enable_event_handler',
+            'enable_perfdata',
+            'volatile'
+        );
+
+        $this->addDisplayGroup($elements, 'check_execution', array(
+            'decorators' => array(
+                'FormElements',
+                'DtDdWrapper',
+                'Fieldset',
+            ),
+            'order' => 60,
+            'legend' => $this->translate('Check execution')
+        ));
 
         return $this;
     }
