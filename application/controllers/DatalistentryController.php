@@ -51,7 +51,10 @@ class Director_DatalistentryController extends ActionController
 
         if ($edit) {
             $form->loadObject(array('list_id' => $listId, 'entry_name' => $entryName));
-            $form->getElement('entry_name')->setAttribs(array('readonly' => true));
+            if ($el = $form->getElement('entry_name')) {
+                // TODO: Doesn't work without setup
+                $el->setAttribs(array('readonly' => true));
+            }
         }
 
         $form->handleRequest();
