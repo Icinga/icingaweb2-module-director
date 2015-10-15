@@ -301,6 +301,20 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    protected function setButtons()
+    {
+        if ($this->object === null || ! $this->object->hasBeenLoadedFromDb()) {
+            $this->setSubmitLabel(
+                $this->translate('Add')
+            );
+        } else {
+            $this->setSubmitLabel(
+                $this->translate('Store')
+            );
+            $this->addDeleteButton();
+        }
+    }
+
     protected function addField($field, $value = null, $inherited = null, $inheritedFrom = null)
     {
         $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
