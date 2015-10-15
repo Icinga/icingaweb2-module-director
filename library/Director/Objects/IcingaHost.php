@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHost extends IcingaObject
@@ -45,6 +46,25 @@ class IcingaHost extends IcingaObject
     protected $supportsImports = true;
 
     protected $supportsFields = true;
+
+    public static function enumProperties(DbConnection $connection = null)
+    {
+        $properties = static::create()->listProperties();
+        $properties = array_combine($properties, $properties);
+        if ($connection !== null) {
+            foreach ($connection->fetchDistinctHostVars() as $var) {
+                if ($var->datatype) {
+                    $properties['vars.' . $var->varname] = $var->caption;
+                } else {
+                    $properties['vars.' . $var->varname] = 'vars.' . $var->varname;
+                }
+            }
+        }
+
+        $properties['vars.*'] = 'Other custom variable';
+
+        return $properties;
+    }
 
     protected function renderCheck_command_id()
     {

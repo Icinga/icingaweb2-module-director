@@ -382,6 +382,25 @@ class Db extends DbConnection
         return $this->enum('icinga_' . $type, null, $filters);
     }
 
+    public function fetchDistinctHostVars()
+    {
+        $select = $this->db()->select()->distinct()->from(
+            array('hv' => 'icinga_host_var'),
+            array(
+                'varname'  => 'hv.varname',
+                'format'   => 'hv.format',
+                'caption'  => 'df.caption',
+                'datatype' => 'df.datatype'
+            )
+        )->joinLeft(
+            array('df' => 'director_datafield'),
+            'df.varname = hv.varname',
+            array()
+        )->order('varname');
+
+        return $this->db()->fetchAll($select);
+    }
+
     public function getUncollectedDeployments()
     {
         $db = $this->db();
