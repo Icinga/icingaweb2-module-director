@@ -14,23 +14,6 @@ class ImportSourceLdap extends ImportSourceHook
 
     public function fetchData()
     {
-        $columns = array(
-            'objectclass',
-            'cn',
-            'snbhostname',
-            'environment',
-            'puppetclass', // multi
-            'puppetvar', // multi
-            'SNBhostcontactteam',
-            'SNBhostlocshort',
-            'SNBmonprio',
-            'SNBappl',
-            'SNBosversion',
-            'SNBossubversion',
-            'snbmachmaint',
-            'snbstate',
-            'snbmaintperiod', // multi
-        );
         $query = $this->connection()->select()->from($this->settings['objectclass'], $this->listColumns());
         if ($base = $this->settings['base']) {
             $query->setBase($base);
