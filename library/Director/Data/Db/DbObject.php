@@ -666,12 +666,15 @@ abstract class DbObject
             }
 
         } catch (Exception $e) {
+            if ($e instanceof IE) {
+                throw $e;
+            }
             throw new IE(
                 'Storing %s[%s] failed: %s {%s}',
                 $this->table,
                 $this->getLogId(),
                 $e->getMessage(),
-                print_r($this->getProperties(), 1)
+                print_r($this->getProperties(), 1) // TODO: Remove properties
             );
         }
         $this->modifiedProperties = array();
