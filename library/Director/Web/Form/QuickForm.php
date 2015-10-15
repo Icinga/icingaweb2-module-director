@@ -205,8 +205,14 @@ abstract class QuickForm extends Zend_Form
         ) + $enum;
     }
 
-    public function setSuccessUrl($url)
+    public function setSuccessUrl($url, $params = null)
     {
+        if (! $url instanceof Url) {
+            $url = Url::fromPath($url);
+        }
+        if ($params !== null) {
+            $url->setParams($params);
+        }
         $this->successUrl = $url;
         return $this;
     }
