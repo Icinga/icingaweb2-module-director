@@ -365,7 +365,14 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $object = $this->object();
         if ($object->hasBeenModified()) {
-
+            if (! $object->hasBeenLoadedFromDb()) {
+                if ($object instanceof IcingaObject) {
+                    $this->setSuccessUrl(
+                        'director/' . strtolower($this->getObjectName()),
+                        array('name' => $object->object_name)
+                    );
+                }
+            }
             $msg = sprintf(
                 $object->hasBeenLoadedFromDb()
                 ? $this->translate('The %s has successfully been stored')
