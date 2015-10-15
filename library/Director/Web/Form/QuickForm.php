@@ -75,6 +75,14 @@ abstract class QuickForm extends Zend_Form
         $this->setAction(Url::fromRequest());
         $this->createIdElement();
         $this->regenerateCsrfToken();
+        $this->setDecorators(
+            array(
+                'Description',
+                array('FormErrors', array('onlyCustomFormErrors' => true)),
+                'FormElements',
+                'Form'
+            )
+        );
     }
 
     protected function handleOptions($options = null)
