@@ -16,13 +16,22 @@ table.avp th {
     font-size: inherit;
 }
 
+form input[type=submit] {
+  .button();
+  border-width: 1px;
+}
+
+form input[type=submit]:first-of-type {
+    border-width: 2px;
+}
+
 form p.description {
-/*  display: none; */
-   padding-bottom: 1em;
-   color: #888;
-   padding-left: 32%;
-   font-size: 0.75em;
-   font-style: italic;
+  display: none; 
+  padding-bottom: 1em;
+  color: #888;
+  padding-left: 32%;
+  font-size: 0.75em;
+  font-style: italic;
 }
 
 /*
@@ -43,19 +52,30 @@ select {
     background: none;
 }
 
-input, textarea {
-    border: 1px solid #ddd;
-    padding-left: 0.5em;
-}
-
 input[type=text], textarea, select {
     max-width: 36em;
     min-width: 20em;
     width: 63%;
+    padding-left: 0.5em;
+    border-style: solid;
+    border-color: transparent;
+    border-bottom-color: @gray-light;
+    border-width: 1px;
 }
 
-select:hover, input:hover, textarea:hover, select:focus, input:focus, textarea:focus {
-    border: 1px solid #666;
+select::-moz-focus-inner { border: 0; }
+
+select, input[type=text], textarea {
+    &:hover {
+        border-style: dotted dotted solid dotted;
+        border-color: @gray-light;
+    }
+
+    &:focus, &:focus:hover {
+        border-style: solid;
+        border-color: @icinga-blue;
+        outline: none;
+    }
 }
 
 select[value=""] {
