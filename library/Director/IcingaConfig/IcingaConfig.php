@@ -3,9 +3,11 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Data\Db\DbConnection;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Web\Hook;
 use Exception;
 
 class IcingaConfig
@@ -90,6 +92,7 @@ class IcingaConfig
     protected function storeIfModified()
     {
         $this->generateFromDb();
+        $this->collectExtraFiles();
         $checksum = $this->calculateChecksum();
         $exists = $this->db->fetchOne(
             $this->db->select()->from(self::$table, 'COUNT(*)')->where('checksum = ?', $this->dbBin($checksum))
@@ -325,6 +328,27 @@ continue;
         }
 
         return $this->files[$filename];
+    }
+
+    protected function collectExtraFiles()
+    {
+        foreach (Hook::all('Director\\ShipConfigFiles') as $hook) {
+            foreach ($hook->fetchFiles() as $filename => $file) {
+                if (array_key_exists($filename, $this->files)) {
+                    throw new ProgrammingError(
+                        'Cannot ship one file twice: %s',
+                        $filename
+                    );
+                }
+                if ($file instanceof IcingaConfigFile) {
+                    $this->files[$filename] = $file;
+                } else {
+                    $this->configFile($filename, '')->setContent((string) $file);
+                }
+            }
+        }
+
+        return $this;
     }
 
     public function getLastActivityHexChecksum()
