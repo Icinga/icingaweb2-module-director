@@ -8,6 +8,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
+use Exception;
 use Zend_Form;
 
 /**
@@ -300,7 +301,12 @@ abstract class QuickForm extends Zend_Form
             if ($this->hasBeenSubmitted()) {
                 $this->beforeValidation($post);
                 if ($this->isValid($post)) {
-                    $this->onSuccess();
+                    try {
+                        $this->onSuccess();
+                    } catch (Exception $e) {
+                        $this->addError($e->getMessage());
+                        $this->onFailure();
+                    }
                 } else {
                     $this->onFailure();
                 }
