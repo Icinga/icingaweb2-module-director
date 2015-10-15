@@ -103,7 +103,7 @@ abstract class QuickForm extends Zend_Form
     protected function addSubmitButtonIfSet()
     {
         if (false !== ($label = $this->getSubmitLabel())) {
-            $el = $this->createElement('submit', $label)->setLabel($label)->removeDecorator('Label');
+            $el = $this->createElement('submit', $label)->setLabel($label)->setDecorators(array('ViewHelper'));
             $this->submitButtonName = $el->getName();
             $this->addElement($el);
         }
