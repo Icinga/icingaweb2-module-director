@@ -6,6 +6,25 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class DeploymentLogTable extends QuickTable
 {
+    protected $activeStageName;
+
+    public function setActiveStageName($name)
+    {
+        $this->activeStageName = $name;
+        return $this;
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($this->activeStageName !== null
+            && $row->stage_name === $this->activeStageName)
+        {
+            return 'running';
+        }
+
+        return false;
+    }
+
     public function getColumns()
     {
         $columns = array(
@@ -14,6 +33,7 @@ class DeploymentLogTable extends QuickTable
             'start_time'        => 'l.start_time',
             'stage_collected'   => 'l.stage_collected',
             'dump_succeeded'    => 'l.dump_succeeded',
+            'stage_name'        => 'l.stage_name',
             'startup_succeeded' => 'l.startup_succeeded',
             'checksum'          => 'LOWER(HEX(c.checksum))',
             'duration'          => "l.duration_dump || 'ms'",

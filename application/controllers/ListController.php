@@ -134,7 +134,16 @@ class Director_ListController extends ActionController
 
         $this->setConfigTabs()->activate('deploymentlog');
         $this->view->title = $this->translate('Deployments');
-        $this->prepareAndRenderTable('deploymentLog');
+        $this->prepareTable('deploymentLog');
+        try {
+
+            $this->view->table->setActiveStageName(
+                $this->api()->getActiveStageName()
+            );
+        } catch (Exception $e) {
+            // Don't care
+        }
+        $this->render('table');
     }
 
     protected function fetchLogs()
@@ -178,11 +187,16 @@ class Director_ListController extends ActionController
         return $api;
     }
 
-    protected function prepareAndRenderTable($name)
+    protected function prepareTable($name)
     {
         $table = $this->loadTable($name)->setConnection($this->db());
         $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
         $this->view->table = $this->applyPaginationLimits($table);
-        $this->render('table');
+        return $this;
+    }
+
+    protected function prepareAndRenderTable($name)
+    {
+        $this->prepareTable($name)->render('table');
     }
 }
