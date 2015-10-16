@@ -14,7 +14,7 @@ class DirectorDeploymentLog extends DbObject
 
     protected $defaultProperties = array(
         'id'                   => null,
-        'config_id'            => null,
+        'config_checksum'      => null,
         'peer_identity'        => null,
         'start_time'           => null,
         'end_time'             => null,
