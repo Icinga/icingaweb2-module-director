@@ -31,6 +31,23 @@ class Director_ConfigController extends ActionController
 
     public function showAction()
     {
+        $tabs = $this->getTabs();
+
+        if ($deploymentId = $this->params->get('deployment_id')) {
+            $tabs->add('deployment', array(
+                'label'     => $this->translate('Deployment'),
+                'url'       => 'director/deployment/show',
+                'urlParams' => array(
+                    'id' => $deploymentId
+                )
+            ));
+        }
+
+        $tabs->add('config', array(
+            'label'     => $this->translate('Config'),
+            'url'       => $this->getRequest()->getUrl(),
+        ))->activate('config');
+
         $this->view->config = IcingaConfig::fromDb(Util::hex2binary($this->params->get('checksum')), $this->db());
     }
 
