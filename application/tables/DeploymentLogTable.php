@@ -56,8 +56,7 @@ class DeploymentLogTable extends QuickTable
         $view = $this->view();
         return array(
             'peer_identity'     => $view->translate('Peer'),
-            // 'checksum'          => $view->translate('Checksum'),
-            'start_time'          => $view->translate('Time'),
+            'start_time'        => $view->translate('Time'),
             'dump_succeeded'    => $view->translate('Sent'),
             'startup_succeeded' => $view->translate('Loaded'),
         );
@@ -72,7 +71,7 @@ class DeploymentLogTable extends QuickTable
             array()
         )->joinLeft(
             array('c' => 'director_generated_config'),
-            'c.checksum = l.config_id', ///Aaaarg
+            'c.checksum = l.config_checksum',
             array()
         )->order('l.start_time DESC');
 
