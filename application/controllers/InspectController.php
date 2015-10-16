@@ -44,6 +44,12 @@ class Director_InspectController extends ActionController
         }
     }
 
+    public function statusAction()
+    {
+        $this->view->status = $status = $this->api()->getStatus();
+        print_r($status); exit;
+    }
+
     protected function api()
     {
         $apiconfig = $this->Config()->getSection('api');
