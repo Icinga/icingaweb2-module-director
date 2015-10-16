@@ -32,9 +32,28 @@ abstract class QuickTable implements Paginatable
 
     protected $searchColumns = array();
 
+    protected function getRowClasses($row)
+    {
+        return array();
+    }
+
+    private function getRowClassesString($row)
+    {
+        $classes = $this->getRowClasses($row);
+        if (is_string($classes)) {
+            $classes = array($classes);
+        }
+
+        if (empty($classes)) {
+            return '';
+        } else {
+            return ' class="' . implode(' ', $classes) . '"';
+        }
+    }
+
     protected function renderRow($row)
     {
-        $htm = "  <tr>\n";
+        $htm = "  <tr" . $this->getRowClassesString($row) . ">\n";
         $firstRow = true;
 
         foreach ($this->getTitles() as $key => $title) {
