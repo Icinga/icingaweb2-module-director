@@ -98,7 +98,6 @@ class ConfigForm extends QuickForm
                         array('data-base-target' => '_main')
                     );
                     $this->addHtmlHint(sprintf($hint, $link));
-                    $this->moveSubmitToBottom();
                 }
 
             } catch (Exception $e) {
@@ -117,7 +116,6 @@ class ConfigForm extends QuickForm
                     array('data-base-target' => '_next')
                 );
                 $this->addHtmlHint(sprintf($hint, $link));
-                $this->moveSubmitToBottom();
             }
         }
     }
