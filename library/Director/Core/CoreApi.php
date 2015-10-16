@@ -142,8 +142,9 @@ class CoreApi
         $deployment = DirectorDeploymentLog::create(array(
             // 'config_id'     => $config->id,
             // 'peer_identity' => $endpoint->object_name,
-            'peer_identity' => $this->client->getPeerIdentity(),
-            'start_time'    => date('Y-m-d H:i:s'),
+            'peer_identity'   => $this->client->getPeerIdentity(),
+            'start_time'      => date('Y-m-d H:i:s'),
+            'config_checksum' => $config->getChecksum()
             // 'triggered_by'  => Util::getUsername(),
             /// 'username'  => Util::getUsername(),
             // 'module_name'   => $moduleName,
