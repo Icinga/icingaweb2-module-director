@@ -42,6 +42,11 @@ class CoreApi
         return $this->client->get('config/packages')->getResult('name');
     }
 
+    public function getActiveStageName()
+    {
+        return current($this->listModuleStages('director', true));
+    }
+
     public function listModuleStages($name, $active = null)
     {
         $modules = $this->getModules();
