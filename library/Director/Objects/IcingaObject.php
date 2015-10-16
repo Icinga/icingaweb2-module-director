@@ -632,6 +632,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return '';
         }
     }
+
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
         return c::renderKeyValue(
