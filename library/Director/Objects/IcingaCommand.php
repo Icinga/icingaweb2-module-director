@@ -36,6 +36,17 @@ class IcingaCommand extends IcingaObject
 
     protected function renderCommand()
     {
-        return c::renderKeyValue('command', c::renderArray(array($this->command)));
+        $command = $this->command;
+        $prefix = '';
+        if (preg_match('~^([A-Z][A-Za-z0-9]+\s\+\s)(.+?)$~', $command, $m)) {
+            $prefix  = $m[1];
+            $command = $m[2];
+        } elseif ($command[0] !== '/') {
+            $prefix = 'PluginDir + ';
+        }
+        $parts = preg_split('/\s+/', $command, -1, PREG_SPLIT_NO_EMPTY);
+        array_unshift($parts, c::alreadyRendered($prefix . c::renderString(array_shift($parts))));
+        
+        return c::renderKeyValue('command', c::renderArray($parts));
     }
 }
