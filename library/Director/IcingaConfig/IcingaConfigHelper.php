@@ -126,6 +126,11 @@ class IcingaConfigHelper
 
     }
 
+    public static function alreadyRendered($string)
+    {
+        return new IcingaConfigRendered($string);
+    }
+
     public static function isReserved($string)
     {
         return in_array($string, self::$reservedWords);
