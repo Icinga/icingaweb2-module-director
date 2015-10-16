@@ -75,7 +75,7 @@ CREATE TABLE director_generated_config_file (
 
 CREATE TABLE director_deployment_log (
   id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
-  config_id BIGINT(20) UNSIGNED NOT NULL,
+  config_checksum VARBINARY(20) DEFAULT NULL,
   peer_identity VARCHAR(64) NOT NULL,
   start_time DATETIME NOT NULL,
   end_time DATETIME DEFAULT NULL,
@@ -91,7 +91,12 @@ CREATE TABLE director_deployment_log (
   startup_succeeded ENUM('y', 'n') DEFAULT NULL,
   username VARCHAR(64) DEFAULT NULL COMMENT 'The user that triggered this deployment',
   startup_log TEXT DEFAULT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  CONSTRAINT config_checksum
+    FOREIGN KEY config_checksum (config_checksum)
+    REFERENCES director_generated_config (checksum)
+    ON DELETE SET NULL
+    ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_datalist (
