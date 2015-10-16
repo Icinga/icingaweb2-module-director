@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+
 class IcingaCommandArgument extends IcingaObject
 {
     protected $keyName = 'id';
@@ -36,5 +38,23 @@ class IcingaCommandArgument extends IcingaObject
     public function onDelete()
     {
         // No log right now, we have to handle "sub-objects"
+    }
+
+    public function toConfigString()
+    {
+        $data = array();
+        if ($this->argument_value) {
+            switch ($this->argument_format) {
+                case 'string':
+                    $data['value'] = c::renderString($this->argument_value);
+                    break;
+            }
+        }
+
+        if ($this->sort_order) {
+            $data['order'] = $this->sort_order;
+        }
+
+        return c::renderDictionary($data);
     }
 }
