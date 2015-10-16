@@ -15,6 +15,33 @@ class CoreApi
         $this->client = $client;
     }
 
+    public function getObjects($name, $pluraltype, $attrs = array())
+    {
+        $name = strtolower($name);
+        $params = (object) array(
+            'attrs' => array($name . '.__name', $name.'.templates')
+        );
+
+        foreach ($attrs as $attr) {
+            $params->attrs[] = $name . '.' . $attr;
+        }
+
+return json_encode(json_decode($this->client->getRaw(
+            'objects/' . urlencode(strtolower($pluraltype))
+            //$params
+        )),  JSON_PRETTY_PRINT);
+
+        $result = array();
+        foreach (json_decode($this->client->getRaw(
+            'objects/' . urlencode(strtolower($pluraltype)),
+            $params
+        ))->results as $res) {
+            $result[$res->attrs->{$name . '.__name'}] = $res->attrs;
+            $result[$res->attrs->{$name . '.__name'}]->__used_by = $res->used_by;
+        }
+        return $result;
+    }
+
     public function getTypes()
     {
         return $this->client->get('types')->getResult('name');
@@ -24,6 +51,11 @@ class CoreApi
     {
         $res = $this->client->get('types', array('name' => $type))->getResult('name');
         return $res[$type]; // TODO: error checking
+    }
+
+    public function getStatus()
+    {
+        return $this->client->get('status')->getResult('name');
     }
 
     public function listObjects($type, $pluralType)
@@ -166,12 +198,15 @@ class CoreApi
         if ($response->succeeded()) {
             if ($stage = $response->getResult('stage', array('package' => $moduleName))) { // Status?
                 $deployment->stage_name = key($stage);
+                $deployment->dump_succeeded = 'y';
+            } else {
+                $deployment->dump_succeeded = 'n';
             }
-            $deployment->dump_succeeded = 'y';
         } else {
             $deployment->dump_succeeded = 'n';
         }
 
-        return $deployment->store($db);
+        $deployment->store($db);
+        return $deployment->dump_succeeded === 'y';
     }
 }
