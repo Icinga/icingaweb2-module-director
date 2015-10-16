@@ -149,6 +149,7 @@ class Director_ListController extends ActionController
     protected function fetchLogs()
     {
         $api = $this->api();
+        $collected = false;
         foreach ($this->db()->getUncollectedDeployments() as $deployment) {
             $stage = $deployment->stage_name;
             try {
@@ -170,12 +171,15 @@ class Director_ListController extends ActionController
                 }
                 $deployment->startup_log = $this->api()->getStagedFile($stage, 'startup.log');
             }
+            $collected = true;
 
             $deployment->store();
         }
 
         // Not correct, we might clear logs we formerly skipped
-        $api->wipeInactiveStages();
+        if ($collected) {
+            $api->wipeInactiveStages();
+        }
     }
 
     protected function api()
