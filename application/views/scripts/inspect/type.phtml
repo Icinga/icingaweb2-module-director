@@ -1,0 +1,12 @@
+<div class="controls">
+<?= $this->tabs ?>
+<h1><?= $this->escape($this->title) ?></h1>
+</div>
+
+<div class="content">
+<pre>
+<?= $this->escape(print_r($this->type, 1)) ?>
+
+<?= $this->escape(print_r($this->objects, 1)) ?>
+</pre>
+</div>

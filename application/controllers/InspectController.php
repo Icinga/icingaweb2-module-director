@@ -29,8 +29,19 @@ class Director_InspectController extends ActionController
 
     public function typeAction()
     {
-        print_r($this->api()->getType($this->params->get('name')));
-        exit;
+        $typeName = $this->params->get('name');
+        $this->view->type = $type = $this->api()->getType($typeName);
+        if ($type->abstract) {
+            return;
+        }
+
+        if (! empty($type->fields)) {
+            $this->view->objects = $this->api()->getObjects(
+                $typeName,
+                $type->plural_name,
+                array_keys((array) $type->fields)
+            );
+        }
     }
 
     protected function api()
