@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Import;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Exception\IcingaException;
 
 class Sync
 {
@@ -89,10 +90,11 @@ class Sync
             $imported[$sourceId] = array();
             foreach ($rows as $row) {
                 if (! property_exists($row, $key)) {
-                    throw new \Exception(
-                        sprintf(
-                            'There is no key column "%s" in this row from "%s": %s', $key, $source->source_name, json_encode($row)
-                        )
+                    throw new IcingaException(
+                        'There is no key column "%s" in this row from "%s": %s',
+                        $key,
+                        $source->source_name,
+                        json_encode($row)
                     );
                 }
                 $imported[$sourceId][$row->$key] = $row;
@@ -197,11 +199,9 @@ class Sync
             foreach ($objects as $object) {
                 if ($object instanceof IcingaObject && $object->isTemplate()) {
                     if ($object->hasBeenModified()) {
-                        throw new \Exception(
-                            sprintf(
-                                'Sync is not allowed to modify template "%s"',
-                                $object->$objectKey
-                            )
+                        throw new IcingaException(
+                            'Sync is not allowed to modify template "%s"',
+                            $object->$objectKey
                         );
                     }
 
