@@ -2,13 +2,13 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Web\Url;
-use Icinga\Module\Director\Core\RestApiClient;
-use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Web\Notification;
+use Icinga\Web\Url;
 
 class ConfigController extends ActionController
 {

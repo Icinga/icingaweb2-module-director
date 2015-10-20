@@ -3,10 +3,6 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Module\Director\Objects\SyncProperty;
-use Icinga\Module\Director\Sync\Sync;
-use Icinga\Exception\InvalidPropertyException;
-use Icinga\Web\Notification;
 
 class SyncpropertyController extends ActionController
 {

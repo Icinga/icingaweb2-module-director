@@ -2,11 +2,9 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\ConfigDiff;
-use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Util;
 
 class ShowController extends ActionController
 {

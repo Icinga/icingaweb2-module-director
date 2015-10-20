@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Forms\ConfigForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class SettingsController extends ActionController

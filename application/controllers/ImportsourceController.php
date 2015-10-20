@@ -3,10 +3,8 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Import\Import;
-use Icinga\Exception\InvalidPropertyException;
 use Icinga\Web\Notification;
 use Icinga\Web\Url;
 
