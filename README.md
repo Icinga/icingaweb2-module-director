@@ -11,7 +11,7 @@ Create Icinga Director database
 
     MySQL:
 
-    mysql -e "CREATE DATABASE director2;
+    mysql -e "CREATE DATABASE director;
        GRANT SELECT, INSERT, UPDATE, DELETE ON director.* TO director@localhost
        IDENTIFIED BY 'some-password';"
 
