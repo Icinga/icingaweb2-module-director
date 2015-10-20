@@ -3,8 +3,6 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Module\Director\Core\RestApiClient;
-use Icinga\Module\Director\Core\CoreApi;
 
 class InspectController extends ActionController
 {
@@ -50,14 +48,5 @@ class InspectController extends ActionController
     {
         $this->view->status = $status = $this->api()->getStatus();
         print_r($status); exit;
-    }
-
-    protected function api()
-    {
-        $apiconfig = $this->Config()->getSection('api');
-        $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
-        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
-        $api = new CoreApi($client);
-        return $api;
     }
 }

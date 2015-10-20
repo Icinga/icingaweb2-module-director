@@ -3,8 +3,6 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Module\Director\Core\RestApiClient;
-use Icinga\Module\Director\Core\CoreApi;
 use Exception;
 
 class ListController extends ActionController
@@ -182,15 +180,6 @@ class ListController extends ActionController
         if ($collected) {
             $api->wipeInactiveStages();
         }
-    }
-
-    protected function api()
-    {
-        $apiconfig = $this->Config()->getSection('api');
-        $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
-        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
-        $api = new CoreApi($client);
-        return $api;
     }
 
     protected function prepareTable($name)
