@@ -1,5 +1,7 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Import\Sync;
@@ -7,7 +9,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Web\Notification;
 
-class Director_SyncruleController extends ActionController
+class SyncruleController extends ActionController
 {
     public function addAction()
     {

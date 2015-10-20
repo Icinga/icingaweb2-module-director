@@ -1,7 +1,9 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ObjectsController;
 
-class Director_HostsController extends ObjectsController
+class HostsController extends ObjectsController
 {
 }

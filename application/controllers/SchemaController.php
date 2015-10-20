@@ -1,8 +1,10 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class Director_SchemaController extends ActionController
+class SchemaController extends ActionController
 {
     protected $schema;
 

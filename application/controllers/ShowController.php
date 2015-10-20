@@ -1,12 +1,14 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class Director_ShowController extends ActionController
+class ShowController extends ActionController
 {
     public function activitylogAction()
     {

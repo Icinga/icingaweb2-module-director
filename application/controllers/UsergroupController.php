@@ -1,7 +1,9 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ObjectController;
 
-class Director_UsergroupController extends ObjectController
+class UsergroupController extends ObjectController
 {
 }

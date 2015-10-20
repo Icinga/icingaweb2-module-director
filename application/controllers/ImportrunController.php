@@ -1,5 +1,7 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 use Icinga\Module\Director\Util;
@@ -8,7 +10,7 @@ use Icinga\Module\Director\Import\Import;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Web\Notification;
 
-class Director_ImportrunController extends ActionController
+class ImportrunController extends ActionController
 {
     public function indexAction()
     {

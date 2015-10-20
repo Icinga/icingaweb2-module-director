@@ -1,8 +1,10 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ObjectController;
 
-class Director_ServiceController extends ObjectController
+class ServiceController extends ObjectController
 {
     public function init()
     {

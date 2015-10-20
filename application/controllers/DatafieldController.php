@@ -1,8 +1,10 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class Director_DatafieldController extends ActionController
+class DatafieldController extends ActionController
 {
     public function addAction()
     {

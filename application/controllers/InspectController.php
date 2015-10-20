@@ -1,10 +1,12 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Core\CoreApi;
 
-class Director_InspectController extends ActionController
+class InspectController extends ActionController
 {
     public function typesAction()
     {

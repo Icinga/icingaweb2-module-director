@@ -1,10 +1,12 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Util;
 
-class Director_DeploymentController extends ActionController
+class DeploymentController extends ActionController
 {
     public function showAction()
     {

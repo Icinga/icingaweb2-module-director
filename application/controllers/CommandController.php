@@ -1,10 +1,11 @@
 <?php
 
-use Icinga\Module\Director\Web\Controller\ObjectController;
+namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Data\Filter\Filter;
 
-class Director_CommandController extends ObjectController
+class CommandController extends ObjectController
 {
     public function init()
     {

@@ -1,8 +1,10 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class Director_DatalistentryController extends ActionController
+class DatalistentryController extends ActionController
 {
     public function addAction()
     {

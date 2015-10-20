@@ -1,9 +1,11 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Forms\ConfigForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class Director_SettingsController extends ActionController
+class SettingsController extends ActionController
 {
     public function indexAction()
     {

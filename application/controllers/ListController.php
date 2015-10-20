@@ -1,11 +1,13 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Core\CoreApi;
 use Exception;
 
-class Director_ListController extends ActionController
+class ListController extends ActionController
 {
     public function activitylogAction()
     {

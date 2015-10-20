@@ -1,5 +1,7 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -8,7 +10,7 @@ use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Web\Notification;
 
-class Director_ConfigController extends ActionController
+class ConfigController extends ActionController
 {
     public function deployAction()
     {

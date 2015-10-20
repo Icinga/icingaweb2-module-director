@@ -1,8 +1,10 @@
 <?php
 
+namespace Icinga\Module\Director\Controllers;
+
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class Director_WelcomeController extends ActionController
+class WelcomeController extends ActionController
 {
     public function indexAction()
     {
