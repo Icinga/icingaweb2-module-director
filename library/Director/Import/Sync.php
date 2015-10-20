@@ -59,7 +59,7 @@ class Sync
         return preg_replace_callback('/\${([A-Za-z0-9_-]+)}/', $func, $string);
     }
 
-    protected function runWithRule(SyncRule $rule)
+    protected function prepareSyncForRule(SyncRule $rule)
     {
         $db = $rule->getConnection();
         $properties = $rule->fetchSyncProperties();
@@ -194,6 +194,42 @@ class Sync
 
         }
 
+        $ignore = array();
+
+        foreach ($objects as $key => $object) {
+
+            if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
+                $found = false;
+                foreach ($sources as $source) {
+                    if (array_key_exists($object->$objectKey, $imported[$source->id])) {
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (! $found) {
+                    // TODO: temporarily disabled, "mark" them: $object->delete();
+                }
+            }
+
+            // TODO: This should be noticed or removed:
+            if (! $object->$objectKey) {
+                $ignore[] = $key;
+            }
+        }
+
+        foreach ($ignore as $key) {
+            unset($objects[$key]);
+        }
+
+        return $objects;
+    }
+
+    protected function runWithRule(SyncRule $rule)
+    {
+        $db = $rule->getConnection();
+        // TODO: Evaluate whether fetching data should happen within the same transaction
+        $objects = $this->prepareSyncForRule($rule);
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
         foreach ($objects as $object) {
@@ -208,24 +244,6 @@ class Sync
                 continue;
             }
 
-            if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
-                $found = false;
-                foreach ($sources as $source) {
-                    if (array_key_exists($object->$objectKey, $imported[$source->id])) {
-                        $found = true;
-                        break;
-                    }
-                }
-
-                if (! $found) {
-                    $object->delete();
-                }
-            }
-
-            // TODO: This should be noticed or removed:
-            if (! $object->$objectKey) {
-                continue;
-            }
             $object->store($db);
         }
 
