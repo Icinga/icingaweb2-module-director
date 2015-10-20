@@ -194,40 +194,42 @@ class Sync
 
         }
 
-            $dba = $db->getDbAdapter();
-            $dba->beginTransaction();
-            foreach ($objects as $object) {
-                if ($object instanceof IcingaObject && $object->isTemplate()) {
-                    if ($object->hasBeenModified()) {
-                        throw new IcingaException(
-                            'Sync is not allowed to modify template "%s"',
-                            $object->$objectKey
-                        );
-                    }
-
-                    continue;
+        $dba = $db->getDbAdapter();
+        $dba->beginTransaction();
+        foreach ($objects as $object) {
+            if ($object instanceof IcingaObject && $object->isTemplate()) {
+                if ($object->hasBeenModified()) {
+                    throw new IcingaException(
+                        'Sync is not allowed to modify template "%s"',
+                        $object->$objectKey
+                    );
                 }
 
-                if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
-                    $found = false;
-                    foreach ($sources as $source) {
-                        if (array_key_exists($object->$objectKey, $imported[$source->id])) {
-                            $found = true;
-                            break;
-                        }
-                    }
-
-                    if (! $found) {
-                        $object->delete();
-                    }
-                }
-if (! $object->$objectKey) {
-continue;
-}
-                $object->store($db);
+                continue;
             }
 
-            $dba->commit();
+            if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
+                $found = false;
+                foreach ($sources as $source) {
+                    if (array_key_exists($object->$objectKey, $imported[$source->id])) {
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (! $found) {
+                    $object->delete();
+                }
+            }
+
+            // TODO: This should be noticed or removed:
+            if (! $object->$objectKey) {
+                continue;
+            }
+            $object->store($db);
+        }
+
+        $dba->commit();
         return 42; // We have no sync_run history table yet
     }
 }
