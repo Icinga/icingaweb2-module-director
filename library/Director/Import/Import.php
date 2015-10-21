@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Import;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Hook\ImportSourceHook;
+use Icinga\Exception\IcingaException;
 
 class Import
 {
@@ -33,13 +34,12 @@ class Import
         foreach (ImportSourceHook::loadByName($source->source_name, $connection)->fetchData() as $row) {
             // TODO: Check for name collision
             if (! isset($row->$keyColumn)) {
-continue;
-                throw new \Exception(
-                    sprintf(
-                        'No key column "%s" in row: %s',
-                        $keyColumn,
-                        json_encode($row)
-                    )
+                // TODO: re-enable errors
+                continue;
+                throw new IcingaException(
+                    'No key column "%s" in row: %s',
+                    $keyColumn,
+                    json_encode($row)
                 );
             }
 
