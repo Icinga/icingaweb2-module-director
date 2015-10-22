@@ -29,7 +29,7 @@ class ImportCommand extends Command
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
-                $this->fail('Director is not confiured correctly');
+                $this->fail('Director is not configured correctly');
             }
         }
 
