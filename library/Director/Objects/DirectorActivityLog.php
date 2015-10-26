@@ -107,7 +107,7 @@ class DirectorActivityLog extends DbObject
             }
         }
         if ($object->supportsImports()) {
-            $imports = $object->groups()->listOriginalGroupNames();
+            $imports = $object->imports()->listOriginalImportNames();
             if (! empty($imports)) {
                 $props['imports'] = $imports;
             }
