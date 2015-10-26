@@ -734,6 +734,13 @@ abstract class DbObject
 
     protected function createWhere()
     {
+        if ($id = $this->getAutoincId()) {
+            return $this->db->quoteInto(
+                sprintf('%s = ?', $this->autoincKeyName),
+                $id
+            );
+        }
+
         $key = $this->getKeyName();
         if (is_array($key) && ! empty($key)) {
             $where = array();
@@ -824,6 +831,18 @@ abstract class DbObject
             $obj->setConnection($connection);
         }
         $obj->setProperties($properties);
+        return $obj;
+    }
+
+    public static function loadWithAutoIncId($id, DbConnection $connection)
+    {
+        // TODO: Index for prefetch?
+
+        $class = get_called_class();
+        $obj = new $class();
+        $obj->setConnection($connection)
+            ->set($obj->autoincKeyName, $id)
+            ->loadFromDb();
         return $obj;
     }
 
