@@ -6,6 +6,7 @@ use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 use Icinga\Exception\IcingaException;
+use stdClass;
 
 class Import
 {
@@ -57,6 +58,9 @@ class Import
 
                 $pval = $row->$key;
                 if (is_array($pval)) {
+                    $pval = json_encode($pval);
+                    $format = 'json';
+                } elseif ($pval instanceof stdClass) {
                     $pval = json_encode($pval);
                     $format = 'json';
                 } else {
