@@ -159,6 +159,43 @@ ul.main-actions {
   }
 }
 
+fieldset {
+    legend {
+        padding-left: 1em;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+
+        &:hover {
+            border-style: dotted;
+        }
+
+        &::before {
+            // icon: down-dir
+            font-family: 'ifont';
+            content: '\e81d';
+            margin-left: -1em;
+            padding-top: 0.25em;
+            float: left;
+            color: inherit;
+        }
+    }
+
+    &.collapsed {
+        dd, dt {
+            display: none;
+        }
+
+        legend::before {
+            // icon: right-dir
+            content: '\e820';
+        }
+
+    }
+}
+
 /* BEGIN Forms */
 form dt label {
     width: auto;
