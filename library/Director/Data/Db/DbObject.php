@@ -75,6 +75,11 @@ abstract class DbObject
     protected $autoincKeyName;
 
     /**
+     * Filled with object instances when prefetchAll is used
+     */
+    protected static $prefetched = array();
+
+    /**
      * Constructor is not accessible and should not be overridden
      */
     protected function __construct()
@@ -834,6 +839,24 @@ abstract class DbObject
         return $obj;
     }
 
+    protected static function getPrefetched($key)
+    {
+        if (static::hasPrefetched($key)) {
+            return static::$prefetched[get_called_class()][$id];
+        } else {
+            return false;
+        }
+    }
+
+    protected static function hasPrefetched($key)
+    {
+        if (array_key_exists(get_called_class(), self::$prefetched)) {
+            return array_key_exists($id, self::$prefetched[get_called_class()]);
+        } else {
+            return false;
+        }
+    }
+
     public static function loadWithAutoIncId($id, DbConnection $connection)
     {
         // TODO: Index for prefetch?
@@ -848,6 +871,10 @@ abstract class DbObject
 
     public static function load($id, DbConnection $connection)
     {
+        if ($prefetched = static::getPrefetched($id)) {
+            return $prefetched;
+        }
+
         $class = get_called_class();
         $obj = new $class();
         $obj->setConnection($connection)->setKey($id)->loadFromDb();
@@ -881,8 +908,17 @@ abstract class DbObject
         return $objects;
     }
 
+    public static function prefetchAll(DbConnection $connection)
+    {
+        return self::$prefetched[get_called_class()] = static::fetchAll($connection);
+    }
+
     public static function exists($id, DbConnection $connection)
     {
+        if (static::getPrefetched($id)) {
+            return true;
+        }
+
         $class = get_called_class();
         $obj = new $class();
         $obj->setConnection($connection)->setKey($id);
