@@ -15,6 +15,7 @@ use Icinga\Web\Request;
 use Icinga\Web\Url;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
+use stdClass;
 
 abstract class QuickTable implements Paginatable
 {
@@ -79,6 +80,8 @@ abstract class QuickTable implements Paginatable
                     $value = '-';
                 } elseif (is_array($val)) {
                     $value = nl2br($this->view()->escape(implode("\n", $val)));
+                } elseif ($val instanceof stdClass) {
+                    $value = '<pre>' . $this->view()->escape(print_r($val, 1)) . '</pre>';
                 } else {
                     $value = $this->view()->escape($val);
                 } 
