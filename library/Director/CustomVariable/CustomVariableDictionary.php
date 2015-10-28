@@ -20,12 +20,22 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         }
 
         foreach ($this->value as $key => $value) {
-            if ($this->$key->differsFrom($value)->$key) {
+            if (! $value->equals($var->$key)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    public function getDbFormat()
+    {
+        return 'json';
+    }
+
+    public function getDbValue()
+    {
+        return json_encode($this->getValue());
     }
 
     public function setValue($value)
@@ -49,7 +59,12 @@ class CustomVariableDictionary extends CustomVariable implements Countable
 
     public function getValue()
     {
-        return json_encode($this->value); // really?
+        $ret = array();
+        foreach ($this->value as $key => $var) {
+            $ret[$key] = $var->getValue();
+        }
+
+        return $ret;
     }
 
     public function listKeys()
@@ -73,7 +88,7 @@ class CustomVariableDictionary extends CustomVariable implements Countable
 
     public function __get($key)
     {
-        // ...
+        return $this->value[$key];
     }
 
     public function toConfigString()
