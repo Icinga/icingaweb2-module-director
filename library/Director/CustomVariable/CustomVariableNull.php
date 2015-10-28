@@ -17,6 +17,11 @@ class CustomVariableNull extends CustomVariable
         return null;
     }
 
+    public function getDbFormat()
+    {
+        return 'json';
+    }
+
     public function setValue($value)
     {
         if (! is_null($value)) {
