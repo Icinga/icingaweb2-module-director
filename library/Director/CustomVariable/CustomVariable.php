@@ -128,6 +128,14 @@ abstract class CustomVariable implements IcingaConfigRenderer
             return new CustomVariableNull($key, $value);
         }
 
+        if (is_bool($value)) {
+            return new CustomVariableBoolean($key, $value);
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return new CustomVariableNumber($key, $value);
+        }
+
         if (is_string($value)) {
 
             return new CustomVariableString($key, $value);
