@@ -43,6 +43,7 @@ class IcingaCommand extends IcingaObject
             $command = $m[2];
         } elseif ($command[0] !== '/') {
             $prefix = 'PluginDir + ';
+            $command = '/' . $command;
         }
         $parts = preg_split('/\s+/', $command, -1, PREG_SPLIT_NO_EMPTY);
         array_unshift($parts, c::alreadyRendered($prefix . c::renderString(array_shift($parts))));
