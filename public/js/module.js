@@ -27,6 +27,7 @@
             ev.stopPropagation();
             var $fieldset = $(ev.currentTarget).closest('fieldset');
             $fieldset.toggleClass('collapsed');
+            this.fixFieldsetInfo($fieldset);
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
         },
 
@@ -46,6 +47,7 @@
                 var $fieldset = $(fieldset);
                 if ($('.required', $fieldset).length == 0 && (! self.fieldsetWasOpened($fieldset))) {
                     $fieldset.addClass('collapsed');
+                    self.fixFieldsetInfo($fieldset);
                 }
             });
         },
@@ -56,6 +58,15 @@
                 return false;
             }
             return this.openedFieldsets[id];
+        },
+
+        fixFieldsetInfo: function($fieldset) {
+            if ($fieldset.hasClass('collapsed')) {
+                var cnt = $('dt', $fieldset).length;
+                $('legend', $fieldset).append($('<span class="element-count"> (' + cnt + ')</span>'));
+            } else {
+                $('legend span.element-count', $fieldset).remove();
+            }
         }
     };
 
