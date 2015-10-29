@@ -121,7 +121,6 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addDisplayGroup($elements, 'custom_fields', array(
                 'decorators' => array(
                     'FormElements',
-                    'DtDdWrapper',
                     'Fieldset',
                 ),
                 'order' => 50,
@@ -691,7 +690,6 @@ abstract class DirectorObjectForm extends QuickForm
         $this->addDisplayGroup($elements, 'check_execution', array(
             'decorators' => array(
                 'FormElements',
-                'DtDdWrapper',
                 'Fieldset',
             ),
             'order' => 60,

@@ -49,7 +49,6 @@ class IcingaHostForm extends DirectorObjectForm
         $this->addDisplayGroup($elements, 'object_definition', array(
             'decorators' => array(
                 'FormElements',
-                'DtDdWrapper',
                 'Fieldset',
             ),
             'order' => 20,
