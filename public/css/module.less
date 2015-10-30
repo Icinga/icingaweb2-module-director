@@ -346,6 +346,34 @@ tr.running {
     color: green;
 }
 
+table.syncrules {
+    tr td:first-child {
+        padding-left: 1.5em;
+        &::before {
+            font-family: 'ifont';
+            float: left;
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.in-sync td:first-child::before {
+        content: '\e803';
+        color: @color-ok;
+    }
+
+    tr.pending-changes td:first-child::before {
+        content: '\e864';
+        color: @color-warning;
+    }
+
+    tr.failing td:first-child::before {
+        content: '\e804';
+        color: @color-critical;
+    }
+}
+
 table.simple {
   width: auto;
   min-width: 100%;
