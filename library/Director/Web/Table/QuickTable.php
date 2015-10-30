@@ -40,7 +40,21 @@ abstract class QuickTable implements Paginatable
 
     private function getRowClassesString($row)
     {
-        $classes = $this->getRowClasses($row);
+        return $this->createClassAttribute($this->getRowClasses($row));
+    }
+
+    private function createClassAttribute($classes)
+    {
+        $str = $this->createClassesString($classes);
+        if (strlen($str) > 0) {
+            return ' class="' . $str . '"';
+        } else {
+            return '';
+        }
+    }
+
+    private function createClassesString($classes)
+    {
         if (is_string($classes)) {
             $classes = array($classes);
         }
@@ -48,7 +62,7 @@ abstract class QuickTable implements Paginatable
         if (empty($classes)) {
             return '';
         } else {
-            return ' class="' . implode(' ', $classes) . '"';
+            return implode(' ', $classes);
         }
     }
 
@@ -218,11 +232,16 @@ abstract class QuickTable implements Paginatable
         return Url::fromPath($url, $params);
     }
 
+    protected function listTableClasses()
+    {
+        return array('simple', 'action', 'action-table');
+    }
+
     public function render()
     {
         $data = $this->fetchData();
 
-        $htm = '<table class="simple action action-table">' . "\n"
+        $htm = '<table' . $this->createClassAttribute($this->listTableClasses()) . '>' . "\n"
              . $this->renderTitles($this->getTitles())
              . "<tbody>\n";
         foreach ($data as $row) {
