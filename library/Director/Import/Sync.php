@@ -19,6 +19,25 @@ class Sync
         return $sync->runWithRule($rule);
     }
 
+    public static function hasModifications(SyncRule $rule)
+    {
+        return count(self::getExpectedModifications($rule)) > 0;
+    }
+
+    public static function getExpectedModifications(SyncRule $rule)
+    {
+        $modified = array();
+        $sync = new static;
+        $objects = $sync->prepareSyncForRule($rule);
+        foreach ($objects as $object) {
+            if ($object->hasBeenModified()) {
+                $modified[] = $object;
+            }
+        }
+
+        return $modified;
+    }
+
     protected function extractVariableNames($string)
     {
         if (preg_match_all('/\${([A-Za-z0-9_-]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
@@ -103,6 +122,15 @@ class Sync
 
         // TODO: Filter auf object, nicht template
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
+        if ($rule->object_type === 'datalistEntry') {
+            $no = array();
+            foreach ($objects as $o) {
+             //   if ($o->list_id !== $source->
+            }
+        }
+if ($rule->rule_name === 'Import Foreman operating systems') {
+var_dump($objects); exit;
+}
         $dummy = IcingaObject::createByType($rule->object_type, array());
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
 
@@ -110,14 +138,7 @@ class Sync
             $sourceId = $source->id;
 
             foreach ($imported[$sourceId] as $key => $row) {
-                $newProps = array(
-                    'object_type' => 'object',
-                    'object_name' => $key
-                );
-
-                if ($rule->object_type === 'datalistEntry') {
-                    $newProps = array();
-                }
+                $newProps = array();
 
                 $newVars = array();
                 $imports = array();
@@ -165,6 +186,9 @@ class Sync
                             $object = $objects[$key];
                             foreach ($newProps as $prop => $value) {
                                 // TODO: data type? 
+if ($prop === 'object_type') {
+exit;
+}
                                 $object->set($prop, $value);
                             }
                             foreach ($newVars as $prop => $var) {
@@ -181,6 +205,12 @@ class Sync
                             // policy 'ignore', no action
                     }
                 } else {
+                    // New object
+                    if ($rule->object_type !== 'datalistEntry') {
+                        $newProps['object_type'] = 'object';
+                        $newProps['object_name'] = $key;
+                    }
+
                     $objects[$key] = IcingaObject::createByType($rule->object_type, $newProps, $db);
                     foreach ($newVars as $prop => $var) {
                         $objects[$key]->vars()->$prop = $var;
