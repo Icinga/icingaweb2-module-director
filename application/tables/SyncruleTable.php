@@ -3,6 +3,9 @@
 namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Import\Sync;
+use Icinga\Module\Director\Objects\SyncRule;
+use Exception;
 
 class SyncruleTable extends QuickTable
 {
@@ -20,7 +23,12 @@ class SyncruleTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/syncrule/add', array('id' => $row->id));
+        return $this->url('director/syncrule/edit', array('id' => $row->id));
+    }
+
+    protected function listTableClasses()
+    {
+        return array_merge(array('syncrules'), parent::listTableClasses());
     }
 
     protected function renderAdditionalActions($row)
@@ -31,6 +39,25 @@ class SyncruleTable extends QuickTable
             array('id' => $row->id),
             array('data-base-target' => '_main')
         );
+    }
+
+    protected function getRowClasses($row)
+    {
+        try {
+            // $mod = Sync::hasModifications(
+            $mod = Sync::getExpectedModifications(
+                SyncRule::load($row->id, $this->connection())
+            );
+            if (count($mod) > 0) {
+                $row->rule_name = $row->rule_name . ' (' . count($mod) . ')';
+                return 'pending-changes';
+            } else {
+                return 'in-sync';
+            }
+        } catch (Exception $e) {
+            $row->rule_name = $row->rule_name . ' (' . $e->getMessage() . ')';
+            return 'failing';
+        }
     }
 
     public function getTitles()
