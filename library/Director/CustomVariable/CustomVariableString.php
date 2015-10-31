@@ -8,6 +8,10 @@ class CustomVariableString extends CustomVariable
 {
     public function equals(CustomVariable $var)
     {
+        if (! $var instanceof CustomVariableString) {
+            return false;
+        }
+
         return $var->getValue() === $this->getValue();
     }
 
