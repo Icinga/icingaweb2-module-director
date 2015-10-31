@@ -59,9 +59,9 @@ class CustomVariableDictionary extends CustomVariable implements Countable
 
     public function getValue()
     {
-        $ret = array();
+        $ret = (object) array();
         foreach ($this->value as $key => $var) {
-            $ret[$key] = $var->getValue();
+            $ret->$key = $var->getValue();
         }
 
         return $ret;
