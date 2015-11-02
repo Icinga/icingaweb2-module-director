@@ -24,7 +24,7 @@ class SyncpropertyTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/syncproperty/add', array('id' => $row->id));
+        return $this->url('director/syncproperty', array('id' => $row->id));
     }
 
     public function getTitles()
