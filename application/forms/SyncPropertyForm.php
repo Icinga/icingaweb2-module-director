@@ -3,10 +3,20 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Web\Hook;
+use Icinga\Exception\InvalidPropertyException;
+use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 
 class SyncPropertyForm extends DirectorObjectForm
 {
+    /**
+     * @var SyncRule
+     */
+    private $rule;
+
+    private $importSource;
+
     public function setup()
     {
         $this->addElement('select', 'rule_id', array(
@@ -54,5 +64,11 @@ class SyncPropertyForm extends DirectorObjectForm
             )
         ));
 
+    }
+
+    public function setRule(SyncRule $rule)
+    {
+        $this->rule = $rule;
+        return $this;
     }
 }
