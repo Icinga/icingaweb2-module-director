@@ -20,7 +20,7 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         }
 
         foreach ($this->value as $key => $value) {
-            if (! $value->equals($var->$key)) {
+            if (! $value->equals($var->getInternalValue($key))) {
                 return false;
             }
         }
@@ -87,6 +87,11 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     }
 
     public function __get($key)
+    {
+        return $this->value[$key];
+    }
+
+    public function getInternalValue($key)
     {
         return $this->value[$key];
     }
