@@ -61,7 +61,7 @@ class Import
                     $pval = json_encode($pval);
                     $format = 'json';
                 } elseif ($pval instanceof stdClass) {
-                    $pval = json_encode($pval);
+                    $pval = json_encode($this->sortObject($pval));
                     $format = 'json';
                 } else {
                     $format = 'string';
@@ -157,6 +157,32 @@ class Import
         $db->commit();
 
         return $id;
+    }
+
+    protected function sortObject($object)
+    {
+        $array = (array) $object;
+        foreach ($array as $key => $val) {
+            $this->sortElement($val);
+        }
+        ksort($array);
+        return (object) $array;
+    }
+
+    protected function sortArrayObject(& $array)
+    {
+        foreach ($array as $key => $val) {
+            $this->sortElement($val);
+        }
+    }
+
+    protected function sortElement(& $el)
+    {
+        if (is_array($el)) {
+            $this->sortArrayObject($el);
+        } elseif ($el instanceof stdClass) {
+            $el = $this->sortObject($el);
+        }
     }
 
     protected function rowSetExists($checksum)
