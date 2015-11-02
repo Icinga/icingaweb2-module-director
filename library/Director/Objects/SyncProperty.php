@@ -25,7 +25,7 @@ class SyncProperty extends DbObject
 
     public function setSource_column($value)
     {
-        $this->source_expression = '$(' . $value . ')';
+        $this->source_expression = '${' . $value . '}';
         return $this; 
     }
 }
