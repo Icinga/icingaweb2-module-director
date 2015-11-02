@@ -75,7 +75,8 @@ class SyncruleController extends ActionController
 
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add sync property rule'),
-            'director/syncproperty/add'
+            'director/syncproperty/add',
+            array('rule_id' => $id)
         );
         $this->getTabs()->add('edit', array(
             'url'       => 'director/syncrule/edit',
