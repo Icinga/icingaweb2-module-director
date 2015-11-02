@@ -122,15 +122,13 @@ class Sync
 
         // TODO: Filter auf object, nicht template
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
+
         if ($rule->object_type === 'datalistEntry') {
             $no = array();
             foreach ($objects as $o) {
              //   if ($o->list_id !== $source->
             }
         }
-if ($rule->rule_name === 'Import Foreman operating systems') {
-var_dump($objects); exit;
-}
         $dummy = IcingaObject::createByType($rule->object_type, array());
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
 
@@ -164,10 +162,11 @@ var_dump($objects); exit;
                         }
                     }
                 }
-
                 if (array_key_exists($key, $objects)) {
+
                     switch ($rule->update_policy) {
                         case 'override':
+// TODO: Only override if it doesn't equal
                             $objects[$key] = IcingaObject::createByType(
                                 $rule->object_type,
                                 $newProps,
@@ -186,15 +185,15 @@ var_dump($objects); exit;
                             $object = $objects[$key];
                             foreach ($newProps as $prop => $value) {
                                 // TODO: data type? 
-if ($prop === 'object_type') {
-exit;
-}
                                 $object->set($prop, $value);
+
                             }
+
                             foreach ($newVars as $prop => $var) {
                                 // TODO: property merge policy
                                 $object->vars()->$prop = $var;
                             }
+
                             if (! empty($imports)) {
                                 // TODO: merge imports ?!
                                 $objects[$key]->imports()->set($imports);
@@ -270,11 +269,12 @@ exit;
                         $object->$objectKey
                     );
                 }
-
                 continue;
             }
+            if ($object->hasBeenModified()) {
+                $object->store($db);
+            }
 
-            $object->store($db);
         }
 
         $dba->commit();
