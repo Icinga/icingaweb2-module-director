@@ -353,7 +353,7 @@ tr.running {
 
 table.syncrules {
     tr td:first-child {
-        padding-left: 1.5em;
+        padding-left: 2em;
         &::before {
             font-family: 'ifont';
             float: left;
@@ -395,6 +395,7 @@ table.simple {
   a {
     color: inherit;
     text-decoration: none;
+    outline: 0;
   }
 
   a:hover {
@@ -420,8 +421,9 @@ table.simple {
         border-left: 0.5em solid transparent;
       }
 
-      td:last-child {
-        border-right: 0.5em solid transparent;
+      td {
+        border-top: 1px solid transparent;
+        border-bottom: 1px solid transparent;
       }
       background-color: #fafcfe;
     }
@@ -430,15 +432,28 @@ table.simple {
       background-color: #f6f8fa;
     }
 
-    tr[href]:hover {
-      background-color: #888;
-      td {
-        color: white;
-      }
+    tr[href]:hover td {
+        border-top-color: #888;
+        border-bottom-color: #888;
+        border-bottom-style: dotted;
+        border-top-style: dotted;
+        background-color: #f2f4f6;
     }
 
-    tr.active td {
-      border-color: black;
+    tr.active td, tr[href].active:hover td {
+        border-color: @icinga-blue;
+    }
+
+    tr.active td:first-child::before {
+        content: '\e820';
+        font-family: 'ifont';
+        float: left;
+        display: inline-block;
+        margin-left: -0.75em;
+        font-size: 1.5em;
+        padding: 0;
+        line-height: 1em;
+        color: @icinga-blue;
     }
 
     th {
