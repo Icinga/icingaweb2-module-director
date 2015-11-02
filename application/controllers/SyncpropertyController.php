@@ -39,16 +39,16 @@ class SyncpropertyController extends ActionController
             ))->activate('add');
         }
 
-        $form = $this->view->form = $this->loadForm('syncProperty')
-            ->setSuccessUrl('director/list/syncproperty')
-            ->setDb($this->db());
+        $form = $this->view->form = $this->loadForm('syncProperty')->setDb($this->db());
 
         if ($edit) {
             $form->loadObject($id);
-            $form->setRule(SyncRule::load($form->getObject()->rule_id, $this->db()));
+            $rule_id = $form->getObject()->rule_id;
+            $form->setRule(SyncRule::load($rule_id, $this->db()));
         } elseif ($rule_id = $this->params->get('rule_id')) {
             $form->setRule(SyncRule::load($rule_id, $this->db()));
         }
+        $form->setSuccessUrl('director/syncrule/property', array('rule_id' => $rule_id));
 
         $form->handleRequest();
 
