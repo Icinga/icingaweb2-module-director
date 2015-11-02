@@ -16,12 +16,18 @@ class SyncProperty extends DbObject
         'id'             	=> null,
         'rule_id'        	=> null,
         'source_id' 		=> null,
-        'source_expression'     => null,
-	'destination_field'	=> null,
-	'priority'		=> null,
-	'filter_expression'	=> null,
-	'merge_policy'		=> null
+        'source_expression' => null,
+	    'destination_field'	=> null,
+	    'priority'		    => null,
+	    'filter_expression'	=> null,
+    	'merge_policy'		=> null
     );
+
+    public function setSource_column($value)
+    {
+        $this->source_expression = '$(' . $value . ')';
+        return $this; 
+    }
 
     /*
     protected $properties = array();
