@@ -454,6 +454,11 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->object;
     }
 
+    public function hasObject()
+    {
+        return $this->object !== null;
+    }
+
     public function setObject(IcingaObject $object)
     {
         $this->object = $object;
