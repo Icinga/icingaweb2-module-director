@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Objects\SyncRule;
 
 class SyncpropertyController extends ActionController
 {
@@ -44,6 +45,9 @@ class SyncpropertyController extends ActionController
 
         if ($edit) {
             $form->loadObject($id);
+            $form->setRule(SyncRule::load($form->getObject()->rule_id, $this->db()));
+        } elseif ($rule_id = $this->params->get('rule_id')) {
+            $form->setRule(SyncRule::load($rule_id, $this->db()));
         }
 
         $form->handleRequest();
