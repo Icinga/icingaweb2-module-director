@@ -257,9 +257,6 @@ abstract class DbObject
         if ($value === '') {
             $value = null;
         }
-        if (! $this->hasProperty($key)) {
-            throw new IE('Trying to set invalid key %s', $key);
-        }
         $func = 'validate' . ucfirst($key);
         if (method_exists($this, $func) && $this->$func($value) !== true) {
             throw new IE('Got invalid value "%s" for "%s"', $value, $key);
@@ -268,18 +265,26 @@ abstract class DbObject
         if (method_exists($this, $func)) {
             $value = $this->$func($value);
         }
-        if ($value === $this->get($key)) {
-            return $this;
-        }
-        if ($key === $this->getKeyName() && $this->hasBeenLoadedFromDb()) {
-            throw new IE('Changing primary key is not allowed');
-        }
+
         $func = 'set' . ucfirst($key);
         if (substr($func, -2) === '[]') {
             $func = substr($func, 0, -2);
         }
+
         if (method_exists($this, $func)) {
             return $this->$func($value);
+        }
+
+        if (! $this->hasProperty($key)) {
+            throw new IE('Trying to set invalid key %s', $key);
+        }
+
+        if ($value === $this->get($key)) {
+            return $this;
+        }
+
+        if ($key === $this->getKeyName() && $this->hasBeenLoadedFromDb()) {
+            throw new IE('Changing primary key is not allowed');
         }
 
         return $this->reallySet($key, $value);
