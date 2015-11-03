@@ -24,19 +24,6 @@ class ImportsourceTable extends QuickTable
         return $this->url('director/importsource/edit', array('id' => $row->id));
     }
 
-    protected function renderAdditionalActions($row)
-    {
-        return $this->view->qlink(
-            'Preview',
-            'director/importsource/preview',
-            array('id' => $row->id)
-        ) . ' ' . $this->view->qlink(
-            'Run',
-            'director/importsource/run',
-            array('id' => $row->id)
-        );
-    }
-
     public function getTitles()
     {
         $view = $this->view();
