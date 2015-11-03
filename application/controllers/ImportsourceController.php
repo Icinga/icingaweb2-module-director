@@ -37,7 +37,7 @@ class ImportsourceController extends ActionController
 
         $this->view->addLink = $this->view->qlink(
             $this->translate('Run'),
-            'director/importsource/add',
+            'director/importsource/run',
             array('id' => $id)
         );
 
