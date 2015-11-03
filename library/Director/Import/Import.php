@@ -159,32 +159,6 @@ class Import
         return $id;
     }
 
-    protected function sortObject($object)
-    {
-        $array = (array) $object;
-        foreach ($array as $key => $val) {
-            $this->sortElement($val);
-        }
-        ksort($array);
-        return (object) $array;
-    }
-
-    protected function sortArrayObject(& $array)
-    {
-        foreach ($array as $key => $val) {
-            $this->sortElement($val);
-        }
-    }
-
-    protected function sortElement(& $el)
-    {
-        if (is_array($el)) {
-            $this->sortArrayObject($el);
-        } elseif ($el instanceof stdClass) {
-            $el = $this->sortObject($el);
-        }
-    }
-
     protected function rowSetExists($checksum)
     {
         return count($this->newChecksums('imported_rowset', array($checksum))) === 0;
@@ -199,5 +173,43 @@ class Import
         );
 
         return array_diff($checksums, $existing);
+    }
+
+    /**
+     * Sort a given stdClass object by property name
+     */
+    protected function sortObject($object)
+    {
+        $array = (array) $object;
+        foreach ($array as $key => $val) {
+            $this->sortElement($val);
+        }
+        ksort($array);
+        return (object) $array;
+    }
+
+    /**
+     * Walk through a given array and sort all children
+     *
+     * Please note that the array itself will NOT be sorted, as arrays must
+     * keep their ordering
+     */
+    protected function sortArrayObject(& $array)
+    {
+        foreach ($array as $key => $val) {
+            $this->sortElement($val);
+        }
+    }
+
+    /**
+     * Recursively sort a given property
+     */
+    protected function sortElement(& $el)
+    {
+        if (is_array($el)) {
+            $this->sortArrayObject($el);
+        } elseif ($el instanceof stdClass) {
+            $el = $this->sortObject($el);
+        }
     }
 }
