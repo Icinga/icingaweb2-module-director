@@ -89,17 +89,30 @@ class IcingaConfig
         return $config->storeIfModified();
     }
 
-    protected function storeIfModified()
+    protected function hasBeenModified()
     {
         $this->generateFromDb();
         $this->collectExtraFiles();
         $checksum = $this->calculateChecksum();
         $exists = $this->db->fetchOne(
-            $this->db->select()->from(self::$table, 'COUNT(*)')->where('checksum = ?', $this->dbBin($checksum))
+            $this->db->select()->from(
+                self::$table,
+                'COUNT(*)'
+            )->where(
+                'checksum = ?',
+                $this->dbBin($checksum)
+            )
         );
-        if ((int) $exists === 0) {
+
+        return (int) $exists === 0;
+    }
+
+    protected function storeIfModified()
+    {
+        if ($this->hasBeenModified()) {
             $this->store();
         }
+
         return $this;
     }
 
