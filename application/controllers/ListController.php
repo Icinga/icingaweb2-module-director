@@ -7,6 +7,46 @@ use Exception;
 
 class ListController extends ActionController
 {
+    public function deploymentlogAction()
+    {
+	    $this->setAutorefreshInterval(5);
+        try {
+            $this->fetchLogs();
+        } catch (Exception $e) {
+            // No problem, Icinga might be reloading
+        }
+
+        $this->view->NOaddLink = $this->view->qlink(
+            $this->translate('Deploy'),
+            'director/config/deploy'
+        );
+
+        $this->setConfigTabs()->activate('deploymentlog');
+        $this->view->title = $this->translate('Deployments');
+        $this->prepareTable('deploymentLog');
+        try {
+
+            $this->view->table->setActiveStageName(
+                $this->api()->getActiveStageName()
+            );
+        } catch (Exception $e) {
+            // Don't care
+        }
+        $this->render('table');
+    }
+
+    public function generatedconfigAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Generate'),
+            'director/config/store'
+        );
+
+        $this->setConfigTabs()->activate('generatedconfig');
+        $this->view->title = $this->translate('Generated Configs');
+        $this->prepareAndRenderTable('generatedConfig');
+    }
+
     public function activitylogAction()
     {
         $this->setConfigTabs()->activate('activitylog');
@@ -24,6 +64,18 @@ class ListController extends ActionController
         $this->setConfigTabs()->activate('datalist');
         $this->view->title = $this->translate('Data lists');
         $this->prepareAndRenderTable('datalist');
+    }
+
+    public function datafieldAction()
+    {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add field'),
+            'director/datafield/add'
+        );
+
+        $this->setConfigTabs()->activate('datafield');
+        $this->view->title = $this->translate('Data fields');
+        $this->prepareAndRenderTable('datafield');
     }
 
     public function importsourceAction()
@@ -56,58 +108,6 @@ class ListController extends ActionController
         $this->setImportTabs()->activate('syncrule');
         $this->view->title = $this->translate('Sync rule');
         $this->view->table = $this->loadTable('syncrule')->setConnection($this->db());
-        $this->render('table');
-    }
-
-    public function datafieldAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add field'),
-            'director/datafield/add'
-        );
-
-        $this->setConfigTabs()->activate('datafield');
-        $this->view->title = $this->translate('Data fields');
-        $this->prepareAndRenderTable('datafield');
-    }
-
-    public function generatedconfigAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Generate'),
-            'director/config/store'
-        );
-
-        $this->setConfigTabs()->activate('generatedconfig');
-        $this->view->title = $this->translate('Generated Configs');
-        $this->prepareAndRenderTable('generatedConfig');
-    }
-
-    public function deploymentlogAction()
-    {
-	    $this->setAutorefreshInterval(5);
-        try {
-            $this->fetchLogs();
-        } catch (Exception $e) {
-            // No problem, Icinga might be reloading
-        }
-
-        $this->view->NOaddLink = $this->view->qlink(
-            $this->translate('Deploy'),
-            'director/config/deploy'
-        );
-
-        $this->setConfigTabs()->activate('deploymentlog');
-        $this->view->title = $this->translate('Deployments');
-        $this->prepareTable('deploymentLog');
-        try {
-
-            $this->view->table->setActiveStageName(
-                $this->api()->getActiveStageName()
-            );
-        } catch (Exception $e) {
-            // Don't care
-        }
         $this->render('table');
     }
 
