@@ -33,7 +33,17 @@ class ImportsourceController extends ActionController
 
     public function previewAction()
     {
-        $source = ImportSource::load($this->params->get('id'), $this->db());
+        $id = $this->params->get('id');
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Run'),
+            'director/importsource/add',
+            array('id' => $id)
+        );
+
+        $source = ImportSource::load($id, $this->db());
+        $this->prepareTabs($id)->activate('preview');
+
         $this->view->title = sprintf(
             $this->translate('Import source preview: "%s"'),
             $source->source_name
@@ -49,36 +59,45 @@ class ImportsourceController extends ActionController
 
     public function indexAction()
     {
-        $edit = false;
-
-        if ($id = $this->params->get('id')) {
-            $edit = true;
-        }
-
-        if ($edit) {
-            $this->view->title = $this->translate('Edit import source');
-            $this->getTabs()->add('edit', array(
-                'url'       => 'director/importsource/edit' . '?id=' . $id,
-                'label'     => $this->view->title,
-            ))->activate('edit');
-        } else {
-            $this->view->title = $this->translate('Add import source');
-            $this->getTabs()->add('add', array(
-                'url'       => 'director/importsource/add',
-                'label'     => $this->view->title,
-            ))->activate('add');
-        }
+        $id = $this->params->get('id');
 
         $form = $this->view->form = $this->loadForm('importSource')
             ->setSuccessUrl('director/list/importsource')
             ->setDb($this->db());
 
-        if ($edit) {
+        if ($id) {
             $form->loadObject($id);
+            $this->prepareTabs($id)->activate('edit');
+            $this->view->title = $this->translate('Edit import source');
+        } else {
+            $this->view->title = $this->translate('Add import source');
+            $this->prepareTabs()->activate('add');
         }
 
         $form->handleRequest();
-
         $this->render('object/form', null, true);
+    }
+
+    protected function prepareTabs($id = null)
+    {
+        $tabs = $this->getTabs();
+
+        if ($id) {
+            $tabs->add('edit', array(
+                'url'       => 'director/importsource/edit' . '?id=' . $id,
+                'label'     => $this->translate('Import source'),
+            ))->add('preview', array(
+                'url'       => 'director/importsource/preview' . '?id=' . $id,
+                'label'     => $this->translate('Preview'),
+            ));
+
+        } else {
+            $tabs->add('add', array(
+                'url'       => 'director/importsource/add',
+                'label'     => $this->translate('New import source'),
+            ))->activate('add');
+        }
+
+        return $tabs;
     }
 }
