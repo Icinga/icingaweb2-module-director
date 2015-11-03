@@ -10,20 +10,51 @@ use stdClass;
 
 class Import
 {
+    /**
+     * @var ImportSource
+     */
+    protected $source;
+
+    /**
+     * @var Icinga\Data\Db\DbConnection
+     */
+    protected $connection;
+
+    /**
+     * @var Zend_Db_Adapter_Abstract
+     */
     protected $db;
 
-    protected function __construct()
+    protected $data;
+
+    protected function __construct(ImportSource $source)
     {
+        $this->source = $source;
+        $this->connection = $source->getConnection();
+        $this->db = $connection->getDbAdapter();
     }
 
     public static function run(ImportSource $source)
     {
-        $import = new self();
+        $import = new self($source);
         return $import->importFromSource($source);
     }
 
-    protected function importFromSource(ImportSource $source)
+    protected function rawData()
     {
+        if ($this->data === null) {
+            $this->data = ImportSourceHook::loadByName(
+                $this->source->source_name,
+                $this->connection
+            )->fetchData();
+        }
+
+        return & $this->data;
+    }
+
+    protected function importFromSource()
+    {
+        $source = $this->source;
         $connection = $source->getConnection();
         $this->db = $db = $connection->getDbAdapter();
 
@@ -32,7 +63,7 @@ class Import
         $props = array();
         $rowsProps = array();
 
-        foreach (ImportSourceHook::loadByName($source->source_name, $connection)->fetchData() as $row) {
+        foreach ($this->rawData() as $row) {
             // TODO: Check for name collision
             if (! isset($row->$keyColumn)) {
                 // TODO: re-enable errors
@@ -98,7 +129,7 @@ class Import
         $rowset = sha1(implode(';', $rowSums), true);
 
         if ($this->rowSetExists($rowset)) {
-            if ($connection->getLatestImportedChecksum($source->id) === Util::binary2hex($rowset)) {
+            if ($this->lastRowsetIs($rowset)) {
                 return false;
             }
         }
@@ -157,6 +188,15 @@ class Import
         $db->commit();
 
         return $id;
+    }
+
+    /**
+     * Whether the last run of this import matches the given checksum
+     */
+    protected function lastRowsetIs($checksum)
+    {
+        return $this->connection->getLatestImportedChecksum($this->source->id)
+            === Util::binary2hex($checksum);
     }
 
     protected function rowSetExists($checksum)
