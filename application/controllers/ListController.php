@@ -59,41 +59,6 @@ class ListController extends ActionController
         $this->render('table');
     }
 
-    public function syncpropertyAction()
-    {
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add sync property rule'),
-            'director/syncproperty/add'
-        );
-
-        $this->setImportTabs()->activate('syncproperty');
-        $this->view->title = $this->translate('Sync property');
-        $this->view->table = $this->loadTable('syncproperty')->setConnection($this->db());
-        $this->render('table');
-    }
-
-    public function datalistentryAction()
-    {
-        $listId = $this->params->get('list_id');
-        $this->view->lastId = $listId;
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add entry'),
-            'director/datalistentry/add' . '?list_id=' . $listId
-        );
-
-        $this->view->title = $this->translate('List entries');
-        $this->getTabs()->add('editlist', array(
-            'url'       => 'director/datalist/edit' . '?id=' . $listId,
-            'label'     => $this->translate('Edit list'),
-        ))->add('datalistentry', array(
-            'url'       => 'director/datalistentry' . '?list_id=' . $listId,
-            'label'     => $this->view->title,
-        ))->activate('datalistentry');
-
-        $this->prepareAndRenderTable('datalistEntry');
-    }
-
     public function datafieldAction()
     {
         $this->view->addLink = $this->view->qlink(
