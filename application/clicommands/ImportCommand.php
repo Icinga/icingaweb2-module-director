@@ -13,7 +13,9 @@ class ImportCommand extends Command
 
     public function runAction()
     {
-        if ($runId = Import::run($id = ImportSource::load($this->params->shift(), $this->db()))) {
+        $id = $this->params->shift();
+        $import = new Import(ImportSource::load($id, $this->db()));
+        if ($runId = $import->run()) {
             echo "Triggered new import\n";
         } else {
             echo "Nothing changed\n";

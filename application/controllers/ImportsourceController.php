@@ -22,7 +22,9 @@ class ImportsourceController extends ActionController
 
     public function runAction()
     {
-        if ($runId = Import::run($id = ImportSource::load($this->params->get('id'), $this->db()))) {
+        $id = $this->params->get('id');
+        $import = new Import(ImportSource::load($id, $this->db()));
+        if ($runId = $import->run()) {
             Notification::success('Import succeeded');
             $this->redirectNow(Url::fromPath('director/importrun', array('id' => $runId)));
         } else {
