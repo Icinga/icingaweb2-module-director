@@ -28,6 +28,7 @@ class ImportSourceForm extends DirectorObjectForm
         ));
 
         $this->addSettings();
+        $this->setButtons();
     }
 
     protected function addSettings($class = null)
