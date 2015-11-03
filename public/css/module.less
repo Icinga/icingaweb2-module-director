@@ -354,7 +354,7 @@ tr.running {
     color: green;
 }
 
-table.syncrules {
+table.syncstate {
     tr td:first-child {
         padding-left: 2em;
         &::before {
@@ -421,13 +421,18 @@ table.simple {
       margin: 0;
 
       td:first-child {
-        border-left: 0.5em solid transparent;
+        border-left: 2px solid transparent;
       }
 
       td {
         border-top: 1px solid transparent;
         border-bottom: 1px solid transparent;
       }
+
+      td:last-child {
+        border-right: 2px solid transparent;
+      }
+
       background-color: #fafcfe;
     }
 
@@ -445,18 +450,6 @@ table.simple {
 
     tr.active td, tr[href].active:hover td {
         border-color: @icinga-blue;
-    }
-
-    tr.active td:first-child::before {
-        content: '\e820';
-        font-family: 'ifont';
-        float: left;
-        display: inline-block;
-        margin-left: -0.75em;
-        font-size: 1.5em;
-        padding: 0;
-        line-height: 1em;
-        color: @icinga-blue;
     }
 
     th {
