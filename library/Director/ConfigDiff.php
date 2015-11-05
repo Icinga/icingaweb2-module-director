@@ -2,7 +2,11 @@
 
 namespace Icinga\Module\Director;
 
-use FineDiff;
+use Diff;
+use Diff_Renderer_Html_Inline;
+use Diff_Renderer_Html_SideBySide;
+use Diff_Renderer_Text_Context;
+use Diff_Renderer_Text_Unified;
 use Icinga\Application\Benchmark;
 
 class ConfigDiff
@@ -16,24 +20,49 @@ class ConfigDiff
 
     protected function __construct($a, $b)
     {
-        $this->a = $a;
-        $this->b = $b;
-        require_once dirname(__DIR__) . '/vendor/PHP-FineDiff/finediff.php';
+        require_once dirname(__DIR__) . '/vendor/php-diff/lib/Diff.php';
 
-        // Trying character granularity first...
-        $granularity = FineDiff::$characterGranularity;
-        $this->diff = new FineDiff($a, $b, $granularity);
-        if (count($this->diff->getOps()) > 4) {
-            // ...fall back to word granularity if too many differences
-            // (available granularities: character, word, sentence, paragraph
-            $granularity = FineDiff::$wordGranularity;
-            $this->diff = new FineDiff($a, $b, $granularity);
-        }
+        $this->a = explode("\n", (string) $a);
+        $this->b = explode("\n", (string) $b);
+
+        $options = array(
+            // 'ignoreWhitespace' => true,
+            // 'ignoreCase' => true,
+        );
+        $this->diff = new Diff($this->a, $this->b, $options);
     }
 
     public function renderHtml()
     {
-        return $this->diff->renderDiffToHTML();
+        return $this->renderHtmlSideBySide();
+    }
+
+    public function renderHtmlSideBySide()
+    {
+        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Html/SideBySide.php';
+        $renderer = new Diff_Renderer_Html_SideBySide;
+        return $this->diff->Render($renderer);
+    }
+
+    public function renderHtmlInline()
+    {
+        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Html/Inline.php';
+        $renderer = new Diff_Renderer_Html_Inline;
+        return $this->diff->Render($renderer);
+    }
+
+    public function renderTextContext()
+    {
+        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Text/Context.php';
+        $renderer = new Diff_Renderer_Text_Context;
+        return $this->diff->Render($renderer);
+    }
+
+    public function renderTextUnified()
+    {
+        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Text/Context.php';
+        $renderer = new Diff_Renderer_Text_Context;
+        return $this->diff->Render($renderer);
     }
 
     public function __toString()

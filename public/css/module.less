@@ -3,6 +3,10 @@ a {
   font-weight: normal;
 }
 
+pre {
+  background: none;
+}
+
 table.avp th {
     font-size: inherit;
 }
@@ -427,3 +431,103 @@ div.diff {
 .tree a.abstract  { background-image: url('../img/director/tree.png'); }
 .tree a.object { background-image: url('../img/director/leaf.gif'); }
 
+/** php-diff **/
+
+.Differences {
+    width: 100%;
+    table-layout: fixed;
+    empty-cells: show;
+}
+
+.Differences thead {
+    display: none;
+}
+
+.Differences thead th {
+    text-align: left;
+    padding-left: 4 / 14 * 16em;
+}
+.Differences tbody th {
+    text-align: right;
+    width: 4em;
+    padding: 1px 2px;
+    border-right: 1px solid @gray-light;
+    background: @gray-lightest;
+    font-weight: normal;
+    vertical-align: top;
+}
+
+.Differences tbody td {
+    width: 50%;
+    .preformatted();
+    word-break: break-all;
+}
+
+@color-diff-ins: #bfb;
+@color-diff-del: #faa;
+@color-diff-changed-old: #fdd;
+@color-diff-changed-new: #efe;
+
+.DifferencesSideBySide {
+    ins, del {
+        text-decoration: none;
+    }
+
+    .ChangeInsert {
+        td.Left {
+            background: @gray-lighter;
+        }
+        td.Right {
+            background: @color-diff-ins;
+        }
+    }
+
+    .ChangeDelete {
+        td.Left {
+            background: @color-diff-del;
+        }
+        td.Right {
+            background: @gray-ligher;
+        }
+    }
+
+    .ChangeReplace {
+        td.Left {
+            background: @color-diff-changed-old;
+            del {
+                background: @color-diff-del;
+            }
+        }
+
+        td.Right {
+            background: @color-diff-changed-new;
+            ins {
+                background: @color-diff-ins;
+            }
+        }
+
+    }
+}   
+
+.Differences .Skipped {
+    background: @gray-lightest;
+}
+
+.DifferencesInline .ChangeReplace .Left,
+.DifferencesInline .ChangeDelete .Left {
+    background: #fdd;
+}
+
+.DifferencesInline .ChangeReplace .Right,
+.DifferencesInline .ChangeInsert .Right {
+    background: #dfd;
+}
+
+.DifferencesInline .ChangeReplace ins {
+    background: #9e9;
+}
+
+.DifferencesInline .ChangeReplace del {
+    background: #e99;
+}
+/** END of php-diff **/

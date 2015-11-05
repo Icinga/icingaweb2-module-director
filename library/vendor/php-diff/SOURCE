@@ -1,0 +1,9 @@
+git clone https://github.com/chrisboulton/php-diff.git
+# Last used commit:
+cd php-diff
+git checkout f4db229d7ae8dffa0a4f90e1adbec9bf22c93d99
+rm -rf .git
+rm -rf .gitignore
+rm -rf composer.json
+rm -rf example
+cd ..
