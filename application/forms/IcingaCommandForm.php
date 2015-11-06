@@ -31,6 +31,8 @@ class IcingaCommandForm extends DirectorObjectForm
             'description' => $this->translate('Identifier for the Icinga command you are going to create')
         ));
 
+        $this->addImportsElement();
+
         $this->addElement('text', 'command', array(
             'label'       => $this->translate('Command'),
             'required'    => true,
@@ -42,6 +44,6 @@ class IcingaCommandForm extends DirectorObjectForm
             'description' => $this->translate('Optional command timeout')
         ));
 
-        $this->addImportsElement();
+        $this->setButtons();
     }
 }
