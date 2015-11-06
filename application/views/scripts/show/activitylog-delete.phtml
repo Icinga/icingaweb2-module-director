@@ -1,8 +1,0 @@
-<h3><?= sprintf(
-    '%s "%s" has been deleted',
-    ucfirst(preg_replace('/^icinga_/', '', $entry->object_type)),
-    $entry->object_name
-) ?></h3>
-<pre>
-<?= (string) $this->oldObject ?>
-</pre>
