@@ -50,6 +50,11 @@ class RestApiClient
             'Authorization: Basic ' . $auth,
             'Connection: close'
         );
+
+        if (! $raw) {
+            $headers[] = 'Accept: application/json';
+        }
+
         if ($body !== null) {
             $body = json_encode($body);
             $headers[] = 'Content-Type: application/json';
