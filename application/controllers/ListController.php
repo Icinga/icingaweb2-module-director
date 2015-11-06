@@ -49,6 +49,7 @@ class ListController extends ActionController
 
     public function activitylogAction()
     {
+        $this->setAutorefreshInterval(10);
         $this->setConfigTabs()->activate('activitylog');
         $this->view->title = $this->translate('Activity Log');
         $this->prepareAndRenderTable('activityLog');
