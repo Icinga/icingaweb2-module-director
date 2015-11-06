@@ -199,6 +199,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    public function getResolvedProperty($key)
+    {
+        $properties = $this->getResolvedProperties();
+        if (property_exists($properties, $key)) {
+            return $properties->$key;
+        }
+
+        return null;
+    }
+
     public function getResolvedProperties()
     {
         return $this->getResolved('Properties');
@@ -683,6 +693,11 @@ return '';
     public function isGroup()
     {
         return substr($this->getType(), -5) === 'Group';
+    }
+
+    public function hasCheckCommand()
+    {
+        return false;
     }
 
     protected function getType()

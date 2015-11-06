@@ -66,6 +66,20 @@ class IcingaHost extends IcingaObject
         return $properties;
     }
 
+    public function getCheckCommand()
+    {
+        $id = $this->getResolvedProperty('check_command_id');
+        return IcingaCommand::loadWithAutoIncId(
+            $id,
+            $this->getConnection()
+        );
+    }
+
+    public function hasCheckCommand()
+    {
+        return $this->getResolvedProperty('check_command_id') !== null;
+    }
+
     protected function renderCheck_command_id()
     {
         return $this->renderCommandProperty($this->check_command_id);
