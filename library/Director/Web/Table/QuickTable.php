@@ -234,6 +234,7 @@ abstract class QuickTable implements Paginatable
 
     protected function listTableClasses()
     {
+        return array('simple', 'common-table', 'table-row-selectable');
         return array('simple', 'action', 'action-table');
     }
 
