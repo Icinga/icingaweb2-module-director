@@ -37,6 +37,11 @@ class CustomVariableNumber extends CustomVariable
 
     public function toConfigString()
     {
-        return (string) $this->value;
+        if (is_int($this->value)) {
+            return (string) $this->value;
+        } else {
+            // Hint: this MUST NOT respect locales
+            return sprintf('%F', $this->value);
+        }
     }
 }
