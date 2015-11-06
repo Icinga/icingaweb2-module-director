@@ -214,10 +214,9 @@ class Import
             // Key column must be set
             if (! isset($row->$keyColumn)) {
                 throw new IcingaException(
-                    'No key column "%s" in row %d: %s',
+                    'No key column "%s" in row %d',
                     $keyColumn,
-                    $rowCount,
-                    json_encode($row)
+                    $rowCount
                 );
             }
 
