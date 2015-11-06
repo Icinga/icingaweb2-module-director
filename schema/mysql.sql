@@ -877,8 +877,8 @@ CREATE TABLE import_run (
   CONSTRAINT import_run_source
     FOREIGN KEY import_source (source_id)
     REFERENCES import_source (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
+    ON DELETE CASCADE
+    ON UPDATE RESTRICT,
   CONSTRAINT import_run_rowset
     FOREIGN KEY rowset (rowset_checksum)
     REFERENCES imported_rowset (checksum)
