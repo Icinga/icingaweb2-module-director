@@ -89,6 +89,12 @@ class IcingaConfig
         return $config->storeIfModified();
     }
 
+    public static function wouldChange(DbConnection $connection)
+    {
+        $config = new static($connection);
+        return $config->hasBeenModified();
+    }
+
     protected function hasBeenModified()
     {
         $this->generateFromDb();
