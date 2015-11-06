@@ -6,6 +6,7 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
 use Icinga\Authentication\Auth;
+use Icinga\Application\Icinga;
 
 class DirectorActivityLog extends DbObject
 {
@@ -30,6 +31,9 @@ class DirectorActivityLog extends DbObject
 
     protected static function username()
     {
+        if (Icinga::app()->isCli()) {
+            return 'cli';
+        }
 
         $auth = Auth::getInstance();
         if ($auth->isAuthenticated()) {
