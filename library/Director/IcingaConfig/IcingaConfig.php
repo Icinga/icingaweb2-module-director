@@ -227,6 +227,10 @@ throw $e;
     {
         $start = microtime(true);
 
+        $this->configFile('conf.d/001-director-basics.conf')->prepend(
+            "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+        );
+
         $this
             ->createFileFromDb('zone')
             ->createFileFromDb('endpoint')
