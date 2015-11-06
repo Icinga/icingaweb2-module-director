@@ -28,4 +28,18 @@ class SyncProperty extends DbObject
         $this->source_expression = '${' . $value . '}';
         return $this; 
     }
+
+    public function sourceIsSingleColumn()
+    {
+        return $this->getSourceColumn() !== null;
+    }
+
+    public function getSourceColumn()
+    {
+        if (preg_match('/^\${([A-Za-z0-9_-]+)}$/', $this->source_expression, $m)) {
+            return $m[1];
+        }
+
+        return null;
+    }
 }
