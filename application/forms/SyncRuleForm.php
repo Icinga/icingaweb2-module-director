@@ -58,5 +58,7 @@ class SyncRuleForm extends DirectorObjectForm
             'label'       => $this->translate('Filter Expression'),
             'description' => $this->translate('This allows to filter for specific parts'),
         ));
+
+        $this->setButtons();
     }
 }
