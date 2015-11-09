@@ -32,11 +32,11 @@ class ShowController extends ActionController
             ));
 
             if ($this->defaultTab === null) {
-                $this->defaultTab = 'diff';
+                $this->defaultTab = 'new';
             }
         }
 
-        if (in_array($entry->action_name, array('create', 'modify'))) {
+        if (in_array($entry->action_name, array('delete', 'modify'))) {
             $tabs->add('old', array(
                 'label'     => $this->translate('Former object'),
                 'url'       => 'director/show/activitylog',
@@ -44,7 +44,7 @@ class ShowController extends ActionController
             ));
 
             if ($this->defaultTab === null) {
-                $this->defaultTab = 'diff';
+                $this->defaultTab = 'old';
             }
         }
 
