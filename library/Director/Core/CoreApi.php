@@ -19,27 +19,15 @@ class CoreApi
     {
         $name = strtolower($name);
         $params = (object) array(
-            'attrs' => array($name . '.__name', $name.'.templates')
         );
-
-        foreach ($attrs as $attr) {
-            $params->attrs[] = $name . '.' . $attr;
+        if (! empty($attrs)) {
+            $params->attrs = $attrs;
         }
 
-return json_encode(json_decode($this->client->getRaw(
-            'objects/' . urlencode(strtolower($pluraltype))
-            //$params
-        )),  JSON_PRETTY_PRINT);
-
-        $result = array();
-        foreach (json_decode($this->client->getRaw(
+        return $this->client->get(
             'objects/' . urlencode(strtolower($pluraltype)),
             $params
-        ))->results as $res) {
-            $result[$res->attrs->{$name . '.__name'}] = $res->attrs;
-            $result[$res->attrs->{$name . '.__name'}]->__used_by = $res->used_by;
-        }
-        return $result;
+        )->getResult('name');
     }
 
     public function getTypes()
@@ -61,12 +49,13 @@ return json_encode(json_decode($this->client->getRaw(
     public function listObjects($type, $pluralType)
     {
         // TODO: more abstraction needed
+        // TODO: autofetch and cache pluraltypes
         return $this->client->get(
             'objects/' . $pluralType,
             array(
                 'attrs' => array($type . '.__name', $type . '.name'),
             )
-        )->getResult('__name');
+        )->getResult('name');
     }
 
     public function getModules()
