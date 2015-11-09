@@ -118,6 +118,11 @@ class CoreApi
         );
     }
 
+    public function getConstants()
+    {
+        // TODO: var results = []; for (k => v in globals) { if (typeof(v) in [String, Number, Boolean]) { results.add(k) } }; results
+    }
+
     public function hasModule($moduleName)
     {
         $modules = $this->getModules();
