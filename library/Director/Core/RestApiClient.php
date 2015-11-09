@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Core;
 
+use Icinga\Application\Benchmark;
 use Exception;
 
 class RestApiClient
@@ -78,10 +79,12 @@ class RestApiClient
         );
         $context = stream_context_create($opts);
 
+        Benchmark::measure('Rest Api, sending ' . $url);
         $res = file_get_contents($this->url($url), false, $context);
         if (substr(array_shift($http_response_header), 0, 10) !== 'HTTP/1.1 2') {
             throw new Exception($res);
         }
+        Benchmark::measure('Rest Api, got response');
         if ($raw) {
             return $res;
         } else {
