@@ -38,8 +38,8 @@ class InspectController extends ActionController
         if (! empty($type->fields)) {
             $this->view->objects = $this->api()->getObjects(
                 $typeName,
-                $type->plural_name,
-                array_keys((array) $type->fields)
+                $type->plural_name
+                //array_keys((array) $type->fields)
             );
         }
     }
