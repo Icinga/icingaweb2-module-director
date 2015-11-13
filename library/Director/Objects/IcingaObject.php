@@ -30,6 +30,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $type;
 
+    protected $booleans = array();
+
     private $vars;
 
     private $groups;
@@ -41,6 +43,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     private $ranges;
 
     private $arguments;
+
+    public function propertyIsBoolean($property)
+    {
+        return array_key_exists($property, $this->booleans);
+    }
 
     public function supportsCustomVars()
     {
@@ -118,6 +125,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $this->vars()->set($k, $v);
             }
             return $this;
+        }
+
+        if ($this->propertyIsBoolean($key) && $value !== null) {
+            if ($value === 'y' || $value === '1' || $value === true || $value === 1) {
+                return parent::set($key, 'y');
+            } elseif ($value === 'n' || $value === '0' || $value === false || $value === 0) {
+                return parent::set($key, 'n');
+            } else {
+                throw new ProgrammingError(
+                    'Got invalid boolean: %s',
+                    var_export($value, 1)
+                );
+            }
         }
 
         return parent::set($key, $value);
@@ -577,7 +597,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if (method_exists($this, $method)) {
                 $out .= $this->$method($value);
             } else {
-                $out .= c::renderKeyValue($key, c::renderString($value));
+                if ($this->propertyIsBoolean($key)) {
+                    if ($value !== $this->defaultProperties[$key]) {
+                        $out .= c::renderKeyValue(
+                            $this->booleans[$key],
+                            c::renderBoolean($value)
+                        );
+                    }
+                } else {
+                    $out .= c::renderKeyValue($key, c::renderString($value));
+                }
             }
         }
 
