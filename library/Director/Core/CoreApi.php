@@ -78,6 +78,61 @@ class CoreApi
         return current($this->listModuleStages('director', true));
     }
 
+    protected function getDirectorObjects($type, $plural, $map)
+    {
+        $attrs = array_merge(
+            array_keys($map),
+            array('package', 'templates', 'active')
+        );
+
+        $objects = array();
+        $result  = $this->getObjects('zone', 'zones', $attrs);
+
+        foreach ($result as $name => $row) {
+            $attrs = $row->attrs;
+
+            $properties = array(
+                'object_name' => $name,
+                'object_type' => 'object'
+            );
+
+            foreach ($map as $key => $prop) {
+                if (property_exists($attrs, $key)) {
+                    $properties[$prop] = $attrs->$key;
+                }
+            }
+
+            $objects[$name] = IcingaObject::createByType($type, $properties, $this->db);
+            if (property_exists($attrs, 'templates')
+                && count($attrs->templates) > 1
+                && $objects[$name]->supportsImports()
+            ) {
+                $imports = $attrs->templates;
+                array_shift($imports);
+                // TODO (prefetch?): $objects[$name]->imports = $imports;
+            }
+        }
+
+        return $objects;
+    }
+
+    public function getZoneObjects()
+    {
+        return $this->getMyObjects('Zone', 'zones', array(
+            'parent' => 'parent',
+            'global' => 'is_global',
+        ));
+    }
+
+    public function getCheckCommandObjects()
+    {
+        return $this->getObjects('CheckCommand', 'CheckCommands');
+        return $this->getMyObjects('Zone', 'zones', array(
+            'parent' => 'parent',
+            'global' => 'is_global',
+        ));
+    }
+
     public function listModuleStages($name, $active = null)
     {
         $modules = $this->getModules();
