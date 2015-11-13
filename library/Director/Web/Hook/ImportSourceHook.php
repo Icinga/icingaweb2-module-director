@@ -17,6 +17,9 @@ abstract class ImportSourceHook
         if (array_shift($parts) === 'Icinga' && array_shift($parts) === 'Module') {
             $module = array_shift($parts);
             if ($module !== 'Director') {
+                if ($class === '') {
+                    return sprintf('%s module', $module);
+                }
                 return sprintf('%s (%s)', $class, $module);
             }
         }
