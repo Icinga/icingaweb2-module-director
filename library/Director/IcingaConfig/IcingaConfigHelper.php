@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Exception\ProgrammingError;
+
 class IcingaConfigHelper
 {
     /**
