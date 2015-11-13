@@ -467,7 +467,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             array(
                 'datafield_id' => 'f.datafield_id',
                 'is_required'  => 'f.is_required',
-                'varname'      => 'df.varname'
+                'varname'      => 'df.varname',
+                'description'  => 'df.description',
+                'datatype'     => 'df.datatype',
+                'format'       => 'df.format',
             )
         )->join(
             array('f' => $this->getTableName() . '_field'),
