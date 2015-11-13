@@ -17,6 +17,7 @@ class IcingaZone extends IcingaObject
     );
 
     protected $booleans = array(
+        // Global is a reserved word in SQL, column name was prefixed
         'is_global' => 'global'
     );
 
@@ -25,15 +26,5 @@ class IcingaZone extends IcingaObject
     protected function renderParent_zone_id()
     {
         return $this->renderZoneProperty($this->parent_zone_id, 'parent_zone');
-    }
-
-    protected function renderIs_global()
-    {
-        // Global is a reserved word in SQL, column name was prefixed
-        if ($this->is_global === 'y') {
-            return c::renderKeyValue('global', c::renderBoolean($this->is_global));
-        } else {
-            return '';
-        }
     }
 }
