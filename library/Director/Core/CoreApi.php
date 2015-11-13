@@ -4,15 +4,25 @@ namespace Icinga\Module\Director\Core;
 
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 
 class CoreApi
 {
     protected $client;
 
+    protected $db;
+
     public function __construct(RestApiClient $client)
     {
         $this->client = $client;
+    }
+
+    // Todo: type
+    public function setDb($db)
+    {
+        $this->db = $db;
+        return $this;
     }
 
     public function getObjects($name, $pluraltype, $attrs = array())
