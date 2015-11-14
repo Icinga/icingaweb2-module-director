@@ -51,5 +51,7 @@ class IcingaEndpointForm extends DirectorObjectForm
 
         $this->addZoneElement()
             ->addImportsElement();
+
+        $this->setButtons();
     }
 }
