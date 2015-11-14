@@ -302,6 +302,7 @@ throw $e;
     {
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         $objects = $class::loadAll($this->connection);
+        $ourGlobalZone = 'director-global';
         $file = null;
 
         foreach ($objects as $object) {
@@ -315,16 +316,14 @@ throw $e;
 
             if ($type === 'zone') {
                 $this->zoneMap[$object->id] = $object->object_name;
-                $zone = 'global'; // which one?
             } elseif ($object->hasProperty('zone_id') && ($zone_id = $object->zone_id)) {
                 $zone = $this->getZoneName($zone_id);
             } else {
                 $zone = 'master';
             }
 
-            if ($type === 'zone') {
-                $filename = 'conf.d/zones';
-continue;
+            if (in_array($type, array('command', 'zone'))) {
+                $filename = 'zones.d/' . $ourGlobalZone . '/' . $filename;
             } elseif ($type === 'endpoint') {
                 $filename = 'conf.d/endpoints';
 continue;
