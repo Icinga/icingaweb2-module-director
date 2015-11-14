@@ -391,7 +391,7 @@ abstract class DirectorObjectForm extends QuickForm
         $object = $this->object();
         if ($object->hasBeenModified()) {
             if (! $object->hasBeenLoadedFromDb()) {
-                if ($object instanceof IcingaObject) {
+                if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
                     $this->setSuccessUrl(
                         'director/' . strtolower($this->getObjectName()),
                         array('name' => $object->object_name)
