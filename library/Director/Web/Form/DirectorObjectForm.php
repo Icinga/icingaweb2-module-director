@@ -189,6 +189,10 @@ abstract class DirectorObjectForm extends QuickForm
             return;
         }
 
+        $fields   = $object->getResolvedFields();
+        $inherits = $object->getInheritedVars();
+        $origins  = $object->getOriginsVars();
+
         if ($this->hasBeenSent()) {
             $vars = array();
             $handled = array();
@@ -199,8 +203,14 @@ abstract class DirectorObjectForm extends QuickForm
             );
 
             foreach ($values as $key => $value) {
+
                 if (substr($key, 0, 4) === 'var_') {
-                    $vars[substr($key, 4)] = $value;
+                    $mykey = substr($key, 4);
+                    if (property_exists($fields, $mykey) && $fields->$mykey->format === 'json') {
+                        $value = json_decode($value);
+                    }
+
+                    $vars[$mykey] = $value;
                     $handled[$key] = true;
                 }
 
@@ -228,10 +238,6 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         $vars = $object->getVars();
-
-        $fields   = $object->getResolvedFields();
-        $inherits = $object->getInheritedVars();
-        $origins  = $object->getOriginsVars();
 
         foreach ($fields as $field) {
             $varname = $field->varname;
