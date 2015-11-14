@@ -177,6 +177,9 @@ abstract class DirectorObjectForm extends QuickForm
         foreach ($props as $k => $v) {
             if ($k !== 'object_name' && property_exists($inherited, $k)) {
                 $this->setElementValue($k, $v, $inherited->$k, $origins->$k);
+                if ($el = $this->getElement($k)) {
+                    $el->setRequired(false);
+                }
             } else {
                 $this->setElementValue($k, $v);
             }
