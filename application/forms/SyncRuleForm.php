@@ -35,11 +35,11 @@ class SyncRuleForm extends DirectorObjectForm
 
         $this->addElement('select', 'update_policy', array(
             'label'        => $this->translate('Update Policity'),
-            'description'  => $this->translate('Whether the field should be merged, overriden or ignored'),
+            'description'  => $this->translate('Whether the field should be merged, replaced or ignored'),
             'required'     => true,
             'multiOptions' => $this->optionalEnum(array( 
                 'merge'    => 'merge',
-                'override' => 'override',
+                'override' => 'replace',
                 'ignore'   => 'ignore'
             ))
         ));
