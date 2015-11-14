@@ -495,28 +495,7 @@ abstract class DirectorObjectForm extends QuickForm
         $object = $this->object();
 
         if ($this->shouldBeDeleted()) {
-            $key = $object->getKeyName();
-            if ($object instanceof IcingaObject) {
-                $msg = sprintf(
-                    '%s "%s" has been removed',
-                    $this->translate($this->getObjectName()),
-                    $object->object_name
-                );
-            } else {
-                $msg = sprintf(
-                    '%s has been removed',
-                    $this->translate($this->getObjectName())
-                );
-            }
-
-            if ($object->delete()) {
-                // fields? $this->setSuccessUrl($this->getSuccessUrl()->without($key));
-                if ($object instanceof IcingaObject) {
-                    $this->setSuccessUrl('director/' . $object->getShortTableName() . 's');
-                }
-            }
-            // TODO: show object name and so
-            $this->redirectOnSuccess($msg);
+            $this->deleteObject($object);
         }
 
         if ($this->hasBeenSent()) {
@@ -540,6 +519,32 @@ abstract class DirectorObjectForm extends QuickForm
         }
        
         $this->handleProperties($object, $values);
+    }
+
+    protected function deleteObject($object)
+    {
+        $key = $object->getKeyName();
+        if ($object instanceof IcingaObject) {
+            $msg = sprintf(
+                '%s "%s" has been removed',
+                $this->translate($this->getObjectName()),
+                $object->object_name
+            );
+        } else {
+            $msg = sprintf(
+                '%s has been removed',
+                $this->translate($this->getObjectName())
+            );
+        }
+
+        if ($object->delete()) {
+            // fields? $this->setSuccessUrl($this->getSuccessUrl()->without($key));
+            if ($object instanceof IcingaObject) {
+                $this->setSuccessUrl('director/' . $object->getShortTableName() . 's');
+            }
+        }
+        // TODO: show object name and so
+        $this->redirectOnSuccess($msg);
     }
 
     protected function addDeleteButton($label = null)
