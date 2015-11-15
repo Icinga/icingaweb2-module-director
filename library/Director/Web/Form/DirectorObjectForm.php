@@ -22,6 +22,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $fieldsDisplayGroup;
 
+    protected $displayGroups = array();
+
     protected function object($values = array())
     {
         if ($this->object === null) {
@@ -108,6 +110,15 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addToFieldsDisplayGroup($elements)
     {
+        return $this->addElementsToGroup(
+            $elements,
+            'custom_fields',
+            $this->translate('Custom fields')
+        );
+    }
+
+    protected function addElementsToGroup($elements, $group, $legend = null)
+    {
         if (! is_array($elements)) {
             $elements = array($elements);
         }
@@ -117,21 +128,21 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        if ($this->fieldsDisplayGroup === null) {
-            $this->addDisplayGroup($elements, 'custom_fields', array(
+        if (! array_key_exists($group, $this->displayGroups)) {
+            $this->addDisplayGroup($elements, $group, array(
                 'decorators' => array(
                     'FormElements',
                     'Fieldset',
                 ),
                 'order' => 50,
-                'legend' => $this->translate('Custom fields')
+                'legend' => $legend ?: $group,
             ));
-            $this->fieldsDisplayGroup = $this->getDisplayGroup('custom_fields');
+            $this->displayGroups[$group] = $this->getDisplayGroup($group);
         } else {
-            $this->fieldsDisplayGroup->addElements($elements);
+            $this->displayGroups[$group]->addElements($elements);
         }
 
-        return $this->fieldsDisplayGroup;
+        return $this->displayGroups[$group];
     }
 
     protected function handleGroups($object, & $values)
