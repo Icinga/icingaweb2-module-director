@@ -162,6 +162,7 @@ class Sync
                         }
                     }
                 }
+
                 if (array_key_exists($key, $objects)) {
 
                     switch ($rule->update_policy) {
