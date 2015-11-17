@@ -32,9 +32,9 @@ class ActivityLogTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'change_time'    => $view->translate('Timestamp'),
-            'author'         => $view->translate('Author'),
-            'action'    => $view->translate('Action'),
+            'change_time' => $view->translate('Timestamp'),
+            'author'      => $view->translate('Author'),
+            'action'      => $view->translate('Action'),
         );
     }
 
