@@ -136,6 +136,12 @@ class ShowController extends ActionController
             $this->view->entry = $this->db()->fetchActivityLogEntry(Util::hex2binary($checksum));
         }
 
+        $this->view->neighbors = $this->db()->getActivitylogNeighbors(
+            $id,
+            $this->params->get('type'),
+            $this->params->get('name')
+        );
+
         $entry = $this->view->entry;
         $this->activityTabs($entry);
         $this->showInfo($entry);

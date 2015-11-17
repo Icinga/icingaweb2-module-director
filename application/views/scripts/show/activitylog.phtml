@@ -4,5 +4,11 @@
 </div>
 
 <div class="content">
+<p><?php if ($this->neighbors->prev): ?>
+<?= $this->qlink('<- prev', $this->url()->with('id', $this->neighbors->prev)) ?>
+<?php endif ?>
+<?php if ($this->neighbors->next): ?>
+ <?= $this->qlink('next ->', $this->url()->with('id', $this->neighbors->next)) ?>
+<?php endif ?></p>
 <?= $this->output ?>
 </div>

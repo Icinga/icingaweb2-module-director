@@ -8,6 +8,8 @@ class ActivityLogTable extends QuickTable
 {
     protected $filters = array();
 
+    protected $extraParams = array();
+
     public function getColumns()
     {
         return array(
@@ -20,7 +22,10 @@ class ActivityLogTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/show/activitylog', array('id' => $row->id));
+        return $this->url(
+            'director/show/activitylog',
+            array_merge(array('id' => $row->id), $this->extraParams
+        ));
     }
 
     public function getTitles()
@@ -37,6 +42,10 @@ class ActivityLogTable extends QuickTable
     {
         $this->filters[] = array('l.object_type = ?', $type);
         $this->filters[] = array('l.object_name = ?', $name);
+        $this->extraParams = array(
+            'type' => $type,
+            'name' => $name,
+        );
 
         return $this;
     }
