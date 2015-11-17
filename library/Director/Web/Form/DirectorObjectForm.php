@@ -533,18 +533,19 @@ abstract class DirectorObjectForm extends QuickForm
                 $object->object_type = $this->objectType;
             }
             $this->handleImports($object, $values);
+            $this->handleProperties($object, $values);
             $this->handleCustomVars($object, $post);
             $this->handleGroups($object, $values);
             $this->handleRanges($object, $values);
+        } else {
+            $this->handleProperties($object, $values);
         }
-       
-        $this->handleProperties($object, $values);
     }
 
     protected function deleteObject($object)
     {
         $key = $object->getKeyName();
-        if ($object instanceof IcingaObject) {
+        if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
             $msg = sprintf(
                 '%s "%s" has been removed',
                 $this->translate($this->getObjectName()),
@@ -559,8 +560,12 @@ abstract class DirectorObjectForm extends QuickForm
 
         if ($object->delete()) {
             // fields? $this->setSuccessUrl($this->getSuccessUrl()->without($key));
-            if ($object instanceof IcingaObject) {
+            if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
                 $this->setSuccessUrl('director/' . $object->getShortTableName() . 's');
+            } else {
+                $this->setSuccessUrl($this->getSuccessUrl()->without(
+                    array('field_id', 'argument_id')
+                ));
             }
         }
         // TODO: show object name and so
