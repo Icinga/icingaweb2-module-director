@@ -58,6 +58,8 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
                 // 'expression' => $this->translate('Icinga DSL')
             )
         ));
+
+        $this->setButtons();
     }
 
     protected function beforeValidation($data = array())
