@@ -19,6 +19,45 @@ class Db extends DbConnection
         return $this->getDbAdapter();
     }
 
+    public function getActivitylogNeighbors($id, $type = null, $name = null)
+    {
+        $db = $this->db();
+
+        $greater = $db->select()->from(
+            array('g' => 'director_activity_log'),
+            array('id' => 'MIN(g.id)')
+        )->where('id > ?', (int) $id);
+
+        $smaller = $db->select()->from(
+            array('l' => 'director_activity_log'),
+            array('id' => 'MAX(l.id)')
+        )->where('id < ?', (int) $id);
+
+        if ($type !== null) {
+            $greater->where('object_type = ?', $type);
+            $smaller->where('object_type = ?', $type);
+        }
+
+        if ($name !== null) {
+            $greater->where('object_name = ?', $name);
+            $smaller->where('object_name = ?', $name);
+        }
+
+        $query = $db->select()->from(
+            array('gt' => $greater),
+            array(
+                'prev' => 'lt.id',
+                'next' => 'gt.id'
+            )  
+        )->join(
+            array('lt' => $smaller),
+            null,
+            array()
+        );
+
+        return $db->fetchRow($query);
+    }
+
     public function fetchActivityLogEntryById($id)
     {
         $sql = 'SELECT * FROM director_activity_log WHERE id = ' . (int) $id;
