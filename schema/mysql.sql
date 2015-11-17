@@ -564,6 +564,18 @@ CREATE TABLE icinga_service_field (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_service_assignment (
+  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  service_id INT(10) UNSIGNED NOT NULL,
+  filter_string TEXT NOT NULL,  
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_service_assignment
+    FOREIGN KEY service (service_id)
+    REFERENCES icinga_service (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE icinga_host_service (
     host_id INT(10) UNSIGNED NOT NULL,
   service_id INT(10) UNSIGNED NOT NULL,
