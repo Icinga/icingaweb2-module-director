@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Web\Hook;
+use Exception;
 
 class DirectorDatafieldForm extends DirectorObjectForm
 {
@@ -33,24 +35,40 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'rows'        => '3',
         ));
 
+        $error = false;
+        try {
+            $types = $this->enumDataTypes();
+        } catch (Exception $e) {
+            $error = $e->getMessage();
+            $types = $this->optionalEnum(array());
+        }
+        
         $this->addElement('select', 'datatype', array(
             'label'         => $this->translate('Data type'),
             'description'   => $this->translate('Field type'),
             'required'      => true,
-            'multiOptions'  => $this->enumDataTypes(),
+            'multiOptions'  => $types,
             'class'         => 'autosubmit',
         ));
-
-
-        if ($class = $this->getSentValue('datatype')) {
-            if ($class && array_key_exists($class, $this->enumDataTypes())) {
-                $this->addSettings($class);
-            }
-        } elseif ($class = $this->object()->datatype) {
-            $this->addSettings($class);
+        if ($error) {
+            $this->getElement('datatype')->addError($error);
         }
 
-        $this->addSettings();
+        try {
+            if ($class = $this->getSentValue('datatype')) {
+                if ($class && array_key_exists($class, $types)) {
+                    $this->addSettings($class);
+                }
+            } elseif ($class = $this->object()->datatype) {
+                $this->addSettings($class);
+            }
+
+            // TODO: next line looks like obsolete duplicate code to me
+            $this->addSettings();
+        } catch (Exception $e) {
+            $this->getElement('datatype')->addError($e->getMessage());
+        }
+
         foreach ($this->object()->getSettings() as $key => $val) {
             if ($el = $this->getElement($key)) {
                 $el->setValue($val);
@@ -61,10 +79,17 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function addSettings($class = null)
     {
         if ($class === null) {
-            if ($class = $this->getValue('datatype')) {
-                $class::addSettingsFormFields($this);
+            $class = $this->getValue('datatype');
+        }
+
+        if ($class !== null) {
+            if (! class_exists($class)) {
+                throw new ConfigurationError(
+                    'The hooked class "%s" for this data field does no longer exist',
+                    $class
+                );
             }
-        } else {
+
             $class::addSettingsFormFields($this);
         }
     }
