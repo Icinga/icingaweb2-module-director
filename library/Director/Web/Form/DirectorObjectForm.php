@@ -350,6 +350,7 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addElement('text', $name, array('disabled' => 'disabled'));
             $el = $this->getElement($name);
             $el->addError(sprintf('Form element could not be created, %s is missing', $className));
+            $this->addToFieldsDisplayGroup($el);
             return $el;
         }
 
