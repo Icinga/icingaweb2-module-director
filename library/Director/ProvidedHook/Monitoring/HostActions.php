@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Director\Web;
+namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
