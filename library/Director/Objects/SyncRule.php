@@ -21,6 +21,22 @@ class SyncRule extends DbObject
 	    'filter_expression'	=> null,
     );
 
+    public function getPriorityForNextProperty()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return 1;
+        }
+        
+        $db = $this->getDb();
+        return $db->fetchOne(
+            $db->select()
+                ->from(
+                    'sync_property',
+                    '(CASE WHEN MAX(priority) IS NULL THEN 1 ELSE MAX(priority) + 1 END)'
+                )->where('rule_id = ?', $this->id)
+        );
+    }
+
     public function fetchSyncProperties()
     {
         $db = $this->getDb();
