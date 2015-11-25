@@ -923,7 +923,7 @@ CREATE TABLE imported_rowset_row (
 CREATE TABLE imported_property (
   checksum VARBINARY(20) NOT NULL,
   property_name VARCHAR(64) NOT NULL,
-  property_value TEXT NOT NULL,
+  property_value MEDIUMTEXT NOT NULL,
   format enum ('string', 'expression', 'json'),
   PRIMARY KEY (checksum),
   KEY search_idx (property_name)
