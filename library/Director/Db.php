@@ -205,6 +205,7 @@ class Db extends DbConnection
 
         $lastRun->order('start_time DESC')->limit(1);
         $checksum = $db->fetchOne($lastRun);
+        // TODO: Postgres decoding?
 
         return $this->fetchImportedRowsetRows($checksum, $columns);
     }
