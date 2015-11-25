@@ -40,7 +40,7 @@ class Sync
 
     protected function extractVariableNames($string)
     {
-        if (preg_match_all('/\${([A-Za-z0-9_-]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
+        if (preg_match_all('/\${([A-Za-z0-9\._-]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
             return $m[1];
         } else {
             return array();
@@ -58,24 +58,53 @@ class Sync
         }
     }
 
+    protected function getDeepValue($val, $keys)
+    {
+        $key = array_shift($keys);
+        if (! property_exists($val, $key)) {
+            return null;
+        }
+
+        if (empty($keys)) {
+            return $val->$key;
+        }
+
+        return $this->getDeepValue($val->$key, $keys);
+    }
+
     protected function fillVariables($string, $row)
     {
-        if (preg_match('/^\${([A-Za-z0-9_-]+)}$/', $string, $m)) {
+        if (preg_match('/^\${([A-Za-z0-9\._-]+)}$/', $string, $m)) {
             $var = $m[1];
-            if (! property_exists($row, $var)) {
-                return null;
+            if (strpos($var, '.') === false) {
+                if (! property_exists($row, $var)) {
+                    return null;
+                }
+
+                $val = $row->$var;
+            } else {
+                $parts = explode('.', $var);
+                $main = array_shift($parts);
+                if ($row->{$main . '__f'} === 'json') {
+                    $val = json_decode($row->$main);
+                    return $this->getDeepValue($val, $parts);
+                } else {
+                    die('Data is not nested, cannot access ...');
+                }
             }
+
             if ($row->{$var . '__f'} === 'json') {
-                return json_decode($row->$var);
+                return json_decode($val);
             }
-            return $row->$var;
+
+            return $val;
         }
 
         $func = function ($match) use ($row) {
             return $row->{$match[1]};
         };
 
-        return preg_replace_callback('/\${([A-Za-z0-9_-]+)}/', $func, $string);
+        return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
     protected function prepareSyncForRule(SyncRule $rule)
