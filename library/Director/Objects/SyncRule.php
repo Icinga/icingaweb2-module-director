@@ -21,6 +21,24 @@ class SyncRule extends DbObject
 	    'filter_expression'	=> null,
     );
 
+    public function listInvolvedSourceIds()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return array();
+        }
+
+        $db = $this->getDb();
+        return array_map('intval', array_unique(
+            $db->fetchCol(
+                $db->select()
+                   ->from(array('p' => 'sync_property'), 'p.source_id')
+                   ->join(array('s' => 'import_source'), 's.id = p.source_id', array())
+                   ->where('rule_id = ?', $this->id)
+                   ->order('s.source_name')
+            )
+        ));
+    }
+
     public function getPriorityForNextProperty()
     {
         if (! $this->hasBeenLoadedFromDb()) {
