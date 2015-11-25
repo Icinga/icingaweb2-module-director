@@ -209,6 +209,58 @@ class Db extends DbConnection
         return $this->fetchImportedRowsetRows($checksum, $columns);
     }
 
+    public function fetchImportedRowsetRows($checksum, $columns)
+    {
+        $db = $this->db();
+        $query = $db->select()->from(
+            array('rsr' => 'imported_rowset_row'),
+            array(
+                'object_name'    => 'r.object_name',
+                'property_name'  => 'p.property_name',
+                'property_value' => 'p.property_value',
+                'format'         => 'p.format'
+            )
+        )->join(
+            array('r' => 'imported_row'),
+            'rsr.row_checksum = r.checksum',
+            array()
+        )->join(
+            array('rp' => 'imported_row_property'),
+            'r.checksum = rp.row_checksum',
+            array()
+        )->join(
+            array('p' => 'imported_property'),
+            'p.checksum = rp.property_checksum',
+            array()
+        )->where('rsr.rowset_checksum = ?', $checksum)->order('r.object_name');
+
+        if ($columns === null) {
+            $columns = $this->listImportedRowsetColumnNames($checksum);
+        } else {
+            $query->where('p.property_name IN (?)', $columns);
+        }
+
+        $result = array();
+        $empty = (object) array();
+        foreach ($columns as $k => $v) {
+            $empty->$k = $v;
+        }
+
+        foreach ($db->fetchAll($query) as $row) {
+            if (! array_key_exists($row->object_name, $result)) {
+                $result[$row->object_name] = clone($empty);
+            }
+
+            if ($row->format === 'json') {
+                $result[$row->object_name]->{$row->property_name} = json_decode($row->property_value);
+            } else {
+                $result[$row->object_name]->{$row->property_name} = $row->property_value;
+            }
+        }
+
+        return $result;
+    }
+
     public function getLatestImportedChecksum($source)
     {
         if ($this->getDbType() === 'pgsql') {
@@ -248,60 +300,6 @@ class Db extends DbConnection
         )->where('rsr.rowset_checksum = ?', $checksum);
 
         return $db->fetchCol($query);
-    }
-
-    public function createImportedRowsetRowsQuery($checksum, $columns = null)
-    {
-        $db = $this->db();
-
-        $query = $db->select()->from(
-            array('r' => 'imported_row'),
-            array()
-        )->join(
-            array('rsr' => 'imported_rowset_row'),
-            'rsr.row_checksum = r.checksum',
-            array()
-        )->where('rsr.rowset_checksum = ?', $checksum);
-
-        $propertyQuery = $db->select()->from(
-            array('rp' => 'imported_row_property'),
-            array(
-                'property_value' => 'p.property_value',
-                'format'         => 'p.format',
-                'row_checksum'   => 'rp.row_checksum'
-            )
-        )->join(
-            array('p' => 'imported_property'),
-            'rp.property_checksum = p.checksum',
-            array()
-        );
-
-        $fetchColumns = array('object_name' => 'r.object_name');
-        if ($columns === null) {
-            $columns = $this->listImportedRowsetColumnNames($checksum);
-        }
-
-        foreach ($columns as $c) {
-            $fetchColumns[$c] = sprintf('p_%s.property_value', $c);
-            $fetchColumns[$c . '__f'] = sprintf('p_%s.format', $c);
-            $p = clone($propertyQuery);
-            $query->joinLeft(
-                array(sprintf('p_' . $c) => $p->where('p.property_name = ?', $c)),
-                sprintf('p_%s.row_checksum = r.checksum', $c),
-                array()
-            );
-        }
-
-        $query->columns($fetchColumns);
-
-        return $query;
-    }
-
-    public function fetchImportedRowsetRows($checksum, $columns = null)
-    {
-        return $this->db()->fetchAll(
-            $this->createImportedRowsetRowsQuery($checksum, $columns)
-        );
     }
 
     public function enumCommands()

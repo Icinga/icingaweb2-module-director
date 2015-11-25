@@ -85,22 +85,18 @@ class Sync
             } else {
                 $parts = explode('.', $var);
                 $main = array_shift($parts);
-                if ($row->{$main . '__f'} === 'json') {
-                    $val = json_decode($row->$main);
-                    return $this->getDeepValue($val, $parts);
-                } else {
+                if (! is_object($row->$main)) {
                     die('Data is not nested, cannot access ...');
                 }
-            }
 
-            if ($row->{$var . '__f'} === 'json') {
-                return json_decode($val);
+                return $this->getDeepValue($row->$main, $parts);
             }
 
             return $val;
         }
 
         $func = function ($match) use ($row) {
+            // TODO allow to access deep value also here
             return $row->{$match[1]};
         };
 
