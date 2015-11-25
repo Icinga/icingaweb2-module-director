@@ -178,9 +178,23 @@ class Db extends DbConnection
         return $objects;
     }
 
-    public function fetchLatestImportedRows($source, $columns = null)
+    public function fetchLatestImportedRows($source, $desiredColumns = null)
     {
         $db = $this->db();
+        if ($desiredColumns === null) {
+            $columns = null;
+        } else {
+            $columns = array();
+            foreach ($desiredColumns as $column) {
+                if (false === ($pos = strpos($column, '.'))) {
+                    $columns[$column] = $column;
+                } else {
+                    $column = substr($column, 0, $pos);
+                    $columns[$column] = $column;
+                }
+            }
+        }
+
         $lastRun = $db->select()->from('import_run', array('rowset_checksum'));
 
         if (is_int($source) || ctype_digit($source)) {
