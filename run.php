@@ -1,6 +1,7 @@
 <?php
 
 $this->provideHook('monitoring/HostActions');
+$this->provideHook('monitoring/ServiceActions');
 $this->registerHook('Director\\ImportSource', '\\Icinga\\Module\\Director\\Import\\ImportSourceSql', 'sql');
 $this->registerHook('Director\\ImportSource', '\\Icinga\\Module\\Director\\Import\\ImportSourceLdap', 'ldap');
 
