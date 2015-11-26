@@ -19,6 +19,10 @@ class HostActions extends HostActionsHook
                 'Modify' => Url::fromPath(
                     'director/host/edit',
                     array('name' => $host->host_name)
+                ),
+                'Inspect' => Url::fromPath(
+                    'director/inspect/object',
+                    array('type' => 'host', 'plural' => 'hosts', 'name' => $host->host_name)
                 )
             );
         } else {
