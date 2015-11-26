@@ -131,7 +131,7 @@ class CoreApi
 
     public function getZoneObjects()
     {
-        return $this->getMyObjects('Zone', 'zones', array(
+        return $this->getDirectorObjects('Zone', 'zones', array(
             'parent' => 'parent',
             'global' => 'is_global',
         ));
