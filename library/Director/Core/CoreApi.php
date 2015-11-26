@@ -40,6 +40,17 @@ class CoreApi
         )->getResult('name');
     }
 
+    public function getObject($name, $pluraltype, $attrs = array())
+    {
+        $params = (object) array(
+        );
+        if (! empty($attrs)) {
+            $params->attrs = $attrs;
+        }
+        $url = 'objects/' . urlencode(strtolower($pluraltype)) . '/' . rawurlencode($name) . '?all_joins=1';
+        return $this->client->get($url, $params)->getResult('name');
+    }
+
     public function getTypes()
     {
         return $this->client->get('types')->getResult('name');
