@@ -4,11 +4,24 @@
 </div>
 
 <div class="content">
-<p><?php if ($this->neighbors->prev): ?>
-<?= $this->qlink('<- prev', $this->url()->with('id', $this->neighbors->prev)) ?>
+<div class="pagination-control">
+<ul class="nav tab-nav">
+  <li class="nav-item"><?php if ($this->neighbors->prev): ?>
+ <a href="<?= $this->url()->with('id', $this->neighbors->prev) ?>"><?=
+   $this->icon('angle-double-left')
+ ?></a>
+<?php else: ?>
+<span class="disabled"><?= $this->icon('angle-double-left') ?></span>
 <?php endif ?>
+</li><li>
 <?php if ($this->neighbors->next): ?>
- <?= $this->qlink('next ->', $this->url()->with('id', $this->neighbors->next)) ?>
-<?php endif ?></p>
+ <a href="<?= $this->url()->with('id', $this->neighbors->next) ?>"><?=
+   $this->icon('angle-double-right')
+ ?></a>
+<?php else: ?>
+ <span class="disabled"><?= $this->icon('angle-double-right') ?></span>
+<?php endif ?>
+</li>
+</div>
 <?= $this->output ?>
 </div>
