@@ -4,9 +4,17 @@
 </div>
 
 <div class="content">
-<pre>
-<?= $this->escape(print_r($this->type, 1)) ?>
-
-<?= $this->escape(print_r($this->objects, 1)) ?>
-</pre>
+<table class="common-table table-row-selectable" data-base-target="_next">
+ <thead><tr><th><?= $this->translate('Object name') ?></th></tr></thead>
+ <tbody>
+<?php foreach ($this->objects as $object): ?>
+  <tr><td><?= $this->qlink(
+    str_replace('!', ': ', $object),
+    'director/inspect/object',
+    array('type' => $this->type->name, 'plural' => $this->type->plural_name, 'name' => $object)
+  ) ?></td></tr>
+<?php endforeach ?>
+ </tbody>
+</table>
+<pre><?= $this->escape(print_r($this->type, 1)) ?></pre>
 </div>
