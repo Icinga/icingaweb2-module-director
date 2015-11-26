@@ -60,12 +60,14 @@ class CoreApi
     {
         // TODO: more abstraction needed
         // TODO: autofetch and cache pluraltypes
-        return $this->client->get(
+        $result = $this->client->get(
             'objects/' . $pluralType,
             array(
-                'attrs' => array($type . '.__name', $type . '.name'),
+                'attrs' => array('__name')
             )
         )->getResult('name');
+
+        return array_keys($result);
     }
 
     public function getModules()
