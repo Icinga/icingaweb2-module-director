@@ -47,7 +47,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
               . ' Please ask an administrator to create such'
             );
 
-            $this->getElement('datafield_id')->setError($msg);
+            $this->getElement('datafield_id')->addError($msg);
         }
 
         $this->addElement('select', 'is_required', array(
