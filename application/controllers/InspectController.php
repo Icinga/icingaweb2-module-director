@@ -36,12 +36,19 @@ class InspectController extends ActionController
         }
 
         if (! empty($type->fields)) {
-            $this->view->objects = $this->api()->getObjects(
+            $this->view->objects = $this->api()->listObjects(
                 $typeName,
                 $type->plural_name
-                //array_keys((array) $type->fields)
             );
         }
+    }
+
+    public function objectAction()
+    {
+        $this->view->object = $this->api()->getObject(
+            $this->params->get('name'),
+            $this->params->get('plural')
+        );
     }
 
     public function statusAction()
