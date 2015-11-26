@@ -23,7 +23,7 @@ class SyncruleController extends ActionController
     public function runAction()
     {
         if ($runId = Sync::run(SyncRule::load($this->params->get('id'), $this->db()))) {
-            Notification::success('Just testing');
+            Notification::success('Source has successfully been synchronized');
             $this->redirectNow('director/list/syncrule');
         } else {
         }
