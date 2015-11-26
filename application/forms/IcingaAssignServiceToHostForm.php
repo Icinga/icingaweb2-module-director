@@ -76,10 +76,10 @@ class IcingaAssignServiceToHostForm extends QuickForm
             case 'host_property':
                 $this->addHostPropertyElements();
                 break;
+            case 'host_property':
+                $this->addHostFilterElements();
+                break;
         }
-
-        $fields = $this->icingaObject->getResolvedFields();
-print_r(array_keys((array) $fields));
 
         $this->setSubmitLabel(
             $this->translate('Assign')
@@ -120,6 +120,18 @@ print_r(array_keys((array) $fields));
             'required'     => true,
             'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->db))
         ));
+        $this->addElement('text', 'filter_expression', array(
+            'label'        => 'Filter expression',
+            'required'     => true,
+        ));
+    }
+
+    protected function addHostFilterElements()
+    {
+        $this->addElement('text', 'host_filter', array(
+            'label'        => 'Host filter string',
+            'required'     => true,
+        ));
     }
 
     public function onSuccess()
@@ -133,12 +145,27 @@ print_r(array_keys((array) $fields));
                 ));
                 break;
             case 'host_group':
-                /*
-                $this->db->insert('icinga_host_group_service', array(
-                    'host_id'    => $this->getValue('hostgroup_id'),
-                    'service_id' => $this->getValue('service_id'),
+                $this->db->insert('icinga_service_assignment', array(
+                    'service_id'    => $this->getValue('service_id'),
+                    // TODO: in?
+                    'filter_string' => 'groups=' . $this->getValue('host_group'),
                 ));
-                */
+                break;
+            case 'host_property':
+                $this->db->insert('icinga_service_assignment', array(
+                    'service_id'    => $this->getValue('service_id'),
+                    'filter_string' => sprintf(
+                        '%s=%s',
+                        $this->getValue('host_property'),
+                        $this->getValue('filter_expression')
+                    )
+                ));
+                break;
+            case 'host_filter':
+                $this->db->insert('icinga_service_assignment', array(
+                    'service_id'    => $this->getValue('service_id'),
+                    'filter_string' => $this->getValue('filter_string'),
+                ));
                 break;
         }
     }
