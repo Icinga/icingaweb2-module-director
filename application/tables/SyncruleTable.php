@@ -28,7 +28,7 @@ class SyncruleTable extends QuickTable
 
     protected function listTableClasses()
     {
-        return array_merge(array('syncrules'), parent::listTableClasses());
+        return array_merge(array('syncstate'), parent::listTableClasses());
     }
 
     protected function renderAdditionalActions($row)
@@ -76,7 +76,7 @@ class SyncruleTable extends QuickTable
         $query = $db->select()->from(
              array('s' => 'sync_rule'),
 	     array()
-        )->order('id');
+        )->order('rule_name');
 
         return $query;
     }
