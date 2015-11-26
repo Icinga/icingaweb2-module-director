@@ -26,7 +26,10 @@ class ServiceController extends ObjectController
             ->setIcingaObject($this->object)
             ->setDb($this->db())
             ->handleRequest();
+
+        $this->view->table = $this->loadTable('icingaObjectAssignment')
+            ->setObject($this->object);
         $this->view->title = 'Assign service to host';
-        $this->render('object/form', null, true);
+        $this->render('object/fields', null, true); // TODO: render table
     }
 }
