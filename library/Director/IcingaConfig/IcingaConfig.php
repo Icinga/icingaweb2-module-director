@@ -175,6 +175,7 @@ class IcingaConfig
                 ->where('checksum IN (?)', array_map(array($this, 'dbBin'), $this->getFilesChecksums()));
 
             $existing = $this->db->fetchCol($existingQuery);
+
             foreach ($existing as $key => $val) {
                 if (is_resource($val)) {
                     $existing[$key] = stream_get_contents($val);
@@ -189,6 +190,7 @@ class IcingaConfig
                 if (! in_array($checksum, $missing)) {
                     continue;
                 }
+
                 $this->db->insert(
                     $fileTable,
                     array(
@@ -206,7 +208,6 @@ class IcingaConfig
                     'checksum'               => $this->dbBin($this->getChecksum()),
                 )
             );
-
             /** @var IcingaConfigFile $file */
             foreach ($this->files as $name => $file) {
                 $this->db->insert(
@@ -235,6 +236,8 @@ throw $e;
 
         $this->configFile('conf.d/001-director-basics.conf')->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+          . "\nobject Zone \"director-global\" {\n    global = true\n}\n"
+
         );
 
         $this
@@ -302,6 +305,7 @@ throw $e;
     {
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         $objects = $class::loadAll($this->connection);
+        if (empty($objects)) return $this;
         $ourGlobalZone = 'director-global';
         $file = null;
 
