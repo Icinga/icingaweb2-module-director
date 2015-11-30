@@ -154,8 +154,8 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     public static function loadForStoredObject(IcingaObject $object)
     {
-        $groups = new static($object);
-        return $groups->loadFromDb();
+        $arguments = new static($object);
+        return $arguments->loadFromDb();
     }
 
     public function toConfigString()
