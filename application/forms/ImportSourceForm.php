@@ -56,6 +56,10 @@ class ImportSourceForm extends DirectorObjectForm
             return null;
         }
 
+        if (! class_exists($class)) {
+            return null;
+        }
+
         return $class::getDefaultKeyColumnName();
     }
 
