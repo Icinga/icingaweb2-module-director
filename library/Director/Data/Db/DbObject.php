@@ -283,8 +283,8 @@ abstract class DbObject
             return $this;
         }
 
-        if ($key === $this->getKeyName() && $this->hasBeenLoadedFromDb()) {
-            throw new IE('Changing primary key is not allowed');
+        if ($key === $this->getAutoincKeyName()) {
+            throw new IE('Changing autoincremental key is not allowed');
         }
 
         return $this->reallySet($key, $value);
@@ -389,7 +389,7 @@ abstract class DbObject
     {
         $props = array();
         foreach (array_keys($this->modifiedProperties) as $key) {
-            if ($key === $this->keyName || $key === $this->autoincKeyName) continue;
+            if ($key === $this->autoincKeyName) continue;
             $props[$key] = $this->properties[$key];
         }
         return $props;
@@ -769,10 +769,17 @@ abstract class DbObject
             }
             return implode(' AND ', $where);
         } else {
-            return $this->db->quoteInto(
-                sprintf('%s = ?', $key),
-                $this->properties[$key]
-            );
+            if ($this->hasBeenLoadedFromDb()) {
+                return $this->db->quoteInto(
+                    sprintf('%s = ?', $key),
+                    $this->loadedProperties[$key]
+                );
+            } else {
+                return $this->db->quoteInto(
+                    sprintf('%s = ?', $key),
+                    $this->properties[$key]
+                );
+            }
         }
     }
 
