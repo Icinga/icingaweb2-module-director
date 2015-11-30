@@ -42,6 +42,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         ));
 
         if (empty($fields)) {
+            // TODO: show message depending on permissions
             $msg = $this->translate(
                 'There are no data fields available.'
               . ' Please ask an administrator to create such'
