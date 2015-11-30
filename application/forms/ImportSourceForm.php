@@ -14,12 +14,6 @@ class ImportSourceForm extends DirectorObjectForm
             'required'    => true,
         ));
 
-        $this->addElement('text', 'key_column', array(
-            'label' => $this->translate('Key column name'),
-            'description' => $this->translate('This must be a column containing unique values like hostnames'),
-            'required'    => true,
-        ));
-
         $this->addElement('select', 'provider_class', array(
             'label'       => $this->translate('Source Type'),
             'required'    => true,
@@ -33,13 +27,18 @@ class ImportSourceForm extends DirectorObjectForm
 
     protected function addSettings($class = null)
     {
-        if ($this->hasBeenSent()) {
-            $class = $this->getRequest()->getPost('provider_class');
-        } else {
-            if (! ($class = $this->object()->provider_class)) {
-                return;
-            }
+        if (! ($class = $this->getProviderClass())) {
+            return;
         }
+
+        $defaultKeyCol = $this->getDefaultKeyColumnName();
+
+        $this->addElement('text', 'key_column', array(
+            'label' => $this->translate('Key column name'),
+            'description' => $this->translate('This must be a column containing unique values like hostnames'),
+            'placeholder' => $defaultKeyCol,
+            'required'    => $defaultKeyCol === null,
+        ));
 
         if (array_key_exists($class, $this->enumSourceTypes())) {
             $class::addSettingsFormFields($this);
@@ -49,6 +48,40 @@ class ImportSourceForm extends DirectorObjectForm
                 }
             }
         }
+    }
+
+    protected function getDefaultKeyColumnName()
+    {
+        if (! ($class = $this->getProviderClass())) {
+            return null;
+        }
+
+        return $class::getDefaultKeyColumnName();
+    }
+
+    protected function getProviderClass()
+    {
+        if ($this->hasBeenSent()) {
+            $class = $this->getRequest()->getPost('provider_class');
+        } else {
+            if (! ($class = $this->object()->provider_class)) {
+                return;
+            }
+        }
+
+        return $class;
+    }
+
+    public function onSuccess()
+    {
+        if (! $this->getValue('key_column')) {
+            if ($default = $this->getDefaultKeyColumnName()) {
+                $this->setElementValue('key_column', $default);
+                $this->object()->key_column = $default;
+            }
+        }
+
+        parent::onSuccess();
     }
 
     protected function enumSourceTypes()

@@ -71,6 +71,17 @@ abstract class ImportSourceHook
     abstract public function listColumns();
 
     /**
+     * Override this method in case you want to suggest a default
+     * key column
+     *
+     * @return string|null Default key column
+     */
+    public static function getDefaultKeyColumnName()
+    {
+        return null;
+    }
+
+    /**
      * Override this method if you want to extend the settings form
      *
      * @param  QuickForm $form QuickForm that should be extended
