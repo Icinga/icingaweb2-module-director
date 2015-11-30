@@ -14,6 +14,10 @@ class ServiceActions extends ServiceActionsHook
     public function getActionsForService(Service $service)
     {
         $db = $this->db();
+        if (! $db) {
+            return array();
+        }
+
         if (IcingaHost::exists($service->host_name, $db)) {
             return array(
                 'Inspect' => Url::fromPath(
@@ -36,6 +40,11 @@ class ServiceActions extends ServiceActionsHook
 
     protected function db()
     {
-        return Db::fromResourceName(Config::module('director')->get('db', 'resource'));
+        $resourceName = Config::module('director')->get('db', 'resource');
+        if (! $resourceName) {
+            return false;
+        }
+
+        return Db::fromResourceName($resourceName);
     }
 }

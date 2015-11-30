@@ -14,6 +14,10 @@ class HostActions extends HostActionsHook
     public function getActionsForHost(Host $host)
     {
         $db = $this->db();
+        if (! $db) {
+            return array();
+        }
+
         if (IcingaHost::exists($host->host_name, $db)) {
             return array(
                 'Modify' => Url::fromPath(
@@ -32,6 +36,11 @@ class HostActions extends HostActionsHook
 
     protected function db()
     {
-        return Db::fromResourceName(Config::module('director')->get('db', 'resource'));
+        $resourceName = Config::module('director')->get('db', 'resource');
+        if (! $resourceName) {
+            return false;
+        }
+
+        return Db::fromResourceName($resourceName);
     }
 }
