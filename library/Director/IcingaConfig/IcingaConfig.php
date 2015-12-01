@@ -310,7 +310,9 @@ throw $e;
         $file = null;
 
         foreach ($objects as $object) {
-            if ($object->isTemplate()) {
+            if ($object->isExternal()) {
+                continue;
+            } elseif ($object->isTemplate()) {
                 $filename = strtolower($type) . '_templates';
                 $zone = 'master';
             } else {

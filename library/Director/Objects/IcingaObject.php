@@ -494,6 +494,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             && $this->object_type === 'template';
     }
 
+    public function isExternal()
+    {
+        return $this->hasProperty('object_type')
+            && $this->object_type === 'external_object';
+    }
+
     public function isApplyRule()
     {
         return $this->hasProperty('object_type')
