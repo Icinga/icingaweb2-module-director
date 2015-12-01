@@ -270,7 +270,7 @@ CREATE TABLE icinga_command_argument (
   command_id INT(10) UNSIGNED NOT NULL,
   argument_name VARCHAR(64) DEFAULT NULL COMMENT '-x, --host',
   argument_value TEXT DEFAULT NULL,
-  argument_format ENUM('string', 'expression', 'json') NOT NULL DEFAULT 'string',
+  argument_format ENUM('string', 'expression', 'json') NULL DEFAULT NULL,
   key_string VARCHAR(64) DEFAULT NULL COMMENT 'Overrides name',
   description TEXT DEFAULT NULL,
   skip_key ENUM('y', 'n') DEFAULT NULL,
