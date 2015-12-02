@@ -90,7 +90,7 @@ CREATE TABLE director_deployment_log (
   dump_succeeded ENUM('y', 'n') DEFAULT NULL,
   startup_succeeded ENUM('y', 'n') DEFAULT NULL,
   username VARCHAR(64) DEFAULT NULL COMMENT 'The user that triggered this deployment',
-  startup_log TEXT DEFAULT NULL,
+  startup_log MEDIUMTEXT DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT config_checksum
     FOREIGN KEY config_checksum (config_checksum)
