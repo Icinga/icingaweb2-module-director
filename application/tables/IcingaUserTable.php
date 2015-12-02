@@ -35,7 +35,6 @@ class IcingaUserTable extends QuickTable
         return array(
             'user'          => $view->translate('Username'),
             'email'         => $view->translate('Email'),
-            'zone'          => $view->translate('Zone'),
         );
     }
 
