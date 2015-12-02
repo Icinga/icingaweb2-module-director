@@ -311,7 +311,6 @@ class Db extends DbConnection
     public function enumCheckcommands()
     {
         $filters = array(
-            'object_type IN (?)' => array('object', 'external_object'),
             'methods_execute IN (?)' => array('PluginCheck', 'IcingaCheck'),
             
         );
@@ -424,7 +423,10 @@ class Db extends DbConnection
 
     public function enumIcingaObjects($type, $filters = array())
     {
-        $filters = array('object_type = ?' => 'object') + $filters;
+        $filters = array(
+            'object_type IN (?)' => array('object', 'external_object')
+        ) + $filters;
+
         return $this->enum('icinga_' . $type, null, $filters);
     }
 
