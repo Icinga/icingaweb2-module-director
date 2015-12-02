@@ -279,8 +279,8 @@ CREATE TABLE icinga_command_argument (
   sort_order SMALLINT DEFAULT NULL, -- -> order
   repeat_key ENUM('y', 'n') DEFAULT NULL COMMENT 'Useful with array values',
   PRIMARY KEY (id),
-  UNIQUE INDEX sort_idx (command_id, sort_order),
   UNIQUE KEY unique_idx (command_id, argument_name),
+  INDEX sort_idx (command_id, sort_order),
   CONSTRAINT icinga_command_argument_command
     FOREIGN KEY command (command_id)
     REFERENCES icinga_command (id)
