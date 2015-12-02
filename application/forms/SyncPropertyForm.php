@@ -73,7 +73,8 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         if ($destination === 'import') {
-            $templates = $this->db->enumHostTemplates(); // ERR. type!
+            $funcTemplates = 'enum' . ucfirst($this->rule->object_type) . 'Templates';
+            $templates = $this->db->$funcTemplates();
             $templates = array_combine($templates, $templates);
             $this->addElement('select', 'source_expression', array(
                 'label'        => $this->translate('Template'), // Objecttype?
