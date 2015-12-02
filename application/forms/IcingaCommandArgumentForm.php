@@ -42,7 +42,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             'label' => $this->translate('Value type'),
             'multiOptions' => array(
                 'string'     => $this->translate('String'),
-                // 'expression' => $this->translate('Icinga DSL')
+                'expression' => $this->translate('Icinga DSL')
             ),
             'class' => 'autosubmit',
         ));
