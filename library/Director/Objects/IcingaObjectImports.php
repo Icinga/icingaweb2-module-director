@@ -188,6 +188,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return $this->object->getShortTableName();
     }
 
+    // TODO: prefetch
     protected function loadFromDb()
     {
         $db = $this->object->getDb();
