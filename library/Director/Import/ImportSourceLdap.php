@@ -18,8 +18,8 @@ class ImportSourceLdap extends ImportSourceHook
         if ($base = $this->settings['base']) {
             $query->setBase($base);
         }
-        if ($filter =  $this->settings['base']) {
-            $query->setBase($base);
+        if ($filter = $this->settings['filter']) {
+            $query->setNativeFilter($filter);
         }
 
         return $query->fetchAll();
