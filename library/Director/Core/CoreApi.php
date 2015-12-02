@@ -51,6 +51,39 @@ class CoreApi
         return $this->client->get($url, $params)->getResult('name');
     }
 
+    public function getConstants()
+    {
+        $constants = array();
+        $command = 'var constants = [];
+for (k => v in globals) {
+   if (typeof(v) in [String, Number, Boolean]) {
+      res = { name = k, value = v }
+      constants.add({name = k, value = v})
+   }
+};
+constants
+';
+
+        foreach ($this->client->post(
+            'console/execute-script',
+            array('command' => $command)
+        )->getSingleResult() as $row) {
+            $constants[$row->name] = $row->value;
+        }
+
+        return $constants;
+    }
+
+    public function getConstant($name)
+    {
+        $constants = $this->getConstants();
+        if (array_key_exists($name, $constants)) {
+            return $constants[$name];
+        }
+
+        return null;
+    }
+
     public function getTypes()
     {
         return $this->client->get('types')->getResult('name');
@@ -194,11 +227,6 @@ class CoreApi
         return $this->client->getRaw(
             'config/files/director/' . $stage . '/' . urlencode($file)
         );
-    }
-
-    public function getConstants()
-    {
-        // TODO: var results = []; for (k => v in globals) { if (typeof(v) in [String, Number, Boolean]) { results.add(k) } }; results
     }
 
     public function hasModule($moduleName)
