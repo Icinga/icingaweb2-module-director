@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Core;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 
 class CoreApi
@@ -124,7 +125,7 @@ constants
         return current($this->listModuleStages('director', true));
     }
 
-    protected function getDirectorObjects($type, $plural, $map)
+    protected function getDirectorObjects($type, $single, $plural, $map)
     {
         $attrs = array_merge(
             array_keys($map),
@@ -132,14 +133,13 @@ constants
         );
 
         $objects = array();
-        $result  = $this->getObjects('zone', 'zones', $attrs);
-
+        $result  = $this->getObjects($single, $plural, $attrs);
         foreach ($result as $name => $row) {
             $attrs = $row->attrs;
 
             $properties = array(
                 'object_name' => $name,
-                'object_type' => 'object'
+                'object_type' => 'external_object'
             );
 
             foreach ($map as $key => $prop) {
@@ -164,7 +164,7 @@ constants
 
     public function getZoneObjects()
     {
-        return $this->getDirectorObjects('Zone', 'zones', array(
+        return $this->getDirectorObjects('Zone', 'Zone', 'zones', array(
             'parent' => 'parent',
             'global' => 'is_global',
         ));
@@ -172,11 +172,22 @@ constants
 
     public function getCheckCommandObjects()
     {
-        return $this->getObjects('CheckCommand', 'CheckCommands');
-        return $this->getMyObjects('Zone', 'zones', array(
-            'parent' => 'parent',
-            'global' => 'is_global',
+        IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
+
+        $objects = $this->getDirectorObjects('Command', 'CheckCommand', 'CheckCommands', array(
+            'arguments' => 'arguments',
+         //   'env' => 'env',
+            'timeout' => 'timeout',
+            'command' => 'command',
+            'vars' => 'vars'
         ));
+        foreach ($objects as $obj) {
+            $obj->methods_execute = 'PluginCheck';
+        }
+
+        return $objects;
+
+        return $this->getObjects('CheckCommand', 'CheckCommands');
     }
 
     public function listModuleStages($name, $active = null)
