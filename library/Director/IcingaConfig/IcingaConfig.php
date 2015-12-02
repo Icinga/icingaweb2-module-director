@@ -317,10 +317,10 @@ throw $e;
                 continue;
             } elseif ($object->isTemplate()) {
                 $filename = strtolower($type) . '_templates';
-                $zone = 'master';
+                $zone = $ourGlobalZone;
             } else {
                 $filename = strtolower($type) . 's';
-                $zone = 'global';
+                $zone = $ourGlobalZone;
             }
 
             if ($type === 'zone') {
@@ -328,16 +328,13 @@ throw $e;
             } elseif ($object->hasProperty('zone_id') && ($zone_id = $object->zone_id)) {
                 $zone = $this->getZoneName($zone_id);
             } else {
-                $zone = 'master';
+                $zone = $ourGlobalZone;
             }
 
             if (in_array($type, array('command', 'zone'))) {
                 $filename = 'zones.d/' . $ourGlobalZone . '/' . $filename;
             } elseif ($type === 'endpoint') {
                 $filename = 'conf.d/endpoints';
-continue;
-            } elseif ($zone === 'master') {
-                $filename = 'conf.d/' . $filename;
             } else {
                 $filename = 'zones.d/' . $zone . '/' . $filename;
             }
