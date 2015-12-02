@@ -53,8 +53,16 @@ class InspectController extends ActionController
 
     public function commandsAction()
     {
-         print_r($this->api()->getCheckCommandObjects());
-         exit;
+        $db = $this->db();
+        echo '<pre>';
+        foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
+            if (! $object::exists($object->object_name, $db)) {
+                // var_dump($object->store());
+                echo $object;
+            }
+        }
+        echo '</pre>';
+        exit;
     }
 
     public function zonesAction()
@@ -63,7 +71,7 @@ class InspectController extends ActionController
         echo '<pre>';
         foreach ($this->api()->setDb($db)->getZoneObjects() as $zone) {
             if (! $zone::exists($zone->object_name, $db)) {
-                //var_dump($zone->store());
+                // var_dump($zone->store());
                 echo $zone;
             }
         }
