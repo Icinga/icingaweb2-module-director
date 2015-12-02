@@ -54,6 +54,12 @@ abstract class ObjectController extends ActionController
 
     public function indexAction()
     {
+        if ($this->wantsJson()) {
+            header('Content: application/json');
+            echo $this->object->toJson($this->params->shift('resolved'));
+            exit;
+        }
+
         return $this->editAction();
     }
 
@@ -210,5 +216,10 @@ abstract class ObjectController extends ActionController
         }
 
         return $this->object;
+    }
+
+    protected function wantsJson()
+    {
+        return $this->params->shift('json');
     }
 }
