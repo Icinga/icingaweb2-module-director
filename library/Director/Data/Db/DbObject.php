@@ -636,7 +636,7 @@ abstract class DbObject
 
         try {
             if ($this->hasBeenLoadedFromDb()) {
-                if ($this->updateDb()) {
+                if ($this->updateDb() !== false) {
                     $result = true;
                     $this->onUpdate();
                 } else {
