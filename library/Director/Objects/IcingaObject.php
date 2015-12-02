@@ -811,6 +811,33 @@ return '';
         return $class::loadAll($db, $query, $keyColumn);
     }
 
+    public function toJson($resolved = false)
+    {
+        $props = array();
+        foreach ($this->getProperties() as $k => $v) {
+            if ($v !== null) {
+                $props[$k] = $v;
+            }
+        }
+
+        if ($this->supportsGroups()) {
+            // TODO: resolve
+            $props['groups'] = $this->groups()->listGroupNames();
+        }
+        if ($this->supportsCustomVars()) {
+            if ($resolved) {
+                $props['vars'] = $this->getVars();
+            } else {
+                $props['vars'] = $this->getResolvedVars();
+            }
+        }
+        if ($this->supportsImports()) {
+            $props['imports'] = $this->imports()->listImportNames();
+        }
+
+        return json_encode($props);
+    }
+
     public function __toString()
     {
         try {
