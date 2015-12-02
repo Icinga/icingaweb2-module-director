@@ -311,6 +311,9 @@ throw $e;
 
         foreach ($objects as $object) {
             if ($object->isExternal()) {
+                if ($type === 'zone') {
+                    $this->zoneMap[$object->id] = $object->object_name;
+                }
                 continue;
             } elseif ($object->isTemplate()) {
                 $filename = strtolower($type) . '_templates';
