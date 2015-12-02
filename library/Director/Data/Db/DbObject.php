@@ -283,7 +283,7 @@ abstract class DbObject
             return $this;
         }
 
-        if ($key === $this->getAutoincKeyName()) {
+        if ($key === $this->getAutoincKeyName()  && $this->hasBeenLoadedFromDb()) {
             throw new IE('Changing autoincremental key is not allowed');
         }
 
