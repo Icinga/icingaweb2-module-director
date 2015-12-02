@@ -301,7 +301,6 @@ class Sync
             if ($object->hasBeenModified()) {
                 $object->store($db);
             }
-
         }
 
         $dba->commit();
