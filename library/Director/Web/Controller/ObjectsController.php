@@ -62,6 +62,7 @@ abstract class ObjectsController extends ActionController
     {
         $type = $this->getType();
         $ltype = strtolower($type);
+        $this->assertPermission('director/' . $type . 's/read');
         $dummy = $this->dummyObject();
 
         if (! in_array($type, $this->globalTypes)) {
