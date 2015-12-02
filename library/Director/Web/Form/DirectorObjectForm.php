@@ -113,11 +113,32 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->addElementsToGroup(
             $elements,
             'custom_fields',
-            $this->translate('Custom fields')
+            50,
+            $this->translate('Custom properties')
         );
     }
 
-    protected function addElementsToGroup($elements, $group, $legend = null)
+    protected function addToCheckExecutionDisplayGroup($elements)
+    {
+        return $this->addElementsToGroup(
+            $elements,
+            'check_execution',
+            60,
+            $this->translate('Check execution')
+        );
+    }
+
+    protected function addToCommandFieldsDisplayGroup($elements)
+    {
+        return $this->addElementsToGroup(
+            $elements,
+            'command_fields',
+            55,
+            $this->translate('Command-specific custom vars')
+        );
+    }
+
+    protected function addElementsToGroup($elements, $group, $order, $legend = null)
     {
         if (! is_array($elements)) {
             $elements = array($elements);
@@ -134,7 +155,7 @@ abstract class DirectorObjectForm extends QuickForm
                     'FormElements',
                     'Fieldset',
                 ),
-                'order' => 50,
+                'order'  => $order,
                 'legend' => $legend ?: $group,
             ));
             $this->displayGroups[$group] = $this->getDisplayGroup($group);
@@ -206,6 +227,13 @@ abstract class DirectorObjectForm extends QuickForm
         $fields   = $object->getResolvedFields();
         $inherits = $object->getInheritedVars();
         $origins  = $object->getOriginsVars();
+        if ($object->hasCheckCommand()) {
+            $checkCommand = $object->getCheckCommand();
+            $checkFields = $checkCommand->getResolvedFields();
+            $checkVars   = $checkCommand->getResolvedVars();
+        } else {
+            $checkFields = (object) array();
+        }
 
         if ($this->hasBeenSent()) {
             $vars = array();
@@ -221,6 +249,10 @@ abstract class DirectorObjectForm extends QuickForm
                 if (substr($key, 0, 4) === 'var_') {
                     $mykey = substr($key, 4);
                     if (property_exists($fields, $mykey) && $fields->$mykey->format === 'json') {
+                        $value = json_decode($value);
+                    }
+
+                    if (property_exists($checkFields, $mykey) && $checkFields->$mykey->format === 'json') {
                         $value = json_decode($value);
                     }
 
@@ -280,10 +312,38 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addField($field, $value, $inheritedValue, $inheritFrom);
         }
 
+
+
+        foreach ($checkFields as $field) {
+            $varname = $field->varname;
+            if (property_exists($vars, $varname)) {
+                $value = $vars->$varname;
+            } else {
+                $value = null;
+            }
+            if (property_exists($checkVars, $varname)) {
+                $inheritedValue = $checkVars->$varname;
+                $inheritFrom = $this->translate('check command');
+            } else {
+                $inheritedValue = null;
+                $inheritFrom = false;
+            }
+            $this->addCommandField($field, $value, $inheritedValue, $inheritFrom);
+            if ($inheritedValue !== null) {
+                $this->getElement('var_' . $field->varname)->setRequired(false);
+            }
+        }
+
+
+
+
         // Additional vars
         foreach ($vars as $key => $value) {
             // Did we already create a field for this var? Then skip it:
             if (array_key_exists($key, $fields)) {
+                continue;
+            }
+            if (array_key_exists($key, $checkFields)) {
                 continue;
             }
 
@@ -368,6 +428,37 @@ abstract class DirectorObjectForm extends QuickForm
         $this->addElement($el);
         $this->setElementValue($name, $value, $inherited, $inheritedFrom);
         $this->addToFieldsDisplayGroup($el);
+
+        return $el;
+    }
+
+    protected function addCommandField($field, $value = null, $inherited = null, $inheritedFrom = null)
+    {
+        $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
+        $name = 'var_' . $datafield->varname;
+        $className = $datafield->datatype;
+
+        if (! class_exists($className)) {
+            $this->addElement('text', $name, array('disabled' => 'disabled'));
+            $el = $this->getElement($name);
+            $el->addError(sprintf('Form element could not be created, %s is missing', $className));
+            return $el;
+        }
+
+        $datatype = new $className;
+        $datatype->setSettings($datafield->getSettings());
+        $el = $datatype->getFormElement($name, $this);
+
+        $el->setLabel($datafield->caption);
+        $el->setDescription($datafield->description);
+
+        if ($field->is_required === 'y' && ! $this->isTemplate() && $inherited === null) {
+            $el->setRequired(true);
+        }
+
+        $this->addElement($el);
+        $this->setElementValue($name, $value, $inherited, $inheritedFrom);
+        $this->addToCommandFieldsDisplayGroup($el);
 
         return $el;
     }
@@ -669,13 +760,19 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckExecutionElements()
+    protected function addCheckCommandElements()
     {
         $this->addElement('select', 'check_command_id', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
-            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands())
+            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands()),
+            'class'        => 'autosubmit', // This influences fields
         ));
+        $this->addToCheckExecutionDisplayGroup('check_command_id');
+    }
+
+    protected function addCheckExecutionElements()
+    {
 
         $this->optionalBoolean(
             'enable_active_checks', 
@@ -714,7 +811,6 @@ abstract class DirectorObjectForm extends QuickForm
         );
 
         $elements = array(
-            'check_command_id',
             'enable_active_checks',
             'enable_passive_checks',
             'enable_notifications',
@@ -722,15 +818,7 @@ abstract class DirectorObjectForm extends QuickForm
             'enable_perfdata',
             'volatile'
         );
-
-        $this->addDisplayGroup($elements, 'check_execution', array(
-            'decorators' => array(
-                'FormElements',
-                'Fieldset',
-            ),
-            'order' => 60,
-            'legend' => $this->translate('Check execution')
-        ));
+        $this->addToCheckExecutionDisplayGroup($elements);
 
         return $this;
     }

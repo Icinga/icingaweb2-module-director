@@ -56,6 +56,7 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         if ($this->isTemplate()) {
+            $this->addCheckCommandElements();
             $this->addCheckExecutionElements();
         } else {
             $this->getElement('imports')->setRequired();
