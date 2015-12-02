@@ -148,7 +148,7 @@ CREATE TABLE icinga_zone (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   parent_zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
-  object_type ENUM('object', 'template') NOT NULL,
+  object_type ENUM('object', 'template', 'external_object') NOT NULL,
   is_global ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
