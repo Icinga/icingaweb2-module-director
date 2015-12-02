@@ -100,7 +100,6 @@ class SyncruleController extends ActionController
 
     public function addpropertyAction()
     {
-        $this->view->stayHere = true;
         $edit = false;
 
         if ($id = $this->params->get('id')) {
