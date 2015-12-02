@@ -10,6 +10,11 @@ class IcingaCommandArgument extends IcingaObject
 
     protected $table = 'icinga_command_argument';
 
+    protected $booleans = array(
+        'skip_key'   => 'skip_key',
+        'repeat_key' => 'repeat_key'
+    );
+
     protected $defaultProperties = array(
         'id'              => null,
         'command_id'      => null,
@@ -48,11 +53,35 @@ class IcingaCommandArgument extends IcingaObject
                 case 'string':
                     $data['value'] = c::renderString($this->argument_value);
                     break;
+                case 'json':
+                    if (is_object($this->argument_value)) {
+                        $data['value'] = c::renderDictionary($this->argument_value);
+                    } elseif (is_array($this->argument_value)) {
+                        $data['value'] = c::renderArray($this->argument_value);
+                    } else {
+                        die('Unhandled');
+                    }
+                    break;
+                case 'expression':
+                    $data['value'] = c::renderExpression($this->argument_value);
+                    break;
             }
         }
 
         if ($this->sort_order) {
             $data['order'] = $this->sort_order;
+        }
+
+        if ($this->set_if) {
+            $data['set_if'] = c::renderString($this->set_if);
+        }
+
+        if ((int) $this->sort_order !== 0) {
+            $data['order'] = $this->sort_order;
+        }
+
+        if ($this->description) {
+            $data['description'] = c::renderString($this->description);
         }
 
         return c::renderDictionary($data);
