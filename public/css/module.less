@@ -364,6 +364,42 @@ table.syncstate {
     }
 }
 
+table.check-commands {
+    tr td:first-child {
+        padding-left: 2em;
+        &::before {
+            font-family: 'ifont';
+            // icon-wrench:
+            content: '\e83d';
+            float: left; 
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.icinga-object-external td:first-child::before {
+        color: @gray;
+        // icon-pin
+        content: '\e879';
+    }   
+    
+    tr.icinga-object td:first-child::before {
+        color: @text-color;
+        // icon-thumbs-up
+        // content: '\e867';
+        // icon-ok
+        content: '\e803';
+    }
+
+    tr.icinga-template td:first-child::before {
+        color: @gray-light;
+        // icon-paste
+        content: '\e817';
+    }
+
+}
+
 /* Temp for deployment state */
 table.simple {
     td.ok {
