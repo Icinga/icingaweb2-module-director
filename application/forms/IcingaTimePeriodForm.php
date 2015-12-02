@@ -10,13 +10,13 @@ class IcingaTimePeriodForm extends DirectorObjectForm
     {
         $isTemplate = isset($_POST['object_type']) && $_POST['object_type'] === 'template';
         $this->addElement('select', 'object_type', array(
-            'label' => $this->translate('Object type'),
+            'label'       => $this->translate('Object type'),
             'description' => $this->translate('Whether this should be a template'),
-            'multiOptions' => array(
-                null => '- please choose -',
-                'object' => 'Timeperiod object',
-                'template' => 'Timeperiod template',
-            )
+            'class'       => 'autosubmit',
+            'multiOptions' => $this->optionalEnum(array(
+                'object'   => $this->translate('Timeperiod object'),
+                'template' => $this->translate('Timeperiod template'),
+            ))
         ));
 
         if ($isTemplate) {
@@ -43,7 +43,6 @@ class IcingaTimePeriodForm extends DirectorObjectForm
             'description' => $this->translate('the update method'),
         ));
 
-        $this->addZoneElement();
         $this->addImportsElement();
     }
 }

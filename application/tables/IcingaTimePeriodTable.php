@@ -16,7 +16,6 @@ class IcingaTimePeriodTable extends QuickTable
             'id'            => 't.id',
             'timeperiod'    => 't.object_name',
             'display_name'  => 't.display_name',
-            'zone'          => 'z.object_name',
         );
     }
 
@@ -31,7 +30,6 @@ class IcingaTimePeriodTable extends QuickTable
         return array(
             'timeperiod' => $view->translate('Timeperiod'),
             'display_name'  => $view->translate('Display Name'),
-            'zone'     => $view->translate('Zone'),
         );
     }
 
@@ -40,10 +38,6 @@ class IcingaTimePeriodTable extends QuickTable
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('t' => 'icinga_timeperiod'),
-            array()
-        )->joinLeft(
-            array('z' => 'icinga_zone'),
-            't.zone_id = z.id',
             array()
         );
 
