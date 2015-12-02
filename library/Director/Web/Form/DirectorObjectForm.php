@@ -742,7 +742,7 @@ abstract class DirectorObjectForm extends QuickForm
         $this->addElement('select', 'zone_id', array(
             'label' => $this->translate('Cluster Zone'),
             'description'  => $this->translate('Icinga cluster zone'),
-            'multiOptions' => $this->optionalEnum($this->db->enumZones())
+            'multiOptions' => $this->optionalEnum($this->db->enumNonglobalZones())
         ));
 
         return $this;

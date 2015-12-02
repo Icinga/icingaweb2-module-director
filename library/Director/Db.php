@@ -334,6 +334,12 @@ class Db extends DbConnection
         return $this->enumIcingaObjects('zone');
     }
 
+    public function enumNonglobalZones()
+    {
+        $filters = array('is_global = ?' => 'n');
+        return $this->enumIcingaObjects('zone', $filters);
+    }
+
     public function enumZoneTemplates()
     {
         return $this->enumIcingaTemplates('zone');

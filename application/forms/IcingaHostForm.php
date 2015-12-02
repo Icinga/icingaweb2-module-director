@@ -30,6 +30,7 @@ class IcingaHostForm extends DirectorObjectForm
             'description' => $this->translate('Usually your hosts main IPv6 address')
         ));
 
+        $this->addZoneElement();
         $this->addImportsElement();
 
         /*
@@ -44,6 +45,7 @@ class IcingaHostForm extends DirectorObjectForm
             'display_name',
             'address',
             'address6',
+            'zone_id',
             'imports',
         );
         $this->addDisplayGroup($elements, 'object_definition', array(
@@ -61,8 +63,7 @@ class IcingaHostForm extends DirectorObjectForm
         } else {
             $this->getElement('imports')->setRequired();
         }
-        $this->setButtons();
 
-        // $this->addZoneElement();
+        $this->setButtons();
     }
 }
