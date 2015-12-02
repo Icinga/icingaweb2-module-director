@@ -692,6 +692,28 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->getSentValue($name) === $this->getElement($name)->getLabel();
     }
 
+    public function getSentOrObjectValue($name, $default = null)
+    {
+        if ($this->hasObject()) {
+            $value = $this->getSentValue($name);
+            if ($value === null) {
+                $object = $this->getObject();
+
+                if ($object->hasProperty($name)) {
+                    return $object->$name;
+                }
+
+                return $default;
+            } else {
+
+                return $value;
+            }
+
+        } else {
+            return $this->getSentValue($name, $default);
+        }
+    }
+
     public function loadObject($id)
     {
         $class = $this->getObjectClassname();
