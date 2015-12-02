@@ -684,7 +684,7 @@ abstract class DbObject
                 $this->table,
                 $this->getLogId(),
                 $e->getMessage(),
-                print_r($this->getProperties(), 1) // TODO: Remove properties
+                var_export($this->getProperties(), 1) // TODO: Remove properties
             );
         }
         $this->modifiedProperties = array();
@@ -905,6 +905,7 @@ abstract class DbObject
         } else {
             $select = $query;
         }
+
         $rows = $db->fetchAll($select);
 
         foreach ($rows as $row) {
