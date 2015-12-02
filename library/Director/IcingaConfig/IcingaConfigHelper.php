@@ -128,6 +128,11 @@ class IcingaConfigHelper
 
     }
 
+    public static function renderExpression($string)
+    {
+        return "{{\n    " . $string . "\n}}";
+    }
+
     public static function alreadyRendered($string)
     {
         return new IcingaConfigRendered($string);
