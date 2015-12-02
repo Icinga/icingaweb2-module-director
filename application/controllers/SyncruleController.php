@@ -71,6 +71,7 @@ class SyncruleController extends ActionController
 
     public function propertyAction()
     {
+        $this->view->stayHere = true;
         $id = $this->params->get('rule_id');
 
         $this->view->addLink = $this->view->qlink(
@@ -100,6 +101,7 @@ class SyncruleController extends ActionController
 
     public function addpropertyAction()
     {
+        $this->view->stayHere = true;
         $edit = false;
 
         if ($id = $this->params->get('id')) {
