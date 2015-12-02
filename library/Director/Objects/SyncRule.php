@@ -49,9 +49,9 @@ class SyncRule extends DbObject
         return $db->fetchOne(
             $db->select()
                 ->from(
-                    'sync_property',
-                    array('priority' => '(CASE WHEN MAX(priority) IS NULL THEN 1 ELSE MAX(priority) + 1 END)')
-                )->where('rule_id = ?', $this->id)
+                    array('p' => 'sync_property'),
+                    array('priority' => '(CASE WHEN MAX(p.priority) IS NULL THEN 1 ELSE MAX(p.priority) + 1 END)')
+                )->where('p.rule_id = ?', $this->id)
         );
     }
 
