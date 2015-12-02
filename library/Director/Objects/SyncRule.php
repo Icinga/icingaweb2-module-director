@@ -50,7 +50,7 @@ class SyncRule extends DbObject
             $db->select()
                 ->from(
                     'sync_property',
-                    '(CASE WHEN MAX(priority) IS NULL THEN 1 ELSE MAX(priority) + 1 END)'
+                    array('priority' => '(CASE WHEN MAX(priority) IS NULL THEN 1 ELSE MAX(priority) + 1 END)')
                 )->where('rule_id = ?', $this->id)
         );
     }
