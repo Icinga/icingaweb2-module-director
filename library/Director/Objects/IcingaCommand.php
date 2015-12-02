@@ -28,10 +28,31 @@ class IcingaCommand extends IcingaObject
 
     protected $supportsArguments = true;
 
+    protected static $pluginDir;
+
     protected function renderMethods_execute()
     {
         // Execute is a reserved word in SQL, column name was prefixed
         return c::renderKeyValue('execute', $this->methods_execute);
+    }
+
+    public function mungeCommand($value)
+    {
+        if (is_array($value)) {
+            $value = implode(' ', $value);
+        } elseif (is_object($value)) {
+            // {  type => Function } -> really??
+            return null;
+            return $value;
+        }
+
+        if (self::$pluginDir !== null) {
+            if (($pos = strpos($value, self::$pluginDir)) === 0) {
+                $value = substr($value, strlen(self::$pluginDir) + 1);
+            }
+        }
+
+        return $value;
     }
 
     protected function renderCommand()
@@ -58,5 +79,10 @@ class IcingaCommand extends IcingaObject
             $value = ((int) $value / 60) . 'm';
         }
         return c::renderKeyValue('timeout', $value);
+    }
+
+    public static function setPluginDir($pluginDir)
+    {
+        self::$pluginDir = $pluginDir;
     }
 }
