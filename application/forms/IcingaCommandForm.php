@@ -35,7 +35,7 @@ class IcingaCommandForm extends DirectorObjectForm
 
         $this->addElement('text', 'command', array(
             'label'       => $this->translate('Command'),
-            'required'    => true,
+            'required'    => ! $this->isTemplate(),
             'description' => $this->translate('The command Icinga should run. Absolute paths are accepted as provided, relative paths are prefixed with "PluginDir + ", similar Constant prefixes are allowed. Spaces will lead to separation of command path and standalone arguments. Please note that this means that we do not support spaces in plugin names and paths right now.')
         ));
 
