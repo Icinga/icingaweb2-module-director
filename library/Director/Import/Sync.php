@@ -72,32 +72,33 @@ class Sync
         return $this->getDeepValue($val->$key, $keys);
     }
 
+    protected function getSpecificValue($row, $var)
+    {
+        if (strpos($var, '.') === false) {
+            if (! property_exists($row, $var)) {
+                return null;
+            }
+
+            return $row->$var;
+        } else {
+            $parts = explode('.', $var);
+            $main = array_shift($parts);
+            if (! is_object($row->$main)) {
+                die('Data is not nested, cannot access ...');
+            }
+
+            return $this->getDeepValue($row->$main, $parts);
+        }
+    }
+
     protected function fillVariables($string, $row)
     {
         if (preg_match('/^\${([A-Za-z0-9\._-]+)}$/', $string, $m)) {
-            $var = $m[1];
-            if (strpos($var, '.') === false) {
-                if (! property_exists($row, $var)) {
-                    return null;
-                }
-
-                $val = $row->$var;
-            } else {
-                $parts = explode('.', $var);
-                $main = array_shift($parts);
-                if (! is_object($row->$main)) {
-                    die('Data is not nested, cannot access ...');
-                }
-
-                return $this->getDeepValue($row->$main, $parts);
-            }
-
-            return $val;
+            return $this->getSpecificValue($row, $m[1]);
         }
 
         $func = function ($match) use ($row) {
-            // TODO allow to access deep value also here
-            return $row->{$match[1]};
+            return $this->getSpecificValue($row, $match[1]);
         };
 
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
