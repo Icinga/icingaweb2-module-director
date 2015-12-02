@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Hook;
 
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Db;
+use Icinga\Exception\ConfigurationError;
 
 abstract class ImportSourceHook
 {
@@ -43,6 +44,13 @@ abstract class ImportSourceHook
                 array('setting_name', 'setting_value')
             )->where('source_id = ?', $source->id)
         );
+
+        if (! class_exists($source->provider_class)) {
+            throw new ConfigurationError(
+                'Cannot load import provider class %s',
+                $source->provider_class
+            );
+        }
 
         $obj = new $source->provider_class;
         $obj->setSettings($settings);
