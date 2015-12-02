@@ -7,6 +7,7 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use Exception;
 
@@ -30,6 +31,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $type;
 
+    /* key/value!! */
     protected $booleans = array();
 
     private $vars;
@@ -368,6 +370,35 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $vals;
+    }
+
+    public function matches(Filter $filter)
+    {
+        return $filter->matches($this->flattenProperties());
+    }
+
+    protected function flattenProperties()
+    {
+        $db = $this->getDb();
+        $obj = (object) array();
+        foreach ($this->getProperties() as $k => $v) {
+            $obj->$k = $v;
+        }
+
+        if ($this->supportsCustomVars()) {
+/*
+            foreach ($this->getVars() as $k => $v) {
+                $obj->{'vars.' . $k} = $v;
+            }
+*/
+        }
+
+        return $obj;
+    }
+
+    public function cloneFullyResolved()
+    {
+        // TODO
     }
 
     protected function assertCustomVarsSupport()
