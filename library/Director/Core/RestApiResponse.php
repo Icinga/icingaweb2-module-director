@@ -27,8 +27,18 @@ class RestApiResponse
 
     public function getResult($desiredKey, $filter = array())
     {
+        return $this->extractResult($this->results, $desiredKey, $filter);
+    }
+
+    public function getSingleResult()
+    {
+        return $this->results[0]->result;
+    }
+
+    protected function extractResult($results, $desiredKey, $filter = array())
+    {
         $response = array();
-        foreach ($this->results as $result) {
+        foreach ($results as $result) {
             foreach ($filter as $key => $val) {
                 if (! property_exists($result, $key)) {
                     continue;
