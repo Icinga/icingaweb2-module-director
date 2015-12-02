@@ -50,4 +50,13 @@ class IcingaCommand extends IcingaObject
         
         return c::renderKeyValue('command', c::renderArray($parts));
     }
+
+    protected function renderTimeout()
+    {
+        $value = $this->timeout;
+        if ($value % 60 === 0) {
+            $value = ((int) $value / 60) . 'm';
+        }
+        return c::renderKeyValue('timeout', $value);
+    }
 }
