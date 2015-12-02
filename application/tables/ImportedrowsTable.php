@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Data\DataArray\ArrayDatasource;
 
 class ImportedrowsTable extends QuickTable
 {
@@ -22,37 +23,52 @@ class ImportedrowsTable extends QuickTable
 
     public function getTitles()
     {
-        $view = $this->view();
         $cols = $this->getColumns();
-        return array(
-            'object_name' => $view->translate('Object name'),
-        ) + array_combine($cols, $cols);
-    }
-
-    public function count()
-    {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()
-            ->from('imported_rowset_row', 'COUNT(*)')
-            ->where('rowset_checksum = ?', $this->checksum);
-
-        return $db->fetchOne($query);
+        // TODO: replace key column with object name!?
+        //       $view = $this->view();
+        //       'object_name' => $view->translate('Object name')
+        return array_combine($cols, $cols);
     }
 
     public function fetchData()
     {
-        $db = $this->connection()->getConnection();
-        $query = $this->getBaseQuery();
+        $query = $this->getBaseQuery()->columns($this->getColumns());
 
         if ($this->hasLimit() || $this->hasOffset()) {
             $query->limit($this->getLimit(), $this->getOffset());
         }
 
-        return $db->fetchAll($query);
+        // TODO: move to dedicated method in parent class
+        $filter = null;
+        $enforced = $this->enforcedFilters;
+        if ($this->filter && ! $this->filter->isEmpty()) {
+            $filter = $this->filter;
+        } elseif (! empty($enforced)) {
+            $filter = array_shift($enforced);
+        }
+        if ($filter) {
+            foreach ($enforced as $f) {
+                $filter->andFilter($f);
+            }
+            $query->where($this->renderFilter($filter));
+        }
+
+        return $query->fetchAll();
+    }
+
+    public function count()
+    {
+        return $this->getBaseQuery()->count();
     }
 
     public function getBaseQuery()
     {
+        return (new ArrayDatasource(
+            $this->connection()->fetchImportedRowsetRows(
+                $this->checksum,
+                null
+            )
+        ))->select()->order('object_name');
         return $this->connection()->createImportedRowsetRowsQuery(
             $this->checksum
         )->order('object_name');
