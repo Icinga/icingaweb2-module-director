@@ -49,7 +49,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             return null;
         }
 
-        return $this->groups[$this->idx[$this->position]];
+        return $this->arguments[$this->idx[$this->position]];
     }
 
     public function key()
@@ -76,20 +76,70 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return null;
     }
 
+    public function set($key, $value)
+    {
+//        var_dump(sprintf('Setting %s', var_export($value, 1)));
+        // type => 'Function'
+        // required => true <-- MISSING
+        $attrs = array(
+            'argument_name' => $key,
+        );
+
+        $map = array(
+            'skip_key'    => 'skip_key',
+            'repeat_key'  => 'repeat_key',
+            'order'       => 'sort_order',
+            'description' => 'description',
+            'set_if'      => 'set_if',
+        );
+
+        $argValue = null;
+        if (is_object($value)) {
+            foreach ($map as $apiKey => $dbKey) {
+                if (property_exists($value, $apiKey)) {
+                    $attrs[$dbKey] = $value->$apiKey;
+                }
+            }
+            if (property_exists($value, 'value')) {
+                $argValue = $value->value;
+            }
+            if (property_exists($value, 'type')) {
+                if ($value->type === 'Function') {
+                    $attrs['argument_value'] = '/* Unable to fetch function body through API */';
+                    $attrs['argument_format'] = 'expression';
+                }
+            }
+        } else {
+            $argValue = $value;
+        }
+
+        if (is_string($argValue)) {
+            $attrs['argument_value'] = $argValue;
+            $attrs['argument_format'] = 'string';
+        } elseif ($argValue !== null) {
+            $attrs['argument_value'] = $argValue;
+            $attrs['argument_format'] = 'json';
+        }
+
+        $this->add(IcingaCommandArgument::create($attrs));
+
+        return $this;
+    }
+
     /**
      * Magic isset check
      *
      * @return boolean
      */
-    public function __isset($group)
+    public function __isset($argument)
     {
-        return array_key_exists($group, $this->groups);
+        return array_key_exists($argument, $this->arguments);
     }
 
     public function remove($argument)
     {
-        if (array_key_exists($group, $this->groups)) {
-            unset($this->groups[$group]);
+        if (array_key_exists($argument, $this->arguments)) {
+            unset($this->arguments[$argument]);
         }
 
         $this->modified = true;
@@ -98,8 +148,8 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     protected function refreshIndex()
     {
-        ksort($this->groups);
-        $this->idx = array_keys($this->groups);
+        ksort($this->arguments);
+        $this->idx = array_keys($this->arguments);
     }
 
     public function add(IcingaCommandArgument $argument)
@@ -156,6 +206,18 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     {
         $arguments = new static($object);
         return $arguments->loadFromDb();
+    }
+
+    public function store()
+    {
+        $db = $this->object->getConnection();
+
+        foreach ($this->arguments as $argument) {
+            $argument->command_id = $this->object->id;
+            $argument->store($db);
+        }
+
+        return $this;
     }
 
     public function toConfigString()
