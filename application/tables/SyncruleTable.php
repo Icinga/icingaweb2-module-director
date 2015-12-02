@@ -9,6 +9,8 @@ use Exception;
 
 class SyncruleTable extends QuickTable
 {
+    protected $revalidate = false;
+
     public function getColumns()
     {
         return array(
@@ -43,6 +45,10 @@ class SyncruleTable extends QuickTable
 
     protected function getRowClasses($row)
     {
+        if (! $this->revalidate) {
+            return array();
+        }
+
         try {
             // $mod = Sync::hasModifications(
             $mod = Sync::getExpectedModifications(
