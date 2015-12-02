@@ -110,6 +110,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->imports()->set($value);
             return $this;
 
+        } elseif ($key === 'arguments') {
+            if (is_object($value)) {
+                foreach ($value as $arg => $val) {
+                    $this->arguments()->set($arg, $val);
+                }
+            }
+            return $this;
+
         } elseif ($key === 'vars') {
             $value = (array) $value;
             $unset = array();
