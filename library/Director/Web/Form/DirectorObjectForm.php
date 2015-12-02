@@ -259,11 +259,12 @@ abstract class DirectorObjectForm extends QuickForm
                     $vars[$mykey] = $value;
                     $handled[$key] = true;
                 }
-
+/*
                 if (substr($key, 0, 8) === '_newvar_') {
                     $newvar[substr($key, 8)] = $value;
                     $handled[$key] = true;
                 }
+*/
             }
 
             foreach ($vars as $k => $v) {
