@@ -15,7 +15,7 @@ class ImportrunController extends ActionController
                 $this->db()->getImportrunRowsetChecksum($this->params->get('id'))
             );
         $this->view->table = $this->applyPaginationLimits($table);
-        $this->view->table->enforceFilter('id', $this->params->shift('id'));
+        //$this->view->table->enforceFilter('id', $this->params->shift('id'));
         // $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
         $this->render('list/table', null, true);
     }
