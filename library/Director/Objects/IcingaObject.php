@@ -66,6 +66,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return __NAMESPACE__ . '\\' . $this->relations[$property];
     }
 
+    protected function getRelatedObjectName($property, $id)
+    {
+        $class = $this->getRelationClass($property);
+        $object = $class::loadWithAutoIncId($id, $this->connection);
+        return $object->object_name;
+    }
+
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
@@ -679,6 +686,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                             c::renderBoolean($value)
                         );
                     }
+                } elseif (
+                    substr($key, -3) === '_id'
+                     && $this->hasRelation($relKey = substr($key, 0, -3))
+                ) {
+                    $out .= $this->renderRelationProperty($relKey, $value);
                 } else {
                     $out .= c::renderKeyValue($key, c::renderString($value));
                 }
@@ -747,6 +759,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    protected function renderRelationProperty($propertyName, $id)
+    {
+        return c::renderKeyValue(
+            $propertyName,
+            c::renderString($this->getRelatedObjectName($propertyName, $id))
+        );
+    }
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
         return c::renderKeyValue(
