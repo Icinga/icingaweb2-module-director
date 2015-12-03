@@ -25,6 +25,22 @@ class ImportSourceForm extends DirectorObjectForm
         $this->setButtons();
     }
 
+    public function getSentOrObjectSetting($name, $default = null)
+    {
+        if ($this->hasObject()) {
+            $value = $this->getSentValue($name);
+            if ($value === null) {
+                $object = $this->getObject();
+
+                return $object->getSetting($name, $default);
+            } else {
+                return $value;
+            }
+        } else {
+            return $this->getSentValue($name, $default);
+        }
+    }
+
     protected function addSettings($class = null)
     {
         if (! ($class = $this->getProviderClass())) {
