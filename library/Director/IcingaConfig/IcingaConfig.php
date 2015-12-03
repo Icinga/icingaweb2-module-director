@@ -333,8 +333,6 @@ throw $e;
 
             if (in_array($type, array('command', 'zone'))) {
                 $filename = 'zones.d/' . $ourGlobalZone . '/' . $filename;
-            } elseif ($type === 'endpoint') {
-                $filename = 'conf.d/endpoints';
             } else {
                 $filename = 'zones.d/' . $zone . '/' . $filename;
             }
