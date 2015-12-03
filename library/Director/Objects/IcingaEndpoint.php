@@ -21,4 +21,9 @@ class IcingaEndpoint extends IcingaObject
     protected $relations = array(
         'zone'             => 'IcingaZone',
     );
+
+    protected function renderLog_duration()
+    {
+        return c::renderKeyValue('log_duration', $this->log_duration);
+    }
 }
