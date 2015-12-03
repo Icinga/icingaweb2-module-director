@@ -17,4 +17,8 @@ class IcingaEndpoint extends IcingaObject
         'log_duration'          => null,
         'object_type'           => null,
     );
+
+    protected $relations = array(
+        'zone'             => 'IcingaZone',
+    );
 }
