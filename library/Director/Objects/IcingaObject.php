@@ -121,6 +121,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
+        if ($this->supportsArguments() && $this->arguments !== null && $this->arguments()->hasBeenModified()) {
+            return true;
+        }
+
         return parent::hasBeenModified();
     }
 
