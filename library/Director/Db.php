@@ -244,7 +244,7 @@ class Db extends DbConnection
         $result = array();
         $empty = (object) array();
         foreach ($columns as $k => $v) {
-            $empty->$k = $v;
+            $empty->$k = null;
         }
 
         foreach ($db->fetchAll($query) as $row) {
