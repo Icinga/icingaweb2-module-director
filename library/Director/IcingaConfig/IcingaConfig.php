@@ -7,6 +7,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Web\Hook;
 use Exception;
 
@@ -239,6 +240,9 @@ throw $e;
           . "\nobject Zone \"director-global\" {\n    global = true\n}\n"
 
         );
+
+        // TODO: combine this with real fetches, this is a test right now
+        IcingaEndpoint::prefetchAll($this->connection);
 
         $this
             ->createFileFromDb('zone')

@@ -80,6 +80,11 @@ abstract class DbObject
     protected static $prefetched = array();
 
     /**
+     * object_name => id map for prefetched objects
+     */
+    protected static $prefetchedNames = array();
+
+    /**
      * Constructor is not accessible and should not be overridden
      */
     protected function __construct()
@@ -111,7 +116,6 @@ abstract class DbObject
     {
         return true;
     }
-
 
     /************************************************************************\
      * Nachfolgend finden sich ein paar Hooks, die bei Bedarf überschrieben *
@@ -438,7 +442,7 @@ abstract class DbObject
 
     public function getKeyParams()
     {
-        $params = array();;
+        $params = array();
         $key = $this->getKeyName();
         if (is_array($key)) {
             foreach ($key as $k) {
@@ -854,7 +858,7 @@ abstract class DbObject
     protected static function getPrefetched($key)
     {
         if (static::hasPrefetched($key)) {
-            return static::$prefetched[get_called_class()][$id];
+            return self::$prefetched[get_called_class()][$key];
         } else {
             return false;
         }
@@ -862,8 +866,9 @@ abstract class DbObject
 
     protected static function hasPrefetched($key)
     {
-        if (array_key_exists(get_called_class(), self::$prefetched)) {
-            return array_key_exists($id, self::$prefetched[get_called_class()]);
+        $class = get_called_class();
+        if (array_key_exists($class, self::$prefetched)) {
+            return array_key_exists($key, self::$prefetched[$class]);
         } else {
             return false;
         }
@@ -871,7 +876,9 @@ abstract class DbObject
 
     public static function loadWithAutoIncId($id, DbConnection $connection)
     {
-        // TODO: Index for prefetch?
+        if ($prefetched = static::getPrefetched($id)) {
+            return $prefetched;
+        }
 
         $class = get_called_class();
         $obj = new $class();
@@ -921,9 +928,15 @@ abstract class DbObject
         return $objects;
     }
 
-    public static function prefetchAll(DbConnection $connection)
+    public static function prefetchAll(DbConnection $connection, $force = false)
     {
-        return self::$prefetched[get_called_class()] = static::fetchAll($connection);
+        $class = get_called_class();
+
+        if ($force || ! array_key_exists($class, self::$prefetched)) {
+            self::$prefetched[$class] = static::loadAll($connection);
+        }
+
+        return self::$prefetched[$class];
     }
 
     public static function exists($id, DbConnection $connection)
