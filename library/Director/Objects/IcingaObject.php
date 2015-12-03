@@ -865,7 +865,7 @@ return '';
         return $class::loadAll($db, $query, $keyColumn);
     }
 
-    public function toJson($resolved = false)
+    public function toPlainObject($resolved = false)
     {
         $props = array();
         foreach ($this->getProperties() as $k => $v) {
@@ -889,7 +889,12 @@ return '';
             $props['imports'] = $this->imports()->listImportNames();
         }
 
-        return json_encode($props);
+        return (object) $props;
+    }
+
+    public function toJson($resolved = false)
+    {
+        return json_encode($this->toPlainObject($resolved));
     }
 
     public function __toString()
