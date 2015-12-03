@@ -223,15 +223,16 @@ class SyncPropertyForm extends DirectorObjectForm
 
     protected function listDestinationFields()
     {
-        $fields = array();
+        $props = array();
+        $special = array();
         $dummy = $this->dummyObject();
 
         if ($dummy instanceof IcingaObject) {
             if ($dummy->supportsCustomvars()) {
-                $fields['vars.*']  = $this->translate('Custom variable (vars.)');
+                $special['vars.*']  = $this->translate('Custom variable (vars.)');
             }
             if ($dummy->supportsImports()) {
-                $fields['import']  = $this->translate('Inheritance (import)');
+                $special['import']  = $this->translate('Inheritance (import)');
             }
         }
 
@@ -241,10 +242,15 @@ class SyncPropertyForm extends DirectorObjectForm
             // TODO: allow those fields, but munge them (store ids)
             //if (preg_match('~_id$~', $prop)) continue;
 
-            $fields[$prop] = $prop;
+            $props[$prop] = $prop;
         }
 
-        return $fields;
+        ksort($props);
+
+        return array(
+            $this->translate('Special properties') => $special,
+            $this->translate('Object properties') => $props
+        );
     }
 
     protected function getImportSource()
