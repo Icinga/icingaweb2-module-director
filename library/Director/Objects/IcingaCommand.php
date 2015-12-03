@@ -74,7 +74,7 @@ class IcingaCommand extends IcingaObject
 
     protected function renderTimeout()
     {
-        return $this->renderPropertyAsSecond('timeout');
+        return $this->renderPropertyAsSeconds('timeout');
     }
 
     public static function setPluginDir($pluginDir)
