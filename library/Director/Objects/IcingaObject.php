@@ -34,6 +34,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /* key/value!! */
     protected $booleans = array();
 
+    // Property suffixed with _id must exist
+    protected $relations = array(
+        // property => PropertyClass
+    );
+
     private $vars;
 
     private $groups;
@@ -49,6 +54,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
+    }
+
+    public function hasRelation($property)
+    {
+        return array_key_exists($property, $this->relations);
+    }
+
+    protected function getRelationClass($property)
+    {
+        return __NAMESPACE__ . '\\' . $this->relations[$property];
     }
 
     public function supportsCustomVars()
@@ -147,6 +162,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     'Got invalid boolean: %s',
                     var_export($value, 1)
                 );
+            }
+        }
+
+        if ($this->hasRelation($key)) {
+            $class = $this->getRelationClass($key);
+            $object = $class::load($value, $this->connection);
+            if (in_array($object->object_type, array('object', 'external_object'))) {
+                return parent::set($key . '_id', $object->id);
             }
         }
 
