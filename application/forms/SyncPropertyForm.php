@@ -241,6 +241,12 @@ class SyncPropertyForm extends DirectorObjectForm
 
             // TODO: allow those fields, but munge them (store ids)
             //if (preg_match('~_id$~', $prop)) continue;
+            if (substr($prop, -3) === '_id') {
+                $prop = substr($prop, 0, -3);
+                if (! $dummy->hasRelation($prop)) {
+                    continue;
+                }
+            }
 
             $props[$prop] = $prop;
         }
