@@ -95,11 +95,6 @@ class IcingaHost extends IcingaObject
         return $this->getResolvedProperty('check_command_id') !== null;
     }
 
-    protected function renderCheck_command_id()
-    {
-        return $this->renderCommandProperty($this->check_command_id);
-    }
-
     protected function renderEnable_notifications()
     {
         return $this->renderBooleanProperty('enable_notifications');
