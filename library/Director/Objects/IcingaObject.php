@@ -166,6 +166,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->hasRelation($key)) {
+            if (! $value) {
+                return parent::set($key . '_id', null);
+            }
+
             $class = $this->getRelationClass($key);
             $object = $class::load($value, $this->connection);
             if (in_array($object->object_type, array('object', 'external_object'))) {
