@@ -52,6 +52,15 @@ class ImportSource extends DbObject
         return $this->settings;
     }
 
+    public function getSetting($name, $default = null)
+    {
+        if (array_key_exists($name, $this->settings)) {
+            return $this->settings[$name];
+        }
+
+        return $default;
+    }
+
     protected function onStore()
     {
         $old = $this->fetchSettingsFromDb();
