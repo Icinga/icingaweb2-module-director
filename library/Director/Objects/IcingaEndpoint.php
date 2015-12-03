@@ -24,6 +24,6 @@ class IcingaEndpoint extends IcingaObject
 
     protected function renderLog_duration()
     {
-        return c::renderKeyValue('log_duration', $this->log_duration);
+        return $this->renderPropertyAsSecond('log_duration');
     }
 }

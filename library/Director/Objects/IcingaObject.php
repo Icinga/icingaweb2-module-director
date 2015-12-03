@@ -705,6 +705,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return c::renderKeyValue($key, c::renderBoolean($this->$key));
     }
 
+    protected function renderPropertyAsSeconds($key)
+    {
+        $value = $this->$key;
+
+        if ($value % 60 === 0) {
+            $value = ((int) $value / 60) . 'm';
+        }
+
+        return c::renderKeyValue($key, $value);
+    }
+
     protected function renderSuffix()
     {
         return "}\n\n";

@@ -74,11 +74,7 @@ class IcingaCommand extends IcingaObject
 
     protected function renderTimeout()
     {
-        $value = $this->timeout;
-        if ($value % 60 === 0) {
-            $value = ((int) $value / 60) . 'm';
-        }
-        return c::renderKeyValue('timeout', $value);
+        return $this->renderPropertyAsSecond('timeout');
     }
 
     public static function setPluginDir($pluginDir)
