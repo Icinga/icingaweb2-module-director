@@ -707,10 +707,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderPropertyAsSeconds($key)
     {
-        $value = $this->$key;
+        $value = (int) $this->$key;
 
-        if ($value % 60 === 0) {
-            $value = ((int) $value / 60) . 'm';
+        if ($value > 0 && $value % 60 === 0) {
+            $value = (int) ($value / 60) . 'm';
         }
 
         return c::renderKeyValue($key, $value);
