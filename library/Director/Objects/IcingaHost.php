@@ -39,6 +39,14 @@ class IcingaHost extends IcingaObject
         'object_type'           => null,
     );
 
+    protected $relations = array(
+        'check_command'    => 'IcingaCommand',
+        'event_command'    => 'IcingaCommand',
+        'check_period'     => 'IcingaTimePeriod',
+        'command_endpoint' => 'IcingaEndpoint',
+        'zone'             => 'IcingaZone',
+    );
+
     protected $supportsCustomVars = true;
 
     protected $supportsGroups = true;
