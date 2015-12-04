@@ -51,6 +51,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $arguments;
 
+    private $shouldBeRemoved = false;
+
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
@@ -189,6 +191,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return parent::set($key, $value);
+    }
+
+    public function markForRemoval($remove = true)
+    {
+        $this->shouldBeRemoved = $remove;
+        return $this;
+    }
+
+    public function shouldBeRemoved()
+    {
+        return $this->shouldBeRemoved;
     }
 
     public function groups()

@@ -264,7 +264,7 @@ class Sync
                 }
 
                 if (! $found) {
-                    // TODO: temporarily disabled, "mark" them: $object->delete();
+                    $object->markForRemoval();
                 }
             }
 
@@ -298,6 +298,11 @@ class Sync
                 }
                 continue;
             }
+            if ($object->shouldBeRemoved()) {
+                $object->delete($db);
+                continue;
+            }
+
             if ($object->hasBeenModified()) {
                 $object->store($db);
             }
