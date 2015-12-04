@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
 
 class SyncRule extends DbObject
@@ -20,6 +21,8 @@ class SyncRule extends DbObject
 	    'purge_existing'	=> null,
 	    'filter_expression'	=> null,
     );
+
+    private $filter;
 
     public function listInvolvedSourceIds()
     {
@@ -53,6 +56,24 @@ class SyncRule extends DbObject
                     array('priority' => '(CASE WHEN MAX(p.priority) IS NULL THEN 1 ELSE MAX(p.priority) + 1 END)')
                 )->where('p.rule_id = ?', $this->id)
         );
+    }
+
+    public function matches($row)
+    {
+        if ($this->filter_expression === null) {
+            return true;
+        }
+
+        return $this->filter()->matches($row);
+    }
+
+    protected function filter()
+    {
+        if ($this->filter === null) {
+            $this->filter = Filter::fromQueryString($this->filter_expression);
+        }
+
+        return $this->filter;
     }
 
     public function fetchSyncProperties()

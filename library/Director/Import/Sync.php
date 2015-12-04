@@ -142,6 +142,9 @@ class Sync
                         json_encode($row)
                     );
                 }
+                if (! $rule->matches($row)) {
+                    continue;
+                }
                 $imported[$sourceId][$row->$key] = $row;
             }
         }
