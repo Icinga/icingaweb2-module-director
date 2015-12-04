@@ -21,6 +21,10 @@ class IcingaZone extends IcingaObject
         'is_global' => 'global'
     );
 
+    protected $relations = array(
+        'parent_zone_id' => 'IcingaZone',
+    );
+
     protected $supportsImports = true;
 
     protected function renderParent_zone_id()
