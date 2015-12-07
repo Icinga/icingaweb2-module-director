@@ -894,6 +894,11 @@ return '';
             $prefix = 'Director';
         }
 
+        if ($type === 'hostgroup') {
+            // TODO: Provide a more sophisticated solution
+            $type = 'hostGroup';
+        }
+
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
     }
 
