@@ -9,21 +9,42 @@ use Icinga\Exception\IcingaException;
 
 class Sync
 {
+    /**
+     * Constructor. No direct initialization allowed right now. Please use one
+     * of the available static factory methods
+     */
     protected function __construct()
     {
     }
 
+    /**
+     * Run the given sync rule
+     */
     public static function run(SyncRule $rule)
     {
         $sync = new static;
         return $sync->runWithRule($rule);
     }
 
+    /**
+     * Whether the given sync rule would apply modifications
+     *
+     * @param  SyncRule $rule SyncRule object
+     *
+     * @return boolean
+     */
     public static function hasModifications(SyncRule $rule)
     {
         return count(self::getExpectedModifications($rule)) > 0;
     }
 
+    /**
+     * Retrieve modifications a given SyncRule would apply
+     *
+     * @param  SyncRule $rule SyncRule object
+     *
+     * @return array  Array of IcingaObject elements
+     */
     public static function getExpectedModifications(SyncRule $rule)
     {
         $modified = array();
@@ -38,6 +59,13 @@ class Sync
         return $modified;
     }
 
+    /**
+     * Extract variable names in the form ${var_name} from a given string
+     *
+     * @param  string $string
+     *
+     * @return array  List of variable names (without ${})
+     */
     protected function extractVariableNames($string)
     {
         if (preg_match_all('/\${([A-Za-z0-9\._-]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
@@ -47,6 +75,13 @@ class Sync
         }
     }
 
+    /**
+     * Transform the given value to an array
+     *
+     * @param  array|string|null $value
+     *
+     * @return array
+     */
     protected function wantArray($value)
     {
         if (is_array($value)) {
@@ -58,6 +93,21 @@ class Sync
         }
     }
 
+    /**
+     * Recursively extract a value from a nested structure
+     *
+     * For a $val looking like
+     *
+     * { 'vars' => { 'disk' => { 'sda' => { 'size' => '256G' } } } }
+     *
+     * and a key vars.disk.sda given as [ 'vars', 'disk', 'sda' ] this would
+     * return { size => '255GB' }
+     *
+     * @param  string $val  The value to extract data from
+     * @param  object $keys A list of nested keys pointing to desired data
+     *
+     * @return mixed
+     */
     protected function getDeepValue($val, $keys)
     {
         $key = array_shift($keys);
@@ -72,6 +122,16 @@ class Sync
         return $this->getDeepValue($val->$key, $keys);
     }
 
+    /**
+     * Return a specific value from a given row object
+     *
+     * Supports also keys pointing to nested structures like vars.disk.sda
+     *
+     * @param  object $row    stdClass object providing property values
+     * @param  string $string Variable/property name
+     *
+     * @return mixed
+     */
     protected function getSpecificValue($row, $var)
     {
         if (strpos($var, '.') === false) {
@@ -91,6 +151,19 @@ class Sync
         }
     }
 
+    /**
+     * Fill variables in the given string pattern
+     *
+     * This replaces all occurances of ${var_name} with the corresponding
+     * property $row->var_name of the given row object. Missing variables are
+     * replaced by an empty string. This works also fine in case there are
+     * multiple variables to be found in your string.
+     *
+     * @param  string $string String with opional variables/placeholders
+     * @param  object $row    stdClass object providing property values
+     *
+     * @return string
+     */
     protected function fillVariables($string, $row)
     {
         if (preg_match('/^\${([A-Za-z0-9\._-]+)}$/', $string, $m)) {
@@ -104,12 +177,22 @@ class Sync
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
+    /**
+     * Evaluates a SyncRule and returns a list of modified objects
+     *
+     * TODO: This needs to be splitted into smaller methods
+     *
+     * @param  SyncRule $rule The synchronization rule that should be used
+     *
+     * @return array          List of modified IcingaObjects
+     */
     protected function prepareSyncForRule(SyncRule $rule)
     {
         $db = $rule->getConnection();
         $properties = $rule->fetchSyncProperties();
         $sourceColumns = array();
         $sources = array();
+
         // $fieldMap = array();
 
         foreach ($properties as $p) {
@@ -250,7 +333,6 @@ class Sync
                     }
                 }
             }
-
         }
 
         $ignore = array();
@@ -284,6 +366,16 @@ class Sync
         return $objects;
     }
 
+    /**
+     * Runs a SyncRule and applies all resulting changes
+     *
+     * TODO: Should return the id of the related sync_history table entry.
+     *       Such a table does not yet exist, so 42 is the answer right now.
+     *
+     * @param  SyncRule $rule The synchronization rule that should be applied
+     *
+     * @return int
+     */
     protected function runWithRule(SyncRule $rule)
     {
         $db = $rule->getConnection();
