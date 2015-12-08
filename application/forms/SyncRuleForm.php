@@ -10,6 +10,7 @@ class SyncRuleForm extends DirectorObjectForm
     public function setup()
     {
         $availableTypes = array( 
+            'command'          => $this->translate('Command'),
             'endpoint'         => $this->translate('Endpoint'),
             'host'             => $this->translate('Host'),
             'service'          => $this->translate('Service'),

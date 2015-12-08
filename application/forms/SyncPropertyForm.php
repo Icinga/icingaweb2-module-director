@@ -234,6 +234,9 @@ class SyncPropertyForm extends DirectorObjectForm
             if ($dummy->supportsImports()) {
                 $special['import']  = $this->translate('Inheritance (import)');
             }
+            if ($dummy->supportsArguments()) {
+                $special['arguments']  = $this->translate('Arguments');
+            }
             if ($dummy->supportsGroups()) {
                 $special['groups']  = $this->translate('Group membership');
             }
