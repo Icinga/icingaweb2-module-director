@@ -322,10 +322,10 @@ CREATE TABLE icinga_endpoint (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
-  address VARCHAR(255) DEFAULT NULL COMMENT 'IP address / hostname of remote node',
+  host VARCHAR(255) DEFAULT NULL COMMENT 'IP address / hostname of remote node',
   port SMALLINT UNSIGNED DEFAULT NULL COMMENT '5665 if not set',
   log_duration VARCHAR(32) DEFAULT NULL COMMENT '1d if not set',
-  object_type ENUM('object', 'template') NOT NULL,
+  object_type ENUM('object', 'template', 'external_object') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_endpoint_zone

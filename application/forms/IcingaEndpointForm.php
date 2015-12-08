@@ -34,7 +34,7 @@ class IcingaEndpointForm extends DirectorObjectForm
             ));
         }
 
-        $this->addElement('text', 'address', array(
+        $this->addElement('text', 'host', array(
             'label' => $this->translate('Endpoint address'),
             'description' => $this->translate('IP address / hostname of remote node')
         ));

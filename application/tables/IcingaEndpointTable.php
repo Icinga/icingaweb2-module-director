@@ -15,7 +15,7 @@ class IcingaEndpointTable extends QuickTable
         return array(
             'id'       => 'e.id',
             'endpoint' => 'e.object_name',
-            'address'  => 'e.address',
+            'host'     => "(CASE WHEN e.host IS NULL THEN NULL ELSE CONCAT(e.host || ':' || COALESCE(e.port, 5665)) END)",
             'zone'     => 'z.object_name',
         );
     }
@@ -30,7 +30,7 @@ class IcingaEndpointTable extends QuickTable
         $view = $this->view();
         return array(
             'endpoint' => $view->translate('Endpoint'),
-            'address'  => $view->translate('Address'),
+            'host'     => $view->translate('Host'),
             'zone'     => $view->translate('Zone'),
         );
     }

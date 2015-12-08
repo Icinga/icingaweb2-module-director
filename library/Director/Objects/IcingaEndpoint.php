@@ -12,7 +12,7 @@ class IcingaEndpoint extends IcingaObject
         'id'                    => null,
         'zone_id'               => null,
         'object_name'           => null,
-        'address'               => null,
+        'host'                  => null,
         'port'                  => null,
         'log_duration'          => null,
         'object_type'           => null,
