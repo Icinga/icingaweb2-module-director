@@ -177,38 +177,45 @@ class Sync
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
-    /**
-     * Evaluates a SyncRule and returns a list of modified objects
-     *
-     * TODO: This needs to be splitted into smaller methods
-     *
-     * @param  SyncRule $rule The synchronization rule that should be used
-     *
-     * @return array          List of modified IcingaObjects
-     */
-    protected function prepareSyncForRule(SyncRule $rule)
+    protected function perpareImportSources($properties, $db)
     {
-        $db = $rule->getConnection();
-        $properties = $rule->fetchSyncProperties();
-        $sourceColumns = array();
         $sources = array();
-
-        // $fieldMap = array();
-
         foreach ($properties as $p) {
             $sourceId = $p->source_id;
             if (! array_key_exists($sourceId, $sources)) {
                 $sources[$sourceId] = ImportSource::load($sourceId, $db);
-                $sourceColumns[$sourceId] = array();
+            }
+        }
+
+        return $sources;
+    }
+
+    protected function prepareSourceColumns($properties)
+    {
+        // $fieldMap = array();
+        $columns = array();
+
+        foreach ($properties as $p) {
+            $sourceId = $p->source_id;
+            if (! array_key_exists($sourceId, $sources)) {
+                $columns[$sourceId] = array();
             }
 
             foreach ($this->extractVariableNames($p->source_expression) as $varname) {
-                $sourceColumns[$sourceId][$varname] = $varname;
+                $columns[$sourceId][$varname] = $varname;
                 // -> ? $fieldMap[
             }
         }
 
+        return $columns;
+    }
+
+    protected function fetchImportedData($sources, $properties, $db)
+    {
         $imported = array();
+
+        $sourceColumns = $this->prepareSourceColumns($properties);
+
         foreach ($sources as $source) {
             $sourceId = $source->id;
             $key = $source->key_column;
@@ -231,6 +238,25 @@ class Sync
                 $imported[$sourceId][$row->$key] = $row;
             }
         }
+
+        return $imported;
+    }
+
+    /**
+     * Evaluates a SyncRule and returns a list of modified objects
+     *
+     * TODO: This needs to be splitted into smaller methods
+     *
+     * @param  SyncRule $rule The synchronization rule that should be used
+     *
+     * @return array          List of modified IcingaObjects
+     */
+    protected function prepareSyncForRule(SyncRule $rule)
+    {
+        $db = $rule->getConnection();
+        $properties = $rule->fetchSyncProperties();
+        $sources = $this->perpareImportSources($properties, $db);
+        $imported = $this->fetchImportedData($sources, $properties, $db);
 
         // TODO: Filter auf object, nicht template
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
