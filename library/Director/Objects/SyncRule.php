@@ -81,7 +81,10 @@ class SyncRule extends DbObject
         $db = $this->getDb();
         return SyncProperty::loadAll(
             $this->getConnection(),
-            $db->select()->from('sync_property')->where('rule_id = ?', $this->id)
+            $db->select()
+               ->from('sync_property')
+               ->where('rule_id = ?', $this->id)
+               ->order('priority DESC')
         );
 
         return $this->syncProperties;
