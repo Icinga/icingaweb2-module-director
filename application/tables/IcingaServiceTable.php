@@ -15,7 +15,6 @@ class IcingaServiceTable extends QuickTable
         return array(
             'id'      => 's.id',
             'service' => 's.object_name',
-            'zone'    => 'z.object_name',
         );
     }
 
@@ -29,7 +28,6 @@ class IcingaServiceTable extends QuickTable
         $view = $this->view();
         return array(
             'service' => $view->translate('Servicename'),
-            'zone'    => $view->translate('Zone'),
         );
     }
 
@@ -38,10 +36,6 @@ class IcingaServiceTable extends QuickTable
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('s' => 'icinga_service'),
-            array()
-        )->joinLeft(
-            array('z' => 'icinga_zone'),
-            's.zone_id = z.id',
             array()
         );
 
