@@ -197,7 +197,7 @@ class Sync
 
         foreach ($properties as $p) {
             $sourceId = $p->source_id;
-            if (! array_key_exists($sourceId, $sources)) {
+            if (! array_key_exists($sourceId, $columns)) {
                 $columns[$sourceId] = array();
             }
 
@@ -210,7 +210,7 @@ class Sync
         return $columns;
     }
 
-    protected function fetchImportedData($sources, $properties, $db)
+    protected function fetchImportedData($sources, $properties, SyncRule $rule, $db)
     {
         $imported = array();
 
@@ -255,8 +255,8 @@ class Sync
     {
         $db = $rule->getConnection();
         $properties = $rule->fetchSyncProperties();
-        $sources = $this->perpareImportSources($properties, $db);
-        $imported = $this->fetchImportedData($sources, $properties, $db);
+        $sources    = $this->perpareImportSources($properties, $db);
+        $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
 
         // TODO: Filter auf object, nicht template
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
