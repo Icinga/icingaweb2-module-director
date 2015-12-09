@@ -787,13 +787,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
-    protected function renderRelationProperty($propertyName, $id)
+    protected function renderRelationProperty($propertyName, $id, $renderKey = null)
     {
         return c::renderKeyValue(
-            $propertyName,
+            $renderKey ?: $propertyName,
             c::renderString($this->getRelatedObjectName($propertyName, $id))
         );
     }
+
     protected function renderCommandProperty($commandId, $propertyName = 'check_command')
     {
         return c::renderKeyValue(
