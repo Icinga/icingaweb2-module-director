@@ -22,13 +22,17 @@ class IcingaZone extends IcingaObject
     );
 
     protected $relations = array(
-        'parent_zone_id' => 'IcingaZone',
+        'parent_zone' => 'IcingaZone',
     );
 
     protected $supportsImports = true;
 
     protected function renderParent_zone_id()
     {
-        return $this->renderZoneProperty($this->parent_zone_id, 'parent_zone');
+        return $this->renderRelationProperty(
+            'parent_zone',
+            $this->parent_zone_id,
+            'parent'
+        );
     }
 }
