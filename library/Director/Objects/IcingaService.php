@@ -68,6 +68,16 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    protected function renderCheck_Interval()
+    {
+        return $this->renderPropertyAsSeconds('check_interval');
+    }
+
+    protected function renderRetry_Interval()
+    {
+        return $this->renderPropertyAsSeconds('retry_interval');
+    }
+
     public function hasCheckCommand()
     {
         return $this->getResolvedProperty('check_command_id') !== null;
