@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\ProgrammingError;
 use Exception;
 
