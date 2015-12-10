@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Application\Icinga;
 use Icinga\Data\Paginatable;
+use Icinga\Exception\AuthenticationException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
@@ -15,6 +17,26 @@ use Icinga\Web\Widget;
 abstract class ActionController extends Controller
 {
     protected $db;
+
+    protected $isApified = false;
+
+    public function init()
+    {
+        if ($this->getRequest()->isApiRequest()) {
+            if (! $this->hasPermission('director/api')) {
+                throw new AuthenticationException('You are not allowed to access this API');
+            }
+
+            if (! $this->isApified()) {
+                throw new NotFoundError('No such API endpoint found');
+            }
+        }
+    }
+
+    protected function isApified()
+    {
+        return $this->isApified;
+    }
 
     protected function applyPaginationLimits(Paginatable $paginatable, $limit = 25, $offset = null)
     {
@@ -28,12 +50,30 @@ abstract class ActionController extends Controller
 
     public function loadForm($name)
     {
-        return FormLoader::load($name, $this->Module());
+        $form = FormLoader::load($name, $this->Module());
+        if ($this->getRequest()->isApiRequest()) {
+            // TODO: Ask form for API support?
+            $form->setApiRequest();
+        }
+
+        return $form;
     }
 
     public function loadTable($name)
     {
         return TableLoader::load($name, $this->Module());
+    }
+
+    protected function sendJson($object)
+    {
+        $this->getResponse()->setHeader('Content-Type', 'application/json', true);
+        $this->_helper->layout()->disableLayout(); 
+        $this->_helper->viewRenderer->setNoRender(true);
+        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+            echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
+        } else {
+            echo json_encode($object);
+        }
     }
 
     protected function setConfigTabs()
