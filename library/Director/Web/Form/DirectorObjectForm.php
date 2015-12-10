@@ -804,6 +804,16 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addCheckExecutionElements()
     {
 
+        $this->addElement('text', 'check_interval', array(
+            'label' => $this->translate('Check interval'),
+            'description' => $this->translate('Your regular check interval')
+        ));
+
+        $this->addElement('text', 'retry_interval', array(
+            'label' => $this->translate('Retry interval'),
+            'description' => $this->translate('Retry interval, will be applied after a state change unless the next hard state is reached')
+        ));
+
         $this->optionalBoolean(
             'enable_active_checks', 
             $this->translate('Execute active checks'),
@@ -841,6 +851,8 @@ abstract class DirectorObjectForm extends QuickForm
         );
 
         $elements = array(
+            'check_interval',
+            'retry_interval',
             'enable_active_checks',
             'enable_passive_checks',
             'enable_notifications',
