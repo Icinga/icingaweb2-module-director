@@ -931,9 +931,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $prefix = 'Director';
         }
 
+        // TODO: Provide a more sophisticated solution
         if ($type === 'hostgroup') {
-            // TODO: Provide a more sophisticated solution
             $type = 'hostGroup';
+        } elseif ($type === 'usergroup') {
+            $type = 'userGroup';
+        } elseif ($type === 'servicegroup') {
+            $type = 'serviceGroup';
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
