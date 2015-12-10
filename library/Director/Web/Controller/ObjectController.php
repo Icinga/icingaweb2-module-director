@@ -153,6 +153,23 @@ abstract class ObjectController extends ActionController
         $this->render('object/form', null, true);
     }
 
+    public function cloneAction()
+    {
+        $type = $this->getType();
+        $this->getTabs()->activate('modify');
+
+        $this->view->form = $form = $this->loadForm(
+            'icingaCloneObject'
+        )->setObject($this->object);
+
+        $this->view->title = sprintf(
+            $this->translate('Clone Icinga %s'),
+            ucfirst($type)
+        );
+        $this->view->form->handleRequest();
+        $this->render('object/form', null, true);
+    }
+
     public function fieldsAction()
     {
         $object = $this->object;
