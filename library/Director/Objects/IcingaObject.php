@@ -956,11 +956,53 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $class::loadAll($db, $query, $keyColumn);
     }
 
+    public static function fromJson($json, Db $connection = null)
+    {
+        return static::fromPlainObject(json_decode($json), $connection);
+    }
+
+    public static function fromPlainObject($plain, Db $connection = null)
+    {
+        return static::create((array) $plain, $connection);
+    }
+
+    public function replaceWith(IcingaObject $object)
+    {
+        $this->setProperties((array) $object->toPlainObject());
+        return $this;
+    }
+
     public function toPlainObject($resolved = false)
     {
         $props = array();
-        foreach ($this->getProperties() as $k => $v) {
-            if ($v !== null) {
+
+        if ($resolved) {
+            $p = $this->getResolvedProperties();
+        } else {
+            $p = $this->getProperties();
+        }
+
+        foreach ($p as $k => $v) {
+
+            // Do not ship ids for IcingaObjects:
+            if ($k === 'id' && $this->hasProperty('object_name')) {
+                continue;
+            }
+
+            if ('_id' === substr($k, -3)) {
+                $relKey = substr($k, 0, -3);
+
+                if ($this->hasRelation($relKey)) {
+                    if ($v !== null) {
+                        $v = $this->getRelatedObjectName($relKey, $v);
+                    }
+
+                    $k = $relKey;
+                }
+            }
+
+            // TODO: Do not ship null properties based on flag?
+            if (true || $v !== null) {
                 $props[$k] = $v;
             }
         }
@@ -971,14 +1013,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
         if ($this->supportsCustomVars()) {
             if ($resolved) {
-                $props['vars'] = $this->getVars();
-            } else {
                 $props['vars'] = $this->getResolvedVars();
+            } else {
+                $props['vars'] = $this->getVars();
             }
         }
         if ($this->supportsImports()) {
-            $props['imports'] = $this->imports()->listImportNames();
+            if ($resolved) {
+                $props['imports'] = array();
+            } else {
+                $props['imports'] = $this->imports()->listImportNames();
+            }
         }
+
+        ksort($props);
 
         return (object) $props;
     }
