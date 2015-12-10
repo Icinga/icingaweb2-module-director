@@ -188,6 +188,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if (in_array($object->object_type, array('object', 'external_object'))) {
                 return parent::set($key . '_id', $object->id);
             }
+            // TODO: what shall we do if it is a template? Fail?
         }
 
         return parent::set($key, $value);
