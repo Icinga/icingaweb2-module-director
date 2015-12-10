@@ -464,6 +464,7 @@ CREATE TABLE icinga_service (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
   display_name VARCHAR(255) DEFAULT NULL,
+  host_id INT(10) UNSIGNED DEFAULT NULL,
   check_command_id INT(10) UNSIGNED DEFAULT NULL,
   max_check_attempts MEDIUMINT UNSIGNED DEFAULT NULL,
   check_period_id INT(10) UNSIGNED DEFAULT NULL,
@@ -488,6 +489,12 @@ CREATE TABLE icinga_service (
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   PRIMARY KEY (id),
   -- UNIQUE INDEX object_name (object_name, zone_id),
+  UNIQUE KEY object_key (object_name, host_id),
+  CONSTRAINT icinga_host
+    FOREIGN KEY host (host_id)
+    REFERENCES icinga_host (id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE,
   CONSTRAINT icinga_service_zone
     FOREIGN KEY zone (zone_id)
     REFERENCES icinga_zone (id)
