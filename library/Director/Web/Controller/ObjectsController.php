@@ -14,6 +14,8 @@ abstract class ObjectsController extends ActionController
 
     public function init()
     {
+        parent::init();
+
         $tabs = $this->getTabs();
         $type = $this->getType();
 
