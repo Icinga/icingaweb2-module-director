@@ -359,9 +359,26 @@ class Import
     {
         $db = $this->db;
 
-        $existing = $db->fetchCol(
-            $db->select()->from($table, 'checksum')->where('checksum IN (?)', $checksums)
-        );
+        // TODO: The following is a quickfix for binary data corrpution reported
+        //       in https://github.com/zendframework/zf1/issues/655 caused by
+        //       https://github.com/zendframework/zf1/commit/2ac9c30f
+        //
+        // Should be reverted once fixed, eventually with a check continueing
+        // to use this workaround for specific ZF versions (1.12.16 and 1.12.17
+        // so far). Alternatively we could also use a custom quoteInto method.
+
+        // The former query looked as follows:
+        //
+        // $query = $db->select()->from($table, 'checksum')
+        //     ->where('checksum IN (?)', $checksums)
+
+        $hexed = array_map('Icinga\Module\Director\Util::binary2hex', $checksums);
+        $query = $db
+            ->select()
+            ->from($table, 'checksum')
+            ->where('LOWER(HEX(checksum)) IN (?)', $hexed)
+
+        $existing = $db->fetchCol($query);
 
         return array_diff($checksums, $existing);
     }
