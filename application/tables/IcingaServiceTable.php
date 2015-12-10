@@ -8,19 +8,26 @@ class IcingaServiceTable extends QuickTable
 {
     protected $searchColumns = array(
         'service',
+        'host'
     );
 
     public function getColumns()
     {
         return array(
-            'id'      => 's.id',
-            'service' => 's.object_name',
+            'id'       => 's.id',
+            'host_id'  => 's.host_id',
+            'host'     => 'h.object_name',
+            'service'  => 's.object_name',
         );
     }
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/service', array('name' => $row->service));
+        $params = array('name' => $row->service);
+        if ($row->host !== null) {
+            $params['host'] = $row->host;
+        }
+        return $this->url('director/service', $params);
     }
 
     public function getTitles()
@@ -28,6 +35,7 @@ class IcingaServiceTable extends QuickTable
         $view = $this->view();
         return array(
             'service' => $view->translate('Servicename'),
+            'host'    => $view->translate('Host'),
         );
     }
 
@@ -36,6 +44,10 @@ class IcingaServiceTable extends QuickTable
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('s' => 'icinga_service'),
+            array()
+        )->joinLeft(
+            array('h' => 'icinga_host'),
+            'h.id = s.host_id',
             array()
         );
 
