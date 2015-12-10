@@ -11,6 +11,7 @@ namespace Icinga\Module\Director\Data\Db;
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Util;
 use Icinga\Exception\IcingaException as IE;
+use Icinga\Exception\NotFoundError;
 use Exception;
 
 /**
@@ -529,7 +530,12 @@ abstract class DbObject
         $properties = $this->db->fetchRow($select);
 
         if (empty($properties)) {
-            throw new IE('Got no "%s" data for: %s', $this->table, $this->getLogId());
+            throw new NotFoundError(
+                'Got no "%s" data for: %s (%s)',
+                $this->table,
+                $this->getLogId(),
+                $this->createWhere()
+            );
         }
 
         return $this->setDbProperties($properties);
