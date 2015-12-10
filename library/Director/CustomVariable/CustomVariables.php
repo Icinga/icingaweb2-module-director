@@ -71,7 +71,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $value = CustomVariable::create($key, $value);
         }
 
-        if (isset($this->$key)) {
+        // Hint: isset($this->$key) wouldn't conflict with protected properties
+        if ($this->__isset($key)) {
             if ($value->equals($this->get($key))) {
                 return $this;
             } else {
