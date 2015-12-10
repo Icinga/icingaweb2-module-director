@@ -346,10 +346,17 @@ class Sync
                     // New object
                     if ($rule->object_type !== 'datalistEntry') {
                         $newProps['object_type'] = 'object';
-                        $newProps['object_name'] = $key;
+                        if (! array_key_exists('object_name', $newProps) || $newProps['object_name'] === null) {
+                            $newProps['object_name'] = $key;
+                        }
                     }
 
-                    $objects[$key] = IcingaObject::createByType($rule->object_type, $newProps, $db);
+                    $objects[$key] = IcingaObject::createByType(
+                        $rule->object_type,
+                        $newProps,
+                        $db
+                    );
+
                     foreach ($newVars as $prop => $var) {
                         $objects[$key]->vars()->$prop = $var;
                     }
