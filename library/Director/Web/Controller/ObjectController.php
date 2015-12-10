@@ -9,8 +9,12 @@ abstract class ObjectController extends ActionController
 {
     protected $object;
 
+    protected $isApified = true;
+
     public function init()
     {
+        parent::init();
+
         $type = $this->getType();
 
         $params = array();
@@ -54,10 +58,10 @@ abstract class ObjectController extends ActionController
 
     public function indexAction()
     {
-        if ($this->wantsJson()) {
-            header('Content: application/json');
-            echo $this->object->toJson($this->params->shift('resolved'));
-            exit;
+        if ($this->getRequest()->isApiRequest()) {
+            return $this->sendJson(
+                $this->object->toPlainObject($this->params->shift('resolved'))
+            );
         }
 
         return $this->editAction();
@@ -216,10 +220,5 @@ abstract class ObjectController extends ActionController
         }
 
         return $this->object;
-    }
-
-    protected function wantsJson()
-    {
-        return $this->params->shift('json');
     }
 }
