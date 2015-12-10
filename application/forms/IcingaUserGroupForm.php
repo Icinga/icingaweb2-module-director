@@ -18,5 +18,7 @@ class IcingaUserGroupForm extends DirectorObjectForm
             'label' => $this->translate('Display Name'),
             'description' => $this->translate('The name which should displayed.')
         ));
+
+        $this->setButtons();
     }
 }
