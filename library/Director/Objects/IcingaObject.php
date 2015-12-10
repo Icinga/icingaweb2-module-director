@@ -818,6 +818,11 @@ return '';
         return $this->renderZoneProperty($this->zone_id);
     }
 
+    protected function renderCustomExtensions()
+    {
+        return '';
+    }
+
     protected function renderObjectHeader()
     {
         return sprintf(
@@ -837,6 +842,7 @@ return '';
             $this->renderRanges(),
             $this->renderArguments(),
             $this->renderGroups(),
+            $this->renderCustomExtensions(),
             $this->renderCustomVars(),
             $this->renderSuffix()
         ));

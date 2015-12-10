@@ -27,6 +27,28 @@ class IcingaZone extends IcingaObject
 
     protected $supportsImports = true;
 
+    protected function renderCustomExtensions()
+    {
+        $endpoints = $this->listEndpoints();
+        if (empty($endpoints)) {
+            return '';
+        }
+
+        return c::renderKeyValue('endpoints', c::renderArray($endpoints));
+    }
+
+    // TODO: Move this away, should be prefetchable:
+    protected function listEndpoints()
+    {
+        $db = $this->getDb();
+        $query = $db->select()
+            ->from('icinga_endpoint', 'object_name')
+            ->where('zone_id = ?', $this->id)
+            ->order('object_name');
+
+        return $db->fetchCol($query);
+    }
+
     protected function renderParent_zone_id()
     {
         return $this->renderRelationProperty(
