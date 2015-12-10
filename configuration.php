@@ -1,5 +1,6 @@
 <?php
 
+$this->providePermission('director/api', $this->translate('Allow to access the director API'));
 $this->providePermission('director/hosts/read', $this->translate('Allow to configure hosts'));
 $this->providePermission('director/hosts/write', $this->translate('Allow to configure hosts'));
 $this->providePermission('director/templates/read', $this->translate('Allow to see template details'));
