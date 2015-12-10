@@ -724,11 +724,8 @@ abstract class DbObject
             }
             foreach ($keyname as $k) {
                 if (! array_key_exists($k, $key)) {
-                    throw new IE(
-                        'Required key component "%s" is missing for "%s", got %s',
-                        $k,
-                        json_encode($key)
-                    );
+                    // We allow for null in multicolumn keys:
+                    $key[$k] = null;
                 }
                 $this->set($k, $key[$k]);
             }
@@ -756,21 +753,31 @@ abstract class DbObject
         }
 
         $key = $this->getKeyName();
+
         if (is_array($key) && ! empty($key)) {
             $where = array();
             foreach ($key as $k) {
                 if ($this->hasBeenLoadedFromDb()) {
-                    $where[] = $this->db->quoteInto(
-                        sprintf('%s = ?', $k),
-                        $this->loadedProperties[$k]
-                    );
+                    if ($this->loadedProperties[$k] === null) {
+                        $where[] = sprintf('%s IS NULL', $k);
+                    } else {
+                        $where[] = $this->db->quoteInto(
+                            sprintf('%s = ?', $k),
+                            $this->loadedProperties[$k]
+                        );
+                    }
                 } else {
-                    $where[] = $this->db->quoteInto(
-                        sprintf('%s = ?', $k),
-                        $this->properties[$k]
-                    );
+                    if ($this->properties[$k] === null) {
+                        $where[] = sprintf('%s IS NULL', $k);
+                    } else {
+                        $where[] = $this->db->quoteInto(
+                            sprintf('%s = ?', $k),
+                            $this->properties[$k]
+                        );
+                    }
                 }
             }
+
             return implode(' AND ', $where);
         } else {
             if ($this->hasBeenLoadedFromDb()) {
