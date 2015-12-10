@@ -68,6 +68,8 @@ abstract class QuickForm extends Zend_Form
 
     protected $hintCount = 0;
 
+    protected $isApiRequest = false;
+
     public function __construct($options = null)
     {
         parent::__construct($this->handleOptions($options));
@@ -151,6 +153,17 @@ abstract class QuickForm extends Zend_Form
     {
         $this->submitLabel = $label;
         return $this;
+    }
+
+    public function setApiRequest($isApiRequest = true)
+    {
+        $this->isApiRequest = $isApiRequest;
+        return $this;
+    }
+
+    public function isApiRequest()
+    {
+        return $this->isApiRequest;
     }
 
     protected function loadForm($name, Module $module = null)
@@ -363,6 +376,11 @@ abstract class QuickForm extends Zend_Form
 
     public function redirectOnSuccess($message = null)
     {
+        if ($this->isApiRequest()) {
+            Icinga::app()->getFrontController()->getResponse()->setMessage($message);
+            return; // TODO: Shutdown?
+        }
+
         $url = $this->getSuccessUrl();
         $this->notifySuccess($this->getSuccessMessage($message));
         $this->redirectAndExit($url);
@@ -390,6 +408,12 @@ abstract class QuickForm extends Zend_Form
     protected function redirectAndExit($url)
     {
         Icinga::app()->getFrontController()->getResponse()->redirectAndExit($url);
+    }
+
+    protected function setHttpResponseCode($code)
+    {
+        Icinga::app()->getFrontController()->getResponse()->setHttpResponseCode($code);
+        return $this;
     }
 
     protected function onRequest()
