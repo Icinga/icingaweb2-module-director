@@ -803,19 +803,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
-    protected function renderZoneProperty($zoneId, $propertyName = 'zone')
-    {
-// TODO: set file info?
-return '';
-        return c::renderKeyValue(
-            $propertyName,
-            c::renderString($this->connection->getZoneName($zoneId))
-        );
-    }
-
     protected function renderZone_id()
     {
-        return $this->renderZoneProperty($this->zone_id);
+        // We do not render zone properties, objects are stored to zone dirs
+        return '';
     }
 
     protected function renderCustomExtensions()
