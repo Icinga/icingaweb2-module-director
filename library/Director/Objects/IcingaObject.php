@@ -978,8 +978,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    public function toPlainObject($resolved = false)
-    {
+    public function toPlainObject(
+        $resolved = false,
+        $skipNull = false,
+        array $chosenProperties = null
+    ) {
         $props = array();
 
         if ($resolved) {
@@ -1007,8 +1010,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 }
             }
 
+            if ($chosenProperties !== null) {
+                if (! in_array($v, $chosenProperties)) {
+                    continue;
+                }
+            }
+
             // TODO: Do not ship null properties based on flag?
-            if (true || $v !== null) {
+            if (!$skipNull || $v !== null) {
                 $props[$k] = $v;
             }
         }
