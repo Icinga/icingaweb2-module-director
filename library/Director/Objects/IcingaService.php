@@ -10,6 +10,7 @@ class IcingaService extends IcingaObject
         'id'                    => null,
         'object_name'           => null,
         'display_name'          => null,
+        'host_id'               => null,
         'check_command_id'      => null,
         'max_check_attempts'    => null,
         'check_period_id'       => null,
@@ -34,6 +35,15 @@ class IcingaService extends IcingaObject
         'object_type'           => null,
     );
 
+    protected $relations = array(
+        'host'             => 'IcingaHost',
+        'check_command'    => 'IcingaCommand',
+        'event_command'    => 'IcingaCommand',
+        'check_period'     => 'IcingaTimePeriod',
+        'command_endpoint' => 'IcingaEndpoint',
+        'zone'             => 'IcingaZone',
+    );
+
     protected $supportsGroups = true;
 
     protected $supportsCustomVars = true;
@@ -42,6 +52,8 @@ class IcingaService extends IcingaObject
 
     protected $supportsImports = true;
 
+    protected $keyName = array('host_id', 'object_name');
+
     public function getCheckCommand()
     {
         $id = $this->getResolvedProperty('check_command_id');
@@ -49,6 +61,11 @@ class IcingaService extends IcingaObject
             $id,
             $this->getConnection()
         );
+    }
+
+    public function renderHost_id()
+    {
+        return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
     public function hasCheckCommand()
