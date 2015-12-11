@@ -142,7 +142,7 @@ class SyncPropertyForm extends DirectorObjectForm
         )); 
         */
 
-        if ($isCustomvar) {
+        if ($isCustomvar || $destination === 'vars') {
             $this->addElement('select', 'merge_policy', array(
                 'label'        => $this->translate('Merge Policy'),
                 'description'  => $this->translate('Whether you want to merge or replace the destination field. Makes no difference for strings'),
@@ -230,6 +230,7 @@ class SyncPropertyForm extends DirectorObjectForm
         if ($dummy instanceof IcingaObject) {
             if ($dummy->supportsCustomvars()) {
                 $special['vars.*']  = $this->translate('Custom variable (vars.)');
+                $special['vars']  = $this->translate('All custom variables (vars)');
             }
             if ($dummy->supportsImports()) {
                 $special['import']  = $this->translate('Inheritance (import)');
