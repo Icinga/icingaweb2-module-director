@@ -58,7 +58,7 @@ CREATE TABLE director_generated_file (
 CREATE TABLE director_generated_config_file (
   config_checksum VARBINARY(20) NOT NULL,
   file_checksum VARBINARY(20) NOT NULL,
-  file_path VARCHAR(64) NOT NULL COMMENT 'e.g. zones/nafta/hosts.conf',
+  file_path VARCHAR(128) NOT NULL COMMENT 'e.g. zones/nafta/hosts.conf',
   CONSTRAINT director_generated_config_file_config
     FOREIGN KEY config (config_checksum)
     REFERENCES director_generated_config (checksum)
