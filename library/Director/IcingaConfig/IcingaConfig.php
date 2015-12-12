@@ -235,7 +235,7 @@ throw $e;
     {
         $start = microtime(true);
 
-        $this->configFile('conf.d/001-director-basics.conf')->prepend(
+        $this->configFile('conf.d/001-director-basics')->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
           . "\nobject Zone \"director-global\" {\n    global = true\n}\n"
 
