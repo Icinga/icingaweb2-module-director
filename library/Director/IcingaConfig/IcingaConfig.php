@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
-use Icinga\Data\Db\DbConnection;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -32,7 +32,7 @@ class IcingaConfig
 
     public static $table = 'director_generated_config';
 
-    protected function __construct(DbConnection $connection)
+    protected function __construct(Db $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
@@ -77,20 +77,20 @@ class IcingaConfig
         return $files;
     }
 
-    public static function fromDb($checksum, DbConnection $connection)
+    public static function load($checksum, Db $connection)
     {
         $config = new static($connection);
         $config->loadFromDb($checksum);
         return $config;
     }
 
-    public static function generate(DbConnection $connection)
+    public static function generate(Db $connection)
     {
         $config = new static($connection);
         return $config->storeIfModified();
     }
 
-    public static function wouldChange(DbConnection $connection)
+    public static function wouldChange(Db $connection)
     {
         $config = new static($connection);
         return $config->hasBeenModified();

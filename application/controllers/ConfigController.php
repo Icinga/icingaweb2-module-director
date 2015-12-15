@@ -13,7 +13,7 @@ class ConfigController extends ActionController
     public function deployAction()
     {
         $checksum = $this->params->get('checksum');
-        $config = IcingaConfig::fromDb(Util::hex2binary($checksum), $this->db());
+        $config = IcingaConfig::load(Util::hex2binary($checksum), $this->db());
         if ($this->api()->dumpConfig($config, $this->db())) {
             $url = Url::fromPath('director/list/deploymentlog');
             Notification::success(
@@ -48,9 +48,10 @@ class ConfigController extends ActionController
             'url'       => $this->getRequest()->getUrl(),
         ))->activate('config');
 
-        $this->view->config = IcingaConfig::fromDb(Util::hex2binary($this->params->get('checksum')), $this->db());
+        $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('checksum')), $this->db());
     }
 
+    // TODO: Check if this can be removed
     public function storeAction()
     {
         $config = IcingaConfig::generate($this->db());
