@@ -299,24 +299,25 @@ class Sync
                         }
                     }
                 }
-
                 if (array_key_exists($key, $objects)) {
 
                     switch ($rule->update_policy) {
                         case 'override':
-// TODO: Only override if it doesn't equal
-                            $objects[$key] = IcingaObject::createByType(
+                            $object = IcingaObject::createByType(
                                 $rule->object_type,
                                 $newProps,
                                 $db
                             );
 
                             foreach ($newVars as $prop => $var) {
-                                $objects[$key]->vars()->$prop = $var;
+                                $object->vars()->$prop = $var;
                             }
+
                             if (! empty($imports)) {
-                                $objects[$key]->imports()->set($imports);
+                                $object->imports()->set($imports);
                             }
+
+                            $objects[$key]->replaceWith($object);
                             break;
 
                         case 'merge':
@@ -413,6 +414,7 @@ class Sync
         $db = $rule->getConnection();
         // TODO: Evaluate whether fetching data should happen within the same transaction
         $objects = $this->prepareSyncForRule($rule);
+
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
         foreach ($objects as $object) {
