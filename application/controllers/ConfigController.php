@@ -29,6 +29,36 @@ class ConfigController extends ActionController
         }
     }
 
+    // Show all files for a given config
+    public function filesAction()
+    {
+        $tabs = $this->getTabs();
+
+        if ($deploymentId = $this->params->get('deployment_id')) {
+            $tabs->add('deployment', array(
+                'label'     => $this->translate('Deployment'),
+                'url'       => 'director/deployment/show',
+                'urlParams' => array(
+                    'id' => $deploymentId
+                )
+            ));
+        }
+
+        $tabs->add('config', array(
+            'label' => $this->translate('Config'),
+            'url'   => $this->getRequest()->getUrl(),
+        ))->activate('config');
+
+        $checksum = $this->params->get('checksum');
+
+        $this->view->table = $this
+            ->loadTable('GeneratedConfigFile')
+            ->setConnection($this->db())
+            ->setConfigChecksum($checksum);
+
+        $this->render('objects/table', null, true);
+    }
+
     public function showAction()
     {
         $tabs = $this->getTabs();
