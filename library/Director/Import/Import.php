@@ -376,7 +376,7 @@ class Import
         $query = $db
             ->select()
             ->from($table, 'checksum')
-            ->where('LOWER(HEX(checksum)) IN (?)', $hexed)
+            ->where('LOWER(HEX(checksum)) IN (?)', $hexed);
 
         $existing = $db->fetchCol($query);
 
