@@ -31,6 +31,10 @@ class ImportSourceCoreApi extends ImportSourceHook
     public function listColumns()
     {
         $res = $this->fetchData();
+        if (empty($data)) {
+            return array('object_name');
+        }
+
         return array_keys((array) $res[0]);
     }
 
@@ -46,8 +50,9 @@ class ImportSourceCoreApi extends ImportSourceHook
             'required' => true,
             'multiOptions' => $form->optionalEnum(array(
                 'CheckCommand'  => 'Commands',
-                'Endpoint' => 'Endpoints',
-                'Zone'     => 'Zones',
+                'Endpoint'      => 'Endpoints',
+                'Host'          => 'Host',
+                'Zone'          => 'Zones',
             ))
         ));
     }
