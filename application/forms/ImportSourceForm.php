@@ -107,10 +107,12 @@ class ImportSourceForm extends DirectorObjectForm
     protected function enumSourceTypes()
     {
         $hooks = Hook::all('Director\\ImportSource');
+
         $enum = array();
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
         }
+        asort($enum);
 
         return $enum;
     }
