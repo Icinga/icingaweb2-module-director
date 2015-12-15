@@ -175,6 +175,42 @@ constants
         ));
     }
 
+    protected function buildEndpointZoneMap()
+    {
+        $zones = $this->getObjects('zone', 'zones', $attrs = array('endpoints'), 'director');
+        $zoneMap = array();
+
+        foreach ($zones as $name => $zone) {
+            if (! is_array($zone->attrs->endpoints)) {
+                continue;
+            }
+            foreach ($zone->attrs->endpoints as $endpoint) {
+                $zoneMap[$endpoint] = $name;
+            }
+        }
+
+        return $zoneMap;
+    }
+
+    public function getEndpointObjects()
+    {
+        $zoneMap = $this->buildEndpointZoneMap();
+        $objects = $this->getDirectorObjects('Endpoint', 'Endpoint', 'endpoints', array(
+            'host'         => 'host',
+            'port'         => 'port',
+            'log_duration' => 'log_duration',
+        ));
+
+        foreach ($objects as $object) {
+            $name = $object->object_name;
+            if (array_key_exists($name, $zoneMap)) {
+                $object->zone = $zoneMap[$name];
+            }
+        }
+
+        return $objects;
+    }
+
     public function getCheckCommandObjects()
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
