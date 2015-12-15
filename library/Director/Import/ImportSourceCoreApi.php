@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Import;
 
 use Icinga\Application\Config;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Util;
@@ -12,6 +13,8 @@ use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 class ImportSourceCoreApi extends ImportSourceHook
 {
     protected $connection;
+
+    protected $db;
 
     public function fetchData()
     {
@@ -55,6 +58,19 @@ class ImportSourceCoreApi extends ImportSourceHook
         $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
         $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
         $api = new CoreApi($client);
+        $api->setDb($this->db());
         return $api;
+    }
+
+    protected function db()
+    {
+        if ($this->db === null) {
+            $resourceName = Config::module('director')->get('db', 'resource');
+            if ($resourceName) {
+                $this->db = Db::fromResourceName($resourceName);
+            }
+        }
+
+        return $this->db;
     }
 }
