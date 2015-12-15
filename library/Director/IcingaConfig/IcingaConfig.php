@@ -287,9 +287,11 @@ throw $e;
         $query = $this->db->select()->from(
             array('cf' => 'director_generated_config_file'),
             array(
-                'file_path' => 'cf.file_path',
-                'checksum'  => 'f.checksum',
-                'content'   => 'f.content',
+                'file_path'    => 'cf.file_path',
+                'checksum'     => 'f.checksum',
+                'content'      => 'f.content',
+                'cnt_object'   => 'f.cnt_object',
+                'cnt_template' => 'f.cnt_template',
             )
         )->join(
             array('f' => 'director_generated_file'),
@@ -299,7 +301,10 @@ throw $e;
 
         foreach ($this->db->fetchAll($query) as $row) {
             $file = new IcingaConfigFile();
-            $this->files[$row->file_path] = $file->setContent($row->content);
+            $this->files[$row->file_path] = $file
+                ->setContent($row->content)
+                ->setObjectCount($row->cnt_object)
+                ->setTemplateCount($row->cnt_template);
         }
 
         return $this;
