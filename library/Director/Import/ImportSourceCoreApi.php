@@ -31,6 +31,11 @@ class ImportSourceCoreApi extends ImportSourceHook
         return array_keys((array) $res[0]);
     }
 
+    public static function getDefaultKeyColumnName()
+    {
+        return 'object_name';
+    }
+
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('select', 'object_type', array(
