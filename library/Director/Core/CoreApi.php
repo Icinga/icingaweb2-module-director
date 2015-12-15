@@ -211,6 +211,38 @@ constants
         return $objects;
     }
 
+    public function getHostObjects()
+    {
+        return $this->getDirectorObjects('Host', 'Host', 'hosts', array(
+            'display_name'          => 'display_name',
+            'address'               => 'address',
+            'address6'              => 'address6',
+            'groups'                => 'groups',
+            'vars'                  => 'vars',
+            'check_command'         => 'check_command',
+            'max_check_attempts'    => 'max_check_attempts',
+            'check_period'          => 'check_period',
+            'check_interval'        => 'check_interval',
+            'retry_interval'        => 'retry_interval',
+            'enable_notifications'  => 'enable_notifications',
+            'enable_active_checks'  => 'enable_active_checks',
+            'enable_passive_checks' => 'enable_passive_checks',
+            'enable_event_handler'  => 'enable_event_handler',
+            'enable_flapping'       => 'enable_flapping',
+            'enable_perfdata'       => 'enable_perfdata',
+            'event_command'         => 'event_command',
+            'flapping_threshold'    => 'flapping_threshold',
+            'volatile'              => 'volatile',
+            'zone_id'               => 'zone_id',
+            'command_endpoint'      => 'command_endpoint',
+            'notes'                 => 'notes',
+            'notes_url'             => 'notes_url',
+            'action_url'            => 'action_url',
+            'icon_image'            => 'icon_image',
+            'icon_image_alt'        => 'icon_image_alt',
+        ));
+    }
+
     public function getCheckCommandObjects()
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
