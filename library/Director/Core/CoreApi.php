@@ -181,10 +181,10 @@ constants
 
         $objects = $this->getDirectorObjects('Command', 'CheckCommand', 'CheckCommands', array(
             'arguments' => 'arguments',
-         //   'env' => 'env',
-            'timeout' => 'timeout',
-            'command' => 'command',
-            'vars' => 'vars'
+            // 'env'      => 'env',
+            'timeout'   => 'timeout',
+            'command'   => 'command',
+            'vars'      => 'vars'
         ));
         foreach ($objects as $obj) {
             $obj->methods_execute = 'PluginCheck';
@@ -288,14 +288,14 @@ constants
         $start = microtime(true);
         $data = $config->getFileContents();
         $deployment = DirectorDeploymentLog::create(array(
-            // 'config_id'     => $config->id,
-            // 'peer_identity' => $endpoint->object_name,
+            // 'config_id'      => $config->id,
+            // 'peer_identity'  => $endpoint->object_name,
             'peer_identity'   => $this->client->getPeerIdentity(),
             'start_time'      => date('Y-m-d H:i:s'),
             'config_checksum' => $config->getChecksum()
-            // 'triggered_by'  => Util::getUsername(),
-            /// 'username'  => Util::getUsername(),
-            // 'module_name'   => $moduleName,
+            // 'triggered_by'   => Util::getUsername(),
+            // 'username'       => Util::getUsername(),
+            // 'module_name'    => $moduleName,
         ));
 
         $this->assertModuleExists($moduleName);
