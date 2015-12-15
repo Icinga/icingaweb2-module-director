@@ -26,11 +26,15 @@ class CoreApi
         return $this;
     }
 
-    public function getObjects($name, $pluraltype, $attrs = array())
+    public function getObjects($name, $pluraltype, $attrs = array(), $ignorePackage = null)
     {
         $name = strtolower($name);
         $params = (object) array(
         );
+        if ($ignorePackage) {
+            $params->filter = 'obj.package!="' . $ignorePackage . '"';
+        }
+
         if (! empty($attrs)) {
             $params->attrs = $attrs;
         }
@@ -45,6 +49,7 @@ class CoreApi
     {
         $params = (object) array(
         );
+
         if (! empty($attrs)) {
             $params->attrs = $attrs;
         }
@@ -133,7 +138,7 @@ constants
         );
 
         $objects = array();
-        $result  = $this->getObjects($single, $plural, $attrs);
+        $result  = $this->getObjects($single, $plural, $attrs, 'director');
         foreach ($result as $name => $row) {
             $attrs = $row->attrs;
 
