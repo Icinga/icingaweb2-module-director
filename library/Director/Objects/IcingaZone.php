@@ -9,11 +9,11 @@ class IcingaZone extends IcingaObject
     protected $table = 'icinga_zone';
 
     protected $defaultProperties = array(
-        'id'             => null,
-        'object_name'    => null,
-        'object_type'    => null,
-        'parent_zone_id' => null,
-        'is_global'      => 'n',
+        'id'          => null,
+        'object_name' => null,
+        'object_type' => null,
+        'parent_id'   => null,
+        'is_global'   => 'n',
     );
 
     protected $booleans = array(
@@ -22,7 +22,7 @@ class IcingaZone extends IcingaObject
     );
 
     protected $relations = array(
-        'parent_zone' => 'IcingaZone',
+        'parent' => 'IcingaZone',
     );
 
     protected $supportsImports = true;
@@ -47,14 +47,5 @@ class IcingaZone extends IcingaObject
             ->order('object_name');
 
         return $db->fetchCol($query);
-    }
-
-    protected function renderParent_zone_id()
-    {
-        return $this->renderRelationProperty(
-            'parent_zone',
-            $this->parent_zone_id,
-            'parent'
-        );
     }
 }

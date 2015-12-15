@@ -146,14 +146,14 @@ CREATE TABLE director_datafield_setting (
 
 CREATE TABLE icinga_zone (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-  parent_zone_id INT(10) UNSIGNED DEFAULT NULL,
+  parent_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   is_global ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
-  CONSTRAINT icinga_zone_parent_zone
-    FOREIGN KEY parent_zone (parent_zone_id)
+  CONSTRAINT icinga_zone_parent
+    FOREIGN KEY parent_zone (parent_id)
     REFERENCES icinga_zone (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
