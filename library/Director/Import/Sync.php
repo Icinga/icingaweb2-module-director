@@ -267,7 +267,6 @@ class Sync
              //   if ($o->list_id !== $source->
             }
         }
-        $dummy = IcingaObject::createByType($rule->object_type, array());
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
 
         foreach ($sources as $source) {
