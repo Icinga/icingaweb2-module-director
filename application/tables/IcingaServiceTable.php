@@ -57,6 +57,6 @@ class IcingaServiceTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        return $this->getUnfilteredQuery()->where('s.object_type = ?', 'object');
+        return $this->getUnfilteredQuery();
     }
 }

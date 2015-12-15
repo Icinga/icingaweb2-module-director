@@ -76,6 +76,6 @@ class IcingaHostTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        return $this->getUnfilteredQuery()->where('h.object_type = ?', 'object');
+        return $this->getUnfilteredQuery();
     }
 }
