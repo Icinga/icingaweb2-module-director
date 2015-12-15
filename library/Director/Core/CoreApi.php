@@ -170,7 +170,7 @@ constants
     public function getZoneObjects()
     {
         return $this->getDirectorObjects('Zone', 'Zone', 'zones', array(
-            'parent' => 'parent',
+            'parent' => 'parent_zone',
             'global' => 'is_global',
         ));
     }
