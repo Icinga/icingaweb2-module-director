@@ -15,6 +15,10 @@ class IcingaConfigFile
 
     protected $checksum;
 
+    protected $cntObject = 0;
+
+    protected $cntTemplate = 0;
+
     public function prepend($content)
     {
         $this->content = $content . $this->content;
@@ -31,6 +35,28 @@ class IcingaConfigFile
     {
         $this->content = $content;
         $this->checksum = null;
+        return $this;
+    }
+
+    public function getObjectCount()
+    {
+        return $this->cntObject;
+    }
+
+    public function getTemplateCount()
+    {
+        return $this->cntTemplate;
+    }
+
+    public function setObjectCount($cnt)
+    {
+        $this->cntObject = $cnt;
+        return $this;
+    }
+
+    public function setTemplateCount($cnt)
+    {
+        $this->cntTemplate = $cnt;
         return $this;
     }
 
@@ -61,6 +87,20 @@ class IcingaConfigFile
     {
         $this->content .= $object->toConfigString();
         $this->checksum = null;
+
+        if ($object->hasProperty('object_type')) {
+            $type = $object->object_type;
+
+            switch ($type) {
+                case 'object':
+                    $this->cntObject++;
+                    break;
+                case 'template':
+                    $this->cntTemplate++;
+                    break;
+            }
+        }
+
         return $this;
     }
 
