@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
-class IcingaUserTable extends QuickTable
+class IcingaUserTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'user',
@@ -14,6 +14,7 @@ class IcingaUserTable extends QuickTable
     {
         return array(
             'id'                    => 'u.id',
+            'object_type'           => 'u.object_type',
             'user'                  => 'u.object_name',
             // 'display_name'          => 'u.display_name',
             'email'                 => 'u.email',

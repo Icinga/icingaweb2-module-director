@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Tables;
 
 use Icinga\Data\Limitable;
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
-class IcingaHostTable extends QuickTable
+class IcingaHostTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'host',
@@ -14,11 +14,12 @@ class IcingaHostTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'      => 'h.id',
-            'host'    => 'h.object_name',
-            'address' => 'h.address',
-            'zone'    => 'z.object_name',
-            'parents' => "GROUP_CONCAT(ih.object_name ORDER BY hi.weight SEPARATOR ', ')"
+            'id'          => 'h.id',
+            'host'        => 'h.object_name',
+            'object_type' => 'h.object_type',
+            'address'     => 'h.address',
+            'zone'        => 'z.object_name',
+            'parents'     => "GROUP_CONCAT(ih.object_name ORDER BY hi.weight SEPARATOR ', ')"
         );
     }
 

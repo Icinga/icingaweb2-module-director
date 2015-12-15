@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
-class IcingaEndpointTable extends QuickTable
+class IcingaEndpointTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'endpoint',

@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
-class IcingaCommandTable extends QuickTable
+class IcingaCommandTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'command',
@@ -26,23 +26,6 @@ class IcingaCommandTable extends QuickTable
             return $this->url('director/command/render', array('name' => $row->command));
         } else {
             return $this->url('director/command', array('name' => $row->command));
-        }
-    }
-
-    protected function listTableClasses()
-    {
-        return array_merge(array('check-commands'), parent::listTableClasses());
-    }
-
-    protected function getRowClasses($row)
-    {
-        switch ($row->object_type) {
-            case 'object':
-                return 'icinga-object';
-            case 'template':
-                return 'icinga-template';
-            case 'external_object':
-                return 'icinga-object-external';
         }
     }
 

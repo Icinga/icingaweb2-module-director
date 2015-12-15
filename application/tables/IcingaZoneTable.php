@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
-class IcingaZoneTable extends QuickTable
+class IcingaZoneTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'zone',
@@ -19,9 +19,10 @@ class IcingaZoneTable extends QuickTable
         }
 
         return array(
-            'id'        => 'z.id',
-            'zone'      => 'z.object_name',
-            'endpoints' => $endpoints,
+            'id'          => 'z.id',
+            'zone'        => 'z.object_name',
+            'object_type' => 'z.object_type',
+            'endpoints'   => $endpoints,
         );
     }
 

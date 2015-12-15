@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
-class IcingaServiceTable extends QuickTable
+class IcingaServiceTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'service',
@@ -14,10 +14,11 @@ class IcingaServiceTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'       => 's.id',
-            'host_id'  => 's.host_id',
-            'host'     => 'h.object_name',
-            'service'  => 's.object_name',
+            'id'          => 's.id',
+            'host_id'     => 's.host_id',
+            'host'        => 'h.object_name',
+            'service'     => 's.object_name',
+            'object_type' => 's.object_type',
         );
     }
 
