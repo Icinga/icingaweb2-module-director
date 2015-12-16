@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Monitoring\Web\Hook\ServiceActionsHook;
+use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
 use Icinga\Module\Monitoring\Object\Service;
 use Icinga\Web\Url;
 
