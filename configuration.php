@@ -26,11 +26,10 @@ $section = $this->menuSection(
     $this->translate('Icinga Director')
 )->setIcon('cubes');
 
-$section->add($this->translate('Welcome'))->setUrl('director/welcome')->setPriority(20);
+$section->add($this->translate('Overview'))->setUrl('director/welcome')->setPriority(20);
 $section->add($this->translate('Hosts'))->setUrl('director/hosts')->setPriority(30);
 $section->add($this->translate('Services'))->setUrl('director/services')->setPriority(40);
 $section->add($this->translate('Commands'))->setUrl('director/commands')->setPriority(50);
-$section->add($this->translate('Global'))->setUrl('director/zones')->setPriority(60);
 $section->add($this->translate('Users'))->setUrl('director/users')->setPriority(70);
 $section->add($this->translate('Import / Sync'))
     ->setUrl('director/list/importsource')

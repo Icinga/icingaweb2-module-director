@@ -21,6 +21,10 @@ abstract class ObjectsController extends ActionController
 
         if (in_array(ucfirst($type), $this->globalTypes)) {
             $ltype = strtolower($type);
+            $tabs->add('overview', array(
+                'url' => $this->getRequest()->getUrl(),
+                'label' => $this->translate('Overview')
+            ));
 
             foreach ($this->globalTypes as $tabType) {
                 $ltabType = strtolower($tabType);
