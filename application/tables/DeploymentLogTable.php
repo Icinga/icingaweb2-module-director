@@ -14,15 +14,31 @@ class DeploymentLogTable extends QuickTable
         return $this;
     }
 
+    protected function listTableClasses()
+    {
+        return array_merge(array('deployment-log'), parent::listTableClasses());
+    }
+
     protected function getRowClasses($row)
     {
+        if ($row->startup_succeeded === 'y') {
+            $classes = array('succeeded');
+        } elseif ($row->startup_succeeded === 'n') {
+            $classes = array('failed');
+        } elseif ($row->dump_succeeded === 'y') {
+            $classes = array('sent');
+        } else {
+            // TODO: does this ever be stored?
+            $classes = array('notsent');
+        }
+
         if ($this->activeStageName !== null
             && $row->stage_name === $this->activeStageName)
         {
-            return 'running';
+            $classes[] = 'running';
         }
 
-        return false;
+        return $classes;
     }
 
     public function getColumns()
@@ -55,10 +71,8 @@ class DeploymentLogTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'peer_identity'     => $view->translate('Peer'),
+            'peer_identity'     => $view->translate('Icinga Node'),
             'start_time'        => $view->translate('Time'),
-            'dump_succeeded'    => $view->translate('Sent'),
-            'startup_succeeded' => $view->translate('Loaded'),
         );
     }
 

@@ -331,10 +331,6 @@ table.tinystats {
 
 /* Simple table, test */
 
-tr.running {
-    color: green;
-}
-
 table.syncstate {
     tr td:first-child {
         padding-left: 2em;
@@ -401,20 +397,46 @@ table.icinga-objects {
 
 }
 
-/* Temp for deployment state */
-table.simple {
-    td.ok {
-      background-color: @colorOk;
+table.deployment-log {
+
+    tr td:nth-child(2), tr th:nth-child(2) {
+        text-align: right;
+        padding-right: 1em;
     }
 
-    td.nok {
-      background-color: @colorCritical;
+    tr th:first-child {
+        padding-left: 2em;
     }
 
+    tr td:first-child {
+        padding-left: 2em;
+        &::before {
+            font-family: 'ifont';
+            // icon-help:
+            content: '\e85b';
+            float: left;
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.succeeded td:first-child::before {
+        // icon-ok
+        color: @color-ok;
+        content: '\e803';
+    }
+
+    tr.failed td:first-child::before {
+        // icon-ok
+        color: @color-critical;
+        content: '\e804';
+    }
+
+    tr.running td, tr.running td a {
+        font-weight: bold;
+    }
 }
-
-
-/* END of Simple table, test */
 
 .tree li a {
   display: inline-block;
