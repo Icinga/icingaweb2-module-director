@@ -63,12 +63,15 @@ class ImportedrowsTable extends QuickTable
 
     public function getBaseQuery()
     {
-        return (new ArrayDatasource(
+        $ds = new ArrayDatasource(
             $this->connection()->fetchImportedRowsetRows(
                 $this->checksum,
                 null
             )
-        ))->select()->order('object_name');
+        );
+
+        return $ds->select()->order('object_name');
+        // TODO: Remove? ->
         return $this->connection()->createImportedRowsetRowsQuery(
             $this->checksum
         )->order('object_name');
