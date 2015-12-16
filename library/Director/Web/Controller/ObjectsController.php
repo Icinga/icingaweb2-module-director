@@ -47,10 +47,6 @@ abstract class ObjectsController extends ActionController
             'url'   => sprintf('director/%ss', strtolower($type)),
             'label' => $this->translate(ucfirst($type) . 's'),
         ));
-        $tabs = $this->getTabs()->add('objecttemplates', array(
-            'url'   => sprintf('director/%stemplates', strtolower($type)),
-            'label' => $this->translate('Templates'),
-        ));
         if ($object->supportsGroups() || $object->isGroup()) {
             $tabs->add('objectgroups', array(
                 'url'   => sprintf('director/%sgroups', $type),
@@ -59,7 +55,7 @@ abstract class ObjectsController extends ActionController
         }
 
         $tabs->add('tree', array(
-            'url'   => sprintf('director/%stemplates/tree', $type),
+            'url'   => sprintf('director/%ss/templatetree', $type),
             'label' => $this->translate('Tree'),
         ));
     }
@@ -75,11 +71,6 @@ abstract class ObjectsController extends ActionController
             if ($dummy->isGroup()) {
                 $this->getTabs()->activate('objectgroups');
                 $table = 'icinga' . ucfirst($type);
-            } elseif ($dummy->isTemplate()) {
-                $this->getTabs()->activate('objecttemplates');
-                $table = 'icinga' . ucfirst($type);
-                $this->loadTable($table);
-                $table = 'icinga' . ucfirst($type) . 'Template';
             } else {
                 $this->getTabs()->activate('objects');
                 $table = 'icinga' . ucfirst($type);
@@ -109,12 +100,12 @@ abstract class ObjectsController extends ActionController
         $this->render('objects/table', null, true);
     }
 
-    public function treeAction()
+    public function templatetreeAction()
     {
         $this->getTabs()->activate('tree');
         $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
         $this->view->objectTypeName = $this->getType();
-        $this->render('hosttemplates/tree', null, true);
+        $this->render('objects/tree', null, true);
     }
 
     protected function dummyObject()
