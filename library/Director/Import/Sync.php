@@ -345,7 +345,10 @@ class Sync
                 } else {
                     // New object
                     if ($rule->object_type !== 'datalistEntry') {
-                        $newProps['object_type'] = 'object';
+                        if (! array_key_exists('object_type', $newProps) || $newProps['object_type'] === null) {
+                            $newProps['object_type'] = 'object';
+                        }
+
                         if (! array_key_exists('object_name', $newProps) || $newProps['object_name'] === null) {
                             $newProps['object_name'] = $key;
                         }
