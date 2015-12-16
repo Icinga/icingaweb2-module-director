@@ -54,6 +54,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $shouldBeRemoved = false;
 
+    private $resolveCache = array();
+
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
@@ -391,8 +393,33 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $res['_ORIGINS_'];
     }
 
+    protected function hasResolveCached($what)
+    {
+        return array_key_exists($what, $this->resolveCache);
+    }
+
+    protected function & getResolveCached($what)
+    {
+        return $this->resolveCache[$what];
+    }
+
+    protected function storeResolvedCache($what, $vals)
+    {
+        $this->resolveCache[$what] = $vals;
+    }
+
+    public function invalidateResolveCache()
+    {
+        $this->resolveCache = array();
+        return $this;
+    }
+
     protected function resolve($what)
     {
+        if ($this->hasResolveCached($what)) {
+            return $this->getResolveCached($what);
+        }
+
         $vals = array();
         $vals['_MERGED_']    = (object) array();
         $vals['_INHERITED_'] = (object) array();
@@ -430,6 +457,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // $vals[$this->object_name]->$key = $value;
             $vals['_MERGED_']->$key = $value;
         }
+
+        $this->storeResolvedCache($what, $vals);
 
         return $vals;
     }
@@ -1033,6 +1062,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $props['vars'] = $this->getVars();
             }
         }
+
         if ($this->supportsImports()) {
             if ($resolved) {
                 $props['imports'] = array();
