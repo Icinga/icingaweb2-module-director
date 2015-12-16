@@ -25,6 +25,8 @@ class DeploymentLogTable extends QuickTable
             $classes = array('succeeded');
         } elseif ($row->startup_succeeded === 'n') {
             $classes = array('failed');
+        } elseif ($row->stage_collected === null) {
+            $classes = array('pending');
         } elseif ($row->dump_succeeded === 'y') {
             $classes = array('sent');
         } else {
@@ -64,7 +66,7 @@ class DeploymentLogTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/deployment/show', array('id' => $row->id));
+        return $this->url('director/deployment', array('id' => $row->id));
     }
 
     public function getTitles()

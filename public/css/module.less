@@ -427,6 +427,13 @@ table.deployment-log {
         content: '\e803';
     }
 
+    tr.pending td:first-child::before {
+        color: @gray;
+        // icon-spinner
+        content: '\e874';
+       .animate(spin 2s infinite linear);
+    }
+
     tr.failed td:first-child::before {
         // icon-ok
         color: @color-critical;

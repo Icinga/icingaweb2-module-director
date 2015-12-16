@@ -38,6 +38,43 @@ class IcingaConfig
         $this->db = $connection->getDbAdapter();
     }
 
+    public function getSize()
+    {
+        $size = 0;
+        foreach ($this->getFiles() as $file) {
+            $size += $file->getSize();
+        }
+        return $size;
+    }
+
+    public function getDuration()
+    {
+        return $this->duration;
+    }
+
+    public function getFileCount()
+    {
+        return count($this->files);
+    }
+
+    public function getObjectCount()
+    {
+        $cnt = 0;
+        foreach ($this->getFiles() as $file) {
+            $cnt += $file->getObjectCount();
+        }
+        return $cnt;
+    }
+
+    public function getTemplateCount()
+    {
+        $cnt = 0;
+        foreach ($this->getFiles() as $file) {
+            $cnt += $file->getTemplateCount();
+        }
+        return $cnt;
+    }
+
     public function getChecksum()
     {
         return $this->checksum;
@@ -265,7 +302,7 @@ throw $e;
     {
         $query = $this->db->select()->from(
             self::$table,
-            array('checksum', 'last_activity_checksum')
+            array('checksum', 'last_activity_checksum', 'duration')
         )->where('checksum = ?', $this->dbBin($checksum));
         $result = $this->db->fetchRow($query);
 
@@ -274,6 +311,7 @@ throw $e;
         }
 
         $this->checksum = $result->checksum;
+        $this->duration = $result->duration;
         $this->lastActivityChecksum = $result->last_activity_checksum;
 
         if (is_resource($this->checksum)) {

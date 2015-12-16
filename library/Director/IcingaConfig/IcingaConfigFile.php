@@ -48,6 +48,11 @@ class IcingaConfigFile
         return $this->cntTemplate;
     }
 
+    public function getSize()
+    {
+        return strlen($this->content);
+    }
+
     public function setObjectCount($cnt)
     {
         $this->cntObject = $cnt;

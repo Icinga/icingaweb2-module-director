@@ -37,7 +37,7 @@ class ConfigController extends ActionController
         if ($deploymentId = $this->params->get('deployment_id')) {
             $tabs->add('deployment', array(
                 'label'     => $this->translate('Deployment'),
-                'url'       => 'director/deployment/show',
+                'url'       => 'director/deployment',
                 'urlParams' => array(
                     'id' => $deploymentId
                 )
