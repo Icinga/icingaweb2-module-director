@@ -128,7 +128,7 @@ abstract class ActionController extends Controller
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
-                $this->redirectNow('director/welcome');
+                $this->redirectNow('director');
             }
         }
 

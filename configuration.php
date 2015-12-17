@@ -26,7 +26,7 @@ $section = $this->menuSection(
     $this->translate('Icinga Director')
 )->setIcon('cubes');
 
-$section->add($this->translate('Overview'))->setUrl('director/welcome')->setPriority(20);
+$section->add($this->translate('Overview'))->setUrl('director')->setPriority(20);
 $section->add($this->translate('Hosts'))->setUrl('director/hosts')->setPriority(30);
 $section->add($this->translate('Services'))->setUrl('director/services')->setPriority(40);
 $section->add($this->translate('Commands'))->setUrl('director/commands')->setPriority(50);
