@@ -127,7 +127,8 @@ abstract class ObjectController extends ActionController
         $this->view->title = sprintf($title, ucfirst($ltype));
         $this->view->form->handleRequest();
 
-        $this->view->actionLinks = $this->view->qlink(
+        $this->view->actionLinks = $this->view->icon('paste') . ' '
+            .  $this->view->qlink(
             sprintf($this->translate('Clone'), $this->translate(ucfirst($ltype))),
             'director/' . $ltype .'/clone',
             array('name' => $object->object_name)
@@ -175,8 +176,9 @@ abstract class ObjectController extends ActionController
         );
         $this->view->form->handleRequest();
 
-        $this->view->actionLinks = $this->view->qlink(
-            sprintf($this->translate('<- back'), $this->translate(ucfirst($ltype))),
+        $this->view->actionLinks = $this->view->icon('left-big') . ' '
+            . $this->view->qlink(
+            sprintf($this->translate('back'), $this->translate(ucfirst($ltype))),
             'director/' . $ltype,
             array('name' => $this->object->object_name)
         );

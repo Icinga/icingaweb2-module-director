@@ -88,7 +88,8 @@ abstract class ObjectsController extends ActionController
             $addTitle = $this->translate('Add %s');
         }
 
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             sprintf($addTitle, $this->translate(ucfirst($ltype))),
             'director/' . $ltype .'/add',
             $addParams
