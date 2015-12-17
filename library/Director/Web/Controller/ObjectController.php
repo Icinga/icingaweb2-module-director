@@ -127,6 +127,12 @@ abstract class ObjectController extends ActionController
         $this->view->title = sprintf($title, ucfirst($ltype));
         $this->view->form->handleRequest();
 
+        $this->view->actionLinks = $this->view->qlink(
+            sprintf($this->translate('Clone'), $this->translate(ucfirst($ltype))),
+            'director/' . $ltype .'/clone',
+            array('name' => $object->object_name)
+        );
+
         $this->render('object/form', null, true);
     }
 
@@ -156,6 +162,7 @@ abstract class ObjectController extends ActionController
     public function cloneAction()
     {
         $type = $this->getType();
+        $ltype = strtolower($type);
         $this->getTabs()->activate('modify');
 
         $this->view->form = $form = $this->loadForm(
@@ -167,6 +174,13 @@ abstract class ObjectController extends ActionController
             ucfirst($type)
         );
         $this->view->form->handleRequest();
+
+        $this->view->actionLinks = $this->view->qlink(
+            sprintf($this->translate('<- back'), $this->translate(ucfirst($ltype))),
+            'director/' . $ltype,
+            array('name' => $this->object->object_name)
+        );
+
         $this->render('object/form', null, true);
     }
 
