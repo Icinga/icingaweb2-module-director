@@ -54,7 +54,10 @@ class CoreApi
             $params->attrs = $attrs;
         }
         $url = 'objects/' . urlencode(strtolower($pluraltype)) . '/' . rawurlencode($name) . '?all_joins=1';
-        return $this->client->get($url, $params)->getResult('name');
+        $res = $this->client->get($url, $params)->getResult('name');
+
+        // TODO: check key, throw
+        return $res[$name];
     }
 
     public function getConstants()
