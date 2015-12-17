@@ -49,6 +49,11 @@ class IcingaEndpointForm extends DirectorObjectForm
             'description' => $this->translate('The log duration time.')
         ));
 
+        $this->addElement('select', 'apiuser_id', array(
+            'label'        => $this->translate('API user'),
+            'multiOptions' => $this->optionalEnum($this->db->enumApiUsers())
+        ));
+
         $this->addZoneElement()
             ->addImportsElement();
 

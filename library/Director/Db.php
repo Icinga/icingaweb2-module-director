@@ -390,6 +390,11 @@ class Db extends DbConnection
         return $this->enumIcingaObjects('usergroup');
     }
 
+    public function enumApiUsers()
+    {
+        return $this->enumIcingaObjects('apiuser');
+    }
+
     public function enumSyncRule()
     {
         return $this->enum('sync_rule', array('id', 'rule_name'));
