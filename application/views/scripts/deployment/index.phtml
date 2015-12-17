@@ -72,7 +72,7 @@ if ($deployment->startup_succeeded === null) {
 </table>
 <?php if ($deployment->startup_succeeded !== null): ?>
 <h2>Startup log</h2>
-<pre>
+<pre class="logfile">
 <?= $this->escape($deployment->startup_log) ?>
 </pre>
 <?php endif ?>
