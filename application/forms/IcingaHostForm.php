@@ -31,6 +31,30 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         $this->addZoneElement();
+
+        $this->addBoolean('has_agent', array(
+            'label'       => $this->translate('Icinga2 Agent'),
+            'description' => $this->translate(
+                'Whether this host has the Icinga 2 Agent installed'
+            ),
+            'class'       => 'autosubmit',
+        ));
+
+        if ($this->getSentOrObjectValue('has_agent') === 'y') {
+            $this->addBoolean('master_should_connect', array(
+                'label'       => $this->translate('Establish connection'),
+                'description' => $this->translate(
+                    'Whether the parent (master) node should actively try to connect to this agent'
+                ),
+                'required'    => true
+            ));
+            $this->addBoolean('accept_config', array(
+                'label'       => $this->translate('Accepts config'),
+                'description' => $this->translate('Whether the agent is configured to accept config'),
+                'required'    => true
+            ));
+        }
+
         $this->addImportsElement();
 
         /*
@@ -46,6 +70,9 @@ class IcingaHostForm extends DirectorObjectForm
             'address',
             'address6',
             'zone_id',
+            'has_agent',
+            'master_should_connect',
+            'accept_config',
             'imports',
         );
         $this->addDisplayGroup($elements, 'object_definition', array(

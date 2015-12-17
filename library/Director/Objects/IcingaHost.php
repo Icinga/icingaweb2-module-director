@@ -37,6 +37,9 @@ class IcingaHost extends IcingaObject
         'icon_image'            => null,
         'icon_image_alt'        => null,
         'object_type'           => null,
+        'has_agent'             => null,
+        'master_should_connect' => null,
+        'accept_config'         => null,
     );
 
     protected $relations = array(
@@ -54,7 +57,10 @@ class IcingaHost extends IcingaObject
         'enable_event_handler',
         'enable_flapping',
         'enable_perfdata',
-        'volatile'
+        'volatile',
+        'has_agent',
+        'master_should_connect',
+        'accept_config'
     );
 
     protected $supportsCustomVars = true;
@@ -103,5 +109,20 @@ class IcingaHost extends IcingaObject
     public function hasCheckCommand()
     {
         return $this->getResolvedProperty('check_command_id') !== null;
+    }
+
+    protected function renderHas_Agent()
+    {
+        return '';
+    }
+
+    protected function renderMaster_should_connect()
+    {
+        return '';
+    }
+
+    protected function renderAccept_config()
+    {
+        return '';
     }
 }
