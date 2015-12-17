@@ -358,7 +358,8 @@ throw $e;
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         $objects = $class::loadAll($this->connection);
         if (empty($objects)) return $this;
-        $ourGlobalZone = 'director-global';
+        $masterZone = $this->getMasterZoneName();
+        $globalZone = $this->getGlobalZoneName();
         $file = null;
 
         foreach ($objects as $object) {
@@ -369,25 +370,42 @@ throw $e;
                 continue;
             } elseif ($object->isTemplate()) {
                 $filename = strtolower($type) . '_templates';
-                $zone = $ourGlobalZone;
             } else {
                 $filename = strtolower($type) . 's';
-                $zone = $ourGlobalZone;
             }
 
+            // Zones get special handling
             if ($type === 'zone') {
                 $this->zoneMap[$object->id] = $object->object_name;
+                // If the zone has a parent zone...
+                if ($object->parent_id) {
+                    // ...we render the zone object to the parent zone
+                    $zone = $object->parent;
+                } elseif ($object->is_global === 'y') {
+                    // ...additional global zones are rendered to our global zone...
+                    $zone = $globalZone;
+                } else {
+                    // ...and all the other zones are rendered to our master zone
+                    $zone = $masterZone;
+                }
+            // Zone definitions for all other objects are respected...
             } elseif ($object->hasProperty('zone_id') && ($zone_id = $object->zone_id)) {
                 $zone = $this->getZoneName($zone_id);
+            // ...and if there is no zone defined, special rules take place
             } else {
-                $zone = $ourGlobalZone;
+                if ($this->typeWantsMasterZone($type)) {
+                    $zone = $masterZone;
+                } elseif ($this->typeWantsGlobalZone($type)) {
+                    $zone = $globalZone;
+                } else {
+                    throw new ProgrammingError(
+                        'I have no idea of how to deploy a "%s" object',
+                        $type
+                    );
+                }
             }
 
-            if (in_array($type, array('command', 'zone'))) {
-                $filename = 'zones.d/' . $ourGlobalZone . '/' . $filename;
-            } else {
-                $filename = 'zones.d/' . $zone . '/' . $filename;
-            }
+            $filename = 'zones.d/' . $zone . '/' . $filename;
             $file = $this->configFile($filename);
             $file->addObject($object);
         }
@@ -396,6 +414,42 @@ throw $e;
         }
 
         return $this;
+    }
+
+    protected function typeWantsGlobalZone($type)
+    {
+        $types = array(
+            'command',
+        );
+
+        return in_array($type, $types);
+    }
+
+    protected function typeWantsMasterZone($type)
+    {
+        $types = array(
+            'host',
+            'hostGroup',
+            'service',
+            'serviceGroup',
+            'endpoint',
+            'user',
+            'userGroup',
+            'timeperiod',
+            'notification'
+        );
+
+        return in_array($type, $types);
+    }
+
+    protected function getMasterZoneName()
+    {
+        return 'master';
+    }
+
+    protected function getGlobalZoneName()
+    {
+        return 'director-global';
     }
 
     protected function configFile($name, $suffix = '.conf')
