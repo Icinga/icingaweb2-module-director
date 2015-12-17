@@ -18,7 +18,7 @@
             /**
              * Tell Icinga about our event handlers
              */
-            this.module.on('rendered',     this.rendered);
+            this.module.on('rendered', this.rendered);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             this.module.icinga.logger.debug('Director module initialized');
         },
@@ -35,7 +35,7 @@
             this.module.icinga.logger.info('rendered');
             var $container = $(ev.currentTarget);
             var self = this;
-            $('form', $container).each(self.restoreFieldsets.bind(self));
+            $container.find('form').each(self.restoreFieldsets.bind(self));
         },
 
         restoreFieldsets: function(idx, form) {
@@ -45,7 +45,7 @@
 
             $('fieldset', $form).each(function(idx, fieldset) {
                 var $fieldset = $(fieldset);
-                if ($('.required', $fieldset).length == 0 && (! self.fieldsetWasOpened($fieldset))) {
+                if ($fieldset.find('.required').length == 0 && (! self.fieldsetWasOpened($fieldset))) {
                     $fieldset.addClass('collapsed');
                     self.fixFieldsetInfo($fieldset);
                 }
@@ -62,10 +62,12 @@
 
         fixFieldsetInfo: function($fieldset) {
             if ($fieldset.hasClass('collapsed')) {
-                var cnt = $('dt', $fieldset).length;
-                $('legend', $fieldset).append($('<span class="element-count"> (' + cnt + ')</span>'));
+                if ($fieldset.find('legend span.element-count').length === 0) {
+                    var cnt = $fieldset.find('dt').length;
+                    $fieldset.find('legend').append($('<span class="element-count"> (' + cnt + ')</span>'));
+                }
             } else {
-                $('legend span.element-count', $fieldset).remove();
+                $fieldset.find('legend span.element-count').remove();
             }
         }
     };
