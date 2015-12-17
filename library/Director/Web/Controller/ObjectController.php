@@ -220,8 +220,8 @@ abstract class ObjectController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/'),
-            array('Group', 'Period', 'Argument'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser'),
             $this->getRequest()->getControllerName()
         );
     }

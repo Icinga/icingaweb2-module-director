@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
-class IcingaEndpointForm extends DirectorObjectForm
+class IcingaApiUserForm extends DirectorObjectForm
 {
     public function setup()
     {
@@ -23,7 +23,6 @@ class IcingaEndpointForm extends DirectorObjectForm
             'required' => true,
         ));
 
-        $this->addImportsElement();
         $this->setButtons();
     }
 }

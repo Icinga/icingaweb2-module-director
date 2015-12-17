@@ -967,6 +967,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'userGroup';
         } elseif ($type === 'servicegroup') {
             $type = 'serviceGroup';
+        } elseif ($type === 'apiuser') {
+            $type = 'apiUser';
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);

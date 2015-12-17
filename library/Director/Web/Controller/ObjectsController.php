@@ -7,9 +7,10 @@ abstract class ObjectsController extends ActionController
     protected $dummy;
 
     protected $globalTypes = array(
-        'TimePeriod',
+        'ApiUser',
         'Zone',
-        'Endpoint'
+        'Endpoint',
+        'TimePeriod',
     );
 
     public function init()
@@ -22,7 +23,7 @@ abstract class ObjectsController extends ActionController
         if (in_array(ucfirst($type), $this->globalTypes)) {
             $ltype = strtolower($type);
             $tabs->add('overview', array(
-                'url' => $this->getRequest()->getUrl(),
+                'url' => 'director/welcome',
                 'label' => $this->translate('Overview')
             ));
 
@@ -129,8 +130,8 @@ abstract class ObjectsController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/'),
-            array('Group', 'Period', 'Argument'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser'),
             str_replace(
                 'template',
                 '', 
