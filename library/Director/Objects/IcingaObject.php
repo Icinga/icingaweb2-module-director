@@ -133,6 +133,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::hasBeenModified();
     }
 
+    public function get($key)
+    {
+        if ($this->hasRelation($key)) {
+            if ($id = $this->get($key . '_id')) {
+                $class = $this->getRelationClass($key);
+                $object = $class::loadWithAutoIncId($id, $this->connection);
+                return $object->object_name;
+            }
+        }
+
+        return parent::get($key);
+    }
+
     public function set($key, $value)
     {
         if ($key === 'groups') {
