@@ -105,6 +105,11 @@ class IcingaConfig
         return array_keys($this->files);
     }
 
+    public function getFile($name)
+    {
+        return $this->files[$name];
+    }
+
     public function getMissingFiles($missing)
     {
         $files = array();

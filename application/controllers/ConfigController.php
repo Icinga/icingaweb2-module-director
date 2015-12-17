@@ -59,6 +59,18 @@ class ConfigController extends ActionController
         $this->render('objects/table', null, true);
     }
 
+    // Show a single file
+    public function fileAction()
+    {
+        $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('config_checksum')), $this->db());
+        $filename = $this->view->filename = $this->params->get('file_path');
+        $this->view->title = sprintf(
+            $this->translate('Config file "%s"'),
+            $filename
+        );
+        $this->view->file = $this->view->config->getFile($filename);
+    }
+
     public function showAction()
     {
         $tabs = $this->getTabs();
