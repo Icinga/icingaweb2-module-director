@@ -16,14 +16,21 @@ class IcingaEndpoint extends IcingaObject
         'port'                  => null,
         'log_duration'          => null,
         'object_type'           => null,
+        'apiuser_id'            => null,
     );
 
     protected $relations = array(
-        'zone'             => 'IcingaZone',
+        'zone'    => 'IcingaZone',
+        'apiuser' => 'IcingaApiUser',
     );
 
     protected function renderLog_duration()
     {
         return $this->renderPropertyAsSeconds('log_duration');
+    }
+
+    protected function renderApiuser_id()
+    {
+        return '';
     }
 }
