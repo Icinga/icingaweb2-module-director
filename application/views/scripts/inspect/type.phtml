@@ -4,6 +4,7 @@
 </div>
 
 <div class="content">
+<?php if ($this->objects): ?>
 <table class="common-table table-row-selectable" data-base-target="_next">
  <thead><tr><th><?= $this->translate('Object name') ?></th></tr></thead>
  <tbody>
@@ -11,10 +12,16 @@
   <tr><td><?= $this->qlink(
     str_replace('!', ': ', $object),
     'director/inspect/object',
-    array('type' => $this->type->name, 'plural' => $this->type->plural_name, 'name' => $object)
+    array(
+        'endpoint' => $this->endpoint,
+        'type'     => $this->type->name,
+        'plural'   => $this->type->plural_name,
+        'name'     => $object
+    )
   ) ?></td></tr>
 <?php endforeach ?>
  </tbody>
 </table>
-<pre><?= $this->escape(print_r($this->type, 1)) ?></pre>
+<?php endif ?>
+<pre><?= $this->renderPlainObject($this->type) ?></pre>
 </div>

@@ -2,13 +2,19 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class InspectController extends ActionController
 {
     public function typesAction()
     {
-        $this->view->title = $this->translate('Icinga2 object types');
+        $this->view->title = sprintf(
+            $this->translate('Icinga2 Objects: %s'),
+            $this->view->endpoint
+        );
         $api = $this->api();
         $types = $api->getTypes();
         $rootNodes = array();
@@ -30,6 +36,10 @@ class InspectController extends ActionController
     public function typeAction()
     {
         $typeName = $this->params->get('name');
+        $this->view->title = sprintf(
+            $this->translate('Object type "%s"'),
+            $typeName
+        );
         $this->view->type = $type = $this->api()->getType($typeName);
         if ($type->abstract) {
             return;
@@ -83,5 +93,16 @@ class InspectController extends ActionController
     {
         $this->view->status = $status = $this->api()->getStatus();
         print_r($status); exit;
+    }
+
+    protected function api()
+    {
+        $this->view->endpoint = $this->params->get('endpoint');
+        $endpoint = IcingaEndpoint::load($this->view->endpoint, $this->db());
+        $apiconfig = $this->Config()->getSection('api');
+        $client = new RestApiClient($endpoint->host, $endpoint->port);
+        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
+        $api = new CoreApi($client);
+        return $api;
     }
 }
