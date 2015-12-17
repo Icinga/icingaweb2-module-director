@@ -640,6 +640,13 @@ abstract class DirectorObjectForm extends QuickForm
         } else {
             $this->handleProperties($object, $values);
         }
+
+        /*
+        // TODO: something like this could be used to remember unstored changes
+        if ($object->hasBeenModified()) {
+            $this->addHtmlHint($this->translate('Object has been modified'));
+        }
+        */
     }
 
     protected function deleteObject($object)
