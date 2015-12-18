@@ -508,6 +508,7 @@ CREATE TABLE icinga_service (
   icon_image VARCHAR(255) DEFAULT NULL,
   icon_image_alt VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
+  use_agent ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   -- UNIQUE INDEX object_name (object_name, zone_id),
   UNIQUE KEY object_key (object_name, host_id),

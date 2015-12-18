@@ -33,6 +33,7 @@ class IcingaService extends IcingaObject
         'icon_image'            => null,
         'icon_image_alt'        => null,
         'object_type'           => null,
+        'use_agent'             => null,
     );
 
     protected $relations = array(
@@ -66,6 +67,11 @@ class IcingaService extends IcingaObject
     public function renderHost_id()
     {
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
+    }
+
+    public function renderUse_agent()
+    {
+        return '';
     }
 
     protected function renderCheck_Interval()
