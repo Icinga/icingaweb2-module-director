@@ -879,6 +879,9 @@ abstract class DbObject
 
     protected static function hasPrefetched($key)
     {
+        // TODO: temporarily disabled as of collisions with services
+        return false;
+
         $class = get_called_class();
         if (array_key_exists($class, self::$prefetched)) {
             return array_key_exists($key, self::$prefetched[$class]);
