@@ -20,7 +20,11 @@ class IcingaServiceForm extends DirectorObjectForm
             'description' => $this->translate('One or more comma separated servicegroup names')
         ));
         */
-
+        $this->optionalBoolean(
+            'use_agent',
+            $this->translate('Run on agent'),
+            $this->translate('Whether the check commmand for this service should be executed on the Icinga agent')
+        );
         $this->addImportsElement();
         $this->addCheckCommandElements();
 
