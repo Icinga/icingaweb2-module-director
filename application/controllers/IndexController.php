@@ -4,12 +4,13 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
 
-class WelcomeController extends ActionController
+class IndexController extends ActionController
 {
     protected $globalTypes = array(
-        'TimePeriod',
+        'ApiUser',
         'Zone',
-        'Endpoint'
+        'Endpoint',
+        'TimePeriod',
     );
 
     public function indexAction()
