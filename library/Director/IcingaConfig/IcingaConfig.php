@@ -370,8 +370,9 @@ throw $e;
 
             $endpoints[] = IcingaEndpoint::create($props);
             $zones[] = IcingaZone::create(array(
-                'object_name' => $name
-            ))->setEndpointList(array($name));
+                'object_name' => $name,
+                'parent'      => $this->getMasterZoneName()
+            ), $this->connection)->setEndpointList(array($name));
         }
 
         $this->createFileForObjects('endpoint', $endpoints);
