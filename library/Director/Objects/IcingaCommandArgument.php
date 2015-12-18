@@ -84,6 +84,10 @@ class IcingaCommandArgument extends IcingaObject
             $data['description'] = c::renderString($this->description);
         }
 
-        return c::renderDictionary($data);
+        if (array_keys($data) === array('value')) {
+            return $data['value'];
+        } else {
+            return c::renderDictionary($data);
+        }
     }
 }
