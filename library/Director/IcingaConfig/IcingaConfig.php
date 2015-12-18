@@ -237,8 +237,10 @@ class IcingaConfig
                 $this->db->insert(
                     $fileTable,
                     array(
-                        $fileKey  => $this->dbBin($checksum),
-                        'content' => $file->getContent()
+                        $fileKey       => $this->dbBin($checksum),
+                        'content'      => $file->getContent(),
+                        'cnt_object'   => $file->getObjectCount(),
+                        'cnt_template' => $file->getTemplateCount()
                     )
                 );
             }
