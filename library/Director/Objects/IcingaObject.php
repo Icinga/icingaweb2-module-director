@@ -141,6 +141,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $object = $class::loadWithAutoIncId($id, $this->connection);
                 return $object->object_name;
             }
+
+            return null;
         }
 
         return parent::get($key);
