@@ -58,8 +58,13 @@ class IcingaCommandArgument extends IcingaObject
                         $data['value'] = c::renderDictionary($this->argument_value);
                     } elseif (is_array($this->argument_value)) {
                         $data['value'] = c::renderArray($this->argument_value);
+                    } elseif (is_null($this->argument_value)) {
+                        // TODO: recheck all this. I bet we never reach this:
+                        $data['value'] = 'null';
+                    } elseif (is_bool($this->argument_value)) {
+                        $data['value'] = c::renderBoolean($this->argument_value);
                     } else {
-                        die('Unhandled');
+                        $data['value'] = $this->argument_value;
                     }
                     break;
                 case 'expression':

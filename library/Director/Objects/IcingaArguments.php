@@ -100,26 +100,41 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
                     $attrs[$dbKey] = $value->$apiKey;
                 }
             }
-            if (property_exists($value, 'value')) {
-                $argValue = $value->value;
-            }
             if (property_exists($value, 'type')) {
                 if ($value->type === 'Function') {
                     $attrs['argument_value'] = '/* Unable to fetch function body through API */';
                     $attrs['argument_format'] = 'expression';
                 }
+            } elseif (property_exists($value, 'value')) {
+                if (is_object($value->value)) {
+                    if ($value->value->type === 'Function') {
+                        $attrs['argument_value'] = '/* Unable to fetch function body through API */';
+                        $attrs['argument_format'] = 'expression';
+                    } else {
+                        var_dump($value);
+                        die('Unable to resolve command argument');
+                    }
+                } else {
+                    $argValue = $value->value;
+                    if (is_string($argValue)) {
+                        $attrs['argument_value'] = $argValue;
+                        $attrs['argument_format'] = 'string';
+                    } else {
+                        $attrs['argument_value'] = json_encode($argValue);
+                        $attrs['argument_format'] = 'json';
+                    }
+                }
             }
         } else {
-            $argValue = $value;
+            if (is_string($value)) {
+                $attrs['argument_value'] = $value;
+                $attrs['argument_format'] = 'string';
+            } else {
+                $attrs['argument_value'] = json_encode($value);
+                $attrs['argument_format'] = 'json';
+            }
         }
 
-        if (is_string($argValue)) {
-            $attrs['argument_value'] = $argValue;
-            $attrs['argument_format'] = 'string';
-        } elseif ($argValue !== null) {
-            $attrs['argument_value'] = $argValue;
-            $attrs['argument_format'] = 'json';
-        }
 
         $this->add(IcingaCommandArgument::create($attrs));
 
