@@ -5,8 +5,8 @@ namespace Icinga\Module\Director\IcingaConfig;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
-use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Web\Hook;
 use Exception;
@@ -283,15 +283,13 @@ throw $e;
 
         );
 
-        // TODO: combine this with real fetches, this is a test right now
-        IcingaEndpoint::prefetchAll($this->connection);
-
         $this
             ->createFileFromDb('zone')
             ->createFileFromDb('endpoint')
             ->createFileFromDb('command')
             ->createFileFromDb('hostGroup')
             ->createFileFromDb('host')
+            ->autogenerateAgents()
             ->createFileFromDb('serviceGroup')
             ->createFileFromDb('service')
             ->createFileFromDb('userGroup')
@@ -353,10 +351,43 @@ throw $e;
         return $this;
     }
 
+    protected function autogenerateAgents()
+    {
+        $zones = array();
+        $endpoints = array();
+        foreach (IcingaHost::prefetchAll($this->connection) as $host) {
+            $name = $host->object_name;
+            if ($host->has_agent === 'y') {
+                $props = array(
+                    'object_name' => $name,
+                    'object_type' => 'object',
+                );
+                if ($host->master_should_connect === 'y') {
+                    $props['host'] = $host->address;
+                    $props['zone_id'] = $host->zone_id;
+                }
+
+                $endpoints[] = IcingaEndpoint::create($props);
+                $zones[] = IcingaZone::create(array(
+                    'object_name' => $name
+                ))->setEndpointList(array($name));
+            }
+        }
+
+        $this->createFileForObjects('endpoint', $endpoints);
+        $this->createFileForObjects('zone', $zones);
+        return $this;
+    }
+
     protected function createFileFromDb($type)
     {
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
-        $objects = $class::loadAll($this->connection);
+        $objects = $class::prefetchAll($this->connection);
+        return $this->createFileForObjects($type, $objects);
+    }
+
+    protected function createFileForObjects($type, $objects)
+    {
         if (empty($objects)) return $this;
         $masterZone = $this->getMasterZoneName();
         $globalZone = $this->getGlobalZoneName();
