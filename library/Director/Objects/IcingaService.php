@@ -80,13 +80,13 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
-    public function renderCommand_endpoint_id()
+    protected function renderCustomExtensions()
     {
-        if ($this->use_agent === 'y') {
-            return $this->renderHost_id();
-        }
+        if ($this->command_endpoint_id !== null) return '';
+        if ($this->object_type !== 'object') return '';
+        if ($this->getResolvedProperty('use_agent') !== 'y') return '';
 
-        return $this->renderRelationProperty('command_endpoint', $this->command_endpoint_id);
+        return $this->renderRelationProperty('host', $this->host_id, 'command_endpoint');
     }
 
     public function renderUse_agent()
