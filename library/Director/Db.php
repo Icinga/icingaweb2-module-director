@@ -5,6 +5,7 @@ namespace Icinga\Module\Director;
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Zend_Db_Expr;
+use Zend_Db_Select;
 
 class Db extends DbConnection
 {
@@ -281,6 +282,47 @@ class Db extends DbConnection
 
         $lastRun->order('start_time DESC')->limit(1);
         return $db->fetchOne($lastRun);
+    }
+
+    public function getObjectSummary()
+    {
+        $types = array(
+            'host',
+            'hostgroup',
+            'service',
+            'servicegroup',
+            'user',
+            'usergroup',
+            'timeperiod',
+            'apiuser',
+            'endpoint',
+            'zone',
+        );
+
+        $queries = array();
+        $db = $this->db();
+        foreach ($types as $type) {
+            $queries[] = $db->select()->from(
+                'icinga_' . $type,
+                array(
+                    'icinga_type'  => "('" . $type . "')",
+                    'cnt_object'   => "COALESCE(SUM(CASE WHEN object_type = 'object' THEN 1 ELSE 0 END), 0)",
+                    'cnt_template' => "COALESCE(SUM(CASE WHEN object_type = 'template' THEN 1 ELSE 0 END), 0)",
+                    'cnt_external' => "COALESCE(SUM(CASE WHEN object_type = 'external_object' THEN 1 ELSE 0 END), 0)",
+                    'cnt_total'    => 'COUNT(*)',
+                )
+            );
+        }
+
+        $query = $this->db()->select()->union($queries, Zend_Db_Select::SQL_UNION_ALL);
+
+        $result = array();
+
+        foreach ($db->fetchAll($query) as $row) {
+            $result[$row->icinga_type] = $row;
+        }
+
+        return $result;
     }
 
     public function listImportedRowsetColumnNames($checksum)
