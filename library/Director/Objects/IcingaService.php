@@ -46,14 +46,14 @@ class IcingaService extends IcingaObject
     );
 
     protected $booleans = array(
-        'enable_notifications',
-        'enable_active_checks',
-        'enable_passive_checks',
-        'enable_event_handler',
-        'enable_flapping',
-        'enable_perfdata',
-        'volatile',
-        'use_agent',
+        'enable_notifications'  => 'enable_notifications',
+        'enable_active_checks'  => 'enable_active_checks',
+        'enable_passive_checks' => 'enable_passive_checks',
+        'enable_event_handler'  => 'enable_event_handler',
+        'enable_flapping'       => 'enable_flapping',
+        'enable_perfdata'       => 'enable_perfdata',
+        'volatile'              => 'volatile',
+        'use_agent'             => 'use_agent',
     );
 
     protected $supportsGroups = true;

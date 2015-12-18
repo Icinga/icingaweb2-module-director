@@ -51,16 +51,16 @@ class IcingaHost extends IcingaObject
     );
 
     protected $booleans = array(
-        'enable_notifications',
-        'enable_active_checks',
-        'enable_passive_checks',
-        'enable_event_handler',
-        'enable_flapping',
-        'enable_perfdata',
-        'volatile',
-        'has_agent',
-        'master_should_connect',
-        'accept_config'
+        'enable_notifications'  => 'enable_notifications',
+        'enable_active_checks'  => 'enable_active_checks',
+        'enable_passive_checks' => 'enable_passive_checks',
+        'enable_event_handler'  => 'enable_event_handler',
+        'enable_flapping'       => 'enable_flapping',
+        'enable_perfdata'       => 'enable_perfdata',
+        'volatile'              => 'volatile',
+        'has_agent'             => 'has_agent',
+        'master_should_connect' => 'master_should_connect',
+        'accept_config'         => 'accept_config'
     );
 
     protected $supportsCustomVars = true;
