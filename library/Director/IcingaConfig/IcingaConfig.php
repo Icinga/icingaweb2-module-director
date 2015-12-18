@@ -279,8 +279,6 @@ throw $e;
 
         $this->configFile('conf.d/001-director-basics')->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
-          . "\nobject Zone \"director-global\" {\n    global = true\n}\n"
-
         );
 
         $this
