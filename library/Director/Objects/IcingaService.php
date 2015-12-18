@@ -80,6 +80,15 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    public function renderCommand_endpoint_id()
+    {
+        if ($this->use_agent === 'y') {
+            return $this->renderHost_id();
+        }
+
+        return $this->renderRelationProperty('command_endpoint', $this->command_endpoint_id);
+    }
+
     public function renderUse_agent()
     {
         return '';
