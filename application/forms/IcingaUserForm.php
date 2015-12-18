@@ -48,12 +48,12 @@ class IcingaUserForm extends DirectorObjectForm
             $this->translate('Send notifications'),
             $this->translate('Whether to send notifications for this user')
         );
-
+/*
         $this->addElement('text', 'groups', array(
             'label' => $this->translate('Usergroups'),
             'description' => $this->translate('One or more comma separated usergroup names')
         ));
-
+*/
         $this->addImportsElement();
     }
 }
