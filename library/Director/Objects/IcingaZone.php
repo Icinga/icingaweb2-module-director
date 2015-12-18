@@ -27,6 +27,8 @@ class IcingaZone extends IcingaObject
 
     protected $supportsImports = true;
 
+    private $endpointList;
+
     protected function renderCustomExtensions()
     {
         $endpoints = $this->listEndpoints();
@@ -37,15 +39,25 @@ class IcingaZone extends IcingaObject
         return c::renderKeyValue('endpoints', c::renderArray($endpoints));
     }
 
+    public function setEndpointList($list)
+    {
+        $this->endpointList = $list;
+        return $this;
+    }
+
     // TODO: Move this away, should be prefetchable:
     protected function listEndpoints()
     {
-        $db = $this->getDb();
-        $query = $db->select()
-            ->from('icinga_endpoint', 'object_name')
-            ->where('zone_id = ?', $this->id)
-            ->order('object_name');
+        if ($this->endpointList === null) {
+            $db = $this->getDb();
+            $query = $db->select()
+                ->from('icinga_endpoint', 'object_name')
+                ->where('zone_id = ?', $this->id)
+                ->order('object_name');
 
-        return $db->fetchCol($query);
+            $this->endpointList = $db->fetchCol($query);
+        }
+
+        return $this->endpointList;
     }
 }
