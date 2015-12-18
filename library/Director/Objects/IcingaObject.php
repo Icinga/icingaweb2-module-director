@@ -186,6 +186,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 return parent::set($key, 'y');
             } elseif ($value === 'n' || $value === '0' || $value === false || $value === 0) {
                 return parent::set($key, 'n');
+            } elseif ($value === '') {
+                return parent::set($key, null);
             } else {
                 throw new ProgrammingError(
                     'Got invalid boolean: %s',
