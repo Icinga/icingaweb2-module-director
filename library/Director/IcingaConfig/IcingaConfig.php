@@ -356,22 +356,23 @@ throw $e;
         $zones = array();
         $endpoints = array();
         foreach (IcingaHost::prefetchAll($this->connection) as $host) {
+            if ($host->object_type !== 'object') continue;
+            if ($host->getResolvedProperty('has_agent') !== 'y') continue;
             $name = $host->object_name;
-            if ($host->has_agent === 'y') {
-                $props = array(
-                    'object_name' => $name,
-                    'object_type' => 'object',
-                );
-                if ($host->master_should_connect === 'y') {
-                    $props['host'] = $host->address;
-                    $props['zone_id'] = $host->zone_id;
-                }
 
-                $endpoints[] = IcingaEndpoint::create($props);
-                $zones[] = IcingaZone::create(array(
-                    'object_name' => $name
-                ))->setEndpointList(array($name));
+            $props = array(
+                'object_name' => $name,
+                'object_type' => 'object',
+            );
+            if ($host->getResolvedProperty('master_should_connect') === 'y') {
+                $props['host'] = $host->getResolvedProperty('address');
+                $props['zone_id'] = $host->getResolvedProperty('zone_id');
             }
+
+            $endpoints[] = IcingaEndpoint::create($props);
+            $zones[] = IcingaZone::create(array(
+                'object_name' => $name
+            ))->setEndpointList(array($name));
         }
 
         $this->createFileForObjects('endpoint', $endpoints);
