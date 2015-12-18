@@ -357,6 +357,7 @@ throw $e;
             if ($host->object_type !== 'object') continue;
             if ($host->getResolvedProperty('has_agent') !== 'y') continue;
             $name = $host->object_name;
+            if (IcingaEndpoint::exists($name, $this->connection)) continue;
 
             $props = array(
                 'object_name' => $name,
