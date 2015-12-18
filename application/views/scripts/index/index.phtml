@@ -8,6 +8,12 @@
 <p class="error"><?= $this->errorMessage ?></p>
 <?php endif ?>
 <?php
+
+if ((int) $stats['apiuser']->cnt_total === 0) {
+    echo $this->form . "</div>\n";
+    return;
+}
+
 $actions = array(
     array('cloud',    $this->translate('Monitoring Nodes'), 'director/commands'),
     array('host',     $this->translate('Host objecs'), 'director/hosts'),
