@@ -68,7 +68,7 @@ abstract class ObjectsController extends ActionController
         $this->assertPermission('director/' . $type . 's/read');
         $dummy = $this->dummyObject();
 
-        if (! in_array($type, $this->globalTypes)) {
+        if (! in_array(ucfirst($type), $this->globalTypes)) {
             if ($dummy->isGroup()) {
                 $this->getTabs()->activate('objectgroups');
                 $table = 'icinga' . ucfirst($type);
