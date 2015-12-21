@@ -20,7 +20,12 @@ class KickstartForm extends QuickForm
                 'Your installation of Icinga Director has not yet been prepared for deployments. This kickstart wizard will assist you with setting up the connection to your Icinga 2 server'
             )
         );
-        // TODO: distinct endpoint name / host
+
+        $this->addElement('text', 'endpoint', array(
+            'label'       => $this->translate('Endpoint Name'),
+            'required'    => true,
+        ));
+
         $this->addElement('text', 'host', array(
             'label'       => $this->translate('Icinga Host'),
             'description' => $this->translate('IP address / hostname of remote node'),
@@ -47,8 +52,10 @@ class KickstartForm extends QuickForm
 
     public function onSuccess()
     {
-        $this->importZones();
-        $this->importEndpoints();
+        $this->importZones()
+             ->importEndpoints()
+             ->importCommands();
+
         $this->apiUser()->store();
         parent::onSuccess();
     }
@@ -74,23 +81,41 @@ class KickstartForm extends QuickForm
                 $object->store();
             }
         }
+
+        return $this;
     }
 
     protected function importEndpoints()
     {
         $db = $this->db;
-        $master = $this->getValue('host');
+        $master = $this->getValue('endpoint');
 
         foreach ($this->api()->setDb($db)->getEndpointObjects() as $object) {
-            if ($object->object_name === 'master') {
-                $this->apiUser()->store();
-                $object->apiuser = $this->apiUser()->object_name;
+
+            if ($object->object_name === $master) {
+                $apiuser = $this->apiUser();
+                $apiuser->store();
+                $object->apiuser = $apiuser->object_name;
             }
 
             if (! $object::exists($object->object_name, $db)) {
                 $object->store();
             }
         }
+
+        return $this;
+    }
+
+    protected function importCommands()
+    {
+        $db = $this->db;
+        foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
+            if (! $object::exists($object->object_name, $db)) {
+                $object->store();
+            }
+        }
+
+        return $this;
     }
 
     public function setDb($db)
@@ -105,8 +130,14 @@ class KickstartForm extends QuickForm
 
     protected function api()
     {
-        $client = new RestApiClient($this->getValue('host'), $this->getValue('port'));
-        $client->setCredentials($this->apiUser()->object_name, $this->apiUser()->password);
+        $client = new RestApiClient(
+            $this->getValue('host'),
+            $this->getValue('port')
+        );
+
+        $apiuser = $this->apiuser;
+        $client->setCredentials($apiuser->object_name, $apiuser->password);
+
         $api = new CoreApi($client);
         return $api;
     }
