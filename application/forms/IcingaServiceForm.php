@@ -25,6 +25,7 @@ class IcingaServiceForm extends DirectorObjectForm
             $this->translate('Run on agent'),
             $this->translate('Whether the check commmand for this service should be executed on the Icinga agent')
         );
+        $this->addZoneElement();
         $this->addImportsElement();
         $this->addCheckCommandElements();
 
