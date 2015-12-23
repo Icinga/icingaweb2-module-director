@@ -775,10 +775,16 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addZoneElement()
     {
+        if ($this->isTemplate()) {
+            $zones = $this->db->enumZones();
+        } else {
+            $zones = $this->db->enumNonglobalZones();
+        }
+
         $this->addElement('select', 'zone_id', array(
             'label' => $this->translate('Cluster Zone'),
             'description'  => $this->translate('Icinga cluster zone'),
-            'multiOptions' => $this->optionalEnum($this->db->enumNonglobalZones())
+            'multiOptions' => $this->optionalEnum($zones)
         ));
 
         return $this;
