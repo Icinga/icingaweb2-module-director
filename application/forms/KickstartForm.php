@@ -135,7 +135,7 @@ class KickstartForm extends QuickForm
             $this->getValue('port')
         );
 
-        $apiuser = $this->apiuser;
+        $apiuser = $this->apiUser();
         $client->setCredentials($apiuser->object_name, $apiuser->password);
 
         $api = new CoreApi($client);
