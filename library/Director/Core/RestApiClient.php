@@ -47,18 +47,10 @@ class RestApiClient
 
     protected function request($method, $url, $body = null, $raw = false)
     {
-/*
-// TODO: Re-enabled once problems with 5.4 are fixed:
-
         if (function_exists('curl_version')) {
             return $this->curlRequest($method, $url, $body, $raw);
         } elseif (version_compare(PHP_VERSION, '5.4.0') >= 0) {
             return $this->phpRequest($method, $url, $body, $raw);
-*/
-        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            return $this->phpRequest($method, $url, $body, $raw);
-        } elseif (function_exists('curl_version')) {
-            return $this->curlRequest($method, $url, $body, $raw);
         } else {
             throw new Exception('No CURL extension detected, this is required for PHP < 5.4');
         }
@@ -119,7 +111,6 @@ class RestApiClient
         $auth = sprintf('%s:%s', $this->user, $this->pass);
         $headers = array(
             'Host: ' . $this->getPeerIdentity(),
-            'Authorization: Basic ' . $auth,
             'Connection: close'
         );
 
@@ -137,7 +128,7 @@ class RestApiClient
         $opts = array(
             CURLOPT_URL            => $this->url($url),
             CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_USERPWD        => base64_decode($auth),
+            CURLOPT_USERPWD        => $auth,
             CURLOPT_CUSTOMREQUEST  => strtoupper($method),
             CURLOPT_RETURNTRANSFER => true,
 
@@ -157,10 +148,7 @@ class RestApiClient
         if ($res === false) {
             throw new Exception('CURL ERROR: ' . curl_error($curl));
         }
-        if ($code == 200) {
-        $response = json_decode($response, true);
-        print_r($response);
-}
+
         Benchmark::measure('Rest Api, got response');
         if ($raw) {
             return $res;
