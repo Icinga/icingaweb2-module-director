@@ -20,15 +20,15 @@ class IndexController extends ActionController
             'label' => $this->translate('Overview')
         ))->activate('overview');
 
-        if ($this->Config()->get('db', 'resource')) {
-            $this->addGlobalTypeTabs();
-        } else {
+        if (! $this->Config()->get('db', 'resource')) {
             $this->view->errorMessage = sprintf(
                 $this->translate('No database resource has been configured yet. Please %s to complete your config'),
                 $this->view->qlink($this->translate('click here'), 'director/settings')
             );
+            return;
         }
 
+        $this->addGlobalTypeTabs();
         $this->view->stats = $this->db()->getObjectSummary();
         if ((int) $this->view->stats['apiuser']->cnt_total === 0) {
             $this->view->form = $this->loadForm('kickstart')->setDb($this->db)->handleRequest();

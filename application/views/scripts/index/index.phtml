@@ -9,7 +9,7 @@
 <?php endif ?>
 <?php
 
-if ((int) $stats['apiuser']->cnt_total === 0) {
+if ($this->stats && (int) $this->stats['apiuser']->cnt_total === 0) {
     echo $this->form . "</div>\n";
     return;
 }
