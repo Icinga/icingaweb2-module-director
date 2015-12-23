@@ -9,6 +9,14 @@ use Icinga\Exception\IcingaException;
 
 class Sync
 {
+    protected $modify = array();
+
+    protected $remove = array();
+
+    protected $create = array();
+
+    protected $errors = array();
+
     /**
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
@@ -132,7 +140,7 @@ class Sync
      *
      * @return mixed
      */
-    protected function getSpecificValue($row, $var)
+    public function getSpecificValue($row, $var)
     {
         if (strpos($var, '.') === false) {
             if (! property_exists($row, $var)) {
@@ -170,8 +178,10 @@ class Sync
             return $this->getSpecificValue($row, $m[1]);
         }
 
-        $func = function ($match) use ($row) {
-            return $this->getSpecificValue($row, $match[1]);
+        // PHP 5.3 :(
+        $self = $this;
+        $func = function ($match) use ($self, $row) {
+            return $self->getSpecificValue($row, $match[1]);
         };
 
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
@@ -386,11 +396,13 @@ class Sync
 
                 if (! $found) {
                     $object->markForRemoval();
+                    $this->remove[] = $object;
                 }
             }
 
             // TODO: This should be noticed or removed:
             if (! $object->$objectKey) {
+                $this->errors[] = $object;
                 $ignore[] = $key;
             }
         }
