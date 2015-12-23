@@ -17,6 +17,8 @@ class RestApiClient
 
     protected $pass;
 
+    protected $curl;
+
     public function __construct($peer, $port = 5665, $cn = null)
     {
         $this->peer = $peer;
@@ -45,6 +47,25 @@ class RestApiClient
 
     protected function request($method, $url, $body = null, $raw = false)
     {
+/*
+// TODO: Re-enabled once problems with 5.4 are fixed:
+
+        if (function_exists('curl_version')) {
+            return $this->curlRequest($method, $url, $body, $raw);
+        } elseif (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+            return $this->phpRequest($method, $url, $body, $raw);
+*/
+        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+            return $this->phpRequest($method, $url, $body, $raw);
+        } elseif (function_exists('curl_version')) {
+            return $this->curlRequest($method, $url, $body, $raw);
+        } else {
+            throw new Exception('No CURL extension detected, this is required for PHP < 5.4');
+        }
+    }
+
+    protected function phpRequest($method, $url, $body = null, $raw = false)
+    {
         $auth = base64_encode(sprintf('%s:%s', $this->user, $this->pass));
         $headers = array(
             'Host: ' . $this->getPeerIdentity(),
@@ -71,6 +92,7 @@ class RestApiClient
                 'ignore_errors' => true
             ),
             'ssl' => array(
+                // TODO: Fix this!
                 'verify_peer'   => false,
                 // 'cafile'        => $dir . 'cacert.pem',
                 // 'verify_depth'  => 5,
@@ -84,6 +106,61 @@ class RestApiClient
         if (substr(array_shift($http_response_header), 0, 10) !== 'HTTP/1.1 2') {
             throw new Exception($res);
         }
+        Benchmark::measure('Rest Api, got response');
+        if ($raw) {
+            return $res;
+        } else {
+            return RestApiResponse::fromJsonResult($res);
+        }
+    }
+
+    protected function curlRequest($method, $url, $body = null, $raw = false)
+    {
+        $auth = sprintf('%s:%s', $this->user, $this->pass);
+        $headers = array(
+            'Host: ' . $this->getPeerIdentity(),
+            'Authorization: Basic ' . $auth,
+            'Connection: close'
+        );
+
+        if (! $raw) {
+            $headers[] = 'Accept: application/json';
+
+        }
+
+        if ($body !== null) {
+            $body = json_encode($body);
+            $headers[] = 'Content-Type: application/json';
+        }
+
+        $curl = $this->curl();
+        $opts = array(
+            CURLOPT_URL            => $this->url($url),
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_USERPWD        => base64_decode($auth),
+            CURLOPT_CUSTOMREQUEST  => strtoupper($method),
+            CURLOPT_RETURNTRANSFER => true,
+
+            // TODO: Fix this!
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+        );
+
+        if ($body !== null) {
+            $opts[CURLOPT_POSTFIELDS] = $body;
+        }
+
+        curl_setopt_array($curl, $opts);
+
+        Benchmark::measure('Rest Api, sending ' . $url);
+        $res = curl_exec($curl);
+        if ($res === false) {
+            throw new Exception('CURL ERROR: ' . curl_error($curl));
+        }
+        if ($code == 200) {
+        $response = json_decode($response, true);
+        print_r($response);
+}
         Benchmark::measure('Rest Api, got response');
         if ($raw) {
             return $res;
@@ -115,5 +192,16 @@ class RestApiClient
     public function delete($url, $body = null)
     {
         return $this->request('delete', $url, $body);
+    }
+
+    protected function curl()
+    {
+        if ($this->curl === null) {
+            $this->curl = curl_init(sprintf('https://%s:%d', $this->peer, $this->port));
+            if (! $this->curl) {
+                throw new Exception('CURL INIT ERROR: ' . curl_error($this->curl));
+            }
+        }
+        return $this->curl;
     }
 }
