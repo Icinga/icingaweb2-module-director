@@ -27,11 +27,10 @@ any API access.
 Versioning
 ----------
 
-Many REST APIs include version strings in their URLs, Icinga Director
+Many REST APIs include version strings in like /v1/ their URLs, Icinga Director
 doesn't. We will try hard to not break compatibility with future versions.
 Sure, sooner or later we also might be forced to introduce some kind of
-versioning. But who knows? So we decided to not pollute our beautiful URLs
-with ugly extensions like /v1/.
+versioning. But who knows?
 
 As a developer you can trust us to not remove any existing REST url or any
 provided property. However, you must always be ready to accept new properties.
