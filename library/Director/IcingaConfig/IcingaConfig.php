@@ -362,8 +362,9 @@ throw $e;
             if (IcingaEndpoint::exists($name, $this->connection)) continue;
 
             $props = array(
-                'object_name' => $name,
-                'object_type' => 'object',
+                'object_name'  => $name,
+                'object_type'  => 'object',
+                'log_duration' => 0
             );
             if ($host->getResolvedProperty('master_should_connect') === 'y') {
                 $props['host'] = $host->getResolvedProperty('address');
