@@ -8,8 +8,18 @@ use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostVar;
 
+
+use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\Core\CoreApi;
+
+
 class BenchmarkCommand extends Command
 {
+    public function streamAction()
+    {
+        $this->api()->stream();
+    }
+
     public function filterAction()
     {
         $flat = array();
@@ -47,4 +57,16 @@ class BenchmarkCommand extends Command
 
         Benchmark::measure('all done');
     }
+
+
+
+    protected function api()
+    {
+        $apiconfig = $this->Config()->getSection('api');
+        $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
+        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
+        $api = new CoreApi($client);
+        return $api;
+    }
+
 }

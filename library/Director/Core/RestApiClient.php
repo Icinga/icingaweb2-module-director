@@ -19,6 +19,8 @@ class RestApiClient
 
     protected $curl;
 
+    protected $readBuffer = '';
+
     public function __construct($peer, $port = 5665, $cn = null)
     {
         $this->peer = $peer;
@@ -45,11 +47,13 @@ class RestApiClient
         return sprintf('https://%s:%d/%s/%s', $this->peer, $this->port, $this->version, $url);
     }
 
-    protected function request($method, $url, $body = null, $raw = false)
+    // protected function request($method, $url, $body = null, $raw = false)
+    public function request($method, $url, $body = null, $raw = false, $stream = false)
     {
         if (function_exists('curl_version')) {
-            return $this->curlRequest($method, $url, $body, $raw);
+            return $this->curlRequest($method, $url, $body, $raw, $stream);
         } elseif (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+            // TODO: fail if stream
             return $this->phpRequest($method, $url, $body, $raw);
         } else {
             throw new Exception('No CURL extension detected, this is required for PHP < 5.4');
@@ -106,12 +110,12 @@ class RestApiClient
         }
     }
 
-    protected function curlRequest($method, $url, $body = null, $raw = false)
+    protected function curlRequest($method, $url, $body = null, $raw = false, $stream = false)
     {
         $auth = sprintf('%s:%s', $this->user, $this->pass);
         $headers = array(
             'Host: ' . $this->getPeerIdentity(),
-            'Connection: close'
+            // 'Connection: close'
         );
 
         if (! $raw) {
@@ -141,6 +145,10 @@ class RestApiClient
             $opts[CURLOPT_POSTFIELDS] = $body;
         }
 
+        if ($stream) {
+            $opts[CURLOPT_WRITEFUNCTION] = array($this, 'readPart');
+        }
+
         curl_setopt_array($curl, $opts);
 
         Benchmark::measure('Rest Api, sending ' . $url);
@@ -150,6 +158,11 @@ class RestApiClient
         }
 
         Benchmark::measure('Rest Api, got response');
+
+        if ($stream) {
+            return $this;
+        }
+
         if ($raw) {
             return $res;
         } else {
@@ -191,5 +204,49 @@ class RestApiClient
             }
         }
         return $this->curl;
+    }
+
+    protected function readPart($curl, $data)
+    {
+        $length = strlen($data);
+        $this->readBuffer .= $data;
+        echo "Got $length bytes\n";
+        $this->dumpEvents();
+        return $length;
+    }
+
+    protected function dumpEvents()
+    {
+        $offset = 0;
+        while (false !== ($pos = strpos($this->readBuffer, "\n", $offset))) {
+            if ($pos === $offset) {
+                echo "Got empty line $offset / $pos\n";
+                $offset = $pos + 1;
+                continue;
+            }
+
+            $str = substr($this->readBuffer, $offset, $pos);
+            $decoded = json_decode($str);
+if ($decoded === false) {
+  die('No json: ' . $str);
+}
+printf("Processing %s bytes\n", strlen($str));
+print_r($decoded);
+
+            $offset = $pos + 1;
+        }
+
+        if ($offset > 0) {
+            $this->readBuffer = substr($this->readBuffer, $offset + 1);
+        }
+
+echo "REMAINING: " . strlen($this->readBuffer) . "\n";
+    }
+
+    public function __destruct()
+    {
+        if ($this->curl !== null && is_resource($this->curl)) {
+            curl_close($this->curl);
+        }
     }
 }

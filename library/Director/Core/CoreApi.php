@@ -354,6 +354,30 @@ constants
         ))->succeeded();
     }
 
+    public function stream()
+    {
+        $allTypes = array(
+            'CheckResult',
+            'StateChange',
+            'Notification',
+            'AcknowledgementSet',
+            'AcknowledgementCleared',
+            'CommentAdded',
+            'CommentRemoved',
+            'DowntimeAdded',
+            'DowntimeRemoved',
+            'DowntimeTriggered'
+        );
+
+        $queue = 'director-rand';
+
+        $url = sprintf('events?queue=%s&types=%s', $queue, implode('&types=', $allTypes));
+
+        $this->client->request('post', $url, null, false, true);
+
+
+    }
+
     public function dumpConfig(IcingaConfig $config, $db, $moduleName = 'director')
     {
         $start = microtime(true);
