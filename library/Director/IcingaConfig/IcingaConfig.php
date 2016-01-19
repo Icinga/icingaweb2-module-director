@@ -8,6 +8,7 @@ use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Application\Benchmark;
 use Icinga\Web\Hook;
 use Exception;
 
@@ -386,12 +387,14 @@ throw $e;
     protected function createFileFromDb($type)
     {
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
+        Benchmark::measure(sprintf('Prefetching %s', $type));
         $objects = $class::prefetchAll($this->connection);
         return $this->createFileForObjects($type, $objects);
     }
 
     protected function createFileForObjects($type, $objects)
     {
+        Benchmark::measure(sprintf('Generating %d %s', count($objects), $type));
         if (empty($objects)) return $this;
         $masterZone = $this->getMasterZoneName();
         $globalZone = $this->getGlobalZoneName();
