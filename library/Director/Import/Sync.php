@@ -152,7 +152,7 @@ class Sync
             $parts = explode('.', $var);
             $main = array_shift($parts);
             if (! is_object($row->$main)) {
-                die('Data is not nested, cannot access ...');
+                throw new IcingaException('Data is not nested, cannot access %s: %s', $var, var_export($row, 1));
             }
 
             return $this->getDeepValue($row->$main, $parts);
