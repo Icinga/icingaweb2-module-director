@@ -10,6 +10,9 @@
 -- icinga_validator_rule
 -- service-set
 
+-- Set DEFAULT 0xda39a3ee5e6b4b0d3255bfef95601890afd80709 for DEFAULT NULL?
+-- Set DEFAULT null-like entry in nullable relations
+
 
 SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER';
 
@@ -403,7 +406,7 @@ CREATE TABLE icinga_host (
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
-  UNIQUE INDEX object_name (object_name, zone_id),
+  UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name),
   CONSTRAINT icinga_host_zone
     FOREIGN KEY zone (zone_id)
