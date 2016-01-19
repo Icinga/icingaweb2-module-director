@@ -14,6 +14,7 @@ class IcingaCloneObjectForm extends QuickForm
         $this->addElement('text', 'new_object_name', array(
             'label'    => 'New name',
             'required' => true,
+            'value'    => $this->object->object_name,
         ));
 
         $this->addElement('select', 'clone_type', array(
@@ -37,6 +38,12 @@ class IcingaCloneObjectForm extends QuickForm
         $object = $this->object;
         $newname = $this->getValue('new_object_name');
         $resolve = $this->getValue('clone_type') === 'flat';
+
+        $this->setSuccessUrl(
+            'director/' . strtolower($object->getShortTableName()),
+            array('name' => $newname)
+        );
+
         $msg = sprintf(
             'The %s "%s" has been cloned from "%s"', 
             $object->getShortTableName(),
