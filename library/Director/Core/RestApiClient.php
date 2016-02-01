@@ -21,6 +21,8 @@ class RestApiClient
 
     protected $readBuffer = '';
 
+    protected $onEvent;
+
     public function __construct($peer, $port = 5665, $cn = null)
     {
         $this->peer = $peer;
@@ -34,6 +36,12 @@ class RestApiClient
         $this->user = $user;
         $this->pass = $pass;
 
+        return $this;
+    }
+
+    public function onEvent($callback)
+    {
+        $this->onEvent = $callback;
         return $this;
     }
 
@@ -156,7 +164,6 @@ class RestApiClient
         if ($res === false) {
             throw new Exception('CURL ERROR: ' . curl_error($curl));
         }
-
         Benchmark::measure('Rest Api, got response');
 
         if ($stream) {
@@ -210,12 +217,12 @@ class RestApiClient
     {
         $length = strlen($data);
         $this->readBuffer .= $data;
-        echo "Got $length bytes\n";
-        $this->dumpEvents();
+        // echo "Got $length bytes\n";
+        $this->processEvents();
         return $length;
     }
 
-    protected function dumpEvents()
+    protected function processEvents()
     {
         $offset = 0;
         while (false !== ($pos = strpos($this->readBuffer, "\n", $offset))) {
@@ -227,11 +234,16 @@ class RestApiClient
 
             $str = substr($this->readBuffer, $offset, $pos);
             $decoded = json_decode($str);
-if ($decoded === false) {
-  die('No json: ' . $str);
-}
-printf("Processing %s bytes\n", strlen($str));
-print_r($decoded);
+            if ($decoded === false) {
+              throw new Exception('Got invalid JSON: ' . $str);
+            }
+
+            // printf("Processing %s bytes\n", strlen($str));
+            // print_r($decoded);
+            if ($this->onEvent !== null) {
+                $func = $this->onEvent;
+                $func($decoded);
+            }
 
             $offset = $pos + 1;
         }
@@ -240,7 +252,7 @@ print_r($decoded);
             $this->readBuffer = substr($this->readBuffer, $offset + 1);
         }
 
-echo "REMAINING: " . strlen($this->readBuffer) . "\n";
+        // echo "REMAINING: " . strlen($this->readBuffer) . "\n";
     }
 
     public function __destruct()

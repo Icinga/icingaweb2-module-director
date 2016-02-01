@@ -45,6 +45,12 @@ class CoreApi
         )->getResult('name');
     }
 
+    public function onEvent($callback)
+    {
+        $this->client->onEvent($callback);
+        return $this;
+    }
+
     public function getObject($name, $pluraltype, $attrs = array())
     {
         $params = (object) array(
