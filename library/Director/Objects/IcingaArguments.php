@@ -135,6 +135,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             }
         }
 
+        if (array_key_exists('set_if', $attrs) && is_object($attrs['set_if'])) {
+            if ($attrs['set_if']->type === 'Function') {
+                $attrs['set_if'] = '/* Unable to fetch function body through API */';
+                $attrs['set_if_format'] = 'expression';
+            }
+        }
 
         $this->add(IcingaCommandArgument::create($attrs));
 
