@@ -79,6 +79,15 @@ class ConfigForm extends QuickForm
         }
 
         if ($resourceName) {
+            $resourceConfig = ResourceFactory::getResourceConfig($resourceName);
+            if (! isset($resourceConfig->charset)
+                || $resourceConfig->charset !== 'utf8'
+            ) {
+                $this->getElement('resource')
+                    ->addError('Please change the encodig for the director database to utf8')
+                    ->removeDecorator('description');
+            }
+
             $resource = ResourceFactory::create($resourceName);
             $db = $resource->getDbAdapter();
 
