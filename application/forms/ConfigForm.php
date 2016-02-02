@@ -102,7 +102,7 @@ class ConfigForm extends QuickForm
                     );
                     $link = $this->getView()->qlink(
                         $this->translate('start using'),
-                        'director/welcome',
+                        'director',
                         null,
                         array('data-base-target' => '_main')
                     );
