@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Exception;
 use Icinga\Web\Url;
 use Icinga\Module\Director\Objects\IcingaObject;
 
@@ -59,9 +60,11 @@ abstract class ObjectController extends ActionController
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
-            return $this->sendJson(
-                $this->object->toPlainObject($this->params->shift('resolved'))
-            );
+            try {
+                return $this->handleApiRequest();
+            } catch (Exception $e) {
+                return $this->sendJson((object) array('error' => $e->getMessage()));
+            }
         }
 
         return $this->editAction();
@@ -253,5 +256,64 @@ abstract class ObjectController extends ActionController
         }
 
         return $this->object;
+    }
+
+    protected function handleApiRequest()
+    {
+        $request = $this->getRequest();
+        $db = $this->db();
+
+        switch ($request->getMethod()) {
+            case 'DELETE':
+                $name = $this->object->object_name;
+                $obj = $this->object->toPlainObject(false, true);
+                $form = $this->loadForm(
+                    'icingaDeleteObject'
+                )->setObject($this->object)->setRequest($request)->onSuccess();
+
+                return $this->sendJson($obj);
+
+            case 'POST':
+            case 'PUT':
+                $type = $this->getType();
+                $data = (array) json_decode($request->getRawBody());
+                if ($object = $this->object) {
+                    if ($request->getMethod() === 'POST') {
+                        $object->setProperties($data);
+                    } else {
+                        $object->replaceWith(
+                            IcingaObject::createByType($type, $data)
+                        );
+                    }
+                } else {
+                    $object = IcingaObject::createByType($type, $data, $db);
+                }
+
+                $response = $this->getResponse();
+                if ($object->hasBeenModified()) {
+                    $object->store();
+                    if ($object->hasBeenLoadedFromDb()) {
+                        $response->setHttpResponseCode(200);
+                    } else {
+                        $response->setHttpResponseCode(201);
+                    }
+                } else {
+                    $response->setHttpResponseCode(304);
+                }
+
+                return $this->sendJson($object->toPlainObject(false, true));
+
+            case 'GET':
+                return $this->sendJson(
+                    $this->object->toPlainObject(
+                        $this->params->shift('resolved'),
+                        ! $this->params->shift('withNull'),
+                        $this->params->shift('properties')
+                    )
+                );
+
+            default:
+                throw new Exception('Unsupported method ' . $request->getMethod());
+        }
     }
 }
