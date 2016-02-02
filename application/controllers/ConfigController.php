@@ -10,22 +10,39 @@ use Icinga\Web\Url;
 
 class ConfigController extends ActionController
 {
+    protected $isApified = true;
+
     public function deployAction()
     {
+        $isApiRequest = $this->getRequest()->isApiRequest();
         $checksum = $this->params->get('checksum');
-        $config = IcingaConfig::load(Util::hex2binary($checksum), $this->db());
-        if ($this->api()->dumpConfig($config, $this->db())) {
-            $url = Url::fromPath('director/list/deploymentlog');
-            Notification::success(
-                $this->translate('Config has been submitted, validation is going on')
-            );
-            $this->redirectNow($url);
+        if ($checksum) {
+            $config = IcingaConfig::load(Util::hex2binary($checksum), $this->db());
         } else {
-            $url = Url::fromPath('director/config/show', array('checksum' => $checksum));
-            Notification::success(
-                $this->translate('Config deployment failed')
-            );
-            $this->redirectNow($url);
+            $config = IcingaConfig::generate($this->db());
+            $checksum = $config->getHexChecksum();
+        }
+
+        if ($this->api()->dumpConfig($config, $this->db())) {
+            if ($isApiRequest) {
+                return $this->sendJson((object) array('checksum' => $checksum));
+            } else {
+                $url = Url::fromPath('director/list/deploymentlog?checkforchanges');
+                Notification::success(
+                    $this->translate('Config has been submitted, validation is going on')
+                );
+                $this->redirectNow($url);
+            }
+        } else {
+            if ($isApiRequest) {
+                return $this->sendJsonError('Config deployment failed');
+            } else {
+                $url = Url::fromPath('director/config/show', array('checksum' => $checksum));
+                Notification::success(
+                    $this->translate('Config deployment failed')
+                );
+                $this->redirectNow($url);
+            }
         }
     }
 
