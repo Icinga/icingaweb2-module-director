@@ -236,7 +236,7 @@ CREATE TABLE icinga_command (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   methods_execute VARCHAR(64) DEFAULT NULL,
-  command VARCHAR(255) DEFAULT NULL,
+  command TEXT DEFAULT NULL,
   -- env text DEFAULT NULL,
   -- vars text DEFAULT NULL,
   timeout SMALLINT UNSIGNED DEFAULT NULL,
