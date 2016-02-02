@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Controller;
 use Icinga\Application\Icinga;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\AuthenticationException;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Core\CoreApi;
@@ -76,6 +77,15 @@ abstract class ActionController extends Controller
         }
     }
 
+    protected function sendJsonError($message, $code = null)
+    {
+        if ($code !== null) {
+            $this->setHttpResponseCode((int) $code);
+        }
+
+        $this->sendJson((object) array('error' => $message));
+    }
+
     protected function setConfigTabs()
     {
         $this->view->tabs = Widget::create('tabs')->add('deploymentlog', array(
@@ -128,7 +138,11 @@ abstract class ActionController extends Controller
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
-                $this->redirectNow('director');
+                if ($this->getRequest()->isApiRequest()) {
+                    throw new ConfigError('Icinga Director is not correctly configured');
+                } else {
+                    $this->redirectNow('director');
+                }
             }
         }
 
