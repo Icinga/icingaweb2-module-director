@@ -1090,14 +1090,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($skipNull) {
+            if (empty($props['imports']))      unset($props['imports']);
+            if (count((array) $props['vars']) === 0) unset($props['vars']);
+            if (empty($props['groups']))       unset($props['groups']);
+        }
+
         ksort($props);
 
         return (object) $props;
     }
 
-    public function toJson($resolved = false)
-    {
-        return json_encode($this->toPlainObject($resolved));
+    public function toJson(
+        $resolved = false,
+        $skipNull = false,
+        array $chosenProperties = null
+    ) {
+        return json_encode($this->toPlainObject($resolved, $skipNull, $chosenProperties));
     }
 
     public function __toString()
