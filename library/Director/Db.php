@@ -303,12 +303,12 @@ class Db extends DbConnection
         $db = $this->db();
         foreach ($types as $type) {
             $queries[] = $db->select()->from(
-                'icinga_' . $type,
+                array('o' => 'icinga_' . $type),
                 array(
                     'icinga_type'  => "('" . $type . "')",
-                    'cnt_object'   => "COALESCE(SUM(CASE WHEN object_type = 'object' THEN 1 ELSE 0 END), 0)",
-                    'cnt_template' => "COALESCE(SUM(CASE WHEN object_type = 'template' THEN 1 ELSE 0 END), 0)",
-                    'cnt_external' => "COALESCE(SUM(CASE WHEN object_type = 'external_object' THEN 1 ELSE 0 END), 0)",
+                    'cnt_object'   => "COALESCE(SUM(CASE WHEN o.object_type = 'object' THEN 1 ELSE 0 END), 0)",
+                    'cnt_template' => "COALESCE(SUM(CASE WHEN o.object_type = 'template' THEN 1 ELSE 0 END), 0)",
+                    'cnt_external' => "COALESCE(SUM(CASE WHEN o.object_type = 'external_object' THEN 1 ELSE 0 END), 0)",
                     'cnt_total'    => 'COUNT(*)',
                 )
             );
