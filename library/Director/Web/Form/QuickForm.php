@@ -377,8 +377,9 @@ abstract class QuickForm extends Zend_Form
     public function redirectOnSuccess($message = null)
     {
         if ($this->isApiRequest()) {
-            Icinga::app()->getFrontController()->getResponse()->setMessage($message);
-            return; // TODO: Shutdown?
+            // TODO: Set the status line message?
+            $this->successMessage = $this->getSuccessMessage($message);
+            return;
         }
 
         $url = $this->getSuccessUrl();
