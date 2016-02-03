@@ -282,7 +282,7 @@ abstract class ObjectController extends ActionController
                         $object->setProperties($data);
                     } else {
                         $object->replaceWith(
-                            IcingaObject::createByType($type, $data)
+                            IcingaObject::createByType($type, $data, $db)
                         );
                     }
                 } else {
