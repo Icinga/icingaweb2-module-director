@@ -211,6 +211,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
         $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'id');
         $this->cloneStored();
+        $this->refreshIndex();
 
         return $this;
     }
