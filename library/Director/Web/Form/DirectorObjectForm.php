@@ -708,13 +708,21 @@ abstract class DirectorObjectForm extends QuickForm
 
     public function getSentOrObjectValue($name, $default = null)
     {
+        // TODO: check whether getSentValue is still needed since element->getValue
+        //       is in place (currently for form element default values only)
+
         if ($this->hasObject()) {
             $value = $this->getSentValue($name);
             if ($value === null) {
+
                 $object = $this->getObject();
 
-                if ($object->hasProperty($name)) {
+                if ($object->hasProperty($name) && $object->$name !== null) {
                     return $object->$name;
+                }
+
+                if (null !== ($val = $this->getElement('object_type')->getValue())) {
+                    return $val;
                 }
 
                 return $default;
@@ -724,7 +732,15 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
         } else {
-            return $this->getSentValue($name, $default);
+            if (null !== ($val = $this->getSentValue($name))) {
+                return $val;
+            }
+
+            if (null !== ($val = $this->getElement('object_type')->getValue())) {
+                return $val;
+            }
+
+            return $default;
         }
     }
 
