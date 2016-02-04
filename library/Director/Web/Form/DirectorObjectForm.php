@@ -789,6 +789,43 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    protected function addObjectTypeElement()
+    {
+        $default = 'object';
+
+        if ($this->object()->supportsImports()) {
+            $templates = $this->enumAllowedTemplates();
+
+            if (empty($templates)) {
+                $default = 'template';
+                $types = array('template' => $this->translate('Template'));
+            } else {
+                $types = array(
+                    'object'   => $this->translate('Object'),
+                    'template' => $this->translate('Template'),
+                );
+            }
+        } else {
+             $types = array('object' => $this->translate('Object'));
+        }
+
+        $types['external_object'] = $this->translate('External Object');
+
+        if (! $this->hasObject()) {
+            $this->object()->object_type = $default;
+        }
+
+        $this->addElement('select', 'object_type', array(
+            'label' => $this->translate('Object type'),
+            'description'  => $this->translate('Whether this should be a template'),
+            'multiOptions' => $this->optionalEnum($types),
+            'value'        => $default,
+            'class'        => 'autosubmit'
+        ));
+
+        return $this;
+    }
+
     protected function addZoneElement()
     {
         if ($this->isTemplate()) {
