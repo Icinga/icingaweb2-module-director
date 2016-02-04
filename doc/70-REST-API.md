@@ -38,6 +38,17 @@ provided property. However, you must always be ready to accept new properties.
 URL scheme and supported methods
 --------------------------------
 
+We support GET, POST, PUT and DELETE. 
+
+| Method | Meaning
+| ------ | ------------------------------------------------------------
+| GET    | Read / fetch data. Not allowed to run operations with the potential to cause any harm
+| POST   | Trigger actions, create or modify objects. Can also be used to partially modify objects
+| PUT    | Creates or replaces objects, cannot be used to modify single object properties
+| DELETE | Remove a specific object
+
+TODO: more examples showing the difference between POST and PUT
+
 POST director/host
  gives 201 on success
 GET director/host?name=hostname.example.com
@@ -78,6 +89,8 @@ properties will be resolved. Such a URL could look as follows:
 
 #### Retrieve all properties
 
+TODO: adjust the code to fix this, current implementation has `withNull`
+
 Per default properties with `null` value are skipped when shipping a result.
 You can influence this behavior with the properties parameter. Just append
 `properties=ALL` to your URL:
@@ -94,10 +107,9 @@ when they have no (`null`) value:
     director/host?name=hostname.example.com&properties=object_name,address,vars
 
 
-Example
--------
+### Example
 
-director/host?name=pe2015.example.com&json
+GET director/host?name=pe2015.example.com
 ```json
 {
   "address": "127.0.0.3",
@@ -123,7 +135,7 @@ director/host?name=pe2015.example.com&json
 }
 ```
 
-director/host?name=pe2015.example.com&json&resolved
+director/host?name=pe2015.example.com&resolved
 ```json
 {
     "address": "127.0.0.3",
@@ -147,6 +159,10 @@ director/host?name=pe2015.example.com&json&resolved
      ...
 }
 ```
+
+Trigger actions
+---------------
+You can of course also use the API to trigger specific actions. Deploying the configuration is as simple as issueing `POST director/config/deploy`.
 
 TODO
 ----
