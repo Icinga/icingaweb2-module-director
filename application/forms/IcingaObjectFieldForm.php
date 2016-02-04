@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaObjectFieldForm extends DirectorObjectForm
@@ -33,11 +34,58 @@ class IcingaObjectFieldForm extends DirectorObjectForm
           . ' a specific set, shown as a dropdown.'
         );
 
-        $fields = $this->db->enumDatafields();
+        // TODO: remove assigned ones!
+        $existingFields = $this->db->enumDatafields();
+        $blacklistedVars = array();
+        $suggestedFields = array();
+
+        foreach ($existingFields as $id => $field) {
+            if (preg_match('/ \(([^\)]+)\)$/', $field, $m)) {
+                $blacklistedVars['$' . $m[1] . '$'] = $id;
+            }
+        }
+
+        // TODO: think about imported existing vars without fields
+        $argumentVars = array();
+        if ($this->icingaObject->supportsArguments()) {
+            foreach ($this->icingaObject->arguments() as $arg) {
+                if ($arg->argument_format === 'string') {
+                    $val = $arg->argument_value;
+                    // TODO: create var::extractMacros or so
+                    if (preg_match('/^\$[^\$]+\$$/', $val)) {
+                        if (array_key_exists($val, $blacklistedVars)) {
+                            $id = $blacklistedVars[$val];
+                            $suggestedFields[$id] = $existingFields[$id];
+                            unset($existingFields[$id]);
+                        } else {
+                            $argumentVars[$val] = $val;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Prepare combined fields array
+        $fields = array();
+        if (! empty($suggestedFields)) {
+            asort($existingFields);
+            $fields[$this->translate('Suggested fields')] = $suggestedFields;
+        }
+
+        if (! empty($argumentVars)) {
+            ksort($argumentVars);
+            $fields[$this->translate('Argument macros')] = $argumentVars;
+        }
+
+        if (! empty($existingFields)) {
+            $fields[$this->translate('Other available fields')] = $existingFields;
+        }
+
         $this->addElement('select', 'datafield_id', array(
             'label'        => 'Field',
             'required'     => true,
             'description'  => 'Field to assign',
+            'class'        => 'autosubmit',
             'multiOptions' => $this->optionalEnum($fields)
         ));
 
@@ -49,6 +97,15 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             );
 
             $this->getElement('datafield_id')->addError($msg);
+        }
+
+        if (($id = $this->getSentValue('datafield_id')) && ! ctype_digit($id)) {
+            $this->addElement('text', 'caption', array(
+                'label'       => $this->translate('Caption'),
+                'required'    => true,
+                'ignore'      => true,
+                'description' => $this->translate('The caption which should be displayed')
+            ));
         }
 
         $this->addElement('select', 'is_required', array(
@@ -84,5 +141,23 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             $this->setSuccessUrl($this->getSuccessUrl()->without('field_id'));
             $this->redirectOnSuccess($this->translate('Field has been removed'));
         }
+    }
+
+    public function onSuccess()
+    {
+        $fieldId = $this->getValue('datafield_id');
+        if (! ctype_digit($fieldId)) {
+
+            $field = DirectorDatafield::create(array(
+                'varname'  => trim($fieldId, '$'),
+                'caption'  => $this->getValue('caption'),
+                'datatype' => 'Icinga\Module\Director\DataType\DataTypeString'
+            ));
+            $field->store($this->getDb());
+            $this->setElementValue('datafield_id', $field->id);
+            $this->object()->datafield_id = $field->id;
+
+        }
+        return parent::onSuccess();
     }
 }
