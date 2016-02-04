@@ -31,7 +31,7 @@ abstract class ObjectController extends ActionController
 
             if ($object->hasBeenLoadedFromDb()
                 && $object->supportsFields()
-                && $object->isTemplate()
+                && ($object->isTemplate() || $type === 'command')
             ) {
                 $tabs->add('fields', array(
                     'url'       => sprintf('director/%s/fields', $type),
