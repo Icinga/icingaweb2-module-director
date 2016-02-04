@@ -966,4 +966,10 @@ abstract class DbObject
         $obj->setConnection($connection)->setKey($id);
         return $obj->existsInDb();
     }
+
+    public function __destruct()
+    {
+        unset($this->db);
+        unset($this->connection);
+    }
 }

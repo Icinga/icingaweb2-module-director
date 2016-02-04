@@ -1125,4 +1125,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
     }
+
+    public function __destruct()
+    {
+        unset($this->resolveCache);
+        unset($this->vars);
+        unset($this->groups);
+        unset($this->imports);
+        unset($this->ranges);
+        unset($this->arguments);
+
+
+        parent::__destruct();
+    }
 }
