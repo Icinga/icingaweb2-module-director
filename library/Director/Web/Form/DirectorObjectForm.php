@@ -668,7 +668,7 @@ abstract class DirectorObjectForm extends QuickForm
         if ($object->delete()) {
             // fields? $this->setSuccessUrl($this->getSuccessUrl()->without($key));
             if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
-                $this->setSuccessUrl('director/' . $object->getShortTableName() . 's');
+                $this->setSuccessUrl('director/' . strtolower($object->getShortTableName()) . 's');
             } else {
                 $this->setSuccessUrl($this->getSuccessUrl()->without(
                     array('field_id', 'argument_id')
