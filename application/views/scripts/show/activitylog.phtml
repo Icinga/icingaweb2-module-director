@@ -1,13 +1,13 @@
 <div class="controls">
 <?= $this->tabs ?>
-<h1><?= $this->escape($this->title) ?></h1>
-</div>
+<?php
+$url = $this->url()->without('checksum')->without('show');
+?>
 
-<div class="content">
-<div class="pagination-control">
+<div class="pagination-control" style="float: right; width: 5em;">
 <ul class="nav tab-nav">
   <li class="nav-item"><?php if ($this->neighbors->prev): ?>
- <a href="<?= $this->url()->with('id', $this->neighbors->prev) ?>"><?=
+ <a href="<?= $url->with('id', $this->neighbors->prev) ?>"><?=
    $this->icon('angle-double-left')
  ?></a>
 <?php else: ?>
@@ -15,7 +15,7 @@
 <?php endif ?>
 </li><li>
 <?php if ($this->neighbors->next): ?>
- <a href="<?= $this->url()->with('id', $this->neighbors->next) ?>"><?=
+ <a href="<?= $url->with('id', $this->neighbors->next) ?>"><?=
    $this->icon('angle-double-right')
  ?></a>
 <?php else: ?>
@@ -23,5 +23,21 @@
 <?php endif ?>
 </li>
 </div>
+
+<h1><?= $this->translate('Activity log entry') ?></h1>
+</div>
+
+<div class="content">
+<table class="name-value-table">
+  <tr>
+    <th><?= $this->translate('Author') ?></th>
+    <td><?= $this->escape($this->entry->author) ?></td>
+  </tr>
+  <tr>
+    <th><?= $this->translate('Date') ?></th>
+    <td><?= $this->entry->change_time ?></td>
+  </tr>
+</table>
+<h1><?= $this->escape($this->title) ?></h1>
 <?= $this->output ?>
 </div>
