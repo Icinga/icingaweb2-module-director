@@ -49,6 +49,7 @@ class ConfigController extends ActionController
     // Show all files for a given config
     public function filesAction()
     {
+        $this->view->title = $this->translate('Generated config');
         $tabs = $this->getTabs();
 
         if ($deploymentId = $this->params->get('deployment_id')) {
@@ -73,7 +74,10 @@ class ConfigController extends ActionController
             ->setConnection($this->db())
             ->setConfigChecksum($checksum);
 
-        $this->render('objects/table', null, true);
+        $this->view->config = IcingaConfig::load(
+            Util::hex2binary($this->params->get('checksum')),
+            $this->db()
+        );
     }
 
     // Show a single file
