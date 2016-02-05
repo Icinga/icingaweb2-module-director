@@ -48,7 +48,7 @@ class IcingaZone extends IcingaObject
     // TODO: Move this away, should be prefetchable:
     protected function listEndpoints()
     {
-        if ($this->endpointList === null) {
+        if ($this->id && $this->endpointList === null) {
             $db = $this->getDb();
             $query = $db->select()
                 ->from('icinga_endpoint', 'object_name')
