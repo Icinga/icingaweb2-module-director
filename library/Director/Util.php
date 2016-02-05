@@ -5,6 +5,8 @@ namespace Icinga\Module\Director;
 use Icinga\Authentication\Auth;
 use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Exception\NotImplementedError;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Url;
 use Zend_Db_Expr;
 
@@ -27,6 +29,62 @@ class Util
     public static function binary2hex($hex)
     {
         return current(unpack('H*', $hex));
+    }
+
+    /**
+     * PBKDF2 - Password-Based Cryptography Specification (RFC2898)
+     *
+     * This method strictly follows examples in php.net's documentation
+     * comments. Hint: RFC6070 would be a good source for related tests
+     *
+     * @param string $alg        Desired hash algorythm (sha1, sha256...)
+     * @param string $secret     Shared secret, password
+     * @param string $salt       Hash salt
+     * @param int    $iterations How many iterations to perform. Please use at
+     *                           least 1000+. More iterations make it slower
+     *                           but more secure.
+     * @param int    $length     Desired key length
+     * @param bool   $raw        Returns the binary key if true, hex string otherwise
+     *
+     * @return string  A $length byte long key, derived from secret and salt
+     */
+    public static function pbkdf2($alg, $secret, $salt, $iterations, $length, $raw = false)
+    {
+        if (! in_array($alg, hash_algos(), true)) {
+            throw new NotImplementedError('No such hash algorithm found: "%s"', $alg);
+        }
+
+        if ($iterations <= 0 || $length <= 0) {
+            throw new ProgrammingError('Positive iterations and length required');
+        }
+
+        $hashLength = strlen(hash($alg, '', true));
+        $blocks = ceil($length / $hashLength);
+
+        $out = '';
+
+        for($i = 1; $i <= $blocks; $i++) {
+            // $i encoded as 4 bytes, big endian.
+            $last = $salt . pack('N', $i);
+            // first iteration
+            $last = $xorsum = hash_hmac($alg, $last, $secret, true);
+            // perform the other $iterations - 1 iterations
+            for ($j = 1; $j < $iterations; $j++) {
+                $xorsum ^= ($last = hash_hmac($alg, $last, $secret, true));
+            }
+            $out .= $xorsum;
+        }
+
+        if ($raw) {
+            return substr($out, 0, $length);
+        }
+
+        return bin2hex(substr($out, 0, $length));
+    }
+
+    public static function getIcingaTicket($certname, $salt)
+    {
+        return self::pbkdf2('sha1', $certname, $salt, 50000, 20);
     }
 
     public static function auth()
