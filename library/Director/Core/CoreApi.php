@@ -66,6 +66,17 @@ class CoreApi
         return $res[$name];
     }
 
+    public function getTicketSalt()
+    {
+        // TODO: api must not be the name!
+        $api = $this->getObject('api', 'ApiListeners', array('ticket_salt'));
+        if (isset($api->attrs->ticket_salt)) {
+            return $api->attrs->ticket_salt;
+        }
+
+        return null;
+    }
+
     public function getConstants()
     {
         $constants = array();
