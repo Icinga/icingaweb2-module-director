@@ -721,10 +721,6 @@ abstract class DirectorObjectForm extends QuickForm
                     return $object->$name;
                 }
 
-                if (null !== ($val = $this->getElement('object_type')->getValue())) {
-                    return $val;
-                }
-
                 return $default;
             } else {
 
@@ -733,10 +729,6 @@ abstract class DirectorObjectForm extends QuickForm
 
         } else {
             if (null !== ($val = $this->getSentValue($name))) {
-                return $val;
-            }
-
-            if (null !== ($val = $this->getElement('object_type')->getValue())) {
                 return $val;
             }
 
