@@ -27,7 +27,7 @@ class ConfigController extends ActionController
             if ($isApiRequest) {
                 return $this->sendJson((object) array('checksum' => $checksum));
             } else {
-                $url = Url::fromPath('director/list/deploymentlog?checkforchanges');
+                $url = Url::fromPath('director/list/deploymentlog');
                 Notification::success(
                     $this->translate('Config has been submitted, validation is going on')
                 );
