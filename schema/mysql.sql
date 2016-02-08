@@ -16,10 +16,6 @@
 
 SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER';
 
-CREATE TABLE director_dbversion (
-  schema_version INT(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE director_activity_log (
   id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_type VARCHAR(64) NOT NULL,
@@ -147,6 +143,12 @@ CREATE TABLE director_datafield_setting (
   REFERENCES director_datafield (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE director_schema_migration (
+  schema_version SMALLINT UNSIGNED NOT NULL,
+  migration_time DATETIME NOT NULL,
+  PRIMARY KEY(schema_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_zone (
@@ -1022,3 +1024,8 @@ CREATE TABLE import_row_modifier_setting (
   setting_value TEXT DEFAULT NULL,
   PRIMARY KEY (modifier_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO director_schema_migration
+  SET migration_time = NOW(),
+      schema_version = 63;
+
