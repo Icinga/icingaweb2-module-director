@@ -15,9 +15,66 @@ class Db extends DbConnection
 
     protected static $commandCache;
 
+    protected $settings;
+
     protected function db()
     {
         return $this->getDbAdapter();
+    }
+
+    public function getSetting($name, $default = null)
+    {
+        if ($this->settings === null) {
+            $this->fetchSettings();
+        }
+
+        if (array_key_exists($name, $this->settings)) {
+            return $this->settings[$name];
+        }
+
+        return $default;
+    }
+
+    public function storeSetting($name, $value)
+    {
+        $db = $this->db();
+        $db->beginTransaction();
+        $updated = $db->update(
+            'director_setting',
+            array('setting_value' => $value),
+            $db->quoteInto('setting_name = ?', $name)
+        );
+
+        if ($updated === 0) {
+            $db->insert(
+                'director_setting',
+                array(
+                    'setting_name'  => $name,
+                    'setting_value' => $value,
+                )
+            );
+        }
+
+        $db->commit();
+        if ($this->settings !== null) {
+            $this->settings[$name] = $value;
+        }
+
+        return $this;
+    }
+
+    public function fetchSettings($force = true)
+    {
+        if ($force || $this->settings === null) {
+            $db = $this->db();
+            $query = $db->select()->from(
+                array('s' => 'director_setting'),
+                array('setting_name', 'setting_value')
+            );
+            $this->settings = (array) $db->fetchPairs($query);
+        }
+
+        return $this->settings;
     }
 
     public function getActivitylogNeighbors($id, $type = null, $name = null)
