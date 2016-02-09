@@ -92,7 +92,7 @@ class ConfigForm extends QuickForm
             $db = $resource->getDbAdapter();
 
             try {
-                $query = $db->select()->from('director_dbversion', 'COUNT(*)');
+                $query = $db->select()->from('director_schema_migration', 'COUNT(*)');
                 $db->fetchOne($query);
 
                 if (! $this->hasBeenSent()) {
