@@ -277,9 +277,28 @@ class Sync
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
 
         if ($rule->object_type === 'datalistEntry') {
+            $listId = null;
+            foreach ($properties as $prop) {
+                if ($prop->destination_field === 'list_id') {
+                    $listId = (int) $prop->source_expression;
+                }
+            }
+
+            if ($listId === null) {
+                throw new IcingaException(
+                    'Cannot sync datalist entry without list_ist'
+                );
+            }
+
             $no = array();
-            foreach ($objects as $o) {
-             //   if ($o->list_id !== $source->
+            foreach ($objects as $k => $o) {
+                if ($o->list_id !== $listId) {
+                    $no[] = $k;
+                }
+            }
+
+            foreach ($no as $k) {
+                unset($objects[$k]);
             }
         }
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
@@ -447,7 +466,9 @@ class Sync
                 }
                 continue;
             }
-            if ($object->shouldBeRemoved()) {
+
+            // TODO: introduce DirectorObject with shouldBeRemoved
+            if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
                 $object->delete($db);
                 continue;
             }
