@@ -4,6 +4,8 @@ namespace Icinga\Module\Director;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Exception\ConfigurationError;
 use Zend_Db_Expr;
 use Zend_Db_Select;
 
@@ -20,6 +22,45 @@ class Db extends DbConnection
     protected function db()
     {
         return $this->getDbAdapter();
+    }
+
+    public function getMasterZoneName()
+    {
+        return $this->getSetting('master_zone', 'master');
+    }
+
+    public function getDefaultGlobalZoneName()
+    {
+        return $this->getSetting('default_global_zone', 'director-global');
+    }
+
+    public function getDeploymentEndpointName()
+    {
+        $db = $this->db();
+        $query = $db->select()->from(
+            array('e' => 'icinga_endpoint'),
+            array('object_name' => 'e.object_name')
+        )->join(
+            array('z' => 'icinga_zone'),
+            array(),
+            'e.zone_id = z.id'
+        )->where('z.object_name = ?', $this->getMasterZoneName())
+         ->order('e.object_name ASC')
+         ->limit(1);
+
+        $name = $db->fetchOne($query);
+        if (! $name) {
+            throw new ConfigurationError(
+                'Unable to detect deployment your endpoint'
+            );
+        }
+
+        return $name;
+    }
+
+    public function getDeploymentEndpoint()
+    {
+        return IcingaEndpoint::load($this->getDeploymentEndpointName(), $this);
     }
 
     public function getSetting($name, $default = null)
