@@ -151,6 +151,12 @@ CREATE TABLE director_schema_migration (
   PRIMARY KEY(schema_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE director_setting (
+  setting_name VARCHAR(64) NOT NULL,
+  setting_value VARCHAR(255) NOT NULL,
+  PRIMARY KEY(setting_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_zone (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   parent_id INT(10) UNSIGNED DEFAULT NULL,
@@ -1027,5 +1033,5 @@ CREATE TABLE import_row_modifier_setting (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 63;
+      schema_version = 64;
 
