@@ -98,6 +98,10 @@ class InspectController extends ActionController
     protected function api()
     {
         $this->view->endpoint = $this->params->get('endpoint');
+        if ($this->view->endpoint === null) {
+            $this->view->endpoint = $this->db()->getDeploymentEndpointName();
+        }
+
         $endpoint = IcingaEndpoint::load($this->view->endpoint, $this->db());
         $apiconfig = $this->Config()->getSection('api');
         $client = new RestApiClient($endpoint->host, $endpoint->port);
