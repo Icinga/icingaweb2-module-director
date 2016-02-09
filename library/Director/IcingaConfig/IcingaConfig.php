@@ -280,7 +280,12 @@ throw $e;
     {
         $start = microtime(true);
 
-        $this->configFile('conf.d/001-director-basics')->prepend(
+        $this->configFile(
+            sprintf(
+                'zones.d/%s/001-director-basics',
+                $this->db()->getDefaultGlobalZoneName()
+            )
+        )->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
         );
 
@@ -375,7 +380,7 @@ throw $e;
             $endpoints[] = IcingaEndpoint::create($props);
             $zones[] = IcingaZone::create(array(
                 'object_name' => $name,
-                'parent'      => $this->getMasterZoneName()
+                'parent'      => $this->db()->getMasterZoneName()
             ), $this->connection)->setEndpointList(array($name));
         }
 
@@ -396,8 +401,8 @@ throw $e;
     {
         Benchmark::measure(sprintf('Generating %d %s', count($objects), $type));
         if (empty($objects)) return $this;
-        $masterZone = $this->getMasterZoneName();
-        $globalZone = $this->getGlobalZoneName();
+        $masterZone = $this->db()->getMasterZoneName();
+        $globalZone = $this->db()->getDefaultGlobalZoneName();
         $file = null;
 
         foreach ($objects as $object) {
@@ -478,16 +483,6 @@ throw $e;
         );
 
         return in_array($type, $types);
-    }
-
-    protected function getMasterZoneName()
-    {
-        return 'master';
-    }
-
-    protected function getGlobalZoneName()
-    {
-        return 'director-global';
     }
 
     protected function configFile($name, $suffix = '.conf')
