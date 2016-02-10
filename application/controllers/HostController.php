@@ -44,8 +44,8 @@ class HostController extends ObjectController
         // TODO: Fail when no ticket
         $this->view->certname = $this->object->object_name;
         $this->view->ticket = Util::getIcingaTicket($this->view->certname, $this->api()->getTicketSalt());
-        $this->view->master = 'master'; // TODO: Change this!!
-        $this->view->masterzone = 'master';
-        $this->view->globalzone = 'director-global';
+        $this->view->master = $this->db()->getDeploymentEndpointName();
+        $this->view->masterzone = $this->db()->getMasterZoneName();
+        $this->view->globalzone = $this->db()->getDefaultGlobalZoneName();
     }
 }
