@@ -79,7 +79,6 @@ class Db extends DbConnection
     public function storeSetting($name, $value)
     {
         $db = $this->db();
-        $db->beginTransaction();
         $updated = $db->update(
             'director_setting',
             array('setting_value' => $value),
@@ -96,7 +95,6 @@ class Db extends DbConnection
             );
         }
 
-        $db->commit();
         if ($this->settings !== null) {
             $this->settings[$name] = $value;
         }
