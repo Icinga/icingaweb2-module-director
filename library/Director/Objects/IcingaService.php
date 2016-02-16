@@ -9,6 +9,8 @@ class IcingaService extends IcingaObject
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
+        'object_type'           => null,
+        'disabled'              => 'n',
         'display_name'          => null,
         'host_id'               => null,
         'check_command_id'      => null,
@@ -32,7 +34,6 @@ class IcingaService extends IcingaObject
         'action_url'            => null,
         'icon_image'            => null,
         'icon_image_alt'        => null,
-        'object_type'           => null,
         'use_agent'             => null,
     );
 

@@ -10,9 +10,10 @@ class IcingaTimePeriod extends IcingaObject
         'id'                => null,
         'zone_id'           => null,
         'object_name'       => null,
+        'object_type'       => null,
+        'disabled'          => 'n',
         'display_name'      => null,
         'update_method'     => null,
-        'object_type'       => null,
     );
 
     protected $supportsImports = true;

@@ -15,6 +15,7 @@ class IcingaApiUser extends IcingaObject
         'id'                    => null,
         'object_name'           => null,
         'object_type'           => null,
+        'disabled'              => 'n',
         'password'              => null,
         'client_dn'             => null,
         'permissions'           => null,

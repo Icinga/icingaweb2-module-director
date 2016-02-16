@@ -12,6 +12,7 @@ class IcingaZone extends IcingaObject
         'id'          => null,
         'object_name' => null,
         'object_type' => null,
+        'disabled'    => 'n',
         'parent_id'   => null,
         'is_global'   => 'n',
     );

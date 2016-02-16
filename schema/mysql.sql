@@ -162,6 +162,7 @@ CREATE TABLE icinga_zone (
   parent_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   is_global ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
@@ -197,6 +198,7 @@ CREATE TABLE icinga_timeperiod (
   update_method VARCHAR(64) DEFAULT NULL COMMENT 'Usually LegacyTimePeriod',
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_timeperiod_zone
@@ -243,14 +245,15 @@ CREATE TABLE icinga_timeperiod_range (
 CREATE TABLE icinga_command (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
+  object_type ENUM('object', 'template', 'external_object') NOT NULL
+    COMMENT 'external_object is an attempt to work with existing commands',
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   methods_execute VARCHAR(64) DEFAULT NULL,
   command TEXT DEFAULT NULL,
   -- env text DEFAULT NULL,
   -- vars text DEFAULT NULL,
   timeout SMALLINT UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
-  object_type ENUM('object', 'template', 'external_object') NOT NULL
-    COMMENT 'external_object is an attempt to work with existing commands',
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_command_zone
@@ -335,6 +338,7 @@ CREATE TABLE icinga_apiuser (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   password VARCHAR(255) DEFAULT NULL,
   client_dn VARCHAR(64) DEFAULT NULL,
   permissions TEXT DEFAULT NULL COMMENT 'JSON-encoded permissions',
@@ -345,10 +349,11 @@ CREATE TABLE icinga_endpoint (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
+  object_type ENUM('object', 'template', 'external_object') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   host VARCHAR(255) DEFAULT NULL COMMENT 'IP address / hostname of remote node',
   port SMALLINT UNSIGNED DEFAULT NULL COMMENT '5665 if not set',
   log_duration VARCHAR(32) DEFAULT NULL COMMENT '1d if not set',
-  object_type ENUM('object', 'template', 'external_object') NOT NULL,
   apiuser_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
@@ -385,6 +390,8 @@ CREATE TABLE icinga_endpoint_inheritance (
 CREATE TABLE icinga_host (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   address VARCHAR(64) DEFAULT NULL,
   address6 VARCHAR(45) DEFAULT NULL,
@@ -409,7 +416,6 @@ CREATE TABLE icinga_host (
   action_url VARCHAR(255) DEFAULT NULL,
   icon_image VARCHAR(255) DEFAULT NULL,
   icon_image_alt VARCHAR(255) DEFAULT NULL,
-  object_type ENUM('object', 'template') NOT NULL,
   has_agent ENUM('y', 'n') DEFAULT NULL,
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
@@ -495,6 +501,8 @@ CREATE TABLE icinga_host_var (
 CREATE TABLE icinga_service (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
+  object_type ENUM('object', 'template', 'apply') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
   check_command_id INT(10) UNSIGNED DEFAULT NULL,
@@ -518,7 +526,6 @@ CREATE TABLE icinga_service (
   action_url VARCHAR(255) DEFAULT NULL,
   icon_image VARCHAR(255) DEFAULT NULL,
   icon_image_alt VARCHAR(255) DEFAULT NULL,
-  object_type ENUM('object', 'template', 'apply') NOT NULL,
   use_agent ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
   -- UNIQUE INDEX object_name (object_name, zone_id),
@@ -635,8 +642,9 @@ CREATE TABLE icinga_host_service (
 CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
-  display_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  display_name VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
@@ -664,8 +672,9 @@ CREATE TABLE icinga_hostgroup_inheritance (
 CREATE TABLE icinga_servicegroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
-  display_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  display_name VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
@@ -740,13 +749,14 @@ CREATE TABLE icinga_hostgroup_parent (
 CREATE TABLE icinga_user (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   email VARCHAR(255) DEFAULT NULL,
   pager VARCHAR(255) DEFAULT NULL,
   enable_notifications ENUM('y', 'n') DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
-  object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_user_zone
@@ -834,9 +844,10 @@ CREATE TABLE icinga_user_var (
 CREATE TABLE icinga_usergroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
-  object_type ENUM('object', 'template') NOT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name, zone_id),
   KEY search_idx (display_name)

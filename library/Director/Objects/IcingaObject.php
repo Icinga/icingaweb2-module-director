@@ -219,6 +219,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    protected function setDisabled($disabled)
+    {
+        return parent::set($this->normalizeBoolean($disabled));
+    }
+
     public function markForRemoval($remove = true)
     {
         $this->shouldBeRemoved = $remove;
@@ -738,6 +743,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } else {
             return '';
         }
+    }
+
+    // Disabled is a virtual property
+    protected function renderDisabled()
+    {
+        return '';
     }
 
     protected function renderProperties()

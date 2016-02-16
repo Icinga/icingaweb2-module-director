@@ -9,13 +9,14 @@ class IcingaUser extends IcingaObject
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
+        'object_type'           => null,
+        'disabled'              => 'n',
         'display_name'          => null,
         'email'                 => null,
         'pager'                 => null,
         'enable_notifications'  => null,
         'period_id'             => null,
         'zone_id'               => null,
-        'object_type'           => null,
     );
 
     protected $supportsGroups = true;

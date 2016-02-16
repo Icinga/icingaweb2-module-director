@@ -13,11 +13,12 @@ class IcingaCommand extends IcingaObject
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
+        'object_type'           => null,
+        'disabled'              => 'n',
         'methods_execute'       => null,
         'command'               => null,
         'timeout'               => null,
         'zone_id'               => null,
-        'object_type'           => null,
     );
 
     protected $supportsCustomVars = true;

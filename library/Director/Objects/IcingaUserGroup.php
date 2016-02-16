@@ -11,8 +11,9 @@ class IcingaUserGroup extends IcingaObject
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
-        'display_name'          => null,
         'object_type'           => null,
+        'disabled'              => 'n',
+        'display_name'          => null,
         'zone_id'               => null,
     );
 }

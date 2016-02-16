@@ -12,6 +12,8 @@ class IcingaHost extends IcingaObject
     protected $defaultProperties = array(
         'id'                    => null,
         'object_name'           => null,
+        'object_type'           => null,
+        'disabled'              => 'n',
         'display_name'          => null,
         'address'               => null,
         'address6'              => null,
@@ -36,7 +38,6 @@ class IcingaHost extends IcingaObject
         'action_url'            => null,
         'icon_image'            => null,
         'icon_image_alt'        => null,
-        'object_type'           => null,
         'has_agent'             => null,
         'master_should_connect' => null,
         'accept_config'         => null,
