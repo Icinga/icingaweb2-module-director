@@ -184,18 +184,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->propertyIsBoolean($key) && $value !== null) {
-            if ($value === 'y' || $value === '1' || $value === true || $value === 1) {
-                return parent::set($key, 'y');
-            } elseif ($value === 'n' || $value === '0' || $value === false || $value === 0) {
-                return parent::set($key, 'n');
-            } elseif ($value === '') {
-                return parent::set($key, null);
-            } else {
-                throw new ProgrammingError(
-                    'Got invalid boolean: %s',
-                    var_export($value, 1)
-                );
-            }
+            return parent::set($key, $this->normalizeBoolean($value));
         }
 
         if ($this->hasRelation($key)) {
@@ -212,6 +201,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return parent::set($key, $value);
+    }
+
+    protected function normalizeBoolean($value)
+    {
+        if ($value === 'y' || $value === '1' || $value === true || $value === 1) {
+            return 'y';
+        } elseif ($value === 'n' || $value === '0' || $value === false || $value === 0) {
+            return 'n';
+        } elseif ($value === '' || $value === null) {
+            return null;
+        } else {
+            throw new ProgrammingError(
+                'Got invalid boolean: %s',
+                var_export($value, 1)
+            );
+        }
     }
 
     public function markForRemoval($remove = true)
