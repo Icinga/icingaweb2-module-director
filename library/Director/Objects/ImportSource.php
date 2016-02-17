@@ -106,7 +106,7 @@ class ImportSource extends DbObject
         }
 
         foreach ($del as $key) {
-            $db->update(
+            $db->delete(
                 'import_source_setting',
                 $db->quoteInto($where, $key)
             );
