@@ -25,28 +25,6 @@ class ConfigForm extends QuickForm
             'value'         => $config->get('db', 'resource')
         ));
 
-        $this->addHtml(sprintf('<h3>%s</h3>', $this->translate('Icinga 2 API')));
-
-        $this->addElement('text', 'api_address', array(
-            'label'         => $this->translate('Address'),
-            'value'         => $config->get('api', 'address', '127.0.0.1')
-        ));
-
-        $this->addElement('text', 'api_port', array(
-            'label'         => $this->translate('Port'),
-            'value'         => $config->get('api', 'port', '5665')
-        ));
-
-        $this->addElement('text', 'api_username', array(
-            'label'         => $this->translate('Username'),
-            'value'         => $config->get('api', 'username')
-        ));
-
-        $this->addElement('text', 'api_password', array(
-            'label'         => $this->translate('Password'),
-            'value'         => $config->get('api', 'password')
-        ));
-
         if (empty($resources)) {
             $this->getElement('resource')->addError(
                 $this->translate('This has to be a MySQL or PostgreSQL database')
@@ -141,16 +119,6 @@ class ConfigForm extends QuickForm
         $value = $this->getValue('resource');
 
         $config->setSection('db', array('resource' => $value));
-
-        if ($user = $this->getValue('api_username')) {
-            $settings = array();
-            foreach (array('address', 'port', 'username', 'password') as $setting) {
-                if ($value = $this->getValue('api_' . $setting)) {
-                    $settings[$setting] = $value;
-                }
-            }
-            $config->setSection('api', $settings);
-        }
 
         try {
             $config->saveIni();
