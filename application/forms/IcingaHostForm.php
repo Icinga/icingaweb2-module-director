@@ -56,6 +56,7 @@ class IcingaHostForm extends DirectorObjectForm
         }
 
         $this->addImportsElement();
+        $this->addDisabledElement();
 
         /*
         $this->addElement('text', 'groups', array(
@@ -74,6 +75,7 @@ class IcingaHostForm extends DirectorObjectForm
             'master_should_connect',
             'accept_config',
             'imports',
+            'disabled',
         );
         $this->addDisplayGroup($elements, 'object_definition', array(
             'decorators' => array(

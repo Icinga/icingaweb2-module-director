@@ -27,6 +27,7 @@ class IcingaServiceForm extends DirectorObjectForm
         );
         $this->addZoneElement();
         $this->addImportsElement();
+        $this->addDisabledElement();
         $this->addCheckCommandElements();
 
 

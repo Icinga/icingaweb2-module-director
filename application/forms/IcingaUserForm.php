@@ -55,5 +55,7 @@ class IcingaUserForm extends DirectorObjectForm
         ));
 */
         $this->addImportsElement();
+        $this->addDisabledElement();
+        $this->setButtons();
     }
 }
