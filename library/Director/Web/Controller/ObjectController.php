@@ -100,14 +100,7 @@ abstract class ObjectController extends ActionController
         );
         $form->setSuccessUrl($url);
 
-        if ($object->isTemplate()) {
-            $title = $this->translate('Modify Icinga %s template');
-            $form->setObjectType('template'); // WHY??
-        } else {
-            $title = $this->translate('Modify Icinga %s');
-        }
-
-        $this->view->title = sprintf($title, ucfirst($ltype));
+        $this->view->title = sprintf($this->translate('Modify %s'), ucfirst($ltype));
         $this->view->form->handleRequest();
 
         $this->view->actionLinks = $this->view->icon('paste') . ' '
@@ -131,14 +124,11 @@ abstract class ObjectController extends ActionController
             ->setDb($this->db())
             ->setSuccessUrl($url);
 
-        if ($this->params->get('type') === 'template') {
-            $form->setObjectType('template');
-            $title = $this->translate('Add new Icinga %s template');
-        } else {
-            $title = $this->translate('Add new Icinga %s');
-        }
+        $this->view->title = sprintf(
+            $this->translate('Add new Icinga %s'),
+            ucfirst($ltype)
+        );
 
-        $this->view->title = sprintf($title, ucfirst($ltype));
         $form->handleRequest();
         $this->render('object/form', null, true);
     }
