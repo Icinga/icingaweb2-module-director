@@ -1044,5 +1044,5 @@ CREATE TABLE import_row_modifier_setting (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 64;
+      schema_version = 65;
 
