@@ -13,7 +13,9 @@ class ImportSourceLdap extends ImportSourceHook
 
     public function fetchData()
     {
-        $query = $this->connection()->select()->from($this->settings['objectclass'], $this->listColumns());
+        $columns = $this->listColumns();
+        $query = $this->connection()->select()->from($this->settings['objectclass'], $columns);
+
         if ($base = $this->settings['base']) {
             $query->setBase($base);
         }
@@ -21,7 +23,16 @@ class ImportSourceLdap extends ImportSourceHook
             $query->setNativeFilter($filter);
         }
 
-        return $query->fetchAll();
+        if (in_array('dn', $columns)) {
+            $result = $query->fetchAll();
+            foreach ($result as $dn => $row) {
+                $row->dn = $dn;
+            }
+
+            return $result;
+        } else {
+            return $query->fetchAll();
+        }
     }
 
     public function listColumns()
