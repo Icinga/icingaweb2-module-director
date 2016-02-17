@@ -18,8 +18,6 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $deleteButtonName;
 
-    protected $objectType = 'object';
-
     protected $fieldsDisplayGroup;
 
     protected $displayGroups = array();
@@ -46,7 +44,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function isTemplate()
     {
-        return $this->objectType === 'template';
+        return $this->getSentOrObjectValue('object_type') === 'template';
     }
 
     protected function handleImports($object, & $values)
@@ -381,12 +379,6 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
-    public function setObjectType($type)
-    {
-        $this->objectType = $type;
-        return $this;
-    }
-
     protected function setButtons()
     {
         if ($this->object === null || ! $this->object->hasBeenLoadedFromDb()) {
@@ -629,9 +621,6 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         if ($object instanceof IcingaObject) {
-            if (! $object->hasBeenLoadedFromDb() && $object->hasProperty('object_type')) {
-                $object->object_type = $this->objectType;
-            }
             $this->handleImports($object, $values);
             $this->handleProperties($object, $values);
             $this->handleCustomVars($object, $post);
@@ -721,6 +710,10 @@ abstract class DirectorObjectForm extends QuickForm
                     return $object->$name;
                 }
 
+                if (null !== ($val = $this->getElement('object_type')->getValue())) {
+                    return $val;
+                }
+
                 return $default;
             } else {
 
@@ -729,6 +722,10 @@ abstract class DirectorObjectForm extends QuickForm
 
         } else {
             if (null !== ($val = $this->getSentValue($name))) {
+                return $val;
+            }
+
+            if (null !== ($val = $this->getElement('object_type')->getValue())) {
                 return $val;
             }
 
@@ -788,7 +785,8 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->object()->supportsImports()) {
             $templates = $this->enumAllowedTemplates();
 
-            if (empty($templates)) {
+            // TODO: getObjectname is a confusing method name
+            if (empty($templates) && $this->getObjectname() !== 'Command') {
                 $default = 'template';
                 $types = array('template' => $this->translate('Template'));
             } else {
