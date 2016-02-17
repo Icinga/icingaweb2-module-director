@@ -92,8 +92,11 @@ $all = array(
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
         array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history')),
     ),
-    $this->translate('Data') => array(
-        array('database', $this->translate('Sync / Import'), 'director/list/importsource', ''),
+    $this->translate('Do more with your data') => array(
+        array('database',     $this->translate('Import data sources'), 'director/list/importsource', $this->translate('Define and manage imports from various data sources')),
+        array('flapping',     $this->translate('Synchronize'), 'director/list/importsource', $this->translate('Define how imported data should be synchronized with Icinga')),
+        array('sort-name-up', $this->translate('Provide data lists'), 'director/list/datalist', $this->translate('Provide data lists to make life easier for your users')),
+        array('edit',         $this->translate('Define data fields'), 'director/list/datafield', $this->translate('Data fields make sure that configuration fits your rules')),
     )
 );
 ?>
