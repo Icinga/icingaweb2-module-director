@@ -393,6 +393,7 @@ class Db extends DbConnection
             'servicegroup',
             'user',
             'usergroup',
+            'command',
             'timeperiod',
             'apiuser',
             'endpoint',
