@@ -848,6 +848,20 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    protected function addDisabledElement()
+    {
+        $this->addBoolean(
+            'disabled',
+            array(
+                'label'       => $this->translate('Disabled'),
+                'description' => $this->translate('Disabled objects will not be deployes')
+            ),
+            'n'
+        );
+
+        return $this;
+    }
+
     protected function addCheckCommandElements()
     {
         $this->addElement('select', 'check_command_id', array(
