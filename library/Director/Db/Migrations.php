@@ -74,6 +74,11 @@ class Migrations
 
     public function listPendingMigrations()
     {
+        $lastMigration = $this->getLastMigrationNumber();
+        if ($lastMigration === 0) {
+            return array(0);
+        }
+
         return $this->listMigrationsAfter($this->getLastMigrationNumber());
     }
 
@@ -101,11 +106,15 @@ class Migrations
 
     public function loadMigrationFile($version)
     {
-        $filename = sprintf(
-            '%s/upgrade_%d.sql',
-            $this->getMigrationsDir(),
-            $version
-        );
+        if ($version === 0) {
+            $filename = $this->getFullSchemaFile();
+        } else {
+            $filename = sprintf(
+                '%s/upgrade_%d.sql',
+                $this->getMigrationsDir(),
+                $version
+            );
+        }
 
         return file_get_contents($filename);
     }
@@ -132,5 +141,13 @@ class Migrations
         }
 
         return $this->migrationsDir;
+    }
+
+    protected function getFullSchemaFile()
+    {
+        return dirname(dirname(dirname(__DIR__)))
+            . '/schema/'
+            . $this->connection->getDbType()
+            . '.sql';
     }
 }

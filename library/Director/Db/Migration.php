@@ -27,7 +27,9 @@ class Migration
     public function apply(Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $queries = preg_split('/[\n\s\t]*\;[\n\s\t]*/s', $this->sql, -1, PREG_SPLIT_NO_EMPTY);
+
+        // TODO: this is fagile and depends on accordingly written schema files:
+        $queries = preg_split('/[\n\s\t]*\;[\n\s\t]+/s', $this->sql, -1, PREG_SPLIT_NO_EMPTY);
 
         if (empty($queries)) {
             throw new IcingaException(
@@ -37,21 +39,17 @@ class Migration
         }
 
         try {
-            $db->beginTransaction();
-
             foreach ($queries as $query) {
                 $db->exec($query);
             }
 
-            $db->commit();
-
         } catch (Exception $e) {
 
-            $db->rollback();
             throw new IcingaException(
-                'Migration %d failed: %s',
+                'Migration %d failed (%s) while running %s',
                 $this->version,
-                $e->getMessage()
+                $e->getMessage(),
+                $query
             );
         }
 
