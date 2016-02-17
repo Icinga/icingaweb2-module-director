@@ -84,8 +84,8 @@ abstract class DbObjectWithSettings extends DbObject
             }
         }
 
-        foreach (array_diff(array_keys($old), array_keys($this->settings)) as $key) {
-            $del[$key] = $key;
+        foreach (array_diff($oldKeys, $newKeys) as $key) {
+            $del[] = $key;
         }
 
         $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name = ?', $this->id);
@@ -109,11 +109,9 @@ abstract class DbObjectWithSettings extends DbObject
             );
         }
 
-        foreach ($del as $key) {
-            $db->delete(
-                $this->settingsTable,
-                $db->quoteInto($where, $key)
-            );
+        if (! empty($del)) {
+            $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name IN (?)', $this->id);
+            $db->delete($this->settingsTable, $db->quoteInto($where, $del));
         }
     }
 
