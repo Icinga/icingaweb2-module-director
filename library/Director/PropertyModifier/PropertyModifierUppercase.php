@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\PropertyModifier;
 
-use Icinga\Module\Director\Web\Hook\PropertyModifierHook;
+use Icinga\Module\Director\Hook\PropertyModifierHook;
 
 class PropertyModifierUppercase extends PropertyModifierHook
 {
