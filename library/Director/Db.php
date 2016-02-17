@@ -38,12 +38,16 @@ class Db extends DbConnection
     {
         $db = $this->db();
         $query = $db->select()->from(
-            array('e' => 'icinga_endpoint'),
+            array('z' => 'icinga_zone'),
             array('object_name' => 'e.object_name')
         )->join(
-            array('z' => 'icinga_zone'),
-            array(),
-            'e.zone_id = z.id'
+            array('e' => 'icinga_endpoint'),
+            'e.zone_id = z.id',
+            array()
+        )->join(
+            array('au' => 'icinga_apiuser'),
+            'e.apiuser_id = au.id',
+            array()
         )->where('z.object_name = ?', $this->getMasterZoneName())
          ->order('e.object_name ASC')
          ->limit(1);
@@ -51,7 +55,7 @@ class Db extends DbConnection
         $name = $db->fetchOne($query);
         if (! $name) {
             throw new ConfigurationError(
-                'Unable to detect deployment your endpoint'
+                'Unable to detect your deployment endpoint'
             );
         }
 
