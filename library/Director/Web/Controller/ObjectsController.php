@@ -65,6 +65,10 @@ abstract class ObjectsController extends ActionController
 
     public function indexAction()
     {
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->setAutorefreshInterval(10);
+        }
+
         $type = $this->getType();
         $ltype = strtolower($type);
         $this->assertPermission('director/' . $type . 's/read');

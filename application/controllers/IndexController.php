@@ -15,6 +15,7 @@ class IndexController extends ActionController
 
     public function indexAction()
     {
+        $this->setAutorefreshInterval(10);
         $this->getTabs()->add('overview', array(
             'url' => $this->getRequest()->getUrl(),
             'label' => $this->translate('Overview')
