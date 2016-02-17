@@ -142,32 +142,36 @@ select option[value=""] {
 
 ul.main-actions {
   margin: 0;
+  padding: 0;
   li {
     list-style-type: none;
-    width: 20em;
 
-    text-align: center;
-    display: block;
+    text-align: left;
+    display: inline-block;
     padding: 0;
-    float: left;
+    clear: both;
+    width: 24%;
+    vertical-align: top;
+    margin: 0 0.5% 0.5% 0;
 
     a {
         i {
-            width: 100%;
-            height: 1.3em;
-            font-size: 2em;
-            display: inline-block;
+            height: 1.6em;
+            font-size: 3em;
+            display: block;
+            height: 100%;
+            float: left;
             line-height: 1em;
+            margin-right: 0.3em;
         }
 
-        border: 1px solid #666;
         padding: 1em;
-        margin: 0.5em;
         font-size: 1.1em;
         color: #666;
         font-weight: bold;
         display: block;
         text-decoration: none;
+        height: 10em;
 
         &:hover {
             background-color: #666;
@@ -175,6 +179,39 @@ ul.main-actions {
             text-decoration: none;
         }
     }
+
+    p {
+        font-weight: normal;
+        margin-bottom: 0.5em;
+    }
+  }
+}
+
+#layout.compact-layout ul.main-actions {
+  li {
+    width: 32%;
+    margin: 0 1% 1% 0;
+  }
+}
+
+#layout.poor-layout ul.main-actions {
+  li {
+    width: 30%;
+    margin: 0 0.5% 0.5% 0;
+  }
+}
+
+#layout.minimal-layout ul.main-actions {
+  li {
+    width: 48%;
+    margin: 0 1% 1% 0;
+  }
+}
+
+#layout.twocols ul.main-actions {
+  li {
+    width: 48%;
+    margin: 0 1% 1% 0;
   }
 }
 

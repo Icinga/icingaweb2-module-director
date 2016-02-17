@@ -3,35 +3,108 @@
 </div>
 
 <div class="content">
-<h1><?= $this->translate('Welcome to the Icinga Director') ?></h1>
 <?php if ($this->errorMessage): ?>
 <p class="error"><?= $this->errorMessage ?></p>
 <?php endif ?>
 <?php
+
+function statSummary($self, $type) {
+    $stat = $self->stats[$type];
+
+    if ((int) $stat->cnt_total === 0) {
+        return $self->translate('No object has been defined yet');
+    }
+
+    if ((int) $stat->cnt_total === 1) {
+        if ($stat->cnt_template > 0) {
+            $msg = $self->translate('One template has been defined');
+        } elseif ($stat->cnt_external > 0) {
+            $msg = $self->translate('One external object has been defined, it will not be deployed');
+        } else {
+            $msg = $self->translate('One object has been defined');
+        }
+
+        return $msg;
+    } else {
+        $msg = sprintf(
+            $self->translate('%d objects have been defined'),
+            $stat->cnt_total
+        );
+    }
+
+    if ($stat->cnt_total === $stat->cnt_object) {
+        return $msg;
+    }
+
+    $extra = array();
+    if ($stat->cnt_template > 0) {
+        $extra[] = sprintf(
+            $self->translate('%d of them are templates'),
+            $stat->cnt_template
+        );
+    }
+    if ($stat->cnt_external > 0) {
+        $extra[] = sprintf(
+            $self->translate('%d have been externally defined and will not be deployed'),
+            $stat->cnt_external
+        );
+    }
+
+    if (array_key_exists($type . 'group', $self->stats)) {
+        $groupstat = $self->stats[$type . 'group'];
+        if ((int) $groupstat->cnt_total === 0) {
+            $extra[] = $self->translate('no related group exists');
+        } elseif ((int) $groupstat->cnt_total === 1) {
+            $extra[] = $self->translate('one related group exists');
+        } else {
+            $extra[] = sprintf(
+                $self->translate('%s related group objects have been created', $groupstat->cnt_total)
+            );
+        }
+    }
+
+    return $msg . ', ' . implode(', ', $extra);
+}
+
+function renderActions($title, $actions) {
+
+}
 
 if ($this->stats && (int) $this->stats['apiuser']->cnt_total === 0) {
     echo $this->form . "</div>\n";
     return;
 }
 
-$actions = array(
-    array('cloud',    $this->translate('Monitoring Nodes'), 'director/commands'),
-    array('host',     $this->translate('Host objecs'), 'director/hosts'),
-    array('services', $this->translate('Monitored Services'), 'director/services'),
-    array('users',    $this->translate('Users / Contacts'), 'director/users'),
-    array('chat',     $this->translate('Alarms and notifications'), 'director/notificatios'),
-    array('database', $this->translate('Sync / Import'), 'director/list/importsource'),
-    array('wrench',   $this->translate('Configuration'), 'director/list/generatedconfig'),
+$all = array(
+    $this->translate('Manage your monitored objects') => array(
+        array('wrench',   $this->translate('Commands'), 'director/commands', statSummary($this, 'command')),
+        array('host',     $this->translate('Host objects'), 'director/hosts', statSummary($this, 'host')),
+        array('services', $this->translate('Monitored Services'), 'director/services', statSummary($this, 'service')),
+    ),
+    $this->translate('Alert your users') => array(
+        array('users',    $this->translate('Users / Contacts'), 'director/users', statSummary($this, 'user')),
+        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
+        array('chat',     $this->translate('Notifications'), '#', $this->translate('Schedule your notifications')),
+    ),
+    $this->translate('Deploy to your Icinga nodes') => array(
+        array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
+        array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
+        array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
+        array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history')),
+    ),
+    $this->translate('Data') => array(
+        array('database', $this->translate('Sync / Import'), 'director/list/importsource', ''),
+    )
 );
 ?>
-<ul class="main-actions">
-<?php foreach ($actions as $a): ?>
- <li>
-  <a href="<?= $this->url($a[2]) ?>">
-  <?= $this->icon($a[0]) ?>
-  <?= $this->escape($a[1]) ?>
-  </a>
- </li>
+
+<?php foreach ($all as $title => $actions): ?>
+<?= $this->partial(
+    'index/actions.phtml',
+    array(
+        'actions' => $actions,
+        'title'   => $title
+    )
+) ?>
 <?php endforeach ?>
-</ul>
 </div>
