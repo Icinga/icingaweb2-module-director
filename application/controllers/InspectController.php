@@ -2,9 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\Core\CoreApi;
-use Icinga\Module\Director\Core\RestApiClient;
-use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class InspectController extends ActionController
@@ -95,18 +92,13 @@ class InspectController extends ActionController
         print_r($status); exit;
     }
 
-    protected function api()
+    protected function api($endpointName = null)
     {
         $this->view->endpoint = $this->params->get('endpoint');
         if ($this->view->endpoint === null) {
             $this->view->endpoint = $this->db()->getDeploymentEndpointName();
         }
 
-        $endpoint = IcingaEndpoint::load($this->view->endpoint, $this->db());
-        $apiconfig = $this->Config()->getSection('api');
-        $client = new RestApiClient($endpoint->host, $endpoint->port);
-        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
-        $api = new CoreApi($client);
-        return $api;
+        return parent::api($this->view->endpoint);
     }
 }
