@@ -225,7 +225,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function setDisabled($disabled)
     {
-        return parent::set($this->normalizeBoolean($disabled));
+        return parent::reallySet('disabled', $this->normalizeBoolean($disabled));
     }
 
     public function markForRemoval($remove = true)
