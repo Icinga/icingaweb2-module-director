@@ -73,9 +73,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function getRelatedObjectName($property, $id)
     {
+        return $this->getRelatedObject($property, $id)->object_name;
+    }
+
+    protected function getRelatedObject($property, $id)
+    {
         $class = $this->getRelationClass($property);
-        $object = $class::loadWithAutoIncId($id, $this->connection);
-        return $object->object_name;
+        return $class::loadWithAutoIncId($id, $this->connection);
     }
 
     public function supportsCustomVars()
