@@ -1,22 +1,26 @@
 <?php
 
-namespace Icinga\Module\Director\Web\Hook;
+namespace Icinga\Module\Director\Hook;
 
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Db;
+use Icinga\Exception\ConfigurationError;
 
-abstract class PropertyModifierHook
+abstract class ImportSourceHook
 {
     protected $settings = array();
 
     public function getName()
     {
         $parts = explode('\\', get_class($this));
-        $class = preg_replace('/ImportRowModifier/', '', array_pop($parts)); // right?
+        $class = preg_replace('/ImportSource/', '', array_pop($parts));
 
         if (array_shift($parts) === 'Icinga' && array_shift($parts) === 'Module') {
             $module = array_shift($parts);
             if ($module !== 'Director') {
+                if ($class === '') {
+                    return sprintf('%s module', $module);
+                }
                 return sprintf('%s (%s)', $class, $module);
             }
         }
@@ -24,24 +28,31 @@ abstract class PropertyModifierHook
         return $class;
     }
 
-    public static function loadById($property_id, Db $db)
+    public static function loadByName($name, $db)
     {
         $db = $db->getDbAdapter();
-        $modifier = $db->fetchRow(
+        $source = $db->fetchRow(
             $db->select()->from(
-                'import_row_modifier',
+                'import_source',
                 array('id', 'provider_class')
-            )->where('property_id = ?', $property_id)
+            )->where('source_name = ?', $name)
         );
 
         $settings = $db->fetchPairs(
             $db->select()->from(
-                'import_row_modifier_settings',
+                'import_source_setting',
                 array('setting_name', 'setting_value')
-            )->where('modifier_id = ?', $modifier->id)
+            )->where('source_id = ?', $source->id)
         );
 
-        $obj = new $modifier->provider_class;
+        if (! class_exists($source->provider_class)) {
+            throw new ConfigurationError(
+                'Cannot load import provider class %s',
+                $source->provider_class
+            );
+        }
+
+        $obj = new $source->provider_class;
         $obj->setSettings($settings);
 
         return $obj;
@@ -51,6 +62,14 @@ abstract class PropertyModifierHook
     {
         $this->settings = $settings;
         return $this;
+    }
+
+    public function getSetting($name, $default = null) {
+        if (array_key_exists($name, $this->settings)) {
+            return $this->settings[$name];
+        } else {
+            return $default;
+        }
     }
 
     /**
@@ -67,13 +86,16 @@ abstract class PropertyModifierHook
      */
     abstract public function listColumns();
 
-
     /**
-     * Methode to transform the given value
+     * Override this method in case you want to suggest a default
+     * key column
      *
-     * @return value
+     * @return string|null Default key column
      */
-    abstract public function transform($value);
+    public static function getDefaultKeyColumnName()
+    {
+        return null;
+    }
 
     /**
      * Override this method if you want to extend the settings form

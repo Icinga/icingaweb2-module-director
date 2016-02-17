@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Director\Web\Hook;
+namespace Icinga\Module\Director\Hook;
 
 abstract class ShipConfigFilesHook
 {

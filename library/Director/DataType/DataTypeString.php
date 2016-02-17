@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\DataType;
 
+use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
-use Icinga\Module\Director\Web\Hook\DataTypeHook;
 
 class DataTypeString extends DataTypeHook
 {

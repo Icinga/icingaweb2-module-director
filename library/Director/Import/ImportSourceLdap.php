@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Import;
 
 use Icinga\Data\ResourceFactory;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\QuickForm;
-use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 
 class ImportSourceLdap extends ImportSourceHook
 {

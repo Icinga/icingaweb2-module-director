@@ -4,8 +4,8 @@ namespace Icinga\Module\Director\DataType;
 
 use Exception;
 use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
-use Icinga\Module\Director\Web\Hook\DataTypeHook;
 use Icinga\Module\Director\Util;
 
 class DataTypeSqlQuery extends DataTypeHook
