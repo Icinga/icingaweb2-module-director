@@ -1,31 +1,13 @@
 <?php
 
-namespace Icinga\Module\Director\Objects;
+namespace Icinga\Module\Director\Data\Db;
 
-use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
-
-class DirectorDatafield extends DbObjectWithSettings
+abstract class DbObjectWithSettings extends DbObject
 {
-    protected $table = 'director_datafield';
+    protected $settingsTable = 'your_table_name';
 
-    protected $keyName = 'id';
+    protected $settingsRemoteId = 'column_pointing_to_main_table_id';
 
-    protected $autoincKeyName = 'id';
-
-    protected $defaultProperties = array(
-        'id'            => null,
-        'varname'       => null,
-        'caption'       => null,
-        'description'   => null,
-        'datatype'      => null,
-        'format'        => null,
-    );
-
-    protected $settingsTable = 'director_datafield_setting';
-
-    protected $settingsRemoteId = 'datafield_id';
-
-/*
     protected $settings = array();
 
     public function set($key, $value)
@@ -55,6 +37,20 @@ class DirectorDatafield extends DbObjectWithSettings
         return parent::get($key);
     }
 
+    public function getSettings()
+    {
+        return $this->settings;
+    }
+
+    public function getSetting($name, $default = null)
+    {
+        if (array_key_exists($name, $this->settings)) {
+            return $this->settings[$name];
+        }
+
+        return $default;
+    }
+
     public function __unset($key)
     {
         if ($this->hasProperty($key)) {
@@ -67,11 +63,6 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         return $this;
-    }
-
-    public function getSettings()
-    {
-        return $this->settings;
     }
 
     protected function onStore()
@@ -97,11 +88,11 @@ class DirectorDatafield extends DbObjectWithSettings
             $del[$key] = $key;
         }
 
-        $where = sprintf('datafield_id = %d AND setting_name = ?', $this->id);
+        $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name = ?', $this->id);
         $db = $this->getDb();
         foreach ($mod as $key => $val) {
             $db->update(
-                'director_datafield_setting',
+                $this->settingsTable,
                 array('setting_value' => $val),
                 $db->quoteInto($where, $key)
             );
@@ -109,18 +100,18 @@ class DirectorDatafield extends DbObjectWithSettings
 
         foreach ($add as $key => $val) {
             $db->insert(
-                'director_datafield_setting',
+                $this->settingsTable,
                 array(
-                    'datafield_id'     => $this->id,
-                    'setting_name'  => $key,
-                    'setting_value' => $val
+                    $this->settingsRemoteId => $this->id,
+                    'setting_name'          => $key,
+                    'setting_value'         => $val
                 )
             );
         }
 
         foreach ($del as $key) {
             $db->delete(
-                'director_datafield_setting',
+                $this->settingsTable,
                 $db->quoteInto($where, $key)
             );
         }
@@ -131,8 +122,8 @@ class DirectorDatafield extends DbObjectWithSettings
         $db = $this->getDb();
         return $db->fetchPairs(
             $db->select()
-                ->from('director_datafield_setting', array('setting_name', 'setting_value'))
-                ->where('datafield_id = ?', $this->id)
+               ->from($this->settingsTable, array('setting_name', 'setting_value'))
+               ->where($this->settingsRemoteId . ' = ?', $this->id)
         );
 
     }
@@ -141,5 +132,4 @@ class DirectorDatafield extends DbObjectWithSettings
     {
         $this->settings = $this->fetchSettingsFromDb();
     }
-*/
 }
