@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Web\Hook;
 
 class ImportRowModifierForm extends DirectorObjectForm
 {

@@ -2,13 +2,13 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Exception;
 use Icinga\Exception\InvalidPropertyException;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Web\Hook\ImportSourceHook;
-use Exception;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class SyncPropertyForm extends DirectorObjectForm
 {

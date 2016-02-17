@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Util;
-use Icinga\Module\Director\Web\Hook\ImportSourceHook;
-use Icinga\Exception\IcingaException;
 use stdClass;
 
 class Import

@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Web\Hook;
+use Icinga\Application\Hook;
 use Exception;
 
 class DirectorDatafieldForm extends DirectorObjectForm

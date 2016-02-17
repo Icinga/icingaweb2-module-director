@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Application\Benchmark;
+use Icinga\Application\Hook;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
-use Icinga\Application\Benchmark;
-use Icinga\Web\Hook;
 use Exception;
 
 class IcingaConfig

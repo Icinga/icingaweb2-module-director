@@ -4,8 +4,8 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Data\Paginatable;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Web\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ImportsourceHookTable extends QuickTable
