@@ -406,6 +406,8 @@ throw $e;
         $file = null;
 
         foreach ($objects as $object) {
+            if ($object->disabled === 'y') continue;
+
             if ($object->isExternal()) {
                 if ($type === 'zone') {
                     $this->zoneMap[$object->id] = $object->object_name;
