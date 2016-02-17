@@ -229,8 +229,8 @@ class SyncPropertyForm extends DirectorObjectForm
 
         if ($dummy instanceof IcingaObject) {
             if ($dummy->supportsCustomvars()) {
-                $special['vars.*']  = $this->translate('Custom variable (vars.)');
-                $special['vars']  = $this->translate('All custom variables (vars)');
+                $special['vars.*'] = $this->translate('Custom variable (vars.)');
+                $special['vars']   = $this->translate('All custom variables (vars)');
             }
             if ($dummy->supportsImports()) {
                 $special['import']  = $this->translate('Inheritance (import)');
@@ -250,7 +250,7 @@ class SyncPropertyForm extends DirectorObjectForm
             //if (preg_match('~_id$~', $prop)) continue;
             if (substr($prop, -3) === '_id') {
                 $prop = substr($prop, 0, -3);
-                if (! $dummy->hasRelation($prop)) {
+                if (! $dummy instanceof IcingaObject || ! $dummy->hasRelation($prop)) {
                     continue;
                 }
             }
