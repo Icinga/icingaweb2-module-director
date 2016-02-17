@@ -83,27 +83,6 @@ abstract class ObjectController extends ActionController
         $this->render('object/show', null, true);
     }
 
-    // TODO: Remove or leave here for API access only. Probably not needed.
-    public function deleteAction()
-    {
-        $type = $this->getType();
-        $this->getTabs()->activate('delete');
-
-        $this->view->form = $form = $this->loadForm(
-            'icingaDeleteObject'
-        )->setObject($this->object);
-
-        $url = Url::fromPath(sprintf('director/%ss', $type));
-        $form->setSuccessUrl($url);
-
-        $this->view->title = sprintf(
-            $this->translate('Delete Icinga %s'),
-            ucfirst($type)
-        );
-        $this->view->form->handleRequest();
-        $this->render('object/form', null, true);
-    }
-
     public function editAction()
     {
         $object = $this->object;
