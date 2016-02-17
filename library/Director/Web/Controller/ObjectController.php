@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Exception;
+use Icinga\Exception\NotFoundError;
 use Icinga\Web\Url;
 use Icinga\Module\Director\Objects\IcingaObject;
 
@@ -265,6 +266,7 @@ abstract class ObjectController extends ActionController
 
         switch ($request->getMethod()) {
             case 'DELETE':
+                $this->requireObject();
                 $name = $this->object->object_name;
                 $obj = $this->object->toPlainObject(false, true);
                 $form = $this->loadForm(
@@ -304,6 +306,7 @@ abstract class ObjectController extends ActionController
                 return $this->sendJson($object->toPlainObject(false, true));
 
             case 'GET':
+                $this->requireObject();
                 return $this->sendJson(
                     $this->object->toPlainObject(
                         $this->params->shift('resolved'),
@@ -314,6 +317,18 @@ abstract class ObjectController extends ActionController
 
             default:
                 throw new Exception('Unsupported method ' . $request->getMethod());
+        }
+    }
+
+    protected function requireObject()
+    {
+        if (! $this->object) {
+            $this->getResponse()->setHttpResponseCode(404);
+            if (! $this->params->get('name')) {
+                throw new NotFoundError('You need to pass a "name" parameter to access a specific object');
+            } else {
+                throw new NotFoundError('No such object available');
+            }
         }
     }
 }
