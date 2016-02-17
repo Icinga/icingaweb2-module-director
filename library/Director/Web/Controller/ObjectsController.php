@@ -6,6 +6,8 @@ abstract class ObjectsController extends ActionController
 {
     protected $dummy;
 
+    protected $isApified = true;
+
     protected $globalTypes = array(
         'ApiUser',
         'Zone',
@@ -106,6 +108,15 @@ abstract class ObjectsController extends ActionController
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
         $table = $this->loadTable($table)->setConnection($this->db());
         $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
+
+        if ($this->getRequest()->isApiRequest()) {
+
+            $objects = $this->db()->getDbAdapter()->fetchAll(
+                $table->getBaseQuery()->columns(array('object_name', 'object_type', 'disabled'))
+            );
+            return $this->sendJson((object) array('objects' => $objects));
+        }
+
         $this->view->table = $this->applyPaginationLimits($table);
 
         $this->render('objects/table', null, true);
