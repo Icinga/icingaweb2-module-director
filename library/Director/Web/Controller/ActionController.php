@@ -7,9 +7,8 @@ use Icinga\Data\Paginatable;
 use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Core\RestApiClient;
-use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Web\Controller;
@@ -20,6 +19,8 @@ abstract class ActionController extends Controller
     protected $db;
 
     protected $isApified = false;
+
+    private $api;
 
     public function init()
     {
@@ -122,13 +123,19 @@ abstract class ActionController extends Controller
         return $this->view->tabs;
     }
 
-    protected function api()
+    protected function api($endpointName = null)
     {
-        $apiconfig = $this->Config()->getSection('api');
-        $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
-        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
-        $api = new CoreApi($client);
-        return $api;
+        if ($this->api === null) {
+            if ($endpointName === null) {
+                $endpoint = $this->db()->getDeploymentEndpoint();
+            } else {
+                $endpoint = IcingaEndpoint::load($endpointName, $this->db());
+            }
+
+            $this->api = $endpoint->api();
+        }
+
+        return $this->api;
     }
 
     protected function db()
