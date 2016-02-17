@@ -8,6 +8,7 @@ class IcingaServiceGroupForm extends DirectorObjectForm
 {
     public function setup()
     {
+        $this->addHidden('object_type', 'object');
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Servicegroup'),
             'required'    => true,

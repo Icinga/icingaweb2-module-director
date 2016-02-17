@@ -8,6 +8,8 @@ class IcingaServiceForm extends DirectorObjectForm
 {
     public function setup()
     {
+        $this->addObjectTypeElement();
+
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Name'),
             'required'    => true,

@@ -8,9 +8,6 @@ class IcingaApiUserForm extends DirectorObjectForm
 {
     public function setup()
     {
-        // TODO: check behaviour on update!
-        $objectType = $this->getSentValue('object_type', 'external_object');
-        $isTemplate = $objectType === 'template';
         $this->addHidden('object_type', 'external_object');
 
         $this->addElement('text', 'object_name', array(

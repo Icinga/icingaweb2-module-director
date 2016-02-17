@@ -8,24 +8,24 @@ class IcingaCommandForm extends DirectorObjectForm
 {
     public function setup()
     {
-        if ($this->isTemplate()) {
-            $this->addElement('select', 'methods_execute', array(
-                'label' => $this->translate('Command type'),
-                'description' => $this->translate('Whether this should be a template'),
-                'multiOptions' => array(
-                    null                 => '- please choose -',
-                    'PluginCheck'        => 'Plugin Check Command',
-                    'PluginNotification' => 'Notification Plugin Command',
-                    'PluginEvent'        => 'Event Plugin Command',
-                    'IcingaCheck'        => 'Icinga Check Command',
-                    'ClusterCheck'       => 'Icinga Cluster Command',
-                    'RandomCheck'        => 'Random Check Command',
-                    'ClusterZoneCheck'   => 'Icinga Cluster Zone Check Command',
-                    'CrlCheck'           => 'Crl Check Command',
-                ),
-                'class' => 'autosubmit'
-            ));
-        }
+        $this->addObjectTypeElement();
+
+        $this->addElement('select', 'methods_execute', array(
+            'label' => $this->translate('Command type'),
+            'multiOptions' => array(
+                null                 => '- please choose -',
+                'PluginCheck'        => 'Plugin Check Command',
+                'PluginNotification' => 'Notification Plugin Command',
+                'PluginEvent'        => 'Event Plugin Command',
+                'IcingaCheck'        => 'Icinga Check Command',
+                'ClusterCheck'       => 'Icinga Cluster Command',
+                'RandomCheck'        => 'Random Check Command',
+                'ClusterZoneCheck'   => 'Icinga Cluster Zone Check Command',
+                'CrlCheck'           => 'Crl Check Command',
+            ),
+            'required' => ! $this->isTemplate(),
+            'class'    => 'autosubmit'
+        ));
 
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Command name'),

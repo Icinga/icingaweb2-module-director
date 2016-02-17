@@ -9,6 +9,8 @@ class IcingaHostForm extends DirectorObjectForm
 {
     public function setup()
     {
+        $this->addObjectTypeElement();
+
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Hostname'),
             'required'    => true,
@@ -66,6 +68,7 @@ class IcingaHostForm extends DirectorObjectForm
         */
 
         $elements = array(
+            'object_type',
             'object_name',
             'display_name',
             'address',

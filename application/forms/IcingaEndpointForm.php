@@ -8,19 +8,9 @@ class IcingaEndpointForm extends DirectorObjectForm
 {
     public function setup()
     {
-        $isTemplate = $this->getSentValue('object_type') === 'template';
-/*
-        $this->addElement('select', 'object_type', array(
-            'label' => $this->translate('Object type'),
-            'description' => $this->translate('Whether this should be a template'),
-            'multiOptions' => array(
-                null => '- please choose -',
-                'object' => 'Endpoint object',
-                'template' => 'Endpoint template',
-            )
-        ));
-*/
-        if ($isTemplate) {
+        $this->addObjectTypeElement();
+
+        if ($this->isTemplate()) {
             $this->addElement('text', 'object_name', array(
                 'label'       => $this->translate('Endpoint template name'),
                 'required'    => true,
