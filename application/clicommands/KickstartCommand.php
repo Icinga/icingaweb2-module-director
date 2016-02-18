@@ -77,7 +77,7 @@ class KickstartCommand extends Command
      */
     public function runAction()
     {
-        $this->kickstart()->run();
+        $this->kickstart()->loadConfigFromFile()->run();
         exit(0);
     }
 
