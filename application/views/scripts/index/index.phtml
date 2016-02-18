@@ -76,7 +76,7 @@ if ($this->stats && (int) $this->stats['apiuser']->cnt_total === 0) {
 }
 
 $all = array(
-    $this->translate('Manage your monitored objects') => array(
+    $this->translate('Define whatever you want to be monitored') => array(
         array('wrench',   $this->translate('Commands'), 'director/commands', statSummary($this, 'command')),
         array('host',     $this->translate('Host objects'), 'director/hosts', statSummary($this, 'host')),
         array('services', $this->translate('Monitored Services'), 'director/services', statSummary($this, 'service')),
@@ -86,11 +86,11 @@ $all = array(
         array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
         array('chat',     $this->translate('Notifications'), '#', $this->translate('Schedule your notifications')),
     ),
-    $this->translate('Deploy to your Icinga nodes') => array(
+    $this->translate('Deploy configuration to your Icinga nodes') => array(
+        array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history')),
         array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
         array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
-        array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history')),
     ),
     $this->translate('Do more with your data') => array(
         array('database',     $this->translate('Import data sources'), 'director/list/importsource', $this->translate('Define and manage imports from various data sources')),
