@@ -54,21 +54,6 @@ abstract class PropertyModifierHook
     }
 
     /**
-     * Returns an array containing importable objects
-     *
-     * @return array
-     */
-    abstract public function fetchData();
-
-    /**
-     * Returns a list of all available columns
-     *
-     * @return array
-     */
-    abstract public function listColumns();
-
-
-    /**
      * Methode to transform the given value
      *
      * @return value
