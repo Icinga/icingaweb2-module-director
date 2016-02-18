@@ -98,6 +98,48 @@ class ImportsourceController extends ActionController
         $this->render('object/form', null, true);
     }
 
+    public function editmodifierAction()
+    {
+        $this->addmodifierAction();
+    }
+
+    public function addmodifierAction()
+    {
+        $this->view->stayHere = true;
+        $edit = false;
+
+        if ($id = $this->params->get('id')) {
+            $edit = true;
+        }
+
+        $form = $this->view->form = $this->loadForm('importRowModifier')->setDb($this->db());
+
+        if ($edit) {
+            $form->loadObject($id);
+            $source_id = $form->getObject()->source_id;
+            $form->setSource(ImportSource::load($source_id, $this->db()));
+        } elseif ($source_id = $this->params->get('source_id')) {
+            $form->setSource(ImportSource::load($source_id, $this->db()));
+        }
+        $form->setSuccessUrl('director/importsource/modifier', array('source_id' => $source_id));
+
+        $form->handleRequest();
+
+        $tabs = $this->getTabs()->add('edit', array(
+            'url'       => 'director/importsource/edit',
+            'urlParams' => array('id' => $source_id),
+            'label'     => $this->translate('Import source'),
+        ))->add('modifier', array(
+            'label'     => $this->translate('Modifiers'),
+            'url'       => 'director/importsource/modifier',
+            'urlParams' => array('source_id' => $source_id)
+        ))->activate('modifier');
+
+        $this->view->title = $this->translate('Modifier'); // add/edit
+        $this->view->table = $this->loadTable('propertymodifier')->enforceFilter(Filter::where('source_id', $source_id))->setConnection($this->db());
+        $this->render('list/table', null, true);
+    }
+
     protected function prepareTabs($id = null)
     {
         $tabs = $this->getTabs();
