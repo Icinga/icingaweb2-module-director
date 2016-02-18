@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 
@@ -47,5 +49,39 @@ class HostController extends ObjectController
         $this->view->master = $this->db()->getDeploymentEndpointName();
         $this->view->masterzone = $this->db()->getMasterZoneName();
         $this->view->globalzone = $this->db()->getDefaultGlobalZoneName();
+    }
+
+    public function renderAction()
+    {
+        $this->renderAgentExtras();
+        return parent::renderAction();
+    }
+
+    protected function renderAgentExtras()
+    {
+        $host = $this->object;
+        $db = $this->db();
+        if ($host->object_type !== 'object') return;
+        if ($host->getResolvedProperty('has_agent') !== 'y') return;
+        $name = $host->object_name;
+        if (IcingaEndpoint::exists($name, $db)) continue;
+
+        $props = array(
+            'object_name'  => $name,
+            'object_type'  => 'object',
+            'log_duration' => 0
+        );
+        if ($host->getResolvedProperty('master_should_connect') === 'y') {
+            $props['host'] = $host->getResolvedProperty('address');
+            $props['zone_id'] = $host->getResolvedProperty('zone_id');
+        }
+
+        $this->view->extraObjects = array(
+            IcingaEndpoint::create($props),
+            IcingaZone::create(array(
+                'object_name' => $name,
+                'parent'      => $db->getMasterZoneName()
+            ), $db)->setEndpointList(array($name))
+        );
     }
 }

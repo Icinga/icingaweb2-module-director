@@ -4,5 +4,7 @@
 </div>
 
 <div class="content">
-<pre><?= $this->escape($object) ?></pre>
+<pre><?= $this->escape($object) ?><?php if ($this->extraObjects): ?>
+<?= implode('', $this->extraObjects) ?>
+<?php endif ?></pre>
 </div>
