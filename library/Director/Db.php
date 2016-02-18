@@ -24,6 +24,19 @@ class Db extends DbConnection
         return $this->getDbAdapter();
     }
 
+    public function countActivitiesSinceLastDeployedConfig()
+    {
+        $query = 'SELECT COUNT(*) FROM director_activity_log WHERE id > ('
+            . ' SELECT id FROM director_activity_log WHERE checksum = ('
+            . '  SELECT last_activity_checksum FROM director_generated_config WHERE checksum = ('
+            . '   SELECT config_checksum FROM director_deployment_log ORDER by id desc limit 1'
+            . '  )'
+            . ' )'
+            . ')';
+
+        return (int) $this->db()->fetchOne($query);
+    }
+
     public function getMasterZoneName()
     {
         return $this->getSetting('master_zone', 'master');
