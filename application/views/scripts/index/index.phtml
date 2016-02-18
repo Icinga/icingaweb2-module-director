@@ -90,7 +90,7 @@ $all = array(
     $this->translate('Alert your users') => array(
         array('users',    $this->translate('Users / Contacts'), 'director/users', statSummary($this, 'user')),
         array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
-        array('chat',     $this->translate('Notifications'), '#', $this->translate('Schedule your notifications')),
+        array('megaphone', $this->translate('Notifications'), '#', $this->translate('Schedule your notifications')),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
         array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history') . pendingDeployments($this)),
