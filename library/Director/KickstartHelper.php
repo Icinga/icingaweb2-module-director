@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director;
 
 use Icinga\Application\Config;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Objects\IcingaApiUser;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\RestApiClient;
@@ -12,6 +13,16 @@ class KickstartHelper
 {
     protected $db;
 
+    protected $apiUser;
+
+    protected $config = array(
+        'endpoint' => null,       
+        'host'     => null,       
+        'port'     => null,       
+        'username' => null,       
+        'password' => null,       
+    );
+
     public function __construct(Db $db)
     {
         $this->db = $db;
@@ -19,16 +30,37 @@ class KickstartHelper
 
     public function isConfigured()
     {
-        $file = Config::module('director', 'kickstart')->getConfigFile();
-        return is_readable($file);
+        $config = $this->fetchConfigFileSection();
+        return array_key_exists('endpoint', $config)
+            && array_key_exists('username', $config);
     }
 
-    public function loadConfigFile()
+    public function loadConfigFromFile()
     {
+        return $this->setConfig($this->fetchConfigFileSection());
+    }
+
+    protected function fetchConfigFileSection()
+    {
+        return Config::module('director', 'kickstart')
+            ->getSection('config')
+            ->toArray();
     }
 
     public function setConfig($config)
     {
+        foreach ($config as $key => $value) {
+            if (! array_key_exists($key, $this->config)) {
+                throw new ProgrammingError(
+                    '"%s" is not a valid config setting for the kickstart helper',
+                    $key
+                );
+            }
+
+            $this->config[$key] = $value;
+        }
+
+        return $this;
     }
 
     public function isRequired()
@@ -37,15 +69,22 @@ class KickstartHelper
         return (int) $stats['apiuser']->cnt_total === 0;
     }
 
+    protected function getValue($key, $default = null)
+    {
+        if ($this->config[$key] === null) {
+            return $default;
+        } else {
+            return $this->config[$key];
+        }
+    }
 
-    protected function run()
+    public function run()
     {
         $this->importZones()
              ->importEndpoints()
              ->importCommands();
 
         $this->apiUser()->store();
-
     }
 
     protected function apiUser()
@@ -116,11 +155,21 @@ class KickstartHelper
         return $this;
     }
 
+    protected function getHost()
+    {
+        return $this->getValue('host', $this->getValue('endpoint'));
+    }
+
+    protected function getPort()
+    {
+        return (int) $this->getValue('port', 5665);
+    }
+
     protected function api()
     {
         $client = new RestApiClient(
-            $this->getValue('host'),
-            $this->getValue('port')
+            $this->getHost(),
+            $this->getPort()
         );
 
         $apiuser = $this->apiUser();
