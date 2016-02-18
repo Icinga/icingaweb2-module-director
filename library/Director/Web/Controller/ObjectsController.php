@@ -106,10 +106,10 @@ abstract class ObjectsController extends ActionController
         $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
 
         if ($this->getRequest()->isApiRequest()) {
-
-            $objects = $this->db()->getDbAdapter()->fetchAll(
-                $table->getBaseQuery()->columns(array('object_name', 'object_type', 'disabled'))
-            );
+            $objects = array();
+            foreach ($dummy::loadAll($this->db) as $object) {
+                $objects[] = $object->toPlainObject(false, true);
+            }
             return $this->sendJson((object) array('objects' => $objects));
         }
 
