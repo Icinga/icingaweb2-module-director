@@ -31,6 +31,7 @@ class IndexController extends ActionController
 
         $this->addGlobalTypeTabs();
         $this->view->stats = $this->db()->getObjectSummary();
+        $this->view->undeployedActivities = $this->db()->countActivitiesSinceLastDeployedConfig();
         if ((int) $this->view->stats['apiuser']->cnt_total === 0) {
             $this->view->form = $this->loadForm('kickstart')->setDb($this->db)->handleRequest();
         }

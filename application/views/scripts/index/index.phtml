@@ -69,10 +69,13 @@ function statSummary($self, $type) {
     return $msg . ', ' . implode(', ', $extra);
 }
 
-function renderActions($title, $actions) {
-
+function pendingDeployments($self) {
+    if ($self->undeployedActivities === 0) return '';
+    return '. <span class="error">' . sprintf(
+        $self->translate('A total of %d config changes happened since your last deployed config has been rendered'),
+        $self->undeployedActivities
+    ) . '</span>';
 }
-
 if ($this->stats && (int) $this->stats['apiuser']->cnt_total === 0) {
     echo $this->form . "</div>\n";
     return;
@@ -90,7 +93,7 @@ $all = array(
         array('chat',     $this->translate('Notifications'), '#', $this->translate('Schedule your notifications')),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
-        array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history')),
+        array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history') . pendingDeployments($this)),
         array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
         array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
