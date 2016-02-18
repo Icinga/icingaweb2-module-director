@@ -101,14 +101,6 @@ abstract class ObjectsController extends ActionController
             $addParams
         );
 
-        if (! $dummy->isGroup()) {
-            $this->view->addLink .= ' ' . $this->view->icon('paste') . ' '
-                .  $this->view->qlink(
-                $this->translate('Create template'),
-                'director/' . $ltype .'/add',
-                array('type' => 'template')
-            );
-        }
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
         $table = $this->loadTable($table)->setConnection($this->db());
         $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
