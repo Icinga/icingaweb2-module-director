@@ -15,10 +15,10 @@ $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeTime');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDatalist');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeSqlQuery');
 
-$this->provideHook('director/PropertyModifier', $prefix . 'DataType\\PropertyModifierLowercase');
-$this->provideHook('director/PropertyModifier', $prefix . 'DataType\\PropertyModifierRegexReplace');
-$this->provideHook('director/PropertyModifier', $prefix . 'DataType\\PropertyModifierReplace');
-$this->provideHook('director/PropertyModifier', $prefix . 'DataType\\PropertyModifierStripDomain');
-$this->provideHook('director/PropertyModifier', $prefix . 'DataType\\PropertyModifierSubstring');
-$this->provideHook('director/PropertyModifier', $prefix . 'DataType\\PropertyModifierUppercase');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierLowercase');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierRegexReplace');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierReplace');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierStripDomain');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierSubstring');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierUppercase');
 
