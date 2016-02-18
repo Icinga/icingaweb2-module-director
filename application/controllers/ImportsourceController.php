@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Import\Import;
@@ -59,6 +60,23 @@ class ImportsourceController extends ActionController
         $this->render('list/table', null, true);
     }
 
+    public function modifierAction()
+    {
+        $this->view->stayHere = true;
+        $id = $this->params->get('source_id');
+        $this->prepareTabs($id)->activate('modifier');
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add property modifier'),
+            'director/importsource/addmodifier',
+            array('source_id' => $id)
+        );
+
+        $this->view->title = $this->translate('Property modifiers');
+        $this->view->table = $this->loadTable('propertymodifier')->enforceFilter(Filter::where('source_id', $id))->setConnection($this->db());
+        $this->render('list/table', null, true);
+    }
+
     public function indexAction()
     {
         $id = $this->params->get('id');
@@ -88,6 +106,9 @@ class ImportsourceController extends ActionController
             $tabs->add('edit', array(
                 'url'       => 'director/importsource/edit' . '?id=' . $id,
                 'label'     => $this->translate('Import source'),
+            ))->add('modifier', array(
+                'url'       => 'director/importsource/modifier' . '?source_id=' . $id,
+                'label'     => $this->translate('Modifiers'),
             ))->add('preview', array(
                 'url'       => 'director/importsource/preview' . '?id=' . $id,
                 'label'     => $this->translate('Preview'),
