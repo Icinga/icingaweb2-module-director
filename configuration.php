@@ -24,7 +24,12 @@ $this->provideConfigTab('config', array(
 
 $section = $this->menuSection(
     $this->translate('Icinga Director')
-)->setIcon('cubes');
+)->setIcon(
+    'cubes'
+)->setRenderer(array(
+    'SummaryNavigationItemRenderer',
+    'state' => 'critical'
+));
 
 $section->add($this->translate('Overview'))->setUrl('director')->setPriority(20);
 $section->add($this->translate('Hosts'))->setUrl('director/hosts')->setPriority(30);
@@ -36,5 +41,6 @@ $section->add($this->translate('Import / Sync'))
     ->setPriority(901);
 $section->add($this->translate('Config'))
     ->setUrl('director/list/deploymentlog')
-    ->setPriority(902);
+    ->setPriority(902)
+    ->setRenderer('ConfigHealthItemRenderer');
 
