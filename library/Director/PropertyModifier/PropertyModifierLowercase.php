@@ -6,10 +6,8 @@ use Icinga\Module\Director\Hook\PropertyModifierHook;
 
 class PropertyModifierLowercase extends PropertyModifierHook
 {
-
     public function transform($value)
     {
         return strtolower($value);
     }
-
 }
