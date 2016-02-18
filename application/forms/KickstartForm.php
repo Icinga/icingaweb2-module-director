@@ -2,16 +2,12 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\IcingaApiUser;
-use Icinga\Module\Director\Core\CoreApi;
-use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class KickstartForm extends QuickForm
 {
     protected $db;
-
-    protected $apiUser;
 
     public function setup()
     {
@@ -52,70 +48,9 @@ class KickstartForm extends QuickForm
 
     public function onSuccess()
     {
-        $this->importZones()
-             ->importEndpoints()
-             ->importCommands();
-
-        $this->apiUser()->store();
+        $kickstart = new KickstartHelper($this->db);
+        $kickstart->setConfig($this->getValues())->run();
         parent::onSuccess();
-    }
-
-    protected function apiUser()
-    {
-        if ($this->apiUser === null) {
-            $this->apiUser = IcingaApiUser::create(array(
-                'object_name' => $this->getValue('username'),
-                'object_type' => 'external_object',
-                'password'    => $this->getValue('password')
-            ), $this->db);
-        }
-
-        return $this->apiUser;
-    }
-
-    protected function importZones()
-    {
-        $db = $this->db;
-        foreach ($this->api()->setDb($db)->getZoneObjects() as $object) {
-            if (! $object::exists($object->object_name, $db)) {
-                $object->store();
-            }
-        }
-
-        return $this;
-    }
-
-    protected function importEndpoints()
-    {
-        $db = $this->db;
-        $master = $this->getValue('endpoint');
-
-        foreach ($this->api()->setDb($db)->getEndpointObjects() as $object) {
-
-            if ($object->object_name === $master) {
-                $apiuser = $this->apiUser();
-                $apiuser->store();
-                $object->apiuser = $apiuser->object_name;
-            }
-
-            if (! $object::exists($object->object_name, $db)) {
-                $object->store();
-            }
-        }
-
-        return $this;
-    }
-
-    protected function importCommands()
-    {
-        $db = $this->db;
-        foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
-            if (! $object::exists($object->object_name, $db)) {
-                $object->store();
-            }
-        }
-
-        return $this;
     }
 
     public function setDb($db)
@@ -126,19 +61,5 @@ class KickstartForm extends QuickForm
         }
 
         return $this;
-    }
-
-    protected function api()
-    {
-        $client = new RestApiClient(
-            $this->getValue('host'),
-            $this->getValue('port')
-        );
-
-        $apiuser = $this->apiUser();
-        $client->setCredentials($apiuser->object_name, $apiuser->password);
-
-        $api = new CoreApi($client);
-        return $api;
     }
 }
