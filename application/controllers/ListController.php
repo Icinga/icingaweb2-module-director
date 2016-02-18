@@ -164,9 +164,9 @@ class ListController extends ActionController
             $deployment->store();
         }
 
-        // Not correct, we might clear logs we formerly skipped
+        // TODO: Not correct, we might clear logs we formerly skipped
         if ($collected) {
-            // $api->wipeInactiveStages();
+            $api->wipeInactiveStages();
         }
     }
 
