@@ -6,6 +6,9 @@
 <?php if ($this->errorMessage): ?>
 <p class="error"><?= $this->errorMessage ?></p>
 <?php endif ?>
+<?php if (! $this->stats): ?>
+</div>
+<?php return; endif ?>
 <?php
 
 function statSummary($self, $type) {
