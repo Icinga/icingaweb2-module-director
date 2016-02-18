@@ -58,6 +58,22 @@ class KickstartCommand extends Command
      * This will connect to the endpoint configured in your kickstart.ini,
      * store the given API user and import existing objects like zones,
      * endpoints and commands.
+     *
+     * /etc/icingaweb2/modules/director/kickstart.ini could look as follows:
+     *
+     *    [config]
+     *    endpoint = "master-node.example.com"
+     *
+     *    ; Host can be an IP address or a hostname. Equals to endpoint name
+     *    ; if not set:
+     *    host = "127.0.0.1"
+     *
+     *    ; Port is 5665 if none given
+     *    port = 5665
+     *
+     *    usename = "director"
+     *    password = "***"
+     *
      */
     public function runAction()
     {
