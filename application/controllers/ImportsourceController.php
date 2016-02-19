@@ -126,15 +126,7 @@ class ImportsourceController extends ActionController
 
         $form->handleRequest();
 
-        $tabs = $this->getTabs()->add('edit', array(
-            'url'       => 'director/importsource/edit',
-            'urlParams' => array('id' => $source_id),
-            'label'     => $this->translate('Import source'),
-        ))->add('modifier', array(
-            'label'     => $this->translate('Modifiers'),
-            'url'       => 'director/importsource/modifier',
-            'urlParams' => array('source_id' => $source_id)
-        ))->activate('modifier');
+        $tabs = $this->prepareTabs($source_id)->activate('modifier');
 
         $this->view->title = $this->translate('Modifier'); // add/edit
         $this->view->table = $this->loadTable('propertymodifier')->enforceFilter(Filter::where('source_id', $source_id))->setConnection($this->db());
