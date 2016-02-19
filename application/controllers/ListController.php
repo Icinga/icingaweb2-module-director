@@ -57,7 +57,8 @@ class ListController extends ActionController
 
     public function datalistAction()
     {
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             $this->translate('Add list'),
             'director/datalist/add'
         );
@@ -72,7 +73,8 @@ class ListController extends ActionController
         $listId = $this->params->get('list_id');
         $this->view->lastId = $listId;
 
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             $this->translate('Add entry'),
             'director/datalistentry/add' . '?list_id=' . $listId
         );
@@ -91,7 +93,8 @@ class ListController extends ActionController
 
     public function datafieldAction()
     {
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             $this->translate('Add field'),
             'director/datafield/add'
         );
@@ -103,7 +106,8 @@ class ListController extends ActionController
 
     public function importsourceAction()
     {
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             $this->translate('Add import source'),
             'director/importsource/add'
         );
@@ -123,7 +127,8 @@ class ListController extends ActionController
 
     public function syncruleAction()
     {
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             $this->translate('Add sync rule'),
             'director/syncrule/add'
         );

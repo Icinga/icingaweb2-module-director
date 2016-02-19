@@ -74,7 +74,8 @@ class SyncruleController extends ActionController
         $this->view->stayHere = true;
         $id = $this->params->get('rule_id');
 
-        $this->view->addLink = $this->view->qlink(
+        $this->view->addLink = $this->view->icon('plus') . ' '
+            .  $this->view->qlink(
             $this->translate('Add sync property rule'),
             'director/syncrule/addproperty',
             array('rule_id' => $id)

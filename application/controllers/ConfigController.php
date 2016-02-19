@@ -14,6 +14,7 @@ class ConfigController extends ActionController
 
     public function deployAction()
     {
+        // TODO: require POST
         $isApiRequest = $this->getRequest()->isApiRequest();
         $checksum = $this->params->get('checksum');
         if ($checksum) {
