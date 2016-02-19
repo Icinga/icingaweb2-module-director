@@ -68,9 +68,45 @@ class ImportsourceHookTable extends QuickTable
             }
 
             $this->dataCache = $query->fetchAll();
+            $this->applyModifiers();
         }
 
         return $this->dataCache;
+    }
+
+    protected function applyModifiers()
+    {
+        $modifiers = $this->source->fetchRowModifiers();
+        if (empty($modifiers)) {
+            return;
+        }
+
+        $propertyModifiers = array();
+
+
+        foreach ($modifiers as $mod) {
+            if (! array_key_exists($mod->property_name, $propertyModifiers)) {
+                $propertyModifiers[$mod->property_name] = array();
+            }
+            $obj = new $mod->provider_class;
+            $obj->setSettings($mod->getSettings());
+            $propertyModifiers[$mod->property_name][] = $obj;
+            
+        }
+
+        foreach ($this->dataCache as & $row) {
+            foreach ($propertyModifiers as $key => $mods) {
+                foreach ($mods as $mod) {
+                    if (is_array($row->$key)) {
+                        foreach ($row->$key as & $k) {
+                            $k = $mod->transform($k);
+                        }
+                    } else {
+                        $row->$key = $mod->transform($row->$key);
+                    }
+                }
+            }
+        }
     }
 
     public function getBaseQuery()
