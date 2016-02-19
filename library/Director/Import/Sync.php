@@ -257,6 +257,34 @@ class Sync
         return $imported;
     }
 
+    // TODO: This is rubbish, we need to filter at fetch time
+    protected function removeForeignListEntries(& $objects, & $properties)
+    {
+        $listId = null;
+        foreach ($properties as $prop) {
+            if ($prop->destination_field === 'list_id') {
+                $listId = (int) $prop->source_expression;
+            }
+        }
+
+        if ($listId === null) {
+            throw new IcingaException(
+                'Cannot sync datalist entry without list_ist'
+            );
+        }
+
+        $no = array();
+        foreach ($objects as $k => $o) {
+            if ($o->list_id !== $listId) {
+                $no[] = $k;
+            }
+        }
+
+        foreach ($no as $k) {
+            unset($objects[$k]);
+        }
+    }
+
     /**
      * Evaluates a SyncRule and returns a list of modified objects
      *
@@ -273,33 +301,11 @@ class Sync
         $sources    = $this->perpareImportSources($properties, $db);
         $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
 
-        // TODO: Filter auf object, nicht template
+        // TODO: Make object_type and object_name mandatory?
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
 
         if ($rule->object_type === 'datalistEntry') {
-            $listId = null;
-            foreach ($properties as $prop) {
-                if ($prop->destination_field === 'list_id') {
-                    $listId = (int) $prop->source_expression;
-                }
-            }
-
-            if ($listId === null) {
-                throw new IcingaException(
-                    'Cannot sync datalist entry without list_ist'
-                );
-            }
-
-            $no = array();
-            foreach ($objects as $k => $o) {
-                if ($o->list_id !== $listId) {
-                    $no[] = $k;
-                }
-            }
-
-            foreach ($no as $k) {
-                unset($objects[$k]);
-            }
+            $this->removeForeignListEntries($objects, $properties);
         }
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
 
