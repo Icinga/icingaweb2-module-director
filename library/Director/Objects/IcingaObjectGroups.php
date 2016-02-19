@@ -124,12 +124,12 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $this->idx = array_keys($this->groups);
     }
 
-    public function add($group)
+    public function add($group, $onError = 'fail')
     {
         // TODO: only one query when adding array
         if (is_array($group)) {
             foreach ($group as $g) {
-                $this->add($g);
+                $this->add($g, $onError);
             }
             return $this;
         }
@@ -139,25 +139,47 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $class = $this->getGroupClass();
-        $connection = $this->object->getConnection();
 
         if ($group instanceof $class) {
             $this->groups[$group->object_name] = $group;
+
         } elseif (is_string($group)) {
+
+            $connection = $this->object->getConnection();
+
+            // TODO: fix this, prefetch or whatever - this is expensive
             $query = $this->object->getDb()->select()->from(
                 $this->getGroupTableName()
             )->where('object_name = ?', $group);
             $groups = $class::loadAll($connection, $query, 'object_name');
-        }
-        if (! array_key_exists($group, $groups)) {
+
+            if (! array_key_exists($group, $groups)) {
+                switch ($onError) {
+                    case 'autocreate':
+                        $groups[$group] = $class::create(array(
+                            'object_type' => 'object',
+                            'object_name' => $group
+                        ));
+                        $groups[$group]->store($connection);
+                        // TODO
+                    case 'fail':
+                        throw new ProgrammingError(
+                            'The group "%s" doesn\'t exists.',
+                            $group
+                        );
+                    break;
+                    case 'ignore':
+                        return $this;
+                }
+            }
+        } else {
             throw new ProgrammingError(
-                'The group "%s" doesn\'t exists.',
-                $group
+                'Invalid group object: %s',
+                var_export($group, 1)
             );
         }
 
         $this->groups[$group] = $groups[$group];
-
         $this->modified = true;
         $this->refreshIndex();
 
