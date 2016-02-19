@@ -166,7 +166,7 @@ class ListController extends ActionController
 
         // TODO: Not correct, we might clear logs we formerly skipped
         if ($collected) {
-            $api->wipeInactiveStages();
+            // $api->wipeInactiveStages();
         }
     }
 
