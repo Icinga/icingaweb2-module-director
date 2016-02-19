@@ -301,7 +301,7 @@ class Sync
         $sources    = $this->perpareImportSources($properties, $db);
         $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
 
-        // TODO: Make object_type and object_name mandatory?
+        // TODO: Make object_type (template, object...) and object_name mandatory?
         $objects = IcingaObject::loadAllByType($rule->object_type, $db);
 
         if ($rule->object_type === 'datalistEntry') {
