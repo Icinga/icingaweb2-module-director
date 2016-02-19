@@ -162,6 +162,26 @@ class Import
             )->fetchData();
         }
 
+        $modifiers = $this->prepareModifiers();
+
+        if (empty($modifiers)) {
+            return $this->data;
+        }
+
+        foreach ($this->data as & $row) {
+            foreach ($modifiers as $key => $mods) {
+                foreach ($mods as $mod) {
+                    if (is_array($row->$key)) {
+                        foreach ($row->$key as & $k) {
+                            $k = $mod->transform($k);
+                        }
+                    } else {
+                        $row->$key = $mod->transform($row->$key);
+                    }
+                }
+            }
+        }
+
         return $this->data;
     }
 
@@ -195,6 +215,24 @@ class Import
         }
 
         return $this->properties[$checksum];
+    }
+
+    // TODO: move to ImportSource, this duplicates logic from preview
+    protected function prepareModifiers()
+    {
+        $modifiers = $this->source->fetchRowModifiers();
+        $propertyModifiers = array();
+
+        foreach ($modifiers as $mod) {
+            if (! array_key_exists($mod->property_name, $propertyModifiers)) {
+                $propertyModifiers[$mod->property_name] = array();
+            }
+            $obj = new $mod->provider_class;
+            $obj->setSettings($mod->getSettings());
+            $propertyModifiers[$mod->property_name][] = $obj;
+        }
+
+        return $propertyModifiers;
     }
 
     /**
