@@ -59,6 +59,8 @@ class ImportRowModifierForm extends DirectorObjectForm
                 $el->setValue($val);
             }
         }
+
+        $this->setButtons();
     }
 
     protected function enumModifiers()
