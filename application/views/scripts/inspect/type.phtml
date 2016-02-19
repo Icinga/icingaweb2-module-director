@@ -5,7 +5,7 @@
 
 <div class="content">
 <?php if ($this->objects): ?>
-<h2><?= sprintf($this->translate('%d objects found'), count($this->objects)) ?></h2>
+<p><?= sprintf($this->translate('%d objects found'), count($this->objects)) ?></p>
 <table class="common-table table-row-selectable" data-base-target="_next">
  <thead><tr><th><?= $this->translate('Object name') ?></th></tr></thead>
  <tbody>
@@ -23,6 +23,8 @@
 <?php endforeach ?>
  </tbody>
 </table>
+<?php else: ?>
+<p><?= $this->translate('No object found') ?></p>
 <?php endif ?>
 <h2>Type attributes</h2>
 <pre><?= $this->renderPlainObject($this->type) ?></pre>
