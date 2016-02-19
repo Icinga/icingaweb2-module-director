@@ -27,7 +27,6 @@ function statSummary($self, $type) {
             $msg = $self->translate('One object has been defined');
         }
 
-        return $msg;
     } else {
         $msg = sprintf(
             $self->translate('%d objects have been defined'),
@@ -35,11 +34,9 @@ function statSummary($self, $type) {
         );
     }
 
-    if ($stat->cnt_total === $stat->cnt_object) {
-        return $msg;
-    }
-
     $extra = array();
+    if ($stat->cnt_total !== $stat->cnt_object) {
+
     if ($stat->cnt_template > 0) {
         $extra[] = sprintf(
             $self->translate('%d of them are templates'),
@@ -52,6 +49,7 @@ function statSummary($self, $type) {
             $stat->cnt_external
         );
     }
+    }
 
     if (array_key_exists($type . 'group', $self->stats)) {
         $groupstat = $self->stats[$type . 'group'];
@@ -61,9 +59,14 @@ function statSummary($self, $type) {
             $extra[] = $self->translate('one related group exists');
         } else {
             $extra[] = sprintf(
-                $self->translate('%s related group objects have been created', $groupstat->cnt_total)
+                $self->translate('%s related group objects have been created'),
+                $groupstat->cnt_total
             );
         }
+    }
+
+    if (empty($extra)) {
+        return $msg;
     }
 
     return $msg . ', ' . implode(', ', $extra);
