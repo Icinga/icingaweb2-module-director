@@ -22,4 +22,17 @@ class ImportSource extends DbObjectWithSettings
     protected $settingsTable = 'import_source_setting';
 
     protected $settingsRemoteId = 'source_id';
+
+    public function fetchRowModifiers()
+    {
+        $db = $this->getDb();
+        return ImportRowModifier::loadAll(
+            $this->getConnection(),
+            $db->select()
+               ->from('import_row_modifier')
+               ->where('source_id = ?', $this->id)
+               ->order('priority DESC')
+        );
+    }
+
 }
