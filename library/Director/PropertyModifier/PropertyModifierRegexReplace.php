@@ -16,7 +16,6 @@ class PropertyModifierRegexReplace extends PropertyModifierHook
 
         $form->addElement('text', 'replacement', array(
             'label'    => 'Replacement',
-            'required' => true,
         ));
     }
 
