@@ -285,29 +285,10 @@ class Sync
         }
     }
 
-    /**
-     * Evaluates a SyncRule and returns a list of modified objects
-     *
-     * TODO: This needs to be splitted into smaller methods
-     *
-     * @param  SyncRule $rule The synchronization rule that should be used
-     *
-     * @return array          List of modified IcingaObjects
-     */
-    protected function prepareSyncForRule(SyncRule $rule)
+    protected function prepareNewObjects($rule, & $properties, & $sources, & $imported)
     {
         $db = $rule->getConnection();
-        $properties = $rule->fetchSyncProperties();
-        $sources    = $this->perpareImportSources($properties, $db);
-        $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
-
-        // TODO: Make object_type (template, object...) and object_name mandatory?
-        $objects = IcingaObject::loadAllByType($rule->object_type, $db);
-
-        if ($rule->object_type === 'datalistEntry') {
-            $this->removeForeignListEntries($objects, $properties);
-        }
-        $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
+        $newObjects = array();
 
         foreach ($sources as $source) {
             $sourceId = $source->id;
@@ -339,106 +320,111 @@ class Sync
                         }
                     }
                 }
-                if (array_key_exists($key, $objects)) {
-
-                    switch ($rule->update_policy) {
-                        case 'override':
-                            $object = IcingaObject::createByType(
-                                $rule->object_type,
-                                $newProps,
-                                $db
-                            );
-
-                            foreach ($newVars as $prop => $var) {
-                                $object->vars()->$prop = $var;
-                            }
-
-                            if (! empty($imports)) {
-                                $object->imports()->set($imports);
-                            }
-
-                            $objects[$key]->replaceWith($object);
-                            break;
-
-                        case 'merge':
-                            $object = $objects[$key];
-                            foreach ($newProps as $prop => $value) {
-                                // TODO: data type? 
-                                $object->set($prop, $value);
-
-                            }
-
-                            foreach ($newVars as $prop => $var) {
-                                // TODO: property merge policy
-                                $object->vars()->$prop = $var;
-                            }
-
-                            if (! empty($imports)) {
-                                // TODO: merge imports ?!
-                                $objects[$key]->imports()->set($imports);
-                            }
-                            break;
-
-                        default:
-                            // policy 'ignore', no action
-                    }
-                } else {
-                    // New object
-                    if ($rule->object_type !== 'datalistEntry') {
-                        if (! array_key_exists('object_type', $newProps) || $newProps['object_type'] === null) {
-                            $newProps['object_type'] = 'object';
-                        }
-
-                        if (! array_key_exists('object_name', $newProps) || $newProps['object_name'] === null) {
-                            $newProps['object_name'] = $key;
-                        }
-                    }
-
-                    $objects[$key] = IcingaObject::createByType(
+                if (! array_key_exists($key, $newObjects)) {
+                    $newObjects[$key] = IcingaObject::createByType(
                         $rule->object_type,
-                        $newProps,
+                        array(),
                         $db
                     );
+                }
 
-                    foreach ($newVars as $prop => $var) {
-                        $objects[$key]->vars()->$prop = $var;
+                $object = $newObjects[$key];
+
+                // Safe default values for object_type and object_name
+                if ($rule->object_type !== 'datalistEntry') {
+                    if (! array_key_exists('object_type', $newProps)
+                        || $newProps['object_type'] === null
+                    ) {
+                        $newProps['object_type'] = 'object';
                     }
 
-                    if (! empty($imports)) {
-                        $objects[$key]->imports()->set($imports);
+                    if (! array_key_exists('object_name', $newProps)
+                        || $newProps['object_name'] === null
+                    ) {
+                        $newProps['object_name'] = $key;
                     }
+                }
+
+                foreach ($newProps as $prop => $value) {
+                    // TODO: data type? 
+                    $object->set($prop, $value);
+                }
+
+                foreach ($newVars as $prop => $var) {
+                    $object->vars()->$prop = $var;
+                }
+
+                if (! empty($imports)) {
+                    // TODO: merge imports!!!
+                    $object->imports()->set($imports);
                 }
             }
         }
 
-        $ignore = array();
+        return $newObjects;
+    }
 
+    /**
+     * Evaluates a SyncRule and returns a list of modified objects
+     *
+     * TODO: This needs to be splitted into smaller methods
+     *
+     * @param  SyncRule $rule The synchronization rule that should be used
+     *
+     * @return array          List of modified IcingaObjects
+     */
+    protected function prepareSyncForRule(SyncRule $rule)
+    {
+        $db = $rule->getConnection();
+        $properties = $rule->fetchSyncProperties();
+        $sources    = $this->perpareImportSources($properties, $db);
+        $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
+
+        // TODO: Make object_type (template, object...) and object_name mandatory?
+        $objects = IcingaObject::loadAllByType($rule->object_type, $db);
+
+        // TODO: should be obsoleted by a better "loadFiltered" method
+        if ($rule->object_type === 'datalistEntry') {
+            $this->removeForeignListEntries($objects, $properties);
+        }
+
+        $newObjects = $this->prepareNewObjects(
+            $rule,
+            $properties,
+            $sources,
+            $imported
+        );
+
+        foreach ($newObjects as $key => $object) {
+            if (array_key_exists($key, $objects)) {
+                switch ($rule->update_policy) {
+                    case 'override':
+                        $objects[$key]->replaceWith($object);
+                        break;
+
+                    case 'merge':
+                        $objects[$key]->merge($object);
+                        break;
+
+                    default:
+                        // policy 'ignore', no action
+                }
+            } else {
+                $objects[$key] = $object;
+            }
+        }
+
+        $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
         foreach ($objects as $key => $object) {
 
             if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
-                $found = false;
-                foreach ($sources as $source) {
-                    if (array_key_exists($object->$objectKey, $imported[$source->id])) {
-                        $found = true;
-                        break;
-                    }
-                }
-
-                if (! $found) {
+                if (! array_key_exists($key, $newObjects)) {
                     $object->markForRemoval();
-                    $this->remove[] = $object;
+
+                    // TODO: this is for stats, preview, summary:
+                    // $this->remove[] = $object;
                 }
             }
-
-            // TODO: This should be noticed or removed:
-            if (! $object->$objectKey) {
-                $this->errors[] = $object;
-                $ignore[] = $key;
-            }
-        }
-
-        foreach ($ignore as $key) {
-            unset($objects[$key]);
         }
 
         return $objects;
