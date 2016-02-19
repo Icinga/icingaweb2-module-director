@@ -280,6 +280,10 @@ throw $e;
     {
         $start = microtime(true);
 
+        // Raise limits. TODO: do this in a failsafe way, and only if necessary
+        ini_set('memory_limit', '768M');
+        ini_set('max_execution_time', 0);
+
         $this->configFile(
             sprintf(
                 'zones.d/%s/001-director-basics',
