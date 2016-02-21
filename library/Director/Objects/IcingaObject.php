@@ -185,6 +185,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $this->vars()->set($k, $v);
             }
             return $this;
+        } elseif (substr($key, 0, 5) === 'vars.') {
+            //TODO: allow for deep keys
+            $this->vars()->set(substr($k, 5), $v);
+            return $this;
         }
 
         if ($this->propertyIsBoolean($key) && $value !== null) {
