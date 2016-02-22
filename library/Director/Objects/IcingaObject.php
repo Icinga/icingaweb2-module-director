@@ -1056,7 +1056,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function toPlainObject(
         $resolved = false,
-        $skipNull = false,
+        $skipDefaults = false,
         array $chosenProperties = null
     ) {
         $props = array();
@@ -1093,7 +1093,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             // TODO: Do not ship null properties based on flag?
-            if (!$skipNull || $v !== null) {
+            if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
                 $props[$k] = $v;
             }
         }
@@ -1118,9 +1118,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($skipNull) {
+        if ($skipDefaults) {
             if (empty($props['imports']))      unset($props['imports']);
-            if (count((array) $props['vars']) === 0) unset($props['vars']);
+            if (array_key_exists('vars', $props)) {
+                if (count((array) $props['vars']) === 0) unset($props['vars']);
+            }
             if (empty($props['groups']))       unset($props['groups']);
         }
 
@@ -1140,10 +1142,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function toJson(
         $resolved = false,
-        $skipNull = false,
+        $skipDefaults = false,
         array $chosenProperties = null
     ) {
-        return json_encode($this->toPlainObject($resolved, $skipNull, $chosenProperties));
+
+        return json_encode($this->toPlainObject($resolved, $skipDefaults, $chosenProperties));
     }
 
     public function __toString()
