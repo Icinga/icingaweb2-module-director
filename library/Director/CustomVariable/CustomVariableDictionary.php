@@ -60,6 +60,8 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function getValue()
     {
         $ret = (object) array();
+        ksort($this->value);
+
         foreach ($this->value as $key => $var) {
             $ret->$key = $var->getValue();
         }
@@ -70,7 +72,7 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function listKeys()
     {
         $keys = array_keys($this->value);
-        ksort($keys);
+        sort($keys);
         return $keys;
     }
 
