@@ -4,7 +4,10 @@
 </div>
 
 <div class="content">
-<pre><?= $this->escape($object) ?><?php if ($this->extraObjects): ?>
+<?php if ($object->disabled === 'y'): ?>
+<p class="error"><?= $this->translate('This object will not be deployed as it has been disabled') ?></p>
+<?php endif ?>
+<pre<?php if ($object->disabled === 'y'): ?> class="disabled"<?php endif ?>><?= $this->escape($object) ?><?php if ($this->extraObjects): ?>
 <?= implode('', $this->extraObjects) ?>
 <?php endif ?></pre>
 </div>
