@@ -55,9 +55,17 @@ class ShowController extends ActionController
     {
         $this->view->title = sprintf('%s config diff', $entry->object_name);
         $this->getTabs()->activate('diff');
+        $old = $this->oldObject($entry);
+        $new = $this->newObject($entry);
+
+        if ($old->disabled === 'y' && $new->disabled === 'n') {
+            $old = null;
+        } elseif ($old->disabled === 'n' && $new->disabled === 'y') {
+            $new = null;
+        }
         $d = ConfigDiff::create(
-            $this->oldObject($entry),
-            $this->newObject($entry)
+            $old,
+            $new
         );
 
         $this->view->output = $d->renderHtml();
