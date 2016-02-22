@@ -9,7 +9,7 @@ class CustomVariableNull extends CustomVariable
 {
     public function equals(CustomVariable $var)
     {
-        return $var->getValue() === $this->getValue();
+        return $var instanceof CustomVariableNull;
     }
 
     public function getValue()
