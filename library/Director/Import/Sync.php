@@ -415,16 +415,25 @@ class Sync
         }
 
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
+        $noAction = array();
+
         foreach ($objects as $key => $object) {
 
-            if ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
-                if (! array_key_exists($key, $newObjects)) {
-                    $object->markForRemoval();
+            if (array_key_exists($key, $newObjects)) {
+                // Stats?
 
-                    // TODO: this is for stats, preview, summary:
-                    // $this->remove[] = $object;
-                }
+            } elseif ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
+                $object->markForRemoval();
+
+                // TODO: this is for stats, preview, summary:
+                // $this->remove[] = $object;
+            } else {
+                $noAction[] = $key;
             }
+        }
+
+        foreach ($noAction as $key) {
+            unset($objects[$key]);
         }
 
         return $objects;
