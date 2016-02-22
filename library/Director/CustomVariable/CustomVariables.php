@@ -85,7 +85,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 }
             }
         } else {
-            $this->vars[$key] = $value;
+            $this->vars[$key] = $value->setModified();
         }
 
         $this->modified = true;
