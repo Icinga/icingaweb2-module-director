@@ -1129,6 +1129,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return (object) $props;
     }
 
+    protected function differsFromDefaultValue($key, $value)
+    {
+        if (array_key_exists($key, $this->defaultProperties)) {
+            return $value !== $this->defaultProperties[$key];
+        } else {
+            return $value !== null;
+        }
+    }
+
     public function toJson(
         $resolved = false,
         $skipNull = false,
