@@ -37,7 +37,19 @@ $url = $this->url()->without('checksum')->without('show');
     <th><?= $this->translate('Date') ?></th>
     <td><?= $this->entry->change_time ?></td>
   </tr>
+  <tr>
+    <th><?= $this->translate('Action') ?></th>
+    <td><?= sprintf(
+        '%s %s "%s"',
+        $this->entry->action_name,
+        $this->entry->object_type,
+        $this->entry->object_name
+    )
+    ?></td>
+  </tr>
 </table>
+<?php if (! empty($this->output)): ?>
 <h1><?= $this->escape($this->title) ?></h1>
 <?= $this->output ?>
+<?php endif ?>
 </div>
