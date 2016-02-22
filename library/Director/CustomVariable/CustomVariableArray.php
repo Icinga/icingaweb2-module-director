@@ -67,4 +67,11 @@ class CustomVariableArray extends CustomVariable
     {
         return c::renderArray($this->value);
     }
+
+    public function __clone()
+    {
+        foreach ($this->value as $key => $value) {
+            $this->value[$key] = clone($value);
+        }
+    }
 }
