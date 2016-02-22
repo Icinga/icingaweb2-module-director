@@ -89,7 +89,11 @@ abstract class CustomVariable implements IcingaConfigRenderer
     {
         $this->modified = $modified;
         if (! $this->modified) {
-            $this->storedValue = clone($this->value);
+            if (is_object($this->value)) {
+                $this->storedValue = clone($this->value);
+            } else {
+                $this->storedValue = $this->value;
+            }
         }
 
         return $this;
@@ -180,7 +184,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
 
         $var->loadedFromDb = true;
-        $var->modified = false;
+        $var->setUnmodified();
         return $var;
     }
 
