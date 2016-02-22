@@ -1149,6 +1149,54 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return json_encode($this->toPlainObject($resolved, $skipDefaults, $chosenProperties));
     }
 
+    public function getPlainUnmodifiedObject()
+    {
+        $props = array();
+        foreach ($this->getOriginalProperties() as $k => $v) {
+            // Do not ship ids for IcingaObjects:
+            if ($k === 'id' && $this->hasProperty('object_name')) {
+                continue;
+            }
+
+            if ('_id' === substr($k, -3)) {
+                $relKey = substr($k, 0, -3);
+
+                if ($this->hasRelation($relKey)) {
+                    if ($v !== null) {
+                        $v = $this->getRelatedObjectName($relKey, $v);
+                    }
+
+                    $k = $relKey;
+                }
+            }
+
+            if ($this->differsFromDefaultvalue($k, $v)) {
+                $props[$k] = $v;
+            }
+        }
+        
+        if ($this->supportsCustomVars()) {
+            $props['vars'] = (object) array();
+            foreach ($this->vars()->getOriginalVars() as $name => $var) {
+                $props['vars']->$name = $var->getValue();
+            }
+        }
+        if ($this->supportsGroups()) {
+            $groups = $this->groups()->listOriginalGroupNames();
+            if (! empty($groups)) {
+                $props['groups'] = $groups;
+            }
+        }
+        if ($this->supportsImports()) {
+            $imports = $this->imports()->listOriginalImportNames();
+            if (! empty($imports)) {
+                $props['imports'] = $imports;
+            }
+        }
+
+        return $props;
+    }
+
     public function __toString()
     {
         try {
