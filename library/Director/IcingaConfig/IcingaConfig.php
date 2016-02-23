@@ -227,6 +227,7 @@ class IcingaConfig
             }
 
             $missing = array_diff($this->getFilesChecksums(), $existing);
+            $stored = array();
 
             /** @var IcingaConfigFile $file */
             foreach ($this->files as $name => $file) {
@@ -234,6 +235,12 @@ class IcingaConfig
                 if (! in_array($checksum, $missing)) {
                     continue;
                 }
+
+                if (array_key_exists($checksum, $stored)) {
+                    continue;
+                }
+
+                $stored[$checksum] = true;
 
                 $this->db->insert(
                     $fileTable,

@@ -11,6 +11,8 @@ class Sync
 {
     protected $rule;
 
+    protected $sources;
+
     protected $modify = array();
 
     protected $remove = array();
@@ -205,17 +207,22 @@ class Sync
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
-    protected function perpareImportSources()
+    /**
+     * Instantiates all related ImportSource objects
+     *
+     * @return array
+     */
+    protected function prepareRelatedImportSources()
     {
-        $sources = array();
+        $this->sources = array();
         foreach ($this->syncProperties as $p) {
-            $sourceId = $p->source_id;
-            if (! array_key_exists($sourceId, $sources)) {
-                $sources[$sourceId] = ImportSource::load($sourceId, $this->db);
+            $id = $p->source_id;
+            if (! array_key_exists($id, $sources)) {
+                $this->sources[$id] = ImportSource::load($id, $this->db);
             }
         }
 
-        return $sources;
+        return $this->sources;
     }
 
     protected function prepareSourceColumns()
@@ -438,7 +445,7 @@ class Sync
     protected function prepare()
     {
         $rule = $this->rule;
-        $sources    = $this->perpareImportSources();
+        $sources    = $this->prepareRelatedImportSources();
         $imported   = $this->fetchImportedData($sources);
 
         // TODO: Make object_type (template, object...) and object_name mandatory?
