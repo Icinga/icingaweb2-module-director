@@ -100,7 +100,16 @@ class ShowController extends ActionController
 
     protected function showObject($object)
     {
-        $this->view->output = '<pre>' . $this->view->escape(
+        $error = '';
+        if ($object->disabled === 'y') {
+            $error = '<p class="error">'
+                . $this->translate('This object will not be deployed as it has been disabled')
+                . '</p>';
+        }
+
+        $this->view->output = $error . ' <pre'
+. ($object->disabled === 'y' ? ' class="disabled"' : '').
+'>' . $this->view->escape(
             (string) $object
         ) . '</pre>';
     }
