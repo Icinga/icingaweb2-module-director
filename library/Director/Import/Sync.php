@@ -26,6 +26,13 @@ class Sync
      */
     protected $imported;
 
+    /**
+     * Objects to work with
+     *
+     * @var array
+     */
+    protected $objects;
+
     protected $modify = array();
 
     protected $remove = array();
@@ -230,7 +237,7 @@ class Sync
         $this->sources = array();
         foreach ($this->syncProperties as $p) {
             $id = $p->source_id;
-            if (! array_key_exists($id, $sources)) {
+            if (! array_key_exists($id, $this->sources)) {
                 $this->sources[$id] = ImportSource::load($id, $this->db);
             }
         }
@@ -348,7 +355,7 @@ class Sync
     }
 
     // TODO: This is rubbish, we need to filter at fetch time
-    protected function removeForeignListEntries(& $objects)
+    protected function removeForeignListEntries()
     {
         $listId = null;
         foreach ($this->syncProperties as $prop) {
@@ -364,15 +371,31 @@ class Sync
         }
 
         $no = array();
-        foreach ($objects as $k => $o) {
+        foreach ($this->objects as $k => $o) {
             if ($o->list_id !== $listId) {
                 $no[] = $k;
             }
         }
 
         foreach ($no as $k) {
-            unset($objects[$k]);
+            unset($this->objects[$k]);
         }
+    }
+
+    protected function loadExistingObjects()
+    {
+        // TODO: Make object_type (template, object...) and object_name mandatory?
+        $this->objects = IcingaObject::loadAllByType(
+            $this->rule->object_type,
+            $this->db
+        );
+
+        // TODO: should be obsoleted by a better "loadFiltered" method
+        if ($this->rule->object_type === 'datalistEntry') {
+            $this->removeForeignListEntries($this->objects);
+        }
+
+        return $this;
     }
 
     protected function prepareNewObjects()
@@ -464,44 +487,37 @@ class Sync
     {
         $rule = $this->rule;
         $this->prepareRelatedImportSources()
-             ->fetchImportedData();
-
-        // TODO: Make object_type (template, object...) and object_name mandatory?
-        $objects = IcingaObject::loadAllByType($rule->object_type, $this->db);
-
-        // TODO: should be obsoleted by a better "loadFiltered" method
-        if ($rule->object_type === 'datalistEntry') {
-            $this->removeForeignListEntries($objects);
-        }
+             ->fetchImportedData()
+             ->loadExistingObjects();
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects();
 
         foreach ($newObjects as $key => $object) {
-            if (array_key_exists($key, $objects)) {
+            if (array_key_exists($key, $this->objects)) {
                 switch ($rule->update_policy) {
                     case 'override':
-                        $objects[$key]->replaceWith($object);
+                        $this->objects[$key]->replaceWith($object);
                         break;
 
                     case 'merge':
                         // TODO: re-evaluate merge settings. vars.x instead of
                         //       just "vars" might suffice.
-                        $objects[$key]->setProperties($object);
+                        $this->objects[$key]->setProperties($object);
                         break;
 
                     default:
                         // policy 'ignore', no action
                 }
             } else {
-                $objects[$key] = $object;
+                $this->objects[$key] = $object;
             }
         }
 
         $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
         $noAction = array();
 
-        foreach ($objects as $key => $object) {
+        foreach ($this->objects as $key => $object) {
 
             if (array_key_exists($key, $newObjects)) {
                 // Stats?
@@ -517,10 +533,10 @@ class Sync
         }
 
         foreach ($noAction as $key) {
-            unset($objects[$key]);
+            unset($this->objects[$key]);
         }
 
-        return $objects;
+        return $this->objects;
     }
 
     /**
