@@ -12,6 +12,15 @@ class CustomVariableNumber extends CustomVariable
             return false;
         }
 
+        // TODO: in case we encounter problems with floats we could
+        //       consider something as follows, but taking more care
+        //       about precision:
+        /*
+        if (is_float($this->value)) {
+            return sprintf($var->getValue(), '%.9F')
+                === sprintf($this->getValue(), '%.9F');
+        }
+        */
         return $var->getValue() === $this->getValue();
     }
 
