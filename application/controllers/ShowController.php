@@ -94,8 +94,8 @@ class ShowController extends ActionController
     {
         return $this->createObject(
             $entry->object_type,
-            $entry->old_properties
-        )->setProperties((array) json_decode($entry->new_properties));
+            $entry->new_properties
+        );
     }
 
     protected function showObject($object)
