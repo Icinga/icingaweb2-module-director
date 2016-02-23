@@ -252,6 +252,13 @@ abstract class ObjectController extends ActionController
                     if ($request->getMethod() === 'POST') {
                         $object->setProperties($data);
                     } else {
+                        $data = array_merge(
+                            array(
+                                'object_type' => $object->object_type,
+                                'object_name' => $object->object_name
+                            ),
+                            $data
+                        );
                         $object->replaceWith(
                             IcingaObject::createByType($type, $data, $db)
                         );
