@@ -32,6 +32,7 @@ class Sync
     protected function __construct(SyncRule $rule)
     {
         $this->rule = $rule;
+        $this->db = $rule->getConnection();
     }
 
     /**
@@ -45,7 +46,7 @@ class Sync
         ini_set('memory_limit', '768M');
         ini_set('max_execution_time', 0);
 
-        return $sync->runWithRule($rule);
+        return $sync->apply();
     }
 
     /**
@@ -71,7 +72,7 @@ class Sync
     {
         $modified = array();
         $sync = new static($rule);
-        $objects = $sync->prepareSyncForRule($rule);
+        $objects = $sync->prepare();
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified[] = $object;
@@ -263,9 +264,11 @@ class Sync
         return $this->hasCombinedKey;
     }
 
-    protected function fetchImportedData($sources, $properties, SyncRule $rule, $db)
+    protected function fetchImportedData($sources, $properties)
     {
         $imported = array();
+        $rule = $this->rule;
+        $db = $this->db;
 
         $sourceColumns = $this->prepareSourceColumns($properties);
 
@@ -429,13 +432,12 @@ class Sync
      *
      * TODO: This needs to be splitted into smaller methods
      *
-     * @param  SyncRule $rule The synchronization rule that should be used
-     *
      * @return array          List of modified IcingaObjects
      */
-    protected function prepareSyncForRule(SyncRule $rule)
+    protected function prepare()
     {
-        $db = $rule->getConnection();
+        $rule = $this->rule;
+        $db = $this->db;
         $properties = $rule->fetchSyncProperties();
         $sources    = $this->perpareImportSources($properties, $db);
         $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
@@ -508,15 +510,15 @@ class Sync
      * TODO: Should return the id of the related sync_history table entry.
      *       Such a table does not yet exist, so 42 is the answer right now.
      *
-     * @param  SyncRule $rule The synchronization rule that should be applied
-     *
      * @return int
      */
-    protected function runWithRule(SyncRule $rule)
+    protected function apply()
     {
-        $db = $rule->getConnection();
+        $rule = $this->rule;
+        $db   = $this->db;
+
         // TODO: Evaluate whether fetching data should happen within the same transaction
-        $objects = $this->prepareSyncForRule($rule);
+        $objects = $this->prepare($rule);
 
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
