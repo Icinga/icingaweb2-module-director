@@ -22,6 +22,13 @@ class Sync
     protected $sources;
 
     /**
+     * Source columns we want to fetch from our sources
+     *
+     * @var array
+     */
+    protected $sourceColumns;
+
+    /**
      * Imported data
      */
     protected $imported;
@@ -245,26 +252,36 @@ class Sync
         return $this;
     }
 
+    /**
+     * Prepare the source columns we want to fetch
+     *
+     * @return self
+     */
     protected function prepareSourceColumns()
     {
         // $fieldMap = array();
-        $columns = array();
+        $this->sourceColumns = array();
 
         foreach ($this->syncProperties as $p) {
             $sourceId = $p->source_id;
-            if (! array_key_exists($sourceId, $columns)) {
-                $columns[$sourceId] = array();
+            if (! array_key_exists($sourceId, $this->sourceColumns)) {
+                $this->sourceColumns[$sourceId] = array();
             }
 
             foreach ($this->extractVariableNames($p->source_expression) as $varname) {
-                $columns[$sourceId][$varname] = $varname;
+                $this->sourceColumns[$sourceId][$varname] = $varname;
                 // -> ? $fieldMap[
             }
         }
 
-        return $columns;
+        return $this;
     }
 
+    /**
+     * Whether we have a combined key (e.g. services on hosts)
+     *
+     * @return bool
+     */
     protected function hasCombinedKey()
     {
         if ($this->hasCombinedKey === null) {
@@ -302,15 +319,17 @@ class Sync
     protected function fetchImportedData()
     {
         $this->imported = array();
-        $rule = $this->rule;
-
-        $sourceColumns = $this->prepareSourceColumns();
 
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
+
+            // Provide an alias column for our key. TODO: double-check this!
             $key = $source->key_column;
-            $sourceColumns[$sourceId][$key] = $key;
-            $rows = $this->db->fetchLatestImportedRows($sourceId, $sourceColumns[$sourceId]);
+            $this->sourceColumns[$sourceId][$key] = $key;
+            $rows = $this->db->fetchLatestImportedRows(
+                $sourceId,
+                $this->sourceColumns[$sourceId]
+            );
 
             $this->imported[$sourceId] = array();
             foreach ($rows as $row) {
@@ -339,7 +358,7 @@ class Sync
 
                 }
 
-                if (! $rule->matches($row)) {
+                if (! $this->rule->matches($row)) {
                     continue;
                 }
 
@@ -487,6 +506,7 @@ class Sync
     {
         $rule = $this->rule;
         $this->prepareRelatedImportSources()
+             ->prepareSourceColumns()
              ->fetchImportedData()
              ->loadExistingObjects();
 
@@ -549,7 +569,6 @@ class Sync
      */
     protected function apply()
     {
-        $rule = $this->rule;
         $db   = $this->db;
 
         // TODO: Evaluate whether fetching data should happen within the same transaction
@@ -568,7 +587,6 @@ class Sync
                 continue;
             }
 
-            // TODO: introduce DirectorObject with shouldBeRemoved
             if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
                 $object->delete($db);
                 continue;
