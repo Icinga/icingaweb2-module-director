@@ -29,6 +29,11 @@ class CustomVariableNumber extends CustomVariable
         return 'json';
     }
 
+    public function getDbValue()
+    {
+        return json_encode($this->getValue());
+    }
+
     public function getValue()
     {
         return $this->value;

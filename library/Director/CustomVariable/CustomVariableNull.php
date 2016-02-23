@@ -17,6 +17,11 @@ class CustomVariableNull extends CustomVariable
         return null;
     }
 
+    public function getDbValue()
+    {
+        return json_encode($this->getValue());
+    }
+
     public function getDbFormat()
     {
         return 'json';
