@@ -202,13 +202,13 @@ class Sync
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
-    protected function perpareImportSources($properties, $db)
+    protected function perpareImportSources($properties)
     {
         $sources = array();
         foreach ($properties as $p) {
             $sourceId = $p->source_id;
             if (! array_key_exists($sourceId, $sources)) {
-                $sources[$sourceId] = ImportSource::load($sourceId, $db);
+                $sources[$sourceId] = ImportSource::load($sourceId, $this->db);
             }
         }
 
@@ -268,7 +268,6 @@ class Sync
     {
         $imported = array();
         $rule = $this->rule;
-        $db = $this->db;
 
         $sourceColumns = $this->prepareSourceColumns($properties);
 
@@ -276,7 +275,7 @@ class Sync
             $sourceId = $source->id;
             $key = $source->key_column;
             $sourceColumns[$sourceId][$key] = $key;
-            $rows = $db->fetchLatestImportedRows($sourceId, $sourceColumns[$sourceId]);
+            $rows = $this->db->fetchLatestImportedRows($sourceId, $sourceColumns[$sourceId]);
 
             $imported[$sourceId] = array();
             foreach ($rows as $row) {
@@ -348,9 +347,8 @@ class Sync
         }
     }
 
-    protected function prepareNewObjects($rule, & $properties, & $sources, & $imported)
+    protected function prepareNewObjects(& $properties, & $sources, & $imported)
     {
-        $db = $rule->getConnection();
         $newObjects = array();
 
         foreach ($sources as $source) {
@@ -385,16 +383,16 @@ class Sync
                 }
                 if (! array_key_exists($key, $newObjects)) {
                     $newObjects[$key] = IcingaObject::createByType(
-                        $rule->object_type,
+                        $this->rule->object_type,
                         array(),
-                        $db
+                        $this->db
                     );
                 }
 
                 $object = $newObjects[$key];
 
                 // Safe default values for object_type and object_name
-                if ($rule->object_type !== 'datalistEntry') {
+                if ($this->rule->object_type !== 'datalistEntry') {
                     if (! array_key_exists('object_type', $newProps)
                         || $newProps['object_type'] === null
                     ) {
@@ -452,7 +450,6 @@ class Sync
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects(
-            $rule,
             $properties,
             $sources,
             $imported
