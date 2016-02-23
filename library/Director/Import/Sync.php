@@ -435,13 +435,12 @@ class Sync
     protected function prepare()
     {
         $rule = $this->rule;
-        $db = $this->db;
         $properties = $rule->fetchSyncProperties();
-        $sources    = $this->perpareImportSources($properties, $db);
-        $imported   = $this->fetchImportedData($sources, $properties, $rule, $db);
+        $sources    = $this->perpareImportSources($properties);
+        $imported   = $this->fetchImportedData($sources, $properties);
 
         // TODO: Make object_type (template, object...) and object_name mandatory?
-        $objects = IcingaObject::loadAllByType($rule->object_type, $db);
+        $objects = IcingaObject::loadAllByType($rule->object_type, $this->db);
 
         // TODO: should be obsoleted by a better "loadFiltered" method
         if ($rule->object_type === 'datalistEntry') {
