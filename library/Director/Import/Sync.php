@@ -9,6 +9,8 @@ use Icinga\Exception\IcingaException;
 
 class Sync
 {
+    protected $rule;
+
     protected $modify = array();
 
     protected $remove = array();
@@ -17,12 +19,19 @@ class Sync
 
     protected $errors = array();
 
+    protected $hasCombinedKey;
+
+    protected $sourceKeyPattern;
+
+    protected $destinationKeyPattern;
+
     /**
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
      */
-    protected function __construct()
+    protected function __construct(SyncRule $rule)
     {
+        $this->rule = $rule;
     }
 
     /**
@@ -30,7 +39,7 @@ class Sync
      */
     public static function run(SyncRule $rule)
     {
-        $sync = new static;
+        $sync = new static($rule);
 
         // Raise limits. TODO: do this in a failsafe way, and only if necessary
         ini_set('memory_limit', '768M');
@@ -61,7 +70,7 @@ class Sync
     public static function getExpectedModifications(SyncRule $rule)
     {
         $modified = array();
-        $sync = new static;
+        $sync = new static($rule);
         $objects = $sync->prepareSyncForRule($rule);
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
@@ -225,29 +234,40 @@ class Sync
         return $columns;
     }
 
+    protected function hasCombinedKey()
+    {
+        if ($this->hasCombinedKey === null) {
+
+            $this->hasCombinedKey = false;
+
+            if ($this->rule->object_type === 'service') {
+                $hasHost = false;
+                $hasObjectName = false;
+                foreach ($properties as $key => $property) {
+                    if ($property->destination_field === 'host') {
+                        $hasHost = $property->source_expression;
+                    }
+                    if ($property->destination_field === 'object_name') {
+                        $hasObjectName = $property->source_expression;
+                    }
+                }
+
+                if ($hasHost !== false && $hasObjectName !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf('%s!%s', $hasHost, $hasObjectName);
+                    $this->destinationKeyPattern = 'host!object_name';
+                }
+            }
+        }
+
+        return $this->hasCombinedKey;
+    }
+
     protected function fetchImportedData($sources, $properties, SyncRule $rule, $db)
     {
         $imported = array();
 
         $sourceColumns = $this->prepareSourceColumns($properties);
-
-        $keyPattern = null;
-        if ($rule->object_type === 'service') {
-            $hasHost = false;
-            $hasObjectName = false;
-            foreach ($properties as $key => $property) {
-                if ($property->destination_field === 'host') {
-                    $hasHost = $property->source_expression;
-                }
-                if ($property->destination_field === 'object_name') {
-                    $hasObjectName = $property->source_expression;
-                }
-            }
-
-            if ($hasHost !== false && $hasObjectName !== false) {
-                $keyPattern = sprintf('%s!%s', $hasHost, $hasObjectName);
-            }
-        }
 
         foreach ($sources as $source) {
             $sourceId = $source->id;
@@ -257,13 +277,13 @@ class Sync
 
             $imported[$sourceId] = array();
             foreach ($rows as $row) {
-                if ($keyPattern) {
-                    $key = $this->fillVariables($keyPattern, $row);
+                if ($this->hasCombinedKey()) {
+                    $key = $this->fillVariables($this->sourceKeyPattern, $row);
                     if (array_key_exists($key, $imported[$sourceId])) {
                         throw new IcingaException(
                             'Trying to import row "%s" (%s) twice: %s VS %s',
                             $key,
-                            $keyPattern,
+                            $this->sourceKeyPattern,
                             json_encode($imported[$sourceId][$key]),
                             json_encode($row)
                         );
@@ -286,7 +306,7 @@ class Sync
                     continue;
                 }
 
-                if ($keyPattern) {
+                if ($this->hasCombinedKey()) {
                     $imported[$sourceId][$key] = $row;
                 } else {
                     $imported[$sourceId][$row->$key] = $row;
