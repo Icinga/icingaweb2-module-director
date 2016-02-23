@@ -231,6 +231,24 @@ class Sync
 
         $sourceColumns = $this->prepareSourceColumns($properties);
 
+        $keyPattern = null;
+        if ($rule->object_type === 'service') {
+            $hasHost = false;
+            $hasObjectName = false;
+            foreach ($properties as $key => $property) {
+                if ($property->destination_field === 'host') {
+                    $hasHost = $property->source_expression;
+                }
+                if ($property->destination_field === 'object_name') {
+                    $hasObjectName = $property->source_expression;
+                }
+            }
+
+            if ($hasHost !== false && $hasObjectName !== false) {
+                $keyPattern = sprintf('%s!%s', $hasHost, $hasObjectName);
+            }
+        }
+
         foreach ($sources as $source) {
             $sourceId = $source->id;
             $key = $source->key_column;
@@ -239,18 +257,40 @@ class Sync
 
             $imported[$sourceId] = array();
             foreach ($rows as $row) {
-                if (! property_exists($row, $key)) {
-                    throw new IcingaException(
-                        'There is no key column "%s" in this row from "%s": %s',
-                        $key,
-                        $source->source_name,
-                        json_encode($row)
-                    );
+                if ($keyPattern) {
+                    $key = $this->fillVariables($keyPattern, $row);
+                    if (array_key_exists($key, $imported[$sourceId])) {
+                        throw new IcingaException(
+                            'Trying to import row "%s" (%s) twice: %s VS %s',
+                            $key,
+                            $keyPattern,
+                            json_encode($imported[$sourceId][$key]),
+                            json_encode($row)
+                        );
+                    }
+
+                } else {
+
+                    if (! property_exists($row, $key)) {
+                        throw new IcingaException(
+                            'There is no key column "%s" in this row from "%s": %s',
+                            $key,
+                            $source->source_name,
+                            json_encode($row)
+                        );
+                    }
+
                 }
+
                 if (! $rule->matches($row)) {
                     continue;
                 }
-                $imported[$sourceId][$row->$key] = $row;
+
+                if ($keyPattern) {
+                    $imported[$sourceId][$key] = $row;
+                } else {
+                    $imported[$sourceId][$row->$key] = $row;
+                }
             }
         }
 
@@ -388,6 +428,7 @@ class Sync
             $this->removeForeignListEntries($objects, $properties);
         }
 
+        // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects(
             $rule,
             $properties,
