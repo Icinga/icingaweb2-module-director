@@ -444,7 +444,9 @@ class Sync
                         break;
 
                     case 'merge':
-                        $objects[$key]->merge($object);
+                        // TODO: re-evaluate merge settings. vars.x instead of
+                        //       just "vars" might suffice.
+                        $objects[$key]->setProperties($object);
                         break;
 
                     default:
