@@ -9,9 +9,22 @@ use Icinga\Exception\IcingaException;
 
 class Sync
 {
+    /**
+     * @var SyncRule
+     */
     protected $rule;
 
+    /**
+     * Related ImportSource objects
+     *
+     * @var array
+     */
     protected $sources;
+
+    /**
+     * Imported data
+     */
+    protected $imported;
 
     protected $modify = array();
 
@@ -210,7 +223,7 @@ class Sync
     /**
      * Instantiates all related ImportSource objects
      *
-     * @return array
+     * @return self
      */
     protected function prepareRelatedImportSources()
     {
@@ -222,7 +235,7 @@ class Sync
             }
         }
 
-        return $this->sources;
+        return $this;
     }
 
     protected function prepareSourceColumns()
@@ -274,29 +287,34 @@ class Sync
         return $this->hasCombinedKey;
     }
 
-    protected function fetchImportedData($sources)
+    /**
+     * Fetch latest imported data rows from all involved import sources
+     *
+     * @return self
+     */
+    protected function fetchImportedData()
     {
-        $imported = array();
+        $this->imported = array();
         $rule = $this->rule;
 
         $sourceColumns = $this->prepareSourceColumns();
 
-        foreach ($sources as $source) {
+        foreach ($this->sources as $source) {
             $sourceId = $source->id;
             $key = $source->key_column;
             $sourceColumns[$sourceId][$key] = $key;
             $rows = $this->db->fetchLatestImportedRows($sourceId, $sourceColumns[$sourceId]);
 
-            $imported[$sourceId] = array();
+            $this->imported[$sourceId] = array();
             foreach ($rows as $row) {
                 if ($this->hasCombinedKey()) {
                     $key = $this->fillVariables($this->sourceKeyPattern, $row);
-                    if (array_key_exists($key, $imported[$sourceId])) {
+                    if (array_key_exists($key, $this->imported[$sourceId])) {
                         throw new IcingaException(
                             'Trying to import row "%s" (%s) twice: %s VS %s',
                             $key,
                             $this->sourceKeyPattern,
-                            json_encode($imported[$sourceId][$key]),
+                            json_encode($this->imported[$sourceId][$key]),
                             json_encode($row)
                         );
                     }
@@ -319,14 +337,14 @@ class Sync
                 }
 
                 if ($this->hasCombinedKey()) {
-                    $imported[$sourceId][$key] = $row;
+                    $this->imported[$sourceId][$key] = $row;
                 } else {
-                    $imported[$sourceId][$row->$key] = $row;
+                    $this->imported[$sourceId][$row->$key] = $row;
                 }
             }
         }
 
-        return $imported;
+        return $this;
     }
 
     // TODO: This is rubbish, we need to filter at fetch time
@@ -357,14 +375,14 @@ class Sync
         }
     }
 
-    protected function prepareNewObjects(& $sources, & $imported)
+    protected function prepareNewObjects()
     {
         $newObjects = array();
 
-        foreach ($sources as $source) {
+        foreach ($this->sources as $source) {
             $sourceId = $source->id;
 
-            foreach ($imported[$sourceId] as $key => $row) {
+            foreach ($this->imported[$sourceId] as $key => $row) {
                 $newProps = array();
 
                 $newVars = array();
@@ -445,8 +463,8 @@ class Sync
     protected function prepare()
     {
         $rule = $this->rule;
-        $sources    = $this->prepareRelatedImportSources();
-        $imported   = $this->fetchImportedData($sources);
+        $this->prepareRelatedImportSources()
+             ->fetchImportedData();
 
         // TODO: Make object_type (template, object...) and object_name mandatory?
         $objects = IcingaObject::loadAllByType($rule->object_type, $this->db);
@@ -457,10 +475,7 @@ class Sync
         }
 
         // TODO: directly work on existing objects, remember imported keys, then purge
-        $newObjects = $this->prepareNewObjects(
-            $sources,
-            $imported
-        );
+        $newObjects = $this->prepareNewObjects();
 
         foreach ($newObjects as $key => $object) {
             if (array_key_exists($key, $objects)) {
