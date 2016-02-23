@@ -61,7 +61,7 @@ class Sync
      */
     public static function hasModifications(SyncRule $rule)
     {
-        return count(self::getExpectedModifications($rule)) > 0;
+        return count(self::getExpectedModifications()) > 0;
     }
 
     /**
@@ -515,7 +515,7 @@ class Sync
         $db   = $this->db;
 
         // TODO: Evaluate whether fetching data should happen within the same transaction
-        $objects = $this->prepare($rule);
+        $objects = $this->prepare();
 
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
