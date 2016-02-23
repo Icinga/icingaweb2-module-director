@@ -25,6 +25,8 @@ class Sync
 
     protected $destinationKeyPattern;
 
+    protected $syncProperties;
+
     /**
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
@@ -33,6 +35,7 @@ class Sync
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();
+        $this->syncProperties = $rule->fetchSyncProperties();
     }
 
     /**
@@ -202,10 +205,10 @@ class Sync
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
-    protected function perpareImportSources($properties)
+    protected function perpareImportSources()
     {
         $sources = array();
-        foreach ($properties as $p) {
+        foreach ($this->syncProperties as $p) {
             $sourceId = $p->source_id;
             if (! array_key_exists($sourceId, $sources)) {
                 $sources[$sourceId] = ImportSource::load($sourceId, $this->db);
@@ -215,12 +218,12 @@ class Sync
         return $sources;
     }
 
-    protected function prepareSourceColumns($properties)
+    protected function prepareSourceColumns()
     {
         // $fieldMap = array();
         $columns = array();
 
-        foreach ($properties as $p) {
+        foreach ($this->syncProperties as $p) {
             $sourceId = $p->source_id;
             if (! array_key_exists($sourceId, $columns)) {
                 $columns[$sourceId] = array();
@@ -244,7 +247,7 @@ class Sync
             if ($this->rule->object_type === 'service') {
                 $hasHost = false;
                 $hasObjectName = false;
-                foreach ($properties as $key => $property) {
+                foreach ($this->syncProperties as $key => $property) {
                     if ($property->destination_field === 'host') {
                         $hasHost = $property->source_expression;
                     }
@@ -264,12 +267,12 @@ class Sync
         return $this->hasCombinedKey;
     }
 
-    protected function fetchImportedData($sources, $properties)
+    protected function fetchImportedData($sources)
     {
         $imported = array();
         $rule = $this->rule;
 
-        $sourceColumns = $this->prepareSourceColumns($properties);
+        $sourceColumns = $this->prepareSourceColumns();
 
         foreach ($sources as $source) {
             $sourceId = $source->id;
@@ -320,10 +323,10 @@ class Sync
     }
 
     // TODO: This is rubbish, we need to filter at fetch time
-    protected function removeForeignListEntries(& $objects, & $properties)
+    protected function removeForeignListEntries(& $objects)
     {
         $listId = null;
-        foreach ($properties as $prop) {
+        foreach ($this->syncProperties as $prop) {
             if ($prop->destination_field === 'list_id') {
                 $listId = (int) $prop->source_expression;
             }
@@ -347,7 +350,7 @@ class Sync
         }
     }
 
-    protected function prepareNewObjects(& $properties, & $sources, & $imported)
+    protected function prepareNewObjects(& $sources, & $imported)
     {
         $newObjects = array();
 
@@ -360,7 +363,7 @@ class Sync
                 $newVars = array();
                 $imports = array();
 
-                foreach ($properties as $p) {
+                foreach ($this->syncProperties as $p) {
                     if ($p->source_id !== $sourceId) continue;
 
                     $prop = $p->destination_field;
@@ -435,21 +438,19 @@ class Sync
     protected function prepare()
     {
         $rule = $this->rule;
-        $properties = $rule->fetchSyncProperties();
-        $sources    = $this->perpareImportSources($properties);
-        $imported   = $this->fetchImportedData($sources, $properties);
+        $sources    = $this->perpareImportSources();
+        $imported   = $this->fetchImportedData($sources);
 
         // TODO: Make object_type (template, object...) and object_name mandatory?
         $objects = IcingaObject::loadAllByType($rule->object_type, $this->db);
 
         // TODO: should be obsoleted by a better "loadFiltered" method
         if ($rule->object_type === 'datalistEntry') {
-            $this->removeForeignListEntries($objects, $properties);
+            $this->removeForeignListEntries($objects);
         }
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects(
-            $properties,
             $sources,
             $imported
         );
