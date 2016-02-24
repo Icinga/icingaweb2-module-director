@@ -30,6 +30,16 @@ abstract class ObjectController extends ActionController
                 'label'     => $this->translate(ucfirst($type))
             ));
 
+            $tabs->add('render', array(
+                'url'       => sprintf('director/%s/render', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('Preview'),
+            ))->add('history', array(
+                'url'       => sprintf('director/%s/history', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('History')
+            ));
+
             if ($object->hasBeenLoadedFromDb()
                 && $object->supportsFields()
                 && ($object->isTemplate() || $type === 'command')
@@ -40,16 +50,6 @@ abstract class ObjectController extends ActionController
                     'label'     => $this->translate('Fields')
                 ));
             }
-
-            $tabs->add('render', array(
-                'url'       => sprintf('director/%s/render', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('Preview'),
-            ))->add('history', array(
-                'url'       => sprintf('director/%s/history', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('History')
-            ));
         } else {
             $this->getTabs()->add('add', array(
                 'url'       => sprintf('director/%s/add', $type),
