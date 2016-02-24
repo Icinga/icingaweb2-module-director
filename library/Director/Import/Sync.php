@@ -183,7 +183,10 @@ class Sync
     public function getSpecificValue($row, $var)
     {
         if (strpos($var, '.') === false) {
-            if (! property_exists($row, $var)) {
+            if ($row instanceof IcingaObject) {
+                return $row->$var;
+            }
+            if (property_exists($row, $var)) {
                 return null;
             }
 
