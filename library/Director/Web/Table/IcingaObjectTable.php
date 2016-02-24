@@ -13,6 +13,8 @@ abstract class IcingaObjectTable extends QuickTable
                 return 'icinga-template';
             case 'external_object':
                 return 'icinga-object-external';
+            case 'apply':
+                return 'icinga-apply';
         }
     }
 
