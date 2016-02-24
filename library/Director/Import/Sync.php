@@ -5,6 +5,8 @@ namespace Icinga\Module\Director\Import;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Module\Director\Objects\SyncRun;
+use Icinga\Module\Director\Util;
 use Icinga\Exception\IcingaException;
 
 class Sync
@@ -40,6 +42,13 @@ class Sync
      */
     protected $objects;
 
+    /**
+     * Whether we already prepared your sync
+     *
+     * @var bool
+     */
+    protected $isPrepared = false;
+
     protected $modify = array();
 
     protected $remove = array();
@@ -56,6 +65,10 @@ class Sync
 
     protected $syncProperties;
 
+    protected $run;
+
+    protected $runStartTime;
+
     /**
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
@@ -64,7 +77,6 @@ class Sync
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();
-        $this->syncProperties = $rule->fetchSyncProperties();
     }
 
     /**
@@ -227,6 +239,29 @@ class Sync
         ini_set('memory_limit', '768M');
         ini_set('max_execution_time', 0);
 
+        return $this;
+    }
+
+    /**
+     * Initialize run summary measurements
+     *
+     * @return self;
+     */
+    protected function startMeasurements()
+    {
+        $this->run = SyncRun::start($this->rule);
+        $this->runStartTime = microtime(true);
+        return $this;
+    }
+
+    /**
+     * Fetch the configured properties involved in this sync
+     *
+     * @return self
+     */
+    protected function fetchSyncProperties()
+    {
+        $this->syncProperties = $this->rule->fetchSyncProperties();
         return $this;
     }
 
@@ -506,8 +541,13 @@ class Sync
      */
     protected function prepare()
     {
-        $rule = $this->rule;
+        if ($this->isPrepared) {
+            return $this->objects;
+        }
+
         $this->raiseLimits()
+             ->startMeasurements()
+             ->fetchSyncProperties()
              ->prepareRelatedImportSources()
              ->prepareSourceColumns()
              ->fetchImportedData()
@@ -558,6 +598,8 @@ class Sync
             unset($this->objects[$key]);
         }
 
+        $this->isPrepared = true;
+
         return $this->objects;
     }
 
@@ -571,13 +613,19 @@ class Sync
      */
     public function apply()
     {
-        // TODO: Evaluate whether fetching data should happen within the same transaction
         $objects = $this->prepare();
-
-        $dba = $this->db->getDbAdapter();
+        $db = $this->db;
+        $dba = $db->getDbAdapter();
         $dba->beginTransaction();
+        $formerActivityChecksum = Util::hex2binary(
+            $db->getLastActivityChecksum()
+        );
+        $created = 0;
+        $modified = 0;
+        $deleted = 0;
         foreach ($objects as $object) {
             if ($object instanceof IcingaObject && $object->isTemplate()) {
+                // TODO: allow to sync templates
                 if ($object->hasBeenModified()) {
                     throw new IcingaException(
                         'Sync is not allowed to modify template "%s"',
@@ -588,16 +636,45 @@ class Sync
             }
 
             if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
-                $object->delete($this->db);
+                $object->delete($db);
+                $deleted++;
                 continue;
             }
 
             if ($object->hasBeenModified()) {
-                $object->store($this->db);
+                if ($object->hasBeenLoadedFromDb()) {
+                    $modified++;
+                } else {
+                    $created++;
+                }
+                $object->store($db);
             }
         }
 
+        $runProperties = array(
+            'objects_created'  => $created,
+            'objects_deleted'  => $deleted,
+            'objects_modified' => $modified,
+        );
+
+        if ($created + $deleted + $modified > 0) {
+            // TODO: What if this has been the very first activity?
+            $runProperties['last_former_activity'] = $formerActivityChecksum;
+            $runProperties['last_related_activity'] = Util::hex2binary(
+                $db->getLastActivityChecksum()
+            );
+        }
+
+        $this->run->setProperties($runProperties)->store();
+
         $dba->commit();
-        return 42; // We have no sync_run history table yet
+
+        // Store duration after commit, as the commit might take some time
+        $this->run->set('duration_ms', (int) round(
+            (microtime(true) - $this->runStartTime) * 1000
+        ))->store();
+
+
+        return $this->run->id;
     }
 }
