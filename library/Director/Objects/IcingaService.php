@@ -65,6 +65,8 @@ class IcingaService extends IcingaObject
 
     protected $supportsImports = true;
 
+    protected $supportsApplyRules = true;
+
     protected $keyName = array('host_id', 'object_name');
 
     public function getCheckCommand()

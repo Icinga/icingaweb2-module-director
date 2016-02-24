@@ -30,6 +30,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsFields = false;
 
+    protected $supportsApplyRules = false;
+
     protected $type;
 
     /* key/value!! */
@@ -112,9 +114,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsFields;
     }
 
+    public function supportsApplyRules()
+    {
+        return $this->supportsApplyRules;
+    }
+
     public function hasBeenModified()
     {
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
+//var_dump($this->vars()); exit;
             return true;
         }
 
