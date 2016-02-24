@@ -1114,6 +1114,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    // TODO: with rules? What if I want to override vars? Drop in favour of vars.x?
+    public function merge(IcingaObject $object)
+    {
+        $object = clone($object);
+        $vars = $object->getVars();
+        $object->vars = array();
+        $this->setProperties((array) $object->toPlainObject());
+        $myVars = $this->vars();
+        foreach ($vars as $key => $var) {
+            $myVars->set($key, $var);
+        }
+
+        return $this;
+    }
+
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,

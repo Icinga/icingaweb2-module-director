@@ -600,7 +600,7 @@ class Sync
                     case 'merge':
                         // TODO: re-evaluate merge settings. vars.x instead of
                         //       just "vars" might suffice.
-                        $this->objects[$key]->setProperties($object);
+                        $this->objects[$key]->merge($object);
                         break;
 
                     default:
