@@ -57,7 +57,7 @@ class ActivityLogTable extends QuickTable
         $query = $db->select()->from(
             array('l' => 'director_activity_log'),
             array()
-        )->order('change_time DESC');
+        )->order('change_time DESC')->order('id DESC');
 
         foreach ($this->filters as $filter) {
             $query->where($filter[0], $filter[1]);
