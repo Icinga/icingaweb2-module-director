@@ -585,7 +585,7 @@ class Sync
              ->prepareRelatedImportSources()
              ->prepareSourceColumns()
              ->loadExistingObjects()
-             ->fetchImportedData()
+             ->fetchImportedData();
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects();
