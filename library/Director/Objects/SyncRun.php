@@ -2,9 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Db;
 
 class SyncRun extends DbObject
 {
