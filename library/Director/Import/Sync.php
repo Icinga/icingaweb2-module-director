@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Module\Director\Util;
@@ -443,11 +444,41 @@ class Sync
 
     protected function loadExistingObjects()
     {
+        $this->objects = array();
+
         // TODO: Make object_type (template, object...) and object_name mandatory?
-        $this->objects = IcingaObject::loadAllByType(
-            $this->rule->object_type,
-            $this->db
-        );
+        if ($this->hasCombinedKey()) {
+
+            foreach (IcingaObject::loadAllByType(
+                $this->rule->object_type,
+                $this->db
+            ) as $object) {
+
+                if ($object instanceof IcingaService) {
+                    if (! $object->host_id) continue;
+                }
+
+                $key = $this->fillVariables(
+                    $this->destinationKeyPattern,
+                    $object
+                );
+
+                if (array_key_exists($key, $this->objects)) {
+                    throw new IcingaException(
+                        'Combined destination key "%s" is not unique, got "%s" twice',
+                        $this->destinationKeyPattern,
+                        $key
+                    );
+                }
+
+                $this->objects[$key] = $object;
+            }
+        } else {
+            $this->objects = IcingaObject::loadAllByType(
+                $this->rule->object_type,
+                $this->db
+            );
+        }
 
         // TODO: should be obsoleted by a better "loadFiltered" method
         if ($this->rule->object_type === 'datalistEntry') {
@@ -553,8 +584,8 @@ class Sync
              ->fetchSyncProperties()
              ->prepareRelatedImportSources()
              ->prepareSourceColumns()
+             ->loadExistingObjects()
              ->fetchImportedData()
-             ->loadExistingObjects();
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects();
