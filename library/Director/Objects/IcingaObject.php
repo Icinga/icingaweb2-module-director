@@ -1033,9 +1033,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public static function loadAllByType($type, Db $db, $query = null, $keyColumn = 'object_name')
     {
-        if ($type === 'datalistEntry') $keyColumn = 'entry_name';
         $class = self::classByType($type);
-        return $class::loadAll($db, $query, $keyColumn);
+
+        if (is_array($class::create()->getKeyName())) {
+            return $class::loadAll($db, $query);
+        } else {
+            return $class::loadAll($db, $query, $keyColumn);
+        }
     }
 
     public static function fromJson($json, Db $connection = null)
