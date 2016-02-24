@@ -801,6 +801,10 @@ abstract class DirectorObjectForm extends QuickForm
 
         $types['external_object'] = $this->translate('External Object');
 
+        if ($this->object()->supportsApplyRules()) {
+            $types['apply'] = $this->translate('Apply rule');
+        }
+
         if (! $this->hasObject()) {
             $this->object()->object_type = $default;
         }
