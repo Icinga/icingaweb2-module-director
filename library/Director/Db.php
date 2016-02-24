@@ -179,6 +179,21 @@ class Db extends DbConnection
         return $this->db()->fetchRow($sql);
     }
 
+    public function fetchActivityLogChecksumById($id, $binary = true)
+    {
+        $sql = 'SELECT checksum FROM director_activity_log WHERE id = ' . (int) $id;
+        $result = $this->db()->fetchOne($sql);
+        if (is_resource($result)) {
+            $result = stream_get_contents($result);
+        }
+
+        if ($binary) {
+            return $result;
+        } else {
+            return bin2hex($result);
+        }
+    }
+
     public function fetchActivityLogEntry($checksum)
     {
         if ($this->getDbType() === 'pgsql') {
