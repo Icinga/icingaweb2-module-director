@@ -194,6 +194,16 @@ class Db extends DbConnection
         }
     }
 
+    public function fetchActivityLogIdByChecksum($checksum)
+    {
+        if ($this->getDbType() === 'pgsql') {
+            $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
+        }
+
+        $sql = 'SELECT id FROM director_activity_log WHERE checksum = ?';
+        return $this->db()->fetchOne($sql, $checksum);
+    }
+
     public function fetchActivityLogEntry($checksum)
     {
         if ($this->getDbType() === 'pgsql') {
