@@ -51,9 +51,9 @@ class SyncruleTable extends QuickTable
 
         try {
             // $mod = Sync::hasModifications(
-            $mod = Sync::getExpectedModifications(
-                SyncRule::load($row->id, $this->connection())
-            );
+            $sync = new Sync(SyncRule::load($row->id, $this->connection()));
+            $mod = $sync->getExpectedModifications();
+
             if (count($mod) > 0) {
                 $row->rule_name = $row->rule_name . ' (' . count($mod) . ')';
                 return 'pending-changes';

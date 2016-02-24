@@ -61,12 +61,12 @@ class JobsCommand extends Command
 
         foreach (SyncRule::loadAll($this->db) as $rule) {
             Benchmark::measure('Checking sync rule ' . $rule->rule_name);
-            $mod = Sync::getExpectedModifications($rule);
-            if (count($mod) > 0) {
+            $sync = new Sync($rule);
+            if ($sync->hasModifications()) {
                 printf('Sync rule "%s" provides changes, triggering sync... ', $rule->rule_name);
                 Benchmark::measure('Got modifications for sync rule ' . $rule->rule_name);
 
-                if (Sync::run($rule)) {
+                if ($sync->apply()) {
                     Benchmark::measure('Successfully synced rule ' . $rule->rule_name);
                     print "SUCCEEDED\n";
                 }

@@ -60,7 +60,7 @@ class Sync
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
      */
-    protected function __construct(SyncRule $rule)
+    public function __construct(SyncRule $rule)
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();
@@ -68,43 +68,24 @@ class Sync
     }
 
     /**
-     * Run the given sync rule
-     */
-    public static function run(SyncRule $rule)
-    {
-        $sync = new static($rule);
-
-        // Raise limits. TODO: do this in a failsafe way, and only if necessary
-        ini_set('memory_limit', '768M');
-        ini_set('max_execution_time', 0);
-
-        return $sync->apply();
-    }
-
-    /**
      * Whether the given sync rule would apply modifications
-     *
-     * @param  SyncRule $rule SyncRule object
      *
      * @return boolean
      */
-    public static function hasModifications(SyncRule $rule)
+    public function hasModifications()
     {
-        return count(self::getExpectedModifications()) > 0;
+        return count($this->getExpectedModifications()) > 0;
     }
 
     /**
      * Retrieve modifications a given SyncRule would apply
      *
-     * @param  SyncRule $rule SyncRule object
-     *
      * @return array  Array of IcingaObject elements
      */
-    public static function getExpectedModifications(SyncRule $rule)
+    public function getExpectedModifications()
     {
         $modified = array();
-        $sync = new static($rule);
-        $objects = $sync->prepare();
+        $objects = $this->prepare();
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified[] = $object;
@@ -235,6 +216,21 @@ class Sync
     }
 
     /**
+     * Raise PHP resource limits
+     *
+     * TODO: do this in a failsafe way, and only if necessary
+     *
+     * @return self;
+     */
+    protected function raiseLimits()
+    {
+        ini_set('memory_limit', '768M');
+        ini_set('max_execution_time', 0);
+
+        return $this;
+    }
+
+    /**
      * Instantiates all related ImportSource objects
      *
      * @return self
@@ -291,6 +287,7 @@ class Sync
             if ($this->rule->object_type === 'service') {
                 $hasHost = false;
                 $hasObjectName = false;
+
                 foreach ($this->syncProperties as $key => $property) {
                     if ($property->destination_field === 'host') {
                         $hasHost = $property->source_expression;
@@ -302,8 +299,13 @@ class Sync
 
                 if ($hasHost !== false && $hasObjectName !== false) {
                     $this->hasCombinedKey = true;
-                    $this->sourceKeyPattern = sprintf('%s!%s', $hasHost, $hasObjectName);
-                    $this->destinationKeyPattern = 'host!object_name';
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasHost,
+                        $hasObjectName
+                    );
+
+                    $this->destinationKeyPattern = '${host}!${object_name}';
                 }
             }
         }
@@ -505,7 +507,8 @@ class Sync
     protected function prepare()
     {
         $rule = $this->rule;
-        $this->prepareRelatedImportSources()
+        $this->raiseLimits()
+             ->prepareRelatedImportSources()
              ->prepareSourceColumns()
              ->fetchImportedData()
              ->loadExistingObjects();
@@ -515,7 +518,7 @@ class Sync
 
         foreach ($newObjects as $key => $object) {
             if (array_key_exists($key, $this->objects)) {
-                switch ($rule->update_policy) {
+                switch ($this->rule->update_policy) {
                     case 'override':
                         $this->objects[$key]->replaceWith($object);
                         break;
@@ -534,7 +537,6 @@ class Sync
             }
         }
 
-        $objectKey = $rule->object_type === 'datalistEntry' ? 'entry_name' : 'object_name';
         $noAction = array();
 
         foreach ($this->objects as $key => $object) {
@@ -542,7 +544,7 @@ class Sync
             if (array_key_exists($key, $newObjects)) {
                 // Stats?
 
-            } elseif ($object->hasBeenLoadedFromDb() && $rule->purge_existing === 'y') {
+            } elseif ($object->hasBeenLoadedFromDb() && $this->rule->purge_existing === 'y') {
                 $object->markForRemoval();
 
                 // TODO: this is for stats, preview, summary:
@@ -567,14 +569,12 @@ class Sync
      *
      * @return int
      */
-    protected function apply()
+    public function apply()
     {
-        $db   = $this->db;
-
         // TODO: Evaluate whether fetching data should happen within the same transaction
         $objects = $this->prepare();
 
-        $dba = $db->getDbAdapter();
+        $dba = $this->db->getDbAdapter();
         $dba->beginTransaction();
         foreach ($objects as $object) {
             if ($object instanceof IcingaObject && $object->isTemplate()) {
@@ -588,12 +588,12 @@ class Sync
             }
 
             if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
-                $object->delete($db);
+                $object->delete($this->db);
                 continue;
             }
 
             if ($object->hasBeenModified()) {
-                $object->store($db);
+                $object->store($this->db);
             }
         }
 
