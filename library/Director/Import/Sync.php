@@ -187,7 +187,7 @@ class Sync
             if ($row instanceof IcingaObject) {
                 return $row->$var;
             }
-            if (property_exists($row, $var)) {
+            if (! property_exists($row, $var)) {
                 return null;
             }
 
