@@ -444,10 +444,10 @@ class Sync
 
     protected function loadExistingObjects()
     {
-        $this->objects = array();
-
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->hasCombinedKey()) {
+
+            $this->objects = array();
 
             foreach (IcingaObject::loadAllByType(
                 $this->rule->object_type,
