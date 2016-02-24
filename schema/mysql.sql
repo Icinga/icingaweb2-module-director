@@ -1064,7 +1064,7 @@ CREATE TABLE sync_run (
   objects_deleted INT(10) UNSIGNED DEFAULT 0,
   objects_created INT(10) UNSIGNED DEFAULT 0,
   objects_modified INT(10) UNSIGNED DEFAULT 0,
-  first_related_activity VARBINARY(20) DEFAULT NULL,
+  last_former_activity VARBINARY(20) DEFAULT NULL,
   last_related_activity VARBINARY(20) DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT sync_run_rule
@@ -1076,5 +1076,5 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 68
+      schema_version = 69
 

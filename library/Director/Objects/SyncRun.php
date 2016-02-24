@@ -21,7 +21,7 @@ class SyncRun extends DbObject
         'objects_created'        => null,
         'objects_deleted'        => null,
         'objects_modified'       => null,
-        'first_related_activity' => null,
+        'last_former_activity'   => null,
         'last_related_activity'  => null,
     );
 
