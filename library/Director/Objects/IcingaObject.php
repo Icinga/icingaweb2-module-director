@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Data\Filter\Filter;
@@ -665,6 +666,30 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $fields;
     }
 
+    protected function getAssignments()
+    {
+        if (! $this->isApplyRule()) {
+            throw new ProgrammingError('Assignments are available only for apply rules');
+        }
+
+        if (! $this->hasBeenLoadedFromDb()) {
+            return array();
+        }
+
+        $db = $this->getDb();
+
+        $query = $db->select()->from(
+            array('a' => $this->getTableName() . '_assignment'),
+            array(
+                'filter_string' => 'a.filter_string',
+            )
+        )->where('a.' . $this->getShortTableName() . '_id = ?', (int) $this->id);
+
+        return $db->fetchCol($query);
+    }
+
+
+
     public function isTemplate()
     {
         return $this->hasProperty('object_type')
@@ -945,6 +970,28 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
+    protected function renderAssignments()
+    {
+        if ($this->isApplyRule()) {
+            $rules = $this->getAssignments();
+
+            if (empty($rules)) {
+                return '';
+            }
+
+            $filters = array();
+            foreach ($rules as $rule) {
+                $filters[] = AssignRenderer::forFilter(
+                    Filter::fromQueryString($rule)
+                )->renderAssign();
+            }
+
+            return "\n    " . implode("\n    ", $filters) . "\n";
+        } else {
+            return '';
+        }
+    }
+
     public function toConfigString()
     {
         return implode(array(
@@ -956,6 +1003,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderGroups(),
             $this->renderCustomExtensions(),
             $this->renderCustomVars(),
+            $this->renderAssignments(),
             $this->renderSuffix()
         ));
     }
