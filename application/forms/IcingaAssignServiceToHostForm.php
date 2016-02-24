@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -155,9 +156,9 @@ class IcingaAssignServiceToHostForm extends QuickForm
                 $this->db->insert('icinga_service_assignment', array(
                     'service_id'    => $this->getValue('service_id'),
                     'filter_string' => sprintf(
-                        '%s=%s',
+                        'host.%s=%s',
                         $this->getValue('host_property'),
-                        $this->getValue('filter_expression')
+                        c::renderString($this->getValue('filter_expression'))
                     )
                 ));
                 break;
