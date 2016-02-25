@@ -129,6 +129,14 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testWhetherAHostRendersCorrectly()
+    {
+        $this->assertEquals(
+            (string) $this->host(),
+            $this->loadRendered('host1')
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(
@@ -151,6 +159,10 @@ class IcingaHostTest extends BaseTestCase
         ));
     }
 
+    protected function loadRendered($name)
+    {
+        return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
+    }
 
     public function tearDown()
     {
