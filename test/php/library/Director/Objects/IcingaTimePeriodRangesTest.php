@@ -20,7 +20,8 @@ class IcingaTimePeriodRangesTest extends BaseTestCase
             'tuesday'   => '18:00-24:00',
             'wednesday' => '00:00-24:00',
         );
-        $period->ranges()->set($newRanges)->store();
+        $period->ranges()->set($newRanges);
+        $period->store();
 
         $period = $this->loadTestPeriod();
         $this->assertEquals(
@@ -49,7 +50,7 @@ class IcingaTimePeriodRangesTest extends BaseTestCase
         );
 
         $ranges->set($testRanges);
-        $ranges->store();
+        $object->store();
 
         return $object;
     }
