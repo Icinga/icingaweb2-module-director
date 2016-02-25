@@ -699,6 +699,7 @@ abstract class DbObject
         }
         $this->modifiedProperties = array();
         $this->hasBeenModified = false;
+        $this->loadedProperties = $this->properties;
         $this->onStore();
         $this->loadedFromDb = true;
         return $result;
