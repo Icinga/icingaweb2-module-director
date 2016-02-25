@@ -8,6 +8,26 @@ use Icinga\Module\Director\Test\BaseTestCase;
 
 class AssignRendererTest extends BaseTestCase
 {
+    public function testWhetherEqualMatchIsCorrectlyRendered()
+    {
+        $string = 'host.name="localhost"';
+        $expected = 'assign where host.name == "localhost"';
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
+    public function testWhetherWildcardsRenderAMatchMethod()
+    {
+        $string = 'host.address="127.0.0.*"';
+        $expected = 'assign where match("127.0.0.*", host.address)';
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
     public function testWhetherACombinedFilterRendersCorrectly()
     {
         $string = 'host.name="*internal"|(service.vars.priority<2'
@@ -16,9 +36,14 @@ class AssignRendererTest extends BaseTestCase
         $expected = 'assign where match("*internal", host.name) ||'
             . ' (service.vars.priority < 2 && host.vars.is_clustered == true)';
 
-        $filter = Filter::fromQueryString($string);
-        $renderer = AssignRenderer::forFilter($filter);
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
 
-        $this->assertEquals($expected, $renderer->renderAssign());
+    protected function renderer($string)
+    {
+        return AssignRenderer::forFilter(Filter::fromQueryString($string));
     }
 }
