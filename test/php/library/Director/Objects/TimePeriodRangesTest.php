@@ -1,75 +1,78 @@
 <?php
 
+namespace Tests\Icinga\Modules\Director\Objects;
+
+use Icinga\Application\Config;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaTimePeriodRange;
 use Icinga\Module\Director\Objects\IcingaTimePeriodRanges;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
-use Icinga\Test\BaseTestCase;
-use Icinga\Application\Config;
-use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Test\BaseTestCase;
 
-Icinga\Application\Config::$configDir = '/etc/icingaweb2';
-
-/**
- * $ icingacli test php unit /usr/local/icingaweb-modules/director
- */
 class TimePeriodRangesTest extends BaseTestCase
 {
-    public function testFoo()
-    {
-        $this->assertEquals('foo', 'foo');
-    }
+    protected $testPeriodName = '___TEST___timerange';
 
     public function getDb()
     {
         $resourceName = Config::module('director')->get('db', 'resource');
         $db = Db::fromResourceName($resourceName);
-
         return $db;
-    }
-
-    public function prepare()
-    {
-        $db = $this->getDb();
-        $object = IcingaTimePeriod::load(1, $db);
-        $ranges = $object->ranges();
-
-        $newRanges = array(
-            'monday'    => '00:00-24:00',
-            'tuesday'   => '00:00-24:00',
-            'wednesday' => '00:00-24:00',
-        );
-
-        $ranges->set($newRanges);
-        $ranges->store();
-
-        return $ranges;
-    }
-
-    public function reload()
-    {
-        $db = $this->getDb();
-        $object = IcingaTimePeriod::load(1, $db);
-        $ranges = $object->ranges();
-
-        return $ranges;
     }
 
     public function testUpdate()
     {
-        $ranges = $this->prepare();
+        $period = $this->createTestPeriod();
 
         $newRanges = array(
             'monday'    => '00:00-24:00',
             'tuesday'   => '18:00-24:00',
             'wednesday' => '00:00-24:00',
         );
+        $period->ranges()->set($newRanges)->store();
 
-        $ranges->set($newRanges);
+        $period = $this->loadTestPeriod();
+        $this->assertEquals(
+            '18:00-24:00',
+            $period->ranges()->get('tuesday')->timeperiod_value
+        );
+    }
+
+    protected function createTestPeriod()
+    {
+        $db = $this->getDb();
+        $object = IcingaTimePeriod::create(
+            array(
+                'object_name' => $this->testPeriodName,
+                'object_type' => 'object'
+            ),
+            $db
+        );
+        $object->store();
+        $ranges = $object->ranges();
+
+        $testRanges = array(
+            'monday'    => '00:00-24:00',
+            'tuesday'   => '00:00-24:00',
+            'wednesday' => '00:00-24:00',
+        );
+
+        $ranges->set($testRanges);
         $ranges->store();
 
-        $reloaded = $this->reload();
-        $newValue = $reloaded->get('tuesday')->timeperiod_value;
+        return $object;
+    }
 
-        $this->assertEquals('18:00-24:00', $newValue);
+    protected function loadTestPeriod()
+    {
+        return IcingaTimePeriod::load($this->testPeriodName, $this->getDb());
+    }
+
+    public function tearDown()
+    {
+        $db = $this->getDb();
+        if (IcingaTimePeriod::exists($this->testPeriodName, $db)) {
+            IcingaTimePeriod::load($this->testPeriodName, $db)->delete();
+        }
     }
 }
