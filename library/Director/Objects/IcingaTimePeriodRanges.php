@@ -182,6 +182,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
     public function store()
     {
         foreach ($this->ranges as $range) {
+            $range->timeperiod_id = $this->object->id;
             $range->store($this->object->getConnection());
         }
 
