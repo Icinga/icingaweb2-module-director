@@ -2,23 +2,14 @@
 
 namespace Tests\Icinga\Modules\Director\Objects;
 
-use Icinga\Application\Config;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaTimePeriodRange;
 use Icinga\Module\Director\Objects\IcingaTimePeriodRanges;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
 use Icinga\Module\Director\Test\BaseTestCase;
 
-class TimePeriodRangesTest extends BaseTestCase
+class IcingaTimePeriodRangesTest extends BaseTestCase
 {
     protected $testPeriodName = '___TEST___timerange';
-
-    public function getDb()
-    {
-        $resourceName = Config::module('director')->get('db', 'resource');
-        $db = Db::fromResourceName($resourceName);
-        return $db;
-    }
 
     public function testUpdate()
     {
