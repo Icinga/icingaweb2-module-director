@@ -89,7 +89,12 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
     {
         foreach ($ranges as $range => $value) {
             if (array_key_exists($range, $this->ranges)) {
-                $this->ranges[$range]->timeperiod_value = $value;
+                if ($this->ranges[$range]->timeperiod_value === $value) {
+                    continue;
+                } else {
+                    $this->ranges[$range]->timeperiod_value = $value;
+                    $this->modified = true;
+                }
             } else {
                 $this->ranges[$range] = IcingaTimePeriodRange::create(array(
                     'timeperiod_id'       => $this->object->id,
@@ -102,6 +107,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         $toDelete = array_diff(array_keys($this->ranges), array_keys($ranges));
         foreach ($toDelete as $range) {
             $this->remove($range);
+            $this->modified = true;
         }
 
         return $this;
@@ -208,7 +214,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
 
     public function toConfigString()
     {
-        if (empty($this->ranges) && $this->object->object_type == 'template') {
+        if (empty($this->ranges) && $this->object->object_type === 'template') {
             return '';
         }
 
