@@ -28,7 +28,7 @@ class IcingaHostTest extends BaseTestCase
 
         $this->assertEquals(
             count($host->vars()),
-            3
+            4
         );
         $this->assertEquals(
             $host->address,
@@ -60,7 +60,7 @@ class IcingaHostTest extends BaseTestCase
 
         $this->assertEquals(
             count($host->vars()),
-            3
+            4
         );
         $this->assertEquals(
             $host->address,
@@ -78,7 +78,7 @@ class IcingaHostTest extends BaseTestCase
         );
         $this->assertEquals(
             count($host->vars()),
-            3
+            4
         );
     }
 
@@ -100,6 +100,35 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testWhetherHostVarsArePersisted()
+    {
+        $db = $this->getDb();
+        $this->host()->store($db);
+        $host = IcingaHost::load($this->testHostName, $db);
+        $this->assertEquals(
+            $host->vars()->test1->getValue(),
+            'string'
+        );
+        $this->assertEquals(
+            $host->vars()->test2->getValue(),
+            17
+        );
+        $this->assertEquals(
+            $host->vars()->test3->getValue(),
+            false
+        );
+        $this->assertEquals(
+            $host->vars()->test4->getValue(),
+            (object) array(
+                'this' => 'is',
+                'a' => array(
+                    'dict',
+                    'ionary'
+                )
+            )
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(
@@ -111,7 +140,23 @@ class IcingaHostTest extends BaseTestCase
                 'test1' => 'string',
                 'test2' => 17,
                 'test3' => false,
+                'test4' => (object) array(
+                    'this' => 'is',
+                    'a' => array(
+                        'dict',
+                        'ionary'
+                    )
+                )
             )
         ));
+    }
+
+
+    public function tearDown()
+    {
+        $db = $this->getDb();
+        if (IcingaHost::exists($this->testHostName, $db)) {
+            IcingaHost::load($this->testHostName, $db)->delete();
+        }
     }
 }
