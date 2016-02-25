@@ -22,7 +22,14 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     public function count()
     {
-        return count($this->vars);
+        $count = 0;
+        foreach ($this->vars as $var) {
+            if (! $var->hasBeenDeleted()) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     public function rewind()
