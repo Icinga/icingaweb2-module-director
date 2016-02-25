@@ -10,11 +10,6 @@ use Icinga\Module\Director\Objects\IcingaHostVar;
 
 class BenchmarkCommand extends Command
 {
-    public function streamAction()
-    {
-        $this->api()->stream();
-    }
-
     public function filterAction()
     {
         $flat = array();
