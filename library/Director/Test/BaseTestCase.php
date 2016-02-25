@@ -7,7 +7,7 @@ use PHPUnit_Framework_TestCase;
 
 class BaseTestCase extends PHPUnit_Framework_TestCase
 {
-    private $app;
+    private static $app;
 
     public function setUp()
     {
@@ -16,13 +16,13 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
 
     protected function app()
     {
-        if ($this->app === null) {
+        if (self::$app === null) {
             $testModuleDir = $_SERVER['PWD'];
             $libDir = dirname(dirname($testModuleDir)) . '/library';
             require_once $libDir . '/Icinga/Application/Cli.php';
-            $this->app = Cli::start();
+            self::$app = Cli::start();
         }
 
-        return $this->app;
+        return self::$app;
     }
 }
