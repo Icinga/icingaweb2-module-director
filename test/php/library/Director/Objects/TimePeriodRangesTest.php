@@ -11,7 +11,7 @@ class IcingaTimePeriodRangesTest extends BaseTestCase
 {
     protected $testPeriodName = '___TEST___timerange';
 
-    public function testUpdate()
+    public function testWhetherUpdatedTimeperiodRangesAreCorrectlyStored()
     {
         $period = $this->createTestPeriod();
 
