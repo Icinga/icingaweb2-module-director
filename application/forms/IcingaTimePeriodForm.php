@@ -44,5 +44,7 @@ class IcingaTimePeriodForm extends DirectorObjectForm
         ));
 
         $this->addImportsElement();
+
+        $this->setButtons();
     }
 }
