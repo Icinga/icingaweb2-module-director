@@ -1,18 +1,11 @@
--- TODO: everywhere: ctime, mtime!
--- apply_rules
--- features
--- implicit ApiListener
--- dependencies
--- notifications
--- scheduled downtimes
--- icinga_command_allowed_var -> datatype, validator?!
--- icinga_validator
--- icinga_validator_rule
--- service-set
-
--- Set DEFAULT 0xda39a3ee5e6b4b0d3255bfef95601890afd80709 for DEFAULT NULL?
--- Set DEFAULT null-like entry in nullable relations
-
+--
+-- MySQL schema
+-- ============
+--
+-- You should normally not be required to care about schema handling.
+-- Director does all the migrations for you and guides you either in
+-- the frontend or provides everything you need for automated migration
+-- handling. Please find more related information in our documentation.
 
 SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER';
 
@@ -238,7 +231,7 @@ CREATE TABLE icinga_timeperiod_range (
   CONSTRAINT icinga_timeperiod_range_timeperiod
     FOREIGN KEY timeperiod (timeperiod_id)
     REFERENCES icinga_timeperiod (id)
-    ON DELETE RESTRICT
+    ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
