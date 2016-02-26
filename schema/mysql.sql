@@ -1069,5 +1069,5 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 69
+      schema_version = 70;
 
