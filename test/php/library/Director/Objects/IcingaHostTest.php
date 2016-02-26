@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Icinga\Modules\Director\Objects;
+namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -102,6 +102,10 @@ class IcingaHostTest extends BaseTestCase
 
     public function testWhetherHostVarsArePersisted()
     {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
         $db = $this->getDb();
         $this->host()->store($db);
         $host = IcingaHost::load($this->testHostName, $db);
@@ -166,9 +170,11 @@ class IcingaHostTest extends BaseTestCase
 
     public function tearDown()
     {
-        $db = $this->getDb();
-        if (IcingaHost::exists($this->testHostName, $db)) {
-            IcingaHost::load($this->testHostName, $db)->delete();
+        if ($this->hasDb()) {
+            $db = $this->getDb();
+            if (IcingaHost::exists($this->testHostName, $db)) {
+                IcingaHost::load($this->testHostName, $db)->delete();
+            }
         }
     }
 }

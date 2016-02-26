@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Icinga\Modules\Director;
+namespace Tests\Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;

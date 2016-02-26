@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Icinga\Modules\Director\Objects;
+namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Objects\IcingaTimePeriodRange;
 use Icinga\Module\Director\Objects\IcingaTimePeriodRanges;
@@ -13,6 +13,10 @@ class IcingaTimePeriodRangesTest extends BaseTestCase
 
     public function testWhetherUpdatedTimeperiodRangesAreCorrectlyStored()
     {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
         $period = $this->createTestPeriod();
 
         $newRanges = array(
