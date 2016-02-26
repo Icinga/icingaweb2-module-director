@@ -14,9 +14,10 @@ of them at once.
 Requirements
 ============
 
-* Icinga 2 (&gt;= 2.4.0)
-* Icinga Web 2 (&gt;= 2.1.0)
+* Icinga 2 (&gt;= 2.4.2)
+* Icinga Web 2 (&gt;= 2.2.0)
 * MySQL or PostgreSQL database
+* php5-curl
 * PostgreSQL: the schema is lacking behind right now, we'll fix this soon. If you want to start testing Director today please use MySQL
 
 Installation
@@ -25,20 +26,16 @@ Installation
 Create Icinga Director database
 -------------------------------
 
-    MySQL:
+### MySQL
 
-    mysql -e "CREATE DATABASE director;
+    mysql -e "CREATE DATABASE director CHARACTER SET 'utf8';
        GRANT ALL ON director.* TO director@localhost IDENTIFIED BY 'some-password';"
 
-    mysql director < schema/mysql.sql
-
-    PostgreSQL:
+### PostgreSQL
 
     CREATE DATABASE director WITH ENCODING 'UTF8';
     CREATE USER director WITH PASSWORD 'some-password';
     GRANT ALL PRIVILEGES ON DATABASE director TO director;
-
-    psql director < schema/pgsql.sql
 
 
 Configure Icinga Web 2
@@ -54,4 +51,6 @@ a new database resource pointing to your newly created database. Last but not
 least you have to tell the director module to use this newly created database
 resource.
 
+In case you prefer automated or manual installation please learn more about
+[doc/30-Automation.md](automated installations) in the related section of our [doc/30-Automation.md](documentation).
 
