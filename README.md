@@ -10,9 +10,10 @@ It tries to target two main audiences:
 What makes Icinga Director so special is the fact that it tries to target both
 of them at once.
 
+![Icinga Director](https://www.icinga.org/wp-content/uploads/2016/02/director_main_screen.png)
 
 Requirements
-============
+------------
 
 * Icinga 2 (&gt;= 2.4.2)
 * Icinga Web 2 (&gt;= 2.2.0)
@@ -21,17 +22,16 @@ Requirements
 * PostgreSQL: the schema is lacking behind right now, we'll fix this soon. If you want to start testing Director today please use MySQL
 
 Installation
-============
+------------
 
-Create Icinga Director database
--------------------------------
+### Create Icinga Director database
 
-### MySQL
+#### MySQL
 
     mysql -e "CREATE DATABASE director CHARACTER SET 'utf8';
        GRANT ALL ON director.* TO director@localhost IDENTIFIED BY 'some-password';"
 
-### PostgreSQL
+#### PostgreSQL
 
     CREATE DATABASE director WITH ENCODING 'UTF8';
     CREATE USER director WITH PASSWORD 'some-password';
