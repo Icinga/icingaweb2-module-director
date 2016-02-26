@@ -973,6 +973,43 @@ abstract class DirectorObjectForm extends QuickForm
         return $tpl;
     }
 
+    protected function enumStateFilters()
+    {
+        return array(
+            $this->translate('Hosts') => array(
+                'Up'       => $this->translate('Up'),
+                'Down'     => $this->translate('Down')
+            ),
+            $this->translate('Services') => array(
+                'OK'       => $this->translate('OK'),
+                'Warning'  => $this->translate('Warning'),
+                'Critical' => $this->translate('Critical'),
+                'Unknown'  => $this->translate('Unknown'),
+            ),
+        );
+    }
+
+    protected function enumTypeFilters()
+    {
+        return array(
+            $this->translate('State changes') => array(
+                'Problem'         => $this->translate('Problem'),
+                'Recovery'        => $this->translate('Recovery'),
+                'Custom'          => $this->translate('Custom notification'),
+            ),
+            $this->translate('Problem handling') => array(
+                'Acknowledgement' => $this->translate('Acknowledgement'),
+                'DowntimeStart'   => $this->translate('Downtime starts'),
+                'DowntimeEnd'     => $this->translate('Downtime ends'),
+                'DowntimeRemoved' => $this->translate('Downtime removed'),
+            ),
+            $this->translate('Flapping') => array(
+                'FlappingStart'   => $this->translate('Flapping ends'),
+                'FlappingEnd'     => $this->translate('Flapping starts')
+            )
+          );
+    }
+
     private function dummyForTranslation()
     {
         $this->translate('Host');
