@@ -52,5 +52,5 @@ least you have to tell the director module to use this newly created database
 resource.
 
 In case you prefer automated or manual installation please learn more about
-[doc/30-Automation.md](automated installations) in the related section of our [doc/30-Automation.md](documentation).
+[automated installations](doc/30-Automation.md) in the related section of our [documentation](doc/30-Automation.md).
 
