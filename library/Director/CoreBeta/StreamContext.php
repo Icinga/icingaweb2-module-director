@@ -24,7 +24,7 @@ class StreamContext
 
     public function setCA(CA $ca)
     {
-        $this->options
+        // $this->options
     }
 
     protected function createSslContext()
@@ -71,7 +71,7 @@ class StreamContext
             $this->context = stream_context_create();
             $this->setContextOptions($this->getOptions());
 
-            stream_context_set_option($this->context
+            // stream_context_set_option($this->context
             if ($this->isSsl()) {
                 $this->options['ssl'] = $this->ssl()->getOptions();
             }
