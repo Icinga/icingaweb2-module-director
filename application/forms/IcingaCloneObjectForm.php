@@ -45,14 +45,15 @@ class IcingaCloneObjectForm extends QuickForm
         );
 
         $msg = sprintf(
-            'The %s "%s" has been cloned from "%s"', 
+            'The %s "%s" has been cloned from "%s"',
             $object->getShortTableName(),
             $newname,
             $object->object_name
         );
 
         $new = $object::fromPlainObject(
-            $object->toPlainObject($resolve), $object->getConnection()
+            $object->toPlainObject($resolve),
+            $object->getConnection()
         )->set('object_name', $newname);
 
         if ($new->store()) {

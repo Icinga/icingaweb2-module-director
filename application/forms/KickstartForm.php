@@ -13,7 +13,8 @@ class KickstartForm extends QuickForm
     {
         $this->addHtmlHint(
             $this->translate(
-                'Your installation of Icinga Director has not yet been prepared for deployments. This kickstart wizard will assist you with setting up the connection to your Icinga 2 server'
+                'Your installation of Icinga Director has not yet been prepared for deployments.'
+                . ' This kickstart wizard will assist you with setting up the connection to your Icinga 2 server'
             )
         );
 

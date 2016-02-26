@@ -29,7 +29,7 @@ class CommandController extends ObjectController
             ->setCommandObject($this->object)
             ->setFilter(Filter::where('command', $this->params->get('name')));
 
-        $form = $this->view->form = $this    
+        $form = $this->view->form = $this
             ->loadForm('icingaCommandArgument')
             ->setCommandObject($this->object);
 

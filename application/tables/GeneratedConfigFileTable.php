@@ -27,7 +27,13 @@ class GeneratedConfigFileTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/config/file', array('config_checksum' => $row->config_checksum, 'file_path' => $row->file_path));
+        return $this->url(
+            'director/config/file',
+            array(
+                'config_checksum' => $row->config_checksum,
+                'file_path' => $row->file_path
+            )
+        );
     }
 
     public function getTitles()

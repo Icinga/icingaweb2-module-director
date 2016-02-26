@@ -66,15 +66,18 @@ class ImportsourceController extends ActionController
         $id = $this->params->get('source_id');
         $this->prepareTabs($id)->activate('modifier');
 
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            $this->translate('Add property modifier'),
-            'director/importsource/addmodifier',
-            array('source_id' => $id)
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                $this->translate('Add property modifier'),
+                'director/importsource/addmodifier',
+                array('source_id' => $id)
+            );
 
         $this->view->title = $this->translate('Property modifiers');
-        $this->view->table = $this->loadTable('propertymodifier')->enforceFilter(Filter::where('source_id', $id))->setConnection($this->db());
+        $this->view->table = $this->loadTable('propertymodifier')
+            ->enforceFilter(Filter::where('source_id', $id))
+            ->setConnection($this->db());
         $this->render('list/table', null, true);
     }
 
@@ -129,7 +132,10 @@ class ImportsourceController extends ActionController
         $tabs = $this->prepareTabs($source_id)->activate('modifier');
 
         $this->view->title = $this->translate('Modifier'); // add/edit
-        $this->view->table = $this->loadTable('propertymodifier')->enforceFilter(Filter::where('source_id', $source_id))->setConnection($this->db());
+        $this->view->table = $this->loadTable('propertymodifier')
+            ->enforceFilter(Filter::where('source_id', $source_id))
+            ->setConnection($this->db());
+
         $this->render('list/table', null, true);
     }
 

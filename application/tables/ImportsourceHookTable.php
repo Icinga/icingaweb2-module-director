@@ -111,7 +111,7 @@ class ImportsourceHookTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $ds = new ArrayDatasource($this->sourceHook()->fetchData()); 
+        $ds = new ArrayDatasource($this->sourceHook()->fetchData());
         return $ds->select();
     }
 }

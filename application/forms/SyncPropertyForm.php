@@ -89,13 +89,13 @@ class SyncPropertyForm extends DirectorObjectForm
         if ($this->hasObject()) {
             if (($col = $this->getObject()->getSourceColumn()) === null) {
                 $this->setElementValue('source_column', self::EXPRESSION);
-            $this->addElement('text', 'source_expression', array(
-                'label'    => $this->translate('Source Expression'),
-                'required' => true,
-            ));
-            if ($this->getSentValue('source_column') === '${' . self::EXPRESSION . '}') {
-                unset($this->source_column);
-            }
+                $this->addElement('text', 'source_expression', array(
+                    'label'    => $this->translate('Source Expression'),
+                    'required' => true,
+                ));
+                if ($this->getSentValue('source_column') === '${' . self::EXPRESSION . '}') {
+                    unset($this->source_column);
+                }
             } else {
                 $this->setElementValue('source_column', $col);
             }
@@ -145,7 +145,9 @@ class SyncPropertyForm extends DirectorObjectForm
         if ($isCustomvar || $destination === 'vars') {
             $this->addElement('select', 'merge_policy', array(
                 'label'        => $this->translate('Merge Policy'),
-                'description'  => $this->translate('Whether you want to merge or replace the destination field. Makes no difference for strings'),
+                'description'  => $this->translate(
+                    'Whether you want to merge or replace the destination field. Makes no difference for strings'
+                ),
                 'required'     => true,
                 'multiOptions' => $this->optionalEnum(array(
                     'merge'    => 'merge',
@@ -244,7 +246,9 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         foreach ($dummy->listProperties() as $prop) {
-            if ($prop === 'id') continue;
+            if ($prop === 'id') {
+                continue;
+            }
 
             // TODO: allow those fields, but munge them (store ids)
             //if (preg_match('~_id$~', $prop)) continue;

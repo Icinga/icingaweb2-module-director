@@ -23,7 +23,7 @@ class DatalistentryController extends ActionController
         $listId = $this->params->get('list_id');
         $this->view->lastId = $listId;
 
-        if($this->params->get('list_id') && $entryName = $this->params->get('entry_name')) {
+        if ($this->params->get('list_id') && $entryName = $this->params->get('entry_name')) {
             $edit = true;
         }
 

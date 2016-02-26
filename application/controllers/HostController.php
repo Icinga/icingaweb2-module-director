@@ -35,7 +35,9 @@ class HostController extends ObjectController
     {
         $this->getTabs()->activate('services');
         $this->view->title = $this->translate('Services');
-        $this->view->table = $this->loadTable('IcingaService')->enforceFilter('host_id', $this->object->id)->setConnection($this->db());
+        $this->view->table = $this->loadTable('IcingaService')
+            ->enforceFilter('host_id', $this->object->id)
+            ->setConnection($this->db());
         $this->render('objects/table', null, true);
     }
 
@@ -61,10 +63,18 @@ class HostController extends ObjectController
     {
         $host = $this->object;
         $db = $this->db();
-        if ($host->object_type !== 'object') return;
-        if ($host->getResolvedProperty('has_agent') !== 'y') return;
+        if ($host->object_type !== 'object') {
+            return;
+        }
+
+        if ($host->getResolvedProperty('has_agent') !== 'y') {
+            return;
+        }
+
         $name = $host->object_name;
-        if (IcingaEndpoint::exists($name, $db)) continue;
+        if (IcingaEndpoint::exists($name, $db)) {
+            return;
+        }
 
         $props = array(
             'object_name'  => $name,

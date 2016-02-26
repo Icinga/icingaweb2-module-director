@@ -65,7 +65,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
     protected function beforeValidation($data = array())
     {
         if (isset($data['argument_value']) && $value = $data['argument_value']) {
-            if (preg_match_all('/\$([a-z0-9_]+)\$/',  $value, $m, PREG_PATTERN_ORDER)) {
+            if (preg_match_all('/\$([a-z0-9_]+)\$/', $value, $m, PREG_PATTERN_ORDER)) {
                 foreach ($m[1] as $var) {
                     // $this->addCustomVariable($var);
                 }

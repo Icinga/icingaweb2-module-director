@@ -107,11 +107,12 @@ class ShowController extends ActionController
                 . '</p>';
         }
 
-        $this->view->output = $error . ' <pre'
-. ($object->disabled === 'y' ? ' class="disabled"' : '').
-'>' . $this->view->escape(
-            (string) $object
-        ) . '</pre>';
+        $this->view->output = $error
+            . ' <pre'
+            . ($object->disabled === 'y' ? ' class="disabled"' : '')
+            . '>'
+            . $this->view->escape((string) $object)
+            . '</pre>';
     }
 
     protected function showInfo($entry)

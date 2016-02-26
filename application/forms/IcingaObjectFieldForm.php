@@ -28,10 +28,10 @@ class IcingaObjectFieldForm extends DirectorObjectForm
 
         $this->addHtmlHint(
             'Custom data fields allow you to easily fill custom variables with'
-          . " meaningful data. It's perfectly legal to override inherited fields."
-          . ' You may for example want to allow "network devices" specifying any'
-          . ' string for vars.snmp_community, but restrict "customer routers" to'
-          . ' a specific set, shown as a dropdown.'
+            . " meaningful data. It's perfectly legal to override inherited fields."
+            . ' You may for example want to allow "network devices" specifying any'
+            . ' string for vars.snmp_community, but restrict "customer routers" to'
+            . ' a specific set, shown as a dropdown.'
         );
 
         // TODO: remove assigned ones!
@@ -92,8 +92,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         if (empty($fields)) {
             // TODO: show message depending on permissions
             $msg = $this->translate(
-                'There are no data fields available.'
-              . ' Please ask an administrator to create such'
+                'There are no data fields available. Please ask an administrator to create such'
             );
 
             $this->getElement('datafield_id')->addError($msg);

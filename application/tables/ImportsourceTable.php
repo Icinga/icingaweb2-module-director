@@ -48,7 +48,7 @@ class ImportsourceTable extends QuickTable
             return array();
         }
         try {
-            $import = new Import(ImportSource::load($row->id,$this->connection()));
+            $import = new Import(ImportSource::load($row->id, $this->connection()));
             if ($import->providesChanges()) {
                 $row->source_name = sprintf(
                     '%s (%s)',

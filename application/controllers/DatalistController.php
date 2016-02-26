@@ -20,7 +20,7 @@ class DatalistController extends ActionController
     {
         $edit = false;
 
-        if($id = $this->params->get('id')) {
+        if ($id = $this->params->get('id')) {
             $edit = true;
         }
 

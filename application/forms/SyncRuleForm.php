@@ -8,7 +8,7 @@ class SyncRuleForm extends DirectorObjectForm
 {
     public function setup()
     {
-        $availableTypes = array( 
+        $availableTypes = array(
             'command'          => $this->translate('Command'),
             'endpoint'         => $this->translate('Endpoint'),
             'host'             => $this->translate('Host'),
@@ -39,7 +39,7 @@ class SyncRuleForm extends DirectorObjectForm
             'label'        => $this->translate('Update Policity'),
             'description'  => $this->translate('Whether the field should be merged, replaced or ignored'),
             'required'     => true,
-            'multiOptions' => $this->optionalEnum(array( 
+            'multiOptions' => $this->optionalEnum(array(
                 'merge'    => 'merge',
                 'override' => 'replace',
                 'ignore'   => 'ignore'
@@ -50,7 +50,7 @@ class SyncRuleForm extends DirectorObjectForm
             'label' => $this->translate('Purge'),
             'description' => $this->translate('Purge existing values.'),
             'required'    => true,
-            'multiOptions' => $this->optionalEnum(array( 
+            'multiOptions' => $this->optionalEnum(array(
                 'y' => 'yes',
                 'n' => 'no'
             ))

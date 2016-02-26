@@ -89,7 +89,8 @@ class InspectController extends ActionController
     public function statusAction()
     {
         $this->view->status = $status = $this->api()->getStatus();
-        print_r($status); exit;
+        print_r($status);
+        exit;
     }
 
     protected function api($endpointName = null)

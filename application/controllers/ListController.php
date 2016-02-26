@@ -25,7 +25,7 @@ class ListController extends ActionController
         $this->view->title = $this->translate('Deployments');
         $this->prepareTable('deploymentLog');
         try {
-
+            // Move elsewhere
             $this->view->table->setActiveStageName(
                 $this->api()->getActiveStageName()
             );
@@ -57,11 +57,12 @@ class ListController extends ActionController
 
     public function datalistAction()
     {
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            $this->translate('Add list'),
-            'director/datalist/add'
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                $this->translate('Add list'),
+                'director/datalist/add'
+            );
 
         $this->setConfigTabs()->activate('datalist');
         $this->view->title = $this->translate('Data lists');
@@ -73,11 +74,12 @@ class ListController extends ActionController
         $listId = $this->params->get('list_id');
         $this->view->lastId = $listId;
 
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            $this->translate('Add entry'),
-            'director/datalistentry/add' . '?list_id=' . $listId
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                $this->translate('Add entry'),
+                'director/datalistentry/add' . '?list_id=' . $listId
+            );
 
         $this->view->title = $this->translate('List entries');
         $this->getTabs()->add('editlist', array(
@@ -93,11 +95,12 @@ class ListController extends ActionController
 
     public function datafieldAction()
     {
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            $this->translate('Add field'),
-            'director/datafield/add'
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                $this->translate('Add field'),
+                'director/datafield/add'
+            );
 
         $this->setConfigTabs()->activate('datafield');
         $this->view->title = $this->translate('Data fields');
@@ -106,11 +109,12 @@ class ListController extends ActionController
 
     public function importsourceAction()
     {
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            $this->translate('Add import source'),
-            'director/importsource/add'
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                $this->translate('Add import source'),
+                'director/importsource/add'
+            );
 
         $this->setImportTabs()->activate('importsource');
         $this->view->title = $this->translate('Import source');
@@ -127,11 +131,12 @@ class ListController extends ActionController
 
     public function syncruleAction()
     {
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            $this->translate('Add sync rule'),
-            'director/syncrule/add'
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                $this->translate('Add sync rule'),
+                'director/syncrule/add'
+            );
 
         $this->setImportTabs()->activate('syncrule');
         $this->view->title = $this->translate('Sync rule');
@@ -155,8 +160,8 @@ class ListController extends ActionController
             }
 
             if (in_array('startup.log', $availableFiles)
-                && in_array('status', $availableFiles))
-            {
+                && in_array('status', $availableFiles)
+            ) {
                 if ($api->getStagedFile($stage, 'status') === '0') {
                     $deployment->startup_succeeded = 'y';
                 } else {

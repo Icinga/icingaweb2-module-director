@@ -35,8 +35,8 @@ class DeploymentLogTable extends QuickTable
         }
 
         if ($this->activeStageName !== null
-            && $row->stage_name === $this->activeStageName)
-        {
+            && $row->stage_name === $this->activeStageName
+        ) {
             $classes[] = 'running';
         }
 

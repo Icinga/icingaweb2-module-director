@@ -40,7 +40,7 @@ class IcingaAssignServiceToHostForm extends QuickForm
         if ($this->icingaObject->isTemplate()) {
             $this->addHtmlHint(
                 'Assign all services importing this service template to one or'
-              . ' more hosts'
+                . ' more hosts'
             );
         } else {
             $this->addHtmlHint(

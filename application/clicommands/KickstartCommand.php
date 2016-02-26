@@ -8,9 +8,8 @@ use Icinga\Module\Director\KickstartHelper;
 /**
  * Kickstart a Director installation
  *
- * Once you prepared your DB resource and created 
- * This command retrieves information about unapplied database migration and
- * helps applying them.
+ * Once you prepared your DB resource this command retrieves information about
+ * unapplied database migration and helps applying them.
  */
 class KickstartCommand extends Command
 {

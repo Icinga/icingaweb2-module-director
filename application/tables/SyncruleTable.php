@@ -80,8 +80,8 @@ class SyncruleTable extends QuickTable
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(
-             array('s' => 'sync_rule'),
-	     array()
+            array('s' => 'sync_rule'),
+            array()
         )->order('rule_name');
 
         return $query;

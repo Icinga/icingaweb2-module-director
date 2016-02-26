@@ -24,7 +24,10 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addElement('text', 'address', array(
             'label' => $this->translate('Host address'),
-            'description' => $this->translate('Host address. Usually an IPv4 address, but may be any kind of address your check plugin is able to deal with')
+            'description' => $this->translate(
+                'Host address. Usually an IPv4 address, but may be any kind of address'
+                . ' your check plugin is able to deal with'
+            )
         ));
 
         $this->addElement('text', 'address6', array(

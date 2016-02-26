@@ -101,9 +101,15 @@ class DirectorDatafieldForm extends DirectorObjectForm
         $global = array('varname', 'description', 'caption', 'datatype');
 
         foreach ($this->getElements() as $el) {
-            if ($el->getIgnore()) continue;
+            if ($el->getIgnore()) {
+                continue;
+            }
+
             $name = $el->getName();
-            if (in_array($name, $global)) continue;
+            if (in_array($name, $global)) {
+                continue;
+            }
+
             $names[$name] = $name;
         }
 

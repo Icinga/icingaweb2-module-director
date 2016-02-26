@@ -75,8 +75,7 @@ class ConfigForm extends QuickForm
 
                 if (! $this->hasBeenSent()) {
                     $hint = $this->translate(
-                        'Configuration looks good, you should be ready to %s'
-                      . ' Icinga Director'
+                        'Configuration looks good, you should be ready to %s Icinga Director'
                     );
                     $link = $this->getView()->qlink(
                         $this->translate('start using'),
@@ -94,7 +93,7 @@ class ConfigForm extends QuickForm
 
                 $hint = $this->translate(
                     'Please make sure that your database grants enough permissions'
-                  . ' and that you deployed the correct %s.'
+                    . ' and that you deployed the correct %s.'
                 );
                 $link = $this->getView()->qlink(
                     $this->translate('database schema'),

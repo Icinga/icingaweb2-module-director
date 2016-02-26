@@ -120,8 +120,10 @@ class ConfigController extends ActionController
     {
         $config = IcingaConfig::generate($this->db());
         $this->redirectNow(
-            Url::fromPath('director/config/show',
-            array('checksum' => $config->getHexChecksum()))
+            Url::fromPath(
+                'director/config/show',
+                array('checksum' => $config->getHexChecksum())
+            )
         );
     }
 }

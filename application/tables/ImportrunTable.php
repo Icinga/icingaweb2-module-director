@@ -44,7 +44,7 @@ class ImportrunTable extends QuickTable
             $db->select()->from(
                 array('sub' => $this->getBaseQuery()->columns($this->getColumns())),
                 'COUNT(*)'
-           )
+            )
         );
     }
 
