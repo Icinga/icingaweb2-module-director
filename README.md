@@ -23,6 +23,12 @@ Requirements
 Installation
 ============
 
+Clone this repository in your icingaweb2 `modules` directory and name it `director`, eg.:
+
+```
+git clone https://github.com/Icinga/icingaweb2-module-director.git /usr/share/icingaweb2/modules/director
+```
+
 Create Icinga Director database
 -------------------------------
 
@@ -41,15 +47,31 @@ Create Icinga Director database
 Configure Icinga Web 2
 ----------------------
 
-As with any Icinga Web 2 module, installation is pretty straight-forward. In
-case you're installing it from source all you have to do is to drop the director
-module in one of your module paths. Then go to your web frontend, Configuration,
-Modules, director - and enable the module. 
+As with any Icinga Web 2 module, installation is pretty straight-forward. 
 
-In your web frontend please go to System / Configuration / Resources and create
-a new database resource pointing to your newly created database. Last but not
-least you have to tell the director module to use this newly created database
-resource.
+Create a new database resource pointing to your newly created database. Usually add an entry
+for the database in your [resources.ini](https://github.com/Icinga/icingaweb2/blob/master/doc/resources.md#resources):
+
+```
+[director]
+type = "db"
+db = "mysql"
+host = "localhost"
+port = ""
+dbname = "director"
+username = "director"
+password = "some-password"
+charset = ""
+persistent = "0"
+```
+
+In your web front end, enable the director module in System / Modules / Director.
+
+Then you have to tell the director module to use this newly created database
+resource in System / Modules / Director / Configuration. Save the configuration or manually add
+an entry to `/etc/icingaweb2/modules/director/config.ini`.
+
+As a last step you need to add an API endpoint to your icinga2 installation.
 
 In case you prefer automated or manual installation please learn more about
 [automated installations](doc/30-Automation.md) in the related section of our [documentation](doc/30-Automation.md).
