@@ -26,6 +26,6 @@ class IcingaUser extends IcingaObject
     protected $supportsImports = true;
 
     protected $booleans = array(
-        'enable_notifications'x  => 'enable_notifications'
+        'enable_notifications' => 'enable_notifications'
     );
 }
