@@ -143,6 +143,7 @@ class RestApiClient
             CURLOPT_USERPWD        => $auth,
             CURLOPT_CUSTOMREQUEST  => strtoupper($method),
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 3,
 
             // TODO: Fix this!
             CURLOPT_SSL_VERIFYHOST => false,
