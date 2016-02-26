@@ -165,7 +165,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     public static function fromDbRow($row)
     {
-        switch($row->format) {
+        switch ($row->format) {
             case 'string':
                 $var = new CustomVariableString($row->varname, $row->varvalue);
                 break;
@@ -194,7 +194,10 @@ abstract class CustomVariable implements IcingaConfigRenderer
             return $this->toConfigString();
         } catch (Exception $e) {
             trigger_error($e);
-            $previousHandler = set_exception_handler(function () {});
+            $previousHandler = set_exception_handler(
+                function () {
+                }
+            );
             restore_error_handler();
             call_user_func($previousHandler, $e);
             die();

@@ -269,7 +269,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             return $this->toConfigString();
         } catch (Exception $e) {
             trigger_error($e);
-            $previousHandler = set_exception_handler(function () {});
+            $previousHandler = set_exception_handler(
+                function () {
+                }
+            );
             restore_error_handler();
             call_user_func($previousHandler, $e);
             die();

@@ -16,11 +16,11 @@ class KickstartHelper
     protected $apiUser;
 
     protected $config = array(
-        'endpoint' => null,       
-        'host'     => null,       
-        'port'     => null,       
-        'username' => null,       
-        'password' => null,       
+        'endpoint' => null,
+        'host'     => null,
+        'port'     => null,
+        'username' => null,
+        'password' => null,
     );
 
     public function __construct(Db $db)

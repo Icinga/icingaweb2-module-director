@@ -38,7 +38,7 @@ class CustomVariableBoolean extends CustomVariable
         $this->value = $value;
 
         return $this;
-    } 
+    }
 
     public function toConfigString()
     {

@@ -37,7 +37,7 @@ class CustomVariableNull extends CustomVariable
         }
 
         return $this;
-    } 
+    }
 
     public function toConfigString()
     {

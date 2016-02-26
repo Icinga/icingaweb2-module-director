@@ -94,12 +94,13 @@ abstract class ObjectsController extends ActionController
             $addTitle = $this->translate('Add %s');
         }
 
-        $this->view->addLink = $this->view->icon('plus') . ' '
-            .  $this->view->qlink(
-            sprintf($addTitle, $this->translate(ucfirst($ltype))),
-            'director/' . $ltype .'/add',
-            $addParams
-        );
+        $this->view->addLink = $this->view->icon('plus')
+            . ' '
+            . $this->view->qlink(
+                sprintf($addTitle, $this->translate(ucfirst($ltype))),
+                'director/' . $ltype .'/add',
+                $addParams
+            );
 
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
         $table = $this->loadTable($table)->setConnection($this->db());
@@ -151,7 +152,7 @@ abstract class ObjectsController extends ActionController
             array('Group', 'Period', 'Argument', 'ApiUser'),
             str_replace(
                 'template',
-                '', 
+                '',
                 substr($this->getRequest()->getControllerName(), 0, -1)
             )
         );

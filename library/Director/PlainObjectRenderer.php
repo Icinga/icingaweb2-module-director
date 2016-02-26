@@ -44,7 +44,9 @@ class PlainObjectRenderer
 
     protected static function renderArray($array, $prefix = '')
     {
-        if (empty($array)) return '[]';
+        if (empty($array)) {
+            return '[]';
+        }
 
         $vals = array();
 
@@ -60,7 +62,10 @@ class PlainObjectRenderer
     {
         $vals = array();
         $hash = (array) $hash;
-        if (empty($hash)) return '{}';
+        if (empty($hash)) {
+            return '{}';
+        }
+
         ksort($hash);
         foreach ($hash as $key => $val) {
             $vals[] = $prefix

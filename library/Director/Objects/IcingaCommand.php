@@ -31,9 +31,19 @@ class IcingaCommand extends IcingaObject
 
     protected static $pluginDir;
 
+    /**
+     * Render the 'medhods_execute' property as 'execute'
+     *
+     * Execute is a reserved word in SQL, column name was prefixed
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderMethods_execute()
     {
-        // Execute is a reserved word in SQL, column name was prefixed
+        // @codingStandardsIgnoreEnd
         return c::renderKeyValue('execute', $this->methods_execute);
     }
 

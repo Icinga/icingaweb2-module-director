@@ -63,7 +63,7 @@ class Util
 
         $out = '';
 
-        for($i = 1; $i <= $blocks; $i++) {
+        for ($i = 1; $i <= $blocks; $i++) {
             // $i encoded as 4 bytes, big endian.
             $last = $salt . pack('N', $i);
             // first iteration

@@ -32,7 +32,7 @@ class CustomVariableString extends CustomVariable
         }
 
         return $this;
-    } 
+    }
 
     public function toConfigString()
     {

@@ -41,12 +41,12 @@ class Migrations
     }
 
     public function hasPendingMigrations()
-    {        
+    {
         return $this->countPendingMigrations() > 0;
     }
 
     public function countPendingMigrations()
-    {        
+    {
         return count($this->listPendingMigrations());
     }
 
@@ -92,7 +92,10 @@ class Migrations
         $versions = array();
 
         foreach (new DirectoryIterator($this->getMigrationsDir()) as $file) {
-            if($file->isDot()) continue;
+            if ($file->isDot()) {
+                continue;
+            }
+
             $filename = $file->getFilename();
             if (preg_match('/^upgrade_(\d+)\.sql$/', $filename, $match)) {
                 $versions[] = $match[1];

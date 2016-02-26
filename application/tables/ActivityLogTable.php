@@ -16,7 +16,8 @@ class ActivityLogTable extends QuickTable
             'id'              => 'l.id',
             'change_time'     => 'l.change_time',
             'author'          => 'l.author',
-            'action'          => "CONCAT(l.action_name || ' ' || REPLACE(l.object_type, 'icinga_', '') || ' \"' || l.object_name || '\"')"
+            'action'          => "CONCAT(l.action_name || ' ' || REPLACE(l.object_type, 'icinga_', '')"
+                               . " || ' \"' || l.object_name || '\"')"
         );
     }
 
@@ -24,8 +25,8 @@ class ActivityLogTable extends QuickTable
     {
         return $this->url(
             'director/show/activitylog',
-            array_merge(array('id' => $row->id), $this->extraParams
-        ));
+            array_merge(array('id' => $row->id), $this->extraParams)
+        );
     }
 
     public function getTitles()

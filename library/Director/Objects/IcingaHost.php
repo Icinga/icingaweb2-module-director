@@ -112,18 +112,37 @@ class IcingaHost extends IcingaObject
         return $this->getResolvedProperty('check_command_id') !== null;
     }
 
+    /**
+     * Internal property, will not be rendered
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderHas_Agent()
     {
         return '';
     }
 
+    /**
+     * Internal property, will not be rendered
+     *
+     * @return string
+     */
     protected function renderMaster_should_connect()
     {
         return '';
     }
 
+    /**
+     * Internal property, will not be rendered
+     *
+     * @return string
+     */
     protected function renderAccept_config()
     {
+        // @codingStandardsIgnoreEnd
         return '';
     }
 }

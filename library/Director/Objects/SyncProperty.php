@@ -13,20 +13,31 @@ class SyncProperty extends DbObject
     protected $autoincKeyName = 'id';
 
     protected $defaultProperties = array(
-        'id'             	=> null,
-        'rule_id'        	=> null,
-        'source_id' 		=> null,
+        'id'                => null,
+        'rule_id'           => null,
+        'source_id'         => null,
         'source_expression' => null,
-	    'destination_field'	=> null,
-	    'priority'		    => null,
-	    'filter_expression'	=> null,
-    	'merge_policy'		=> null
+        'destination_field' => null,
+        'priority'          => null,
+        'filter_expression' => null,
+        'merge_policy'      => null
     );
 
+    /**
+     * Virtual property for source_column
+     *
+     * Internally we always use an expression. Form indirectly uses this
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return self
+     */
     public function setSource_column($value)
     {
+        // @codingStandardsIgnoreEnd
         $this->source_expression = '${' . $value . '}';
-        return $this; 
+        return $this;
     }
 
     public function sourceIsSingleColumn()

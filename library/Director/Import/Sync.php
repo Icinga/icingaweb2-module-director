@@ -455,7 +455,9 @@ class Sync
             ) as $object) {
 
                 if ($object instanceof IcingaService) {
-                    if (! $object->host_id) continue;
+                    if (! $object->host_id) {
+                        continue;
+                    }
                 }
 
                 $key = $this->fillVariables(
@@ -502,7 +504,9 @@ class Sync
                 $imports = array();
 
                 foreach ($this->syncProperties as $p) {
-                    if ($p->source_id !== $sourceId) continue;
+                    if ($p->source_id !== $sourceId) {
+                        continue;
+                    }
 
                     $prop = $p->destination_field;
                     $val = $this->fillVariables($p->source_expression, $row);

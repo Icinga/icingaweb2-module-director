@@ -16,7 +16,6 @@ $this->provideRestriction(
     $this->translate('Allow to use only these db resources (comma separated list)')
 );
 
-
 $this->provideConfigTab('config', array(
     'title' => 'Configuration',
     'url'   => 'settings'
@@ -43,4 +42,3 @@ $section->add($this->translate('Config'))
     ->setUrl('director/list/deploymentlog')
     ->setPriority(902)
     ->setRenderer('ConfigHealthItemRenderer');
-

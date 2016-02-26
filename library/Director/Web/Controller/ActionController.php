@@ -69,7 +69,7 @@ abstract class ActionController extends Controller
     protected function sendJson($object)
     {
         $this->getResponse()->setHeader('Content-Type', 'application/json', true);
-        $this->_helper->layout()->disableLayout(); 
+        $this->_helper->layout()->disableLayout();
         $this->_helper->viewRenderer->setNoRender(true);
         if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
             echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
@@ -89,36 +89,60 @@ abstract class ActionController extends Controller
 
     protected function setConfigTabs()
     {
-        $this->view->tabs = Widget::create('tabs')->add('deploymentlog', array(
-            'label' => $this->translate('Deployments'),
-            'url'   => 'director/list/deploymentlog')
-        )->add('generatedconfig', array(
-            'label' => $this->translate('Configs'),
-            'url'   => 'director/list/generatedconfig')
-        )->add('activitylog', array(
-            'label' => $this->translate('Activity Log'),
-            'url'   => 'director/list/activitylog')
-        )->add('datalist', array(
-            'label' => $this->translate('Data lists'),
-            'url'   => 'director/list/datalist')
-        )->add('datafield', array(
-            'label' => $this->translate('Data fields'),
-            'url'   => 'director/list/datafield')
+        $this->view->tabs = Widget::create('tabs')->add(
+            'deploymentlog',
+            array(
+                'label' => $this->translate('Deployments'),
+                'url'   => 'director/list/deploymentlog'
+            )
+        )->add(
+            'generatedconfig',
+            array(
+                'label' => $this->translate('Configs'),
+                'url'   => 'director/list/generatedconfig'
+            )
+        )->add(
+            'activitylog',
+            array(
+                'label' => $this->translate('Activity Log'),
+                'url'   => 'director/list/activitylog'
+            )
+        )->add(
+            'datalist',
+            array(
+                'label' => $this->translate('Data lists'),
+                'url'   => 'director/list/datalist'
+            )
+        )->add(
+            'datafield',
+            array(
+                'label' => $this->translate('Data fields'),
+                'url'   => 'director/list/datafield'
+            )
         );
         return $this->view->tabs;
     }
 
     protected function setImportTabs()
     {
-        $this->view->tabs = Widget::create('tabs')->add('importsource', array(
-            'label' => $this->translate('Import source'),
-            'url'   => 'director/list/importsource')
-        )->add('importrun', array(
-            'label' => $this->translate('Import history'),
-            'url'   => 'director/list/importrun')
-        )->add('syncrule', array(
-            'label' => $this->translate('Sync rule'),
-            'url'   => 'director/list/syncrule')
+        $this->view->tabs = Widget::create('tabs')->add(
+            'importsource',
+            array(
+                'label' => $this->translate('Import source'),
+                'url'   => 'director/list/importsource'
+            )
+        )->add(
+            'importrun',
+            array(
+                'label' => $this->translate('Import history'),
+                'url'   => 'director/list/importrun'
+            )
+        )->add(
+            'syncrule',
+            array(
+                'label' => $this->translate('Sync rule'),
+                'url'   => 'director/list/syncrule'
+            )
         );
         return $this->view->tabs;
     }

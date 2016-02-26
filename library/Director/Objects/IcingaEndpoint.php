@@ -58,13 +58,31 @@ class IcingaEndpoint extends IcingaObject
         return new CoreApi($client);
     }
 
+    /**
+     * Use duration time renderer helper
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderLog_duration()
     {
+        // @codingStandardsIgnoreEnd
         return $this->renderPropertyAsSeconds('log_duration');
     }
 
+    /**
+     * Internal property, will not be rendered
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderApiuser_id()
     {
+        // @codingStandardsIgnoreEnd
         return '';
     }
 }

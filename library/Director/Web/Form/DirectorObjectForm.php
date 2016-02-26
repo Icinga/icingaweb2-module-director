@@ -347,13 +347,15 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
             // TODO: handle structured vars
-            if (! is_string($value)) continue;
+            if (! is_string($value)) {
+                continue;
+            }
 
             // Show inheritance information in case we inherited this var:
             if (isset($inherited->$key)) {
-                $this->addCustomVar($key, $value, $inherited->$key, $origins->$key);            
+                $this->addCustomVar($key, $value, $inherited->$key, $origins->$key);
             } else {
-                $this->addCustomVar($key, $value);            
+                $this->addCustomVar($key, $value);
             }
 
         }
@@ -674,7 +676,10 @@ abstract class DirectorObjectForm extends QuickForm
             $label = $this->translate('Delete');
         }
 
-        $el = $this->createElement('submit', $label)->setLabel($label)->setDecorators(array('ViewHelper')); //->removeDecorator('Label');
+        $el = $this->createElement('submit', $label)
+            ->setLabel($label)
+            ->setDecorators(array('ViewHelper'));
+            //->removeDecorator('Label');
 
         $this->deleteButtonName = $el->getName();
         $this->addElement($el);
@@ -689,7 +694,9 @@ abstract class DirectorObjectForm extends QuickForm
 
     public function shouldBeDeleted()
     {
-        if (! $this->hasDeleteButton()) return false;
+        if (! $this->hasDeleteButton()) {
+            return false;
+        }
 
         $name = $this->deleteButtonName;
         return $this->getSentValue($name) === $this->getElement($name)->getLabel();
@@ -878,24 +885,34 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addCheckExecutionElements()
     {
 
-        $this->addElement('text', 'check_interval', array(
-            'label' => $this->translate('Check interval'),
-            'description' => $this->translate('Your regular check interval')
-        ));
+        $this->addElement(
+            'text',
+            'check_interval',
+            array(
+                'label' => $this->translate('Check interval'),
+                'description' => $this->translate('Your regular check interval')
+            )
+        );
 
-        $this->addElement('text', 'retry_interval', array(
-            'label' => $this->translate('Retry interval'),
-            'description' => $this->translate('Retry interval, will be applied after a state change unless the next hard state is reached')
-        ));
+        $this->addElement(
+            'text',
+            'retry_interval',
+            array(
+                'label' => $this->translate('Retry interval'),
+                'description' => $this->translate(
+                    'Retry interval, will be applied after a state change unless the next hard state is reached'
+                )
+            )
+        );
 
         $this->optionalBoolean(
-            'enable_active_checks', 
+            'enable_active_checks',
             $this->translate('Execute active checks'),
             $this->translate('Whether to actively check this object')
         );
 
         $this->optionalBoolean(
-            'enable_passive_checks', 
+            'enable_passive_checks',
             $this->translate('Accept passive checks'),
             $this->translate('Whether to accept passive check results for this object')
         );

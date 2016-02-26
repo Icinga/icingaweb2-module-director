@@ -78,32 +78,70 @@ class IcingaService extends IcingaObject
         );
     }
 
+    /**
+     * Render host_id as host_name
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     public function renderHost_id()
     {
+        // @codingStandardsIgnoreEnd
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
     protected function renderCustomExtensions()
     {
-        if ($this->command_endpoint_id !== null) return '';
-        if ($this->object_type !== 'object') return '';
-        if ($this->getResolvedProperty('use_agent') !== 'y') return '';
+        if ($this->command_endpoint_id !== null
+            || $this->object_type !== 'object'
+            || $this->getResolvedProperty('use_agent') !== 'y') {
+            return '';
+        }
 
         return $this->renderRelationProperty('host', $this->host_id, 'command_endpoint');
     }
 
+    /**
+     * Do not render internal property
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     public function renderUse_agent()
     {
+        // @codingStandardsIgnoreEnd
         return '';
     }
 
+    /**
+     * Use duration time renderer helper
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderCheck_Interval()
     {
+        // @codingStandardsIgnoreEnd
         return $this->renderPropertyAsSeconds('check_interval');
     }
 
+    /**
+     * Use duration time renderer helper
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderRetry_Interval()
     {
+        // @codingStandardsIgnoreEnd
         return $this->renderPropertyAsSeconds('retry_interval');
     }
 

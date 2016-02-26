@@ -159,6 +159,7 @@ class RestApiClient
         }
 
         curl_setopt_array($curl, $opts);
+        // TODO: request headers, validate status code
 
         Benchmark::measure('Rest Api, sending ' . $url);
         $res = curl_exec($curl);
@@ -236,7 +237,7 @@ class RestApiClient
             $str = substr($this->readBuffer, $offset, $pos);
             $decoded = json_decode($str);
             if ($decoded === false) {
-              throw new Exception('Got invalid JSON: ' . $str);
+                throw new Exception('Got invalid JSON: ' . $str);
             }
 
             // printf("Processing %s bytes\n", strlen($str));

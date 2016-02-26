@@ -276,8 +276,7 @@ class IcingaConfig
             $this->db->commit();
         } catch (Exception $e) {
             $this->db->rollBack();
-throw $e;
-            var_dump($e->getMessage());
+            throw $e;
         }
 
         return $this;
@@ -373,10 +372,18 @@ throw $e;
         $zones = array();
         $endpoints = array();
         foreach (IcingaHost::prefetchAll($this->connection) as $host) {
-            if ($host->object_type !== 'object') continue;
-            if ($host->getResolvedProperty('has_agent') !== 'y') continue;
+            if ($host->object_type !== 'object') {
+                continue;
+            }
+
+            if ($host->getResolvedProperty('has_agent') !== 'y') {
+                continue;
+            }
+
             $name = $host->object_name;
-            if (IcingaEndpoint::exists($name, $this->connection)) continue;
+            if (IcingaEndpoint::exists($name, $this->connection)) {
+                continue;
+            }
 
             $props = array(
                 'object_name'  => $name,
@@ -411,18 +418,24 @@ throw $e;
     protected function createFileForObjects($type, $objects)
     {
         Benchmark::measure(sprintf('Generating %d %s', count($objects), $type));
-        if (empty($objects)) return $this;
+        if (empty($objects)) {
+            return $this;
+        }
+
         $masterZone = $this->connection->getMasterZoneName();
         $globalZone = $this->connection->getDefaultGlobalZoneName();
         $file = null;
 
         foreach ($objects as $object) {
-            if ($object->disabled === 'y') continue;
+            if ($object->disabled === 'y') {
+                continue;
+            }
 
             if ($object->isExternal()) {
                 if ($type === 'zone') {
                     $this->zoneMap[$object->id] = $object->object_name;
                 }
+
                 continue;
             } elseif ($object->isTemplate()) {
                 $filename = strtolower($type) . '_templates';
@@ -557,6 +570,7 @@ throw $e;
     }
 
     // TODO: wipe unused files
-    // DELETE f FROM director_generated_file f left join director_generated_config_file cf ON f.checksum = cf.file_checksum WHERE cf.file_checksum IS NULL;
-
+    // DELETE f FROM director_generated_file f
+    // LEFT JOIN director_generated_config_file cf ON f.checksum = cf.file_checksum
+    // WHERE cf.file_checksum IS NULL;
 }

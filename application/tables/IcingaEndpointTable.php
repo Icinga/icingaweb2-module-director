@@ -16,7 +16,8 @@ class IcingaEndpointTable extends IcingaObjectTable
             'id'          => 'e.id',
             'endpoint'    => 'e.object_name',
             'object_type' => 'e.object_type',
-            'host'        => "(CASE WHEN e.host IS NULL THEN NULL ELSE CONCAT(e.host || ':' || COALESCE(e.port, 5665)) END)",
+            'host'        => "(CASE WHEN e.host IS NULL THEN NULL ELSE"
+                           . " CONCAT(e.host || ':' || COALESCE(e.port, 5665)) END)",
             'zone'        => 'z.object_name',
         );
     }

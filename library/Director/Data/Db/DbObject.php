@@ -130,7 +130,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function beforeInit() {}
+    protected function beforeInit()
+    {
+    }
 
     /**
      * Wird ausgeführt, nachdem mittels ::factory() ein neues Objekt erstellt
@@ -138,7 +140,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function onFactory() {}
+    protected function onFactory()
+    {
+    }
 
     /**
      * Wird ausgeführt, nachdem mittels ::factory() ein neues Objekt erstellt
@@ -146,7 +150,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function onLoadFromDb() {}
+    protected function onLoadFromDb()
+    {
+    }
 
     /**
      * Wird ausgeführt, bevor ein Objekt abgespeichert wird. Die Operation
@@ -154,14 +160,18 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function beforeStore() {}
+    protected function beforeStore()
+    {
+    }
 
     /**
      * Wird ausgeführt, nachdem ein Objekt erfolgreich gespeichert worden ist
      *
      * @return void
      */
-    protected function onStore() {}
+    protected function onStore()
+    {
+    }
 
     /**
      * Wird ausgeführt, nachdem ein Objekt erfolgreich der Datenbank hinzu-
@@ -169,7 +179,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function onInsert() {}
+    protected function onInsert()
+    {
+    }
 
     /**
      * Wird ausgeführt, nachdem bestehendes Objekt erfolgreich der Datenbank
@@ -177,7 +189,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function onUpdate() {}
+    protected function onUpdate()
+    {
+    }
 
     /**
      * Wird ausgeführt, bevor ein Objekt gelöscht wird. Die Operation wird
@@ -185,7 +199,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function beforeDelete() {}
+    protected function beforeDelete()
+    {
+    }
 
     /**
      * Wird ausgeführt, nachdem bestehendes Objekt erfolgreich aud der
@@ -193,7 +209,9 @@ abstract class DbObject
      *
      * @return void
      */
-    protected function onDelete() {}
+    protected function onDelete()
+    {
+    }
 
     /**
      * Set database connection
@@ -394,7 +412,10 @@ abstract class DbObject
     {
         $props = array();
         foreach (array_keys($this->modifiedProperties) as $key) {
-            if ($key === $this->autoincKeyName) continue;
+            if ($key === $this->autoincKeyName) {
+                continue;
+            }
+
             $props[$key] = $this->properties[$key];
         }
         return $props;
@@ -475,9 +496,8 @@ abstract class DbObject
                 $id[$key] = $this->properties[$key];
             }
             return $id;
-         } else {
-            if (isset($this->properties[$this->keyName]))
-            {
+        } else {
+            if (isset($this->properties[$this->keyName])) {
                 return $this->properties[$this->keyName];
             }
         }
@@ -491,8 +511,7 @@ abstract class DbObject
      */
     public function getAutoincId()
     {
-        if (isset($this->properties[$this->autoincKeyName]))
-        {
+        if (isset($this->properties[$this->autoincKeyName])) {
             return $this->properties[$this->autoincKeyName];
         }
         return null;

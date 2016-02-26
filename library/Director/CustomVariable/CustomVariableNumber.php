@@ -51,7 +51,7 @@ class CustomVariableNumber extends CustomVariable
         $this->value = $value;
 
         return $this;
-    } 
+    }
 
     public function toConfigString()
     {

@@ -14,5 +14,4 @@ abstract class Stream
     {
         $this->stream = $stream;
     }
-
 }

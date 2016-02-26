@@ -483,7 +483,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $origins = $object->$getOrigins();
 
             foreach ($object->$getInherited() as $key => $value) {
-                if (in_array($key, $blacklist)) continue;
+                if (in_array($key, $blacklist)) {
+                    continue;
+                }
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
                 $vals['_INHERITED_']->$key = $value;
@@ -500,7 +502,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         foreach ($this->$get() as $key => $value) {
-            if ($value === null) continue;
+            if ($value === null) {
+                continue;
+            }
 
             // $vals[$this->object_name]->$key = $value;
             $vals['_MERGED_']->$key = $value;
@@ -807,8 +811,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         foreach ($this->properties as $key => $value) {
 
-            if ($value === null) continue;
-            if (in_array($key, $blacklist)) continue;
+            if ($value === null) {
+                continue;
+            }
+            if (in_array($key, $blacklist)) {
+                continue;
+            }
 
             $method = 'render' . ucfirst($key);
             if (method_exists($this, $method)) {
@@ -821,8 +829,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                             c::renderBoolean($value)
                         );
                     }
-                } elseif (
-                    substr($key, -3) === '_id'
+                } elseif (substr($key, -3) === '_id'
                      && $this->hasRelation($relKey = substr($key, 0, -3))
                 ) {
                     $out .= $this->renderRelationProperty($relKey, $value);
@@ -949,9 +956,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
+    /**
+     * We do not render zone properties, objects are stored to zone dirs
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderZone_id()
     {
-        // We do not render zone properties, objects are stored to zone dirs
+        // @codingStandardsIgnoreEnd
         return '';
     }
 
@@ -1194,11 +1209,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($skipDefaults) {
-            if (empty($props['imports']))      unset($props['imports']);
-            if (array_key_exists('vars', $props)) {
-                if (count((array) $props['vars']) === 0) unset($props['vars']);
+            if (empty($props['imports'])) {
+                unset($props['imports']);
             }
-            if (empty($props['groups']))       unset($props['groups']);
+            if (array_key_exists('vars', $props)) {
+                if (count((array) $props['vars']) === 0) {
+                    unset($props['vars']);
+                }
+            }
+            if (empty($props['groups'])) {
+                unset($props['groups']);
+            }
         }
 
         ksort($props);
@@ -1278,7 +1299,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this->toConfigString();
         } catch (Exception $e) {
             trigger_error($e);
-            $previousHandler = set_exception_handler(function () {});
+            $previousHandler = set_exception_handler(
+                function () {
+                }
+            );
             restore_error_handler();
             if ($previousHandler !== null) {
                 call_user_func($previousHandler, $e);

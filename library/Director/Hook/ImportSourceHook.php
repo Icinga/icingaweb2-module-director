@@ -64,7 +64,8 @@ abstract class ImportSourceHook
         return $this;
     }
 
-    public function getSetting($name, $default = null) {
+    public function getSetting($name, $default = null)
+    {
         if (array_key_exists($name, $this->settings)) {
             return $this->settings[$name];
         } else {

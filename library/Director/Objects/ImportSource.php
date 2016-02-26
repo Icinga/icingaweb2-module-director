@@ -34,5 +34,4 @@ class ImportSource extends DbObjectWithSettings
                ->order('priority DESC')
         );
     }
-
 }

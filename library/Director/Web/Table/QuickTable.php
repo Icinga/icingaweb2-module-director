@@ -98,7 +98,7 @@ abstract class QuickTable implements Paginatable
                     $value = '<pre>' . $this->view()->escape(print_r($val, 1)) . '</pre>';
                 } else {
                     $value = $this->view()->escape($val);
-                } 
+                }
             }
 
             $htm .= '    <td>' . $value . "</td>\n";
@@ -352,7 +352,11 @@ abstract class QuickTable implements Paginatable
                 }
             }
         } else {
-            $str .= $this->whereToSql($this->mapFilterColumn($filter->getColumn()), $filter->getSign(), $filter->getExpression());
+            $str .= $this->whereToSql(
+                $this->mapFilterColumn($filter->getColumn()),
+                $filter->getSign(),
+                $filter->getExpression()
+            );
         }
 
         return $str;
