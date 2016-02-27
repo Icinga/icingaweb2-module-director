@@ -404,7 +404,8 @@ constants
             // 'peer_identity'  => $endpoint->object_name,
             'peer_identity'   => $this->client->getPeerIdentity(),
             'start_time'      => date('Y-m-d H:i:s'),
-            'config_checksum' => $config->getChecksum()
+            'config_checksum' => $config->getChecksum(),
+            'last_activity_checksum' => $config->getLastActivityChecksum()
             // 'triggered_by'   => Util::getUsername(),
             // 'username'       => Util::getUsername(),
             // 'module_name'    => $moduleName,
