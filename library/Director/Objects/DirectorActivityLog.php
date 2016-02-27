@@ -94,5 +94,4 @@ class DirectorActivityLog extends DbObject
         $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
         return self::create($data)->store($db);
     }
-
 }
