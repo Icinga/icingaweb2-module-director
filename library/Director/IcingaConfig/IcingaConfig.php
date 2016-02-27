@@ -199,12 +199,12 @@ class IcingaConfig
             return stream_get_contents($value);
         }
 
-        return $val;
+        return $value;
     }
 
     protected function calculateChecksum()
     {
-        $files = array($this->getLastActivityHexChecksum());
+        $files = array();
         $sortedFiles = $this->files;
         ksort($sortedFiles);
         /** @var IcingaConfigFile $file */
