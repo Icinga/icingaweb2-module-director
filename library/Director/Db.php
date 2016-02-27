@@ -444,14 +444,16 @@ class Db extends DbConnection
 
         $queries = array();
         $db = $this->db();
+        $cnt = "COALESCE(SUM(CASE WHEN o.object_type = '%s' THEN 1 ELSE 0 END), 0)";
+
         foreach ($types as $type) {
             $queries[] = $db->select()->from(
                 array('o' => 'icinga_' . $type),
                 array(
                     'icinga_type'  => "('" . $type . "')",
-                    'cnt_object'   => "COALESCE(SUM(CASE WHEN o.object_type = 'object' THEN 1 ELSE 0 END), 0)",
-                    'cnt_template' => "COALESCE(SUM(CASE WHEN o.object_type = 'template' THEN 1 ELSE 0 END), 0)",
-                    'cnt_external' => "COALESCE(SUM(CASE WHEN o.object_type = 'external_object' THEN 1 ELSE 0 END), 0)",
+                    'cnt_object'   => sprintf($cnt, 'object'),
+                    'cnt_template' => sprintf($cnt, 'template'),
+                    'cnt_external' => sprintf($cnt, 'external_object'),
                     'cnt_total'    => 'COUNT(*)',
                 )
             );
