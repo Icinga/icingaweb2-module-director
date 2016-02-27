@@ -144,17 +144,35 @@ class IcingaConfig
         $this->generateFromDb();
         $this->collectExtraFiles();
         $checksum = $this->calculateChecksum();
-        $exists = $this->db->fetchOne(
-            $this->db->select()->from(
-                self::$table,
-                'COUNT(*)'
-            )->where(
-                'checksum = ?',
-                $this->dbBin($checksum)
+        $activity = $this->getLastActivityChecksum();
+
+        $lastActivity = $this->binFromDb(
+            $this->db->fetchOne(
+                $this->db->select()->from(
+                    self::$table,
+                    'last_activity_checksum'
+                )->where(
+                    'checksum = ?',
+                    $this->dbBin($checksum)
+                )
             )
         );
 
-        return (int) $exists === 0;
+        if ($lastActivity === false || $lastActivity === null) {
+            return true;
+        }
+
+        if ($lastActivity !== $activity) {
+            $this->db->update(
+                self::$table,
+                array(
+                    'last_activity_checksum' => $this->dbBin($activity)
+                ),
+                $this->db->quoteInto('checksum = ?', $this->dbBin($checksum))
+            );
+        }
+
+        return false;
     }
 
     protected function storeIfModified()
@@ -262,12 +280,14 @@ class IcingaConfig
                 );
             }
 
+            $activity = $this->dbBin($this->getLastActivityChecksum());
             $this->db->insert(
                 self::$table,
                 array(
-                    'duration'               => $this->generationTime,
-                    'last_activity_checksum' => $this->dbBin($this->getLastActivityChecksum()),
-                    'checksum'               => $this->dbBin($this->getChecksum()),
+                    'duration'                => $this->generationTime,
+                    'first_activity_checksum' => $activity,
+                    'last_activity_checksum'  => $activity,
+                    'checksum'                => $this->dbBin($this->getChecksum()),
                 )
             );
             /** @var IcingaConfigFile $file */
@@ -338,17 +358,9 @@ class IcingaConfig
             throw new Exception(sprintf('Got no config for %s', Util::binary2hex($checksum)));
         }
 
-        $this->checksum = $result->checksum;
+        $this->checksum = $this->binFromDb($result->checksum);
         $this->duration = $result->duration;
-        $this->lastActivityChecksum = $result->last_activity_checksum;
-
-        if (is_resource($this->checksum)) {
-            $this->checksum = stream_get_contents($this->checksum);
-        }
-
-        if (is_resource($this->lastActivityChecksum)) {
-            $this->lastActivityChecksum = stream_get_contents($this->lastActivityChecksum);
-        }
+        $this->lastActivityChecksum = $this->binFromDb($result->last_activity_checksum);
 
         $query = $this->db->select()->from(
             array('cf' => 'director_generated_config_file'),
