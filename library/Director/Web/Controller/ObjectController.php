@@ -225,6 +225,10 @@ abstract class ObjectController extends ActionController
                 $name,
                 $this->db()
             );
+
+            $this->view->undeployedChanges = $this->countUndeployedChanges();
+            $this->view->totalUndeployedChanges = $this->db()
+                ->countActivitiesSinceLastDeployedConfig();
         }
 
         return $this->object;
@@ -296,6 +300,15 @@ abstract class ObjectController extends ActionController
             default:
                 throw new Exception('Unsupported method ' . $request->getMethod());
         }
+    }
+
+    protected function countUndeployedChanges()
+    {
+        if ($this->object === null) {
+            return 0;
+        }
+
+        return $this->db()->countActivitiesSinceLastDeployedConfig($this->object);
     }
 
     protected function requireObject()
