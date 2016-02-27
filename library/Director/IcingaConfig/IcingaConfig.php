@@ -175,6 +175,15 @@ class IcingaConfig
         }
     }
 
+    protected function binFromDb($value)
+    {
+        if (is_resource($value)) {
+            return stream_get_contents($value);
+        }
+
+        return $val;
+    }
+
     protected function calculateChecksum()
     {
         $files = array($this->getLastActivityHexChecksum());
