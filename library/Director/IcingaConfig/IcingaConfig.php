@@ -568,9 +568,4 @@ class IcingaConfig
 
         return $this->lastActivityChecksum;
     }
-
-    // TODO: wipe unused files
-    // DELETE f FROM director_generated_file f
-    // LEFT JOIN director_generated_config_file cf ON f.checksum = cf.file_checksum
-    // WHERE cf.file_checksum IS NULL;
 }
