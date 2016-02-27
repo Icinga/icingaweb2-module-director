@@ -32,6 +32,7 @@ CREATE TABLE director_generated_config (
   director_version VARCHAR(64) DEFAULT NULL,
   director_db_version INT(10) DEFAULT NULL,
   duration INT(10) UNSIGNED DEFAULT NULL COMMENT 'Config generation duration (ms)',
+  first_activity_checksum VARBINARY(20) NOT NULL,
   last_activity_checksum VARBINARY(20) NOT NULL,
   PRIMARY KEY (checksum),
   CONSTRAINT director_generated_config_activity
@@ -70,6 +71,7 @@ CREATE TABLE director_generated_config_file (
 CREATE TABLE director_deployment_log (
   id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
   config_checksum VARBINARY(20) DEFAULT NULL,
+  last_activity_checksum VARBINARY(20) NOT NULL,
   peer_identity VARCHAR(64) NOT NULL,
   start_time DATETIME NOT NULL,
   end_time DATETIME DEFAULT NULL,
@@ -1110,4 +1112,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 71;
+      schema_version = 72;
