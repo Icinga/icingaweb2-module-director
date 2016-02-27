@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Test;
 
 use Icinga\Application\Cli;
 use Icinga\Application\Config;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
 use PHPUnit_Framework_TestCase;
 
@@ -18,10 +19,36 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
         $this->app();
     }
 
+    protected function skipForMissingDb()
+    {
+        if ($this->hasDb()) {
+            return false;
+        }
+
+        $this->markTestSkipped('Test db resource has not been configured');
+
+        return true;
+    }
+
+    protected function hasDb()
+    {
+        return $this->getDbResourceName() !== null;
+    }
+
+    protected function getDbResourceName()
+    {
+        return Config::module('director')->get('testing', 'db_resource');
+    }
+
     protected function getDb()
     {
         if ($this->db === null) {
-            $resourceName = Config::module('director')->get('db', 'resource');
+            $resourceName = $this->getDbResourceName();
+            if (! $resourceName) {
+                throw new ConfigurationError(
+                    'Could not run DB-based tests, please configure a testing db resource'
+                );
+            }
             $this->db = Db::fromResourceName($resourceName);
         }
 
