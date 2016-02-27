@@ -74,7 +74,10 @@ class IcingaHost extends IcingaObject
 
     public static function enumProperties(DbConnection $connection = null)
     {
-        $properties = static::create()->listProperties();
+        $properties = array_merge(
+            array('name'),
+            static::create()->listProperties()
+        );
         $props = mt('director', 'Properties');
         $vars  = mt('director', 'Custom variables');
         $properties = array(
@@ -82,10 +85,17 @@ class IcingaHost extends IcingaObject
             $vars => array()
         );
 
+        unset($properties[$props]['object_name']);
+        unset($properties[$props]['object_type']);
+
         if ($connection !== null) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
                 if ($var->datatype) {
-                    $properties[$vars]['vars.' . $var->varname] = sprintf('%s (%s)', $var->varname, $var->caption);
+                    $properties[$vars]['vars.' . $var->varname] = sprintf(
+                        '%s (%s)',
+                        $var->varname,
+                        $var->caption
+                    );
                 } else {
                     $properties[$vars]['vars.' . $var->varname] = $var->varname;
                 }
