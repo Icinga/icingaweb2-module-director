@@ -23,8 +23,6 @@ class IcingaNotification extends IcingaObject
         'zone_id'               => null,
     );
 
-    protected $supportsGroups = true;
-
     protected $supportsCustomVars = true;
 
     protected $supportsImports = true;
