@@ -9,7 +9,7 @@ CREATE TABLE icinga_notification (
   times_end INT(10) UNSIGNED DEFAULT NULL,
   notification_interval INT(10) UNSIGNED DEFAULT NULL,
   command_id INT(10) UNSIGNED DEFAULT NULL,
-  timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
+  period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_host
@@ -27,8 +27,8 @@ CREATE TABLE icinga_notification (
     REFERENCES icinga_command (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT icinga_notification_timeperiod
-    FOREIGN KEY timeperiod (timeperiod_id)
+  CONSTRAINT icinga_notification_period
+    FOREIGN KEY period (period_id)
     REFERENCES icinga_timeperiod (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,

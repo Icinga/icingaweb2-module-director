@@ -17,7 +17,7 @@ class IcingaNotification extends IcingaObject
         // 'user_groups'           => null,
         'times_begin'           => null,
         'times_end'             => null,
-        'command'               => null,
+        'command_id'            => null,
         'notification_interval' => null,
         'period_id'             => null,
         'zone_id'               => null,
