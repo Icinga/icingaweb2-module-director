@@ -5,6 +5,7 @@ namespace Icinga\Module\Director;
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Exception\ConfigurationError;
 use Zend_Db_Expr;
 use Zend_Db_Select;
@@ -24,8 +25,10 @@ class Db extends DbConnection
         return $this->getDbAdapter();
     }
 
-    public function countActivitiesSinceLastDeployedConfig()
+    public function countActivitiesSinceLastDeployedConfig(IcingaObject $object = null)
     {
+        $db = $this->db();
+
         $query = 'SELECT COUNT(*) FROM director_activity_log WHERE id > ('
             . ' SELECT id FROM director_activity_log WHERE checksum = ('
             . '  SELECT last_activity_checksum FROM director_generated_config WHERE checksum = ('
@@ -34,7 +37,11 @@ class Db extends DbConnection
             . ' )'
             . ')';
 
-        return (int) $this->db()->fetchOne($query);
+        if ($object !== null) {
+            $query .= $db->quoteInto(' AND object_type = ?', $object->getTableName());
+            $query .= $db->quoteInto(' AND object_name = ?', $object->object_name);
+        }
+        return (int) $db->fetchOne($query);
     }
 
     public function getMasterZoneName()
