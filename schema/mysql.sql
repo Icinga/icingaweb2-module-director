@@ -896,6 +896,47 @@ CREATE TABLE icinga_usergroup_parent (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_notification (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  host_id INT(10) UNSIGNED DEFAULT NULL,
+  service_id INT(10) UNSIGNED DEFAULT NULL,
+  times_begin INT(10) UNSIGNED DEFAULT NULL,
+  times_end INT(10) UNSIGNED DEFAULT NULL,
+  notification_interval INT(10) UNSIGNED DEFAULT NULL,
+  command_id INT(10) UNSIGNED DEFAULT NULL,
+  timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
+  zone_id INT(10) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_notification_host
+    FOREIGN KEY host (host_id)
+    REFERENCES icinga_host (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_service
+    FOREIGN KEY service (service_id)
+    REFERENCES icinga_service (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_command
+    FOREIGN KEY command (command_id)
+    REFERENCES icinga_command (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_timeperiod
+    FOREIGN KEY timeperiod (timeperiod_id)
+    REFERENCES icinga_timeperiod (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_notification_zone
+    FOREIGN KEY zone (zone_id)
+    REFERENCES icinga_zone (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE import_source (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_name VARCHAR(64) NOT NULL,
@@ -1069,5 +1110,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 70;
-
+      schema_version = 71;
