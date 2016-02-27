@@ -25,7 +25,7 @@ class MigrationCommand extends Command
      *     }
      *
      * Exit code 0 means that there are pending migrations, code 1 that there
-     * are no such. Use --verbose
+     * are no such. Use --verbose for human readable output
      */
     public function pendingAction()
     {
