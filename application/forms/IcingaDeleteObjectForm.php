@@ -1,6 +1,6 @@
 <?php
 
-
+// TODO: Check whether this can be removed
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -23,7 +23,7 @@ class IcingaDeleteObjectForm extends QuickForm
     {
         $object = $this->object;
         $msg = sprintf(
-            'The %s "%s" has been deleted', 
+            'The %s "%s" has been deleted',
             $object->getShortTableName(),
             $object->object_name
         );
