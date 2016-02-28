@@ -327,6 +327,18 @@ abstract class DirectorObjectForm extends QuickForm
                 $inheritedValue = null;
                 $inheritFrom = false;
             }
+
+            // Command vars are overridden at object level:
+            if (property_exists($inherits, $varname)) {
+                $inheritedValue = $inherits->$varname;
+                $inheritFrom = $origins->$varname;
+                if ($inheritFrom === $object->object_name) {
+                    $inherited = false;
+                } else {
+                    $inherited = true;
+                }
+            }
+
             $this->addCommandField($field, $value, $inheritedValue, $inheritFrom);
             if ($inheritedValue !== null) {
                 $this->getElement('var_' . $field->varname)->setRequired(false);
