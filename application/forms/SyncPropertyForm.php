@@ -122,25 +122,36 @@ class SyncPropertyForm extends DirectorObjectForm
         }
         */
 
-        /*
-        TODO: Filter should be a modifier
+
+        // TODO: we need modifier
         $this->addElement('select', 'use_filter', array(
-            'label'        => $this->translate('Filter values'),
-            'description'  => $this->translate('Whether you want to merge or replace the destination field. Makes no difference for strings'),
+            'label'        => $this->translate('Set based on filter'),
+            'ignore'       => true,
+            'class'        => 'autosubmit',
             'required'     => true,
-            'multiOptions' => $this->optionalEnum(array(
-                'y' => 'merge',
-                'n' => 'replace'
-            ))
+            'multiOptions' => $this->enumBoolean()
         ));
 
-        $this->addElement('text', 'filter_expression', array(
-            'label'       => $this->translate('Filter Expression'),
-            'description' => $this->translate('This allows to filter for specific parts within the given source expression'),
-            'required'    => false,
-            // TODO: validate filter
-        )); 
-        */
+        if ($this->hasBeenSent()) {
+            $useFilter = $this->getSentValue('use_filter');
+            if ($useFilter === null) {
+                $this->setElementValue('use_filter', $useFilter = 'n');
+            }
+        } else {
+            $useFilter = empty($this->getObject()->filter_expression) ? 'n' : 'y';
+            $this->setElementValue('use_filter', $useFilter);
+        }
+
+        if ($useFilter === 'y') {
+            $this->addElement('text', 'filter_expression', array(
+                'label'       => $this->translate('Filter Expression'),
+                'description' => $this->translate(
+                    'This allows to filter for specific parts within the given source expression'
+                ),
+                'required'    => false,
+                // TODO: validate filter
+            ));
+        }
 
         if ($isCustomvar || $destination === 'vars') {
             $this->addElement('select', 'merge_policy', array(
