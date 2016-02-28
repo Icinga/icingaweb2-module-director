@@ -171,6 +171,10 @@ class IcingaConfigHelper
 
     public static function parseInterval($interval)
     {
+        if ($interval === null || $interval === '') {
+            return null;
+        }
+
         if (ctype_digit($interval)) {
             return (int) $interval;
         }
