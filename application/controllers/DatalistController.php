@@ -30,7 +30,7 @@ class DatalistController extends ActionController
                 'url'       => 'director/datalist/edit' . '?id=' . $id,
                 'label'     => $this->view->title,
             ))->add('entries', array(
-                'url'       => 'director/list/datalistentry' . '?list_id=' . $id,
+                'url'       => 'director/data/listentry' . '?list_id=' . $id,
                 'label'     => $this->translate('List entries'),
             ))->activate('editlist');
         } else {
@@ -42,7 +42,7 @@ class DatalistController extends ActionController
         }
 
         $form = $this->view->form = $this->loadForm('directorDatalist')
-            ->setSuccessUrl('director/list/datalist')
+            ->setSuccessUrl('director/data/lists')
             ->setDb($this->db());
 
         if ($edit) {

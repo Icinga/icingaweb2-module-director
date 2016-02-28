@@ -21,7 +21,7 @@ class DatalistTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/list/datalistentry', array('list_id' => $row->id));
+        return $this->url('director/data/listentry', array('list_id' => $row->id));
     }
 
     public function getTitles()
