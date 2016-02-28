@@ -25,7 +25,7 @@ abstract class ObjectController extends ActionController
             $params['name'] = $object->object_name;
 
             $tabs = $this->getTabs()->add('modify', array(
-                'url'       => sprintf('director/%s/edit', $type),
+                'url'       => sprintf('director/%s', $type),
                 'urlParams' => $params,
                 'label'     => $this->translate(ucfirst($type))
             ));
