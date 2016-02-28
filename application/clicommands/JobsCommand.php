@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Application\Benchmark;
@@ -23,6 +24,11 @@ class JobsCommand extends Command
              ->syncCoreStages()
              ->runScheduledDeployments()
              ;
+    }
+
+    public function renderconfigAction()
+    {
+        IcingaConfig::generate($this->db());
     }
 
     protected function hasBeenDisabled()
