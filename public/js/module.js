@@ -32,7 +32,6 @@
         },
 
         rendered: function(ev) {
-            this.module.icinga.logger.info('rendered');
             var $container = $(ev.currentTarget);
             var self = this;
             $container.find('form').each(self.restoreFieldsets.bind(self));
