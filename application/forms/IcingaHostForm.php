@@ -45,7 +45,7 @@ class IcingaHostForm extends DirectorObjectForm
             'class'       => 'autosubmit',
         ));
 
-        if ($this->getSentOrObjectValue('has_agent') === 'y') {
+        if ($this->getSentOrResolvedObjectValue('has_agent') === 'y') {
             $this->addBoolean('master_should_connect', array(
                 'label'       => $this->translate('Establish connection'),
                 'description' => $this->translate(
