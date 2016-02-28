@@ -497,7 +497,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $getInherited = 'getInherited' . $what;
         $getOrigins   = 'getOrigins'  . $what;
 
-        $blacklist = array('id', 'object_type', 'object_name');
+        $blacklist = array('id', 'object_type', 'object_name', 'disabled');
         foreach ($objects as $name => $object) {
             $origins = $object->$getOrigins();
 
@@ -512,8 +512,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             foreach ($object->$get() as $key => $value) {
-                if ($value === null) continue;
-                if (in_array($key, $blacklist)) continue;
+                // TODO: skip if default value?
+                if ($value === null) {
+                    continue;
+                }
+                if (in_array($key, $blacklist)) {
+                    continue;
+                }
                 $vals['_MERGED_']->$key = $value;
                 $vals['_INHERITED_']->$key = $value;
                 $vals['_ORIGINS_']->$key = $name;
