@@ -151,4 +151,83 @@ class IcingaConfigHelper
             return $string;
         }
     }
+
+    public static function isValidInterval($interval)
+    {
+        if (ctype_digit($interval)) {
+            return true;
+        }
+
+        $parts = preg_split('/\s+/', $interval, -1, PREG_SPLIT_NO_EMPTY);
+        $value = 0;
+        foreach ($parts as $part) {
+            if (! preg_match('/^(\d+)([dhms]?)$/', $part)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static function parseInterval($interval)
+    {
+        if (ctype_digit($interval)) {
+            return (int) $interval;
+        }
+
+        $parts = preg_split('/\s+/', $interval, -1, PREG_SPLIT_NO_EMPTY);
+        $value = 0;
+        foreach ($parts as $part) {
+            if (! preg_match('/^(\d+)([dhms]?)$/', $part, $m)) {
+                throw new ProgrammingError(
+                    '"%s" is not a valid time (duration) definition',
+                    $interval
+                );
+            }
+            switch ($m[2]) {
+                case 'd':
+                    $value += $m[1] * 86400;
+                    break;
+                case 'h':
+                    $value += $m[1] * 3600;
+                    break;
+                case 'm':
+                    $value += $m[1] * 60;
+                    break;
+                default:
+                    $value += (int) $m[1];
+            }
+        }
+
+        return $value;
+    }
+
+    public static function renderInterval($interval)
+    {
+        // TODO: compat only, do this at munge time. All db fields should be int
+        $seconds = self::parseInterval($interval);
+        if ($seconds === 0) {
+            return '0s';
+        }
+
+        $parts = array();
+        $steps = array(
+            'd' => 86400,
+            'h' => 3600,
+            'm' => 60,
+        );
+
+        foreach ($steps as $unit => $duration) {
+            if ($seconds > $duration) {
+                $parts[] = (int) floor($seconds / $duration) . $unit;
+                $seconds = $seconds % $duration;
+            }
+        }
+
+        if ($seconds > 0) {
+            $parts[] = $seconds . 's';
+        }
+
+        return implode(' ', $parts);
+    }
 }

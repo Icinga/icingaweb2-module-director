@@ -849,41 +849,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderPropertyAsSeconds($key)
     {
-        // TODO: db field should be int
-        if (ctype_digit($this->$key)) {
-            $value = (int) $this->$key;
-        } else {
-            // TODO: do this at munge time
-            $parts = preg_split('/\s+/', $this->$key, -1, PREG_SPLIT_NO_EMPTY);
-            $value = 0;
-            foreach ($parts as $part) {
-                if (! preg_match('/^(\d+)([dhms]?)$/', $part, $m)) {
-                    throw new ConfigurationError(
-                        '"%s" is not a valid time (duration) definition',
-                        $this->$key
-                    );
-                }
-                switch ($m[2]) {
-                    case 'd':
-                        $value += $m[1] * 86400;
-                        break;
-                    case 'h':
-                        $value += $m[1] * 3600;
-                        break;
-                    case 'm':
-                        $value += $m[1] * 60;
-                        break;
-                    default:
-                        $value += (int) $m[1];
-                }
-            }
-        }
-
-        if ($value > 0 && $value % 60 === 0) {
-            $value = (int) ($value / 60) . 'm';
-        }
-
-        return c::renderKeyValue($key, $value);
+        return c::renderKeyValue($key, c::renderInterval($this->$key));
     }
 
     protected function renderSuffix()
