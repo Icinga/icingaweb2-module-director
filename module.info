@@ -1,5 +1,5 @@
 Name: Icinga Director
-Version: 0.0.1-alpha1
+Version: 1.0.0-alpha2
 Depends: monitoring
-Description: Config tool for Icinga 2
+Description: Director - Config tool for Icinga 2
  This is going to be the new Icinga 2 config tool. Not for productional use. YET.
