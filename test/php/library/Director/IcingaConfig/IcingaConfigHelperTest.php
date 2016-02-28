@@ -28,8 +28,9 @@ class IcingaConfigHelperTest extends BaseTestCase
     {
         $this->assertEquals(c::renderInterval(10), '10s');
         $this->assertEquals(c::renderInterval(60), '1m');
-        $this->assertEquals(c::renderInterval(121), '2m 1s');
+        $this->assertEquals(c::renderInterval(121), '121s');
+        $this->assertEquals(c::renderInterval(3600), '1h');
         $this->assertEquals(c::renderInterval(86400), '1d');
-        $this->assertEquals(c::renderInterval(86459), '1d 59s');
+        $this->assertEquals(c::renderInterval(86459), '86459s');
     }
 }

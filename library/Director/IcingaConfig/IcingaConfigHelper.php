@@ -218,16 +218,11 @@ class IcingaConfigHelper
         );
 
         foreach ($steps as $unit => $duration) {
-            if ($seconds >= $duration) {
-                $parts[] = (int) floor($seconds / $duration) . $unit;
-                $seconds = $seconds % $duration;
+            if ($seconds % $duration === 0) {
+                return (int) floor($seconds / $duration) . $unit;
             }
         }
 
-        if ($seconds > 0) {
-            $parts[] = $seconds . 's';
-        }
-
-        return implode(' ', $parts);
+        return $seconds . 's';
     }
 }
