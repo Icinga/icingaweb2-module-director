@@ -890,7 +890,7 @@ abstract class DirectorObjectForm extends QuickForm
             'disabled',
             array(
                 'label'       => $this->translate('Disabled'),
-                'description' => $this->translate('Disabled objects will not be deployes')
+                'description' => $this->translate('Disabled objects will not be deployed')
             ),
             'n'
         );
