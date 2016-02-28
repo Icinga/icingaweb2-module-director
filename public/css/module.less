@@ -144,6 +144,32 @@ select option[value=""] {
     color: #aaa;
 }
 
+a {
+    &.state-critical {
+        color: @color-critical;
+    }
+
+    &.state-warning {
+        color: @color-warning;
+    }
+
+    &.state-ok {
+        color: @color-ok;
+    }
+
+    &.state-unknown {
+        color: @color-unknown;
+    }
+
+    &.state-pending {
+        color: @color-pending;
+    }
+}
+
+a:hover::before {
+  text-decoration: none;
+}
+
 ul.main-actions {
   margin: 0;
   padding: 0;
