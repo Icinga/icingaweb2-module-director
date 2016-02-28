@@ -75,10 +75,38 @@ abstract class ObjectController extends ActionController
     {
         $type = $this->getType();
         $this->getTabs()->activate('render');
-        $this->view->object = $this->object;
+        $object = $this->object;
+
+        if ($this->params->shift('resolved')) {
+            $this->view->object = $object::fromPlainObject(
+                $object->toPlainObject(true),
+                $object->getConnection()
+            );
+
+            if ($object->imports()->count() > 0) {
+                $this->view->actionLinks = $this->view->qlink(
+                    $this->translate('Show normal'),
+                    $this->getRequest()->getUrl()->without('resolved'),
+                    null,
+                    array('class' => 'icon-resize-small state-warning')
+                );
+            }
+        } else {
+            $this->view->object = $object;
+
+            if ($object->imports()->count() > 0) {
+                $this->view->actionLinks = $this->view->qlink(
+                    $this->translate('Show resolved'),
+                    $this->getRequest()->getUrl()->with('resolved', true),
+                    null,
+                    array('class' => 'icon-resize-full')
+                );
+            }
+        }
+
         $this->view->title = sprintf(
             $this->translate('Config preview: %s'),
-            $this->object->object_name
+            $object->object_name
         );
         $this->render('object/show', null, true);
     }
