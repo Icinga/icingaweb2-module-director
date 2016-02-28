@@ -48,6 +48,21 @@ class IcingaUserForm extends DirectorObjectForm
             $this->translate('Send notifications'),
             $this->translate('Whether to send notifications for this user')
         );
+
+        $this->addElement('multiselect', 'states', array(
+            'label'        => $this->translate('States'),
+            'description'  => $this->translate('The host/service states you want to get notifications for'),
+            'multiOptions' => $this->enumStateFilters(),
+            'size'         => 6,
+        ));
+
+        $this->addElement('multiselect', 'types', array(
+            'label'        => $this->translate('Event types'),
+            'description'  => $this->translate('The event types you want to get notifications for'),
+            'multiOptions' => $this->enumTypeFilters(),
+            'size'         => 6,
+        ));
+
 /*
         $this->addElement('text', 'groups', array(
             'label' => $this->translate('Usergroups'),

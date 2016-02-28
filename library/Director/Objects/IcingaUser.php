@@ -28,4 +28,16 @@ class IcingaUser extends IcingaObject
     protected $booleans = array(
         'enable_notifications' => 'enable_notifications'
     );
+
+    protected $states = array();
+
+    protected function setStates($value)
+    {
+        $states = $value;
+        sort($states);
+        if ($this->states !== $states) {
+            $this->states = $states;
+            $this->hasBeenModified = true;
+        }
+    }
 }
