@@ -37,7 +37,7 @@ $section->add($this->translate('Users'))->setUrl('director/users')->setPriority(
 $section->add($this->translate('Import / Sync'))
     ->setUrl('director/list/importsource')
     ->setPriority(901);
-$section->add($this->translate('Config'))
-    ->setUrl('director/list/deploymentlog')
+$section->add($this->translate('Deployments / History'))
+    ->setUrl('director/config/deployments')
     ->setPriority(902)
     ->setRenderer('ConfigHealthItemRenderer');

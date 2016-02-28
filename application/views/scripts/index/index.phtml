@@ -97,9 +97,7 @@ $all = array(
         array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
-        array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history') . pendingDeployments($this)),
-        array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
-        array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
+        array('wrench',   $this->translate('Deployment'), 'director/config/deployments', $this->translate('Manage deployments, access audit log and history') . pendingDeployments($this), $this->undeployedActivities ? 'warning' : 'ok'),
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
         array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
         array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
