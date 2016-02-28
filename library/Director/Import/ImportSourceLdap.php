@@ -68,5 +68,4 @@ class ImportSourceLdap extends ImportSourceHook
 
         return $this->connection;
     }
-
 }

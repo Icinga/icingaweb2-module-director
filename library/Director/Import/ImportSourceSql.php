@@ -40,5 +40,4 @@ class ImportSourceSql extends ImportSourceHook
 
         return $this->db;
     }
-
 }
