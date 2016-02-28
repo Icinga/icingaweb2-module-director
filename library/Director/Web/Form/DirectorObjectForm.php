@@ -702,22 +702,37 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->getSentValue($name) === $this->getElement($name)->getLabel();
     }
 
-    public function getSentOrObjectValue($name, $default = null)
+    public function getSentOrResolvedObjectValue($name, $default = null)
+    {
+        return $this->getSentOrObjectValue($name, $default, true);
+    }
+
+    public function getSentOrObjectValue($name, $default = null, $resolved = false)
     {
         // TODO: check whether getSentValue is still needed since element->getValue
         //       is in place (currently for form element default values only)
 
         if ($this->hasObject()) {
             $value = $this->getSentValue($name);
-            if ($value === null) {
+            if ($value === null || $value === '') {
 
                 $object = $this->getObject();
 
-                if ($object->hasProperty($name) && $object->$name !== null) {
-                    return $object->$name;
+                if ($object->hasProperty($name)) {
+                    if ($resolved) {
+                        $objectProperty = $object->getResolvedProperty($name);
+                    } else {
+                        $objectProperty = $object->$name;
+                    }
+                } else {
+                    $objectProperty = null;
                 }
 
-                if (null !== ($val = $this->getElement('object_type')->getValue())) {
+                if ($objectProperty !== null) {
+                    return $objectProperty;
+                }
+
+                if (null !== ($val = $this->getElement($name)->getValue())) {
                     return $val;
                 }
 
@@ -732,7 +747,7 @@ abstract class DirectorObjectForm extends QuickForm
                 return $val;
             }
 
-            if (null !== ($val = $this->getElement('object_type')->getValue())) {
+            if (null !== ($val = $this->getElement($name)->getValue())) {
                 return $val;
             }
 
