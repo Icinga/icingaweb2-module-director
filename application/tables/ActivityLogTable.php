@@ -21,6 +21,11 @@ class ActivityLogTable extends QuickTable
         );
     }
 
+    protected function listTableClasses()
+    {
+        return array_merge(array('activity-log'), parent::listTableClasses());
+    }
+
     protected function getActionUrl($row)
     {
         return $this->url(
