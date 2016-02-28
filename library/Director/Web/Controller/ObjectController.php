@@ -184,6 +184,14 @@ abstract class ObjectController extends ActionController
                 $type . '_id' => $object->id,
                 'datafield_id' => $id
             ));
+
+            $this->view->actionLinks = $this->view->qlink(
+                $this->translate('back'),
+                $this->getRequest()->getUrl()->without('field_id'),
+                null,
+                array('class' => 'icon-left-big')
+            );
+
         }
 
         $form->handleRequest();
