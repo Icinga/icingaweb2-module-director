@@ -122,12 +122,6 @@ abstract class ObjectController extends ActionController
         $this->view->form = $form = $this->loadForm($formName)->setDb($this->db());
         $form->setObject($object);
 
-        $url = Url::fromPath(
-            sprintf('director/%s', $type),
-            array('name' => $object->object_name)
-        );
-        $form->setSuccessUrl($url);
-
         $this->view->title = sprintf($this->translate('Modify %s'), ucfirst($ltype));
         $this->view->form->handleRequest();
 

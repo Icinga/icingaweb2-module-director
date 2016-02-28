@@ -507,12 +507,6 @@ abstract class DirectorObjectForm extends QuickForm
             if (! $object->hasBeenLoadedFromDb()) {
 
                 $this->setHttpResponseCode(201);
-                if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
-                    $this->setSuccessUrl(
-                        'director/' . strtolower($this->getObjectName()),
-                        array('name' => $object->object_name)
-                    );
-                }
             }
             $msg = sprintf(
                 $object->hasBeenLoadedFromDb()
@@ -526,6 +520,12 @@ abstract class DirectorObjectForm extends QuickForm
                 $this->setHttpResponseCode(304);
             }
             $msg = $this->translate('No action taken, object has not been modified');
+        }
+        if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
+            $this->setSuccessUrl(
+                'director/' . strtolower($this->getObjectName()),
+                array('name' => $object->object_name)
+            );
         }
 
         $this->redirectOnSuccess($msg);
