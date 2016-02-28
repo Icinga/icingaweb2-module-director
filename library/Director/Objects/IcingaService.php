@@ -57,6 +57,11 @@ class IcingaService extends IcingaObject
         'use_agent'             => 'use_agent',
     );
 
+    protected $intervalProperties = array(
+        'check_interval' => 'check_interval',
+        'retry_interval' => 'retry_interval',
+    );
+
     protected $supportsGroups = true;
 
     protected $supportsCustomVars = true;
@@ -115,34 +120,6 @@ class IcingaService extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
         return '';
-    }
-
-    /**
-     * Use duration time renderer helper
-     *
-     * Avoid complaints for method names with underscore:
-     * @codingStandardsIgnoreStart
-     *
-     * @return string
-     */
-    protected function renderCheck_Interval()
-    {
-        // @codingStandardsIgnoreEnd
-        return $this->renderPropertyAsSeconds('check_interval');
-    }
-
-    /**
-     * Use duration time renderer helper
-     *
-     * Avoid complaints for method names with underscore:
-     * @codingStandardsIgnoreStart
-     *
-     * @return string
-     */
-    protected function renderRetry_Interval()
-    {
-        // @codingStandardsIgnoreEnd
-        return $this->renderPropertyAsSeconds('retry_interval');
     }
 
     public function hasCheckCommand()

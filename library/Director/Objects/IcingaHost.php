@@ -64,6 +64,11 @@ class IcingaHost extends IcingaObject
         'accept_config'         => 'accept_config'
     );
 
+    protected $intervalProperties = array(
+        'check_interval' => 'check_interval',
+        'retry_interval' => 'retry_interval',
+    );
+
     protected $supportsCustomVars = true;
 
     protected $supportsGroups = true;

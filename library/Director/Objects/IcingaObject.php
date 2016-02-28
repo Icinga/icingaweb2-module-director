@@ -43,6 +43,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => PropertyClass
     );
 
+    /**
+     * Array of interval property names
+     *
+     * Those will be automagically munged to integers (seconds) and rendered
+     * as durations (e.g. 2m 10s). Array expects (propertyName => renderedKey)
+     *
+     * @var array
+     */
+    protected $intervalProperties = array();
+
     private $vars;
 
     private $groups;
@@ -62,6 +72,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
+    }
+
+    public function propertyIsInterval($property)
+    {
+        return array_key_exists($property, $this->intervalProperties);
     }
 
     public function hasRelation($property)
@@ -215,6 +230,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 return parent::set($key . '_id', $object->id);
             }
             // TODO: what shall we do if it is a template? Fail?
+        }
+
+        if ($this->propertyIsInterval($key)) {
+            return parent::set($key, c::parseInterval($value));
         }
 
         return parent::set($key, $value);
@@ -829,6 +848,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                             c::renderBoolean($value)
                         );
                     }
+                } elseif ($this->propertyIsInterval($key)) {
+                    $out .= c::renderKeyValue(
+                        $this->intervalProperties[$key],
+                        c::renderInterval($value)
+                    );
                 } elseif (substr($key, -3) === '_id'
                      && $this->hasRelation($relKey = substr($key, 0, -3))
                 ) {
