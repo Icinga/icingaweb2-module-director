@@ -46,6 +46,8 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         }
 
         // TODO: think about imported existing vars without fields
+        // TODO: extract vars from command line (-> dummy)
+        // TODO: do not suggest chosen ones
         $argumentVars = array();
         if ($this->icingaObject->supportsArguments()) {
             foreach ($this->icingaObject->arguments() as $arg) {
@@ -117,18 +119,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             )
         ));
 
-        if ($this->object === null) {
-            $this->setSubmitLabel(
-                $this->translate('Add new field')
-            );
-        } else {
-            $this->setSubmitLabel(
-                $this->translate('Store')
-            );
-            $this->addElement('submit', 'delete', array(
-                'label' => $this->translate('Delete')
-            ));
-        }
+        $this->setButtons();
     }
 
     protected function onRequest()
