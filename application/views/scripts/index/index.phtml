@@ -92,14 +92,17 @@ $all = array(
     ),
     $this->translate('Alert your users') => array(
         array('users',    $this->translate('Users / Contacts'), 'director/users', statSummary($this, 'user')),
-        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
-        array('megaphone', $this->translate('Notifications'), '#', $this->translate('Schedule your notifications')),
+        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod'), 'pending'),
+        array('megaphone', $this->translate('Notifications'), 'director/notifications', $this->translate('Schedule your notifications'), 'pending'),
+        array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
         array('wrench',   $this->translate('Deployment'), 'director/list/deploymentlog', $this->translate('Manage deployments, access audit log and history') . pendingDeployments($this)),
         array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
         array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
+        array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint')),
+        array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
     ),
     $this->translate('Do more with your data') => array(
         array('database',     $this->translate('Import data sources'), 'director/list/importsource', $this->translate('Define and manage imports from various data sources')),
@@ -115,7 +118,7 @@ $all = array(
     'index/actions.phtml',
     array(
         'actions' => $actions,
-        'title'   => $title
+        'title'   => $title,
     )
 ) ?>
 <?php endforeach ?>
