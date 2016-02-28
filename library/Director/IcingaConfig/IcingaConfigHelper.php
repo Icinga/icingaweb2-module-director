@@ -218,7 +218,7 @@ class IcingaConfigHelper
         );
 
         foreach ($steps as $unit => $duration) {
-            if ($seconds > $duration) {
+            if ($seconds >= $duration) {
                 $parts[] = (int) floor($seconds / $duration) . $unit;
                 $seconds = $seconds % $duration;
             }
