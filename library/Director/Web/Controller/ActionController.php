@@ -107,17 +107,23 @@ abstract class ActionController extends Controller
                 'label' => $this->translate('Activity Log'),
                 'url'   => 'director/list/activitylog'
             )
-        )->add(
+        );
+        return $this->view->tabs;
+    }
+
+    protected function setDataTabs()
+    {
+        $this->view->tabs = Widget::create('tabs')->add(
             'datalist',
             array(
                 'label' => $this->translate('Data lists'),
-                'url'   => 'director/list/datalist'
+                'url'   => 'director/data/lists'
             )
         )->add(
             'datafield',
             array(
                 'label' => $this->translate('Data fields'),
-                'url'   => 'director/list/datafield'
+                'url'   => 'director/data/fields'
             )
         );
         return $this->view->tabs;
