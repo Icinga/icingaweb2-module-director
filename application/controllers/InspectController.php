@@ -8,11 +8,29 @@ class InspectController extends ActionController
 {
     public function typesAction()
     {
+        $api = $this->api();
+        $params = array('name' => $this->view->endpoint);
+        $this->getTabs()->add('modify', array(
+            'url'       => 'director/endpoint',
+            'urlParams' => $params,
+            'label'     => $this->translate('Endpoint')
+        ))->add('render', array(
+            'url'       => 'director/endpoint/render',
+            'urlParams' => $params,
+            'label'     => $this->translate('Preview'),
+        ))->add('history', array(
+            'url'       => 'director/endpoint/history',
+            'urlParams' => $params,
+            'label'     => $this->translate('History')
+        ))->add('inspect', array(
+            'url'       => $this->getRequest()->getUrl(),
+            'label'     => $this->translate('Inspect')
+        ))->activate('inspect');
+
         $this->view->title = sprintf(
             $this->translate('Icinga2 Objects: %s'),
             $this->view->endpoint
         );
-        $api = $this->api();
         $types = $api->getTypes();
         $rootNodes = array();
         foreach ($types as $name => $type) {
