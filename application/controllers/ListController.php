@@ -179,17 +179,4 @@ class ListController extends ActionController
             // $api->wipeInactiveStages();
         }
     }
-
-    protected function prepareTable($name)
-    {
-        $table = $this->loadTable($name)->setConnection($this->db());
-        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
-        $this->view->table = $this->applyPaginationLimits($table);
-        return $this;
-    }
-
-    protected function prepareAndRenderTable($name)
-    {
-        $this->prepareTable($name)->render('table');
-    }
 }
