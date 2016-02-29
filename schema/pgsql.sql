@@ -510,9 +510,9 @@ CREATE TABLE icinga_host (
   action_url character varying(255) DEFAULT NULL,
   icon_image character varying(255) DEFAULT NULL,
   icon_image_alt character varying(255) DEFAULT NULL,
-  has_agent enum_boolean NOT NULL DEFAULT NULL,
-  master_should_connect enum_boolean NOT NULL DEFAULT NULL,
-  accept_config enum_boolean NOT NULL DEFAULT NULL,
+  has_agent enum_boolean DEFAULT NULL,
+  master_should_connect enum_boolean DEFAULT NULL,
+  accept_config enum_boolean DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_host_zone
   FOREIGN KEY (zone_id)
