@@ -39,9 +39,15 @@ class IcingaConfigHelper
 
     public static function renderKeyValue($key, $value, $prefix = '    ')
     {
+        return self::renderKeyOperatorValue($key, '=', $value, $prefix);
+    }
+
+    public static function renderKeyOperatorValue($key, $operator, $value, $prefix = '    ')
+    {
         $string = sprintf(
-            "%s = %s",
+            "%s %s %s",
             $key,
+            $operator,
             $value
         );
 
