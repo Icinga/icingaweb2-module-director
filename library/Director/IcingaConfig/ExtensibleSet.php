@@ -63,11 +63,6 @@ class ExtensibleSet
         return $this->resolvedValues;
     }
 
-    protected function hasBeenResolved()
-    {
-        return $this->resolvedValues !== null;
-    }
-
     public function inheritFrom(ExtensibleSet $parent)
     {
         if ($this->ownValues !== null) {
@@ -88,17 +83,22 @@ class ExtensibleSet
         return $this->recalculate();
     }
 
+    public function forgetInheritedValues()
+    {
+        $this->inheritedValues = array();
+        return $this;
+    }
+
+    protected function hasBeenResolved()
+    {
+        return $this->resolvedValues !== null;
+    }
+
     protected function stripBlacklistedValues($array)
     {
         $this->removeValuesFrom($array, $this->minusValues);
 
         return $array;
-    }
-
-    public function forgetInheritedValues()
-    {
-        $this->inheritedValues = array();
-        return $this;
     }
 
     protected function assertValidValue($value)
