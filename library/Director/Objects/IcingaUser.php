@@ -29,15 +29,8 @@ class IcingaUser extends IcingaObject
         'enable_notifications' => 'enable_notifications'
     );
 
-    protected $states = array();
-
-    protected function setStates($value)
-    {
-        $states = $value;
-        sort($states);
-        if ($this->states !== $states) {
-            $this->states = $states;
-            $this->hasBeenModified = true;
-        }
-    }
+    protected $relatedSets = array(
+        'states' => 'StateFilterSet',
+        'types'  => 'TypeFilterSet',
+    );
 }

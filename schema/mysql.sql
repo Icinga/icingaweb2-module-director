@@ -799,7 +799,7 @@ CREATE TABLE icinga_user_states_set (
     ON UPDATE CASCADE
 )  ENGINE=InnoDB;
 
-CREATE TABLE icinga_user_filters_set (
+CREATE TABLE icinga_user_types_set (
   user_id INT(10) UNSIGNED NOT NULL,
   property ENUM(
     'DowntimeStart',
@@ -815,7 +815,7 @@ CREATE TABLE icinga_user_filters_set (
   merge_behaviour ENUM('override', 'extend', 'blacklist') NOT NULL DEFAULT 'override'
     COMMENT 'override: = [], extend: += [], blacklist: -= []',
   PRIMARY KEY (user_id, property, merge_behaviour),
-  CONSTRAINT icinga_user_filters_set_user
+  CONSTRAINT icinga_user_types_set_user
     FOREIGN KEY icinga_user (user_id)
     REFERENCES icinga_user (id)
     ON DELETE CASCADE
@@ -1112,4 +1112,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 75;
+      schema_version = 76;
