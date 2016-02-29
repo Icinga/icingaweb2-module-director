@@ -779,9 +779,9 @@ CREATE TABLE icinga_user_inheritance (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE icinga_user_filter_state (
+CREATE TABLE icinga_user_states_set (
   user_id INT(10) UNSIGNED NOT NULL,
-  state_name ENUM(
+  property ENUM(
     'OK',
     'Warning',
     'Critical',
@@ -789,19 +789,19 @@ CREATE TABLE icinga_user_filter_state (
     'Up',
     'Down'
   ) NOT NULL,
-  merge_behaviour ENUM('set', 'add', 'substract') NOT NULL DEFAULT 'set'
-    COMMENT 'set: = [], add: += [], substract: -= []',
-  PRIMARY KEY (user_id, state_name),
-  CONSTRAINT icinga_user_filter_state_user
+  merge_behaviour ENUM('override', 'extend', 'blacklist') NOT NULL DEFAULT 'override'
+    COMMENT 'override: = [], extend: += [], blacklist: -= []',
+  PRIMARY KEY (user_id, property),
+  CONSTRAINT icinga_user_states_set_user
     FOREIGN KEY icinga_user (user_id)
     REFERENCES icinga_user (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 )  ENGINE=InnoDB;
 
-CREATE TABLE icinga_user_filter_type (
+CREATE TABLE icinga_user_filters_set (
   user_id INT(10) UNSIGNED NOT NULL,
-  type_name ENUM(
+  property ENUM(
     'DowntimeStart',
     'DowntimeEnd',
     'DowntimeRemoved',
@@ -812,10 +812,10 @@ CREATE TABLE icinga_user_filter_type (
     'FlappingStart',
     'FlappingEnd'
   ) NOT NULL,
-  merge_behaviour ENUM('set', 'add', 'substract') NOT NULL DEFAULT 'set'
-    COMMENT 'set: = [], add: += [], substract: -= []',
-  PRIMARY KEY (user_id, type_name),
-  CONSTRAINT icinga_user_filter_type_user
+  merge_behaviour ENUM('override', 'extend', 'blacklist') NOT NULL DEFAULT 'override'
+    COMMENT 'override: = [], extend: += [], blacklist: -= []',
+  PRIMARY KEY (user_id, property),
+  CONSTRAINT icinga_user_filters_set_user
     FOREIGN KEY icinga_user (user_id)
     REFERENCES icinga_user (id)
     ON DELETE CASCADE
@@ -1112,4 +1112,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 72;
+      schema_version = 73;
