@@ -47,6 +47,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => ExtensibleSetClass
     );
 
+    protected $loadedRelatedSets = array();
+
     /**
      * Array of interval property names
      *
@@ -96,8 +98,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function getRelatedSet($property)
     {
-        $class = $this->getRelatedSetClass($property);
-        return $class::forIcingaObject($this, $property);
+        if (! array_key_exists($property, $this->loadedRelatedSets)) {
+            $class = $this->getRelatedSetClass($property);
+            $this->loadedRelatedSets[$property]
+                 = $class::forIcingaObject($this, $property);
+        }
+
+        return $this->loadedRelatedSets[$property];
     }
 
     public function hasRelation($property)
@@ -179,6 +186,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
+        foreach ($this->loadedRelatedSets as $set) {
+            if ($set->hasBeenModified()) {
+                return true;
+            }
+        }
+
         return parent::hasBeenModified();
     }
 
@@ -251,6 +264,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 return parent::set($key . '_id', $object->id);
             }
             // TODO: what shall we do if it is a template? Fail?
+        }
+
+        if ($this->propertyIsRelatedSet($key)) {
+            $this->getRelatedSet($key)->set($value);
+            return $this;
         }
 
         if ($this->propertyIsInterval($key)) {
@@ -764,6 +782,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeGroups()
             ->storeImports()
             ->storeRanges()
+            ->storeRelatedSets()
             ->storeArguments();
     }
 
@@ -810,6 +829,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         if ($this->supportsArguments()) {
             $this->arguments !== null && $this->arguments()->store();
+        }
+
+        return $this;
+    }
+
+    protected function storeRelatedSets()
+    {
+        foreach ($this->loadedRelatedSets as $set) {
+            if ($set->hasBeenModified()) {
+                $set->store();
+            }
         }
 
         return $this;
