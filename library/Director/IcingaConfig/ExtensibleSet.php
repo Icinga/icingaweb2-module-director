@@ -113,6 +113,35 @@ class ExtensibleSet
         return $plain;
     }
 
+    public function getPlainUnmodifiedObject()
+    {
+        if ($this->fromDb === null) {
+            return null;
+        }
+        
+        $old = $this->fromDb;
+
+        if ($old['override'] !== null) {
+            if (empty($old['blacklist']) && empty($old['extend'])) {
+                return $old['override'];
+            }
+        }
+
+        $plain = (object) array();
+
+        if ($old['override'] !== null) {
+            $plain->override = $old['override'];
+        }
+        if (! empty($old['extend'])) {
+            $plain->extend = $old['extend'];
+        }
+        if (! empty($old['blacklist'])) {
+            $plain->blacklist = $old['blacklist'];
+        }
+
+        return $plain;
+    }
+
     public function hasBeenLoadedFromDb()
     {
         return $this->fromDb !== null;

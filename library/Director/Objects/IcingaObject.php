@@ -1290,6 +1290,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         foreach ($this->relatedSets() as $property => $set) {
             if ($resolved) {
+                if ($this->supportsImports()) {
+                    $set = clone($set);
+                    foreach ($this->importedObjects() as $parent) {
+                        $set->inheritFrom($parent->getRelatedSet($property));
+                    }
+                }
+
                 $values = $set->getResolvedValues();
                 if (empty($values)) {
                     if (!$skipDefaults) {
@@ -1375,6 +1382,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if (! empty($imports)) {
                 $props['imports'] = $imports;
             }
+        }
+
+        foreach ($this->relatedSets() as $property => $set) {
+            if ($set->isEmpty()) { continue; }
+            $props[$property] = $set->getPlainUnmodifiedObject();
         }
 
         return $props;
