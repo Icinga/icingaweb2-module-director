@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Exception\InvalidPropertyException;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class ExtensibleSet
 {
@@ -87,6 +88,38 @@ class ExtensibleSet
     {
         $this->inheritedValues = array();
         return $this;
+    }
+
+    public function renderAs($key, $prefix = '    ')
+    {
+        $parts = array();
+
+        if ($this->ownValues !== null) {
+            $parts[] = c::renderKeyValue(
+                $key,
+                c::renderArray($this->ownValues),
+                $prefix
+            );
+        }
+
+        if (! empty($this->plusValues)) {
+            $parts[] = c::renderKeyOperatorValue(
+                $key,
+                '+=',
+                c::renderArray($this->plusValues),
+                $prefix
+            );
+        }
+        if (! empty($this->minusValues)) {
+            $parts[] = c::renderKeyOperatorValue(
+                $key,
+                '-=',
+                c::renderArray($this->plusValues),
+                $prefix
+            );
+        }
+
+        return implode('', $parts);
     }
 
     protected function hasBeenResolved()

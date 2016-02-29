@@ -132,4 +132,20 @@ class ExtensibleSetTest extends BaseTestCase
             $child->getResolvedValues()
         );
     }
+
+    public function testCombinedDefinitionRendersCorrectly()
+    {
+        $set = new ExtensibleSet(array('pre', 'def', 'ined'));
+        $set->blacklist('and', 'not', 'those');
+        $set->extend('plus this');
+
+        $out = '    key_name = [ "pre", "def", "ined" ]' . "\n"
+             . '    key_name += [ "plus this" ]' . "\n"
+             . '    key_name -= [ "plus this" ]' . "\n";
+
+        $this->assertEquals(
+            $out,
+            $set->renderAs('key_name')
+        );
+    }
 }
