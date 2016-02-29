@@ -57,6 +57,28 @@ class ExtensibleSet
         return $set;
     }
 
+    public function set($set)
+    {
+        if (is_array($set) || is_string($set)) {
+            $this->reset();
+            $this->override($set);
+        } elseif (is_object($set)) {
+            $this->reset();
+
+            foreach (array('override', 'extend', 'blacklist') as $method) {
+                if (property_exists($set, $method)) {
+                    $this->$method($set->$method);
+                }
+            }
+        } else {
+            throw new ProgrammingError(
+                'ExtensibleSet::set accepts only plain arrays or objects'
+            );
+        }
+
+        return $this;
+    }
+
     public function hasBeenLoadedFromDb()
     {
         return $this->fromDb !== null;
@@ -277,7 +299,7 @@ class ExtensibleSet
         }
 
         if ($this->hasBeenResolved()) {
-            $this->reset();
+            $this->resolvedValues = null;
         }
 
         $this->inheritedValues = array();
@@ -449,7 +471,11 @@ class ExtensibleSet
 
     protected function reset()
     {
+        $this->ownValues = null;
+        $this->plusValues = array();
+        $this->minusValues = array();
         $this->resolvedValues = null;
+        $this->inheritedValues = array();
 
         return $this;
     }
