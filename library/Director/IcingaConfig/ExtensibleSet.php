@@ -59,7 +59,11 @@ class ExtensibleSet
 
     public function set($set)
     {
-        if (is_array($set) || is_string($set)) {
+        if (null === $set) {
+            $this->reset();
+            return $this;
+
+        } elseif (is_array($set) || is_string($set)) {
             $this->reset();
             $this->override($set);
         } elseif (is_object($set)) {
@@ -77,6 +81,36 @@ class ExtensibleSet
         }
 
         return $this;
+    }
+
+    public function isEmpty()
+    {
+        return $this->ownValues === null
+            && empty($this->plusValues)
+            && empty($this->minusValues);
+    }
+
+    public function toPlainObject()
+    {
+        if ($this->ownValues !== null) {
+            if (empty($this->minusValues) && empty($this->plusValues)) {
+                return $this->ownValues;
+            }
+        }
+
+        $plain = (object) array();
+
+        if ($this->ownValues !== null) {
+            $plain->override = $this->ownValues;
+        }
+        if (! empty($this->plusValues)) {
+            $plain->extend = $this->plusValues;
+        }
+        if (! empty($this->minusValues)) {
+            $plain->blacklist = $this->minusValues;
+        }
+
+        return $plain;
     }
 
     public function hasBeenLoadedFromDb()
@@ -458,6 +492,7 @@ class ExtensibleSet
     protected function recalculate()
     {
         $this->resolvedValues = array();
+
         if ($this->ownValues === null) {
             $this->addValuesTo($this->resolvedValues, $this->inheritedValues);
         } else {

@@ -107,6 +107,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->loadedRelatedSets[$property];
     }
 
+    protected function relatedSets()
+    {
+        $sets = array();
+        foreach ($this->relatedSets as $key => $class) {
+            $sets[$key] = $this->getRelatedSet($key);
+        }
+
+        return $sets;
+    }
+
     public function hasRelation($property)
     {
         return array_key_exists($property, $this->relations);
@@ -1275,6 +1285,27 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
             if (empty($props['groups'])) {
                 unset($props['groups']);
+            }
+        }
+
+        foreach ($this->relatedSets() as $property => $set) {
+            if ($resolved) {
+                $values = $set->getResolvedValues();
+                if (empty($values)) {
+                    if (!$skipDefaults) {
+                        $props[$property] = null;
+                    }
+                } else {
+                    $props[$property] = $values;
+                }
+            } else {
+                if ($set->isEmpty()) {
+                    if (!$skipDefaults) {
+                        $props[$property] = null;
+                    }
+                } else {
+                    $props[$property] = $set->toPlainObject();
+                }
             }
         }
 
