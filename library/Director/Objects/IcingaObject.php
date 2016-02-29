@@ -43,6 +43,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => PropertyClass
     );
 
+    protected $relatedSets = array(
+        // property => ExtensibleSetClass
+    );
+
     /**
      * Array of interval property names
      *
@@ -77,6 +81,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsInterval($property)
     {
         return array_key_exists($property, $this->intervalProperties);
+    }
+
+    public function propertyIsRelatedSet($property)
+    {
+        return array_key_exists($property, $this->relatedSets);
+    }
+
+    protected function getRelatedSetClass($property)
+    {
+        $prefix = '\\Icinga\\Module\\Director\\IcingaConfig\\';
+        return $prefix . $this->relatedSets[$property];
+    }
+
+    protected function getRelatedSet($property)
+    {
+        $class = $this->getRelatedSetClass($property);
+        return $class::forIcingaObject($this, $property);
     }
 
     public function hasRelation($property)
@@ -935,6 +956,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    protected function renderRelatedSets()
+    {
+        $config = '';
+        foreach ($this->relatedSets as $property => $class) {
+            $config .= $this->getRelatedSet($property)->renderAs($property);
+        }
+        return $config;
+    }
+
     protected function renderRelationProperty($propertyName, $id, $renderKey = null)
     {
         return c::renderKeyValue(
@@ -1010,6 +1040,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderProperties(),
             $this->renderRanges(),
             $this->renderArguments(),
+            $this->renderRelatedSets(),
             $this->renderGroups(),
             $this->renderCustomExtensions(),
             $this->renderCustomVars(),
