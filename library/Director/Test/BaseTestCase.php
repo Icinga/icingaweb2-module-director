@@ -6,6 +6,7 @@ use Icinga\Application\Cli;
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Migrations;
 use PHPUnit_Framework_TestCase;
 
 class BaseTestCase extends PHPUnit_Framework_TestCase
@@ -50,6 +51,8 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
                 );
             }
             $this->db = Db::fromResourceName($resourceName);
+            $migrations = new Migrations($this->db);
+            $migrations->applyPendingMigrations();
         }
 
         return $this->db;
