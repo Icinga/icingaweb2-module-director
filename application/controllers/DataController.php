@@ -27,7 +27,6 @@ class DataController extends ActionController
             'director/datafield/add',
             null,
             array('class' => 'icon-plus')
-
         );
 
         $this->setDataTabs()->activate('datafield');
@@ -45,7 +44,6 @@ class DataController extends ActionController
             'director/datalistentry/add' . '?list_id=' . $listId,
             null,
             array('class' => 'icon-plus')
-
         );
 
         $this->view->title = $this->translate('List entries');
