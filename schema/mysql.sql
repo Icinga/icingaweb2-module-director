@@ -791,7 +791,7 @@ CREATE TABLE icinga_user_states_set (
   ) NOT NULL,
   merge_behaviour ENUM('override', 'extend', 'blacklist') NOT NULL DEFAULT 'override'
     COMMENT 'override: = [], extend: += [], blacklist: -= []',
-  PRIMARY KEY (user_id, property),
+  PRIMARY KEY (user_id, property, merge_behaviour),
   CONSTRAINT icinga_user_states_set_user
     FOREIGN KEY icinga_user (user_id)
     REFERENCES icinga_user (id)
@@ -814,7 +814,7 @@ CREATE TABLE icinga_user_filters_set (
   ) NOT NULL,
   merge_behaviour ENUM('override', 'extend', 'blacklist') NOT NULL DEFAULT 'override'
     COMMENT 'override: = [], extend: += [], blacklist: -= []',
-  PRIMARY KEY (user_id, property),
+  PRIMARY KEY (user_id, property, merge_behaviour),
   CONSTRAINT icinga_user_filters_set_user
     FOREIGN KEY icinga_user (user_id)
     REFERENCES icinga_user (id)
@@ -1112,4 +1112,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 74;
+      schema_version = 75;
