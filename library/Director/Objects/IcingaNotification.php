@@ -29,7 +29,10 @@ class IcingaNotification extends IcingaObject
 
     protected $supportsApplyRules = true;
 
-    protected $supportsNotificationFilters = false; // -> true
+    protected $relatedSets = array(
+        'states' => 'StateFilterSet',
+        'types'  => 'TypeFilterSet',
+    );
 
     protected $relations = array(
         'zone'    => 'IcingaZone',
