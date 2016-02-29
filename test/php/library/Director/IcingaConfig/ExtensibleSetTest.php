@@ -146,13 +146,13 @@ class ExtensibleSetTest extends BaseTestCase
 
     public function testCombinedDefinitionRendersCorrectly()
     {
-        $set = new ExtensibleSet(array('pre', 'def', 'ined'));
-        $set->blacklist(array('and', 'not', 'those'));
-        $set->extend('plus this');
+        $set = new ExtensibleSet(array('Pre', 'Def', 'Ined'));
+        $set->blacklist(array('And', 'Not', 'Those'));
+        $set->extend('PlusThis');
 
-        $out = '    key_name = [ "pre", "def", "ined" ]' . "\n"
-             . '    key_name += [ "plus this" ]' . "\n"
-             . '    key_name -= [ "and", "not", "those" ]' . "\n";
+        $out = '    key_name = [ Pre, Def, Ined ]' . "\n"
+             . '    key_name += [ PlusThis ]' . "\n"
+             . '    key_name -= [ And, Not, Those ]' . "\n";
 
         $this->assertEquals(
             $out,

@@ -296,6 +296,16 @@ class ExtensibleSet
         return $this;
     }
 
+    protected function renderArray($array)
+    {
+        $safe = array();
+        foreach ($array as $value) {
+            $safe[] = c::alreadyRendered($value);
+        }
+
+        return c::renderArray($safe);
+    }
+
     public function renderAs($key, $prefix = '    ')
     {
         $parts = array();
@@ -303,7 +313,7 @@ class ExtensibleSet
         if ($this->ownValues !== null) {
             $parts[] = c::renderKeyValue(
                 $key,
-                c::renderArray($this->ownValues),
+                $this->renderArray($this->ownValues),
                 $prefix
             );
         }
@@ -312,7 +322,7 @@ class ExtensibleSet
             $parts[] = c::renderKeyOperatorValue(
                 $key,
                 '+=',
-                c::renderArray($this->plusValues),
+                $this->renderArray($this->plusValues),
                 $prefix
             );
         }
@@ -321,7 +331,7 @@ class ExtensibleSet
             $parts[] = c::renderKeyOperatorValue(
                 $key,
                 '-=',
-                c::renderArray($this->minusValues),
+                $this->renderArray($this->minusValues),
                 $prefix
             );
         }
