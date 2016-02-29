@@ -9,12 +9,12 @@ class ListController extends ActionController
 {
     public function importsourceAction()
     {
-        $this->view->addLink = $this->view->icon('plus')
-            . ' '
-            . $this->view->qlink(
-                $this->translate('Add import source'),
-                'director/importsource/add'
-            );
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add import source'),
+            'director/importsource/add',
+            null,
+            array('class' => 'icon-plus')
+        );
 
         $this->setImportTabs()->activate('importsource');
         $this->view->title = $this->translate('Import source');
@@ -31,12 +31,12 @@ class ListController extends ActionController
 
     public function syncruleAction()
     {
-        $this->view->addLink = $this->view->icon('plus')
-            . ' '
-            . $this->view->qlink(
-                $this->translate('Add sync rule'),
-                'director/syncrule/add'
-            );
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add sync rule'),
+            'director/syncrule/add',
+            null,
+            array('class' => 'icon-plus')
+        );
 
         $this->setImportTabs()->activate('syncrule');
         $this->view->title = $this->translate('Sync rule');

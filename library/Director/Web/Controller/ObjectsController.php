@@ -90,13 +90,12 @@ abstract class ObjectsController extends ActionController
             $addTitle = $this->translate('Add %s');
         }
 
-        $this->view->addLink = $this->view->icon('plus')
-            . ' '
-            . $this->view->qlink(
-                sprintf($addTitle, $this->translate(ucfirst($ltype))),
-                'director/' . $ltype .'/add',
-                $addParams
-            );
+        $this->view->addLink = $this->view->qlink(
+            sprintf($addTitle, $this->translate(ucfirst($ltype))),
+            'director/' . $ltype .'/add',
+            $addParams,
+            array('class' => 'icon-plus')
+        );
 
         $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
         $table = $this->loadTable($table)->setConnection($this->db());
