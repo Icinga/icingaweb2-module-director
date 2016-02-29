@@ -525,10 +525,10 @@ CREATE TABLE icinga_service (
   PRIMARY KEY (id),
   -- UNIQUE INDEX object_name (object_name, zone_id),
   UNIQUE KEY object_key (object_name, host_id),
-  CONSTRAINT icinga_host
+  CONSTRAINT icinga_service_host
     FOREIGN KEY host (host_id)
     REFERENCES icinga_host (id)
-    ON DELETE SET NULL
+    ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_service_zone
     FOREIGN KEY zone (zone_id)
@@ -1112,4 +1112,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 73;
+      schema_version = 74;
