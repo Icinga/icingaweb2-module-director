@@ -317,7 +317,7 @@ class ExtensibleSet
             $parts[] = c::renderKeyOperatorValue(
                 $key,
                 '-=',
-                c::renderArray($this->plusValues),
+                c::renderArray($this->minusValues),
                 $prefix
             );
         }

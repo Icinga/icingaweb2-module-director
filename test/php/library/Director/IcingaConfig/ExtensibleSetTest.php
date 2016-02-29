@@ -3,6 +3,7 @@
 namespace Tests\Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Module\Director\IcingaConfig\ExtensibleSet;
+use Icinga\Module\Director\Objects\IcingaUser;
 use Icinga\Module\Director\Test\BaseTestCase;
 
 class ExtensibleSetTest extends BaseTestCase
@@ -24,6 +25,16 @@ class ExtensibleSetTest extends BaseTestCase
 
         $this->assertEquals(
             $values,
+            $set->getResolvedValues()
+        );
+    }
+
+    public function testConstructorAcceptsSingleValues()
+    {
+        $set = new ExtensibleSet('Bla');
+
+        $this->assertEquals(
+            array('Bla'),
             $set->getResolvedValues()
         );
     }
@@ -96,12 +107,12 @@ class ExtensibleSetTest extends BaseTestCase
 
     public function testInheritedValuesCanBeBlacklisted()
     {
-        $pset = array('p1', 'p2', 'p3');
-
         $child = new ExtensibleSet();
         $child->blacklist('p2');
 
+        $pset = array('p1', 'p2', 'p3');
         $parent = new ExtensibleSet($pset);
+
         $child->inheritFrom($parent);
         $child->blacklist(array('not', 'yet', 'p1'));
 
@@ -136,12 +147,12 @@ class ExtensibleSetTest extends BaseTestCase
     public function testCombinedDefinitionRendersCorrectly()
     {
         $set = new ExtensibleSet(array('pre', 'def', 'ined'));
-        $set->blacklist('and', 'not', 'those');
+        $set->blacklist(array('and', 'not', 'those'));
         $set->extend('plus this');
 
         $out = '    key_name = [ "pre", "def", "ined" ]' . "\n"
              . '    key_name += [ "plus this" ]' . "\n"
-             . '    key_name -= [ "plus this" ]' . "\n";
+             . '    key_name -= [ "and", "not", "those" ]' . "\n";
 
         $this->assertEquals(
             $out,
