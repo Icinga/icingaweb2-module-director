@@ -120,6 +120,10 @@ class ExtensibleSet
         }
 
         foreach ($byBehaviour as $method => &$values) {
+            if (empty($values)) {
+                continue;
+            }
+
             sort($values);
             $this->$method($values);
         }
