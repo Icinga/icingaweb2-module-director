@@ -47,15 +47,10 @@ class ExtensibleSet
     public static function forIcingaObject(IcingaObject $object, $propertyName)
     {
         $set = new static;
-
-        if ($set->foreignKey === null) {
-            throw new ProgrammingError(
-                'ExtensibleSet::forIcingaObject requires implementations with a defined $foreignKey'
-            );
-        }
+        $set->object = $object;
+        $set->propertyName = $propertyName;
 
         if ($object->hasBeenLoadedFromDb()) {
-            $set->object = $object;
             $set->loadFromDb();
         }
 
@@ -70,7 +65,19 @@ class ExtensibleSet
     public function hasBeenModified()
     {
         if ($this->hasBeenLoadedFromDb()) {
+            if ($this->ownValues !== $this->fromDb['override']) {
+                return true;
+            }
 
+            if ($this->plusValues !== $this->fromDb['extend']) {
+                return true;
+            }
+
+            if ($this->minusValues !== $this->fromDb['blacklist']) {
+                return true;
+            }
+
+            return false;
         } else {
             if ($this->ownValues === null
                 && empty($this->plusValues)
@@ -102,7 +109,7 @@ class ExtensibleSet
         );
 
         foreach ($db->fetchAll($query) as $row) {
-            if (! array_key_exists($row->merge_behaviour, byBehaviour)) {
+            if (! array_key_exists($row->merge_behaviour, $byBehaviour)) {
                 throw new ProgrammingError(
                     'Got unknown merge_behaviour "%s". Schema change?',
                     $row->merge_behaviour
@@ -133,12 +140,92 @@ class ExtensibleSet
 
     protected function tableName()
     {
-        return implode(
-            '_',
+        return implode('_', array(
             $this->object->getTableName(),
             $this->propertyName,
             'set'
+        ));
+    }
+
+    public function getObject()
+    {
+        return $this->object;
+    }
+
+    public function store()
+    {
+        if (null === $this->object) {
+            throw new ProgrammingError(
+                'Cannot store ExtensibleSet with no assigned object'
+            );
+        }
+
+        if (! $this->hasBeenModified()) {
+            return false;
+        }
+
+        $this->storeToDb();
+        return true;
+    }
+
+    protected function storeToDb()
+    {
+        $db = $this->object->getDb();
+
+        if ($db === null) {
+            throw new ProgrammingError(
+                'Cannot store a set for an unstored related object'
+            );
+        }
+
+        $table = $this->tableName();
+        $props = array(
+            $this->foreignKey() => $this->object->id
         );
+
+        $db->delete(
+            $this->tableName(),
+            $db->quoteInto(
+                $this->foreignKey() . ' = ?',
+                $this->object->id
+            )
+        );
+
+        if ($this->ownValues !== null) {
+            $props['merge_behaviour'] = 'override';
+            foreach ($this->ownValues as $value) {
+                $db->insert(
+                    $table,
+                    array_merge($props, array('property' => $value))
+                );
+            }
+
+            $this->fromDb['override'] = $this->ownValues;
+        }
+
+        if (! empty($this->plusValues)) {
+            $props['merge_behaviour'] = 'extend';
+            foreach ($this->plusValues as $value) {
+                $db->insert(
+                    $table,
+                    array_merge($props, array('property' => $value))
+                );
+            }
+
+            $this->fromDb['extend'] = $this->ownValues;
+        }
+
+        if (! empty($this->minusValues)) {
+            $props['merge_behaviour'] = 'blacklist';
+            foreach ($this->minusValues as $value) {
+                $db->insert(
+                    $table,
+                    array_merge($props, array('property' => $value))
+                );
+            }
+
+            $this->fromDb['blacklist'] = $this->ownValues;
+        }
     }
 
     public function override($values)
