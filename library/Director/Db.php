@@ -172,7 +172,7 @@ class Db extends DbConnection
             )
         )->join(
             array('lt' => $smaller),
-            null,
+            '1 = 1',
             array()
         );
 
@@ -183,7 +183,12 @@ class Db extends DbConnection
     {
         $sql = 'SELECT * FROM director_activity_log WHERE id = ' . (int) $id;
 
-        return $this->db()->fetchRow($sql);
+        $result = $this->db()->fetchRow($sql);
+        if (is_resource($result->checksum)) {
+            $result->checksum = stream_get_contents($result->checksum);
+        }
+
+        return $result;
     }
 
     public function fetchActivityLogChecksumById($id, $binary = true)
