@@ -164,7 +164,7 @@ abstract class QuickTable implements Paginatable
     {
         $db = $this->connection()->getConnection();
 
-        return $db->fetchOne($this->getBaseQuery()->columns(array('COUNT(*)')));
+        return $db->fetchOne($this->getBaseQuery()->reset('order')->columns(array('COUNT(*)')));
     }
 
     public function limit($count = null, $offset = null)
