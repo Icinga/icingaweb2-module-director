@@ -15,11 +15,10 @@ of them at once.
 Requirements
 ------------
 
-* Icinga 2 (&gt;= 2.4.2)
+* Icinga 2 (&gt;= 2.4.3)
 * Icinga Web 2 (&gt;= 2.2.0)
-* MySQL or PostgreSQL database
+* A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1) database (MariaDB and other forks are also fine)
 * php5-curl
-* PostgreSQL: the schema is lacking behind right now, we'll fix this soon. If you want to start testing Director today please use MySQL
 
 Installation
 ------------
@@ -52,5 +51,5 @@ least you have to tell the director module to use this newly created database
 resource.
 
 In case you prefer automated or manual installation please learn more about
-[automated installations](doc/30-Automation.md) in the related section of our [documentation](doc/30-Automation.md).
+[automated installations](doc/30-Automation.md) in the related [section](doc/30-Automation.md) of our documentation.
 
