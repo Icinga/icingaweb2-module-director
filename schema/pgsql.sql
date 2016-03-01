@@ -1002,6 +1002,29 @@ CREATE INDEX user_var_search_idx ON icinga_user_var (varname);
 CREATE INDEX user_var_user ON icinga_user_var (user_id);
 
 
+CREATE TABLE icinga_user_field (
+  user_id integer NOT NULL,
+  datafield_id integer NOT NULL,
+  is_required enum_boolean NOT NULL,
+  PRIMARY KEY (user_id, datafield_id),
+  CONSTRAINT icinga_user_field_user
+  FOREIGN KEY (user_id)
+    REFERENCES icinga_user (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_field_datafield
+  FOREIGN KEY (datafield_id)
+    REFERENCES director_datafield (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX user_field_key ON icinga_user_field (user_id, datafield_id);
+CREATE INDEX user_field_user ON icinga_user_field (user_id);
+CREATE INDEX user_field_datafield ON icinga_user_field (datafield_id);
+COMMENT ON COLUMN icinga_user_field.user_id IS 'Makes only sense for templates';
+
+
 CREATE TABLE icinga_usergroup (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -1392,4 +1415,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (77, NOW());
+  VALUES (78, NOW());
