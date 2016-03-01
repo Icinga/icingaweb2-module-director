@@ -267,45 +267,8 @@ Content-Type: application/json
 }
 ```
 
+The most important part of the response is the response code: `201`, a resource has been created. Just for fun, let's fire the same request again. The answer obviously changes:
 
-### Retrieve the new host
-
-Let's create a host:
-
-    POST director/host
-
-```json
-{
-  "object_name": "apitest",
-  "object_type": "object",
-  "address": "127.0.0.1",
-  "vars": {
-    "location": "Berlin"
-  }
-}
-```
-
-The most important part of the response is the response code: `201`, a resource has been created:
-```
-HTTP/1.1 201 Created
-Date: Tue, 01 Mar 2016 04:44:48 GMT
-Server: Apache
-Content-Length: 140
-Content-Type: application/json
-```
-
-```json
-{
-    "address": "127.0.0.1",
-    "object_name": "apitest",
-    "object_type": "object",
-    "vars": {
-        "location": "Berlin"
-    }
-}
-```
-
-Just for fun, let's fire the same request again. The answer obviously changes:
 ```
 HTTP/1.1 500 Internal Server Error
 Date: Tue, 01 Mar 2016 04:45:04 GMT
@@ -351,7 +314,7 @@ So let's now try to really change something:
 {"address": "127.0.0.2", "vars.event": "Icinga CAMP" }
 ```
 
-Now we get status `200`, changes have been applied:
+We get status `200`, changes have been applied:
 
 ```
 HTTP/1.1 200 OK
@@ -375,7 +338,7 @@ Content-Type: application/json
 
 The response always returns the full object on modification. This way you can immediately investigate the merged result. As you can see, `POST` requests only touch the parameters you passed - the rest remains untouched.
 
-One more exmaple to prove this:
+One more example to prove this:
 
 ```
 POST director/host?name=apitest
