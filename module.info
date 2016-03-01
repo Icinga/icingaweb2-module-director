@@ -2,4 +2,5 @@ Name: Icinga Director
 Version: 1.0.0-alpha2
 Depends: monitoring
 Description: Director - Config tool for Icinga 2
- This is going to be the new Icinga 2 config tool. Not for productional use. YET.
+ Icinga Director is a configuration tool that has been designed to make
+ Icinga 2 configuration easy and understandable.
