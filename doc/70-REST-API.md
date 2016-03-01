@@ -403,6 +403,7 @@ POST director/host?name=apitest
 ```
 
 The response shows that this works as expected:
+
 ```
 HTTP/1.1 200 OK
 Date: Tue, 01 Mar 2016 04:52:33 GMT
@@ -462,24 +463,29 @@ Let's put "nothing":
 ```json
 {}
 ```
+
+Works as expected:
+
+```
 HTTP/1.1 200 OK
 Date: Tue, 01 Mar 2016 04:57:35 GMT
 Server: Apache
 Content-Length: 62
 Content-Type: application/json
+```
 
+```json
 {
     "object_name": "apitest",
     "object_type": "object"
 }
 ```
 
-Of course, `PUT`also supports `304`, you can check this by sending the same request again.
+Of course, `PUT` also supports `304`, you can check this by sending the same request again.
 
 Now let's try to cheat:
-```
-KILL director/host?name=apitest
-```
+
+    KILL director/host?name=apitest
 
 ```
 HTTP/1.1 400 Bad Request
