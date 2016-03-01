@@ -13,10 +13,11 @@ class IcingaHostTable extends IcingaObjectTable
 
     public function getColumns()
     {
-        if ($this->connection()->getDbType() === 'pgsql')
-            $parents = "ARRAY_TO_STRING(ARRAY_AGG(ih.object_name), ', ')";
-        else
+        if ($this->connection()->getDbType() === 'pgsql') {
+            $parents = "ARRAY_TO_STRING(ARRAY_AGG(ih.object_name ORDER BY hi.weight), ', ')";
+        } else {
             $parents = "GROUP_CONCAT(ih.object_name ORDER BY hi.weight SEPARATOR ', ')";
+        }
 
         return array(
             'id'          => 'h.id',
@@ -60,8 +61,9 @@ class IcingaHostTable extends IcingaObjectTable
             array('ih' => 'icinga_host'),
             'hi.parent_host_id = ih.id',
             array()
-        )->group('h.id, z.object_name')
-        ->order('h.object_name');
+        )->group('h.id')
+         ->group('z.id')
+         ->order('h.object_name');
 
         return $query;
     }
