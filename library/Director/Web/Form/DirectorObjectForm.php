@@ -1000,6 +1000,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $tpl;
     }
 
+    // TODO: deprecate
     protected function enumStateFilters()
     {
         return array(
@@ -1034,7 +1035,7 @@ abstract class DirectorObjectForm extends QuickForm
                 'FlappingStart'   => $this->translate('Flapping ends'),
                 'FlappingEnd'     => $this->translate('Flapping starts')
             )
-          );
+        );
     }
 
     private function dummyForTranslation()

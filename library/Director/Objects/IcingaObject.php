@@ -1385,7 +1385,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         foreach ($this->relatedSets() as $property => $set) {
-            if ($set->isEmpty()) { continue; }
+            if ($set->isEmpty()) {
+                continue;
+            }
+
             $props[$property] = $set->getPlainUnmodifiedObject();
         }
 
