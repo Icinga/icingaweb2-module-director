@@ -20,6 +20,7 @@ CREATE TYPE enum_object_type_all AS ENUM('object', 'template', 'apply', 'externa
 CREATE TYPE enum_object_type AS ENUM('object', 'template', 'external_object');
 CREATE TYPE enum_timeperiod_range_type AS ENUM('include', 'exclude');
 CREATE TYPE enum_merge_behaviour AS ENUM('set', 'add', 'substract', 'override');
+CREATE TYPE enum_set_merge_behaviour AS ENUM('override', 'extend', 'blacklist');
 CREATE TYPE enum_command_object_type AS ENUM('object', 'template', 'external_object');
 CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply', 'external_object');
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
@@ -204,20 +205,20 @@ CREATE TABLE director_setting (
 
 CREATE TABLE icinga_zone (
   id serial,
-  parent_zone_id integer DEFAULT NULL,
+  parent_id integer DEFAULT NULL,
   object_name character varying(255) NOT NULL UNIQUE,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   is_global enum_boolean NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
   CONSTRAINT icinga_zone_parent_zone
-  FOREIGN KEY (parent_zone_id)
+  FOREIGN KEY (parent_id)
     REFERENCES icinga_zone (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
 
-CREATE INDEX zone_parent ON icinga_zone (parent_zone_id);
+CREATE INDEX zone_parent ON icinga_zone (parent_id);
 
 
 CREATE TABLE icinga_zone_inheritance (
@@ -357,7 +358,7 @@ CREATE TABLE icinga_command_argument (
   command_id integer NOT NULL,
   argument_name character varying(64) DEFAULT NULL,
   argument_value text DEFAULT NULL,
-  argument_format enum_property_format NOT NULL DEFAULT 'string',
+  argument_format enum_property_format DEFAULT NULL,
   key_string character varying(64) DEFAULT NULL,
   description text DEFAULT NULL,
   skip_key enum_boolean DEFAULT NULL,
@@ -373,8 +374,8 @@ CREATE TABLE icinga_command_argument (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX command_argument_sort_idx ON icinga_command_argument (command_id, sort_order);
 CREATE UNIQUE INDEX command_argument_unique_idx ON icinga_command_argument (command_id, argument_name);
+CREATE INDEX command_argument_sort_idx ON icinga_command_argument (command_id, sort_order);
 CREATE INDEX command_argument_command ON icinga_command_argument (command_id);
 COMMENT ON COLUMN icinga_command_argument.argument_name IS '-x, --host';
 COMMENT ON COLUMN icinga_command_argument.key_string IS 'Overrides name';
@@ -955,7 +956,7 @@ CREATE INDEX user_inheritance_user_parent ON icinga_user_inheritance (parent_use
 CREATE TABLE icinga_user_states_set (
   user_id integer NOT NULL,
   property enum_state_name NOT NULL,
-  merge_behaviour enum_merge_behaviour NOT NULL DEFAULT 'set',
+  merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
   PRIMARY KEY (user_id, property),
   CONSTRAINT icinga_user_filter_state_user
   FOREIGN KEY (user_id)
@@ -965,13 +966,13 @@ CREATE TABLE icinga_user_states_set (
 );
 
 CREATE INDEX user_states_set_user ON icinga_user_states_set (user_id);
-COMMENT ON COLUMN icinga_user_states_set.merge_behaviour IS 'set: = [], add: += [], substract: -= []';
+COMMENT ON COLUMN icinga_user_states_set.merge_behaviour IS 'override: = [], extend: += [], blacklist: -= []';
 
 
 CREATE TABLE icinga_user_types_set (
   user_id integer NOT NULL,
   property enum_type_name NOT NULL,
-  merge_behaviour enum_merge_behaviour NOT NULL DEFAULT 'set',
+  merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
   PRIMARY KEY (user_id, property),
   CONSTRAINT icinga_user_filter_type_user
   FOREIGN KEY (user_id)
@@ -981,7 +982,7 @@ CREATE TABLE icinga_user_types_set (
 );
 
 CREATE INDEX user_types_set_user ON icinga_user_types_set (user_id);
-COMMENT ON COLUMN icinga_user_types_set.merge_behaviour IS 'set: = [], add: += [], substract: -= []';
+COMMENT ON COLUMN icinga_user_types_set.merge_behaviour IS 'override: = [], extend: += [], blacklist: -= []';
 
 
 CREATE TABLE icinga_user_var (
@@ -1325,7 +1326,7 @@ CREATE TABLE sync_run (
 CREATE TABLE icinga_notification_states_set (
   notification_id integer NOT NULL,
   property enum_state_name NOT NULL,
-  merge_behaviour enum_merge_behaviour NOT NULL DEFAULT 'override',
+  merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
   PRIMARY KEY (notification_id, property, merge_behaviour),
   CONSTRAINT icinga_notification_states_set_notification
   FOREIGN KEY (notification_id)
@@ -1340,7 +1341,7 @@ COMMENT ON COLUMN icinga_notification_states_set.merge_behaviour IS 'override: =
 CREATE TABLE icinga_notification_types_set (
   notification_id integer NOT NULL,
   property enum_type_name NOT NULL,
-  merge_behaviour enum_merge_behaviour NOT NULL DEFAULT 'override',
+  merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
   PRIMARY KEY (notification_id, property, merge_behaviour),
   CONSTRAINT icinga_notification_types_set_notification
   FOREIGN KEY (notification_id)
