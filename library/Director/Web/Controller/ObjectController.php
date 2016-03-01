@@ -3,9 +3,10 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Exception;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
-use Icinga\Web\Url;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Web\Url;
 
 abstract class ObjectController extends ActionController
 {
@@ -64,6 +65,11 @@ abstract class ObjectController extends ActionController
             try {
                 return $this->handleApiRequest();
             } catch (Exception $e) {
+                $response = $this->getResponse();
+                if ($response->getHttpResponseCode() === 200) {
+                    $response->setHttpResponseCode(500);
+                }
+
                 return $this->sendJson((object) array('error' => $e->getMessage()));
             }
         }
@@ -283,7 +289,17 @@ abstract class ObjectController extends ActionController
             case 'POST':
             case 'PUT':
                 $type = $this->getType();
-                $data = (array) json_decode($request->getRawBody());
+                $data = json_decode($request->getRawBody());
+
+                if ($data === null) {
+                    $this->getResponse()->setHttpResponseCode(400);
+                    throw new IcingaException(
+                        'Invalid JSON: %s' . $request->getRawBody(),
+                        $this->getLastJsonError()
+                    );
+                } else {
+                    $data = (array) $data;
+                }
                 if ($object = $this->object) {
                     if ($request->getMethod() === 'POST') {
                         $object->setProperties($data);
@@ -305,12 +321,9 @@ abstract class ObjectController extends ActionController
 
                 $response = $this->getResponse();
                 if ($object->hasBeenModified()) {
+                    $status = $object->hasBeenLoadedFromDb() ? 200 : 201;
                     $object->store();
-                    if ($object->hasBeenLoadedFromDb()) {
-                        $response->setHttpResponseCode(200);
-                    } else {
-                        $response->setHttpResponseCode(201);
-                    }
+                    $response->setHttpResponseCode($status);
                 } else {
                     $response->setHttpResponseCode(304);
                 }
@@ -328,6 +341,7 @@ abstract class ObjectController extends ActionController
                 );
 
             default:
+                $request->getResponse()->setHttpResponseCode(400);
                 throw new Exception('Unsupported method ' . $request->getMethod());
         }
     }
