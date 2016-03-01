@@ -628,6 +628,7 @@ abstract class DbObject
         if ($this->autoincKeyName !== null) {
             unset($properties[$this->autoincKeyName]);
         }
+        // TODO: Remove this!
         if ($this->connection->getDbType() === 'pgsql') {
             foreach ($properties as $key => $value) {
                 if (preg_match('/checksum$/', $key)) {
@@ -687,7 +688,14 @@ abstract class DbObject
                 if ($this->insertIntoDb()) {
                     $id = $this->getId();
                     if ($this->autoincKeyName) {
-                        $this->properties[$this->autoincKeyName] = $this->db->lastInsertId();
+                        if ($this->connection->getDbType() === 'pgsql') {
+                            $this->properties[$this->autoincKeyName] = $this->db->lastInsertId(
+                                $table,
+                                $this->autoincKeyName
+                            );
+                        } else {
+                            $this->properties[$this->autoincKeyName] = $this->db->lastInsertId();
+                        }
                         if (! $id) {
                             $id = '[' . $this->properties[$this->autoincKeyName] . ']';
                         }
