@@ -27,10 +27,9 @@ any API access.
 Versioning
 ----------
 
-Many REST APIs include version strings in like /v1/ their URLs, Icinga Director
-doesn't. We will try hard to not break compatibility with future versions.
-Sure, sooner or later we also might be forced to introduce some kind of
-versioning. But who knows?
+There are no version strings so far in the Director URLs. We will try hard
+to not break compatibility with future versions. Sure, sooner or later we
+also might be forced to introduce some kind of versioning. But who knows?
 
 As a developer you can trust us to not remove any existing REST url or any
 provided property. However, you must always be ready to accept new properties.
@@ -67,6 +66,41 @@ curl -H 'Accept: application/json' \
      'https://icinga.example.com/icingaweb2/director/host?name=hostname.example.com'
 ```
 
+### CURL helper script
+
+A script like the following makes it easy to play around with curl:
+
+```sh
+METHOD=$1
+URL=$2
+BODY="$3"
+USERNAME="demo"
+PASSWORD="***"
+test -z "$PASSWORD" || USERNAME="$USERNAME:$PASSWORD"
+
+test -z "$BODY" && curl -u "$USERNAME" \
+  -i http://icingaweb/icingaweb/$URL \
+  -H 'Accept: application/json' \
+  -X $METHOD
+
+test -z "$BODY" || curl -u "$USERNAME" \
+  -i http://icingaweb/icingaweb/$URL \
+  -H 'Accept: application/json' \
+  -X $METHOD \
+  -d "$BODY"
+
+echo
+```
+
+It can be used as follows:
+
+```sh
+director-curl GET director/host?name=localhost
+
+director-curl POST director/host '{"object_name": "host2", "... }'
+```
+
+
 Should I use HTTPS?
 -------------------
 
@@ -84,7 +118,7 @@ Icinga Objects
 In case you add the `resolve` parameter to your URL, all inherited object
 properties will be resolved. Such a URL could look as follows:
 
-    director/host?name=hostname.example.com&resolve
+    director/host?name=hostname.example.com&resolved
 
 
 #### Retrieve all properties
@@ -160,22 +194,327 @@ director/host?name=pe2015.example.com&resolved
 }
 ```
 
+JSON is pretty-printed per default, at least for PHP >= 5.4
+
+Error handling
+--------------
+
+Director tries hard to return meaningful output and error codes:
+```
+HTTP/1.1 400 Bad Request
+Server: Apache
+Content-Length: 46
+Connection: close
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "Invalid JSON: Syntax error"
+}
+```
+
 Trigger actions
 ---------------
-You can of course also use the API to trigger specific actions. Deploying the configuration is as simple as issueing `POST director/config/deploy`.
+You can of course also use the API to trigger specific actions. Deploying the configuration is as simple as issueing:
 
-TODO
+    POST director/config/deploy
+
+More
 ----
 
-Return Last-Modified und ETag header?
- -> If-Modified-Since -> mtime?
- -> If-Unmodified-Since -> mtime
+Currently we do not handle Last-Modified und ETag headers. This would involve some work, but could be a cool feature. Let us know your ideas!
 
 
- SHA1 sum as ETag? For PUT and DELETE:
- -> If-Match -> SHA1 sum as ETag?!
- -> If-None-Match -> SHA1 sum as ETag?!
+Sample scenario
+---------------
+
+Let's show you how the REST API works with a couple of practical examples:
+
+### Create a new host
+
+```
+POST director/host
+```
+
+```json
+{
+  "object_name": "apitest",
+  "object_type": "object",
+  "address": "127.0.0.1",
+  "vars": {
+    "location": "Berlin"
+  }
+}
+```
+#### Response
+```
+HTTP/1.1 201 Created
+Date: Tue, 01 Mar 2016 04:43:55 GMT
+Server: Apache
+Content-Length: 140
+Content-Type: application/json
+```
+
+```json
+{
+    "address": "127.0.0.1",
+    "object_name": "apitest",
+    "object_type": "object",
+    "vars": {
+        "location": "Berlin"
+    }
+}
+```
 
 
-  304, 412
+### Retrieve the new host
+
+Let's create a host:
+
+    POST director/host
+
+```json
+{
+  "object_name": "apitest",
+  "object_type": "object",
+  "address": "127.0.0.1",
+  "vars": {
+    "location": "Berlin"
+  }
+}
+```
+
+The most important part of the response is the response code: `201`, a resource has been created:
+```
+HTTP/1.1 201 Created
+Date: Tue, 01 Mar 2016 04:44:48 GMT
+Server: Apache
+Content-Length: 140
+Content-Type: application/json
+```
+
+```json
+{
+    "address": "127.0.0.1",
+    "object_name": "apitest",
+    "object_type": "object",
+    "vars": {
+        "location": "Berlin"
+    }
+}
+```
+
+Just for fun, let's fire the same request again. The answer obviously changes:
+```
+HTTP/1.1 500 Internal Server Error
+Date: Tue, 01 Mar 2016 04:45:04 GMT
+Server: Apache
+Content-Length: 60
+Connection: close
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "Trying to recreate icinga_host (apitest)"
+}
+```
+
+So, let's update this host. To work with existing objects, you must ship their `name` in the URL:
+
+    POST director/host?name=apitest
+
+```json
+{
+  "object_name": "apitest",
+  "object_type": "object",
+  "address": "127.0.0.1",
+  "vars": {
+    "location": "Berlin"
+  }
+}
+```
+
+Same body, so no change:
+```
+HTTP/1.1 304 Not Modified
+Date: Tue, 01 Mar 2016 04:45:33 GMT
+Server: Apache
+```
+
+So let's now try to really change something:
+
+    POST director/host?name=apitest
+
+```json
+{"address": "127.0.0.2", "vars.event": "Icinga CAMP" }
+```
+
+Now we get status `200`, changes have been applied:
+
+```
+HTTP/1.1 200 OK
+Date: Tue, 01 Mar 2016 04:46:25 GMT
+Server: Apache
+Content-Length: 172
+Content-Type: application/json
+```
+
+```json
+{
+    "address": "127.0.0.2",
+    "object_name": "apitest",
+    "object_type": "object",
+    "vars": {
+        "location": "Berlin",
+        "event": "Icinga CAMP"
+    }
+}
+```
+
+The response always returns the full object on modification. This way you can immediately investigate the merged result. As you can see, `POST` requests only touch the parameters you passed - the rest remains untouched.
+
+One more exmaple to prove this:
+
+```
+POST director/host?name=apitest
+```
+
+```json
+{"address": "127.0.0.2", "vars.event": "Icinga CAMP" }
+```
+
+No modification, you get a `304`. HTTP standards strongly discourage shipping a body in this case:
+```
+HTTP/1.1 304 Not Modified
+Date: Tue, 01 Mar 2016 04:52:05 GMT
+Server: Apache
+```
+
+As you might have noted, we only changed single properties in the vars dictionary. Now lets override the whole dictionary:
+
+```
+POST director/host?name=apitest
+```
+
+```json
+{"address": "127.0.0.2", "vars": { "event": [ "Icinga", "Camp" ] } }
+```
+
+The response shows that this works as expected:
+```
+HTTP/1.1 200 OK
+Date: Tue, 01 Mar 2016 04:52:33 GMT
+Server: Apache
+Content-Length: 181
+Content-Type: application/json
+```
+
+```json
+{
+    "address": "127.0.0.2",
+    "object_name": "apitest",
+    "object_type": "object",
+    "vars": {
+        "event": [
+            "Icinga",
+            "Camp"
+        ]
+    }
+}
+```
+
+If merging properties is not what you want, `PUT` comes to the rescue:
+
+    PUT director/host?name=apitest
+
+```
+{ "vars": { "event": [ "Icinga", "Camp" ] } 
+```
+
+All other properties vanished, all but name and type:
+```
+HTTP/1.1 200 OK
+Date: Tue, 01 Mar 2016 04:54:33 GMT
+Server: Apache
+Content-Length: 153
+Content-Type: application/json
+```
+
+```json
+{
+    "object_name": "apitest",
+    "object_type": "object",
+    "vars": {
+        "event": [
+            "Icinga",
+            "Camp"
+        ]
+    }
+}
+```
+
+Let's put "nothing":
+
+    PUT director/host?name=apitest
+
+```json
+{}
+```
+HTTP/1.1 200 OK
+Date: Tue, 01 Mar 2016 04:57:35 GMT
+Server: Apache
+Content-Length: 62
+Content-Type: application/json
+
+{
+    "object_name": "apitest",
+    "object_type": "object"
+}
+```
+
+Of course, `PUT`also supports `304`, you can check this by sending the same request again.
+
+Now let's try to cheat:
+```
+KILL director/host?name=apitest
+```
+
+```
+HTTP/1.1 400 Bad Request
+Date: Tue, 01 Mar 2016 04:54:07 GMT
+Server: Apache
+Content-Length: 43
+Connection: close
+Content-Type: application/json
+```
+
+```json
+{
+    "error": "Unsupported method KILL"
+}
+```
+
+Ok, no way. So let's use the correct method:
+
+    DELETE 'director/host?name=apitest
+
+```
+HTTP/1.1 200 OK
+Date: Tue, 01 Mar 2016 05:59:22 GMT
+Server: Apache
+Content-Length: 109
+Content-Type: application/json
+```
+
+```json
+{
+    "imports": [
+        "generic-host"
+    ],
+    "object_name": "apitest",
+    "object_type": "object"
+}
+```
 
