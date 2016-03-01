@@ -23,6 +23,8 @@ class IcingaUser extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsFields = true;
+
     protected $supportsImports = true;
 
     protected $booleans = array(
