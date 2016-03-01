@@ -39,7 +39,7 @@ class DatafieldController extends ActionController
         }
 
         $form = $this->view->form = $this->loadForm('directorDatafield')
-            ->setSuccessUrl('director/list/datafield')
+            ->setSuccessUrl('director/data/fields')
             ->setDb($this->db());
 
         if ($edit) {
