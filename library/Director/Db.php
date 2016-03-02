@@ -181,14 +181,19 @@ class Db extends DbConnection
 
     public function fetchActivityLogEntryById($id)
     {
-        $sql = 'SELECT * FROM director_activity_log WHERE id = ' . (int) $id;
+        $sql = 'SELECT id, object_type, object_name, action_name,'
+             . ' old_properties, new_properties, author, change_time,'
+             . ' %s AS checksum, %s AS parent_checksum'
+             . ' FROM director_activity_log WHERE id = %d';
 
-        $result = $this->db()->fetchRow($sql);
-        if (is_resource($result->checksum)) {
-            $result->checksum = stream_get_contents($result->checksum);
-        }
+        $sql = sprintf(
+            $sql,
+            $this->dbHexFunc('checksum'),
+            $this->dbHexFunc('parent_checksum'),
+            $id
+        );
 
-        return $result;
+        return $this->db()->fetchRow($sql);
     }
 
     public function fetchActivityLogChecksumById($id, $binary = true)
@@ -222,31 +227,21 @@ class Db extends DbConnection
             $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
         }
 
-        $sql = 'SELECT * FROM director_activity_log WHERE checksum = ?';
-        $ret = $this->db()->fetchRow($sql, $checksum);
+        $sql = 'SELECT id, object_type, object_name, action_name'
+             . ' old_properties, new_properties, author, change_time'
+             . ' %s AS checksum, %s AS parent_checksum'
+             . ' FROM director_activity_log WHERE checksum = ?';
 
-        if (is_resource($ret->checksum)) {
-            $ret->checksum = stream_get_contents($ret->checksum);
-        }
-
-        if (is_resource($ret->parent_checksum)) {
-            $ret->checksum = stream_get_contents($ret->parent_checksum);
-        }
-
-        return $ret;
+        return $this->db()->fetchRow($sql, $checksum);
     }
 
     public function getLastActivityChecksum()
     {
-        if ($this->isPgsql()) {
-            $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, LOWER(ENCODE(checksum, 'hex')) AS checksum"
-                    . " FROM director_activity_log ORDER BY id DESC LIMIT 1) a"
-                    . " UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
-        } else {
-            $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, LOWER(HEX(checksum)) AS checksum"
-                    . " FROM director_activity_log ORDER BY id DESC LIMIT 1) a"
-                    . " UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
-        }
+        $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, "
+                . $this->dbHexFunc('checksum')
+                . " AS checksum"
+                . " FROM director_activity_log ORDER BY id DESC LIMIT 1) a"
+                . " UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
 
         return $this->db()->fetchOne($select);
     }
@@ -668,6 +663,15 @@ class Db extends DbConnection
     public function isPgsql()
     {
         return $this->getDbType() === 'pgsql';
+    }
+
+    protected function dbHexFunc($column)
+    {
+        if ($this->isPgsql()) {
+            return sprintf("LOWER(ENCODE(%s, 'hex'))", $column);
+        } else {
+            return sprintf("LOWER(HEX(%s))", $column);
+        }
     }
 
     public function getUncollectedDeployments()

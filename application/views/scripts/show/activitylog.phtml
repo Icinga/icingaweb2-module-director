@@ -60,7 +60,7 @@ $url = $this->url()->without('checksum')->without('show');
 <?php endif ?>
   <tr>
     <th><?= $this->translate('Checksum') ?></th>
-    <td><?= bin2hex($this->entry->checksum) ?></td>
+    <td><?= $this->entry->checksum ?></td>
   </tr>
 </table>
 <?php if (! empty($this->output)): ?>
