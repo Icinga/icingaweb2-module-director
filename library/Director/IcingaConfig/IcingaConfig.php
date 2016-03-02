@@ -585,7 +585,7 @@ class IcingaConfig
         if ($this->lastActivityChecksum === null) {
             $query = $this->db->select()
                 ->from('director_activity_log', 'checksum')
-                ->order('change_time DESC')
+                ->order('id DESC')
                 ->limit(1);
 
             $this->lastActivityChecksum = $this->db->fetchOne($query);
