@@ -10,6 +10,8 @@ class IcingaEndpointTable extends IcingaObjectTable
         'endpoint',
     );
 
+    protected $deploymentEndpoint;
+
     public function getColumns()
     {
         return array(
@@ -20,6 +22,20 @@ class IcingaEndpointTable extends IcingaObjectTable
                            . " CONCAT(e.host || ':' || COALESCE(e.port, 5665)) END)",
             'zone'        => 'z.object_name',
         );
+    }
+
+    protected function listTableClasses()
+    {
+        return array_merge(array('endpoints'), parent::listTableClasses());
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->endpoint === $this->deploymentEndpoint) {
+            return array('deployment-endpoint', parent::getRowClasses($row));
+        }
+
+        return parent::getRowClasses($row);
     }
 
     protected function getActionUrl($row)
@@ -40,6 +56,14 @@ class IcingaEndpointTable extends IcingaObjectTable
     public function getBaseQuery()
     {
         $db = $this->connection()->getConnection();
+
+        if ($this->deploymentEndpoint === null) {
+            $c = $this->connection();
+            if ($c->hasDeploymentEndpoint()) {
+                $this->deploymentEndpoint = $c->getDeploymentEndpointName();
+            }
+        }
+
         $query = $db->select()->from(
             array('e' => 'icinga_endpoint'),
             array()
