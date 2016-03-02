@@ -13,7 +13,7 @@ class IcingaHostTable extends IcingaObjectTable
 
     public function getColumns()
     {
-        if ($this->connection()->getDbType() === 'pgsql') {
+        if ($this->connection()->isPgsql()) {
             $parents = "ARRAY_TO_STRING(ARRAY_AGG(ih.object_name ORDER BY hi.weight), ', ')";
         } else {
             $parents = "GROUP_CONCAT(ih.object_name ORDER BY hi.weight SEPARATOR ', ')";

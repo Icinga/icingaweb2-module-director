@@ -12,7 +12,7 @@ class IcingaZoneTable extends IcingaObjectTable
 
     public function getColumns()
     {
-        if ($this->connection()->getDbType() === 'pgsql') {
+        if ($this->connection()->isPgsql()) {
             $endpoints = "ARRAY_TO_STRING(ARRAY_AGG(e.object_name), ', ')";
         } else {
             $endpoints = "GROUP_CONCAT(e.object_name ORDER BY e.object_name SEPARATOR ', ')";

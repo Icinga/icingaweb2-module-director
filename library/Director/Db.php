@@ -208,7 +208,7 @@ class Db extends DbConnection
 
     public function fetchActivityLogIdByChecksum($checksum)
     {
-        if ($this->getDbType() === 'pgsql') {
+        if ($this->isPgsql()) {
             $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
         }
 
@@ -218,7 +218,7 @@ class Db extends DbConnection
 
     public function fetchActivityLogEntry($checksum)
     {
-        if ($this->getDbType() === 'pgsql') {
+        if ($this->isPgsql()) {
             $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
         }
 
@@ -238,7 +238,7 @@ class Db extends DbConnection
 
     public function getLastActivityChecksum()
     {
-        if ($this->getDbType() === 'pgsql') {
+        if ($this->isPgsql()) {
             $select = "SELECT checksum FROM (SELECT * FROM (SELECT 1 AS pos, LOWER(ENCODE(checksum, 'hex')) AS checksum"
                     . " FROM director_activity_log ORDER BY change_time DESC LIMIT 1) a"
                     . " UNION SELECT 2 AS pos, '' AS checksum) u ORDER BY pos LIMIT 1";
@@ -419,7 +419,7 @@ class Db extends DbConnection
 
     public function getLatestImportedChecksum($source)
     {
-        if ($this->getDbType() === 'pgsql') {
+        if ($this->isPgsql()) {
             $col = "LOWER(ENCODE(rowset_checksum, 'hex'))";
         } else {
             $col = '(LOWER(HEX(import_run.rowset_checksum)))';
@@ -663,6 +663,11 @@ class Db extends DbConnection
         )->order('varname');
 
         return $this->db()->fetchAll($select);
+    }
+
+    public function isPgsql()
+    {
+        return $this->getDbType() === 'pgsql';
     }
 
     public function getUncollectedDeployments()

@@ -57,7 +57,7 @@ class DeploymentLogTable extends QuickTable
             'duration'          => "l.duration_dump || 'ms'",
         );
 
-        if ($this->connection->getDbType() === 'pgsql') {
+        if ($this->connection->isPgsql()) {
             $columns['checksum'] = "LOWER(ENCODE(c.checksum, 'hex'))";
         }
 

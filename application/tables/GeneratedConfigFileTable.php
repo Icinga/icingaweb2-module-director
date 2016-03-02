@@ -17,7 +17,7 @@ class GeneratedConfigFileTable extends QuickTable
             'config_checksum' => 'LOWER(HEX(cf.config_checksum))',
         );
 
-        if ($this->connection->getDbType() === 'pgsql') {
+        if ($this->connection->isPgsql()) {
             $columns['checksum'] = "LOWER(ENCODE(f.checksum, 'hex'))";
             $columns['config_checksum'] = "LOWER(ENCODE(cf.config_checksum, 'hex'))";
         }

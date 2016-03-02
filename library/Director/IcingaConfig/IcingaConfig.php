@@ -186,7 +186,7 @@ class IcingaConfig
 
     protected function dbBin($binary)
     {
-        if ($this->connection->getDbType() === 'pgsql') {
+        if ($this->connection->isPgsql()) {
             return Util::pgBinEscape($binary);
         } else {
             return $binary;

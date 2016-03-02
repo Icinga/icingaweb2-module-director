@@ -629,7 +629,7 @@ abstract class DbObject
             unset($properties[$this->autoincKeyName]);
         }
         // TODO: Remove this!
-        if ($this->connection->getDbType() === 'pgsql') {
+        if ($this->connection->isPgsql()) {
             foreach ($properties as $key => $value) {
                 if (preg_match('/checksum$/', $key)) {
                     $properties[$key] = Util::pgBinEscape($value);
@@ -688,7 +688,7 @@ abstract class DbObject
                 if ($this->insertIntoDb()) {
                     $id = $this->getId();
                     if ($this->autoincKeyName) {
-                        if ($this->connection->getDbType() === 'pgsql') {
+                        if ($this->connection->isPgsql()) {
                             $this->properties[$this->autoincKeyName] = $this->db->lastInsertId(
                                 $table,
                                 $this->autoincKeyName
