@@ -148,20 +148,25 @@ class ShowController extends ActionController
 
     public function activitylogAction()
     {
+        $v = $this->view;
+
+        $v->object_type = $this->params->get('type');
+        $v->object_name = $this->params->get('name');
+
         if ($id = $this->params->get('id')) {
-            $this->view->entry = $this->db()->fetchActivityLogEntryById($id);
+            $v->entry = $this->db()->fetchActivityLogEntryById($id);
         } elseif ($checksum = $this->params->get('checksum')) {
-            $this->view->entry = $this->db()->fetchActivityLogEntry(Util::hex2binary($checksum));
-            $id = $this->view->entry->id;
+            $v->entry = $this->db()->fetchActivityLogEntry(Util::hex2binary($checksum));
+            $id = $v->entry->id;
         }
 
-        $this->view->neighbors = $this->db()->getActivitylogNeighbors(
+        $v->neighbors = $this->db()->getActivitylogNeighbors(
             $id,
-            $this->params->get('type'),
-            $this->params->get('name')
+            $v->object_type,
+            $v->object_name
         );
 
-        $entry = $this->view->entry;
+        $entry = $v->entry;
         $this->activityTabs($entry);
         $this->showInfo($entry);
         $func = 'show' . ucfirst($this->params->get('show', $this->defaultTab));

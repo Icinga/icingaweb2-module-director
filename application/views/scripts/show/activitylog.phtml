@@ -37,16 +37,27 @@ $url = $this->url()->without('checksum')->without('show');
     <th><?= $this->translate('Date') ?></th>
     <td><?= $this->entry->change_time ?></td>
   </tr>
+<?php if ($this->object_name): ?>
   <tr>
     <th><?= $this->translate('Action') ?></th>
-    <td><?= sprintf(
+    <td><?= $this->entry->action_name ?></td>
+  </tr>
+<?php else: ?>
+  <tr>
+    <th><?= $this->translate('Action') ?></th>
+    <td data-base-target="_next"><?= sprintf(
         '%s %s "%s"',
         $this->entry->action_name,
         $this->entry->object_type,
-        $this->entry->object_name
+        $this->qlink(
+            $this->entry->object_name,
+            'director/' . preg_replace('/^icinga_/', '', $this->entry->object_type),
+            array('name' => $this->entry->object_name)
+        )
     )
     ?></td>
   </tr>
+<?php endif ?>
   <tr>
     <th><?= $this->translate('Checksum') ?></th>
     <td><?= bin2hex($this->entry->checksum) ?></td>
