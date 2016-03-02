@@ -296,7 +296,7 @@ CREATE TABLE icinga_timeperiod_range (
   CONSTRAINT icinga_timeperiod_range_timeperiod
   FOREIGN KEY (timeperiod_id)
     REFERENCES icinga_timeperiod (id)
-    ON DELETE RESTRICT
+    ON DELETE CASCADE
     ON UPDATE CASCADE
 );
 
@@ -1415,4 +1415,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (79, NOW());
+  VALUES (80, NOW());
