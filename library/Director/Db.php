@@ -47,7 +47,22 @@ class Db extends DbConnection
 
     public function getMasterZoneName()
     {
-        return $this->getSetting('master_zone', 'master');
+        if ($zone = $this->getSetting('master_zone')) {
+            return $zone;
+        }
+
+        $db = $this->db();
+        $query = $db->select()
+            ->from('icinga_zone', 'object_name')
+            ->where('is_global = ?', 'n');
+
+        $zones = $db->fetchCol($query);
+
+        if (count($zones) === 1) {
+            return $zones[0];
+        }
+
+        return 'master';
     }
 
     public function getDefaultGlobalZoneName()
