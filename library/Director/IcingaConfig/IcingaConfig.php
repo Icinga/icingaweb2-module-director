@@ -320,10 +320,11 @@ class IcingaConfig
         ini_set('memory_limit', '768M');
         ini_set('max_execution_time', 0);
 
-        if ($this->db->quote("1\0") !== '\'1\\0\'') {
+        if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
+
             throw new IcingaException(
                 'Refusing to render the configuration, your DB layer corrupts binary data.'
-              . ' You might be affected by Zend Framework bug #655'
+                . ' You might be affected by Zend Framework bug #655'
             );
         }
 
