@@ -22,6 +22,7 @@ class IndexController extends ActionController
             return;
         }
 
+        $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
         $this->view->stats = $this->db()->getObjectSummary();
         $this->view->undeployedActivities = $this->db()->countActivitiesSinceLastDeployedConfig();
         if ((int) $this->view->stats['apiuser']->cnt_total === 0) {

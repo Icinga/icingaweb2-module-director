@@ -55,6 +55,25 @@ class Db extends DbConnection
         return $this->getSetting('default_global_zone', 'director-global');
     }
 
+    public function hasDeploymentEndpoint()
+    {
+        $db = $this->db();
+        $query = $db->select()->from(
+            array('z' => 'icinga_zone'),
+            array('cnt' => 'COUNT(*)')
+        )->join(
+            array('e' => 'icinga_endpoint'),
+            'e.zone_id = z.id',
+            array()
+        )->join(
+            array('au' => 'icinga_apiuser'),
+            'e.apiuser_id = au.id',
+            array()
+        )->where('z.object_name = ?', $this->getMasterZoneName());
+
+        return $db->fetchOne($query) > 0;
+    }
+
     public function getDeploymentEndpointName()
     {
         $db = $this->db();
