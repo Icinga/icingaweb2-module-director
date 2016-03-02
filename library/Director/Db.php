@@ -74,9 +74,13 @@ class Db extends DbConnection
          ->limit(1);
 
         $name = $db->fetchOne($query);
+
         if (! $name) {
             throw new ConfigurationError(
-                'Unable to detect your deployment endpoint'
+                'Unable to detect your deployment endpoint. I was looking for'
+              . ' the first endpoint configured with an assigned API user'
+              . ' in the "%s" zone.',
+                $this->getMasterZoneName()
             );
         }
 
