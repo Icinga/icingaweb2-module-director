@@ -6,6 +6,7 @@ use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Util;
 use Icinga\Exception\ConfigurationError;
 use Zend_Db_Expr;
 use Zend_Db_Select;
@@ -198,16 +199,18 @@ class Db extends DbConnection
 
     public function fetchActivityLogChecksumById($id, $binary = true)
     {
-        $sql = 'SELECT checksum FROM director_activity_log WHERE id = ' . (int) $id;
+        $sql = sprintf(
+            'SELECT %s AS checksum FROM director_activity_log WHERE id = %d',
+            $this->dbHexFunc('checksum'),
+            (int) $id
+        );
+
         $result = $this->db()->fetchOne($sql);
-        if (is_resource($result)) {
-            $result = stream_get_contents($result);
-        }
 
         if ($binary) {
-            return $result;
+            return Util::hex2binary($result);
         } else {
-            return bin2hex($result);
+            return $result;
         }
     }
 
