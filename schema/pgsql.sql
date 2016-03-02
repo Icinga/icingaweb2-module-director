@@ -957,7 +957,7 @@ CREATE TABLE icinga_user_states_set (
   user_id integer NOT NULL,
   property enum_state_name NOT NULL,
   merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
-  PRIMARY KEY (user_id, property),
+  PRIMARY KEY (user_id, property, merge_behaviour),
   CONSTRAINT icinga_user_filter_state_user
   FOREIGN KEY (user_id)
     REFERENCES icinga_user (id)
@@ -973,7 +973,7 @@ CREATE TABLE icinga_user_types_set (
   user_id integer NOT NULL,
   property enum_type_name NOT NULL,
   merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
-  PRIMARY KEY (user_id, property),
+  PRIMARY KEY (user_id, property, merge_behaviour),
   CONSTRAINT icinga_user_filter_type_user
   FOREIGN KEY (user_id)
     REFERENCES icinga_user (id)
@@ -1415,4 +1415,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (78, NOW());
+  VALUES (79, NOW());
