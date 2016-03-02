@@ -216,26 +216,21 @@ class Db extends DbConnection
 
     public function fetchActivityLogIdByChecksum($checksum)
     {
-        if ($this->isPgsql()) {
-            $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
-        }
-
         $sql = 'SELECT id FROM director_activity_log WHERE checksum = ?';
-        return $this->db()->fetchOne($sql, $checksum);
+        return $this->db()->fetchOne($sql, $this->quoteBinary($checksum));
     }
 
     public function fetchActivityLogEntry($checksum)
     {
-        if ($this->isPgsql()) {
-            $checksum = new Zend_Db_Expr("\\x" . bin2hex($checksum));
-        }
-
         $sql = 'SELECT id, object_type, object_name, action_name'
              . ' old_properties, new_properties, author, change_time'
              . ' %s AS checksum, %s AS parent_checksum'
              . ' FROM director_activity_log WHERE checksum = ?';
 
-        return $this->db()->fetchRow($sql, $checksum);
+        return $this->db()->fetchRow(
+            $sql,
+            $this->quoteBinary(Util::hex2binary($checksum))
+        );
     }
 
     public function getLastActivityChecksum()
@@ -675,6 +670,15 @@ class Db extends DbConnection
         } else {
             return sprintf("LOWER(HEX(%s))", $column);
         }
+    }
+
+    protected function quoteBinary($binary)
+    {
+        if ($this->isPgsql()) {
+            return new Zend_Db_Expr("\\x" . bin2hex($binary));
+        }
+
+        return $binary;
     }
 
     public function getUncollectedDeployments()

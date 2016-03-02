@@ -156,7 +156,7 @@ class ShowController extends ActionController
         if ($id = $this->params->get('id')) {
             $v->entry = $this->db()->fetchActivityLogEntryById($id);
         } elseif ($checksum = $this->params->get('checksum')) {
-            $v->entry = $this->db()->fetchActivityLogEntry(Util::hex2binary($checksum));
+            $v->entry = $this->db()->fetchActivityLogEntry($checksum);
             $id = $v->entry->id;
         }
 
