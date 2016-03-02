@@ -530,6 +530,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    public function countDirectDescendants()
+    {
+        $db = $this->getDb();
+        $table = $this->getTableName();
+        $type = strtolower($this->getType());
+        $query = $db->select()->from(
+            array('oi' => $table . '_inheritance'),
+            array('cnt' => 'COUNT(*)')
+        )->where('oi.parent_' . $type . '_id = ?', (int) $this->id);
+
+        return $db->fetchOne($query);
+    }
+
     protected function resolve($what)
     {
         if ($this->hasResolveCached($what)) {

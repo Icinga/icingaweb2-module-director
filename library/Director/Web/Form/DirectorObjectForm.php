@@ -684,6 +684,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addDeleteButton($label = null)
     {
+        $object = $this->object;
+
         if ($label === null) {
             $label = $this->translate('Delete');
         }
@@ -694,6 +696,20 @@ abstract class DirectorObjectForm extends QuickForm
             //->removeDecorator('Label');
 
         $this->deleteButtonName = $el->getName();
+
+        if ($object instanceof IcingaObject && $object->isTemplate()) {
+            if ($cnt = $object->countDirectDescendants()) {
+                $el->setAttrib('disabled', 'disabled');
+                $el->setAttrib(
+                    'title',
+                    sprintf(
+                        $this->translate('This template is still in use by %d other objects'),
+                        $cnt
+                    )
+                );
+            }
+        }
+
         $this->addElement($el);
 
         return $this;

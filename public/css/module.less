@@ -52,6 +52,12 @@ form input[type=submit] {
   .button();
   border-width: 1px;
   margin-top: 0.5em;
+
+  &:disabled {
+    border-color: @gray-light;
+    background-color: @gray-light;
+    color: #fff;
+  }
 }
 
 form input[type=submit]:first-of-type {
