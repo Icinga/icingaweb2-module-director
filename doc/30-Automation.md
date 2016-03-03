@@ -116,7 +116,7 @@ username = director
 password = ***
 ```
 
-Usually `/etc/icingaweb/modules/director/kickstart.ini` should be the
+Usually `/etc/icingaweb2/modules/director/kickstart.ini` should be the
 full path to this file. `endpoint` (master certificate name), `username`
 and `password` (fitting an already configured `ApiUser`) are required.
 `host` can be a resolvable hostname or an IP address. `port` is 5665 per
