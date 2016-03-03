@@ -178,7 +178,7 @@ class Util
                     $form->translate('here')
                 );
                 $form->addHtmlHint(sprintf($hint, $link));
-                $msg = $form->translate('No db resource available');
+                $msg = sprintf($form->translate('No %s resource available'), $type);
             } else {
                 $msg = $form->translate('Please ask an administrator to grant you access to resources');
             }
