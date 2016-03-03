@@ -100,7 +100,7 @@ abstract class ObjectController extends ActionController
         } else {
             $this->view->object = $object;
 
-            if ($object->imports()->count() > 0) {
+            if ($object->supportsImports() && $object->imports()->count() > 0) {
                 $this->view->actionLinks = $this->view->qlink(
                     $this->translate('Show resolved'),
                     $this->getRequest()->getUrl()->with('resolved', true),
