@@ -176,10 +176,17 @@ class Diff_Renderer_Html_Array extends Diff_Renderer_Abstract
 	{
 		$lines = array_map(array($this, 'ExpandTabs'), $lines);
 		$lines = array_map(array($this, 'HtmlSafe'), $lines);
+		$callback = array($this, 'fixMatchedSpaces');
 		foreach($lines as &$line) {
-			$line = preg_replace('# ( +)|^ #e', "\$this->fixSpaces('\\1')", $line);
+			// $line = preg_replace('# ( +)|^ #e', "\$this->fixSpaces('\\1')", $line);
+			$line = preg_replace_callback('# ( +)|^ #', $callback, $line);
 		}
 		return $lines;
+	}
+
+	protected function fixMatchedSpaces($m)
+	{
+		return $this->fixSpaces($m[1]);
 	}
 
 	/**
