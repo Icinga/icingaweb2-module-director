@@ -62,7 +62,7 @@ class ConfigForm extends QuickForm
                 || $resourceConfig->charset !== 'utf8'
             ) {
                 $this->getElement('resource')
-                    ->addError('Please change the encodig for the director database to utf8')
+                    ->addError('Please change the encoding for the director database to utf8')
                     ->removeDecorator('description');
             }
 
