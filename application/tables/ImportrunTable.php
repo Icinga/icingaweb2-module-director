@@ -12,7 +12,7 @@ class ImportrunTable extends QuickTable
 
     public function getColumns()
     {
-        return array(
+        $columns = array(
             'id'          => 'r.id',
             'source_id'   => 's.id',
             'source_name' => 's.source_name',
@@ -20,6 +20,12 @@ class ImportrunTable extends QuickTable
             'rowset'      => 'LOWER(HEX(rs.checksum))',
             'cnt_rows'    => 'COUNT(rsr.row_checksum)',
         );
+
+        if ($this->connection->isPgsql()) {
+            $columns['rowset'] = "LOWER(ENCODE(rs.checksum, 'hex'))";
+        }
+
+        return $columns;
     }
 
     protected function getActionUrl($row)
@@ -67,7 +73,8 @@ class ImportrunTable extends QuickTable
             array('rsr' => 'imported_rowset_row'),
             'rs.checksum = rsr.rowset_checksum',
             array()
-        )->group('r.id')->order('r.start_time DESC');
+        )->group('r.id')->group('s.id')->group('rs.checksum')
+         ->order('r.start_time DESC');
 
         return $query;
     }
