@@ -73,6 +73,21 @@ abstract class QuickForm extends Zend_Form
     public function __construct($options = null)
     {
         parent::__construct($this->handleOptions($options));
+
+        $basedir = Icinga::app()
+            ->getModuleManager()
+            ->getModule('director')
+            ->getLibDir()
+            . '/Director/Web/Form';
+
+        $this->addPrefixPaths(array(
+            array(
+                'prefix'    => __NAMESPACE__ . '\\Element\\',
+                'path'      => $basedir . '/Element',
+                'type'      => static::ELEMENT
+            )
+        ));
+
         $this->setMethod('post');
         $this->setAction(Url::fromRequest());
         $this->createIdElement();
