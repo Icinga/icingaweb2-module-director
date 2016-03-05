@@ -222,11 +222,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function set($key, $value)
     {
-        if ($key === 'imports') {
-            $this->imports()->set($value);
-            return $this;
-
-        } elseif ($key === 'arguments') {
+        if ($key === 'arguments') {
             if (is_object($value)) {
                 foreach ($value as $arg => $val) {
                     $this->arguments()->set($arg, $val);
@@ -398,6 +394,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->importedObjects = null;
         return $this;
+    }
+
+    public function setImports($imports)
+    {
+        if (! is_array($imports)) {
+            $imports = array($imports);
+        }
+
+        $this->imports()->set($imports);
+        if ($this->imports()->hasBeenModified()) {
+            $this->clearImportedObjects();
+            $this->invalidateResolveCache();
+        }
+    }
+
+    public function getImports()
+    {
+        return $this->imports()->listImportNames();
     }
 
     public function getResolvedProperty($key, $default = null)
