@@ -874,7 +874,14 @@ print_r($object);
 
         $this->addElement('select', 'object_type', array(
             'label' => $this->translate('Object type'),
-            'description'  => $this->translate('Whether this should be a template'),
+            'description'  => $this->translate(
+                'What kind of object this should be. Templates allow full access'
+                . ' to any property, they are your building blocks for "real" objects.'
+                . ' External objects should usually not be manually created or modified.'
+                . ' They allow you to work with objects locally defined on your Icinga nodes,'
+                . ' while not rendering and deploying them with the Director. Apply rules allow'
+                . ' to assign services, notifications and groups to other objects.'
+            ),
             'multiOptions' => $this->optionalEnum($types),
             'value'        => $default,
             'class'        => 'autosubmit'
@@ -893,7 +900,12 @@ print_r($object);
 
         $this->addElement('select', 'zone_id', array(
             'label' => $this->translate('Cluster Zone'),
-            'description'  => $this->translate('Icinga cluster zone'),
+            'description'  => $this->translate(
+                'Icinga cluster zone. Allows to manually override Directors decisions'
+                . ' of where to deploy your config to. You should consider not doing so'
+                . ' unless you gained enough knowledge of you an Icinga Cluster stack'
+                . ' works'
+            ),
             'multiOptions' => $this->optionalEnum($zones)
         ));
 
