@@ -306,7 +306,7 @@ class Db extends DbConnection
     {
         $db = $this->db();
         $query = $db->select()
-            ->from('import_run', 'rowset_checksum')
+            ->from('import_run', $this->dbHexFunc('rowset_checksum'))
             ->where('id = ?', $id);
 
         return $db->fetchOne($query);
@@ -381,7 +381,10 @@ class Db extends DbConnection
             }
         }
 
-        $lastRun = $db->select()->from('import_run', array('rowset_checksum'));
+        $lastRun = $db->select()->from(
+            'import_run',
+            array('checksum' => $this->dbHexFunc('rowset_checksum'))
+        );
 
         if (is_int($source) || ctype_digit($source)) {
             $lastRun->where('source_id = ?', $source);
@@ -391,7 +394,6 @@ class Db extends DbConnection
 
         $lastRun->order('start_time DESC')->limit(1);
         $checksum = $db->fetchOne($lastRun);
-        // TODO: Postgres decoding?
 
         return $this->fetchImportedRowsetRows($checksum, $columns);
     }
@@ -399,6 +401,8 @@ class Db extends DbConnection
     public function fetchImportedRowsetRows($checksum, $columns)
     {
         $db = $this->db();
+        $binchecksum = Util::hex2binary($checksum);
+
         $query = $db->select()->from(
             array('rsr' => 'imported_rowset_row'),
             array(
@@ -419,7 +423,7 @@ class Db extends DbConnection
             array('p' => 'imported_property'),
             'p.checksum = rp.property_checksum',
             array()
-        )->where('rsr.rowset_checksum = ?', $checksum)->order('r.object_name');
+        )->where('rsr.rowset_checksum = ?', $this->quoteBinary($binchecksum))->order('r.object_name');
 
         if ($columns === null) {
             $columns = $this->listImportedRowsetColumnNames($checksum);
@@ -528,7 +532,7 @@ class Db extends DbConnection
             array('rsr' => 'imported_rowset_row'),
             'rsr.row_checksum = rp.row_checksum',
             array()
-        )->where('rsr.rowset_checksum = ?', $checksum);
+        )->where('rsr.rowset_checksum = ?', $this->quoteBinary(Util::hex2binary($checksum)));
 
         return $db->fetchCol($query);
     }
@@ -701,7 +705,7 @@ class Db extends DbConnection
         return $this->getDbType() === 'pgsql';
     }
 
-    protected function dbHexFunc($column)
+    public function dbHexFunc($column)
     {
         if ($this->isPgsql()) {
             return sprintf("LOWER(ENCODE(%s, 'hex'))", $column);
@@ -710,10 +714,10 @@ class Db extends DbConnection
         }
     }
 
-    protected function quoteBinary($binary)
+    public function quoteBinary($binary)
     {
         if ($this->isPgsql()) {
-            return new Zend_Db_Expr("\\x" . bin2hex($binary));
+            return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
         }
 
         return $binary;

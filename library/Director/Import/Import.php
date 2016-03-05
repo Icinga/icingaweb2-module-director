@@ -100,13 +100,16 @@ class Import
             'import_run',
             array(
                 'source_id'       => $this->source->id,
-                'rowset_checksum' => $this->rowsetChecksum(),
+                'rowset_checksum' => $this->quoteBinary($this->rowsetChecksum()),
                 'start_time'      => date('Y-m-d H:i:s'),
                 'succeeded'       => 'y'
             )
         );
-
-        return $this->db->lastInsertId();
+        if ($this->connection->isPgsql()) {
+            return $this->db->lastInsertId('import_run', 'id');
+        } else {
+            return $this->db->lastInsertId();
+        }
     }
 
     /**
@@ -207,7 +210,7 @@ class Import
 
         if (! array_key_exists($checksum, $this->properties)) {
             $this->properties[$checksum] = array(
-                'checksum'       => $checksum,
+                'checksum'       => $this->quoteBinary($checksum),
                 'property_name'  => $key,
                 'property_value' => $value,
                 'format'         => $format
@@ -290,7 +293,7 @@ class Import
             }
 
             $this->rows[$checksum] = array(
-                'checksum'    => $checksum,
+                'checksum'    => $this->quoteBinary($checksum),
                 'object_name' => $object_name
             );
 
@@ -323,7 +326,7 @@ class Import
             $newProperties = $this->newChecksums('imported_property', array_keys($this->properties));
         }
 
-        $db->insert('imported_rowset', array('checksum' => $rowset));
+        $db->insert('imported_rowset', array('checksum' => $this->quoteBinary($rowset)));
 
         foreach ($newProperties as $checksum) {
             $db->insert('imported_property', $this->properties[$checksum]);
@@ -333,7 +336,7 @@ class Import
             $db->insert('imported_row', $rows[$row]);
             foreach ($this->rowProperties[$row] as $property) {
                 $db->insert('imported_row_property', array(
-                    'row_checksum'      => $row,
+                    'row_checksum'      => $this->quoteBinary($row),
                     'property_checksum' => $property
                 ));
             }
@@ -343,8 +346,8 @@ class Import
             $db->insert(
                 'imported_rowset_row',
                 array(
-                    'rowset_checksum' => $rowset,
-                    'row_checksum'    => $row
+                    'rowset_checksum' => $this->quoteBinary($rowset),
+                    'row_checksum'    => $this->quoteBinary($row)
                 )
             );
         }
@@ -414,7 +417,10 @@ class Import
         $query = $db
             ->select()
             ->from($table, 'checksum')
-            ->where('LOWER(HEX(checksum)) IN (?)', $hexed);
+            ->where(
+                $this->connection->dbHexFunc('checksum') . ' IN (?)',
+                $hexed
+            );
 
         $existing = $db->fetchCol($query);
 
@@ -457,5 +463,10 @@ class Import
         } elseif ($el instanceof stdClass) {
             $el = $this->sortObject($el);
         }
+    }
+
+    protected function quoteBinary($bin)
+    {
+        return $this->connection->quoteBinary($bin);
     }
 }
