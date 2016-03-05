@@ -250,7 +250,7 @@ abstract class QuickForm extends Zend_Form
         $this->getElement($name)
             ->setValue($html)
             ->setIgnore(true)
-            ->removeDecorator('Label');
+            ->setDecorators(array('ViewHelper'));
 
         return $this;
     }
