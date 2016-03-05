@@ -43,6 +43,17 @@ class IcingaUserForm extends DirectorObjectForm
             'description' => $this->translate('The pager address of the user.')
         ));
 
+        $this->addElement('extensibleSet', 'groups', array(
+            'label'        => $this->translate('Groups'),
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumUsergroups()),
+            'positional'   => false,
+            'description'  => $this->translate(
+                'User groups that should be directly assigned to this user. Groups can be useful'
+                . ' for various reasons. You might prefer to send notifications to groups instead of'
+                . ' single users'
+            )
+        ));
+
         $this->optionalBoolean(
             'enable_notifications',
             $this->translate('Send notifications'),
@@ -63,14 +74,22 @@ class IcingaUserForm extends DirectorObjectForm
             'size'         => 6,
         ));
 
-/*
-        $this->addElement('text', 'groups', array(
-            'label' => $this->translate('Usergroups'),
-            'description' => $this->translate('One or more comma separated usergroup names')
-        ));
-*/
         $this->addImportsElement();
         $this->addDisabledElement();
         $this->setButtons();
+    }
+
+    protected function enumUsergroups()
+    {
+        $db = $this->db->getDbAdapter();
+        $select = $db->select()->from(
+            'icinga_usergroup',
+            array(
+                'name'    => 'object_name',
+                'display' => 'COALESCE(display_name, object_name)'
+            )
+        )->where('object_type = ?', 'object')->order('display');
+
+        return $db->fetchPairs($select);
     }
 }
