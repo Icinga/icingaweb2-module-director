@@ -8,6 +8,8 @@
  */
 class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 {
+    private $currentId;
+
     /**
      * Generates an 'extensible set' element.
      *
@@ -73,7 +75,8 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
                     }
                 }
 
-                $suff = '_' . $cnt;
+                $suff = $this->suffix($cnt);
+
                 $htm = '<li><span class="inline-buttons">';
 
                 if ($sorted) {
@@ -96,7 +99,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
             }
         }
 
-        $suff = '_' . $cnt;
+        $suff = $this->suffix($cnt);
         if ($multiOptions) {
             if (count($multiOptions) > 1 || strlen(key($multiOptions))) {
                 $htm = '<li>'
@@ -108,7 +111,8 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
                          null,
                          array(
                              'class'    => 'autosubmit' . ($cnt === 0 ? '' : ' extend-set'),
-                             'multiple' => false
+                             'multiple' => false,
+                             'id'       => $id . $suff
                          ),
                          $multiOptions
                      );
@@ -134,19 +138,13 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
              . "</ul>\n";
     }
 
-    public function moveUp($key)
+    private function suffix($cnt)
     {
-        var_dump("$key up");
-    }
-
-    public function moveDown($key)
-    {
-        var_dump("$key down");
-    }
-
-    public function removeKey($key)
-    {
-        var_dump("$key remove");
+        if ($cnt === 0) {
+            return '';
+        } else {
+            return '_' . $cnt;
+        }
     }
 
     private function renderText($name, $id, $suff, $attribs, $disabled)
