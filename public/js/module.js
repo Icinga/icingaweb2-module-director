@@ -20,7 +20,27 @@
              */
             this.module.on('rendered', this.rendered);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
+            this.module.on('focus', 'form input', this.formElementFocus);
+            this.module.on('focus', 'form select', this.formElementFocus);
             this.module.icinga.logger.debug('Director module initialized');
+        },
+
+        formElementFocus: function(ev)
+        {
+            var $input = $(ev.currentTarget);
+            var $dd = $input.closest('dd');
+            if ($dd.attr('id').match(/button/)) {
+                return;
+            }
+            var $li = $input.closest('li');
+            var $dt = $dd.prev();
+            var $form = $dt.closest('form');
+            $form.find('dt').removeClass('active');
+            $form.find('dd').removeClass('active');
+            $form.find('li').removeClass('active');
+            $li.addClass('active');
+            $dt.addClass('active');
+            $dd.addClass('active');
         },
 
         toggleFieldset: function (ev) {
