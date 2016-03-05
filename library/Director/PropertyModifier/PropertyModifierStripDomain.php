@@ -18,6 +18,6 @@ class PropertyModifierStripDomain extends PropertyModifierHook
 
     public function transform($value)
     {
-        return preg_replace($this->settings['domain'], "", $value);
+        return preg_replace($this->settings['domain'], '', $value);
     }
 }
