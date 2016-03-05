@@ -40,6 +40,11 @@ class Migrations
         }
     }
 
+    public function hasSchema()
+    {
+        return $this->listPendingMigrations() !== array(0);
+    }
+
     public function hasPendingMigrations()
     {
         return $this->countPendingMigrations() > 0;
