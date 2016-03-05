@@ -53,6 +53,8 @@ abstract class QuickForm extends Zend_Form
 
     protected $submitButtonName;
 
+    protected $fakeSubmitButtonName;
+
     /**
      * Whether form elements have already been created
      */
@@ -123,7 +125,22 @@ abstract class QuickForm extends Zend_Form
             $el = $this->createElement('submit', $label)->setLabel($label)->setDecorators(array('ViewHelper'));
             $this->submitButtonName = $el->getName();
             $this->addElement($el);
+
+            $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT')
+                ->setLabel($label)
+                ->setDecorators(array('ViewHelper'));
+            $this->fakeSubmitButtonName = $fakeEl->getName();
+            $this->addElement($fakeEl);
         }
+
+        $this->addDisplayGroup(
+            array($this->fakeSubmitButtonName),
+            'fake_button',
+            array(
+                'decorators' => array('FormElements'),
+                'order' => 1,
+            )
+        );
 
         $grp = array(
             $this->submitButtonName,
@@ -132,6 +149,7 @@ abstract class QuickForm extends Zend_Form
         $this->addDisplayGroup($grp, 'buttons', array(
             'decorators' => array(
                 'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
                 'DtDdWrapper',
             ),
             'order' => 1000,
@@ -294,22 +312,42 @@ abstract class QuickForm extends Zend_Form
         if ($this->hasBeenSubmitted === null) {
             $req = $this->getRequest();
             if ($req->isPost()) {
-                $post = $req->getPost();
-                $name  = $this->submitButtonName;
-
-                if ($name === null) {
-                    $this->hasBeenSubmitted = $this->hasBeenSent();
-                } else {
-                    $el = $this->getElement($name);
-                    $this->hasBeenSubmitted = array_key_exists($name, $post)
-                         && $post[$name] === $this->getSubmitLabel();
+                if (! $this->hasSubmitButton()) {
+                    return $this->hasBeenSubmitted = $this->hasBeenSent();
                 }
+
+                $this->hasBeenSubmitted = $this->pressedButton(
+                    $this->fakeSubmitButtonName,
+                    $this->getSubmitLabel()
+                ) || $this->pressedButton(
+                    $this->submitButtonName,
+                    $this->getSubmitLabel()
+                );
             } else {
                 $this->hasBeenSubmitted === false;
             }
         }
 
         return $this->hasBeenSubmitted;
+    }
+
+    protected function hasSubmitButton()
+    {
+        return $this->submitButtonName !== null;
+    }
+
+    protected function pressedButton($name, $label)
+    {
+        $req = $this->getRequest();
+        if (! $req->isPost()) {
+            return false;
+        }
+
+        $req = $this->getRequest();
+        $post = $req->getPost();
+
+        return array_key_exists($name, $post)
+            && $post[$name] === $label;
     }
 
     protected function beforeValidation($data = array())
