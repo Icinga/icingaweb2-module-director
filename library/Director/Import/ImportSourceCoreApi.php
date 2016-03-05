@@ -16,6 +16,8 @@ class ImportSourceCoreApi extends ImportSourceHook
 
     protected $db;
 
+    protected $api;
+
     public function fetchData()
     {
         $func = 'get' . $this->getSetting('object_type') . 'Objects';
@@ -59,12 +61,12 @@ class ImportSourceCoreApi extends ImportSourceHook
 
     protected function api()
     {
-        $apiconfig = Config::module('director')->getSection('api');
-        $client = new RestApiClient($apiconfig->get('address'), $apiconfig->get('port'));
-        $client->setCredentials($apiconfig->get('username'), $apiconfig->get('password'));
-        $api = new CoreApi($client);
-        $api->setDb($this->db());
-        return $api;
+        if ($this->api === null) {
+            $endpoint = $this->db()->getDeploymentEndpoint();
+            $this->api = $endpoint->api();
+        }
+
+        return $this->api;
     }
 
     protected function db()
