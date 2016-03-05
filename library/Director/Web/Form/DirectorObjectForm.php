@@ -48,26 +48,6 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->getSentOrObjectValue('object_type') === 'template';
     }
 
-    protected function handleImports($object, & $values)
-    {
-        if (! $object->supportsImports()) {
-            return;
-        }
-
-        if (array_key_exists('imports', $values)) {
-            $value = $values['imports'];
-            unset($values['imports']);
-            $object->clearImportedObjects();
-            $object->imports()->set($value);
-        }
-
-        $el = $this->getElement('imports');
-        if ($el) {
-            $el->setMultiOptions($this->enumAllowedTemplates());
-            $el->setValue($object->imports()->listImportNames());
-        }
-    }
-
     protected function handleRanges($object, & $values)
     {
         if (! $object->supportsRanges()) {
@@ -166,25 +146,6 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->displayGroups[$group];
     }
 
-    protected function handleGroups($object, & $values)
-    {
-        if (! $object->supportsGroups()) {
-            return;
-        }
-
-        if (array_key_exists('groups', $values)) {
-            $value = $values['groups'];
-            unset($values['groups']);
-
-            // TODO: Drop this once we have arrays everwhere
-            if (is_string($value)) {
-                $value =  preg_split('/\s*,\s*/', $value, -1, PREG_SPLIT_NO_EMPTY);
-            }
-
-            $object->groups()->set($value);
-        }
-    }
-
     protected function handleProperties($object, & $values)
     {
         if ($this->hasBeenSent()) {
@@ -197,16 +158,16 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        $props = $object->getProperties();
+        if ($object instanceof IcingaObject) {
+            $props = (array) $object->toPlainObject();
+        } else {
+            $props = $object->getProperties();
+            unset($props['vars']);
+        }
+        $this->setDefaults($props);
 
         if (! $object instanceof IcingaObject) {
-            $this->setDefaults($props);
             return $this;
-        }
-
-        if (! $object->supportsImports()) {
-            $this->setDefaults($props);
-            return;
         }
 
         $inherited = $object->getInheritedProperties();
@@ -757,6 +718,12 @@ abstract class DirectorObjectForm extends QuickForm
                 if ($object->hasProperty($name)) {
                     if ($resolved) {
                         $objectProperty = $object->getResolvedProperty($name);
+/*
+var_dump($name);
+var_dump($objectProperty);
+print_r($object);
+
+*/
                     } else {
                         $objectProperty = $object->$name;
                     }
