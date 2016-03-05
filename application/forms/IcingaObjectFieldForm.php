@@ -54,13 +54,16 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                 if ($arg->argument_format === 'string') {
                     $val = $arg->argument_value;
                     // TODO: create var::extractMacros or so
-                    if (preg_match('/^\$[^\$]+\$$/', $val)) {
-                        if (array_key_exists($val, $blacklistedVars)) {
-                            $id = $blacklistedVars[$val];
-                            $suggestedFields[$id] = $existingFields[$id];
-                            unset($existingFields[$id]);
-                        } else {
-                            $argumentVars[$val] = $val;
+
+                    if (preg_match_all('/(\$[a-z0-9_]+\$)/', $val, $m, PREG_PATTERN_ORDER)) {
+                        foreach ($m[1] as $val) {
+                            if (array_key_exists($val, $blacklistedVars)) {
+                                $id = $blacklistedVars[$val];
+                                $suggestedFields[$id] = $existingFields[$id];
+                                unset($existingFields[$id]);
+                            } else {
+                                $argumentVars[$val] = $val;
+                            }
                         }
                     }
                 }
