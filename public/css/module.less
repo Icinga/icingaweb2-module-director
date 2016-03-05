@@ -48,6 +48,11 @@ table.avp th {
   margin-bottom: 2em;
 }
 
+.invisible {
+    position: absolute;
+    left: -100%;
+}
+
 form input[type=submit] {
   .button();
   border-width: 1px;
@@ -66,19 +71,15 @@ form input[type=submit]:first-of-type {
 
 form p.description {
   display: none;
-  padding-bottom: 1em;
   color: #888;
-  padding-left: 32%;
   font-style: italic;
 }
 
-/*
 input, select, select option, textarea {
    -webkit-appearance: none;
    -moz-appearance: none;
    appearance: none;
 }
-*/
 
 form ul.form-errors {
     margin-bottom: 0.5em;
@@ -118,16 +119,74 @@ select {
 input[type=text], input[type=password], textarea, select {
     max-width: 36em;
     min-width: 20em;
-    width: 63%;
+    width: 100%;
     padding-left: 0.5em;
     border-style: solid;
     border-color: transparent;
     border-bottom-color: @gray-light;
     border-width: 1px 1px 1px 3px;
+    background-color: white;
 
     &.search {
         background: transparent url("../img/icons/search.png") no-repeat scroll 0.5em center / 1em 1em;
         padding-left: 2em;
+    }
+}
+
+ul.extensible-set {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    display: inline-block;
+    width: 100%;
+    border-bottom: 1px solid @gray-light;
+
+    input[type=text], input[type=password], textarea, select {
+        border-color: transparent;
+    }
+
+    li {
+        position: relative;
+        clear: both;
+    }
+
+    input[type=text], select {
+        width: 100%;
+    }
+
+    span.inline-buttons {
+        position: absolute;
+        z-index: 10;
+        right: 1em;
+        input[type=submit] {
+            font-family: 'ifont';
+            width: 2em;
+            font-size: 0.625em;
+            margin-left: 0.2em;
+            padding: 0.2em 0 0.2em 0;
+        }
+    }
+
+    select.extend-set, input.extend-set {
+        display: none;
+    }
+}
+
+form {
+    #_FAKE_SUBMIT {
+        position: absolute;
+        left: -100%;
+    }
+}
+
+dd.active ul.extensible-set {
+    border: 1px solid @gray-light;
+    select.extend-set, input.extend-set {
+        display: inline;
+    }
+
+    input[type=submit]:first-of-type {
+        border-width: 1px;
     }
 }
 
@@ -149,15 +208,18 @@ select, input[type=text], textarea {
 select[value=""] {
     color: blue;
     border: 1px solid #666;
+    background-color: white;
 }
 
 select option {
     color: inherit;
     padding-left: 0.5em;
+    background-color: white;
 }
 
 select option[value=""] {
     color: #aaa;
+    background-color: white;
 }
 
 a {
@@ -340,6 +402,7 @@ fieldset {
     }
 }
 
+
 /* BEGIN Forms */
 form dt label {
     width: auto;
@@ -351,13 +414,44 @@ form dt label {
             content: '*'
         }
     }
+
+    &:hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+}
+
+form dd input.related-action[type='submit'] {
+    display: none;
+}
+
+form dd.active li.active input.related-action[type='submit'] {
+    display: inline-block;
+}
+
+form dt.active label {
+    color: @icinga-blue;
+}
+
+form dd.active {
+    p.description {
+        display: block;
+        width: 100%;
+    }
 }
 
 form dd {
-    display: inline;
-    min-height: 2.5em;
-    vertical-align: top;
-    margin: 0;
+  padding: 0.3em 0.5em;
+  margin: 0;
+}
+
+form dt {
+  padding: 0.5em 0.5em;
+  margin: 0;
+}
+
+form dt.active, form dd.active {
+    background-color: @tr-active-color;
 }
 
 form dt {
@@ -366,6 +460,14 @@ form dt {
     min-width: 12em;
     min-height: 2.5em;
     width: 30%;
+}
+
+form dd {
+    display: inline-block;
+    width: 63%;
+    min-height: 2.5em;
+    vertical-align: top;
+    margin: 0;
 }
 
 form dd:after {
