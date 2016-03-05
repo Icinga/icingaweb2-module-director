@@ -60,23 +60,33 @@ class IcingaUserForm extends DirectorObjectForm
             $this->translate('Whether to send notifications for this user')
         );
 
-        $this->addElement('multiselect', 'states', array(
-            'label'        => $this->translate('States'),
+        $this->addElement('extensibleSet', 'states', array(
+            'label' => $this->translate('States'),
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
             'description'  => $this->translate('The host/service states you want to get notifications for'),
-            'multiOptions' => $this->enumStateFilters(),
-            'size'         => 6,
         ));
 
-        $this->addElement('multiselect', 'types', array(
-            'label'        => $this->translate('Event types'),
+        $this->addElement('extensibleSet', 'types', array(
+            'label' => $this->translate('Event types'),
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
             'description'  => $this->translate('The event types you want to get notifications for'),
-            'multiOptions' => $this->enumTypeFilters(),
-            'size'         => 6,
         ));
 
         $this->addImportsElement();
         $this->addDisabledElement();
         $this->setButtons();
+    }
+
+    protected function enumStates()
+    {
+        $set = new \Icinga\Module\Director\IcingaConfig\StateFilterSet();
+        return $set->enumAllowedValues();
+    }
+
+    protected function enumTypes()
+    {
+        $set = new \Icinga\Module\Director\IcingaConfig\TypeFilterSet();
+        return $set->enumAllowedValues();
     }
 
     protected function enumUsergroups()
