@@ -103,10 +103,21 @@ class KickstartHelper
     protected function importZones()
     {
         $db = $this->db;
+        $imports = array();
+        $objects = array();
+
         foreach ($this->api()->setDb($db)->getZoneObjects() as $object) {
             if (! $object::exists($object->object_name, $db)) {
+                $imports[$object->object_name] = $object->imports;
+                $object->imports = array();
+                $objects[$object->object_name] = $object;
                 $object->store();
             }
+        }
+
+        foreach ($imports as $name => $imports) {
+            $objects[$name]->imports = $imports;
+            $objects[$name]->store();
         }
 
         return $this;
