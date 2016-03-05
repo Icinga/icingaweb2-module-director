@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Director\ConfigHealthChecker;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Web\Navigation\Renderer\BadgeNavigationItemRenderer;
 
@@ -54,6 +55,26 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
                 'No database has been configured for Icinga Director'
             );
 
+            return;
+        }
+
+        $migrations = new Migrations($db);
+        if (!$migrations->hasSchema()) {
+            $this->count = 1;
+            $this->directorState = self::STATE_CRITICAL;
+            $this->message = $this->translate(
+                'Director database schema has not been created yet'
+            );
+            return;
+        }
+
+        if ($migrations->hasPendingMigrations()) {
+            $this->count = $migrations->countPendingMigrations();
+            $this->directorState = self::STATE_PENDING;
+            $this->message = sprintf(
+                $this->translate('There are %d pending database migrations'),
+                $this->count
+            );
             return;
         }
 
