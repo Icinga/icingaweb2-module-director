@@ -472,6 +472,11 @@ class ExtensibleSet
     protected function addValuesTo(&$array, $values)
     {
         foreach ($this->wantArray($values) as $value) {
+            // silently ignore null or empty strings
+            if (strlen($value) === 0) {
+                continue;
+            }
+
             $this->addTo($array, $value);
         }
 
