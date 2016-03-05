@@ -29,7 +29,7 @@
         {
             var $input = $(ev.currentTarget);
             var $dd = $input.closest('dd');
-            if ($dd.attr('id').match(/button/)) {
+            if ($dd.attr('id') && $dd.attr('id').match(/button/)) {
                 return;
             }
             var $li = $input.closest('li');
