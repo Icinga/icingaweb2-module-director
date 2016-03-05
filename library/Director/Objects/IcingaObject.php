@@ -222,11 +222,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function set($key, $value)
     {
-        if ($key === 'groups') {
-            $this->groups()->set($value);
-            return $this;
-
-        } elseif ($key === 'imports') {
+        if ($key === 'imports') {
             $this->imports()->set($value);
             return $this;
 
@@ -486,6 +482,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $vars;
+    }
+
+    public function getGroups()
+    {
+        return $this->groups()->listGroupNames();
+    }
+
+    public function setGroups($groups)
+    {
+        $this->groups()->set($groups);
+        return $this;
     }
 
     protected function getResolved($what)
