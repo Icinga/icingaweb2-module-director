@@ -253,7 +253,7 @@ constants
             'event_command'         => 'event_command',
             'flapping_threshold'    => 'flapping_threshold',
             'volatile'              => 'volatile',
-            'zone_id'               => 'zone_id',
+            'zone'                  => 'zone',
             'command_endpoint'      => 'command_endpoint',
             'notes'                 => 'notes',
             'notes_url'             => 'notes_url',

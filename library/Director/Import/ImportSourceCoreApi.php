@@ -63,7 +63,7 @@ class ImportSourceCoreApi extends ImportSourceHook
     {
         if ($this->api === null) {
             $endpoint = $this->db()->getDeploymentEndpoint();
-            $this->api = $endpoint->api();
+            $this->api = $endpoint->api()->setDb($this->db());
         }
 
         return $this->api;
