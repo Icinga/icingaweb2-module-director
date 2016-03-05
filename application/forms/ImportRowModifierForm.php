@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Application\Hook;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -10,15 +11,18 @@ class ImportRowModifierForm extends DirectorObjectForm
 {
     protected $source;
 
+    protected $importSource;
+
     public function setup()
     {
         $this->addHidden('source_id', $this->source->id);
         $this->addHidden('priority', 1);
 
-        $this->addElement('text', 'property_name', array(
-            'label' => $this->translate('Property'),
-            'description' => $this->translate('This must be an import source column'),
-            'required'    => true,
+        $this->addElement('select', 'property_name', array(
+            'label'        => $this->translate('Property'),
+            'description'  => $this->translate('This must be an import source column (property)'),
+            'multiOptions' => $this->optionalEnum($this->enumSourceColumns()),
+            'required'     => true,
         ));
 
         $error = false;
@@ -32,6 +36,9 @@ class ImportRowModifierForm extends DirectorObjectForm
         $this->addElement('select', 'provider_class', array(
             'label'        => $this->translate('Modifier'),
             'required'     => true,
+            'description'  => $this->translate(
+                'A property modifier allows you to modify a specific property at import time'
+            ),
             'multiOptions' => $this->optionalEnum($mods),
             'class'        => 'autosubmit',
         ));
@@ -63,6 +70,23 @@ class ImportRowModifierForm extends DirectorObjectForm
         $this->setButtons();
     }
 
+    protected function enumSourceColumns()
+    {
+        $columns = $this->getImportSource()->listColumns();
+        $columns = array_combine($columns, $columns);
+        return $columns;
+    }
+
+
+    protected function getImportSource()
+    {
+        if ($this->importSource === null) {
+            $this->importSource = ImportSourceHook::loadByName($this->source->source_name, $this->db);
+        }
+
+        return $this->importSource;
+    }
+
     protected function enumModifiers()
     {
         $hooks = Hook::all('Director\\PropertyModifier');
@@ -70,6 +94,8 @@ class ImportRowModifierForm extends DirectorObjectForm
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
         }
+
+        asort($enum);
 
         return $enum;
     }
