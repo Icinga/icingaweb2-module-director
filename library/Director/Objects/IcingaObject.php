@@ -799,7 +799,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $db->fetchCol($query);
     }
 
+    public function hasProperty($key)
+    {
+        if ($this->propertyIsRelatedSet($key)) {
+            return true;
+        }
 
+        return parent::hasProperty($key);
+    }
 
     public function isTemplate()
     {
