@@ -16,19 +16,6 @@ class IcingaNotificationForm extends DirectorObjectForm
             'description' => $this->translate('Icinga object name for this notification')
         ));
  
-        $this->addElement('multiselect', 'states', array(
-            'label'        => $this->translate('States'),
-            'description'  => $this->translate('The host/service states you want to get notifications for'),
-            'multiOptions' => $this->enumStateFilters(),
-            'size'         => 6,
-        ));
-
-        $this->addElement('multiselect', 'types', array(
-            'label'        => $this->translate('Event types'),
-            'description'  => $this->translate('The event types you want to get notifications for'),
-            'multiOptions' => $this->enumTypeFilters(),
-            'size'         => 6,
-        ));
 
         $this->addDisabledElement();
         $this->setButtons();
