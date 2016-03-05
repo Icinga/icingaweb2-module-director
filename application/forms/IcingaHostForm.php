@@ -14,12 +14,35 @@ class IcingaHostForm extends DirectorObjectForm
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Hostname'),
             'required'    => true,
-            'description' => $this->translate('Icinga object name for this host')
+            'description' => $this->translate(
+                'Icinga object name for this host. This is usually a fully qualified host name'
+                . ' but it could basically be any kind of string. To make things easier for your'
+                . ' users we strongly suggest to use meaningful names for templates. E.g. "generic-host"'
+                . ' is ugly, "Standard Linux Server" is easier to understand'
+            )
         ));
- 
+
+        $this->addElement('extensibleSet', 'groups', array(
+            'label'        => $this->translate('Groups'),
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumHostgroups()),
+            'positional'   => false,
+            'description'  => $this->translate(
+                'Hostgroups that should be directly assigned to this node. Hostgroups can be useful'
+                . ' for various reasons. You might assign service checks based on assigned hostgroup.'
+                . ' They are also often used as an instrument to enforce restricted views in Icinga Web 2.'
+                . ' Hostgroups can be directly assigned to single hosts or to host templates. You might'
+                . ' also want to consider assigning hostgroups using apply rules'
+            )
+        ));
+
+        $this->addImportsElement();
+
         $this->addElement('text', 'display_name', array(
             'label' => $this->translate('Display name'),
-            'description' => $this->translate('Alternative name for this host')
+            'description' => $this->translate(
+                'Alternative name for this host. Might be a host alias or and kind'
+                . ' of string helping your users to identify this host'
+            )
         ));
 
         $this->addElement('text', 'address', array(
@@ -60,15 +83,7 @@ class IcingaHostForm extends DirectorObjectForm
             ));
         }
 
-        $this->addImportsElement();
         $this->addDisabledElement();
-
-        /*
-        $this->addElement('text', 'groups', array(
-            'label' => $this->translate('Hostgroups'),
-            'description' => $this->translate('One or more comma separated hostgroup names')
-        ));
-        */
 
         $elements = array(
             'object_type',
@@ -76,20 +91,34 @@ class IcingaHostForm extends DirectorObjectForm
             'display_name',
             'address',
             'address6',
-            'zone_id',
-            'has_agent',
-            'master_should_connect',
-            'accept_config',
             'imports',
+            'groups',
             'disabled',
         );
         $this->addDisplayGroup($elements, 'object_definition', array(
             'decorators' => array(
                 'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
             'order' => 20,
             'legend' => $this->translate('Host properties')
+        ));
+
+        $elements = array(
+            'zone_id',
+            'has_agent',
+            'master_should_connect',
+            'accept_config',
+        );
+        $this->addDisplayGroup($elements, 'clustering', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 40,
+            'legend' => $this->translate('Icinga Replication Settings')
         ));
 
         if ($this->isTemplate()) {
@@ -100,5 +129,19 @@ class IcingaHostForm extends DirectorObjectForm
         }
 
         $this->setButtons();
+    }
+
+    protected function enumHostgroups()
+    {
+        $db = $this->db->getDbAdapter();
+        $select = $db->select()->from(
+            'icinga_hostgroup',
+            array(
+                'name'    => 'object_name',
+                'display' => 'COALESCE(display_name, object_name)'
+            )
+        )->where('object_type = ?', 'object')->order('display');
+
+        return $db->fetchPairs($select);
     }
 }
