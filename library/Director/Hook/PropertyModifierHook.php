@@ -12,7 +12,7 @@ abstract class PropertyModifierHook
     public function getName()
     {
         $parts = explode('\\', get_class($this));
-        $class = preg_replace('/ImportRowModifier/', '', array_pop($parts)); // right?
+        $class = preg_replace('/^PropertyModifier/', '', array_pop($parts)); // right?
 
         if (array_shift($parts) === 'Icinga' && array_shift($parts) === 'Module') {
             $module = array_shift($parts);
