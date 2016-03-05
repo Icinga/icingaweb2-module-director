@@ -151,6 +151,7 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addDisplayGroup($elements, $group, array(
                 'decorators' => array(
                     'FormElements',
+                    array('HtmlTag', array('tag' => 'dl')),
                     'Fieldset',
                 ),
                 'order'  => $order,
