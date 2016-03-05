@@ -583,6 +583,22 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->objectName;
     }
 
+    protected function removeFromSet(& $set, $key)
+    {
+        unset($set[$key]);
+        sort($set);
+    }
+
+    protected function moveUpInSet(& $set, $key)
+    {
+        list($set[$key - 1], $set[$key]) = array($set[$key], $set[$key - 1]);
+    }
+
+    protected function moveDownInSet(& $set, $key)
+    {
+        list($set[$key + 1], $set[$key]) = array($set[$key], $set[$key + 1]);
+    }
+
     protected function onRequest()
     {
         $values = array();
@@ -601,18 +617,33 @@ abstract class DirectorObjectForm extends QuickForm
                     $values[$key] = $value;
                 }
             }
-        }
 
+            foreach ($post as $key => $value) {
+                if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
+                    $values[$m[1]] = array_filter($values[$m[1]], 'strlen');
+                    switch ($m[3]) {
+                        case 'MOVE_UP':
+                            $this->moveUpInSet($values[$m[1]], $m[2]);
+                            break;
+                        case 'MOVE_DOWN':
+                            $this->moveDownInSet($values[$m[1]], $m[2]);
+                            break;
+                        case 'REMOVE':
+                            $this->removeFromSet($values[$m[1]], $m[2]);
+                            break;
+                    }
+
+                    $this->getRequest()->setPost($m[1], $values[$m[1]]);
+                }
+            }
+        }
         if ($object instanceof IcingaObject) {
-            $this->handleImports($object, $values);
             $this->handleProperties($object, $values);
             $this->handleCustomVars($object, $post);
-            $this->handleGroups($object, $values);
             $this->handleRanges($object, $values);
         } else {
             $this->handleProperties($object, $values);
         }
-
         /*
         // TODO: something like this could be used to remember unstored changes
         if ($object->hasBeenModified()) {
@@ -803,6 +834,13 @@ print_r($object);
         return $this;
     }
 
+    public function optionallyAddFromEnum($enum)
+    {
+        return array(
+            null => $this->translate('- click to add more -')
+        ) + $enum;
+    }
+
     protected function addObjectTypeElement()
     {
         $default = 'object';
@@ -864,11 +902,11 @@ print_r($object);
 
     protected function addImportsElement()
     {
-        $this->addElement('multiselect', 'imports', array(
+        $this->addElement('extensibleSet', 'imports', array(
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate('Importable templates, choose one or more of them (CTRL/SHIFT click)'),
-            'multiOptions' => $this->enumAllowedTemplates(),
-            'size'         => 8,
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumAllowedTemplates()),
+            'sorted'       => true,
             'class'        => 'autosubmit'
         ));
 
