@@ -25,7 +25,18 @@ CREATE TYPE enum_command_object_type AS ENUM('object', 'template', 'external_obj
 CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply', 'external_object');
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
 CREATE TYPE enum_type_name AS ENUM('DowntimeStart', 'DowntimeEnd', 'DowntimeRemoved', 'Custom', 'Acknowledgement', 'Problem', 'Recovery', 'FlappingStart', 'FlappingEnd');
-CREATE TYPE enum_sync_rule_object_type AS ENUM('host', 'user');
+CREATE TYPE enum_sync_rule_object_type AS ENUM(
+  'host',
+  'service',
+  'command',
+  'user',
+  'hostgroup',
+  'servicegroup',
+  'usergroup',
+  'datalistEntry',
+  'endpoint',
+  'zone'
+);
 CREATE TYPE enum_sync_rule_update_policy AS ENUM('merge', 'override', 'ignore');
 CREATE TYPE enum_sync_property_merge_policy AS ENUM('override', 'merge');
 
@@ -1415,4 +1426,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (81, NOW());
+  VALUES (82, NOW());

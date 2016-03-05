@@ -1154,7 +1154,18 @@ CREATE TABLE imported_row_property (
 CREATE TABLE sync_rule (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   rule_name VARCHAR(255) NOT NULL,
-  object_type enum('host', 'host_template', 'service', 'service_template', 'command', 'command_template', 'user', 'user_template', 'hostgroup', 'servicegroup', 'usergroup', 'datalistEntry', 'endpoint', 'zone') NOT NULL,
+  object_type enum(
+    'host',
+    'service',
+    'command',
+    'user',
+    'hostgroup',
+    'servicegroup',
+    'usergroup',
+    'datalistEntry',
+    'endpoint',
+    'zone'
+  ) NOT NULL,
   update_policy ENUM('merge', 'override', 'ignore') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
   filter_expression TEXT DEFAULT NULL,
