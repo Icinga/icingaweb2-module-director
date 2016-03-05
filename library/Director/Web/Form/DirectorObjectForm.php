@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Exception;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Zend_Form_Element_Select as Zf_Select;
@@ -187,7 +188,13 @@ abstract class DirectorObjectForm extends QuickForm
     protected function handleProperties($object, & $values)
     {
         if ($this->hasBeenSent()) {
-            $object->setProperties($values);
+            foreach ($values as $key => $value) {
+                try {
+                    $object->set($key, $value);
+                } catch (Exception $e) {
+                    $this->getElement($key)->addError($e->getMessage());
+                }
+            }
         }
 
         $props = $object->getProperties();
