@@ -1210,7 +1210,7 @@ CREATE TABLE import_run (
   source_id integer NOT NULL,
   rowset_checksum bytea CHECK(LENGTH(rowset_checksum) = 20),
   start_time timestamp with time zone NOT NULL,
-  end_time timestamp with time zone NOT NULL,
+  end_time timestamp with time zone DEFAULT NULL,
   succeeded enum_boolean DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT import_run_source
@@ -1415,4 +1415,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (80, NOW());
+  VALUES (81, NOW());
