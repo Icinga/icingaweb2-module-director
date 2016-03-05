@@ -10,17 +10,32 @@ class PropertyModifierRegexReplace extends PropertyModifierHook
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('text', 'pattern', array(
-            'label'    => 'Regex pattern',
-            'required' => true,
+            'label'       => 'Regex pattern',
+            'description' => $form->translate(
+                'The pattern you want to search for. This can be a regular expression like /^www\d+\./'
+            ),
+            'required'    => true,
         ));
 
         $form->addElement('text', 'replacement', array(
-            'label'    => 'Replacement',
+            'label'       => 'Replacement',
+            'description' => $form->translate(
+                'The string that should be used as a preplacement'
+            ),
         ));
+    }
+
+    public function getName()
+    {
+        return 'Regular expression based replacement';
     }
 
     public function transform($value)
     {
-        return preg_replace($this->settings['pattern'], $this->settings['replacement'], $value);
+        return preg_replace(
+            $this->getSetting('pattern'),
+            $this->getSetting('replacement'),
+            $value
+        );
     }
 }

@@ -11,13 +11,24 @@ class PropertyModifierStripDomain extends PropertyModifierHook
     {
         $form->addElement('text', 'domain', array(
             'label'       => 'Domain name',
-            'description' => 'Domain to be replaced',
+            'description' => $form->translate('The domain name you want to be stripped'),
             'required'    => true,
         ));
     }
 
+    public function getName()
+    {
+        return 'Strip a domain name';
+    }
+
     public function transform($value)
     {
-        return preg_replace($this->settings['domain'], '', $value);
+        $domain = preg_quote(ltrim($this->getSetting('domain'), '.'), '/');
+
+        return preg_replace(
+            '/\.' . $domain . '$/',
+            '',
+            $value
+        );
     }
 }

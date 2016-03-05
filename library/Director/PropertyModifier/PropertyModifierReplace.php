@@ -10,13 +10,15 @@ class PropertyModifierReplace extends PropertyModifierHook
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('text', 'string', array(
-            'label'    => 'Search string',
-            'required' => true,
+            'label'       => 'Search string',
+            'description' => $form->translate('The string you want to search for'),
+            'required'    => true,
         ));
 
         $form->addElement('text', 'replacement', array(
-            'label'    => 'Replacement',
-            'required' => true,
+            'label'       => 'Replacement',
+            'description' => $form->translate('Your replacement string'),
+            'required'    => true,
         ));
     }
 

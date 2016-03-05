@@ -14,7 +14,7 @@ class PropertyModifierSubstring extends PropertyModifierHook
             'required'    => true,
             'description' => sprintf(
                 $form->translate(
-                    'Please see %s for detailled instructions of how start and and work'
+                    'Please see %s for detailled instructions of how start and end work'
                 ),
                 'http://php.net/manual/en/function.substr.php'
             )
@@ -22,7 +22,12 @@ class PropertyModifierSubstring extends PropertyModifierHook
 
         $form->addElement('text', 'length', array(
             'label'    => 'End',
-            'required' => true,
+            'description' => sprintf(
+                $form->translate(
+                    'Please see %s for detailled instructions of how start and end work'
+                ),
+                'http://php.net/manual/en/function.substr.php'
+            )
         ));
     }
 
