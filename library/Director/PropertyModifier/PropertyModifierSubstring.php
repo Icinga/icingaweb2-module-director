@@ -9,19 +9,25 @@ class PropertyModifierSubstring extends PropertyModifierHook
 {
     public static function addSettingsFormFields(QuickForm $form)
     {
-        $form->addElement('text', 'pattern', array(
-            'label'    => 'Regex pattern',
-            'required' => true,
+        $form->addElement('text', 'start', array(
+            'label'       => 'Start',
+            'required'    => true,
+            'description' => sprintf(
+                $form->translate(
+                    'Please see %s for detailled instructions of how start and and work'
+                ),
+                'http://php.net/manual/en/function.substr.php'
+            )
         ));
 
-        $form->addElement('text', 'replacement', array(
-            'label'    => 'Replacement',
+        $form->addElement('text', 'length', array(
+            'label'    => 'End',
             'required' => true,
         ));
     }
 
     public function transform($value)
     {
-        return substr($value, $this->settings['start'], $this->settings['end'] - $this->settings['start']);
+        return substr($value, $this->getSetting('start'), $this->getSetting('length'));
     }
 }
