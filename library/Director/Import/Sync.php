@@ -697,10 +697,10 @@ class Sync
 
         if ($created + $deleted + $modified > 0) {
             // TODO: What if this has been the very first activity?
-            $runProperties['last_former_activity'] = $formerActivityChecksum;
-            $runProperties['last_related_activity'] = Util::hex2binary(
+            $runProperties['last_former_activity'] = $db->quoteBinary($formerActivityChecksum);
+            $runProperties['last_related_activity'] = $db->quoteBinary(Util::hex2binary(
                 $db->getLastActivityChecksum()
-            );
+            ));
         }
 
         $this->run->setProperties($runProperties)->store();
