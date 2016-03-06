@@ -43,16 +43,20 @@ class ServiceController extends ObjectController
 
     protected function loadObject()
     {
-        if ($this->object === null && $name = $this->params->get('name')) {
-            $params = array('object_name' => $name);
-            $db = $this->db();
+        if ($this->object === null) {
+            if ($name = $this->params->get('name')) {
+                $params = array('object_name' => $name);
+                $db = $this->db();
 
-            if ($hostname = $this->params->get('host')) {
-                $this->view->host = IcingaHost::load($hostname, $db);
-                $params['host_id'] = $this->view->host->id;
+                if ($hostname = $this->params->get('host')) {
+                    $this->view->host = IcingaHost::load($hostname, $db);
+                    $params['host_id'] = $this->view->host->id;
+                }
+
+                $this->object = IcingaService::load($params, $db);
+            } else {
+                parent::loadObject();
             }
-
-            $this->object = IcingaService::load($params, $db);
         }
 
         return $this->object;
