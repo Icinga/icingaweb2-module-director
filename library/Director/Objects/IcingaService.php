@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+
 class IcingaService extends IcingaObject
 {
     protected $table = 'icinga_service';
@@ -95,6 +97,45 @@ class IcingaService extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
+    }
+
+    protected function renderObjectHeader()
+    {
+        if ($this->hasBeenAssignedToHostTemplate()) {
+
+            return sprintf(
+                "%s %s %s {\n",
+                'apply',
+                $this->getType(),
+                c::renderString($this->getObjectName())
+            );
+
+        } else {
+            return parent::renderObjectHeader();
+        }
+    }
+
+    protected function renderAssignments()
+    {
+        if (! $this->hasBeenAssignedToHostTemplate()) {
+            return parent::renderAssignments();
+        }
+
+        // TODO: use assignment renderer, escape host
+        $filter = sprintf(
+            'assign where "%s" in host.templates',
+            $this->host
+        );
+
+        return "\n    " . $filter . "\n";
+    }
+
+    protected function hasBeenAssignedToHostTemplate()
+    {
+        return $this->host_id && $this->getRelatedObject(
+            'host',
+            $this->host_id
+        )->object_type === 'template';
     }
 
     protected function renderCustomExtensions()
