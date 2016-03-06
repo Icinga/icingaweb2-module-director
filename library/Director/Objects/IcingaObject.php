@@ -1374,6 +1374,27 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    public function getUrlParams()
+    {
+        $params = array();
+
+        if ($this->object_type === 'apply') {
+            $params['id'] = $this->id;
+        } else {
+            $params = array('name' => $this->object_name);
+
+            if ($this->hasProperty('host_id')) {
+                $params['host'] = $this->host;
+            }
+
+            if ($this->hasProperty('service_id')) {
+                $params['service'] = $this->service;
+            }
+        }
+
+        return $params;
+    }
+
     public function toJson(
         $resolved = false,
         $skipDefaults = false,
