@@ -60,11 +60,17 @@ class RestApiClient
     {
         if (function_exists('curl_version')) {
             return $this->curlRequest($method, $url, $body, $raw, $stream);
+        /*
+        // Completely disabled fallback method, caused too many issues
+        // with hanging connections on specific PHP versions
         } elseif (version_compare(PHP_VERSION, '5.4.0') >= 0) {
             // TODO: fail if stream
             return $this->phpRequest($method, $url, $body, $raw);
+        */
         } else {
-            throw new Exception('No CURL extension detected, this is required for PHP < 5.4');
+            throw new Exception(
+                'No CURL extension detected, it must be installed and enabled'
+            );
         }
     }
 
