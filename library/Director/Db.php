@@ -260,10 +260,15 @@ class Db extends DbConnection
 
     public function fetchActivityLogEntry($checksum)
     {
-        $sql = 'SELECT id, object_type, object_name, action_name'
-             . ' old_properties, new_properties, author, change_time'
+        $sql = 'SELECT id, object_type, object_name, action_name,'
+             . ' old_properties, new_properties, author, change_time,'
              . ' %s AS checksum, %s AS parent_checksum'
              . ' FROM director_activity_log WHERE checksum = ?';
+
+        $sql = sprintf(
+            $sql,
+            $this->dbHexFunc('checksum'),
+            $this->dbHexFunc('parent_checksum'));
 
         return $this->db()->fetchRow(
             $sql,
