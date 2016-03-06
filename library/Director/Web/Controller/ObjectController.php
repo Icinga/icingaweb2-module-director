@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Controller;
 
 use Exception;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Url;
@@ -20,10 +21,9 @@ abstract class ObjectController extends ActionController
 
         $type = $this->getType();
 
-        $params = array();
         if ($object = $this->loadObject()) {
 
-            $params['name'] = $object->object_name;
+            $params = $object->getUrlParams();
 
             $tabs = $this->getTabs()->add('modify', array(
                 'url'       => sprintf('director/%s', $type),
@@ -254,12 +254,24 @@ abstract class ObjectController extends ActionController
 
     protected function loadObject()
     {
-        if ($this->object === null && $name = $this->params->get('name')) {
-            $this->object = IcingaObject::loadByType(
-                $this->getType(),
-                $name,
-                $this->db()
-            );
+        if ($this->object === null) {
+            if ($name = $this->params->get('name')) {
+                $this->object = IcingaObject::loadByType(
+                    $this->getType(),
+                    $name,
+                    $this->db()
+                );
+            } elseif ($id = $this->params->get('id')) {
+                $this->object = IcingaObject::loadByType(
+                    $this->getType(),
+                    (int) $id,
+                    $this->db()
+                );
+            } else {
+                throw new InvalidPropertyException(
+                    'Cannot load object, missing parameters'
+                );
+            }
 
             $this->view->undeployedChanges = $this->countUndeployedChanges();
             $this->view->totalUndeployedChanges = $this->db()
