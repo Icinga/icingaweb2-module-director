@@ -24,10 +24,15 @@ class IcingaServiceTable extends IcingaObjectTable
 
     protected function getActionUrl($row)
     {
-        $params = array('name' => $row->service);
-        if ($row->host !== null) {
-            $params['host'] = $row->host;
+        if ($row->object_type === 'apply') {
+            $params['id'] = $row->id;
+        } else {
+            $params = array('name' => $row->service);
+            if ($row->host !== null) {
+                $params['host'] = $row->host;
+            }
         }
+
         return $this->url('director/service', $params);
     }
 
