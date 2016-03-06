@@ -1254,7 +1254,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
-        array $chosenProperties = null
+        array $chosenProperties = null,
+        $resolveIds = true
     ) {
         $props = array();
 
@@ -1267,19 +1268,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($p as $k => $v) {
 
             // Do not ship ids for IcingaObjects:
-            if ($k === 'id' && $this->hasProperty('object_name')) {
-                continue;
-            }
+            if ($resolveIds) {
+                if ($k === 'id' && $this->hasProperty('object_name')) {
+                    continue;
+                }
 
-            if ('_id' === substr($k, -3)) {
-                $relKey = substr($k, 0, -3);
+                if ('_id' === substr($k, -3)) {
+                    $relKey = substr($k, 0, -3);
 
-                if ($this->hasRelation($relKey)) {
-                    if ($v !== null) {
-                        $v = $this->getRelatedObjectName($relKey, $v);
+                    if ($this->hasRelation($relKey)) {
+                        if ($v !== null) {
+                            $v = $this->getRelatedObjectName($relKey, $v);
+                        }
+
+                        $k = $relKey;
                     }
-
-                    $k = $relKey;
                 }
             }
 
