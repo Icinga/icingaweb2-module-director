@@ -118,7 +118,7 @@ class IcingaHostForm extends DirectorObjectForm
                 'Fieldset',
             ),
             'order' => 40,
-            'legend' => $this->translate('Icinga Replication Settings')
+            'legend' => $this->translate('Icinga Agent and zone settings')
         ));
 
         if ($this->isTemplate()) {
