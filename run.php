@@ -10,6 +10,7 @@ $this->provideHook('director/ImportSource', $prefix . 'Import\\ImportSourceLdap'
 $this->provideHook('director/ImportSource', $prefix . 'Import\\ImportSourceCoreApi');
 
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeString');
+$this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeArray');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeNumber');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeTime');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDatalist');
