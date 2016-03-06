@@ -267,7 +267,9 @@ abstract class ObjectController extends ActionController
                     (int) $id,
                     $this->db()
                 );
-            } else {
+            } elseif ($this->getRequest()->isApiRequest()) {
+                $this->getResponse()->setHttpResponseCode(422);
+
                 throw new InvalidPropertyException(
                     'Cannot load object, missing parameters'
                 );
