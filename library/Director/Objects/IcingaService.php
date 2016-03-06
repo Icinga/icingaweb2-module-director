@@ -85,6 +85,23 @@ class IcingaService extends IcingaObject
         );
     }
 
+    protected function setKey($key)
+    {
+        if (is_int($key)) {
+            $this->id = $key;
+        } elseif (is_array($key)) {
+            foreach (array('id', 'host_id', 'object_name') as $k) {
+                if (array_key_exists($k, $key)) {
+                    $this->set($k, $key[$k]);
+                }
+            }
+        } else {
+            return parent::setKey($key);
+        }
+
+        return $this;
+    }
+
     /**
      * Render host_id as host_name
      *
