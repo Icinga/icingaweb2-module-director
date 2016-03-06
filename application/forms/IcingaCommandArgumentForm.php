@@ -84,7 +84,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
     protected function addCustomVariable($varname)
     {
         $a = new \Zend_Form_SubForm();
-        $a->addElement('note', 'title', array(
+        $a->addElement('simpleNote', 'title', array(
             'label' => sprintf($this->translate('Custom Variable "%s"'), $varname),
         ));
 

@@ -77,7 +77,7 @@ abstract class DirectorObjectForm extends QuickForm
 
         /*
         // TODO implement when new logic is there
-        $this->addElement('note', '_newrange_hint', array('label' => 'New range'));
+        $this->addElement('simpleNote', '_newrange_hint', array('label' => 'New range'));
         $this->addElement('text', '_newrange_name', array(
             'label' => 'Name'
         ));
