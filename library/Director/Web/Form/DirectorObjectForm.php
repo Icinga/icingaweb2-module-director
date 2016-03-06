@@ -43,6 +43,11 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->object;
     }
 
+    protected function isObject()
+    {
+        return $this->getSentOrObjectValue('object_type') === 'object';
+    }
+
     protected function isTemplate()
     {
         return $this->getSentOrObjectValue('object_type') === 'template';
