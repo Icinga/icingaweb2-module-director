@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Core;
 
 use Icinga\Application\Benchmark;
+use Icinga\Exception\ConfigurationError;
 use Exception;
 
 class RestApiClient
@@ -172,6 +173,14 @@ class RestApiClient
         if ($res === false) {
             throw new Exception('CURL ERROR: ' . curl_error($curl));
         }
+
+        $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        if ($statusCode === 401) {
+            throw new ConfigurationError(
+                'Unable to authenticate, please check your API credentials'
+            );
+        }
+
         Benchmark::measure('Rest Api, got response');
 
         if ($stream) {
