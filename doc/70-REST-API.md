@@ -37,7 +37,7 @@ provided property. However, you must always be ready to accept new properties.
 URL scheme and supported methods
 --------------------------------
 
-We support GET, POST, PUT and DELETE. 
+We support GET, POST, PUT and DELETE.
 
 | Method | Meaning
 | ------ | ------------------------------------------------------------
@@ -394,7 +394,7 @@ If merging properties is not what you want, `PUT` comes to the rescue:
     PUT director/host?name=apitest
 
 ```
-{ "vars": { "event": [ "Icinga", "Camp" ] } 
+{ "vars": { "event": [ "Icinga", "Camp" ] }
 ```
 
 All other properties vanished, all but name and type:
