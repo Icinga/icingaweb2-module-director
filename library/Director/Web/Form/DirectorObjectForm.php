@@ -619,12 +619,12 @@ abstract class DirectorObjectForm extends QuickForm
         $values = array();
 
         $object = $this->object();
-
-        if ($this->shouldBeDeleted()) {
-            $this->deleteObject($object);
-        }
-
         if ($this->hasBeenSent()) {
+
+            if ($this->shouldBeDeleted()) {
+                $this->deleteObject($object);
+            }
+
             $post = $this->getRequest()->getPost();
             foreach ($post as $key => $value) {
                 $el = $this->getElement($key);
