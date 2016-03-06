@@ -53,8 +53,6 @@ class IcingaAssignServiceToHostForm extends QuickForm
             'required'     => true,
             'multiOptions' => $this->optionalEnum(
                 array(
-                    'host'          => $this->translate('to a single host'),
-                    'host_template' => $this->translate('to a host template'),
                     'host_group'    => $this->translate('to a host group'),
                     'host_property' => $this->translate('by host property'),
                     'host_group_property' => $this->translate('by host group property'),
@@ -65,12 +63,6 @@ class IcingaAssignServiceToHostForm extends QuickForm
         ));
 
         switch ($this->getSentValue('object_type')) {
-            case 'host':
-                $this->addHostElements();
-                break;
-            case 'host_template':
-                $this->addHostTemplateElements();
-                break;
             case 'host_group':
                 $this->addHostGroupElements();
                 break;
@@ -85,24 +77,6 @@ class IcingaAssignServiceToHostForm extends QuickForm
         $this->setSubmitLabel(
             $this->translate('Assign')
         );
-    }
-
-    protected function addHostElements()
-    {
-        $this->addElement('select', 'host_id', array(
-            'label'        => 'Host',
-            'required'     => true,
-            'multiOptions' => $this->optionalEnum($this->db->enumHosts())
-        ));
-    }
-
-    protected function addHostTemplateElements()
-    {
-        $this->addElement('select', 'host_id', array(
-            'label'        => 'Host template',
-            'required'     => true,
-            'multiOptions' => $this->optionalEnum($this->db->enumHostTemplates())
-        ));
     }
 
     protected function addHostGroupElements()
@@ -138,13 +112,6 @@ class IcingaAssignServiceToHostForm extends QuickForm
     public function onSuccess()
     {
         switch ($this->getValue('object_type')) {
-            case 'host':
-            case 'host_template':
-                $this->db->insert('icinga_host_service', array(
-                    'host_id'    => $this->getValue('host_id'),
-                    'service_id' => $this->getValue('service_id'),
-                ));
-                break;
             case 'host_group':
                 $this->db->insert('icinga_service_assignment', array(
                     'service_id'    => $this->getValue('service_id'),
