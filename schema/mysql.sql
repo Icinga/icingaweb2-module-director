@@ -523,7 +523,6 @@ CREATE TABLE icinga_service (
   icon_image_alt VARCHAR(255) DEFAULT NULL,
   use_agent ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
-  -- UNIQUE INDEX object_name (object_name, zone_id),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_host
     FOREIGN KEY host (host_id)
