@@ -170,8 +170,13 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
-        $inherited = $object->getInheritedProperties();
-        $origins   = $object->getOriginsProperties();
+        if ($object->supportsImports()) {
+            $inherited = $object->getInheritedProperties();
+            $origins   = $object->getOriginsProperties();
+        } else {
+            $inherited = (object) array();
+            $origins   = (object) array();
+        }
 
         foreach ($props as $k => $v) {
             if ($k !== 'object_name' && property_exists($inherited, $k)) {
@@ -747,7 +752,7 @@ abstract class DirectorObjectForm extends QuickForm
                 $object = $this->getObject();
 
                 if ($object->hasProperty($name)) {
-                    if ($resolved) {
+                    if ($resolved && $object->supportsImports()) {
                         $objectProperty = $object->getResolvedProperty($name);
 /*
 var_dump($name);
