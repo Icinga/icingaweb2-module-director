@@ -122,7 +122,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
         } else {
 
             $elements[] = '<li><input type="text"'
-                    . ' name="' . $name . '_add"'
+                    . ' name="' . $name . '[]"'
                     . ($cnt === 0 ? '' : ' class="extend-set"')
                     . ' id="' . $id . $suff . '"'
                     . ' placeholder="' . $v->translate('Add a new one...') . '"'
