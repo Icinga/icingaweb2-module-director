@@ -324,9 +324,8 @@ CREATE TABLE icinga_command (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   methods_execute character varying(64) DEFAULT NULL,
-  command character varying(255) DEFAULT NULL,
+  command text DEFAULT NULL,
 -- env text DEFAULT NULL,
--- vars text DEFAULT NULL,
   timeout smallint DEFAULT NULL,
   zone_id integer DEFAULT NULL,
   PRIMARY KEY (id),
@@ -1426,4 +1425,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (82, NOW());
+  VALUES (83, NOW());
