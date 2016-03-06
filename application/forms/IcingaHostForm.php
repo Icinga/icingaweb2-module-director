@@ -58,6 +58,28 @@ class IcingaHostForm extends DirectorObjectForm
             'description' => $this->translate('Usually your hosts main IPv6 address')
         ));
 
+        $this->addDisabledElement();
+
+        $elements = array(
+            'object_type',
+            'object_name',
+            'display_name',
+            'address',
+            'address6',
+            'imports',
+            'groups',
+            'disabled',
+        );
+        $this->addDisplayGroup($elements, 'object_definition', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 20,
+            'legend' => $this->translate('Host properties')
+        ));
+
         $this->addZoneElement();
 
         $this->addBoolean('has_agent', array(
@@ -82,28 +104,6 @@ class IcingaHostForm extends DirectorObjectForm
                 'required'    => true
             ));
         }
-
-        $this->addDisabledElement();
-
-        $elements = array(
-            'object_type',
-            'object_name',
-            'display_name',
-            'address',
-            'address6',
-            'imports',
-            'groups',
-            'disabled',
-        );
-        $this->addDisplayGroup($elements, 'object_definition', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order' => 20,
-            'legend' => $this->translate('Host properties')
-        ));
 
         $elements = array(
             'zone_id',
