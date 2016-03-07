@@ -174,14 +174,6 @@ constants
             }
 
             $objects[$name] = IcingaObject::createByType($type, $properties, $this->db);
-            if (property_exists($attrs, 'templates')
-                && count($attrs->templates) > 1
-                && $objects[$name]->supportsImports()
-            ) {
-                $imports = $attrs->templates;
-                array_shift($imports);
-                // TODO (prefetch?): $objects[$name]->imports = $imports;
-            }
         }
 
         return $objects;
@@ -237,6 +229,7 @@ constants
             'display_name'          => 'display_name',
             'address'               => 'address',
             'address6'              => 'address6',
+            'templates'             => 'imports',
             'groups'                => 'groups',
             'vars'                  => 'vars',
             'check_command'         => 'check_command',
