@@ -50,6 +50,10 @@ class KickstartHelper
     public function setConfig($config)
     {
         foreach ($config as $key => $value) {
+            if ($value === '') {
+                continue;
+            }
+
             if (! array_key_exists($key, $this->config)) {
                 throw new ProgrammingError(
                     '"%s" is not a valid config setting for the kickstart helper',
