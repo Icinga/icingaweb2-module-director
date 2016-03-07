@@ -139,6 +139,8 @@ ul.extensible-set {
     list-style-type: none;
     display: inline-block;
     width: 100%;
+    max-width: 36em;
+    min-width: 20em;
     border-bottom: 1px solid @gray-light;
 
     input[type=text], input[type=password], textarea, select {
@@ -169,6 +171,7 @@ ul.extensible-set {
 
     select.extend-set, input.extend-set {
         display: none;
+        background-color: @gray-lighter;
     }
 }
 
