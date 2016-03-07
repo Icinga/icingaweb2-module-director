@@ -25,19 +25,7 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
-        $this->addElement('extensibleSet', 'groups', array(
-            'label'        => $this->translate('Groups'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumHostgroups()),
-            'positional'   => false,
-            'description'  => $this->translate(
-                'Hostgroups that should be directly assigned to this node. Hostgroups can be useful'
-                . ' for various reasons. You might assign service checks based on assigned hostgroup.'
-                . ' They are also often used as an instrument to enforce restricted views in Icinga Web 2.'
-                . ' Hostgroups can be directly assigned to single hosts or to host templates. You might'
-                . ' also want to consider assigning hostgroups using apply rules'
-            )
-        ));
-
+        $this->addGroupsElement();
         $this->addImportsElement();
 
         $this->addElement('text', 'display_name', array(
@@ -132,6 +120,29 @@ class IcingaHostForm extends DirectorObjectForm
         }
 
         $this->setButtons();
+    }
+
+    protected function addGroupsElement()
+    {
+        $groups = $this->enumHostgroups();
+        if (empty($groups)) {
+            return $this;
+        }
+
+        $this->addElement('extensibleSet', 'groups', array(
+            'label'        => $this->translate('Groups'),
+            'multiOptions' => $this->optionallyAddFromEnum($groups),
+            'positional'   => false,
+            'description'  => $this->translate(
+                'Hostgroups that should be directly assigned to this node. Hostgroups can be useful'
+                . ' for various reasons. You might assign service checks based on assigned hostgroup.'
+                . ' They are also often used as an instrument to enforce restricted views in Icinga Web 2.'
+                . ' Hostgroups can be directly assigned to single hosts or to host templates. You might'
+                . ' also want to consider assigning hostgroups using apply rules'
+            )
+        ));
+
+        return $this;
     }
 
     protected function enumHostgroups()
