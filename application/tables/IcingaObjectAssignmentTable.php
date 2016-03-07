@@ -32,7 +32,7 @@ class IcingaObjectAssignmentTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return Url::fromRequest()->with('field_id', $row->id);
+        return Url::fromRequest()->with('rule_id', $row->id);
     }
 
     public function getTitles()
