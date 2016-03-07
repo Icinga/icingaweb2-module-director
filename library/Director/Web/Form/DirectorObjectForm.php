@@ -858,14 +858,13 @@ print_r($object);
 
     protected function addObjectTypeElement()
     {
-        $default = 'object';
+        $object = $this->object();
 
-        if ($this->object()->supportsImports()) {
+        if ($object->supportsImports()) {
             $templates = $this->enumAllowedTemplates();
 
             // TODO: getObjectname is a confusing method name
             if (empty($templates) && $this->getObjectname() !== 'Command') {
-                $default = 'template';
                 $types = array('template' => $this->translate('Template'));
             } else {
                 $types = array(
@@ -881,10 +880,6 @@ print_r($object);
 
         if ($this->object()->supportsApplyRules()) {
             $types['apply'] = $this->translate('Apply rule');
-        }
-
-        if (! $this->hasObject()) {
-            $this->object()->object_type = $default;
         }
 
         $this->addElement('select', 'object_type', array(
