@@ -14,6 +14,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     protected $imports = array();
 
+    protected $objects = array();
+
     protected $modified = false;
 
     protected $object;
@@ -48,7 +50,9 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             return null;
         }
 
-        return $this->imports[$this->idx[$this->position]];
+        return $this->getObject(
+            $this->imports[$this->idx[$this->position]]
+        );
     }
 
     public function key()
@@ -69,7 +73,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     public function get($key)
     {
         if (array_key_exists($key, $this->imports)) {
-            return $this->imports[$key];
+            return $this->getObject($this->imports[$key]);
         }
 
         return null;
@@ -166,24 +170,35 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
-        $connection = $this->object->getConnection();
-
         if ($import instanceof $class) {
-            $this->imports[$import->object_name] = $import;
+            $this->imports[$import->object_name] = $import->object_name;
+            $this->objects[$import->object_name] = $import;
         } elseif (is_string($import)) {
-            if (is_array($this->object->getKeyName())) {
-                // Services only
-                $import = $class::load(array('object_name' => $import), $connection);
-            } else {
-                $import = $class::load($import, $connection);
-            }
-            $this->imports[$import->object_name] = $import;
+            $this->imports[$import] = $import;
         }
 
         $this->modified = true;
         $this->refreshIndex();
 
         return $this;
+    }
+
+    protected function getObject($name)
+    {
+        if (array_key_exists($name, $this->objects)) {
+            return $this->objects[$name];
+        }
+
+        $connection = $this->object->getConnection();
+        $class = $this->getImportClass();
+        if (is_array($this->object->getKeyName())) {
+            // Services only
+            $import = $class::load(array('object_name' => $name), $connection);
+        } else {
+            $import = $class::load($name, $connection);
+        }
+
+        return $this->objects[$import->object_name] = $import;
     }
 
     protected function getImportTableName()
@@ -230,9 +245,13 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         ->order('oi.weight');
 
         $class = $this->getImportClass();
-        $this->imports = $class::loadAll($connection, $query, 'object_name');
+        $this->objects = $class::loadAll($connection, $query, 'object_name');
+        foreach ($this->objects as $k => $obj) {
+            $this->imports[$k] = $k;
+        }
+
         $this->storedImports = array();
-        foreach ($this->imports as $k => $v) {
+        foreach ($this->objects as $k => $v) {
             $this->storedImports[$k] = clone($v);
         }
 
@@ -258,7 +277,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $weight = 1;
-        foreach ($this->imports as $import) {
+        foreach ($this->imports as $importName) {
+            $import = $this->getObject($importName);
             $this->object->db->insert(
                 $this->getImportTableName(),
                 array(
@@ -277,7 +297,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     protected function cloneStored()
     {
         $this->storedImports = array();
-        foreach ($this->imports as $k => $v) {
+        foreach ($this->objects as $k => $v) {
             $this->storedImports[$k] = clone($v);
         }
     }
@@ -297,8 +317,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         $ret = '';
 
-        foreach ($this->imports as $name => & $o) {
-            $ret .= '    import ' . c::renderString($o->object_name) . "\n";
+        foreach ($this->imports as $name => $o) {
+            $ret .= '    import ' . c::renderString($name) . "\n";
         }
 
         if ($ret !== '') {
