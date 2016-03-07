@@ -10,6 +10,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
+            $this->groupObjectDefinition();
             return;
         }
 
@@ -29,39 +30,24 @@ class IcingaServiceForm extends DirectorObjectForm
             ));
         }
 
-        $this->addElement('extensibleSet', 'groups', array(
-            'label'        => $this->translate('Groups'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumServicegroups()),
-            'positional'   => false,
-            'description'  => $this->translate(
-                'Service groups that should be directly assigned to this service. Servicegroups can be useful'
-                . ' for various reasons. They are helpful to provided service-type specific view in Icinga Web 2,'
-                . ' either for custom dashboards or as an instrument to enforce restrictior. Service groups'
-                . ' can be directly assigned to single services or to service templates.'
-            )
-        ));
+        $groups = $this->enumServicegroups();
+        if (! empty($groups)) {
+            $this->addElement('extensibleSet', 'groups', array(
+                'label'        => $this->translate('Groups'),
+                'multiOptions' => $this->optionallyAddFromEnum($groups),
+                'positional'   => false,
+                'description'  => $this->translate(
+                    'Service groups that should be directly assigned to this service. Servicegroups can be useful'
+                    . ' for various reasons. They are helpful to provided service-type specific view in Icinga Web 2,'
+                    . ' either for custom dashboards or as an instrument to enforce restrictior. Service groups'
+                    . ' can be directly assigned to single services or to service templates.'
+                )
+            ));
+        }
 
         $this->addImportsElement();
         $this->addDisabledElement();
-
-        $elements = array(
-            'object_type',
-            'object_name',
-            'display_name',
-            'imports',
-            'host_id',
-            'groups',
-            'disabled',
-        );
-        $this->addDisplayGroup($elements, 'object_definition', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order' => 20,
-            'legend' => $this->translate('Service properties')
-        ));
+        $this->groupObjectDefinition();
 
         $this->addCheckCommandElements();
 
@@ -94,6 +80,29 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $this->setButtons();
+    }
+
+
+    protected function groupObjectDefinition()
+    {
+        $elements = array(
+            'object_type',
+            'object_name',
+            'display_name',
+            'imports',
+            'host_id',
+            'groups',
+            'disabled',
+        );
+        $this->addDisplayGroup($elements, 'object_definition', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 20,
+            'legend' => $this->translate('Service properties')
+        ));
     }
 
     protected function enumHostsAndTemplates()
