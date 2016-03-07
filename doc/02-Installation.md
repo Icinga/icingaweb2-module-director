@@ -42,7 +42,7 @@ sure that you choose `utf8` as an encoding.
 As with any Icinga Web 2 module, installation is pretty straight-forward. In
 case you're installing it from source all you have to do is to drop the director
 module in one of your module paths. You can examine (and set) the module path(s)
-in `Configuration / General`. In a tipical environment you'll probably drop the
+in `Configuration / General`. In a typical environment you'll probably drop the
 module to `/usr/share/icingaweb2/modules/director`. Please note that the directory
 name MUST be `director` and not `icingaweb2-module-director` or anything else.
 
