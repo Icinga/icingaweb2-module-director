@@ -13,9 +13,9 @@ class ServiceController extends ObjectController
         parent::init();
         if ($this->object && $this->object->object_type === 'apply') {
             $this->getTabs()->add('assign', array(
-                'url' => 'director/service/assign',
-                'urlParams' => array('name' => $this->object->object_name),
-                'label' => 'Assign'
+                'url'       => 'director/service/assign',
+                'urlParams' => $this->object->getUrlParams(),
+                'label'     => 'Assign'
             ));
 
             if ($host = $this->params->get('host')) {
