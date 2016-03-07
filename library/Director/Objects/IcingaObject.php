@@ -290,7 +290,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->hasRelation($key)) {
-            if (! $value) {
+            if (strlen($value) === 0) {
                 return parent::set($key . '_id', null);
             }
 
