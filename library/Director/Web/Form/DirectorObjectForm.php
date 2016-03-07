@@ -892,6 +892,7 @@ print_r($object);
                 . ' while not rendering and deploying them with the Director. Apply rules allow'
                 . ' to assign services, notifications and groups to other objects.'
             ),
+            'required'     => true,
             'multiOptions' => $this->optionalEnum($types),
             'class'        => 'autosubmit'
         ));
@@ -933,10 +934,19 @@ print_r($object);
 
     protected function addImportsElement()
     {
+        $enum = $this->enumAllowedTemplates();
+        if (empty($enum)) {
+            return $this;
+        }
+
         $this->addElement('extensibleSet', 'imports', array(
             'label'        => $this->translate('Imports'),
-            'description'  => $this->translate('Importable templates, choose one or more of them (CTRL/SHIFT click)'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumAllowedTemplates()),
+            'description'  => $this->translate(
+                'Importable templates, add as many as you want. Please note that order'
+                . ' matters when importing properting from multiple templates: last one'
+                . ' wins'
+            ),
+            'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'class'        => 'autosubmit'
         ));
