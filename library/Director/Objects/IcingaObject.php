@@ -175,8 +175,31 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsApplyRules;
     }
 
+    public function resolveUnresolvedRelatedProperties()
+    {
+        foreach ($this->unresolvedRelatedProperties as $name => $p) {
+            $this->resolveUnresolvedRelatedProperty($name);
+        }
+
+        return $this;
+    }
+
+    protected function resolveUnresolvedRelatedProperty($name)
+    {
+        $class = $this->getRelationClass($name);
+        $object = $class::load(
+            $this->unresolvedRelatedProperties[$name],
+            $this->connection
+        );
+
+        $this->$key = $object->id;
+        unset($this->unresolvedRelatedProperties[$name]);
+    }
+
     public function hasBeenModified()
     {
+        $this->resolveUnresolvedRelatedProperties();
+
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
 //var_dump($this->vars()); exit;
             return true;
@@ -213,13 +236,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $short = substr($key, 0, -3);
             if ($this->hasRelation($short)) {
                 if (array_key_exists($short, $this->unresolvedRelatedProperties)) {
-                    $class = $this->getRelationClass($short);
-                    $object = $class::load(
-                        $this->unresolvedRelatedProperties[$short],
-                        $this->connection
-                    );
-
-                    $this->$key = $object->id;
+                    $this->resolveUnresolvedRelatedProperty($short);
                 }
             }
         }
