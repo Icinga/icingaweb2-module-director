@@ -186,13 +186,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function resolveUnresolvedRelatedProperty($name)
     {
-        $class = $this->getRelationClass($name);
+        $short = substr($name, 0, -3);
+        $class = $this->getRelationClass($short);
         $object = $class::load(
             $this->unresolvedRelatedProperties[$name],
             $this->connection
         );
 
-        $this->$key = $object->id;
+        $this->$name = $object->id;
         unset($this->unresolvedRelatedProperties[$name]);
     }
 
@@ -235,8 +236,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if (substr($key, -3) === '_id') {
             $short = substr($key, 0, -3);
             if ($this->hasRelation($short)) {
-                if (array_key_exists($short, $this->unresolvedRelatedProperties)) {
-                    $this->resolveUnresolvedRelatedProperty($short);
+                if (array_key_exists($key, $this->unresolvedRelatedProperties)) {
+                    $this->resolveUnresolvedRelatedProperty($key);
                 }
             }
         }
