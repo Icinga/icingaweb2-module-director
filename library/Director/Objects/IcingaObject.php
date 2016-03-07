@@ -47,6 +47,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => ExtensibleSetClass
     );
 
+    protected $unresolvedRelatedProperties = array();
+
     protected $loadedRelatedSets = array();
 
     /**
@@ -207,6 +209,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function get($key)
     {
+        if (substr($key, -3) === '_id') {
+            $short = substr($key, 0, -3);
+            if ($this->hasRelation($short)) {
+                if (array_key_exists($short, $this->unresolvedRelatedProperties)) {
+                    $class = $this->getRelationClass($short);
+                    $object = $class::load(
+                        $this->unresolvedRelatedProperties[$short],
+                        $this->connection
+                    );
+
+                    $this->$key = $object->id;
+                }
+            }
+        }
+
         if ($this->hasRelation($key)) {
             if ($id = $this->get($key . '_id')) {
                 $class = $this->getRelationClass($key);
@@ -260,12 +277,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 return parent::set($key . '_id', null);
             }
 
-            $class = $this->getRelationClass($key);
-            $object = $class::load($value, $this->connection);
-            if (in_array($object->object_type, array('object', 'external_object'))) {
-                return parent::set($key . '_id', $object->id);
-            }
-            // TODO: what shall we do if it is a template? Fail?
+            $this->unresolvedRelatedProperties[$key . '_id'] = $value;
+            return $this;
         }
 
         if ($this->propertyIsRelatedSet($key)) {
