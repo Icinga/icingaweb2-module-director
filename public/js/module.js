@@ -55,6 +55,13 @@
             var $container = $(ev.currentTarget);
             var self = this;
             $container.find('form').each(self.restoreFieldsets.bind(self));
+
+            var $objectType = $container.find('form').find('select[name=object_type]');
+            if ($objectType.length) {
+                if ($objectType[0].value === '') {
+                    $objectType.focus();
+                }
+            }
         },
 
         restoreFieldsets: function(idx, form) {
