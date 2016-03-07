@@ -505,10 +505,10 @@ abstract class DirectorObjectForm extends QuickForm
             }
             $msg = $this->translate('No action taken, object has not been modified');
         }
-        if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
+        if ($object instanceof IcingaObject) {
             $this->setSuccessUrl(
                 'director/' . strtolower($this->getObjectName()),
-                array('name' => $object->object_name)
+                $object->getUrlParams()
             );
         }
 
