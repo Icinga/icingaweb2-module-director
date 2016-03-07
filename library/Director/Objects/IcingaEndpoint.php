@@ -44,7 +44,7 @@ class IcingaEndpoint extends IcingaObject
     public function api()
     {
         $client = new RestApiClient(
-            $this->getResolvedProperty('host'),
+            $this->getResolvedProperty('host', $this->object_name),
             $this->getResolvedProperty('port')
         );
 
