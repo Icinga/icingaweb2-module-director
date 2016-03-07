@@ -9,6 +9,9 @@ class IcingaServiceForm extends DirectorObjectForm
     public function setup()
     {
         $this->addObjectTypeElement();
+        if (! $this->hasObjectType()) {
+            return;
+        }
 
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Name'),

@@ -893,11 +893,20 @@ print_r($object);
                 . ' to assign services, notifications and groups to other objects.'
             ),
             'multiOptions' => $this->optionalEnum($types),
-            'value'        => $default,
             'class'        => 'autosubmit'
         ));
 
         return $this;
+    }
+
+    protected function hasObjectType()
+    {
+        return ! $this->valueIsEmpty($this->getSentOrObjectValue('object_type'));
+    }
+
+    protected function valueIsEmpty($value)
+    {
+        return strlen($value) === 0;
     }
 
     protected function addZoneElement()

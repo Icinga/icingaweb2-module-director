@@ -9,6 +9,9 @@ class IcingaEndpointForm extends DirectorObjectForm
     public function setup()
     {
         $this->addObjectTypeElement();
+        if (! $this->hasObjectType()) {
+            return;
+        }
 
         if ($this->isTemplate()) {
             $this->addElement('text', 'object_name', array(

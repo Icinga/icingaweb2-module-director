@@ -9,6 +9,9 @@ class IcingaCommandForm extends DirectorObjectForm
     public function setup()
     {
         $this->addObjectTypeElement();
+        if (! $this->hasObjectType()) {
+            return;
+        }
 
         $this->addElement('select', 'methods_execute', array(
             'label' => $this->translate('Command type'),
