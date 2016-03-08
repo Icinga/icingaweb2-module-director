@@ -9,6 +9,8 @@ abstract class PropertyModifierHook
 {
     protected $settings = array();
 
+    private $db;
+
     public function getName()
     {
         $parts = explode('\\', get_class($this));
@@ -24,9 +26,9 @@ abstract class PropertyModifierHook
         return $class;
     }
 
-    public static function loadById($property_id, Db $db)
+    public static function loadById($property_id, Db $connection)
     {
-        $db = $db->getDbAdapter();
+        $db = $connection->getDbAdapter();
         $modifier = $db->fetchRow(
             $db->select()->from(
                 'import_row_modifier',
@@ -43,8 +45,20 @@ abstract class PropertyModifierHook
 
         $obj = new $modifier->provider_class;
         $obj->setSettings($settings);
+        $obj->setDb($db);
 
         return $obj;
+    }
+
+    public function setDb(Db $db)
+    {
+        $this->db = $db;
+        return $this;
+    }
+
+    public function getDb()
+    {
+        return $this->db;
     }
 
     public function setSettings($settings)

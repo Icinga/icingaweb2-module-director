@@ -90,6 +90,7 @@ class ImportsourceHookTable extends QuickTable
             }
             $obj = new $mod->provider_class;
             $obj->setSettings($mod->getSettings());
+            $obj->setDb($this->source->getConnection());
             $propertyModifiers[$mod->property_name][] = $obj;
             
         }

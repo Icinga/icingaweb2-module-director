@@ -232,6 +232,7 @@ class Import
             }
             $obj = new $mod->provider_class;
             $obj->setSettings($mod->getSettings());
+            $obj->setDb($this->connection);
             $propertyModifiers[$mod->property_name][] = $obj;
         }
 
