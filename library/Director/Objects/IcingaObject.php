@@ -231,12 +231,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::hasBeenModified();
     }
 
+    protected function hasUnresolvedRelatedProperty($name)
+    {
+        return array_key_exists($name, $this->unresolvedRelatedProperties);
+    }
+
     public function get($key)
     {
+        if ($this->hasUnresolvedRelatedProperty($key . '_id')) {
+            return $this->unresolvedRelatedProperties[$key . '_id'];
+        }
+
         if (substr($key, -3) === '_id') {
             $short = substr($key, 0, -3);
             if ($this->hasRelation($short)) {
-                if (array_key_exists($key, $this->unresolvedRelatedProperties)) {
+                if ($this->hasUnresolvedRelatedProperty($key)) {
                     $this->resolveUnresolvedRelatedProperty($key);
                 }
             }
@@ -868,6 +877,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeArguments();
     }
 
+    protected function beforeStore()
+    {
+        $this->resolveUnresolvedRelatedProperties();
+    }
+
     public function onInsert()
     {
         DirectorActivityLog::logCreation($this, $this->connection);
@@ -967,6 +981,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
 
         foreach ($this->properties as $key => $value) {
+
+            if (substr($key, -3) === '_id') {
+                $short = substr($key, 0, -3);
+                if ($this->hasUnresolvedRelatedProperty($key)) {
+                    $out .= c::renderKeyValue(
+                        $short, // NOT
+                        c::renderString($this->$short)
+                    );
+
+                    continue;
+                }
+            }
 
             if ($value === null) {
                 continue;
@@ -1308,7 +1334,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     $relKey = substr($k, 0, -3);
 
                     if ($this->hasRelation($relKey)) {
-                        if ($v !== null) {
+
+                        if ($this->hasUnresolvedRelatedProperty($k)) {
+                            $v = $this->$relKey;
+                        } elseif ($v !== null) {
                             $v = $this->getRelatedObjectName($relKey, $v);
                         }
 
