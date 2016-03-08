@@ -1467,6 +1467,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getPlainUnmodifiedObject()
     {
         $props = array();
+
         foreach ($this->getOriginalProperties() as $k => $v) {
             // Do not ship ids for IcingaObjects:
             if ($k === 'id' && $this->hasProperty('object_name')) {
@@ -1517,7 +1518,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $props[$property] = $set->getPlainUnmodifiedObject();
         }
 
-        return $props;
+        return (object) $props;
     }
 
     public function __toString()
