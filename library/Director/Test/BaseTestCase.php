@@ -7,6 +7,7 @@ use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
+use Icinga\Module\Director\Objects\IcingaObject;
 use PHPUnit_Framework_TestCase;
 
 class BaseTestCase extends PHPUnit_Framework_TestCase
@@ -56,6 +57,16 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
         }
 
         return $this->db;
+    }
+
+    protected function newObject($type, $name, $properties = array())
+    {
+        if (! array_key_exists('object_type', $properties)) {
+            $properties['object_type'] = 'object';
+        }
+        $properties['object_name'] = $name;
+
+        return IcingaObject::createByType($type, $properties);
     }
 
     protected function app()
