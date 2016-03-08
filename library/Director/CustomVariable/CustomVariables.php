@@ -152,6 +152,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                         'format'       => $var->getDbFormat()
                     )
                 );
+                $var->setLoadedFromDb();
                 continue;
             }
 
@@ -186,7 +187,17 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     public function hasBeenModified()
     {
-        return $this->modified;
+        if ($this->modified) {
+            return true;
+        }
+
+        foreach ($this->vars as $var) {
+            if ($var->hasBeenModified()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function setUnmodified()
@@ -195,6 +206,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $this->storedVars = array();
         foreach ($this->vars as $key => $var) {
             $this->storedVars[$key] = clone($var);
+            $var->setUnmodified();
         }
         return $this;
     }
