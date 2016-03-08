@@ -517,6 +517,15 @@ abstract class DbObject
         return null;
     }
 
+    protected function forgetAutoincId()
+    {
+        if (isset($this->properties[$this->autoincKeyName])) {
+            $this->properties[$this->autoincKeyName] = null;
+        }
+
+        return $this;
+    }
+
     /**
      * Liefert das benutzte Datenbank-Handle
      *
@@ -876,7 +885,7 @@ abstract class DbObject
     public function __clone()
     {
         $this->onClone();
-        $this->autoincKeyName  = null;
+        $this->forgetAutoincId();
         $this->loadedFromDb    = false;
         $this->hasBeenModified = true;
     }
