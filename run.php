@@ -22,3 +22,4 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierStripDomain');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierSubstring');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierUppercase');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierGetHostByName');
