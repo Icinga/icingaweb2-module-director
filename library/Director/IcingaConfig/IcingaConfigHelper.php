@@ -126,8 +126,9 @@ class IcingaConfigHelper
     {
         $vals = array();
         foreach ($dictionary as $key => $value) {
-            $vals[] = rtrim(self::renderKeyValue(self::renderString($key), $value));
+            $vals[$key] = rtrim(self::renderKeyValue(self::renderString($key), $value));
         }
+        ksort($vals);
 
         // Prefix for toConfigString?
         return "{\n" . implode("\n", $vals) . "\n}";
