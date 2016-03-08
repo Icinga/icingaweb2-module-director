@@ -31,7 +31,7 @@ class PropertyModifierGetHostByName extends PropertyModifierHook
     {
         $host = gethostbyname($value);
         if (strlen(@inet_pton($host)) !== 4) {
-            switch($this->getSetting('on_failure')) {
+            switch ($this->getSetting('on_failure')) {
                 case 'null':
                     return null;
                 case 'keep':
