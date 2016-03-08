@@ -182,9 +182,13 @@ class IcingaHostTest extends BaseTestCase
      */
     public function testFailsToStoreWithInvalidUnresolvedDependencies()
     {
-        $newHost = $this->host();
-        $newHost->zone             = 'invalid';
-        $newHost->store($this->getDb());
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $host = $this->host();
+        $host->zone = 'invalid';
+        $host->store($this->getDb());
     }
 
     protected function host()
