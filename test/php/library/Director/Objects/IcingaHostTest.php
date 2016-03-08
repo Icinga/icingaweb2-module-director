@@ -141,6 +141,52 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testGivesPlainObjectWithInvalidUnresolvedDependencies()
+    {
+        $props = array(
+            'zone'             => 'invalid',
+            'check_command'    => 'unknown',
+            'event_command'    => 'What event?',
+            'check_period'     => 'Not time is a good time @ nite',
+            'command_endpoint' => 'nirvana',
+        );
+
+        $host = $this->host();
+        foreach ($props as $k => $v) {
+            $host->$k = $v;
+        }
+
+        $plain = $host->toPlainObject();
+        foreach ($props as $k => $v) {
+            $this->assertEquals($plain->$k, $v);
+        }
+    }
+
+    public function testRendersWithInvalidUnresolvedDependencies()
+    {
+        $newHost = $this->host();
+        $newHost->zone             = 'invalid';
+        $newHost->check_command    = 'unknown';
+        $newHost->event_command    = 'What event?';
+        $newHost->check_period     = 'Not time is a good time @ nite';
+        $newHost->command_endpoint = 'nirvana';
+
+        $this->assertEquals(
+            (string) $newHost,
+            $this->loadRendered('host2')
+        );
+    }
+
+    /**
+     * @expectedException \Icinga\Exception\NotFoundError
+     */
+    public function testFailsToStoreWithInvalidUnresolvedDependencies()
+    {
+        $newHost = $this->host();
+        $newHost->zone             = 'invalid';
+        $newHost->store($this->getDb());
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(
