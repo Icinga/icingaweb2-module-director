@@ -1,0 +1,14 @@
+object Host "___TEST___host" {
+    import "___TEST___parent"
+
+    display_name = "Whatever"
+    address = "127.0.0.127"
+    vars.test1 = "nada"
+    vars.test2 = 17
+    vars.test3 = false
+    vars.test4 = {
+        "a" = [ "dict", "ionary" ]
+        "this" = "is"
+    }
+}
+

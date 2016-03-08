@@ -3,13 +3,14 @@
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Test\BaseTestCase;
 
 class IcingaHostTest extends BaseTestCase
 {
     protected $testHostName = '___TEST___host';
 
-    public function testWhetherHostPropertiesCanBeSet()
+    public function testPropertiesCanBeSet()
     {
         $host = $this->host();
         $host->display_name = 'Something else';
@@ -19,7 +20,7 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testWhetherHostsCanBeReplaced()
+    public function testCanBeReplaced()
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
@@ -51,7 +52,7 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testWhetherHostsCanBeMerged()
+    public function testCanBeMerged()
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
@@ -82,7 +83,7 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testWhetherDistinctCustomVarsCanBeSetWithoutSideEffects()
+    public function testDistinctCustomVarsCanBeSetWithoutSideEffects()
     {
         $host = $this->host();
         $host->set('vars.test2', 18);
@@ -100,7 +101,7 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testWhetherHostVarsArePersisted()
+    public function testVarsArePersisted()
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -133,7 +134,7 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testWhetherAHostRendersCorrectly()
+    public function testRendersCorrectly()
     {
         $this->assertEquals(
             (string) $this->host(),
@@ -143,13 +144,7 @@ class IcingaHostTest extends BaseTestCase
 
     public function testGivesPlainObjectWithInvalidUnresolvedDependencies()
     {
-        $props = array(
-            'zone'             => 'invalid',
-            'check_command'    => 'unknown',
-            'event_command'    => 'What event?',
-            'check_period'     => 'Not time is a good time @ nite',
-            'command_endpoint' => 'nirvana',
-        );
+        $props = $this->getDummyRelatedProperties();
 
         $host = $this->host();
         foreach ($props as $k => $v) {
@@ -160,6 +155,91 @@ class IcingaHostTest extends BaseTestCase
         foreach ($props as $k => $v) {
             $this->assertEquals($plain->$k, $v);
         }
+    }
+
+    public function testCorrectlyStoresLazyRelations()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+        $db = $this->getDb();
+        $host = $this->host();
+        $host->zone = '___TEST___zone';
+        $this->assertEquals(
+            '___TEST___zone',
+            $host->zone
+        );
+
+        $zone = $this->newObject('zone', '___TEST___zone');
+        $zone->store($db);
+
+        $host->store($db);
+        $zone->delete();
+        $host->delete();
+    }
+
+    /**
+     * @expectedException \Icinga\Exception\NotFoundError
+     */
+    public function testFailsToStoreWithMissingLazyRelations()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+        $db = $this->getDb();
+        $host = $this->host();
+        $host->zone = '___TEST___zone';
+        $host->store($db);
+    }
+
+    public function testHandlesUnmodifiedProperties()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->host();
+        $host->store($db);
+
+        $parent = $this->newObject('host', '___TEST___parent');
+        $parent->store($db);
+        $host->imports = '___TEST___parent';
+
+        $host->store($db);
+
+        $plain = $host->getPlainUnmodifiedObject();
+        $this->assertEquals(
+            'string',
+            $plain->vars->test1
+        );
+        $host->vars()->set('test1', 'nada');
+
+        $host->store();
+
+        $plain = $host->getPlainUnmodifiedObject();
+        $this->assertEquals(
+            'nada',
+            $plain->vars->test1
+        );
+
+        $host->vars()->set('test1', 'string');
+        $plain = $host->getPlainUnmodifiedObject();
+        $this->assertEquals(
+            'nada',
+            $plain->vars->test1
+        );
+
+        $plain = $host->getPlainUnmodifiedObject();
+        $test = IcingaHost::create((array) $plain);
+
+        $this->assertEquals(
+            $this->loadRendered('host3'),
+            (string) $test
+        );
+
+        $host->delete();
+        $parent->delete();
     }
 
     public function testRendersWithInvalidUnresolvedDependencies()
@@ -189,6 +269,17 @@ class IcingaHostTest extends BaseTestCase
         $host = $this->host();
         $host->zone = 'invalid';
         $host->store($this->getDb());
+    }
+
+    protected function getDummyRelatedProperties()
+    {
+        return array(
+            'zone'             => 'invalid',
+            'check_command'    => 'unknown',
+            'event_command'    => 'What event?',
+            'check_period'     => 'Not time is a good time @ nite',
+            'command_endpoint' => 'nirvana',
+        );
     }
 
     protected function host()
@@ -222,8 +313,18 @@ class IcingaHostTest extends BaseTestCase
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
-            if (IcingaHost::exists($this->testHostName, $db)) {
-                IcingaHost::load($this->testHostName, $db)->delete();
+            $kill = array($this->testHostName, '___TEST___parent');
+            foreach ($kill as $name) {
+                if (IcingaHost::exists($name, $db)) {
+                    IcingaHost::load($name, $db)->delete();
+                }
+            }
+
+            $kill = array('___TEST___zone');
+            foreach ($kill as $name) {
+                if (IcingaZone::exists($name, $db)) {
+                    IcingaZone::load($name, $db)->delete();
+                }
             }
         }
     }

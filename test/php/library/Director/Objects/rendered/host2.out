@@ -1,0 +1,17 @@
+object Host "___TEST___host" {
+    display_name = "Whatever"
+    address = "127.0.0.127"
+    check_command = "unknown"
+    check_period = "Not time is a good time @ nite"
+    event_command = "What event?"
+    zone = "invalid"
+    command_endpoint = "nirvana"
+    vars.test1 = "string"
+    vars.test2 = 17
+    vars.test3 = false
+    vars.test4 = {
+        "a" = [ "dict", "ionary" ]
+        "this" = "is"
+    }
+}
+
