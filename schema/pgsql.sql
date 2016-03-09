@@ -1041,12 +1041,11 @@ CREATE TABLE icinga_usergroup (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
-  zone_id integer DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
-CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name, zone_id);
+CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name);
 
 
 CREATE TABLE icinga_usergroup_inheritance (
@@ -1425,4 +1424,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (83, NOW());
+  VALUES (84, NOW());

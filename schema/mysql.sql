@@ -858,9 +858,8 @@ CREATE TABLE icinga_usergroup (
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
-  zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
-  UNIQUE INDEX object_name (object_name, zone_id),
+  UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1214,4 +1213,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 82;
+      schema_version = 84;
