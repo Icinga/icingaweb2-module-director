@@ -180,6 +180,7 @@ abstract class DirectorObjectForm extends QuickForm
             $props = $object->getProperties();
             unset($props['vars']);
         }
+
         $this->setDefaults($props);
 
         if (! $object instanceof IcingaObject) {
@@ -485,7 +486,9 @@ abstract class DirectorObjectForm extends QuickForm
             }
             $el->setMultiOptions($multi);
         } else {
-            $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
+            if (is_string($inherited)) {
+                $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
+            }
         }
     }
 
