@@ -164,7 +164,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
     {
         $v = $this->view;
 
-        return '<input type="submit" class="related-action"'
+        return '<input type="submit" class="related-action action-add"'
             . ' name="' . $name . '_ADD"'
             . ' value="&#xe805;"'
             . ' title="' . $v->translate('Remove this entry') . '"'
@@ -176,7 +176,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
     {
         $v = $this->view;
 
-        return '<input type="submit" class="related-action"'
+        return '<input type="submit" class="related-action action-remove"'
             . ' name="' . $name . '_' . $cnt . '__REMOVE' . '"'
             . ' value="&#xe804;"'
             . ' title="' . $v->translate('Remove this entry') . '"'
@@ -188,7 +188,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
     {
         $v = $this->view;
 
-        return '<input type="submit" class="related-action"'
+        return '<input type="submit" class="related-action action-move-up"'
             . ' name="' . $name . '_' . $cnt . '__MOVE_UP"'
             . ' value="&#xe825;"'
             . ' title="' . $v->translate('Move up') . '"'
@@ -200,7 +200,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
     {
         $v = $this->view;
 
-        return '<input type="submit" class="related-action"'
+        return '<input type="submit" class="related-action action-move-down"'
             . ' name="' . $name . '_' . $cnt . '__MOVE_DOWN"'
             . ' value="&#xe828;"'
             . ' title="' . $v->translate('Move down') . '"'
