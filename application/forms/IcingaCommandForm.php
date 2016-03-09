@@ -26,8 +26,16 @@ class IcingaCommandForm extends DirectorObjectForm
                 'ClusterZoneCheck'   => 'Icinga Cluster Zone Check Command',
                 'CrlCheck'           => 'Crl Check Command',
             ),
-            'required' => ! $this->isTemplate(),
-            'class'    => 'autosubmit'
+            'required'    => ! $this->isTemplate(),
+            'description' => $this->translate(
+                'Plugin Check commands are what you need when running checks agains'
+                . ' your infrastructure. Notification commands will be used when it'
+                . ' comes to notify your users. Event commands allow you to trigger'
+                . ' specific actions when problems occur. Some people use them for'
+                . ' auto-healing mechanisms, like restarting services or rebooting'
+                . ' systems at specific thresholds'
+            ),
+            'class'       => 'autosubmit'
         ));
 
         $this->addElement('text', 'object_name', array(
