@@ -13,12 +13,10 @@ class IcingaHostGroupForm extends DirectorObjectForm
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Hostgroup'),
             'required'    => true,
-            'description' => $this->translate('Icinga object name for this hostgroup')
+            'description' => $this->translate('Icinga object name for this host group')
         ));
 
-        $this->addElement('text', 'display_name', array(
-            'label' => $this->translate('Display Name'),
-            'description' => $this->translate('The name which should displayed.')
-        ));
+        $this->addGroupDisplayNameElement()
+             ->setButtons();
     }
 }

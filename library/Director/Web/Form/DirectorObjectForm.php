@@ -981,6 +981,18 @@ print_r($object);
         return $this;
     }
 
+    protected function addGroupDisplayNameElement()
+    {
+        $this->addElement('text', 'display_name', array(
+            'label' => $this->translate('Display Name'),
+            'description' => $this->translate(
+                'An alternative display name for this group. If you wonder how this'
+                . ' could be helpful just leave it blank')
+        ));
+
+        return $this;
+     }
+
     protected function addCheckCommandElements()
     {
         $this->addElement('select', 'check_command_id', array(
