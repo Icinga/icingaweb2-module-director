@@ -261,6 +261,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return null;
         }
 
+        if ($this->propertyIsRelatedSet($key)) {
+            return $this->getRelatedSet($key)->toPlainObject();
+        }
+
         return parent::get($key);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+use Icinga\Module\Director\IcingaConfig\ExtensibleSet;
+
 /**
  * View helper for extensible sets
  *
@@ -29,15 +31,17 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
     {
         $info = $this->_getInfo($name, $value, $attribs);
         extract($info); // name, value, attribs, options, listsep, disable
-
         if (array_key_exists('multiOptions', $attribs)) {
             $multiOptions = $attribs['multiOptions'];
+            unset($attribs['multiOptions']);
+            $validOptions = $this->flattenOptions($multiOptions);
         } else {
             $multiOptions = null;
         }
 
         if (array_key_exists('sorted', $attribs)) {
             $sorted = (bool) $attribs['sorted'];
+            unset($attribs['sorted']);
         } else {
             $sorted = false;
         }
@@ -53,9 +57,17 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 
         $elements = array();
         $v = $this->view;
-        $values = array('group a', 'group b');
         $name = $v->escape($name);
         $id = $v->escape($id);
+
+        if ($value instanceof ExtensibleSet) {
+            $value = $value->toPlainObject();
+        }
+
+        if (is_array($value)) {
+            $value = array_filter($value, 'strlen');
+        }
+
 
         $cnt = 0;
         $total = 0;
@@ -63,13 +75,10 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
             $total = count($value);
 
             foreach ($value as $val) {
-                if (! strlen($val)) {
-                    continue;
-                }
 
                 if ($multiOptions !== null) {
-                    if (array_key_exists($val, $multiOptions)) {
-                        unset($multiOptions[$val]);
+                    if (in_array($val, $validOptions)) {
+                        $this->removeOption($multiOptions, $val);
                     } else {
                         continue; // Value no longer valid
                     }
@@ -136,6 +145,39 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
         return '<ul class="extensible-set">' . "\n  "
              . implode("\n  ", $elements)
              . "</ul>\n";
+    }
+
+    private function flattenOptions($options)
+    {
+        $flat = array();
+
+        foreach ($options as $key => $option) {
+            if (is_array($option)) {
+                foreach ($option as $k => $o) {
+                    $flat[] = $k;
+                }
+            } else {
+                $flat[] = $key;
+            }
+        }
+
+        return $flat;
+    }
+
+    private function removeOption(& $options, $option)
+    {
+        foreach ($options as $key => $value) {
+            if (is_array($value)) {
+                if ($this->removeOption($value, $option)) {
+                    return true;
+                }
+            } elseif ($key === $option) {
+                unset($options[$key]);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function suffix($cnt)
