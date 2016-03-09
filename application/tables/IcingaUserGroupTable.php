@@ -8,6 +8,7 @@ class IcingaUserGroupTable extends QuickTable
 {
     protected $searchColumns = array(
         'usergroup',
+        'display_name'
     );
 
     public function getColumns()
@@ -16,7 +17,6 @@ class IcingaUserGroupTable extends QuickTable
             'id'                    => 'ug.id',
             'usergroup'             => 'ug.object_name',
             'display_name'          => 'ug.display_name',
-            'zone'                  => 'z.object_name',
         );
     }
 
@@ -29,9 +29,8 @@ class IcingaUserGroupTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'usergroup'         => $view->translate('Usergroup'),
-            'display_name'      => $view->translate('Display Name'),
-            'zone'              => $view->translate('Zone'),
+            'usergroup'    => $view->translate('Usergroup'),
+            'display_name' => $view->translate('Display Name'),
         );
     }
 
@@ -40,10 +39,6 @@ class IcingaUserGroupTable extends QuickTable
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('ug' => 'icinga_usergroup'),
-            array()
-        )->joinLeft(
-            array('z' => 'icinga_zone'),
-            'ug.zone_id = z.id',
             array()
         );
 

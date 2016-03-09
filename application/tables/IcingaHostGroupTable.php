@@ -8,6 +8,7 @@ class IcingaHostGroupTable extends QuickTable
 {
     protected $searchColumns = array(
         'hostgroup',
+        'display_name'
     );
 
     public function getColumns()
@@ -28,8 +29,8 @@ class IcingaHostGroupTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'hostgroup'         => $view->translate('Hostgroup'),
-            'display_name'      => $view->translate('Display Name'),
+            'hostgroup'    => $view->translate('Hostgroup'),
+            'display_name' => $view->translate('Display Name'),
         );
     }
 

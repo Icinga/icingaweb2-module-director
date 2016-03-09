@@ -8,6 +8,7 @@ class IcingaServiceGroupTable extends QuickTable
 {
     protected $searchColumns = array(
         'servicegroup',
+        'display_name'
     );
 
     public function getColumns()
