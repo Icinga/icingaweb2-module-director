@@ -51,7 +51,10 @@ class IcingaCommandForm extends DirectorObjectForm
 
         $this->addElement('text', 'timeout', array(
             'label' => $this->translate('Timeout'),
-            'description' => $this->translate('Optional command timeout')
+            'description' => $this->translate(
+                'Optional command timeout. Allowed values are seconds or durations postfixed with a'
+                . ' specific unit (e.g. 1m or also 3m 30s).'
+            )
         ));
         $this->addDisabledElement();
 
