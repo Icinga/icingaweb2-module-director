@@ -956,7 +956,7 @@ print_r($object);
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate(
                 'Importable templates, add as many as you want. Please note that order'
-                . ' matters when importing properting from multiple templates: last one'
+                . ' matters when importing properties from multiple templates: last one'
                 . ' wins'
             ),
             'multiOptions' => $this->optionallyAddFromEnum($enum),
