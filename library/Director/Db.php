@@ -268,7 +268,8 @@ class Db extends DbConnection
         $sql = sprintf(
             $sql,
             $this->dbHexFunc('checksum'),
-            $this->dbHexFunc('parent_checksum'));
+            $this->dbHexFunc('parent_checksum')
+        );
 
         return $this->db()->fetchRow(
             $sql,
