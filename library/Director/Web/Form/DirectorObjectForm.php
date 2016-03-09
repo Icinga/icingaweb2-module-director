@@ -236,6 +236,10 @@ abstract class DirectorObjectForm extends QuickForm
             foreach ($values as $key => $value) {
 
                 if (substr($key, 0, 4) === 'var_') {
+                    if (substr($key, -6) === '___ADD') {
+                        continue;
+                    }
+
                     $mykey = substr($key, 4);
                     if (property_exists($fields, $mykey) && $fields->$mykey->format === 'json') {
                         $value = json_decode($value);

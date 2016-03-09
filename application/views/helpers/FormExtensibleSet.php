@@ -138,7 +138,9 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
                     . $disabled
                     . $this->_htmlAttribs($attribs)
                     . $this->getClosingBracket()
+                    . '<span class="inline-buttons">'
                     . $this->renderAddButton($name, $disabled)
+                    . '</span>'
                     . '</li>';
         }
 
@@ -207,9 +209,9 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
         $v = $this->view;
 
         return '<input type="submit" class="related-action action-add"'
-            . ' name="' . $name . '_ADD"'
+            . ' name="' . $name . '___ADD"'
             . ' value="&#xe805;"'
-            . ' title="' . $v->translate('Remove this entry') . '"'
+            . ' title="' . $v->translate('Add a new entry') . '"'
             . $disabled
             . ' />';
     }
