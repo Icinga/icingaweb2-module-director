@@ -29,6 +29,10 @@ class IcingaCommand extends IcingaObject
 
     protected $supportsArguments = true;
 
+    protected $intervalProperties = array(
+        'timeout' => 'timeout',
+    );
+
     protected static $pluginDir;
 
     /**
@@ -81,11 +85,6 @@ class IcingaCommand extends IcingaObject
         array_unshift($parts, c::alreadyRendered($prefix . c::renderString(array_shift($parts))));
         
         return c::renderKeyValue('command', c::renderArray($parts));
-    }
-
-    protected function renderTimeout()
-    {
-        return $this->renderPropertyAsSeconds('timeout');
     }
 
     public static function setPluginDir($pluginDir)
