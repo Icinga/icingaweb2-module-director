@@ -66,7 +66,11 @@
         fixRelatedActions: function($ul)
         {
             var $uls = $ul.find('li');
-            var last = $uls.length -2;
+            var last = $uls.length - 1;
+            if ($ul.find('.extend-set').length) {
+                last--;
+            }
+
             $uls.each(function (idx, li) {
                 var $li = $(li);
                 if (idx === 0) {
