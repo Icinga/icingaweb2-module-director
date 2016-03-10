@@ -1033,7 +1033,7 @@ print_r($object);
 
     protected function addCheckCommandElements()
     {
-        if ($this->isTemplate()) {
+        if (! $this->isTemplate()) {
             return $this;
         }
 
@@ -1050,7 +1050,7 @@ print_r($object);
 
     protected function addCheckExecutionElements()
     {
-        if ($this->isTemplate()) {
+        if (! $this->isTemplate()) {
             return $this;
         }
 
