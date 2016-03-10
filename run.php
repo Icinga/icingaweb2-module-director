@@ -24,3 +24,4 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierUppercase');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierMap');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierGetHostByName');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierExtractFromDN');
