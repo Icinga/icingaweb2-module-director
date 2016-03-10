@@ -12,7 +12,7 @@ class PropertyModifierExtractFromDN extends PropertyModifierHook
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('select', 'dn_component', array(
-            'label'        => 'On failure',
+            'label'        => $form->translate('DN component'),
             'description'  => $form->translate('What should we extract from the DN?'),
             'multiOptions' => $form->optionalEnum(array(
                 'cn'      => $form->translate('The first (leftmost) CN'),
@@ -24,7 +24,7 @@ class PropertyModifierExtractFromDN extends PropertyModifierHook
         ));
 
         $form->addElement('select', 'on_failure', array(
-            'label'        => 'On failure',
+            'label'        => $form->translate('On failure'),
             'description'  => $form->translate('What should we do if the desired part does not exist?'),
             'multiOptions' => $form->optionalEnum(array(
                 'null' => $form->translate('Set no value (null)'),
@@ -49,7 +49,7 @@ class PropertyModifierExtractFromDN extends PropertyModifierHook
         $parts = LdapUtils::explodeDN($value);
         $result = null;
 
-        switch($this->getSetting('dn_component')) {
+        switch ($this->getSetting('dn_component')) {
             case 'cn':
                 $result = $this->extractFirst($parts, 'cn');
                 break;
