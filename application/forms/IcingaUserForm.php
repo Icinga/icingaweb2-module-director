@@ -76,51 +76,6 @@ class IcingaUserForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function addEventFilterElements()
-    {
-        $this->addElement('extensibleSet', 'states', array(
-            'label' => $this->translate('States'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
-            'description'  => $this->translate(
-                'The host/service states you want to get notifications for'
-            ),
-        ));
-
-        $this->addElement('extensibleSet', 'types', array(
-            'label' => $this->translate('Transition types'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
-            'description'  => $this->translate(
-                'The state transition types you want to get notifications for'
-            ),
-        ));
-
-        $elements = array(
-            'states',
-            'types',
-        );
-        $this->addDisplayGroup($elements, 'event_filters', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order' =>70,
-            'legend' => $this->translate('State and transition type filters')
-        ));
-    }
-
-    protected function enumStates()
-    {
-        $set = new \Icinga\Module\Director\IcingaConfig\StateFilterSet();
-        return $set->enumAllowedValues();
-    }
-
-    protected function enumTypes()
-    {
-        $set = new \Icinga\Module\Director\IcingaConfig\TypeFilterSet();
-        return $set->enumAllowedValues();
-    }
-
     protected function groupObjectDefinition()
     {
         $elements = array(

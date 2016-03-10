@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Module\Director\IcingaConfig\StateFilterSet;
+use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Zend_Form_Element_Select as Zf_Select;
@@ -1097,42 +1099,49 @@ print_r($object);
         return $tpl;
     }
 
-    // TODO: deprecate
-    protected function enumStateFilters()
+    protected function addEventFilterElements()
     {
-        return array(
-            $this->translate('Hosts') => array(
-                'Up'       => $this->translate('Up'),
-                'Down'     => $this->translate('Down')
+        $this->addElement('extensibleSet', 'states', array(
+            'label' => $this->translate('States'),
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
+            'description'  => $this->translate(
+                'The host/service states you want to get notifications for'
             ),
-            $this->translate('Services') => array(
-                'OK'       => $this->translate('OK'),
-                'Warning'  => $this->translate('Warning'),
-                'Critical' => $this->translate('Critical'),
-                'Unknown'  => $this->translate('Unknown'),
+        ));
+
+        $this->addElement('extensibleSet', 'types', array(
+            'label' => $this->translate('Transition types'),
+            'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
+            'description'  => $this->translate(
+                'The state transition types you want to get notifications for'
             ),
+        ));
+
+        $elements = array(
+            'states',
+            'types',
         );
+        $this->addDisplayGroup($elements, 'event_filters', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' =>70,
+            'legend' => $this->translate('State and transition type filters')
+        ));
     }
 
-    protected function enumTypeFilters()
+    protected function enumStates()
     {
-        return array(
-            $this->translate('State changes') => array(
-                'Problem'         => $this->translate('Problem'),
-                'Recovery'        => $this->translate('Recovery'),
-                'Custom'          => $this->translate('Custom notification'),
-            ),
-            $this->translate('Problem handling') => array(
-                'Acknowledgement' => $this->translate('Acknowledgement'),
-                'DowntimeStart'   => $this->translate('Downtime starts'),
-                'DowntimeEnd'     => $this->translate('Downtime ends'),
-                'DowntimeRemoved' => $this->translate('Downtime removed'),
-            ),
-            $this->translate('Flapping') => array(
-                'FlappingStart'   => $this->translate('Flapping ends'),
-                'FlappingEnd'     => $this->translate('Flapping starts')
-            )
-        );
+        $set = new StateFilterSet();
+        return $set->enumAllowedValues();
+    }
+
+    protected function enumTypes()
+    {
+        $set = new TypeFilterSet();
+        return $set->enumAllowedValues();
     }
 
     private function dummyForTranslation()
