@@ -647,6 +647,7 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
             foreach ($post as $key => $value) {
+
                 if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
                     $values[$m[1]] = array_filter($values[$m[1]], 'strlen');
                     switch ($m[3]) {
@@ -987,11 +988,12 @@ print_r($object);
             'label' => $this->translate('Display Name'),
             'description' => $this->translate(
                 'An alternative display name for this group. If you wonder how this'
-                . ' could be helpful just leave it blank')
+                . ' could be helpful just leave it blank'
+            )
         ));
 
         return $this;
-     }
+    }
 
     protected function addCheckCommandElements()
     {
