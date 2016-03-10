@@ -37,10 +37,27 @@ class IcingaNotification extends IcingaObject
     protected $relations = array(
         'zone'    => 'IcingaZone',
         'host'    => 'IcingaHost',
+        'service' => 'IcingaService',
         'command' => 'IcingaCommand',
         'period'  => 'IcingaTimePeriod',
-        'service' => 'IcingaService',
     );
 
     // listOfRelations -> users, user_groups
+
+    protected function setKey($key)
+    {
+        if (is_int($key)) {
+            $this->id = $key;
+        } elseif (is_array($key)) {
+            foreach (array('id', 'host_id', 'service_id', 'object_name') as $k) {
+                if (array_key_exists($k, $key)) {
+                    $this->set($k, $key[$k]);
+                }
+            }
+        } else {
+            return parent::setKey($key);
+        }
+
+        return $this;
+    }
 }
