@@ -10,99 +10,98 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
-            $this->groupObjectDefinition();
-            return;
+            return $this->groupMainProperties();
         }
 
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Name'),
             'required'    => true,
-            'description' => $this->translate('Name for the Icinga object you are going to create')
+            'description' => $this->translate(
+                'Name for the Icinga object you are going to create'
+            )
         ));
 
-        // TODO: Should not be 'object' on new empty form:
+        $this->addHostObjectElement()
+             ->addImportsElement()
+             ->addGroupsElement()
+             ->addDisabledElement()
+             ->groupMainProperties()
+             ->addCheckCommandElements()
+             ->addCheckExecutionElements()
+             ->addAgentAndZoneElements()
+             ->setButtons();
+    }
+
+    protected function addHostObjectElement()
+    {
         if ($this->isObject()) {
             $this->addElement('select', 'host_id', array(
                 'label'       => $this->translate('Host'),
                 'required'    => true,
                 'multiOptions' => $this->optionalEnum($this->enumHostsAndTemplates()),
-                'description' => $this->translate('Choose the host this single service should be assigned to')
+                'description' => $this->translate(
+                    'Choose the host this single service should be assigned to'
+                )
             ));
         }
 
+        return $this;
+    }
+
+    protected function addGroupsElement()
+    {
         $groups = $this->enumServicegroups();
+
         if (! empty($groups)) {
             $this->addElement('extensibleSet', 'groups', array(
                 'label'        => $this->translate('Groups'),
                 'multiOptions' => $this->optionallyAddFromEnum($groups),
                 'positional'   => false,
                 'description'  => $this->translate(
-                    'Service groups that should be directly assigned to this service. Servicegroups can be useful'
-                    . ' for various reasons. They are helpful to provided service-type specific view in Icinga Web 2,'
-                    . ' either for custom dashboards or as an instrument to enforce restrictior. Service groups'
-                    . ' can be directly assigned to single services or to service templates.'
+                    'Service groups that should be directly assigned to this service.'
+                    . ' Servicegroups can be useful for various reasons. They are'
+                    . ' helpful to provided service-type specific view in Icinga Web 2,'
+                    . ' either for custom dashboards or as an instrument to enforce'
+                    . ' restrictions. Service groups can be directly assigned to'
+                    . ' single services or to service templates.'
                 )
             ));
         }
 
-        $this->addImportsElement();
-        $this->addDisabledElement();
-        $this->groupObjectDefinition();
-
-        $this->addCheckCommandElements();
-
-        if ($this->isTemplate()) {
-            $this->addCheckExecutionElements();
-        }
-
-        if ($this->isTemplate()) {
-            $this->optionalBoolean(
-                'use_agent',
-                $this->translate('Run on agent'),
-                $this->translate('Whether the check commmand for this service should be executed on the Icinga agent')
-            );
-            $this->addZoneElement();
-
-            $elements = array(
-                'use_agent',
-                'zone_id',
-            );
-            $this->addDisplayGroup($elements, 'clustering', array(
-                'decorators' => array(
-                    'FormElements',
-                    array('HtmlTag', array('tag' => 'dl')),
-                    'Fieldset',
-                ),
-                'order' => 40,
-                'legend' => $this->translate('Icinga Agent and zone settings')
-            ));
-
-        }
-
-        $this->setButtons();
+        return $this;
     }
 
-
-    protected function groupObjectDefinition()
+    protected function addAgentAndZoneElements()
     {
-        $elements = array(
-            'object_type',
-            'object_name',
-            'display_name',
-            'imports',
-            'host_id',
-            'groups',
-            'disabled',
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $this->optionalBoolean(
+            'use_agent',
+            $this->translate('Run on agent'),
+            $this->translate(
+                'Whether the check commmand for this service should be executed'
+                . ' on the Icinga agent'
+            )
         );
-        $this->addDisplayGroup($elements, 'object_definition', array(
+        $this->addZoneElement();
+
+        $elements = array(
+            'use_agent',
+            'zone_id',
+        );
+        $this->addDisplayGroup($elements, 'clustering', array(
             'decorators' => array(
                 'FormElements',
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 20,
-            'legend' => $this->translate('Service properties')
+            'order' => 40,
+            'legend' => $this->translate('Icinga Agent and zone settings')
         ));
+
+        return $this;
     }
 
     protected function enumHostsAndTemplates()

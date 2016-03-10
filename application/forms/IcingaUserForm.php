@@ -10,8 +10,7 @@ class IcingaUserForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
-            $this->groupObjectDefinition();
-            return;
+            return $this->groupMainProperties();
         }
 
         if ($this->isTemplate()) {
@@ -38,20 +37,24 @@ class IcingaUserForm extends DirectorObjectForm
             'description' => $this->translate('The pager address of the user.')
         ));
 
-        $this->addGroupsElement();
-        $this->addImportsElement();
+        $this->addGroupsElement()
+             ->addImportsElement()
+             ->addEnableNotificationsElement()
+             ->addDisabledElement()
+             ->addEventFilterElements()
+             ->groupMainProperties()
+             ->setButtons();
+    }
+
+    protected function addEnableNotificationsElement()
+    {
         $this->optionalBoolean(
             'enable_notifications',
             $this->translate('Send notifications'),
             $this->translate('Whether to send notifications for this user')
         );
-        $this->addDisabledElement();
-        $this->groupObjectDefinition();
 
-
-        $this->addEventFilterElements();
-
-        $this->setButtons();
+        return $this;
     }
 
     protected function addGroupsElement()

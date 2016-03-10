@@ -10,6 +10,7 @@ class IcingaNotificationForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
+            $this->groupMainProperties();
             return;
         }
 
@@ -19,8 +20,11 @@ class IcingaNotificationForm extends DirectorObjectForm
             'description' => $this->translate('Icinga object name for this notification')
         ));
  
-
-        $this->addDisabledElement();
-        $this->setButtons();
+        $this->addDisabledElement()
+             ->addImportsElement()
+             ->addDisabledElement()
+             ->addEventFilterElements()
+             ->groupMainProperties()
+             ->setButtons();
     }
 }

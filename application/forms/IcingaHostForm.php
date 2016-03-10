@@ -11,7 +11,7 @@ class IcingaHostForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
-            return;
+            return $this->groupMainProperties();
         }
 
         $this->addElement('text', 'object_name', array(
@@ -25,53 +25,13 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
-        $this->addGroupsElement();
-        $this->addImportsElement();
-
-        $this->addElement('text', 'display_name', array(
-            'label' => $this->translate('Display name'),
-            'description' => $this->translate(
-                'Alternative name for this host. Might be a host alias or and kind'
-                . ' of string helping your users to identify this host'
-            )
-        ));
-
-        $this->addElement('text', 'address', array(
-            'label' => $this->translate('Host address'),
-            'description' => $this->translate(
-                'Host address. Usually an IPv4 address, but may be any kind of address'
-                . ' your check plugin is able to deal with'
-            )
-        ));
-
-        $this->addElement('text', 'address6', array(
-            'label' => $this->translate('IPv6 address'),
-            'description' => $this->translate('Usually your hosts main IPv6 address')
-        ));
-
-        $this->addDisabledElement();
-
-        $elements = array(
-            'object_type',
-            'object_name',
-            'display_name',
-            'address',
-            'address6',
-            'imports',
-            'groups',
-            'disabled',
-        );
-        $this->addDisplayGroup($elements, 'object_definition', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order' => 20,
-            'legend' => $this->translate('Host properties')
-        ));
-
-        $this->addZoneElement();
+        $this->addGroupsElement()
+             ->addImportsElement()
+             ->addDisplayNameElement()
+             ->addAddressElements()
+             ->addDisabledElement()
+             ->groupMainProperties()
+             ->addZoneElement();
 
         $this->addBoolean('has_agent', array(
             'label'       => $this->translate('Icinga2 Agent'),
@@ -112,14 +72,9 @@ class IcingaHostForm extends DirectorObjectForm
             'legend' => $this->translate('Icinga Agent and zone settings')
         ));
 
-        if ($this->isTemplate()) {
-            $this->addCheckCommandElements();
-            $this->addCheckExecutionElements();
-        } else {
-            $this->getElement('imports')->setRequired();
-        }
-
-        $this->setButtons();
+        $this->addCheckCommandElements()
+             ->addCheckExecutionElements()
+             ->setButtons();
     }
 
     protected function addGroupsElement()
@@ -139,6 +94,45 @@ class IcingaHostForm extends DirectorObjectForm
                 . ' They are also often used as an instrument to enforce restricted views in Icinga Web 2.'
                 . ' Hostgroups can be directly assigned to single hosts or to host templates. You might'
                 . ' also want to consider assigning hostgroups using apply rules'
+            )
+        ));
+
+        return $this;
+    }
+
+    protected function addAddressElements()
+    {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addElement('text', 'address', array(
+            'label' => $this->translate('Host address'),
+            'description' => $this->translate(
+                'Host address. Usually an IPv4 address, but may be any kind of address'
+                . ' your check plugin is able to deal with'
+            )
+        ));
+
+        $this->addElement('text', 'address6', array(
+            'label' => $this->translate('IPv6 address'),
+            'description' => $this->translate('Usually your hosts main IPv6 address')
+        ));
+
+        return $this;
+    }
+
+    protected function addDisplayNameElement()
+    {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addElement('text', 'display_name', array(
+            'label' => $this->translate('Display name'),
+            'description' => $this->translate(
+                'Alternative name for this host. Might be a host alias or and kind'
+                . ' of string helping your users to identify this host'
             )
         ));
 

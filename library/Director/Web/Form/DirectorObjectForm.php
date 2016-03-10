@@ -404,6 +404,36 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
+    protected function groupMainProperties()
+    {
+        $elements = array(
+            'object_type',
+            'object_name',
+            'display_name',
+            'imports',
+            'host_id',
+            'address',
+            'address6',
+            'groups',
+            'email',
+            'pager',
+            'enable_notifications',
+            'disabled',
+        );
+
+        $this->addDisplayGroup($elements, 'object_definition', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 20,
+            'legend' => $this->translate('Main properties')
+        ));
+
+        return $this;
+    }
+
     protected function addField($field, $value = null, $inherited = null, $inheritedFrom = null)
     {
         $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
@@ -972,6 +1002,10 @@ print_r($object);
 
     protected function addDisabledElement()
     {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
         $this->addBoolean(
             'disabled',
             array(
@@ -999,6 +1033,10 @@ print_r($object);
 
     protected function addCheckCommandElements()
     {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
         $this->addElement('select', 'check_command_id', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
@@ -1006,10 +1044,15 @@ print_r($object);
             'class'        => 'autosubmit', // This influences fields
         ));
         $this->addToCheckExecutionDisplayGroup('check_command_id');
+
+        return $this;
     }
 
     protected function addCheckExecutionElements()
     {
+        if ($this->isTemplate()) {
+            return $this;
+        }
 
         $this->addElement(
             'text',
@@ -1130,6 +1173,8 @@ print_r($object);
             'order' =>70,
             'legend' => $this->translate('State and transition type filters')
         ));
+
+        return $this;
     }
 
     protected function enumStates()
