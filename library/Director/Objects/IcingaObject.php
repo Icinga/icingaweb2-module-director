@@ -1301,12 +1301,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function merge(IcingaObject $object)
     {
         $object = clone($object);
-        $vars = $object->getVars();
-        $object->vars = array();
+
+        if ($object->supportsCustomVars()) {
+            $vars = $object->getVars();
+            $object->vars = array();
+        }
+
         $this->setProperties((array) $object->toPlainObject(null, true));
-        $myVars = $this->vars();
-        foreach ($vars as $key => $var) {
-            $myVars->set($key, $var);
+
+        if ($object->supportsCustomVars()) {
+            $myVars = $this->vars();
+            foreach ($vars as $key => $var) {
+                $myVars->set($key, $var);
+            }
         }
 
         return $this;
