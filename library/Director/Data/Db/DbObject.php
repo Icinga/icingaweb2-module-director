@@ -85,6 +85,8 @@ abstract class DbObject
      */
     protected static $prefetchedNames = array();
 
+    protected static $prefetchStats = array();
+
     /**
      * Constructor is not accessible and should not be overridden
      */
@@ -920,11 +922,22 @@ abstract class DbObject
         return false;
 
         $class = get_called_class();
+        if (! array_key_exists($class, self::$prefetchStats)) {
+            self::$prefetchStats[$class] = (object) array('miss' => 0, 'hits' => 0);
+        }
+
         if (array_key_exists($class, self::$prefetched)) {
+            self::$prefetchStats[$class]->hits++;
             return array_key_exists($key, self::$prefetched[$class]);
         } else {
+            self::$prefetchStats[$class]->miss++;
             return false;
         }
+    }
+
+    public static function getPrefetchStats()
+    {
+        return self::$prefetchStats;
     }
 
     public static function loadWithAutoIncId($id, DbConnection $connection)
