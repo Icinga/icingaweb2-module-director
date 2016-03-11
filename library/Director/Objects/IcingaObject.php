@@ -193,7 +193,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->connection
         );
 
-        $this->$name = $object->id;
+        $this->reallySet($name, $object->id);
         unset($this->unresolvedRelatedProperties[$name]);
     }
 
