@@ -557,6 +557,14 @@ class Db extends DbConnection
         return $this->enumIcingaObjects('command', $filters);
     }
 
+    public function enumNotificationCommands()
+    {
+        $filters = array(
+            'methods_execute IN (?)' => array('PluginNotification'),
+        );
+        return $this->enumIcingaObjects('command', $filters);
+    }
+
     public function getZoneName($id)
     {
         $objects = $this->enumZones();
