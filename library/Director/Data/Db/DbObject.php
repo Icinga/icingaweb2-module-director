@@ -315,7 +315,7 @@ abstract class DbObject
 
     protected function reallySet($key, $value)
     {
-        if ($value === $this->$key) {
+        if ($value === $this->properties[$key]) {
             return $this;
         }
         $this->hasBeenModified = true;
