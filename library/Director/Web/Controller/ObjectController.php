@@ -267,11 +267,13 @@ abstract class ObjectController extends ActionController
                     $this->db()
                 );
             } elseif ($this->getRequest()->isApiRequest()) {
-                $this->getResponse()->setHttpResponseCode(422);
+                if ($this->getRequest()->isGet()) {
+                    $this->getResponse()->setHttpResponseCode(422);
 
-                throw new InvalidPropertyException(
-                    'Cannot load object, missing parameters'
-                );
+                    throw new InvalidPropertyException(
+                        'Cannot load object, missing parameters'
+                    );
+                }
             }
 
             $this->view->undeployedChanges = $this->countUndeployedChanges();
