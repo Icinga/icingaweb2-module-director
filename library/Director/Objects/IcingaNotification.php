@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+
 class IcingaNotification extends IcingaObject
 {
     protected $table = 'icinga_notification';
@@ -42,7 +44,44 @@ class IcingaNotification extends IcingaObject
         'period'  => 'IcingaTimePeriod',
     );
 
+    protected $intervalProperties = array(
+        'notification_interval' => 'notification_interval',
+        'times_begin'           => 'times_begin',
+        'times_end'             => 'times_end',
+    );
+
     // listOfRelations -> users, user_groups
+    protected function renderTimes_begin()
+    {
+        $times = (object) array(
+            'begin' => c::renderInterval($this->times_begin)
+        );
+
+        if ($this->times_end !== null) {
+            $times->end = c::renderInterval($this->times_end);
+        }
+
+        return c::renderKeyValue(
+            'times',
+            c::renderDictionary($times)
+        );
+    }
+
+    protected function renderTimes_end()
+    {
+        if ($this->times_begin !== null) {
+            return '';
+        }
+
+        $times = (object) array(
+            'end' => c::renderInterval($this->times_end)
+        );
+
+        return c::renderKeyValue(
+            'times',
+            c::renderDictionary($times)
+        );
+    }
 
     protected function setKey($key)
     {

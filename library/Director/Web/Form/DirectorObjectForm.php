@@ -416,6 +416,8 @@ abstract class DirectorObjectForm extends QuickForm
             'address6',
             'groups',
             'command_id', // Notification
+            'notification_interval',
+            'period',
             'email',
             'pager',
             'enable_notifications',
