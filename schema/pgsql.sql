@@ -1152,6 +1152,19 @@ CREATE TABLE icinga_notification (
 );
 
 
+CREATE TABLE icinga_notification_assignment (
+  id bigserial,
+  notification_id integer NOT NULL,
+  filter_string TEXT NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_notification_assignment
+    FOREIGN KEY (notification_id)
+    REFERENCES icinga_notification (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+
 CREATE TABLE import_source (
   id serial,
   source_name character varying(64) NOT NULL,
@@ -1424,4 +1437,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (84, NOW());
+  VALUES (85, NOW());
