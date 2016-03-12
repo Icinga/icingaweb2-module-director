@@ -67,7 +67,7 @@ class IcingaNotificationForm extends DirectorObjectForm
             'text',
             'times_end',
             array(
-                'label' => $this->translate('Times end'),
+                'label' => $this->translate('Last notification'),
                 'description' => $this->translate(
                     'When the last notification should be sent'
                 )
