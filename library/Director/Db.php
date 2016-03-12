@@ -490,6 +490,7 @@ class Db extends DbConnection
             'usergroup',
             'command',
             'timeperiod',
+            'notification',
             'apiuser',
             'endpoint',
             'zone',

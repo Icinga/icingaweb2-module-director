@@ -92,8 +92,8 @@ $all = array(
     ),
     $this->translate('Alert your users') => array(
         array('users',    $this->translate('Users / Contacts'), 'director/users', statSummary($this, 'user')),
-        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod'), 'pending'),
-        array('megaphone', $this->translate('Notifications'), 'director/notifications', $this->translate('Schedule your notifications'), 'pending'),
+        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
+        array('megaphone', $this->translate('Notifications'), 'director/notifications', $this->translate('Schedule your notifications.') . ' ' . statSummary($this, 'notification')),
         array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
