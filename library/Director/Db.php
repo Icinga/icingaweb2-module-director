@@ -30,13 +30,13 @@ class Db extends DbConnection
     {
         $db = $this->db();
 
-        $query = 'SELECT COUNT(*) FROM director_activity_log WHERE id > ('
+        $query = 'SELECT COUNT(*) FROM director_activity_log WHERE id > COALESCE(('
             . ' SELECT id FROM director_activity_log WHERE checksum = ('
             . '  SELECT last_activity_checksum FROM director_generated_config WHERE checksum = ('
             . '   SELECT config_checksum FROM director_deployment_log ORDER by id desc limit 1'
             . '  )'
             . ' )'
-            . ')';
+            . '), 0)';
 
         if ($object !== null) {
             $query .= $db->quoteInto(' AND object_type = ?', $object->getTableName());
