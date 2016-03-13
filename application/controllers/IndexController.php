@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Exception;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class IndexController extends ActionController
@@ -22,11 +23,23 @@ class IndexController extends ActionController
             return;
         }
 
-        $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
-        $this->view->stats = $this->db()->getObjectSummary();
-        $this->view->undeployedActivities = $this->db()->countActivitiesSinceLastDeployedConfig();
-        if ((int) $this->view->stats['apiuser']->cnt_total === 0) {
+        if (! $this->fetchStats()
+            || (int) $this->view->stats['apiuser']->cnt_total === 0
+        ) {
             $this->view->form = $this->loadForm('kickstart')->setDb($this->db)->handleRequest();
         }
+    }
+
+    protected function fetchStats()
+    {
+        try {
+            $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
+            $this->view->stats = $this->db()->getObjectSummary();
+            $this->view->undeployedActivities = $this->db()->countActivitiesSinceLastDeployedConfig();
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return true;
     }
 }

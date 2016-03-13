@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Exception;
+use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
@@ -10,8 +11,21 @@ class KickstartForm extends QuickForm
 {
     protected $db;
 
+    protected $createDbLabel;
+
     public function setup()
     {
+        $this->createDbLabel = $this->translate('Create database schema');
+        if (!$this->migrations()->hasSchema()) {
+
+            $this->addHtmlHint($this->translate(
+                'No database schema has been created yet'
+            ));
+
+            $this->setSubmitLabel($this->createDbLabel);
+            return ;
+        }
+
         $this->addHtmlHint(
             $this->translate(
                 'Your installation of Icinga Director has not yet been prepared for deployments.'
@@ -73,11 +87,15 @@ class KickstartForm extends QuickForm
     public function onSuccess()
     {
         try {
+            if ($this->getSubmitLabel() === $this->createDbLabel) {
+                $this->migrations()->applyPendingMigrations();
+                return parent::onSuccess();
+            }
             $kickstart = new KickstartHelper($this->db);
             $kickstart->setConfig($this->getValues())->run();
             parent::onSuccess();
         } catch (Exception $e) {
-            $this->getElement('endpoint')->addError($e->getMessage());
+            $this->addError($e->getMessage());
         }
     }
 
@@ -89,5 +107,10 @@ class KickstartForm extends QuickForm
         }
 
         return $this;
+    }
+
+    protected function migrations()
+    {
+        return new Migrations($this->db);
     }
 }
