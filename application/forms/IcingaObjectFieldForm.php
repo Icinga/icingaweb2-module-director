@@ -49,6 +49,8 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         // TODO: extract vars from command line (-> dummy)
         // TODO: do not suggest chosen ones
         $argumentVars = array();
+        $argumentVarDescriptions = array();
+
         if ($this->icingaObject->supportsArguments()) {
             foreach ($this->icingaObject->arguments() as $arg) {
                 if ($arg->argument_format === 'string') {
@@ -63,6 +65,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                                 unset($existingFields[$id]);
                             } else {
                                 $argumentVars[$val] = $val;
+                                $argumentVarDescriptions[$val] = $arg->description;
                             }
                         }
                     }
@@ -108,7 +111,16 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                 'label'       => $this->translate('Caption'),
                 'required'    => true,
                 'ignore'      => true,
+                'value'       => trim($id, '$'),
                 'description' => $this->translate('The caption which should be displayed')
+            ));
+
+            $this->addElement('textarea', 'description', array(
+                'label'       => $this->translate('Description'),
+                'description' => $this->translate('A description about the field'),
+                'ignore'      => true,
+                'value'       => array_key_exists($id, $argumentVarDescriptions) ? $argumentVarDescriptions[$id] : null,
+                'rows'        => '3',
             ));
         }
 
@@ -139,18 +151,19 @@ class IcingaObjectFieldForm extends DirectorObjectForm
     public function onSuccess()
     {
         $fieldId = $this->getValue('datafield_id');
-        if (! ctype_digit($fieldId)) {
 
+        if (! ctype_digit($fieldId)) {
             $field = DirectorDatafield::create(array(
-                'varname'  => trim($fieldId, '$'),
-                'caption'  => $this->getValue('caption'),
-                'datatype' => 'Icinga\Module\Director\DataType\DataTypeString'
+                'varname'     => trim($fieldId, '$'),
+                'caption'     => $this->getValue('caption'),
+                'description' => $this->getValue('description'),
+                'datatype'    => 'Icinga\Module\Director\DataType\DataTypeString'
             ));
             $field->store($this->getDb());
             $this->setElementValue('datafield_id', $field->id);
             $this->object()->datafield_id = $field->id;
-
         }
+
         return parent::onSuccess();
     }
 }
