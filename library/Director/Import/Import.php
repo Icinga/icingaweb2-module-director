@@ -413,19 +413,26 @@ class Import
         //
         // $query = $db->select()->from($table, 'checksum')
         //     ->where('checksum IN (?)', $checksums)
+        // ...
+        // return array_diff($checksums, $existing);
 
         $hexed = array_map('Icinga\Module\Director\Util::binary2hex', $checksums);
+
+        $conn = $this->connection;
         $query = $db
             ->select()
-            ->from($table, 'checksum')
-            ->where(
-                $this->connection->dbHexFunc('checksum') . ' IN (?)',
+            ->from(
+                $table,
+                array('checksum' => $conn->dbHexFunc('checksum'))
+            )->where(
+                $conn->dbHexFunc('checksum') . ' IN (?)',
                 $hexed
             );
 
         $existing = $db->fetchCol($query);
+        $new = array_diff($hexed, $existing);
 
-        return array_diff($checksums, $existing);
+        return array_map('Icinga\Module\Director\Util::hex2binary', $new);
     }
 
     /**
