@@ -44,18 +44,34 @@ class ImportSourceLdap extends ImportSourceHook
     {
         Util::addLDAPResourceFormElement($form, 'resource');
         $form->addElement('text', 'base', array(
-            'label'    => 'LDAP Search Base',
+            'label'       => $form->translate('LDAP Search Base'),
+            'description' => $form->translate(
+                'Your LDAP search base. Often something like OU=Users,OU=HQ,DC=your,DC=company,DC=tld'
+            )
         ));
         $form->addElement('text', 'objectclass', array(
-            'label'    => 'Object class',
+            'label'       => $form->translate('Object class'),
+            'description' => $form->translate(
+                'An object class to search for. Might be "user", "group", "computer" or similar'
+            )
         ));
         $form->addElement('text', 'filter', array(
             'label'    => 'LDAP filter',
+            'description' => $form->translate(
+                'A custom LDAP filter to use in addition to the object class. This allows'
+                . ' for a lot of flexibility but requires LDAP filter skills. Simple filters'
+                . ' might look as follows: operatingsystem=*server*'
+            )
         ));
         $form->addElement('textarea', 'query', array(
-            'label'    => 'Properties',
-            //'required' => true,
-            'rows'     => 5,
+            'label'       => $form->translate('Properties'),
+            'description' => $form->translate(
+                'The LDAP properties that should be fetched. This is required to be a'
+                . ' comma-separated list like: "cn, dnshostname, operatingystem, sAMAccountName"'
+            ),
+            'spellcheck'  => 'false',
+            'required'    => true,
+            'rows'        => 5,
         ));
         return $form;
     }
