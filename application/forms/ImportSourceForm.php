@@ -24,7 +24,7 @@ class ImportSourceForm extends DirectorObjectForm
             'multiOptions' => $this->optionalEnum($this->enumSourceTypes()),
             'description'  => $this->translate(
                 'These are different data providers fetching data from various sources.'
-                . ' You didn\t find what you\'re looking for? Import sources are implemented'
+                . ' You didn\'t find what you\'re looking for? Import sources are implemented'
                 . ' as a hook in Director, so you might find (or write your own) Icinga Web 2'
                 . ' module fetching data from wherever you want'
             ),
