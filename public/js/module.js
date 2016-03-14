@@ -22,6 +22,7 @@
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
             this.module.on('focus', 'form input', this.formElementFocus);
+            this.module.on('focus', 'form textarea', this.formElementFocus);
             this.module.on('focus', 'form select', this.formElementFocus);
             this.module.icinga.logger.debug('Director module initialized');
         },
