@@ -460,14 +460,11 @@ class Db extends DbConnection
 
     public function getLatestImportedChecksum($source)
     {
-        if ($this->isPgsql()) {
-            $col = "LOWER(ENCODE(rowset_checksum, 'hex'))";
-        } else {
-            $col = '(LOWER(HEX(import_run.rowset_checksum)))';
-        }
-
         $db = $this->db();
-        $lastRun = $db->select()->from('import_run', array('last_checksum' => $col));
+        $lastRun = $db->select()->from(
+            array('r' => 'import_run'),
+            array('last_checksum' => $this->dbHexFunc('r.rowset_checksum'))
+        );
 
         if (is_int($source) || ctype_digit($source)) {
             $lastRun->where('source_id = ?', (int) $source);
