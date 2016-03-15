@@ -312,8 +312,8 @@ class Db extends DbConnection
     {
         $db = $this->db();
         $query = $db->select()
-            ->from('import_run', $this->dbHexFunc('rowset_checksum'))
-            ->where('id = ?', $id);
+            ->from(array('r' => 'import_run'), $this->dbHexFunc('r.rowset_checksum'))
+            ->where('r.id = ?', $id);
 
         return $db->fetchOne($query);
     }
@@ -388,17 +388,17 @@ class Db extends DbConnection
         }
 
         $lastRun = $db->select()->from(
-            'import_run',
-            array('checksum' => $this->dbHexFunc('rowset_checksum'))
+            array('r' => 'import_run'),
+            array('checksum' => $this->dbHexFunc('r.rowset_checksum'))
         );
 
         if (is_int($source) || ctype_digit($source)) {
-            $lastRun->where('source_id = ?', $source);
+            $lastRun->where('r.source_id = ?', $source);
         } else {
-            $lastRun->where('source_name = ?', $source);
+            $lastRun->where('r.source_name = ?', $source);
         }
 
-        $lastRun->order('start_time DESC')->limit(1);
+        $lastRun->order('r.start_time DESC')->limit(1);
         $checksum = $db->fetchOne($lastRun);
 
         return $this->fetchImportedRowsetRows($checksum, $columns);
