@@ -174,8 +174,8 @@ class IcingaHostTest extends BaseTestCase
         $zone->store($db);
 
         $host->store($db);
-        $zone->delete();
         $host->delete();
+        $zone->delete();
     }
 
     /**
