@@ -11,6 +11,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Selectable;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\QueryException;
+use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
 use Icinga\Web\Widget;
@@ -92,10 +93,10 @@ abstract class QuickTable implements Paginatable
             if ($value === null) {
                 if ($val === null) {
                     $value = '-';
-                } elseif (is_array($val)) {
-                    $value = nl2br($this->view()->escape(implode("\n", $val)));
-                } elseif ($val instanceof stdClass) {
-                    $value = '<pre>' . $this->view()->escape(print_r($val, 1)) . '</pre>';
+                } elseif (is_array($val) || $val instanceof stdClass) {
+                    $value = '<pre>'
+                           . $this->view()->escape(PlainObjectRenderer::render($val))
+                           . '</pre>';
                 } else {
                     $value = $this->view()->escape($val);
                 }
