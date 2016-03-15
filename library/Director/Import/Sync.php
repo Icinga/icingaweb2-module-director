@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -69,6 +70,8 @@ class Sync
     protected $run;
 
     protected $runStartTime;
+
+    protected $columnFilters = array();
 
     /**
      * Constructor. No direct initialization allowed right now. Please use one
@@ -266,7 +269,26 @@ class Sync
     protected function fetchSyncProperties()
     {
         $this->syncProperties = $this->rule->fetchSyncProperties();
+        foreach ($this->syncProperties as $key => $prop) {
+            if (! strlen($prop->filter_expression)) {
+                continue;
+            }
+
+            $this->columnFilters[$key] = Filter::fromQueryString(
+                $prop->filter_expression
+            );
+        }
+
         return $this;
+    }
+
+    protected function rowMatchesPropertyFilter($row, $key)
+    {
+        if (!array_key_exists($key, $this->columnFilters)) {
+            return true;
+        }
+
+        return $this->columnFilters[$key]->matches($row);
     }
 
     /**
@@ -503,12 +525,17 @@ class Sync
                 $newVars = array();
                 $imports = array();
 
-                foreach ($this->syncProperties as $p) {
+                foreach ($this->syncProperties as $propertyKey => $p) {
                     if ($p->source_id !== $sourceId) {
                         continue;
                     }
 
+                    if (! $this->rowMatchesPropertyFilter($row, $propertyKey)) {
+                        continue;
+                    }
+
                     $prop = $p->destination_field;
+
                     $val = $this->fillVariables($p->source_expression, $row);
 
                     if (substr($prop, 0, 5) === 'vars.') {
