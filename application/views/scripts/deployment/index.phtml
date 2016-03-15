@@ -2,6 +2,17 @@
 
 use Icinga\Util\Format;
 
+function colorize($log) {
+    $log = preg_replace(
+        '/^(debug|notice|information|warning|critical)\/(\w+)/m',
+        '<span class="loglevel \1">\1</span>/<span class="application">\2</span>',
+        $log
+    );
+
+    $log = preg_replace('/([\^]{2,})/', '<span class="error-hint">\1</span>', $log);
+    return $log;
+}
+
 ?><div class="controls">
 <?= $this->tabs ?>
 <h1><?= $this->escape($this->title) ?></h1>
@@ -73,7 +84,9 @@ if ($deployment->startup_succeeded === null) {
 <?php if ($deployment->startup_succeeded !== null): ?>
 <h2>Startup log</h2>
 <pre class="logfile">
-<?= $this->escape($deployment->startup_log) ?>
+<?= colorize(
+    $this->escape($deployment->startup_log)
+) ?>
 </pre>
 <?php endif ?>
 </div>

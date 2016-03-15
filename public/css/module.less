@@ -37,7 +37,40 @@ pre {
 
 pre.logfile {
   font-size: 0.875em;
-  padding: 0;
+  padding: 1em;
+  background-color: #222;
+  color: #ddd;
+  overflow: auto;
+  white-space: pre;
+
+  .loglevel, .application {
+    font-weight: bold;
+  }
+
+  .critical {
+    color: @color-critical;
+  }
+
+  .warning {
+    color: @color-warning;
+  }
+
+  .information {
+    color: @color-ok;
+  }
+
+  .notice {
+    // color: @color-ok;
+  }
+
+  .debug {
+    color: @color-pending;
+  }
+
+  .error-hint {
+    color: #fff;
+    font-weight: 900;
+  }
 }
 
 table.avp th {
