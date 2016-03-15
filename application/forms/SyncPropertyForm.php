@@ -146,9 +146,12 @@ class SyncPropertyForm extends DirectorObjectForm
             $this->addElement('text', 'filter_expression', array(
                 'label'       => $this->translate('Filter Expression'),
                 'description' => $this->translate(
-                    'This allows to filter for specific parts within the given source expression'
+                    'This allows to filter for specific parts within the given source expression.'
+                    . ' You are allowed to refer all imported columns. Examples: host=www* would'
+                    . ' set this property only for rows imported with a host property starting'
+                    . ' with "www". Complex example: host=www*&!(address=127.*|address6=::1)'
                 ),
-                'required'    => false,
+                'required'    => true,
                 // TODO: validate filter
             ));
         }
@@ -306,8 +309,13 @@ class SyncPropertyForm extends DirectorObjectForm
                 $this->addHidden('source_expression', '${' . $sourceColumn . '}');
             }
         }
+
         $object = $this->getObject();
         $object->rule_id = $this->rule->id; // ?!
+
+        if ($this->getValue('use_filter') === 'n') {
+            $object->filter_expression = null;
+        }
 
         $destination = $this->getValue('destination_field');
         if ($destination === 'vars.*') {
