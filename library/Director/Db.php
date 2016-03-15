@@ -467,7 +467,7 @@ class Db extends DbConnection
         }
 
         $db = $this->db();
-        $lastRun = $db->select()->from('import_run', array($col));
+        $lastRun = $db->select()->from('import_run', array('last_checksum' => $col));
 
         if (is_int($source) || ctype_digit($source)) {
             $lastRun->where('source_id = ?', (int) $source);
