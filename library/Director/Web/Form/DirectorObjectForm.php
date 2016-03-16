@@ -183,6 +183,12 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
+        foreach ($props as $k => & $v) {
+            if (is_bool($v)) {
+                $v = $v ? 'y' : 'n';
+            }
+        }
+
         $this->setDefaults($props);
 
         if (! $object instanceof IcingaObject) {
