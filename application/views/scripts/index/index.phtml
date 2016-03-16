@@ -81,8 +81,7 @@ function pendingDeployments($self) {
     ) . '</span>';
 }
 if ($this->stats && (int) $this->stats['apiuser']->cnt_total === 0) {
-    echo $this->form . "</div>\n";
-    return;
+    echo $this->form;
 }
 
 $all = array(
