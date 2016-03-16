@@ -422,10 +422,10 @@ class Import
         $query = $db
             ->select()
             ->from(
-                $table,
-                array('checksum' => $conn->dbHexFunc('checksum'))
+                array('c' => $table),
+                array('checksum' => $conn->dbHexFunc('c.checksum'))
             )->where(
-                $conn->dbHexFunc('checksum') . ' IN (?)',
+                $conn->dbHexFunc('c.checksum') . ' IN (?)',
                 $hexed
             );
 
