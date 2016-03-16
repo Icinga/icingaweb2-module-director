@@ -8,7 +8,7 @@ class IcingaZoneForm extends DirectorObjectForm
 {
     public function setup()
     {
-        $this->addObjectTypeElement();
+        $this->addHidden('object_type', 'object');
 
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Zone (template) name'),
