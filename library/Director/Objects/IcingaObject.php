@@ -121,11 +121,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private function loadMultiRelation($property)
     {
-        $this->loadedMultiRelations[$property] = new IcingaObjectMultiRelations(
-            $this,
-            $property,
-            $this->multiRelations[$property]
-        );
+        if ($this->hasBeenLoadedFromDb()) {
+            $rel = IcingaObjectMultiRelations::loadForStoredObject(
+                $this,
+                $property,
+                $this->multiRelations[$property]
+            );
+        } else {
+            $rel = new IcingaObjectMultiRelations(
+                $this,
+                $property,
+                $this->multiRelations[$property]
+            );
+        }
+
+        $this->loadedMultiRelations[$property] = $rel;
     }
 
     private function hasLoadedMultiRelation($property)
@@ -938,6 +948,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $this
             ->storeCustomVars()
             ->storeGroups()
+            ->storeMultiRelations()
             ->storeImports()
             ->storeRanges()
             ->storeRelatedSets()
@@ -974,6 +985,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         if ($this->supportsGroups()) {
             $this->groups !== null && $this->groups()->store();
+        }
+
+        return $this;
+    }
+
+    protected function storeMultiRelations()
+    {
+        foreach ($this->loadedMultiRelations as $rel) {
+            $rel->store();
         }
 
         return $this;
@@ -1139,6 +1159,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @return string
      */
+    protected function renderMultiRelations()
+    {
+        $out = '';
+        foreach ($this->loadAllMultiRelations() as $rel) {
+            $out .= $rel->toConfigString();
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return string
+     */
     protected function renderRanges()
     {
         if ($this->supportsRanges()) {
@@ -1247,6 +1280,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderArguments(),
             $this->renderRelatedSets(),
             $this->renderGroups(),
+            $this->renderMultiRelations(),
             $this->renderCustomExtensions(),
             $this->renderCustomVars(),
             $this->renderAssignments(),

@@ -227,7 +227,8 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
     protected function getTableName()
     {
-        return $this->object->getTableName() . '_' . $this->getPropertyName();
+        $class = $this->getRelatedClassName();
+        return $this->object->getTableName() . '_' . $class::create()->getShortTableName();
     }
 
     protected function getRelatedTableName()
@@ -282,13 +283,9 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
             sprintf('r.%s = ro.id', $relationIdCol),
             '*'
         )->where(
-            sprintf('o. = ?', $objectIdCol),
-            $this->object->object_name
+            sprintf('r.%s = ?', $objectIdCol),
+            (int) $this->object->id
         )->order('ro.object_name');
-
-        // TODO: Test only, remove
-        echo $query;
-        exit;
 
         $class = $this->getRelatedClassName();
         $this->relations = $class::loadAll($connection, $query, 'object_name');
@@ -362,9 +359,9 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->db;
     }
 
-    public static function loadForStoredObject(IcingaObject $object)
+    public static function loadForStoredObject(IcingaObject $object, $propertyName, $relatedObjectClass)
     {
-        $relations = new static($object);
+        $relations = new static($object, $propertyName, $relatedObjectClass);
         return $relations->loadFromDb();
     }
 
@@ -376,7 +373,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
             return '';
         }
 
-        return c::renderKeyValue('groups', c::renderArray($relations));
+        return c::renderKeyValue($this->propertyName, c::renderArray($relations));
     }
 
     public function __toString()
