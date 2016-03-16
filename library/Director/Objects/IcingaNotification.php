@@ -36,6 +36,11 @@ class IcingaNotification extends IcingaObject
         'types'  => 'TypeFilterSet',
     );
 
+    protected $multiRelations = array(
+        'users'       => 'IcingaUser',
+        'user_groups' => 'IcingaUserGroup',
+    );
+
     protected $relations = array(
         'zone'    => 'IcingaZone',
         'host'    => 'IcingaHost',
