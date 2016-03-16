@@ -112,6 +112,28 @@ class IcingaNotificationTest extends BaseTestCase
         $user2->delete();
     }
 
+    public function testRendersConfigurationWithRelatedUsers()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+        $db = $this->getDb();
+
+        $user1 = $this->user1();
+        $user1->store($db);
+
+        $user2 = $this->user2();
+        $user2->store($db);
+
+        $n = $this->notification();
+        $n->users = array($user1->object_name, $user2->object_name);
+
+        $this->assertEquals(
+            $this->loadRendered('notification1'),
+            (string) $n
+        );
+    }
+
     public function testLazyUsersCanBeSet()
     {
         $n = $this->notification();

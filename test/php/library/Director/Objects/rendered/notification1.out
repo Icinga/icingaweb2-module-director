@@ -1,0 +1,4 @@
+object Notification "___TEST___notification" {
+    users = [ "___TEST___user1", "___TEST___user2" ]
+}
+
