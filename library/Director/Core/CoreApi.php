@@ -116,14 +116,19 @@ for (k => v in globals) {
 constants
 ';
 
-        foreach ($this->client->post(
-            'console/execute-script',
-            array('command' => $command)
-        )->getSingleResult() as $row) {
+        foreach ($this->runConsoleCommand($command)->getSingleResult() as $row) {
             $constants[$row->name] = $row->value;
         }
 
         return $constants;
+    }
+
+    protected function runConsoleCommand($command)
+    {
+        return $this->client->post(
+            'console/execute-script',
+            array('command' => $command)
+        );
     }
 
     public function getConstant($name)
