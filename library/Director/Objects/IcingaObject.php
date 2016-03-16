@@ -1472,7 +1472,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         foreach ($this->loadAllMultiRelations() as $key => $rel) {
-            if (count($rel)) {
+            if (count($rel) || !$skipDefaults) {
                 $props[$key] = $rel->listRelatedNames();
             }
         }
