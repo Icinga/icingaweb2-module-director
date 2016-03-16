@@ -1,0 +1,159 @@
+<?php
+
+namespace Tests\Icinga\Module\Director\Objects;
+
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaNotification;
+use Icinga\Module\Director\Objects\IcingaUser;
+use Icinga\Module\Director\Objects\IcingaUsergroup;
+use Icinga\Module\Director\Test\BaseTestCase;
+
+class IcingaNotificationTest extends BaseTestCase
+{
+    protected $testUserName1 = '___TEST___user1';
+
+    protected $testUserName2 = '___TEST___user2';
+
+    protected $testNotificationName = '___TEST___user';
+
+    public function testPropertiesCanBeSet()
+    {
+        $n = $this->notification();
+        $n->notification_interval = '10m';
+        $this->assertEquals(
+            $n->notification_interval,
+            600
+        );
+    }
+
+    public function testCanBeStoredAndDeletedWithRelatedUserPassedAsString()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+        $db = $this->getDb();
+
+        $user = $this->user1();
+        $user->store($db);
+
+        $n = $this->notification();
+        $n->users = $user->object_name;
+        $this->assertTrue($n->store($db));
+        $this->assertTrue($n->delete());
+        $user->delete();
+    }
+
+    public function testCanBeStoredAndDeletedWithMultipleRelatedUsers()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+        $db = $this->getDb();
+
+        $user1 = $this->user1();
+        $user1->store($db);
+
+        $user2 = $this->user2();
+        $user2->store($db);
+
+        $n = $this->notification();
+        $n->users = array($user1->object_name, $user2->object_name);
+        $this->assertTrue($n->store($db));
+        $this->assertTrue($n->delete());
+        $user1->delete();
+        $user2->delete();
+    }
+
+    public function testGivesPlainObjectWithRelatedUsers()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+        $db = $this->getDb();
+
+        $user1 = $this->user1();
+        $user1->store($db);
+
+        $user2 = $this->user2();
+        $user2->store($db);
+
+        $n = $this->notification();
+        $n->users = array($user1->object_name, $user2->object_name);
+        $n->store($db);
+        $this->assertEquals(
+            (object) array(
+                'object_name' => $this->testNotificationName,
+                'object_type' => 'object',
+                'users' => array(
+                    $user1->object_name,
+                    $user2->object_name
+                )
+            ),
+            $n->toPlainObject(null, true))
+        ;
+
+        $n->delete();
+        $user1->delete();
+        $user2->delete();
+    }
+// echo $n;
+
+
+    public function testLazyUsersCanBeSet()
+    {
+        $n = $this->notification();
+        $n->users = 'bla';
+    }
+
+    protected function user1()
+    {
+        return IcingaUser::create(array(
+            'object_name' => $this->testUserName1,
+            'object_type' => 'object',
+            'email'       => 'nowhere@example.com',
+        ), $this->getDb());
+    }
+
+    protected function user2()
+    {
+        return IcingaUser::create(array(
+            'object_name' => $this->testUserName2,
+            'object_type' => 'object',
+            'email'       => 'nowhere.else@example.com',
+        ), $this->getDb());
+    }
+
+    protected function notification()
+    {
+        return IcingaNotification::create(array(
+            'object_name' => $this->testNotificationName,
+            'object_type' => 'object',
+        ), $this->getDb());
+    }
+
+    protected function loadRendered($name)
+    {
+        return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
+    }
+
+    public function tearDown()
+    {
+        if ($this->hasDb()) {
+            $db = $this->getDb();
+            $kill = array($this->testNotificationName);
+            foreach ($kill as $name) {
+                if (IcingaNotification::exists($name, $db)) {
+                    IcingaNotification::load($name, $db)->delete();
+                }
+            }
+
+            $kill = array($this->testUserName1, $this->testUserName2);
+            foreach ($kill as $name) {
+                if (IcingaUser::exists($name, $db)) {
+                    IcingaUser::load($name, $db)->delete();
+                }
+            }
+        }
+    }
+}
