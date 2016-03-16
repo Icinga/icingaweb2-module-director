@@ -15,7 +15,7 @@ class IcingaNotificationTest extends BaseTestCase
 
     protected $testUserName2 = '___TEST___user2';
 
-    protected $testNotificationName = '___TEST___user';
+    protected $testNotificationName = '___TEST___notification';
 
     public function testPropertiesCanBeSet()
     {
@@ -93,12 +93,24 @@ class IcingaNotificationTest extends BaseTestCase
             $n->toPlainObject(null, true))
         ;
 
+        $n = IcingaNotification::load($n->object_name, $db);
+        $this->assertEquals(
+            (object) array(
+                'object_name' => $this->testNotificationName,
+                'object_type' => 'object',
+                'users' => array(
+                    $user1->object_name,
+                    $user2->object_name
+                )
+            ),
+            $n->toPlainObject(null, true))
+        ;
+
         $n->delete();
+
         $user1->delete();
         $user2->delete();
     }
-// echo $n;
-
 
     public function testLazyUsersCanBeSet()
     {
