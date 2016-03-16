@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Exception;
 use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Countable;
@@ -90,7 +91,11 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
     public function set($relation)
     {
         if (! is_array($relation)) {
-            $relation = array($relation);
+            if ($relation === null) {
+                $relation = array();
+            } else {
+                $relation = array($relation);
+            }
         }
 
         $existing = array_keys($this->relations);
@@ -98,17 +103,17 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         $class = $this->getRelatedClassName();
         $unset = array();
 
-        foreach ($relation as $k => $g) {
+        foreach ($relation as $k => $ro) {
 
-            if ($g instanceof $class) {
-                $new[] = $g->object_name;
+            if ($ro instanceof $class) {
+                $new[] = $ro->object_name;
             } else {
-                if (empty($g)) {
+                if (empty($ro)) {
                     $unset[] = $k;
                     continue;
                 }
 
-                $new[] = $g;
+                $new[] = $ro;
             }
         }
 
@@ -180,26 +185,24 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         } elseif (is_string($relation)) {
 
             $connection = $this->object->getConnection();
-            // TODO: fix this, prefetch or whatever - this is expensive
-            $query = $this->getDb()->select()->from(
-                $this->getRelatedTableName()
-            )->where('object_name = ?', $relation);
-            $relations = $class::loadAll($connection, $query, 'object_name');
+            try {
+                $relation = $class::load($relation, $connection);
+            } catch (Exception $e) {
 
-            if (! array_key_exists($relation, $relations)) {
                 switch ($onError) {
                     case 'autocreate':
-                        $relations[$relation] = $class::create(array(
+                        $relation = $class::create(array(
                             'object_type' => 'object',
                             'object_name' => $relation
                         ));
-                        $relations[$relation]->store($connection);
+                        $relation->store($connection);
                         // TODO
                     case 'fail':
                         throw new ProgrammingError(
-                            'The related %s "%s" doesn\'t exists.',
+                            'The related %s "%s" doesn\'t exists: %s',
                             $this->getRelatedTableName(),
-                            $relation
+                            $relation,
+                            $e->getMessage()
                         );
                         break;
                     case 'ignore':
@@ -213,7 +216,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
             );
         }
 
-        $this->relations[$relation] = $relations[$relation];
+        $this->relations[$relation->object_name] = $relation;
         $this->modified = true;
         $this->refreshIndex();
 
@@ -310,10 +313,13 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
         $toDelete = array_diff($stored, $relations);
         foreach ($toDelete as $relation) {
+            // We work with cloned objects. (why?)
+            // As __clone drops the id, we need to access original properties
+            $orig =  $this->stored[$relation]->getOriginalProperties();
             $where = sprintf(
                 $objectCol . ' = %d AND ' . $relationCol . ' = %d',
                 $objectId,
-                $this->stored[$relation]->id
+                $orig['id']
             );
 
             $db->delete(
