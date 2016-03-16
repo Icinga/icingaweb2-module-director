@@ -101,6 +101,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
                     'timeperiod_key'      => $range,
                     'timeperiod_value'    => $value,
                 ));
+                $this->modified = true;
             }
         }
 
