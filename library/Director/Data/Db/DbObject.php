@@ -560,12 +560,20 @@ abstract class DbObject
         $properties = $this->db->fetchRow($select);
 
         if (empty($properties)) {
-            throw new NotFoundError(
-                'Got no "%s" data for: %s (%s)',
-                $this->table,
-                $this->getLogId(),
-                $this->createWhere()
-            );
+
+            if (is_array($this->getKeyName())) {
+                throw new NotFoundError(
+                    'Failed to load %s for %s',
+                    $this->table,
+                    $this->createWhere()
+                );
+            } else {
+                throw new NotFoundError(
+                    'Failed to load %s "%s"',
+                    $this->table,
+                    $this->getLogId()
+                );
+            }
         }
 
         return $this->setDbProperties($properties);
@@ -742,7 +750,6 @@ abstract class DbObject
         $this->loadedFromDb = true;
         return $result;
     }
-
 
     /**
      * Delete item from DB
