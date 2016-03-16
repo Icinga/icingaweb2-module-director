@@ -134,13 +134,21 @@ class AssignRenderer
         if (! $filter->isEmpty()) {
             foreach ($filter->filters() as $f) {
                 if ($f->isChain()) {
-                    $parts[] = '(' . $this->renderFilter($f) . ')';
+                    if ($f instanceof FilterNot) {
+                        $parts[] = '! (' . $this->renderFilter($f) . ')';
+                    } else {
+                        $parts[] = '(' . $this->renderFilter($f) . ')';
+                    }
                 } else {
                     $parts[] = $this->renderFilter($f);
                 }
             }
         }
 
-        return implode($op, $parts);
+        if ($filter instanceof FilterNot) {
+            return implode(' && ', $parts);
+        } else {
+            return implode($op, $parts);
+        }
     }
 }
