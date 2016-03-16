@@ -105,7 +105,10 @@ class IcingaNotificationTest extends BaseTestCase
             ),
             $n->toPlainObject(null, true))
         ;
-
+        $this->assertEquals(
+            array(),
+            $n->toPlainObject()->user_groups
+        );
         $n->delete();
 
         $user1->delete();
