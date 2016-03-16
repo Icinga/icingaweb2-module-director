@@ -231,6 +231,7 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
+        $this->setAutorefreshInterval(10);
         $db = $this->db();
         $type = $this->getType();
         $this->getTabs()->activate('history');
