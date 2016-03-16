@@ -231,12 +231,16 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
+        $db = $this->db();
         $type = $this->getType();
         $this->getTabs()->activate('history');
         $this->view->title = $this->translate('Activity Log');
+        $lastDeployedId = $db->getLastDeploymentActivityLogId();
         $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('activityLog')->setConnection($this->db())
-            ->filterObject('icinga_' . $type, $this->object->object_name)
+            $this->loadTable('activityLog')
+                ->setConnection($db)
+                ->setLastDeployedId($lastDeployedId)
+                ->filterObject('icinga_' . $type, $this->object->object_name)
         );
         $this->render('object/history', null, true);
     }
