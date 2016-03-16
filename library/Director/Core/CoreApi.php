@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Core;
 
+use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -75,6 +76,31 @@ class CoreApi
         }
 
         return null;
+    }
+
+    public function checkServiceNow($host, $service)
+    {
+        $filter = 'host.name == "' . $host . '" && service.name == "' . $service . '"';
+        $this->client->post(
+            'actions/reschedule-check?filter=' . rawurlencode($filter),
+            (object) array(
+                'type' => 'Service'
+            )
+        );
+    }
+
+    public function getServiceOutput($host, $service)
+    {
+        try {
+            $object = $this->getObject($host . '!' . $service, 'services');
+        } catch (\Exception $e) {
+            return 'Unable to fetch the requested object';
+        }
+        if (isset($object->attrs->last_check_result)) {
+            return $object->attrs->last_check_result->output;
+        } else {
+            return '(no check result available)';
+        }
     }
 
     public function getConstants()
