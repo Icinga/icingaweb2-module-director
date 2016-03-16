@@ -22,6 +22,8 @@ class IcingaNotificationForm extends DirectorObjectForm
  
         $this->addDisabledElement()
              ->addImportsElement()
+             ->addUsersElement()
+             ->addUsergroupsElement()
              ->addIntervalElement()
              ->addPeriodElement()
              ->addTimesElements()
@@ -30,6 +32,50 @@ class IcingaNotificationForm extends DirectorObjectForm
              ->addEventFilterElements()
              ->groupMainProperties()
              ->setButtons();
+    }
+
+    protected function addUsersElement()
+    {
+        $users = $this->enumUsers();
+        if (empty($users)) {
+            return $this;
+        }
+
+        $this->addElement(
+            'extensibleSet',
+            'users',
+            array(
+                'label'       => $this->translate('Users'),
+                'description' => $this->translate(
+                    'Users that should be notified by this notifications'
+                ),
+                'multiOptions' => $this->optionalEnum($users)
+            )
+        );
+
+        return $this;
+    }
+
+    protected function addUsergroupsElement()
+    {
+        $groups = $this->enumUsergroups();
+        if (empty($groups)) {
+            return $this;
+        }
+
+        $this->addElement(
+            'extensibleSet',
+            'user_groups',
+            array(
+                'label'       => $this->translate('User groups'),
+                'description' => $this->translate(
+                    'User groups that should be notified by this notifications'
+                ),
+                'multiOptions' => $this->optionalEnum($groups)
+            )
+        );
+
+        return $this;
     }
 
     protected function addIntervalElement()
@@ -108,5 +154,33 @@ class IcingaNotificationForm extends DirectorObjectForm
         ));
 
         return $this;
+    }
+
+    protected function enumUsers()
+    {
+        $db = $this->db->getDbAdapter();
+        $select = $db->select()->from(
+            'icinga_user',
+            array(
+                'name'    => 'object_name',
+                'display' => 'COALESCE(display_name, object_name)'
+            )
+        )->where('object_type = ?', 'object')->order('display');
+
+        return $db->fetchPairs($select);
+    }
+
+    protected function enumUsergroups()
+    {
+        $db = $this->db->getDbAdapter();
+        $select = $db->select()->from(
+            'icinga_usergroup',
+            array(
+                'name'    => 'object_name',
+                'display' => 'COALESCE(display_name, object_name)'
+            )
+        )->where('object_type = ?', 'object')->order('display');
+
+        return $db->fetchPairs($select);
     }
 }
