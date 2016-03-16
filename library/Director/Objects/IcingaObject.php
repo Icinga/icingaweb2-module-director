@@ -1371,6 +1371,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $class::load($id, $db);
     }
 
+    public static function existsByType($type, $id, Db $db)
+    {
+        $class = self::classByType($type);
+        return $class::exists($id, $db);
+    }
+
     public static function loadAllByType($type, Db $db, $query = null, $keyColumn = 'object_name')
     {
         $class = self::classByType($type);
