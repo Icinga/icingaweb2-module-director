@@ -113,6 +113,11 @@ class IcingaService extends IcingaObject
     public function renderHost_id()
     {
         // @codingStandardsIgnoreEnd
+
+        if ($this->hasBeenAssignedToHostTemplate()) {
+            return '';
+        }
+
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
