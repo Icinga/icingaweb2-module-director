@@ -68,7 +68,7 @@ class IcingaHostForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 40,
+            'order' => 80,
             'legend' => $this->translate('Icinga Agent and zone settings')
         ));
 
