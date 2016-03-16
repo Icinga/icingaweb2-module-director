@@ -11,6 +11,8 @@ class ShowController extends ActionController
 {
     protected $defaultTab;
 
+    protected $oldObject;
+
     protected function activityTabs($entry)
     {
         $tabs = $this->getTabs();
@@ -87,7 +89,14 @@ class ShowController extends ActionController
 
     protected function oldObject($entry)
     {
-        return $this->createObject($entry->object_type, $entry->old_properties);
+        if ($this->oldObject === null) {
+            $this->oldObject = $this->createObject(
+                $entry->object_type,
+                $entry->old_properties
+            );
+        }
+
+        return $this->oldObject;
     }
 
     protected function newObject($entry)
@@ -167,6 +176,15 @@ class ShowController extends ActionController
         );
 
         $entry = $v->entry;
+
+        if ($entry->old_properties) {
+            $this->view->form = $this
+                ->loadForm('restoreObject')
+                ->setDb($this->db())
+                ->setObject($this->oldObject($entry))
+                ->handleRequest();
+        }
+
         $this->activityTabs($entry);
         $this->showInfo($entry);
         $func = 'show' . ucfirst($this->params->get('show', $this->defaultTab));
