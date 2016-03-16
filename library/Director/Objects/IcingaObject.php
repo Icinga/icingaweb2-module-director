@@ -333,6 +333,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this->getRelatedSet($key)->toPlainObject();
         }
 
+        if ($this->propertyIsMultiRelation($key)) {
+            return $this->getMultiRelation($key)->listRelatedNames();
+        }
+
         return parent::get($key);
     }
 
