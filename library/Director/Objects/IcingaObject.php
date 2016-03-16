@@ -1472,7 +1472,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
-                $props[$k] = $v;
+                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
+                    if ($v === 'y') {
+                        $props[$k] = true;
+                    } elseif ($v === 'n') {
+                        $props[$k] = false;
+                    } else {
+                        $props[$k] = $v;
+                    }
+
+                } else {
+                    $props[$k] = $v;
+                }
             }
         }
 
