@@ -47,6 +47,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => ExtensibleSetClass
     );
 
+    protected $multiRelations = array(
+        // property => IcingaObjectClass
+    );
+
+    protected $loadedMultiRelations = array();
+
     protected $unresolvedRelatedProperties = array();
 
     protected $loadedRelatedSets = array();
@@ -90,6 +96,52 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsRelatedSet($property)
     {
         return array_key_exists($property, $this->relatedSets);
+    }
+
+    public function propertyIsMultiRelation($property)
+    {
+        return array_key_exists($property, $this->multiRelations);
+    }
+
+    public function getMultiRelation($property)
+    {
+        if (! $this->hasLoadedMultiRelation($property)) {
+            $this->loadMultiRelation($property);
+        }
+
+        return $this->loadedMultiRelations[$property];
+    }
+
+    public function setMultiRelation($property, $values)
+    {
+        $this->getMultiRelation($property)->set($values);
+        return $this;
+    }
+
+
+    private function loadMultiRelation($property)
+    {
+        $this->loadedMultiRelations[$property] = new IcingaObjectMultiRelations(
+            $this,
+            $property,
+            $this->multiRelations[$property]
+        );
+    }
+
+    private function hasLoadedMultiRelation($property)
+    {
+        return array_key_exists($property, $this->loadedMultiRelations);
+    }
+
+    private function loadAllMultiRelations()
+    {
+        foreach (array_keys($this->multiRelations) as $key) {
+            if (! $this->hasLoadedMultiRelation($key)) {
+                $this->loadMultiRelation($key);
+            }
+        }
+
+        return $this->loadedMultiRelations;
     }
 
     protected function getRelatedSetClass($property)
@@ -228,6 +280,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        foreach ($this->loadedMultiRelations as $rel) {
+            if ($rel->hasBeenModified()) {
+                return true;
+            }
+        }
+
         return parent::hasBeenModified();
     }
 
@@ -309,6 +367,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             $this->unresolvedRelatedProperties[$key . '_id'] = $value;
+            return $this;
+        }
+
+        if ($this->propertyIsMultiRelation($key)) {
+            $this->setMultiRelation($key, $value);
             return $this;
         }
 
@@ -1373,6 +1436,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // TODO: resolve
             $props['groups'] = $this->groups()->listGroupNames();
         }
+
+        foreach ($this->loadAllMultiRelations() as $key => $rel) {
+            if (count($rel)) {
+                $props[$key] = $rel->listRelatedNames();
+            }
+        }
+
         if ($this->supportsCustomVars()) {
             if ($resolved) {
                 $props['vars'] = $this->getResolvedVars();
