@@ -676,7 +676,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $db = $this->getDb();
         $table = $this->getTableName();
+
         $type = strtolower($this->getType());
+
+        if ($type === 'checkcommand') {
+            $type = 'command';
+        }
+
         $query = $db->select()->from(
             array('oi' => $table . '_inheritance'),
             array('cnt' => 'COUNT(*)')
@@ -1350,6 +1356,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'hostGroup';
         } elseif ($type === 'usergroup') {
             $type = 'userGroup';
+        } elseif ($type === 'timeperiod') {
+            $type = 'timePeriod';
         } elseif ($type === 'servicegroup') {
             $type = 'serviceGroup';
         } elseif ($type === 'apiuser') {
@@ -1472,7 +1480,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
-                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
+                if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
                     if ($v === 'y') {
                         $props[$k] = true;
                     } elseif ($v === 'n') {
@@ -1579,11 +1587,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } else {
             $params = array('name' => $this->object_name);
 
-            if ($this->hasProperty('host_id')) {
+            if ($this->hasProperty('host_id') && $this->host_id) {
                 $params['host'] = $this->host;
             }
 
-            if ($this->hasProperty('service_id')) {
+            if ($this->hasProperty('service_id') && $this->service_id) {
                 $params['service'] = $this->service;
             }
         }
@@ -1652,6 +1660,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             $props[$property] = $set->getPlainUnmodifiedObject();
+        }
+
+        foreach ($this->loadAllMultiRelations() as $key => $rel) {
+            if (count($rel)) {
+                $props[$key] = $rel->listOriginalNames();
+            }
         }
 
         return (object) $props;
