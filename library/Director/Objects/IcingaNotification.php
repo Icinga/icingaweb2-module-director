@@ -55,9 +55,19 @@ class IcingaNotification extends IcingaObject
         'times_end'             => 'times_end',
     );
 
-    // listOfRelations -> users, user_groups
+    /**
+     * We have distinct properties in the db
+     *
+     * ...but render times only once
+     *
+     * And we skip warnings about underscores in method names:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderTimes_begin()
     {
+        // @codingStandardsIgnoreEnd
         $times = (object) array(
             'begin' => c::renderInterval($this->times_begin)
         );
@@ -72,8 +82,20 @@ class IcingaNotification extends IcingaObject
         );
     }
 
+    /**
+     * We have distinct properties in the db
+     *
+     * ...but render times only once
+     *
+     * And we skip warnings about underscores in method names:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderTimes_end()
     {
+        // @codingStandardsIgnoreEnd
+
         if ($this->times_begin !== null) {
             return '';
         }
