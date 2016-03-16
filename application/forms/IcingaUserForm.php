@@ -39,6 +39,7 @@ class IcingaUserForm extends DirectorObjectForm
 
         $this->addGroupsElement()
              ->addImportsElement()
+             ->addDisplayNameElement()
              ->addEnableNotificationsElement()
              ->addDisabledElement()
              ->addEventFilterElements()
@@ -73,6 +74,23 @@ class IcingaUserForm extends DirectorObjectForm
                 'User groups that should be directly assigned to this user. Groups can be useful'
                 . ' for various reasons. You might prefer to send notifications to groups instead of'
                 . ' single users'
+            )
+        ));
+
+        return $this;
+    }
+
+    protected function addDisplayNameElement()
+    {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addElement('text', 'display_name', array(
+            'label' => $this->translate('Display name'),
+            'description' => $this->translate(
+                'Alternative name for this user. In case your object name is a'
+                . ' username, this could be the full name of the corresponding person'
             )
         ));
 
