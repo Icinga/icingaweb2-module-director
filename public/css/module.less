@@ -734,16 +734,30 @@ table.activity-log {
         }
     }
 
-    tr.deployed td:first-child::before {
-        // icon-ok
+    tr.action-create td:first-child::before {
+        // icon-plus
+        color: @color-pending;
+        content: '\e805';
+    }
+
+    tr.action-modify td:first-child::before {
+        // icon-wrench
         color: @color-ok;
-        content: '\e803';
+        content: '\e83d';
+    }
+
+    tr.action-delete td:first-child::before {
+        // icon-cancel
+        color: @color-critical;
+        content: '\e804';
+    }
+
+    tr.undeployed td, tr.undeployed a {
+        font-weight: bold;
     }
 
     tr.undeployed td:first-child::before {
         color: @gray;
-        // icon-clock
-        content: '\e833';
     }
 }
 

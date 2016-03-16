@@ -85,7 +85,10 @@ class ConfigController extends ActionController
         $this->setAutorefreshInterval(10);
         $this->overviewTabs()->activate('activitylog');
         $this->view->title = $this->translate('Activity Log');
-        $this->prepareAndRenderTable('activityLog');
+        $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
+        $this->prepareTable('activityLog');
+        $this->view->table->setLastDeployedId($lastDeployedId);
+        $this->render('list/table', null, true);
     }
 
     protected function fetchLogs()

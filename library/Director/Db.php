@@ -45,6 +45,20 @@ class Db extends DbConnection
         return (int) $db->fetchOne($query);
     }
 
+    // TODO: use running config?!
+    public function getLastDeploymentActivityLogId()
+    {
+        $db = $this->db();
+
+        $query = ' SELECT COALESCE(id, 0) AS id FROM director_activity_log WHERE checksum = ('
+            . '  SELECT last_activity_checksum FROM director_generated_config WHERE checksum = ('
+            . '   SELECT config_checksum FROM director_deployment_log ORDER by id desc limit 1'
+            . '  )'
+            . ')';
+
+        return (int) $db->fetchOne($query);
+    }
+
     public function getMasterZoneName()
     {
         if ($zone = $this->getSetting('master_zone')) {

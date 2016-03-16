@@ -8,6 +8,8 @@ class ActivityLogTable extends QuickTable
 {
     protected $filters = array();
 
+    protected $lastDeployedId;
+
     protected $extraParams = array();
 
     public function getColumns()
@@ -17,13 +19,31 @@ class ActivityLogTable extends QuickTable
             'change_time'     => 'l.change_time',
             'author'          => 'l.author',
             'action'          => "CONCAT(l.action_name || ' ' || REPLACE(l.object_type, 'icinga_', '')"
-                               . " || ' \"' || l.object_name || '\"')"
+                               . " || ' \"' || l.object_name || '\"')",
+            'action_name'     => 'l.action_name',
         );
+    }
+
+    public function setLastDeployedId($id)
+    {
+        $this->lastDeployedId = $id;
+        return $this;
     }
 
     protected function listTableClasses()
     {
         return array_merge(array('activity-log'), parent::listTableClasses());
+    }
+
+    protected function getRowClasses($row)
+    {
+        $action = 'action-' . $row->action_name . ' ';
+
+        if ($row->id > $this->lastDeployedId) {
+            return $action . 'undeployed';
+        } else {
+            return $action . 'deployed';
+        }
     }
 
     protected function getActionUrl($row)
