@@ -13,7 +13,7 @@ class ObjectCommand extends Command
 
     private $object;
 
-    private $experimental = array();
+    private $experimentalFlags = array();
 
     public function init()
     {
@@ -201,7 +201,6 @@ class ObjectCommand extends Command
         printf("%s '%s' has not been modified\n", $this->getType(), $name);
         exit(0);
     }
-
 
     /**
      * Delete a specific object
