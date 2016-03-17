@@ -2,16 +2,14 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Objects\IcingaTimePeriodRange;
-use Icinga\Module\Director\Objects\IcingaTimePeriodRanges;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
 use Icinga\Module\Director\Test\BaseTestCase;
 
-class IcingaTimePeriodRangesTest extends BaseTestCase
+class IcingaTimePeriodTest extends BaseTestCase
 {
-    protected $testPeriodName = '___TEST___timerange';
+    protected $testPeriodName = '___TEST___timeperiod';
 
-    public function testWhetherUpdatedTimeperiodRangesAreCorrectlyStored()
+    public function testWhetherUpdatedTimeperiodsAreCorrectlyStored()
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -24,13 +22,35 @@ class IcingaTimePeriodRangesTest extends BaseTestCase
             'tuesday'   => '18:00-24:00',
             'wednesday' => '00:00-24:00',
         );
-        $period->ranges()->set($newRanges);
+        $period->ranges = $newRanges;
+        $this->assertEquals(
+            '18:00-24:00',
+            $period->toPlainObject()->ranges->tuesday
+        );
+
         $period->store();
 
         $period = $this->loadTestPeriod();
         $this->assertEquals(
             '18:00-24:00',
             $period->ranges()->get('tuesday')->timeperiod_value
+        );
+
+        $this->assertEquals(
+            '00:00-24:00',
+            $period->toPlainObject()->ranges->wednesday
+        );
+
+        $period->ranges()->setRange('wednesday', '09:00-17:00');
+
+        $this->assertEquals(
+            '09:00-17:00',
+            $period->toPlainObject()->ranges->wednesday
+        );
+
+        $this->assertEquals(
+            '00:00-24:00',
+            $period->getPlainUnmodifiedObject()->ranges->wednesday
         );
     }
 
