@@ -214,11 +214,13 @@ class ObjectCommand extends Command
      */
     public function deleteAction()
     {
+        $type = $this->getType();
+        $name = $this->getName();
         if ($this->getObject()->delete()) {
-            printf("%s '%s' has been deleted\n", $this->getType(), $this->getName());
+            printf("%s '%s' has been deleted\n", $type, $name);
             exit(0);
         } else {
-            printf("Something went wrong while deleting %s '%s'\n", $this->getType(), $this->getName());
+            printf("Something went wrong while deleting %s '%s'\n", $type, $name);
             exit(1);
         }
     }
