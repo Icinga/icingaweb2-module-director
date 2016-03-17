@@ -34,7 +34,19 @@ class RestApiResponse
 
     public function getSingleResult()
     {
-        return $this->results[0]->result;
+        if ($this->isErrorCode($this->results[0]->code)) {
+            throw new IcingaException(
+                $this->results[0]->status
+            );
+        } else {
+            return $this->results[0]->result;
+        }
+    }
+
+    protected function isErrorCode($code)
+    {
+        $code = (int) ceil($code);
+        return $code >= 400;
     }
 
     protected function extractResult($results, $desiredKey, $filter = array())
