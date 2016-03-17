@@ -78,6 +78,17 @@ class CoreApi
         return null;
     }
 
+    public function checkHostNow($host)
+    {
+        $filter = 'host.name == "' . $host . '"';
+        return $this->client->post(
+            'actions/reschedule-check?filter=' . rawurlencode($filter),
+            (object) array(
+                'type' => 'Host'
+            )
+        );
+    }
+
     public function checkServiceNow($host, $service)
     {
         $filter = 'host.name == "' . $host . '" && service.name == "' . $service . '"';
@@ -87,6 +98,55 @@ class CoreApi
                 'type' => 'Service'
             )
         );
+    }
+
+    public function getHostOutput($host)
+    {
+        try {
+            $object = $this->getObject($host);
+        } catch (\Exception $e) {
+            return 'Unable to fetch the requested object';
+        }
+        if (isset($object->attrs->last_check_result)) {
+            return $object->attrs->last_check_result->output;
+        } else {
+            return '(no check result available)';
+        }
+    }
+
+    public function checkHostAndWaitForResult($host, $timeout = 10)
+    {
+        $this->checkHostNow($host);
+        $now = time();
+
+        $waiting = true;
+        while (true) {
+            try {
+                $object = $this->getObject($host, 'hosts');
+
+                if (isset($object->attrs->last_check_result)) {
+                    $res = $object->attrs->last_check_result;
+                    if ($res->execution_start > $now) {
+                        return $res;
+                    }
+                } else {
+                    // no check result available
+                }
+            } catch (Exception $e) {
+                // Unable to fetch the requested object
+                throw new IcingaException(
+                    'Unable to fetch the requested host "%s"',
+                    $host
+                );
+            }
+            if (time() > ($now + $timeout)) {
+                break;
+            }
+
+            usleep(150000);
+        }
+
+        return false;
     }
 
     public function getServiceOutput($host, $service)
