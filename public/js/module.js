@@ -101,12 +101,22 @@
             var $li = $input.closest('li');
             var $dt = $dd.prev();
             var $form = $dt.closest('form');
-            $form.find('dt').removeClass('active');
-            $form.find('dd').removeClass('active');
-            $form.find('li').removeClass('active');
+            $form.find('dt, dd, li').removeClass('active');
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
+        },
+
+        highlightFormErrors: function($container)
+        {
+            $container.find('dd ul.errors').each(function(idx, ul) {
+                var $ul = $(ul);
+                var $dd = $ul.closest('dd');
+                var $dt = $dd.prev();
+
+                $dt.addClass('errors');
+                $dd.addClass('errors');
+            });
         },
 
         toggleFieldset: function (ev) {
@@ -119,15 +129,38 @@
 
         rendered: function(ev) {
             var $container = $(ev.currentTarget);
+            this.restoreContainerFieldsets($container);
+            this.backupAllExtensibleSetDefaultValues($container);
+            this.putFocusOnFirstObjectTypeElement($container);
+            this.highlightFormErrors($container);
+        },
+
+        restoreContainerFieldsets: function($container)
+        {
             var self = this;
             $container.find('form').each(self.restoreFieldsets.bind(self));
+        },
 
+        putFocusOnFirstObjectTypeElement: function($container)
+        {
             var $objectType = $container.find('form').find('select[name=object_type]');
             if ($objectType.length) {
                 if ($objectType[0].value === '') {
                     $objectType.focus();
                 }
             }
+        },
+
+        backupAllExtensibleSetDefaultValues: function($container) {
+            var self = this;
+            $container.find('.extensible-set').each(function (idx, eSet) {
+                $(eSet).find('input[type=text]').each(self.backupDefaultValue);
+                $(eSet).find('select').each(self.backupDefaultValue);
+            });
+        },
+
+        backupDefaultValue: function(idx, el) {
+            $(el).data('originalvalue', el.value);
         },
 
         restoreFieldsets: function(idx, form) {

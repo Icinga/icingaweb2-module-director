@@ -505,6 +505,9 @@ form dt {
     min-width: 12em;
     min-height: 2.5em;
     width: 30%;
+    &.errors label {
+        color: @color-critical;
+    }
 }
 
 form dd {
@@ -513,6 +516,11 @@ form dd {
     min-height: 2.5em;
     vertical-align: top;
     margin: 0;
+    &.errors {
+        input[type=text], select {
+            border-color: @color-critical;
+        }
+    }
 }
 
 form dd:after {
