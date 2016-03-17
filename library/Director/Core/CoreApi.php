@@ -163,6 +163,42 @@ class CoreApi
         }
     }
 
+    public function supportsRuntimeCreationFor(IcingaObject $object)
+    {
+        $valid = array('host');
+        return in_array($object->getShortTableName(), $valid);
+    }
+
+    protected function assertRuntimeCreationSupportFor(IcingaObject $object)
+    {
+        if (!$this->supportsRuntimeCreationFor($object)) {
+            throw new IcingaException(
+                'Object creation at runtime is not supported for "%s"',
+                $object->getShortTableName()
+            );
+        }
+    }
+
+    // Note: this is for testing purposes only, NOT production-ready
+    public function createObjectAtRuntime(IcingaObject $object)
+    {
+        $this->assertRuntimeCreationSupportFor($object);
+
+        $key = $object->getShortTableName();
+
+        $command = sprintf(
+            "f = function() {\n"
+            . '  existing = get_%s("%s")'
+            . "\n  if (existing) { return false }"
+            . "\n%s\n}\n__run_with_activation_context(f)\n",
+            $key,
+            $object->object_name,
+            (string) $object
+        );
+
+        return $this->runConsoleCommand($command)->getSingleResult();
+    }
+
     public function getConstants()
     {
         $constants = array();
