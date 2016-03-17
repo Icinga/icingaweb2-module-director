@@ -932,6 +932,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
+        if ($this->propertyIsMultiRelation($key)) {
+            return true;
+        }
+
         return parent::hasProperty($key);
     }
 
@@ -1663,8 +1667,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         foreach ($this->loadAllMultiRelations() as $key => $rel) {
-            if (count($rel)) {
-                $props[$key] = $rel->listOriginalNames();
+            $old = $rel->listOriginalNames();
+            if (! empty($old)) {
+                $props[$key] = $old;
             }
         }
 
