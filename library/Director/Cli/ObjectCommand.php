@@ -13,6 +13,13 @@ class ObjectCommand extends Command
 
     private $object;
 
+    private $experimental = array();
+
+    public function init()
+    {
+        $this->shiftExperimentalFlags();
+    }
+
     /**
      * Show a specific object
      *
@@ -291,5 +298,21 @@ class ObjectCommand extends Command
         }
 
         return $this->name;
+    }
+
+    protected function hasExperimental($flag)
+    {
+        return array_key_exists($flag, $this->experimentalFlags);
+    }
+
+    protected function shiftExperimentalFlags()
+    {
+        if ($flags = $this->params->shift('experimental')) {
+            foreach (preg_split('/,/', $flags) as $flag) {
+                $this->experimentalFlags[$flag] = true;
+            }
+        }
+
+        return $this;
     }
 }
