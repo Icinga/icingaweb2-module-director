@@ -120,6 +120,25 @@ class ObjectCommand extends Command
 
         if ($object->store()) {
             printf("%s '%s' has been created\n", $type, $name);
+            if ($this->hasExperimental('live-creation')) {
+                if ($this->api()->createObjectAtRuntime($object)) {
+                    echo "Live creation for '$name' succeeded\n";
+                } else {
+                    echo "Live creation for '$name' succeeded\n";
+                    exit(1);
+                }
+
+                if ($type === 'Host' && $this->hasExperimental('immediate-check')) {
+                    echo "Waiting for check result...";
+                    flush();
+                    if ($res = $this->api()->checkHostAndWaitForResult($name)) {
+                        echo " done\n" . $res->output . "\n";
+                    } else {
+                        echo "TIMEOUT\n";
+                    }
+                }
+            }
+
             exit(0);
         } else {
             printf("%s '%s' has not been created\n", $type, $name);
