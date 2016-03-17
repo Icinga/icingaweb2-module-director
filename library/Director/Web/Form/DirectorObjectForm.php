@@ -655,7 +655,12 @@ abstract class DirectorObjectForm extends QuickForm
     protected function getObjectname()
     {
         if ($this->objectName === null) {
-            return substr(join('', array_slice(explode('\\', get_class($this)), -1)), 6, -4);
+            $className = substr(strrchr(get_class($this), '\\'), 1);
+            if (substr($className, 0, 6) === 'Icinga') {
+                return substr($className, 6, -4);
+            } else {
+                return substr($className, 0, -4);
+            }
         }
 
         return $this->objectName;
