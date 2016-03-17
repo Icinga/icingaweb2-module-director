@@ -401,6 +401,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::set($key, $value);
     }
 
+    protected function setRanges($ranges)
+    {
+        $this->ranges()->set((array) $ranges);
+        return $this;
+    }
+
+    protected function getRanges()
+    {
+        return $this->ranges()->getValues();
+    }
+
     protected function normalizeBoolean($value)
     {
         if ($value === 'y' || $value === '1' || $value === true || $value === 1) {
@@ -1526,10 +1537,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($this->supportsRanges()) {
+            // TODO: resolve
+            $props['ranges'] = $this->get('ranges');
+        }
+
         if ($skipDefaults) {
-            if (empty($props['imports'])) {
-                unset($props['imports']);
+            foreach (array('imports', 'ranges', 'arguments') as $key) {
+                if (empty($props[$key])) {
+                    unset($props[$key]);
+                }
             }
+
             if (array_key_exists('vars', $props)) {
                 if (count((array) $props['vars']) === 0) {
                     unset($props['vars']);
@@ -1655,6 +1674,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $imports = $this->imports()->listOriginalImportNames();
             if (! empty($imports)) {
                 $props['imports'] = $imports;
+            }
+        }
+
+        if ($this->supportsRanges()) {
+            $ranges = $this->ranges()->getOriginalValues();
+            if (!empty($ranges)) {
+                $props['ranges'] = $ranges;
             }
         }
 
