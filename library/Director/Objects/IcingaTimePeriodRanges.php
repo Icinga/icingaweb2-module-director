@@ -75,6 +75,26 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         return null;
     }
 
+    public function getValues()
+    {
+        $res = array();
+        foreach ($this->ranges as $key => $range) {
+            $res[$key] = $range->timeperiod_value;
+        }
+
+        return (object) $res;
+    }
+
+    public function getOriginalValues()
+    {
+        $res = array();
+        foreach ($this->storedRanges as $key => $range) {
+            $res[$key] = $range->timeperiod_value;
+        }
+
+        return (object) $res;
+    }
+
     public function getRanges()
     {
         return $this->ranges;
@@ -88,26 +108,37 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
     public function set($ranges)
     {
         foreach ($ranges as $range => $value) {
-            if (array_key_exists($range, $this->ranges)) {
-                if ($this->ranges[$range]->timeperiod_value === $value) {
-                    continue;
-                } else {
-                    $this->ranges[$range]->timeperiod_value = $value;
-                    $this->modified = true;
-                }
-            } else {
-                $this->ranges[$range] = IcingaTimePeriodRange::create(array(
-                    'timeperiod_id'       => $this->object->id,
-                    'timeperiod_key'      => $range,
-                    'timeperiod_value'    => $value,
-                ));
-                $this->modified = true;
-            }
+            $this->setRange($range, $value);
         }
 
         $toDelete = array_diff(array_keys($this->ranges), array_keys($ranges));
         foreach ($toDelete as $range) {
             $this->remove($range);
+        }
+
+        return $this;
+    }
+
+    public function setRange($range, $value)
+    {
+        if ($value === null && array_key_exists($range, $this->ranges)) {
+            $this->remove($range);
+            return $this;
+        }
+
+        if (array_key_exists($range, $this->ranges)) {
+            if ($this->ranges[$range]->timeperiod_value === $value) {
+                return $this;
+            } else {
+                $this->ranges[$range]->timeperiod_value = $value;
+                $this->modified = true;
+            }
+        } else {
+            $this->ranges[$range] = IcingaTimePeriodRange::create(array(
+                'timeperiod_id'       => $this->object->id,
+                'timeperiod_key'      => $range,
+                'timeperiod_value'    => $value,
+            ));
             $this->modified = true;
         }
 
@@ -181,7 +212,11 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
 
         $class = $this->getClass();
         $this->ranges = $class::loadAll($connection, $query, 'timeperiod_key');
-        $this->storedRanges = $this->ranges;
+        $this->storedRanges = array();
+
+        foreach ($this->ranges as $key => $range) {
+            $this->storedRanges[$key] = clone($range);
+        }
 
         return $this;
     }
