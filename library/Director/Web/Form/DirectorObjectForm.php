@@ -348,9 +348,8 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-
-
-
+        // TODO Define whether admins are allowed to set those
+        /*
         // Additional vars
         foreach ($vars as $key => $value) {
             // Did we already create a field for this var? Then skip it:
@@ -374,6 +373,7 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
         }
+        */
 
         if (/* TODO: add free var */false && $object->isTemplate()) {
             $this->addElement('text', '_newvar_name', array(
