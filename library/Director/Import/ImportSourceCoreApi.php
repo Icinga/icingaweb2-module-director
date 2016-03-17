@@ -50,13 +50,22 @@ class ImportSourceCoreApi extends ImportSourceHook
         $form->addElement('select', 'object_type', array(
             'label'    => 'Object type',
             'required' => true,
-            'multiOptions' => $form->optionalEnum(array(
-                'CheckCommand'  => 'Commands',
-                'Endpoint'      => 'Endpoints',
-                'Host'          => 'Host',
-                'Zone'          => 'Zones',
-            ))
+            'multiOptions' => $form->optionalEnum(self::enumObjectTypes($form))
         ));
+    }
+
+    protected static function enumObjectTypes($form)
+    {
+        $types = array(
+            'CheckCommand'  => $form->translate('Commands'),
+            'Endpoint'      => $form->translate('Endpoints'),
+            'Host'          => $form->translate('Hosts'),
+            'User'          => $form->translate('Users'),
+            'Zone'          => $form->translate('Zones'),
+        );
+
+        asort($types);
+        return $types;
     }
 
     protected function api()

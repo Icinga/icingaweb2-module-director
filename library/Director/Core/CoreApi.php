@@ -314,6 +314,16 @@ constants
         ));
     }
 
+    public function getUserObjects()
+    {
+        return $this->getDirectorObjects('User', 'User', 'users', array(
+            'display_name' => 'display_name',
+            'email'        => 'email',
+            'groups'       => 'groups',
+            'vars'         => 'vars',
+        ));
+    }
+
     protected function buildEndpointZoneMap()
     {
         $zones = $this->getObjects('zone', 'zones', $attrs = array('endpoints'), 'director');
