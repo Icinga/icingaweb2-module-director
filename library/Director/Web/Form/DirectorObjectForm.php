@@ -396,9 +396,14 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
+    protected function isNew()
+    {
+        return $this->object === null || ! $this->object->hasBeenLoadedFromDb();
+    }
+
     protected function setButtons()
     {
-        if ($this->object === null || ! $this->object->hasBeenLoadedFromDb()) {
+        if ($this->isNew()) {
             $this->setSubmitLabel(
                 $this->translate('Add')
             );
