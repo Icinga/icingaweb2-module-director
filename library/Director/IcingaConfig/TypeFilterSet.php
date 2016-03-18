@@ -31,8 +31,8 @@ class TypeFilterSet extends ExtensibleSet
                 'DowntimeRemoved' => $this->translate('Downtime removed'),
             ),
             $this->translate('Flapping') => array(
-                'FlappingStart'   => $this->translate('Flapping ends'),
-                'FlappingEnd'     => $this->translate('Flapping starts')
+                'FlappingStart'   => $this->translate('Flapping starts'),
+                'FlappingEnd'     => $this->translate('Flapping ends')
             )
         );
     }
