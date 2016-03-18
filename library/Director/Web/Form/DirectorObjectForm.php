@@ -183,9 +183,9 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
-        foreach ($props as $k => & $v) {
+        foreach ($props as $k => $v) {
             if (is_bool($v)) {
-                $v = $v ? 'y' : 'n';
+                $props[$k] = $v ? 'y' : 'n';
             }
         }
 
