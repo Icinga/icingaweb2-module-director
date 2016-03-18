@@ -42,6 +42,14 @@ class ServiceController extends ObjectController
                 }
             }
         }
+
+        if ($this->host) {
+            $this->getTabs()->add('services', array(
+                'url'       => 'director/host/services',
+                'urlParams' => array('name' => $this->host->object_name),
+                'label'     => $this->translate('Services'),
+            ));
+        }
     }
 
     public function assignAction()
