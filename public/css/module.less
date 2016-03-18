@@ -1,15 +1,32 @@
-/* normalize 2.0 bs */
 .content a {
-  font-weight: normal;
-  text-decoration: dotted underline;
+  color: @icinga-blue;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 h1 {
   margin-bottom: 0.5em;
 }
 
-table.common-table a {
-  text-decoration: none;
+table.common-table {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  td {
+    vertical-align: top;
+  }
+
+  pre {
+    margin: 0;
+    padding: 0.2em;
+    overflow: hidden;
+    max-height: 12em;
+    background: @gray-lightest;
+    display: inline-block;
+  }
 }
 
 span.disabled {
