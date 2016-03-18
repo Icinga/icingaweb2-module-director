@@ -927,6 +927,10 @@ print_r($object);
 
     protected function addObjectTypeElement()
     {
+        if (!$this->isNew()) {
+            return;
+        }
+
         $object = $this->object();
 
         if ($object->supportsImports()) {
