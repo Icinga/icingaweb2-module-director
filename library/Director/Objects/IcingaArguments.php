@@ -216,6 +216,30 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    public function toPlainObject(
+        $resolved = false,
+        $skipDefaults = false,
+        array $chosenProperties = null,
+        $resolveIds = true
+    ) {
+        $args = array();
+        foreach ($this->arguments as $arg) {
+            $args[$arg->argument_name] = $arg->toPlainObject($resolved, $skipDefaults);
+        }
+
+        return $args;
+    }
+
+    public function toUnmodifiedPlainObject()
+    {
+        $args = array();
+        foreach ($this->storedArguments as $arg) {
+            $args[] = $arg->toPlainObject();
+        }
+
+        return $args;
+    }
+
     protected function cloneStored()
     {
         $this->storedArguments = array();

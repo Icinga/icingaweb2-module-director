@@ -353,15 +353,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function set($key, $value)
     {
-        if ($key === 'arguments') {
-            if (is_object($value)) {
-                foreach ($value as $arg => $val) {
-                    $this->arguments()->set($arg, $val);
-                }
-            }
-            return $this;
-
-        } elseif ($key === 'vars') {
+        if ($key === 'vars') {
             $value = (array) $value;
             $unset = array();
             foreach ($this->vars() as $k => $f) {
@@ -379,6 +371,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif (substr($key, 0, 5) === 'vars.') {
             //TODO: allow for deep keys
             $this->vars()->set(substr($key, 5), $value);
+            return $this;
+        } elseif (substr($key, 0, 10) === 'arguments.') {
+            $this->arguments()->set(substr($key, 10), $value);
             return $this;
         }
 
@@ -415,6 +410,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function setRanges($ranges)
     {
         $this->ranges()->set((array) $ranges);
+        return $this;
+    }
+
+    protected function setArguments($value)
+    {
+        $this->arguments->setArguments($value);
         return $this;
     }
 
@@ -1532,6 +1533,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($this->supportsArguments()) {
+            // TODO: resolve
+            $props['arguments'] = $this->arguments()->toPlainObject(
+                $resolved,
+                $skipDefaults
+            );
+        }
+
         if ($this->supportsCustomVars()) {
             if ($resolved) {
                 $props['vars'] = $this->getResolvedVars();
@@ -1685,6 +1694,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $imports = $this->imports()->listOriginalImportNames();
             if (! empty($imports)) {
                 $props['imports'] = $imports;
+            }
+        }
+
+        if ($this->supportsArguments()) {
+            $args = $this->arguments()->toUnmodifiedPlainObject();
+            if (! empty($arguments)) {
+                $props['arguments'] = $arguments;
             }
         }
 

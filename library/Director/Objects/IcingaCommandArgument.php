@@ -2,9 +2,10 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
-class IcingaCommandArgument extends IcingaObject
+class IcingaCommandArgument extends DbObject
 {
     protected $keyName = 'id';
 
@@ -43,6 +44,36 @@ class IcingaCommandArgument extends IcingaObject
     public function onDelete()
     {
         // No log right now, we have to handle "sub-objects"
+    }
+
+    public function toPlainObject(
+        $resolved = false,
+        $skipDefaults = false,
+        array $chosenProperties = null,
+        $resolveIds = true
+    ) {
+        $keys = array(
+            'argument_value',
+            'argument_format',
+            'key_string',
+            'description',
+            'skip_key',
+            'set_if',
+            'sort_order',
+            'repeat_key',
+            'set_if_format',
+        );
+
+        $obj = (object) array();
+        foreach ($keys as $key) {
+            if ($skipDefaults && $this->$key === null) {
+                continue;
+            }
+
+            $obj->$key = $this->$key;
+        }
+
+        return $obj;
     }
 
     public function toConfigString()
