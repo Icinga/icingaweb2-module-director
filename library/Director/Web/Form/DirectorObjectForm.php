@@ -971,6 +971,10 @@ print_r($object);
 
     protected function hasObjectType()
     {
+        if (!$this->object()->hasProperty('object_type')) {
+            return false;
+        }
+
         return ! $this->valueIsEmpty($this->getSentOrObjectValue('object_type'));
     }
 
