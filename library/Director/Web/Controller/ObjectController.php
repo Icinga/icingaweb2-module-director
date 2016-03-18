@@ -22,7 +22,7 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
 
         if ($object = $this->loadObject()) {
-
+            $this->beforeTabs();
             $params = $object->getUrlParams();
 
             $tabs = $this->getTabs()->add('modify', array(
@@ -52,6 +52,7 @@ abstract class ObjectController extends ActionController
                 ));
             }
         } else {
+            $this->beforeTabs();
             $this->getTabs()->add('add', array(
                 'url'       => sprintf('director/%s/add', $type),
                 'label'     => sprintf($this->translate('Add %s'), ucfirst($type)),
@@ -384,5 +385,9 @@ abstract class ObjectController extends ActionController
                 throw new NotFoundError('No such object available');
             }
         }
+    }
+
+    protected function beforeTabs()
+    {
     }
 }
