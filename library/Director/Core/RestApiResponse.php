@@ -87,6 +87,13 @@ class RestApiResponse
             $this->setJsonError();
             throw new IcingaException('Parsing JSON result failed: ' . $this->errorMessage);
         }
+        if (property_exists($result, 'error')) {
+            if (property_exists($result, 'status')) {
+                throw new IcingaException('API request failed: ' . $result->status);
+            } else {
+                throw new IcingaException('API request failed: ' . var_export($result, 1));
+            }
+        }
 
         $this->results = $result->results; // TODO: Check if set
         return $this;
