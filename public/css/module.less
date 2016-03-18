@@ -182,12 +182,22 @@ ul.extensible-set {
     }
 
     li {
-        position: relative;
-        clear: both;
+        display: inline;
     }
 
-    input[type=text], select {
+    select {
         width: 100%;
+    }
+
+    input[type=text] {
+        background-color: @tr-active-color;
+        .rounded-corners(0.5em);
+        border: 1px solid transparent;
+        padding: 0.1em 0.3em;
+        margin: 0.2em 0.2em;
+        width: 30%;
+        min-width: 4em;
+        text-overflow: ellipsis;
     }
 
     span.inline-buttons {
@@ -218,6 +228,25 @@ form {
 
 dd.active ul.extensible-set {
     border: 1px solid @gray-lighter;
+
+    li {
+        display: list-item;
+        position: relative;
+        clear: both;
+    }
+
+    input[type=text], select {
+        width: 100%;
+    }
+
+    input[type=text] {
+        background-color: white;
+        .rounded-corners(0);
+        border: 1px solid white;
+        padding: 0.25em 0.5em;
+        margin: 0;
+    }
+
     select.extend-set, input.extend-set {
         display: inline;
     }
@@ -635,7 +664,7 @@ table.icinga-objects {
             font-family: 'ifont';
             // icon-wrench:
             content: '\e83d';
-            float: left; 
+            float: left;
             font-weight: bold;
             margin-left: -1.5em;
             line-height: 1.5em;
@@ -646,8 +675,8 @@ table.icinga-objects {
         color: @gray;
         // icon-pin
         content: '\e879';
-    }   
-    
+    }
+
     tr.icinga-object td:first-child::before {
         color: @text-color;
         // icon-thumbs-up
@@ -932,7 +961,7 @@ form.editor {
         }
 
     }
-}   
+}
 
 .Differences .Skipped {
     background: @gray-lightest;
