@@ -19,4 +19,5 @@ Learn more about the Director in the documentation:
 * [Automation](doc/03-Automation.md)
 * [Getting started](doc/04-Getting-started.md) 
 * [REST API](doc/70-REST-API.md) 
+* [FAQ](doc/80-FAQ.md)
 
