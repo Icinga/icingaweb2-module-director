@@ -133,7 +133,7 @@ abstract class ObjectController extends ActionController
         $this->view->form->handleRequest();
 
         $this->view->actionLinks = $this->view->qlink(
-            sprintf($this->translate('Clone'), $this->translate(ucfirst($ltype))),
+            $this->translate('Clone'),
             'director/' . $ltype .'/clone',
             array('name' => $object->object_name),
             array('class' => 'icon-paste')
