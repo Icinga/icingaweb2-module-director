@@ -3,25 +3,35 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Objects\IcingaHost;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
+    private $host;
+
     public function setup()
+    {
+        if (!$this->isNew() && $this->host === null) {
+            $this->host = $this->object->getResolvedRelated('host');
+        }
+
+        if ($this->host === null) {
+            $this->setupServiceElements();
+        } else {
+            $this->setupHostRelatedElements();
+        }
+    }
+
+    protected function setupServiceElements()
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
             return $this->groupMainProperties();
         }
 
-        $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Name'),
-            'required'    => true,
-            'description' => $this->translate(
-                'Name for the Icinga object you are going to create'
-            )
-        ));
 
-        $this->addHostObjectElement()
+        $this->addNameElement()
+             ->addHostObjectElement()
              ->addImportsElement()
              ->addGroupsElement()
              ->addDisabledElement()
@@ -31,6 +41,51 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addAgentAndZoneElements()
              ->setButtons();
     }
+
+    protected function setupHostRelatedElements()
+    {
+        $this->addHidden('host_id', $this->host->id);
+        $this->addHidden('object_type', 'object');
+        $this->addImportsElement();
+        $imports = $this->getSentOrObjectValue('imports');
+        if (empty($imports)) {
+            return $this->groupMainProperties();
+        }
+
+        $this->addNameElement()
+             ->addDisabledElement()
+             ->groupMainProperties()
+             ->addCheckCommandElements()
+             ->setButtons();
+
+        if ($this->hasBeenSent()) {
+            $name = $this->getValue('object_name');
+            if (!strlen($name)) {
+                $this->setElementValue('object_name', end($imports));
+                $this->object->object_name = end($imports);
+            }
+        }
+    }
+
+    public function setHost(IcingaHost $host)
+    {
+        $this->host = $host;
+        return $this;
+    }
+
+    protected function addNameElement()
+    {
+        $this->addElement('text', 'object_name', array(
+            'label'       => $this->translate('Name'),
+            'required'    => true,
+            'description' => $this->translate(
+                'Name for the Icinga service you are going to create'
+            )
+        ));
+
+        return $this;
+    }
+
 
     protected function addHostObjectElement()
     {
@@ -73,7 +128,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function addAgentAndZoneElements()
     {
-        if ($this->isTemplate()) {
+        if (!$this->isTemplate()) {
             return $this;
         }
 
