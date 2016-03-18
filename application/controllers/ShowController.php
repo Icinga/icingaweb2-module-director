@@ -13,8 +13,28 @@ class ShowController extends ActionController
 
     protected $oldObject;
 
+    protected function objectKey($entry)
+    {
+        if ($entry->object_type === 'icinga_service') {
+            // TODO: this is not correct. Activity needs to get (multi) key support
+            return array('name' => $entry->object_name);
+        }
+
+        return $entry->object_name;
+    }
+
     protected function activityTabs($entry)
     {
+        $db = $this->db();
+
+        if (IcingaObject::existsByType($entry->object_type, $this->objectKey($entry), $db)) {
+            $this->view->currentObject = IcingaObject::loadByType(
+                $entry->object_type,
+                $entry->object_name,
+                $db
+            );
+        }
+
         $tabs = $this->getTabs();
         if ($entry->action_name === 'modify') {
             $tabs->add('diff', array(
