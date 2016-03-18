@@ -949,8 +949,6 @@ print_r($object);
              $types = array('object' => $this->translate('Object'));
         }
 
-        $types['external_object'] = $this->translate('External Object');
-
         if ($this->object()->supportsApplyRules()) {
             $types['apply'] = $this->translate('Apply rule');
         }
