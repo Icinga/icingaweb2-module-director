@@ -6,6 +6,9 @@ $this->providePermission('director/hosts/write', $this->translate('Allow to conf
 $this->providePermission('director/templates/read', $this->translate('Allow to see template details'));
 $this->providePermission('director/templates/write', $this->translate('Allow to configure templates'));
 
+$this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
+$this->provideSearchUrl($this->translate('Service configs'), 'director/services?limit=10', 59);
+
 $this->provideRestriction(
     'director/hosttemplates/filter',
     $this->translate('Allow to use only host templates matching this filter')
