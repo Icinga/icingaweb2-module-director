@@ -96,7 +96,7 @@ COMMENT ON COLUMN director_generated_file.checksum IS 'SHA1(content)';
 CREATE TABLE director_generated_config_file (
   config_checksum bytea CHECK(LENGTH(config_checksum) = 20),
   file_checksum bytea CHECK(LENGTH(file_checksum) = 20),
-  file_path character varying(64) NOT NULL,
+  file_path character varying(128) NOT NULL,
   PRIMARY KEY (config_checksum, file_path),
   CONSTRAINT director_generated_config_file_config
   FOREIGN KEY (config_checksum)
@@ -1470,4 +1470,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (86, NOW());
+  VALUES (88, NOW());
