@@ -22,11 +22,7 @@ class IcingaCommandTable extends IcingaObjectTable
 
     protected function getActionUrl($row)
     {
-        if ($row->object_type === 'external_object') {
-            return $this->url('director/command/render', array('name' => $row->command));
-        } else {
-            return $this->url('director/command', array('name' => $row->command));
-        }
+        return $this->url('director/command', array('name' => $row->command));
     }
 
     public function getTitles()

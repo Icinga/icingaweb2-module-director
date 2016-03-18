@@ -1,0 +1,17 @@
+<div class="controls">
+<?= $this->tabs ?>
+<h1><?= $this->escape($this->title) ?></h1>
+<span>
+<?= $this->actionLinks ?>
+</span>
+</div>
+
+<div class="content">
+<p><?= $this->translate(
+    'This is an external object. It has been imported from Icinga 2 throught the'
+    . ' Core API and cannot be managed with the Icinga Director. It is however'
+    . ' perfectly valid to create objects using this or referring to this object.'
+    . ' You might also want to define related Fields to make work based on this'
+    . ' object more enjoyable'
+) ?></p>
+</div>

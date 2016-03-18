@@ -25,11 +25,19 @@ abstract class ObjectController extends ActionController
             $this->beforeTabs();
             $params = $object->getUrlParams();
 
-            $tabs = $this->getTabs()->add('modify', array(
-                'url'       => sprintf('director/%s', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate(ucfirst($type))
-            ));
+            if ($object->isExternal()) {
+                $tabs = $this->getTabs()->add('modify', array(
+                    'url'       => sprintf('director/%s', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate(ucfirst($type))
+                ));
+            } else {
+                $tabs = $this->getTabs()->add('modify', array(
+                    'url'       => sprintf('director/%s', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate(ucfirst($type))
+                ));
+            }
 
             $tabs->add('render', array(
                 'url'       => sprintf('director/%s/render', $type),
@@ -73,6 +81,17 @@ abstract class ObjectController extends ActionController
 
                 return $this->sendJson((object) array('error' => $e->getMessage()));
             }
+        }
+
+        $allowedExternals = array(
+            'apiuser',
+            'endpoint'
+        );
+        if ($this->object
+            && $this->object->isExternal()
+            && ! in_array($this->object->getShortTableName(), $allowedExternals)
+        ) {
+           return $this->externalObjectInfo();
         }
 
         return $this->editAction();
@@ -255,6 +274,17 @@ abstract class ObjectController extends ActionController
             array('Group', 'Period', 'Argument', 'ApiUser'),
             $this->getRequest()->getControllerName()
         );
+    }
+
+    protected function externalObjectInfo()
+    {
+        $this->view->title = sprintf(
+            $this->translate('External object: %s'),
+            $this->object->object_name
+        );
+        $this->getTabs()->activate('modify');
+
+        $this->render('object/externalinfo', null, true);
     }
 
     protected function loadObject()
