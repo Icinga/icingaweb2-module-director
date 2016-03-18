@@ -202,6 +202,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $class::loadWithAutoIncId($id, $this->connection);
     }
 
+    public function getResolvedRelated($property)
+    {
+        $id = $this->getResolvedProperty($property . '_id');
+
+        if ($id) {
+            return $this->getRelatedObject($property, $id);
+        }
+
+        return null;
+    }
+
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
