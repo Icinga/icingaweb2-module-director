@@ -419,9 +419,9 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $elements = array(
             'object_type',
+            'imports',
             'object_name',
             'display_name',
-            'imports',
             'host_id',
             'address',
             'address6',
