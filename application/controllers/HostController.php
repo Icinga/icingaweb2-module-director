@@ -43,7 +43,10 @@ class HostController extends ObjectController
         );
 
         $this->getTabs()->activate('services');
-        $this->view->title = $this->translate('Services');
+        $this->view->title = sprintf(
+            $this->translate('Services on %s'),
+            $host->object_name
+        );
         $this->view->table = $this->loadTable('IcingaHostService')
             ->setHost($host)
             ->enforceFilter('host_id', $host->id)
