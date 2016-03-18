@@ -66,6 +66,17 @@ class PlainObjectRenderer
             return '{}';
         }
 
+        if (count($hash) === 1) {
+            $current = self::renderObject(current($hash), $prefix . self::INDENTATION);
+            if (strlen($current) < 62) {
+                return sprintf(
+                    '{ %s: %s }',
+                    key($hash),
+                    $current
+                );
+            }
+        }
+
         ksort($hash);
         foreach ($hash as $key => $val) {
             $vals[] = $prefix
