@@ -78,7 +78,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 
                 if ($multiOptions !== null) {
                     if (in_array($val, $validOptions)) {
-                        $this->removeOption($multiOptions, $val);
+                        $multiOptions = $this->removeOption($multiOptions, $val);
                     } else {
                         continue; // Value no longer valid
                     }
@@ -166,20 +166,25 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
         return $flat;
     }
 
-    private function removeOption(& $options, $option)
+    private function removeOption($options, $option)
     {
-        foreach ($options as $key => $value) {
+        $unset = array();
+        foreach ($options as $key => & $value) {
             if (is_array($value)) {
-                if ($this->removeOption($value, $option)) {
-                    return true;
+                $value = $this->removeOption($value, $option);
+                if (empty($value)) {
+                    $unset[] = $key;
                 }
             } elseif ($key === $option) {
-                unset($options[$key]);
-                return true;
+                $unset[] = $key;
             }
         }
 
-        return false;
+        foreach ($unset as $key) {
+            unset($options[$key]);
+        }
+
+        return $options;
     }
 
     private function suffix($cnt)
