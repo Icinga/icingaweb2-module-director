@@ -48,7 +48,6 @@ class HostController extends ObjectController
             ->setHost($host)
             ->enforceFilter('host_id', $host->id)
             ->setConnection($this->db());
-        $this->render('objects/table', null, true);
     }
 
     public function agentAction()
