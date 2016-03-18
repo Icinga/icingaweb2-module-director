@@ -10,7 +10,8 @@
 <?= $this->table->getPaginator() ?>
 </div>
 
-<div class="content" data-base-target="_next">
+<div class="content"<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
+<?= $this->form ?>
 <?php if (count($table)): ?>
 <?= $this->table->render() ?>
 <?php endif ?>
