@@ -4,19 +4,17 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
+// TODO: quickform once apply has been moved elsewhere
 class IcingaServiceTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'service',
-        'host'
     );
 
     public function getColumns()
     {
         return array(
             'id'          => 's.id',
-            'host_id'     => 's.host_id',
-            'host'        => 'h.object_name',
             'service'     => 's.object_name',
             'object_type' => 's.object_type',
         );
@@ -24,13 +22,12 @@ class IcingaServiceTable extends IcingaObjectTable
 
     protected function getActionUrl($row)
     {
+        // TODO: Remove once we got a separate apply table
         if ($row->object_type === 'apply') {
             $params['id'] = $row->id;
         } else {
             $params = array('name' => $row->service);
-            if ($row->host !== null) {
-                $params['host'] = $row->host;
-            }
+
         }
 
         return $this->url('director/service', $params);
@@ -41,7 +38,6 @@ class IcingaServiceTable extends IcingaObjectTable
         $view = $this->view();
         return array(
             'service' => $view->translate('Servicename'),
-            'host'    => $view->translate('Host'),
         );
     }
 
@@ -51,10 +47,6 @@ class IcingaServiceTable extends IcingaObjectTable
         $query = $db->select()->from(
             array('s' => 'icinga_service'),
             array()
-        )->joinLeft(
-            array('h' => 'icinga_host'),
-            'h.id = s.host_id',
-            array()
         );
 
         return $query;
@@ -62,6 +54,10 @@ class IcingaServiceTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        return $this->getUnfilteredQuery();
+        // TODO: remove apply
+        return $this->getUnfilteredQuery()->where(
+            's.object_type IN (?)',
+            array('template', 'apply')
+        );
     }
 }
