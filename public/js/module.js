@@ -95,6 +95,7 @@
         {
             var $input = $(ev.currentTarget);
             var $dd = $input.closest('dd');
+            $dd.find('p.description').show();
             if ($dd.attr('id') && $dd.attr('id').match(/button/)) {
                 return;
             }
@@ -105,6 +106,19 @@
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
+            $dd.find('p.description.fading-out')
+                .stop(true)
+                .removeClass('fading-out')
+                .fadeIn('fast');
+
+            $form.find('dd').not($dd)
+                .find('p.description')
+                .not('.fading-out')
+                .addClass('fading-out')
+                .delay(2000)
+                .fadeOut('slow', function() {
+                    $(this).removeClass('fading-out').hide()
+                });
         },
 
         highlightFormErrors: function($container)
@@ -127,12 +141,17 @@
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
         },
 
+        hideInactiveFormDescriptions: function($container) {
+            $container.find('dd').not('.active').find('p.description').hide();
+        },
+
         rendered: function(ev) {
             var $container = $(ev.currentTarget);
             this.restoreContainerFieldsets($container);
             this.backupAllExtensibleSetDefaultValues($container);
             this.putFocusOnFirstObjectTypeElement($container);
             this.highlightFormErrors($container);
+            this.hideInactiveFormDescriptions($container);
         },
 
         restoreContainerFieldsets: function($container)
