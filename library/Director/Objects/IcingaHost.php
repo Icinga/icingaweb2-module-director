@@ -61,7 +61,7 @@ class IcingaHost extends IcingaObject
         'volatile'              => 'volatile',
         'has_agent'             => 'has_agent',
         'master_should_connect' => 'master_should_connect',
-        'accept_config'         => 'accept_config'
+        'accept_config'         => 'accept_config',
     );
 
     protected $intervalProperties = array(
