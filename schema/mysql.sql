@@ -916,7 +916,7 @@ CREATE TABLE icinga_usergroup_parent (
 CREATE TABLE icinga_notification (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
-  object_type ENUM('object', 'template') NOT NULL,
+  object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   host_id INT(10) UNSIGNED DEFAULT NULL,
   service_id INT(10) UNSIGNED DEFAULT NULL,
@@ -1257,4 +1257,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 86;
+      schema_version = 87;
