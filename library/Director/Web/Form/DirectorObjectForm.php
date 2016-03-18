@@ -1021,6 +1021,7 @@ print_r($object);
                 . ' matters when importing properties from multiple templates: last one'
                 . ' wins'
             ),
+            'required'     => $this->isObject(),
             'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'class'        => 'autosubmit'
