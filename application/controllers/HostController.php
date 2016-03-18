@@ -33,10 +33,20 @@ class HostController extends ObjectController
 
     public function servicesAction()
     {
+        $host = $this->object;
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add service'),
+            'director/service/add',
+            array('host' => $host->object_name),
+            array('class' => 'icon-plus')
+        );
+
         $this->getTabs()->activate('services');
         $this->view->title = $this->translate('Services');
-        $this->view->table = $this->loadTable('IcingaService')
-            ->enforceFilter('host_id', $this->object->id)
+        $this->view->table = $this->loadTable('IcingaHostService')
+            ->setHost($host)
+            ->enforceFilter('host_id', $host->id)
             ->setConnection($this->db());
         $this->render('objects/table', null, true);
     }
