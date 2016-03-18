@@ -418,7 +418,7 @@ class Db extends DbConnection
         return $this->fetchImportedRowsetRows($checksum, $columns);
     }
 
-    public function fetchImportedRowsetRows($checksum, $columns)
+    public function fetchImportedRowsetRows($checksum, $columns, $filter = null)
     {
         $db = $this->db();
         $binchecksum = Util::hex2binary($checksum);
@@ -467,6 +467,17 @@ class Db extends DbConnection
             } else {
                 $result[$row->object_name]->{$row->property_name} = $row->property_value;
             }
+        }
+
+        if ($filter) {
+            $filtered = array();
+            foreach ($result as $key => $row) {
+                if ($filter->matches($row)) {
+                    $filtered[$key] = $row;
+                }
+            }
+
+            return $filtered;
         }
 
         return $result;
