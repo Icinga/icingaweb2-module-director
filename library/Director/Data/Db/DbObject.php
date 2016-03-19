@@ -597,6 +597,7 @@ abstract class DbObject
                 $this->properties[$key] = (string) $val;
             }
         }
+
         $this->loadedFromDb = true;
         $this->loadedProperties = $this->properties;
         $this->hasBeenModified = false;
@@ -916,8 +917,15 @@ abstract class DbObject
 
     protected static function getPrefetched($key)
     {
+        $class = get_called_class();
         if (static::hasPrefetched($key)) {
-            return self::$prefetched[get_called_class()][$key];
+            if (is_string($key) && array_key_exists($key, self::$prefetchedNames[$class])) {
+                return self::$prefetched[$class][
+                    self::$prefetchedNames[$class][$key]
+                ];
+            } else {
+                return self::$prefetched[$class][$key];
+            }
         } else {
             return false;
         }
@@ -926,15 +934,28 @@ abstract class DbObject
     protected static function hasPrefetched($key)
     {
         // TODO: temporarily disabled as of collisions with services
-        return false;
-
+        //return false;
         $class = get_called_class();
         if (! array_key_exists($class, self::$prefetchStats)) {
-            self::$prefetchStats[$class] = (object) array('miss' => 0, 'hits' => 0);
+            self::$prefetchStats[$class] = (object) array('miss' => 0, 'hits' => 0, 'hitNames' => 0, 'combinedMiss' => 0);
+        }
+
+        if (is_array($key)) {
+            self::$prefetchStats[$class]->combinedMiss++;
+            return false;
         }
 
         if (array_key_exists($class, self::$prefetched)) {
-            self::$prefetchStats[$class]->hits++;
+            if (is_string($key) && array_key_exists($key, self::$prefetchedNames[$class])) {
+                self::$prefetchStats[$class]->hitNames++;
+                return true;
+            } elseif (array_key_exists($key, self::$prefetched[$class])) {
+                self::$prefetchStats[$class]->hits++;
+                return true;
+            } else {
+                self::$prefetchStats[$class]->miss++;
+                return false;
+            }
             return array_key_exists($key, self::$prefetched[$class]);
         } else {
             self::$prefetchStats[$class]->miss++;
@@ -1005,8 +1026,17 @@ abstract class DbObject
     {
         $class = get_called_class();
 
+        $dummy = $class::create();
+        $autoInc = $dummy->getAutoIncKeyName();
+        $keyName = $dummy->getKeyName();
+
         if ($force || ! array_key_exists($class, self::$prefetched)) {
-            self::$prefetched[$class] = static::loadAll($connection);
+            self::$prefetched[$class] = static::loadAll($connection, null, $autoInc);
+            if (! is_array($keyName) && $keyName !== $autoInc) {
+                foreach (self::$prefetched[$class] as $k => $v) {
+                    self::$prefetchedNames[$class][$v->$keyName] = $k;
+                }
+            }
         }
 
         return self::$prefetched[$class];
