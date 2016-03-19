@@ -34,7 +34,7 @@ class IcingaConfig
 
     public static $table = 'director_generated_config';
 
-    protected function __construct(Db $connection)
+    public function __construct(Db $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
@@ -140,7 +140,7 @@ class IcingaConfig
         return $config->hasBeenModified();
     }
 
-    protected function hasBeenModified()
+    public function hasBeenModified()
     {
         $this->generateFromDb();
         $this->collectExtraFiles();
@@ -234,7 +234,7 @@ class IcingaConfig
         return $this->zoneMap[$id];
     }
 
-    protected function store()
+    public function store()
     {
 
         $fileTable = IcingaConfigFile::$table;
