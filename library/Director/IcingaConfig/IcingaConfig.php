@@ -341,6 +341,7 @@ class IcingaConfig
             ->createFileFromDb('zone')
             ->createFileFromDb('endpoint')
             ->createFileFromDb('command')
+            ->createFileFromDb('timePeriod')
             ->createFileFromDb('hostGroup')
             ->createFileFromDb('host')
             ->autogenerateAgents()
@@ -534,7 +535,7 @@ class IcingaConfig
             'endpoint',
             'user',
             'userGroup',
-            'timeperiod',
+            'timePeriod',
             'notification'
         );
 
