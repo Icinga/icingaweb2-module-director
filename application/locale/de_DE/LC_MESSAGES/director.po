@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Director Module (1.0.0-alpha2)\n"
 "Report-Msgid-Bugs-To: dev@icinga.org\n"
 "POT-Creation-Date: 2016-03-16 01:17+0100\n"
-"PO-Revision-Date: 2016-03-18 13:48+0100\n"
+"PO-Revision-Date: 2016-03-19 13:33+0100\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -693,7 +693,7 @@ msgstr "Mehr mit Daten anfangen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/StateFilterSet.php:21
 msgid "Down"
-msgstr "Nach unten"
+msgstr "Down"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/TypeFilterSet.php:30
 msgid "Downtime ends"
@@ -2099,7 +2099,7 @@ msgstr "Nicht verwendete, generierte Dateien"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/StateFilterSet.php:20
 msgid "Up"
-msgstr "Nach oben"
+msgstr "Up"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaTimePeriodForm.php:42
 msgid "Update Method"
