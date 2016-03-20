@@ -243,17 +243,13 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         $table = $this->object->getTableName();
         $query = $db->select()->from(
-            array('o' => $table),
-            array()
-        )->join(
             array('go' => $table . 'group_' . $type),
-            'go.' . $type . '_id = o.id',
             array()
         )->join(
             array('g' => $table . 'group'),
             'go.' . $type . 'group_id = g.id',
             '*'
-        )->where('o.object_name = ?', $this->object->object_name)
+        )->where('go.' . $type . '_id = ?', $this->object->id)
         ->order('g.object_name');
 
         $class = $this->getGroupClass();
