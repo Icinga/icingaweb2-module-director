@@ -452,7 +452,7 @@ class IcingaConfig
 
     protected function createFileForObjects($type, $objects)
     {
-        Benchmark::measure(sprintf('Generating %d %s', count($objects), $type));
+        Benchmark::measure(sprintf('Generating %ss: %s', $type, count($objects)));
         if (empty($objects)) {
             return $this;
         }
@@ -516,7 +516,7 @@ class IcingaConfig
         if ($file && $type === 'command') {
             $file->prepend("library \"methods\"\n\n");
         }
-
+        Benchmark::measure(sprintf('%ss done', $type, count($objects)));
         return $this;
     }
 
