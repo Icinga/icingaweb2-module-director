@@ -19,13 +19,13 @@ class ConfigCommand extends Command
             Benchmark::measure('All done');
             $checksum = $config->getHexChecksum();
             printf(
-                'New config with checksum %s has been generated',
+                "New config with checksum %s has been generated\n",
                 $checksum
             );
         } else {
             $checksum = $config->getHexChecksum();
             printf(
-                'Config with checksum %s already exists',
+                "Config with checksum %s already exists\n",
                 $checksum
             );
         }
