@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Application\Benchmark;
 use Icinga\Application\Hook;
+use Icinga\Application\Icinga;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
@@ -36,6 +37,9 @@ class IcingaConfig
 
     public function __construct(Db $connection)
     {
+        // Make sure module hooks are loaded:
+        Icinga::app()->getModuleManager()->loadEnabledModules();
+
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
     }
