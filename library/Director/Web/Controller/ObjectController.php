@@ -151,14 +151,18 @@ abstract class ObjectController extends ActionController
         $this->view->title = $object->object_name;
         $this->view->form->handleRequest();
 
-        $this->view->actionLinks = $this->view->qlink(
+        $this->view->actionLinks = $this->createCloneLink();
+        $this->setViewScript('object/form');
+    }
+
+    protected function createCloneLink()
+    {
+        return $this->view->qlink(
             $this->translate('Clone'),
-            'director/' . $ltype .'/clone',
-            array('name' => $object->object_name),
+            'director/' . $this->getType() .'/clone',
+            $this->object->getUrlParams(),
             array('class' => 'icon-paste')
         );
-
-        $this->render('object/form', null, true);
     }
 
     public function addAction()
