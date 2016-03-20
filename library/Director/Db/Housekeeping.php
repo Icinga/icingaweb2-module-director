@@ -71,4 +71,30 @@ class Housekeeping
 
         return $this->db->exec($sql);
     }
+
+    public function wipeUnusedImportedRowsAndProperties()
+    {
+        $queries = array(
+            // This one removes imported_rowset and imported_rowset_row
+            // entries no longer used by any historic import
+            'DELETE rs.* FROM imported_rowset rs LEFT JOIN import_run r'
+            . ' ON r.rowset_checksum = rs.checksum WHERE r.id IS NULL',
+
+            // This query removes imported_row and imported_row_property columns
+            // without related rowset
+            'DELETE r.* FROM imported_row r LEFT JOIN imported_rowset_row rsr'
+            . ' ON rsr.row_checksum = r.checksum WHERE rsr.row_checksum IS NULL',
+
+            // This
+            'DELETE p.* FROM imported_property p LEFT JOIN imported_row_property rp'
+            . ' ON rp.property_checksum = p.checksum WHERE rp.property_checksum IS NULL'
+        );
+
+        $count = 0;
+        foreach ($queries as $sql) {
+            $count += $this->db->exec($sql);
+        }
+
+        return $count;
+    }
 }
