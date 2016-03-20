@@ -8,6 +8,7 @@ class IcingaUserTable extends IcingaObjectTable
 {
     protected $searchColumns = array(
         'user',
+        'display_name'
     );
 
     public function getColumns()
@@ -16,9 +17,9 @@ class IcingaUserTable extends IcingaObjectTable
             'id'                    => 'u.id',
             'object_type'           => 'u.object_type',
             'user'                  => 'u.object_name',
-            // 'display_name'          => 'u.display_name',
+            'display_name'          => 'u.display_name',
             'email'                 => 'u.email',
-            // 'pager'                 => 'u.pager',
+            'pager'                 => 'u.pager',
             // 'enable_notifications'  => 'u.enable_notifications',
             // 'period'                => ''
             'zone'                  => 'z.object_name',
