@@ -14,7 +14,7 @@ object ApiUser "director" {
 
 Start with a new, empty Icinga setup. Director is not allowed to modify
 existing configuration in `/etc/icinga2`, and while importing existing
-config is possible (happens for examply automacigally at kickstart time)
+config is possible (happens for example automagically at kickstart time)
 this is an advanced task you should not tackle at the early beginning.
 
 Take some time to really understand work with Icinga Director first.
