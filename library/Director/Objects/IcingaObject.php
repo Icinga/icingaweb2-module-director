@@ -1082,6 +1082,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    public function beforeDelete()
+    {
+        $this->cachedPlainUnmodified = $this->getPlainUnmodifiedObject();
+    }
+
+    public function getCachedUnmodifiedObject()
+    {
+        return $this->cachedPlainUnmodified;
+    }
+
     public function onDelete()
     {
         DirectorActivityLog::logRemoval($this, $this->connection);
@@ -1648,6 +1658,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $params;
+    }
+
+    public function getOnDeleteUrl()
+    {
+        return 'director/' . strtolower($this->getShortTableName()) . 's';
     }
 
     public function toJson(

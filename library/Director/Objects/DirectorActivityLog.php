@@ -80,12 +80,13 @@ class DirectorActivityLog extends DbObject
 
     public static function logRemoval(DbObject $object, Db $db)
     {
+        $plain = $object->getCachedUnmodifiedObject();
         $data = array(
-            'object_name'     => $object->object_name,
+            'object_name'     => $plain->object_name,
             'action_name'     => 'delete',
             'author'          => self::username(),
             'object_type'     => $object->getTableName(),
-            'old_properties'  => json_encode($object->getPlainUnmodifiedObject()),
+            'old_properties'  => json_encode($plain),
             'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
             'parent_checksum' => $db->getLastActivityChecksum()
         );
