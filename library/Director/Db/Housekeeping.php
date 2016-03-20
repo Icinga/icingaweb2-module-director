@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Db;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 
 class Housekeeping
@@ -29,15 +30,26 @@ class Housekeeping
 
     public function getTaskSummary()
     {
+        $summary = array();
+        foreach ($this->listTasks() as $name => $title) {
+            $func = 'count' . ucfirst($name);
+            $summary[$name] = (object) array(
+                'title' => $title,
+                'count' => $this->$func()
+            );
+        }
+
+        return $summary;
+    }
+
+    public function listTasks()
+    {
         return array(
-            'oldUndeployedConfigs' => (object) array(
-                'title' => N_('Undeployed configurations'),
-                'count' => $this->countOldUndeployedConfigs()
-            ),
-            'unusedFiles' => (object) array(
-                'title' => N_('Unused rendered files'),
-                'count' => $this->countUnusedFiles()
-            )
+            'oldUndeployedConfigs'       => N_('Undeployed configurations'),
+            'unusedFiles'                => N_('Unused rendered files'),
+            'unlinkedImportedRowSets'    => N_('Unlinked imported row sets'),
+            'unlinkedImportedRows'       => N_('Unlinked imported rows'),
+            'unlinkedImportedProperties' => N_('Unlinked imported properties'),
         );
     }
 
@@ -51,13 +63,54 @@ class Housekeeping
         );
     }
 
+    public function runAllTasks()
+    {
+        $result = array();
+
+        foreach ($this->listTasks() as $name => $task) {
+            $this->runTask($name);
+        }
+
+        return $this;
+    }
+
+    public function runTask($name)
+    {
+        $func = 'wipe' . ucfirst($name);
+        if (!method_exists($this, $func)) {
+            throw new NotFoundError(
+                'There is no such task: %s',
+                $name
+            );
+        }
+
+        return $this->$func();
+    }
+
     public function countOldUndeployedConfigs()
     {
-        $sql = 'SELECT COUNT(*) FROM director_generated_config c'
-             . ' LEFT JOIN director_deployment_log d ON c.checksum = d.config_checksum'
-             . ' WHERE d.config_checksum IS NULL';
+        $conn = $this->connection;
+        $lastActivity = $conn->getLastActivityChecksum();
 
-        return $this->db->fetchOne($sql);
+        $sql = 'SELECT COUNT(*) FROM director_generated_config c'
+             . '  LEFT JOIN director_deployment_log d ON c.checksum = d.config_checksum'
+             . ' WHERE d.config_checksum IS NULL'
+             . '   AND ? != ' . $conn->dbHexFunc('c.last_activity_checksum');
+
+        return $this->db->fetchOne($sql, $lastActivity);
+    }
+
+    public function wipeOldUndeployedConfigs()
+    {
+        $conn = $this->connection;
+        $lastActivity = $conn->getLastActivityChecksum();
+
+        $sql = 'DELETE c.* FROM director_generated_config c'
+             . ' LEFT JOIN director_deployment_log d ON c.checksum = d.config_checksum'
+             . ' WHERE d.config_checksum IS NULL'
+             . '   AND ? != ' . $conn->dbHexFunc('c.last_activity_checksum');
+
+        return $this->db->query($sql, $lastActivity);
     }
 
     public function countUnusedFiles()
@@ -78,29 +131,56 @@ class Housekeeping
         return $this->db->exec($sql);
     }
 
-    public function wipeUnusedImportedRowsAndProperties()
+    public function countUnlinkedImportedRowSets()
     {
-        $queries = array(
-            // This one removes imported_rowset and imported_rowset_row
-            // entries no longer used by any historic import
-            'DELETE rs.* FROM imported_rowset rs LEFT JOIN import_run r'
-            . ' ON r.rowset_checksum = rs.checksum WHERE r.id IS NULL',
+        $sql = 'SELECT COUNT(*) FROM imported_rowset rs LEFT JOIN import_run r'
+            . ' ON r.rowset_checksum = rs.checksum WHERE r.id IS NULL';
 
-            // This query removes imported_row and imported_row_property columns
-            // without related rowset
-            'DELETE r.* FROM imported_row r LEFT JOIN imported_rowset_row rsr'
-            . ' ON rsr.row_checksum = r.checksum WHERE rsr.row_checksum IS NULL',
+        return $this->db->fetchOne($sql);
+    }
 
-            // This
-            'DELETE p.* FROM imported_property p LEFT JOIN imported_row_property rp'
-            . ' ON rp.property_checksum = p.checksum WHERE rp.property_checksum IS NULL'
-        );
+    public function wipeUnlinkedImportedRowSets()
+    {
+        // This one removes imported_rowset and imported_rowset_row
+        // entries no longer used by any historic import<F12>
+        $sql = 'DELETE rs.* FROM imported_rowset rs LEFT JOIN import_run r'
+            . ' ON r.rowset_checksum = rs.checksum WHERE r.id IS NULL';
 
-        $count = 0;
-        foreach ($queries as $sql) {
-            $count += $this->db->exec($sql);
-        }
+        return $this->db->exec($sql);
+    }
 
-        return $count;
+    public function countUnlinkedImportedRows()
+    {
+        $sql = 'SELECT COUNT(*) FROM imported_row r LEFT JOIN imported_rowset_row rsr'
+            . ' ON rsr.row_checksum = r.checksum WHERE rsr.row_checksum IS NULL';
+
+        return $this->db->fetchOne($sql);
+    }
+
+    public function wipeUnlinkedImportedRows()
+    {
+        // This query removes imported_row and imported_row_property columns
+        // without related rowset
+        $sql = 'DELETE r.* FROM imported_row r LEFT JOIN imported_rowset_row rsr'
+            . ' ON rsr.row_checksum = r.checksum WHERE rsr.row_checksum IS NULL';
+
+        return $this->db->exec($sql);
+    }
+
+    public function countUnlinkedImportedProperties()
+    {
+        $sql = 'SELECT COUNT(*) FROM imported_property p LEFT JOIN imported_row_property rp'
+            . ' ON rp.property_checksum = p.checksum WHERE rp.property_checksum IS NULL';
+
+        return $this->db->fetchOne($sql);
+    }
+
+    public function wipeUnlinkedImportedProperties()
+    {
+        // This query removes unlinked imported properties
+        $sql = 'DELETE p.* FROM imported_property p LEFT JOIN imported_row_property rp'
+            . ' ON rp.property_checksum = p.checksum WHERE rp.property_checksum IS NULL';
+
+        return $this->db->exec($sql);
     }
 }
