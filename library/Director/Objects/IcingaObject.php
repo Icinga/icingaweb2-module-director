@@ -83,6 +83,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $resolveCache = array();
 
+    private $cachedPlainUnmodified;
+
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
@@ -960,6 +962,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return parent::hasProperty($key);
+    }
+
+    public function isObject()
+    {
+        return $this->hasProperty('object_type')
+            && $this->object_type === 'object';
     }
 
     public function isTemplate()
