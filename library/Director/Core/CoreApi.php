@@ -439,6 +439,41 @@ constants
         return $found;
     }
 
+    public function collectLogFiles($db)
+    {
+
+        $existing = $this->listModuleStages('director');
+        foreach ($db->getUncollectedDeployments() as $deployment) {
+            $stage = $deployment->stage_name;
+            if (! in_array($stage, $existing)) {
+                continue;
+            }
+
+            try {
+                $availableFiles = $this->listStageFiles($stage);
+            } catch (Exception $e) {
+                // This is not correct. We might miss logs as af an ongoing reload
+                $deployment->stage_collected = 'y';
+                $deployment->store();
+                continue;
+            }
+
+            if (in_array('startup.log', $availableFiles)
+                && in_array('status', $availableFiles)
+            ) {
+                if ($this->getStagedFile($stage, 'status') === '0') {
+                    $deployment->startup_succeeded = 'y';
+                } else {
+                    $deployment->startup_succeeded = 'n';
+                }
+                $deployment->startup_log = $this->getStagedFile($stage, 'startup.log');
+            }
+            $collected = true;
+
+            $deployment->store();
+        }
+    }
+
     public function wipeInactiveStages($db)
     {
         $uncollected = $db->getUncollectedDeployments();

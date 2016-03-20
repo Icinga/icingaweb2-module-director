@@ -18,7 +18,7 @@ class ConfigController extends ActionController
         $this->setAutorefreshInterval(5);
         try {
             if ($this->getRequest()->getUrl()->shift('checkforchanges')) {
-                $this->fetchLogs();
+                $this->api()->collectLogFiles($this->db());
             }
         } catch (Exception $e) {
             // No problem, Icinga might be reloading
@@ -57,6 +57,8 @@ class ConfigController extends ActionController
             $checksum = $config->getHexChecksum();
         }
 
+        $this->api()->wipeInactiveStages($this->db());
+
         if ($this->api()->dumpConfig($config, $this->db())) {
             if ($isApiRequest) {
                 return $this->sendJson((object) array('checksum' => $checksum));
@@ -89,42 +91,6 @@ class ConfigController extends ActionController
         $this->prepareTable('activityLog');
         $this->view->table->setLastDeployedId($lastDeployedId);
         $this->render('list/table', null, true);
-    }
-
-    protected function fetchLogs()
-    {
-        $api = $this->api();
-        $collected = false;
-        foreach ($this->db()->getUncollectedDeployments() as $deployment) {
-            $stage = $deployment->stage_name;
-            try {
-                $availableFiles = $api->listStageFiles($stage);
-            } catch (Exception $e) {
-                // This is not correct. We might miss logs as af an ongoing reload
-                $deployment->stage_collected = 'y';
-                $deployment->store();
-                continue;
-            }
-
-            if (in_array('startup.log', $availableFiles)
-                && in_array('status', $availableFiles)
-            ) {
-                if ($api->getStagedFile($stage, 'status') === '0') {
-                    $deployment->startup_succeeded = 'y';
-                } else {
-                    $deployment->startup_succeeded = 'n';
-                }
-                $deployment->startup_log = $this->api()->getStagedFile($stage, 'startup.log');
-            }
-            $collected = true;
-
-            $deployment->store();
-        }
-
-        // TODO: Not correct, we might clear logs we formerly skipped
-        if ($collected) {
-            // $api->wipeInactiveStages();
-        }
     }
 
     // Show all files for a given config
