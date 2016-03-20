@@ -397,7 +397,12 @@ abstract class DbObject
      */
     public function getProperties()
     {
-        return $this->properties;
+        $res = array();
+        foreach ($this->listProperties() as $key) {
+            $res[$key] = $this->get($key);
+        }
+
+        return $res;
     }
 
     public function listProperties()
