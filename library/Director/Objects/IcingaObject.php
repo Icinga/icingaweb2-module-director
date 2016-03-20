@@ -776,31 +776,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function matches(Filter $filter)
     {
-        return $filter->matches($this->flattenProperties());
-    }
-
-    protected function flattenProperties()
-    {
-        $db = $this->getDb();
-        $obj = (object) array();
-        foreach ($this->getProperties() as $k => $v) {
-            $obj->$k = $v;
-        }
-
-        if ($this->supportsCustomVars()) {
-/*
-            foreach ($this->getVars() as $k => $v) {
-                $obj->{'vars.' . $k} = $v;
-            }
-*/
-        }
-
-        return $obj;
-    }
-
-    public function cloneFullyResolved()
-    {
-        // TODO
+        // TODO: speed up by passing only desired properties (filter columns) to
+        //       toPlainObject method
+        return $filter->matches($this->toPlainObject());
     }
 
     protected function assertCustomVarsSupport()
