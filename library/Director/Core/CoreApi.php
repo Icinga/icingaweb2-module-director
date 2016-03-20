@@ -439,10 +439,14 @@ constants
         return $found;
     }
 
-    public function wipeInactiveStages()
+    public function wipeInactiveStages($db)
     {
+        $uncollected = $db->getUncollectedDeployments();
         $moduleName = 'director';
         foreach ($this->listModuleStages($moduleName, false) as $stage) {
+            if (array_key_exists($stage, $uncollected)) {
+                continue;
+            }
             $this->client->delete('config/stages/' . $moduleName . '/' . $stage);
         }
     }
