@@ -8,6 +8,7 @@ use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Table\TableLoader;
@@ -21,6 +22,8 @@ abstract class ActionController extends Controller
     protected $isApified = false;
 
     private $api;
+
+    private $monitoring;
 
     public function init()
     {
@@ -218,5 +221,14 @@ abstract class ActionController extends Controller
         }
 
         return $this->db;
+    }
+
+    protected function monitoring()
+    {
+        if ($this->monitoring === null) {
+            $this->monitoring = new Monitoring;
+        }
+
+        return $this->monitoring;
     }
 }
