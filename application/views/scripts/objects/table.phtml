@@ -6,7 +6,7 @@
 <span data-base-target="_next">
 <?= $this->addLink ?>
 </span>
-<?php if ($this->filterEditor && ! $this->filterEditor->getFilter()->isEmpty()): ?>
+<?php if ($this->filterEditor): ?>
 <?= $this->filterEditor ?>
 <?php endif ?>
 <?= $this->table->getPaginator() ?>
