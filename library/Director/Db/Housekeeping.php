@@ -30,19 +30,25 @@ class Housekeeping
     public function getTaskSummary()
     {
         return array(
-            'oldUndeployedConfigs' => array(
+            'oldUndeployedConfigs' => (object) array(
                 'title' => N_('Undeployed configurations'),
                 'count' => $this->countOldUndeployedConfigs()
             ),
-            'unusedFiles' => array(
+            'unusedFiles' => (object) array(
                 'title' => N_('Unused rendered files'),
                 'count' => $this->countUnusedFiles()
             )
         );
     }
 
-    public function getPendingTasks()
+    public function getPendingTaskSummary()
     {
+        return array_filter(
+            $this->getTaskSummary(),
+            function($task) {
+                return $task->count > 0;
+            }
+        );
     }
 
     public function countOldUndeployedConfigs()
