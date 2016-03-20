@@ -34,6 +34,7 @@ class Housekeeping
         foreach ($this->listTasks() as $name => $title) {
             $func = 'count' . ucfirst($name);
             $summary[$name] = (object) array(
+                'name'  => $name,
                 'title' => $title,
                 'count' => $this->$func()
             );
