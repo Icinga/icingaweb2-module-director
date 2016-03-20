@@ -62,7 +62,7 @@ class HostController extends ObjectController
 
         $this->getTabs()->activate('services');
         $this->view->title = sprintf(
-            $this->translate('Services on %s'),
+            $this->translate('Services: %s'),
             $host->object_name
         );
         $this->view->table = $this->loadTable('IcingaHostService')

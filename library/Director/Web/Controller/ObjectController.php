@@ -259,7 +259,10 @@ abstract class ObjectController extends ActionController
         $db = $this->db();
         $type = $this->getType();
         $this->getTabs()->activate('history');
-        $this->view->title = $this->translate('Activity Log');
+        $this->view->title = sprintf(
+            $this->translate('Activity Log: %s'),
+            $this->object->object_name
+        );
         $lastDeployedId = $db->getLastDeploymentActivityLogId();
         $this->view->table = $this->applyPaginationLimits(
             $this->loadTable('activityLog')

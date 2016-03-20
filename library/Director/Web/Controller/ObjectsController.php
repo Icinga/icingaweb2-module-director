@@ -97,7 +97,7 @@ abstract class ObjectsController extends ActionController
             array('class' => 'icon-plus')
         );
 
-        $this->view->title = $this->translate('Icinga ' . ucfirst($ltype));
+        $this->view->title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
         $table = $this->loadTable($table)->setConnection($this->db());
         $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
 
