@@ -39,11 +39,6 @@ class IcingaCloneObjectForm extends QuickForm
         $newname = $this->getValue('new_object_name');
         $resolve = $this->getValue('clone_type') === 'flat';
 
-        $this->setSuccessUrl(
-            'director/' . strtolower($object->getShortTableName()),
-            array('name' => $newname)
-        );
-
         $msg = sprintf(
             'The %s "%s" has been cloned from "%s"',
             $object->getShortTableName(),
@@ -55,6 +50,11 @@ class IcingaCloneObjectForm extends QuickForm
             $object->toPlainObject($resolve),
             $object->getConnection()
         )->set('object_name', $newname);
+
+        $this->setSuccessUrl(
+            'director/' . strtolower($object->getShortTableName()),
+            $new->getUrlParams()
+        );
 
         if ($new->store()) {
             $this->redirectOnSuccess($msg);
