@@ -91,7 +91,7 @@ abstract class ObjectController extends ActionController
             && $this->object->isExternal()
             && ! in_array($this->object->getShortTableName(), $allowedExternals)
         ) {
-           return $this->externalObjectInfo();
+            return $this->externalObjectInfo();
         }
 
         return $this->editAction();
@@ -148,7 +148,7 @@ abstract class ObjectController extends ActionController
         $this->view->form = $form = $this->loadForm($formName)->setDb($this->db());
         $form->setObject($object);
 
-        $this->view->title = sprintf($this->translate('Modify %s'), ucfirst($ltype));
+        $this->view->title = $object->object_name;
         $this->view->form->handleRequest();
 
         $this->view->actionLinks = $this->view->qlink(
