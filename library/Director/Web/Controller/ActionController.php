@@ -156,6 +156,12 @@ abstract class ActionController extends Controller
         return $this->view->tabs;
     }
 
+    protected function setViewScript($name)
+    {
+        $this->_helper->viewRenderer->setNoController(true);
+        $this->_helper->viewRenderer->setScriptAction($name);
+    }
+
     protected function prepareTable($name)
     {
         $table = $this->loadTable($name)->setConnection($this->db());
