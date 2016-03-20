@@ -156,6 +156,21 @@ abstract class ActionController extends Controller
         return $this->view->tabs;
     }
 
+    protected function provideQuickSearch()
+    {
+        $htm = '<form action="%s" class="quicksearch inline" method="post">'
+             . '<input type="text" name="q" value="" placeholder="%s" class="search" />'
+             . '</form>';
+
+        $this->view->quickSearch = sprintf(
+            $htm,
+            $this->getRequest()->getUrl()->without('q')->without('page'),
+            $this->translate('Search...')
+        );
+
+        return $this;
+    }
+
     protected function setViewScript($name)
     {
         $this->_helper->viewRenderer->setNoController(true);

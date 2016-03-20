@@ -1,11 +1,12 @@
 <?php if (! $this->compact): ?>
 <div class="controls">
 <?= $this->tabs ?>
-<h1><?= $this->escape($this->title) ?></h1>
+
+<h1><?= $this->escape($this->title) ?><?= $this->quickSearch ?></h1>
 <span data-base-target="_next">
 <?= $this->addLink ?>
 </span>
-<?php if (count($table) || ($this->filterEditor && ! $this->filterEditor->getFilter()->isEmpty())): ?>
+<?php if ($this->filterEditor && ! $this->filterEditor->getFilter()->isEmpty()): ?>
 <?= $this->filterEditor ?>
 <?php endif ?>
 <?= $this->table->getPaginator() ?>

@@ -184,6 +184,35 @@ input[type=text], input[type=password], textarea, select {
     }
 }
 
+form.quicksearch {
+    float: right;
+
+    input.search {
+        width: 8em;
+        min-width: auto;
+        border: none;
+        background-size: 0.75em auto;
+        background-position: 0.5em 0.75em;
+        padding-left: 1.5em;
+        &:focus {
+            width: 16em;
+            .transition(width 0.5s ease);
+            border: none;
+        }
+    }
+}
+
+h1 form.quicksearch {
+    font-size: 0.75em;
+    font-weight: normal;
+    padding-left: 1em;
+    float: none;
+}
+
+#layout.twocols h1 form.quicksearch {
+    float: right;
+}
+
 ul.extensible-set {
     margin: 0;
     padding: 0;
