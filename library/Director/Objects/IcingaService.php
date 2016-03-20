@@ -189,4 +189,13 @@ class IcingaService extends IcingaObject
     {
         return $this->getResolvedProperty('check_command_id') !== null;
     }
+
+    public function getOnDeleteUrl()
+    {
+        if ($this->host_id) {
+            return 'director/host/services?name=' . rawurlencode($this->host);
+        } else {
+            return parent::getOnDeleteUrl();
+        }
+    }
 }

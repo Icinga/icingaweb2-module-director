@@ -752,15 +752,16 @@ abstract class DirectorObjectForm extends QuickForm
             );
         }
 
+        if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
+            $url = $object->getOnDeleteUrl();
+        } else {
+            $url = $this->getSuccessUrl()->without(
+                array('field_id', 'argument_id')
+            );
+        }
+
         if ($object->delete()) {
-            // fields? $this->setSuccessUrl($this->getSuccessUrl()->without($key));
-            if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
-                $this->setSuccessUrl('director/' . strtolower($object->getShortTableName()) . 's');
-            } else {
-                $this->setSuccessUrl($this->getSuccessUrl()->without(
-                    array('field_id', 'argument_id')
-                ));
-            }
+            $this->setSuccessUrl($url);
         }
         // TODO: show object name and so
         $this->redirectOnSuccess($msg);
