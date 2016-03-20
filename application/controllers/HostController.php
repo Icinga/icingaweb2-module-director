@@ -31,6 +31,24 @@ class HostController extends ObjectController
         }
     }
 
+    public function editAction()
+    {
+        parent::editAction();
+        $host = $this->object;
+        $mon = $this->monitoring();
+        if ($host->isObject() && $mon->isAvailable() && $mon->hasHost($host->object_name)) {
+            $this->view->actionLinks .= ' ' . $this->view->qlink(
+                $this->translate('Show'),
+                'monitoring/host/show',
+                array('host' => $host->object_name),
+                array(
+                    'class'            => 'icon-globe critical',
+                    'data-base-target' => '_next'
+                )
+            );
+        }
+    }
+
     public function servicesAction()
     {
         $host = $this->object;
