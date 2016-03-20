@@ -58,7 +58,7 @@ class Housekeeping
     {
         return array_filter(
             $this->getTaskSummary(),
-            function($task) {
+            function ($task) {
                 return $task->count > 0;
             }
         );

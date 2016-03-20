@@ -21,7 +21,7 @@ class HousekeepingCommand extends Command
 
         $len = array_reduce(
             $tasks,
-            function($max, $task) {
+            function ($max, $task) {
                 return max(
                     $max,
                     strlen($task->title) + strlen($task->name) + 3
@@ -31,8 +31,8 @@ class HousekeepingCommand extends Command
 
         if (count($tasks)) {
             print "\n";
-            printf(" %-" . $len . "s | %s\n", 'Housekeeping task (name)', 'Count'); 
-            printf("-%-" . $len . "s-|-------\n", str_repeat('-', $len)); 
+            printf(" %-" . $len . "s | %s\n", 'Housekeeping task (name)', 'Count');
+            printf("-%-" . $len . "s-|-------\n", str_repeat('-', $len));
         }
 
         foreach ($tasks as $task) {

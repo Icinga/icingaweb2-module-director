@@ -942,7 +942,12 @@ abstract class DbObject
         //return false;
         $class = get_called_class();
         if (! array_key_exists($class, self::$prefetchStats)) {
-            self::$prefetchStats[$class] = (object) array('miss' => 0, 'hits' => 0, 'hitNames' => 0, 'combinedMiss' => 0);
+            self::$prefetchStats[$class] = (object) array(
+                'miss'         => 0,
+                'hits'         => 0,
+                'hitNames'     => 0,
+                'combinedMiss' => 0
+            );
         }
 
         if (is_array($key)) {
