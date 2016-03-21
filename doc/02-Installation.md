@@ -47,5 +47,6 @@ module to `/usr/share/icingaweb2/modules/director`. Please note that the directo
 name MUST be `director` and not `icingaweb2-module-director` or anything else.
 
 Now go to your web frontend, Configuration, Modules, director - and enable the
-module. Last but not least you have to tell the director module to use this newly
-created database resource.
+module. Choose either Director directly from the menu or got to the Configuration
+tab. Either way you'll reach the kickstart wizards. Follow the instructions and
+you're all done!
