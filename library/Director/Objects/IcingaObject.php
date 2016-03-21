@@ -379,7 +379,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this;
         }
 
-        if ($this->propertyIsBoolean($key) && $value !== null) {
+        if ($this->propertyIsBoolean($key)) {
             return parent::set($key, $this->normalizeBoolean($value));
         }
 
@@ -417,7 +417,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function setArguments($value)
     {
-        $this->arguments->setArguments($value);
+        $this->arguments()->setArguments($value);
         return $this;
     }
 
