@@ -183,18 +183,10 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
-        $null = array();
         foreach ($props as $k => $v) {
             if (is_bool($v)) {
                 $props[$k] = $v ? 'y' : 'n';
             }
-            if ($v === null) {
-                $null[] = $k;
-            }
-        }
-
-        foreach ($null as $k) {
-            unset($props[$k]);
         }
 
         $this->setDefaults($props);
