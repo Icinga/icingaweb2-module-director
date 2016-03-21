@@ -560,8 +560,6 @@ constants
         $url = sprintf('events?queue=%s&types=%s', $queue, implode('&types=', $allTypes));
 
         $this->client->request('post', $url, null, false, true);
-
-
     }
 
     public function dumpConfig(IcingaConfig $config, $db, $moduleName = 'director')
