@@ -12,7 +12,8 @@ class ImportedrowsTable extends QuickTable
     public function getColumns()
     {
         $db = $this->connection();
-        return $db->listImportedRowsetColumnNames($this->checksum);
+        $cols = $db->listImportedRowsetColumnNames($this->checksum);
+        return array_combine($cols, $cols);
     }
 
     public function setChecksum($checksum)
