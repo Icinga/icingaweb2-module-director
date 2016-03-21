@@ -245,7 +245,13 @@ abstract class QuickForm extends Zend_Form
 
     public function addHtml($html, $options = array())
     {
-        $name = '_HINT' . ++$this->hintCount;
+        if (array_key_exists('name', $options)) {
+            $name = $options['name'];
+            unset($options['name']);
+        } else {
+            $name = '_HINT' . ++$this->hintCount;
+        }
+
         $this->addElement('simpleNote', $name, $options);
         $this->getElement($name)
             ->setValue($html)
