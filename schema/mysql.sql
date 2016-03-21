@@ -289,6 +289,7 @@ CREATE TABLE icinga_command_argument (
   set_if_format ENUM('string', 'expression', 'json') DEFAULT NULL,
   sort_order SMALLINT DEFAULT NULL, -- -> order
   repeat_key ENUM('y', 'n') DEFAULT NULL COMMENT 'Useful with array values',
+  required ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY unique_idx (command_id, argument_name),
   INDEX sort_idx (command_id, sort_order),
@@ -1257,4 +1258,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 87;
+      schema_version = 89;

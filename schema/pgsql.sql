@@ -376,6 +376,7 @@ CREATE TABLE icinga_command_argument (
   set_if_format enum_property_format DEFAULT NULL,
   sort_order smallint DEFAULT NULL, -- -> order
   repeat_key enum_boolean DEFAULT NULL,
+  required enum_boolean DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_command_argument_command
   FOREIGN KEY (command_id)
@@ -1470,4 +1471,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 -- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (88, NOW());
+  VALUES (89, NOW());
