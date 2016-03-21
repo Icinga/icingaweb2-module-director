@@ -38,10 +38,20 @@ class IcingaTimePeriodForm extends DirectorObjectForm
             'description' => $this->translate('the display name')
         ));
 
-        $this->addElement('text', 'update_method', array(
-            'label' => $this->translate('Update Method'),
-            'description' => $this->translate('the update method'),
-        ));
+        if ($this->isTemplate()) {
+            $this->addElement('text', 'update_method', array(
+                'label'       => $this->translate('Update Method'),
+                'description' => $this->translate('the update method'),
+                'value'       => 'LegacyTimePeriod',
+            ));
+
+        } else {
+            // TODO: I'd like to skip this for objects inheriting from a template
+            //       with a defined update_method. However, unfortunately it's too
+            //       early for $this->object()->getResolvedProperty('update_method').
+            //       Should be fixed.
+            $this->addHidden('update_method', 'LegacyTimePeriod');
+        }
 
         $this->addImportsElement();
 
