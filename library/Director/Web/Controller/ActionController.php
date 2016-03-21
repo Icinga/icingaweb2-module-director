@@ -171,6 +171,14 @@ abstract class ActionController extends Controller
         return $this;
     }
 
+    protected function shorten($string, $length)
+    {
+        if (strlen($string) > $length) {
+            return substr($string, 0, $length) . '...';
+        }
+        return $string;
+    }
+
     protected function setViewScript($name)
     {
         $this->_helper->viewRenderer->setNoController(true);
