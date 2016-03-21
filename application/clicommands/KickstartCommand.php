@@ -70,7 +70,7 @@ class KickstartCommand extends Command
      *    ; Port is 5665 if none given
      *    port = 5665
      *
-     *    usename = "director"
+     *    username = "director"
      *    password = "***"
      *
      */
