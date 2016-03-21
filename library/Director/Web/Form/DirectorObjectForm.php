@@ -25,6 +25,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $displayGroups = array();
 
+    protected $resolvedImports = false;
+
     protected function object($values = array())
     {
         if ($this->object === null) {
@@ -43,6 +45,33 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $this->object;
+    }
+
+    protected function assertResolvedImports()
+    {
+        if ($this->resolvedImports) {
+            return $this;
+        }
+
+        $this->resolvedImports = true;
+        $object = $this->object;
+
+        if (! $object instanceof IcingaObject) {
+            return $this;
+        }
+        if (! $object->supportsImports()) {
+            return $this;
+        }
+        if ($this->hasBeenSent()) {
+            if ($el = $this->getElement('imports')) {
+                $this->populate($this->getRequest()->getPost());
+                $object->imports = $el->getValue();
+            }
+        }
+
+        $this->object->importedObjects();
+        $object->resolveUnresolvedRelatedProperties();
+        return $this;
     }
 
     protected function isObject()
@@ -825,53 +854,50 @@ abstract class DirectorObjectForm extends QuickForm
         // TODO: check whether getSentValue is still needed since element->getValue
         //       is in place (currently for form element default values only)
 
-        if ($this->hasObject()) {
-            $value = $this->getSentValue($name);
-            if ($value === null || $value === '') {
+        if (!$this->hasObject()) {
+            if ($this->hasBeenSent()) {
 
-                $object = $this->getObject();
+                return $this->getSentValue($name, $default);
+            } else {
+                if (strlen($val = $this->getValue($name))) {
 
-                if ($object->hasProperty($name)) {
-                    if ($resolved && $object->supportsImports()) {
-                        $objectProperty = $object->getResolvedProperty($name);
-/*
-var_dump($name);
-var_dump($objectProperty);
-print_r($object);
-
-*/
-                    } else {
-                        $objectProperty = $object->$name;
-                    }
-                } else {
-                    $objectProperty = null;
-                }
-
-                if ($objectProperty !== null) {
-                    return $objectProperty;
-                }
-
-                if (null !== ($val = $this->getElement($name)->getValue())) {
                     return $val;
                 }
 
                 return $default;
-            } else {
+            }
+        }
 
+        // Has Object:
+
+        if (!$resolved && $this->hasBeenSent()) {
+            if (strlen($value = $this->getSentValue($name))) {
                 return $value;
             }
-
-        } else {
-            if (null !== ($val = $this->getSentValue($name))) {
-                return $val;
-            }
-
-            if (null !== ($val = $this->getElement($name)->getValue())) {
-                return $val;
-            }
-
-            return $default;
         }
+
+        $object = $this->getObject();
+
+        if ($object->hasProperty($name)) {
+            if ($resolved && $object->supportsImports()) {
+                $this->assertResolvedImports();
+                $objectProperty = $object->getResolvedProperty($name);
+            } else {
+                $objectProperty = $object->$name;
+            }
+        } else {
+            $objectProperty = null;
+        }
+
+        if ($objectProperty !== null) {
+            return $objectProperty;
+        }
+
+        if (strlen($val = $this->getElement($name)->getValue())) {
+            return $val;
+        }
+
+        return $default;
     }
 
     public function loadObject($id)
