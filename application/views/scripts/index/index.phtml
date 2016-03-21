@@ -80,7 +80,7 @@ function pendingDeployments($self) {
         $self->undeployedActivities
     ) . '</span>';
 }
-if ($this->stats && (int) $this->stats['apiuser']->cnt_total === 0) {
+if (!$this->hasDeploymentEndpoint) {
     echo $this->form;
 }
 

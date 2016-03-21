@@ -13,30 +13,39 @@ class IndexController extends ActionController
             $this->setAutorefreshInterval(10);
         }
 
-        $this->getTabs()->add('overview', array(
-            'url' => $this->getRequest()->getUrl(),
-            'label' => $this->translate('Overview')
-        ))->activate('overview');
-
-        if (! $this->Config()->get('db', 'resource')) {
-            $this->view->errorMessage = sprintf(
-                $this->translate('No database resource has been configured yet. Please %s to complete your config'),
-                $this->view->qlink($this->translate('click here'), 'director/settings')
-            );
-            return;
-        }
-
-        if (! $this->fetchStats()
-            || (int) $this->view->stats['apiuser']->cnt_total === 0
+        if (! $this->Config()->get('db', 'resource')
+            || !$this->fetchStats()
+            || !$this->hasDeploymentEndpoint()
         ) {
-            $this->view->form = $this->loadForm('kickstart')->setDb($this->db)->handleRequest();
+            $this->getTabs()->add('overview', array(
+                'url' => $this->getRequest()->getUrl(),
+                'label' => $this->translate('Configuration')
+            ))->activate('overview');
+            $this->view->title = $this->translate('Configuration');
+            $this->view->form = $this->loadForm('kickstart')->handleRequest();
+
+        } else {
+            $this->getTabs()->add('overview', array(
+                'url' => $this->getRequest()->getUrl(),
+                'label' => $this->translate('Overview')
+            ))->activate('overview');
         }
+    }
+
+    protected function hasDeploymentEndpoint()
+    {
+        try {
+            $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return $this->view->hasDeploymentEndpoint;
     }
 
     protected function fetchStats()
     {
         try {
-            $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
             $this->view->stats = $this->db()->getObjectSummary();
             $this->view->undeployedActivities = $this->db()->countActivitiesSinceLastDeployedConfig();
         } catch (Exception $e) {
