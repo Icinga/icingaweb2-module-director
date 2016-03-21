@@ -164,7 +164,7 @@ abstract class ActionController extends Controller
 
         $this->view->quickSearch = sprintf(
             $htm,
-            $this->getRequest()->getUrl()->without('q')->without('page'),
+            $this->getRequest()->getUrl()->without(array('q', 'page', 'modifyFilter')),
             $this->translate('Search...')
         );
 
