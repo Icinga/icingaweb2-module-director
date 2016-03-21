@@ -2,9 +2,13 @@
 
 namespace Icinga\Module\Director;
 
+use Exception;
 use Icinga\Application\Config;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Objects\IcingaApiUser;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Db;
@@ -13,7 +17,15 @@ class KickstartHelper
 {
     protected $db;
 
+    protected $api;
+
     protected $apiUser;
+
+    protected $deploymentEndpoint;
+
+    protected $loadedEndpoints;
+
+    protected $loadedZones;
 
     protected $config = array(
         'endpoint' => null,
@@ -84,8 +96,11 @@ class KickstartHelper
 
     public function run()
     {
-        $this->importZones()
-             ->importEndpoints()
+        $this->loadEndpoints()
+             ->reconnectToDeploymentEndpoint()
+             ->loadZones()
+             ->storeZones()
+             ->storeEndpoints()
              ->importCommands();
 
         $this->apiUser()->store();
@@ -94,48 +109,159 @@ class KickstartHelper
     protected function apiUser()
     {
         if ($this->apiUser === null) {
-            $this->apiUser = IcingaApiUser::create(array(
+
+            $name = $this->getValue('username');
+
+            $user = IcingaApiUser::create(array(
                 'object_name' => $this->getValue('username'),
                 'object_type' => 'external_object',
                 'password'    => $this->getValue('password')
             ), $this->db);
+
+            if (IcingaApiUser::exists($name, $this->db)) {
+                $this->apiUser = IcingaApiUser::load($name, $this->db)->replaceWith($user);
+            } else {
+                $this->apiUser = $user;
+            }
+
+            $this->apiUser->store();
         }
 
         return $this->apiUser;
     }
 
-    protected function importZones()
+    protected function loadZones()
     {
         $db = $this->db;
         $imports = array();
         $objects = array();
+        $children = array();
+        $root = array();
 
         foreach ($this->api()->setDb($db)->getZoneObjects() as $object) {
-            if (! $object::exists($object->object_name, $db)) {
-                $object->store();
+            if ($object->parent) {
+                $children[$object->parent][$object->object_name] = $object;
+            } else {
+                $root[$object->object_name] = $object;
             }
+        }
+
+        foreach ($root as $name => $object) {
+            $objects[$name] = $object;
+        }
+
+        $loop = 0;
+        while (! empty($children)) {
+            $loop++;
+            $unset = array();
+            foreach ($objects as $name => $object) {
+                if (array_key_exists($name, $children)) {
+                    foreach ($children[$name] as $object) {
+                        $objects[$object->object_name] = $object;
+                    }
+
+                    unset($children[$name]);
+                }
+            }
+
+            if ($loop > 20) {
+                throw new ConfigurationError('Loop detected while importing zones');
+            }
+        }
+
+        $this->loadedZones = $objects;
+
+        return $this;
+    }
+
+    protected function storeZones()
+    {
+        $db = $this->db;
+        $existing = $db->listExternal('zone');
+        foreach ($this->loadedZones as $name => $zone) {
+            if ($zone::exists($name, $db)) {
+                $zone = $zone::load($name, $db)->replaceWith($zone);
+            }
+            $zone->store();
+            unset($existing[$name]);
+        }
+        foreach ($existing as $name) {
+            IcingaZone::load($name, $db)->delete();
         }
 
         return $this;
     }
 
-    protected function importEndpoints()
+    protected function loadEndpoints()
     {
         $db = $this->db;
         $master = $this->getValue('endpoint');
 
+        $endpoints = array();
         foreach ($this->api()->setDb($db)->getEndpointObjects() as $object) {
 
             if ($object->object_name === $master) {
                 $apiuser = $this->apiUser();
                 $apiuser->store();
                 $object->apiuser = $apiuser->object_name;
+                $this->deploymentEndpoint = $object;
             }
 
-            if (! $object::exists($object->object_name, $db)) {
-                $object->store();
-            }
+            $endpoints[$object->object_name] = $object;
         }
+
+        $this->loadedEndpoints = $endpoints;
+
+        return $this;
+    }
+
+    protected function reconnectToDeploymentEndpoint()
+    {
+        $db = $this->db;
+        $master = $this->getValue('endpoint');
+
+        if (!$this->deploymentEndpoint) {
+            throw new ConfigurationError(
+                'I found no Endpoint object called "%s" on %s:%d',
+                $master,
+                $this->getHost(),
+                $this->getPort()
+            );
+        }
+
+        try {
+            $this->switchToDeploymentApi()->getStatus();
+        } catch (Exception $e) {
+            $ep = $this->deploymentEndpoint;
+            throw new ConfigurationError(
+                'I was unable to re-establish a connection to the Endpoint "%s" (%s:%d).'
+                . ' When reconnecting to the configured Endpoint (%s:%d) I get an error: %s'
+                . ' Please re-check your Icinga 2 endpoint configuration',
+                $master,
+                $this->getHost(),
+                $this->getPort(),
+                $ep->getResolvedProperty('host', $ep->object_name),
+                $ep->getResolvedProperty('port'),
+                $e->getMessage()
+            );
+        }
+
+        return $this;
+    }
+
+    protected function storeEndpoints()
+    {
+        $db = $this->db;
+
+        foreach ($this->loadedEndpoints as $name => $object) {
+            if ($object::exists($object->object_name, $db)) {
+                $object = $object::load($object->object_name, $db)->replaceWith($object);
+            }
+
+            $object->store();
+        }
+
+        $db->storeSetting('master_zone', $this->deploymentEndpoint->zone);
 
         return $this;
     }
@@ -172,8 +298,26 @@ class KickstartHelper
         return (int) $this->getValue('port', 5665);
     }
 
-    protected function api()
+    protected function getDeploymentApi()
     {
+        unset($this->api);
+        $ep = $this->deploymentEndpoint;
+
+        $client = new RestApiClient(
+            $ep->getResolvedProperty('host', $ep->object_name),
+            $ep->getResolvedProperty('port')
+        );
+
+        $apiuser = $this->apiUser();
+        $client->setCredentials($apiuser->object_name, $apiuser->password);
+
+        $api = new CoreApi($client);
+        return $api;
+    }
+
+    protected function getConfiguredApi()
+    {
+        unset($this->api);
         $client = new RestApiClient(
             $this->getHost(),
             $this->getPort()
@@ -184,5 +328,19 @@ class KickstartHelper
 
         $api = new CoreApi($client);
         return $api;
+    }
+
+    protected function switchToDeploymentApi()
+    {
+        return $this->api = $this->getDeploymentApi();
+    }
+
+    protected function api()
+    {
+        if ($this->api === null) {
+            $this->api = $this->getConfiguredApi();
+        }
+
+        return $this->api;
     }
 }
