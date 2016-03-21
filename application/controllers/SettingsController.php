@@ -12,7 +12,7 @@ class SettingsController extends ActionController
             ->getConfigTabs()
             ->activate('config');
 
-        $this->view->form = $this->loadForm('config')
+        $this->view->form = $this->loadForm('kickstart')
             ->setModuleConfig($this->Config())
             ->handleRequest();
     }
