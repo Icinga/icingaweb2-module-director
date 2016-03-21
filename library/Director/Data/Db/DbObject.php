@@ -282,6 +282,7 @@ abstract class DbObject
         if ($value === '') {
             $value = null;
         }
+
         $func = 'validate' . ucfirst($key);
         if (method_exists($this, $func) && $this->$func($value) !== true) {
             throw new IE('Got invalid value "%s" for "%s"', $value, $key);
