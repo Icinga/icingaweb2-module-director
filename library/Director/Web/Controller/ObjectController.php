@@ -26,11 +26,7 @@ abstract class ObjectController extends ActionController
             $params = $object->getUrlParams();
 
             if ($object->isExternal()) {
-                $tabs = $this->getTabs()->add('modify', array(
-                    'url'       => sprintf('director/%s', $type),
-                    'urlParams' => $params,
-                    'label'     => $this->translate(ucfirst($type))
-                ));
+                $tabs = $this->getTabs();
             } else {
                 $tabs = $this->getTabs()->add('modify', array(
                     'url'       => sprintf('director/%s', $type),
@@ -91,7 +87,9 @@ abstract class ObjectController extends ActionController
             && $this->object->isExternal()
             && ! in_array($this->object->getShortTableName(), $allowedExternals)
         ) {
-            return $this->externalObjectInfo();
+            $this->redirectNow(
+                $this->getRequest()->getUrl()->setPath(sprintf('director/%s/render', $this->getType()))
+            );
         }
 
         return $this->editAction();
@@ -281,17 +279,6 @@ abstract class ObjectController extends ActionController
             array('Group', 'Period', 'Argument', 'ApiUser'),
             $this->getRequest()->getControllerName()
         );
-    }
-
-    protected function externalObjectInfo()
-    {
-        $this->view->title = sprintf(
-            $this->translate('External object: %s'),
-            $this->object->object_name
-        );
-        $this->getTabs()->activate('modify');
-
-        $this->render('object/externalinfo', null, true);
     }
 
     protected function loadObject()
