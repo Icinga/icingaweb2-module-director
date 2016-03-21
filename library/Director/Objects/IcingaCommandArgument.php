@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
-class IcingaCommandArgument extends DbObject
+class IcingaCommandArgument extends IcingaObject
 {
     protected $keyName = 'id';
 
@@ -13,7 +13,8 @@ class IcingaCommandArgument extends DbObject
 
     protected $booleans = array(
         'skip_key'   => 'skip_key',
-        'repeat_key' => 'repeat_key'
+        'repeat_key' => 'repeat_key',
+        'required'   => 'required'
     );
 
     protected $defaultProperties = array(
@@ -29,6 +30,7 @@ class IcingaCommandArgument extends DbObject
         'sort_order'      => null,
         'repeat_key'      => null,
         'set_if_format'   => null,
+        'required'        => null,
     );
 
     public function onInsert()
@@ -52,28 +54,50 @@ class IcingaCommandArgument extends DbObject
         array $chosenProperties = null,
         $resolveIds = true
     ) {
-        $keys = array(
-            'argument_value',
-            'argument_format',
-            'key_string',
-            'description',
-            'skip_key',
-            'set_if',
-            'sort_order',
-            'repeat_key',
-            'set_if_format',
-        );
+        // TODO: skipDefaults?
 
-        $obj = (object) array();
-        foreach ($keys as $key) {
-            if ($skipDefaults && $this->$key === null) {
-                continue;
+        $data = array();
+        if ($this->argument_value) {
+            switch ($this->argument_format) {
+                case 'string':
+                case 'json':
+                    $data['value'] = $this->argument_value;
+                    break;
+                case 'expression':
+                    $data['value'] = (object) array(
+                        'type' => 'Function',
+                        // TODO: Not for dummy comment
+                        'body' => $this->argument_value
+                    );
+                    break;
             }
-
-            $obj->$key = $this->$key;
         }
 
-        return $obj;
+        if ($this->sort_order !== null) {
+            $data['order'] = $this->sort_order;
+        }
+
+        if ($this->set_if) {
+            $data['set_if'] = $this->set_if;
+        }
+
+        if ($this->required) {
+            $data['required'] = $this->required === 'y';
+        }
+
+        if ($this->repeat_key) {
+            $data['repeat_key'] = $this->repeat_key === 'y';
+        }
+
+        if ($this->description) {
+            $data['description'] = $this->description;
+        }
+
+        if (array_keys($data) === array('value')) {
+            return $data['value'];
+        } else {
+            return $data;
+        }
     }
 
     public function toConfigString()
@@ -104,7 +128,7 @@ class IcingaCommandArgument extends DbObject
             }
         }
 
-        if ($this->sort_order) {
+        if ($this->sort_order !== null) {
             $data['order'] = $this->sort_order;
         }
 
@@ -112,10 +136,19 @@ class IcingaCommandArgument extends DbObject
             $data['set_if'] = c::renderString($this->set_if);
         }
 
-        if ((int) $this->sort_order !== 0) {
+        if ($this->required) {
+            $data['required'] = c::renderBoolean($this->required);
+        }
+
+        if ($this->repeat_key) {
+            $data['repeat_key'] = c::renderBoolean($this->repeat_key);
+        }
+
+/*        if ((int) $this->sort_order !== 0) {
             $data['order'] = $this->sort_order;
         }
 
+*/
         if ($this->description) {
             $data['description'] = c::renderString($this->description);
         }

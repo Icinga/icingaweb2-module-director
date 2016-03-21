@@ -78,9 +78,18 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     public function set($key, $value)
     {
-//        var_dump(sprintf('Setting %s', var_export($value, 1)));
-        // type => 'Function'
-        // required => true <-- MISSING
+        $argument = IcingaCommandArgument::create($this->mungeCommandArgument($key, $value));
+        if (array_key_exists($key, $this->arguments)) {
+            $this->arguments[$key]->replaceWith($argument);
+        } else {
+            $this->add($argument);
+        }
+
+        return $this;
+    }
+
+    protected function mungeCommandArgument($key, $value)
+    {
         $attrs = array(
             'argument_name' => $key,
         );
@@ -88,6 +97,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $map = array(
             'skip_key'    => 'skip_key',
             'repeat_key'  => 'repeat_key',
+            'required'    => 'required',
             'order'       => 'sort_order',
             'description' => 'description',
             'set_if'      => 'set_if',
@@ -142,8 +152,36 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             }
         }
 
-        $this->add(IcingaCommandArgument::create($attrs));
+        return $attrs;
+    }
 
+    // TODO -> UNFINISHED!!!
+    public function setArguments($arguments)
+    {
+        if (empty($arguments)) {
+            if (count($this->arguments)) {
+                $this->arguments = array();
+                $this->modified = true;
+            }
+
+            return $this;
+        }
+
+        $arguments = (array) $arguments;
+
+        foreach ($arguments as $arg => $val) {
+            $this->set($arg, $val);
+        }
+
+        foreach (array_diff(
+            array_keys($this->arguments),
+            array_keys($arguments)
+        ) as $arg) {
+            $this->remove($arg);
+        }
+
+        // Didn't check diff;
+        $this->modified = true;
         return $this;
     }
 
