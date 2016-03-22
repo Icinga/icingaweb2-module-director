@@ -77,11 +77,9 @@ class KickstartForm extends QuickForm
                 'Your installation of Icinga Director has not yet been prepared for'
                 . ' deployments. This kickstart wizard will assist you with setting'
                 . ' up the connection to your Icinga 2 server.'
-            )
-            /*
-            . $this->translate(
-                http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
-            )*/, array('name' => 'HINT_kickstart')
+            ),
+            array('name' => 'HINT_kickstart')
+            // http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
         );
 
         $this->addElement('text', 'endpoint', array(

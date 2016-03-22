@@ -44,7 +44,8 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
                 'label'       => $this->translate('Value'),
                 'description' => $this->translate(
                     'And Icinga DSL expression, e.g.: var cmd = macro("$cmd$");'
-                    . ' return typeof(command) == String ...'),
+                    . ' return typeof(command) == String ...'
+                ),
                 'rows'        => 3
             ));
         } else {
