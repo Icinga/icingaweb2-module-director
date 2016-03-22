@@ -38,7 +38,19 @@ class IcingaHostForm extends DirectorObjectForm
              ->addAddressElements()
              ->addDisabledElement()
              ->groupMainProperties()
-             ->addZoneElement();
+             ->addClusteringElements()
+             ->addCheckCommandElements()
+             ->addCheckExecutionElements()
+             ->setButtons();
+    }
+
+    protected function addClusteringElements()
+    {
+        if (!$this->isTemplate() && !$this->hasClusterProperties()) {
+            return $this;
+        }
+
+        $this->addZoneElement();
 
         $this->addBoolean('has_agent', array(
             'label'       => $this->translate('Icinga2 Agent'),
@@ -79,9 +91,16 @@ class IcingaHostForm extends DirectorObjectForm
             'legend' => $this->translate('Icinga Agent and zone settings')
         ));
 
-        $this->addCheckCommandElements()
-             ->addCheckExecutionElements()
-             ->setButtons();
+        return $this;
+    }
+
+    protected function hasClusterProperties()
+    {
+        if (!$object = $this->object) {
+            return false;
+        }
+
+        return $object->zone_id || $object->has_agent;
     }
 
     protected function beforeSuccessfulRedirect()
