@@ -877,19 +877,18 @@ abstract class DirectorObjectForm extends QuickForm
 
                 return $this->getSentValue($name, $default);
             } else {
-                if (strlen($val = $this->getValue($name))) {
-
+                if ($this->valueIsEmpty($val = $this->getValue($name))) {
+                    return $default;
+                } else {
                     return $val;
                 }
-
-                return $default;
             }
         }
 
         // Has Object:
 
         if (!$resolved && $this->hasBeenSent()) {
-            if (strlen($value = $this->getSentValue($name))) {
+            if (!$this->valueIsEmpty($value = $this->getSentValue($name))) {
                 return $value;
             }
         }
@@ -911,7 +910,7 @@ abstract class DirectorObjectForm extends QuickForm
             return $objectProperty;
         }
 
-        if (strlen($val = $this->getElement($name)->getValue())) {
+        if (!$this->valueIsEmpty($val = $this->getElement($name)->getValue())) {
             return $val;
         }
 
@@ -1027,6 +1026,10 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function valueIsEmpty($value)
     {
+        if (is_array($value)) {
+            return empty($value);
+        }
+
         return strlen($value) === 0;
     }
 
