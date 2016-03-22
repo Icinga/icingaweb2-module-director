@@ -3,7 +3,7 @@
 <?= $this->tabs ?>
 
 <h1><?= $this->escape($this->title) ?><?= $this->quickSearch ?></h1>
-<span data-base-target="_next">
+<span<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
 <?= $this->addLink ?>
 </span>
 <?php if ($this->filterEditor): ?>
