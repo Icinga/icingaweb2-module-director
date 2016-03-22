@@ -106,7 +106,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
     public function onSuccess()
     {
         $object = $this->object();
-        $cmd = $this->commandObject();
+        $cmd = $this->commandObject;
         if ($object->hasBeenModified()) {
             $cmd->arguments()->set(
                 $object->argument_name,
