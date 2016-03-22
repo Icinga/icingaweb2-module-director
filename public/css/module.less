@@ -143,21 +143,6 @@ form ul.form-errors {
     }
 }
 
-fieldset {
-    margin: 0;
-    padding: 0;
-    border: none;
-
-    legend {
-        margin: 0 0 0.5em 0;
-        font-size: 1.2em;
-        color: @icinga-blue;
-        border-bottom: 1px solid @gray-light;
-        display: block;
-        width: 100%;
-    }
-}
-
 select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
     display: none;
 }
@@ -505,8 +490,19 @@ ul.main-actions {
 }
 
 fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+
     legend {
+        margin: 0 0 0.5em 0;
+        font-size: 1em;
+        border-bottom: 1px solid @gray-light;
+        font-weight: bold;
+        display: block;
+        width: 100%;
         padding-left: 1em;
+        line-height: 2em;
         cursor: pointer;
         user-select: none;
         -webkit-user-select: none;
@@ -514,7 +510,7 @@ fieldset {
         -ms-user-select: none;
 
         &:hover {
-            border-style: dotted;
+            border-color: @text-color;
         }
 
         &::before {
@@ -522,7 +518,7 @@ fieldset {
             font-family: 'ifont';
             content: '\e81d';
             margin-left: -1em;
-            padding-top: 0.25em;
+            padding-top: 0em;
             float: left;
             color: inherit;
         }
