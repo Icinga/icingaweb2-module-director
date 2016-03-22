@@ -163,7 +163,9 @@ abstract class ObjectsController extends ActionController
 
         $this->view->table = $this->applyPaginationLimits($table);
 
-        $this->render('objects/table', null, true);
+        $this->provideQuickSearch();
+
+        $this->setViewScript('objects/table');
     }
 
     public function templatetreeAction()
