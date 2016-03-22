@@ -172,6 +172,8 @@ input[type=text], input[type=password], textarea, select {
     max-width: 36em;
     min-width: 20em;
     width: 100%;
+    line-height: 2em;
+    height: 2.4em;
     padding-left: 0.5em;
     border-style: solid;
     border-color: transparent;
@@ -183,6 +185,20 @@ input[type=text], input[type=password], textarea, select {
         background: transparent url("../img/icons/search.png") no-repeat scroll 0.5em center / 1em 1em;
         padding-left: 2em;
     }
+}
+
+select option {
+    height: 2em;
+    padding-top: 0.3em;
+}
+
+label {
+    line-height: 2em;
+}
+
+form dl {
+    margin: 0;
+    padding: 0;
 }
 
 div.filter > form.search, div.filter > a {
@@ -255,13 +271,15 @@ ul.extensible-set {
     span.inline-buttons {
         position: absolute;
         z-index: 10;
-        right: 1em;
+        right: 0.225em;
+        top: -0.275em;
         input[type=submit] {
             font-family: 'ifont';
             width: 2em;
-            font-size: 0.625em;
+            height: 2em;
+            font-size: 1em;
             margin-left: 0.2em;
-            padding: 0.2em 0 0.2em 0;
+            padding: 1px 0 1px 0;
         }
     }
 
@@ -278,7 +296,7 @@ form {
     }
 }
 
-dd.active ul.extensible-set {
+dd.active ul.extensible-set, ul.extensible-set.sortable {
     border: 1px solid @gray-lighter;
 
     li {
