@@ -15,6 +15,11 @@ abstract class ObjectController extends ActionController
 
     protected $isApified = true;
 
+    protected $allowedExternals = array(
+        'apiuser',
+        'endpoint'
+    );
+
     public function init()
     {
         parent::init();
@@ -25,7 +30,9 @@ abstract class ObjectController extends ActionController
             $this->beforeTabs();
             $params = $object->getUrlParams();
 
-            if ($object->isExternal()) {
+            if ($object->isExternal()
+                && ! in_array($object->getShortTableName(), $this->allowedExternals)
+            ) {
                 $tabs = $this->getTabs();
             } else {
                 $tabs = $this->getTabs()->add('modify', array(
@@ -79,13 +86,9 @@ abstract class ObjectController extends ActionController
             }
         }
 
-        $allowedExternals = array(
-            'apiuser',
-            'endpoint'
-        );
         if ($this->object
             && $this->object->isExternal()
-            && ! in_array($this->object->getShortTableName(), $allowedExternals)
+            && ! in_array($this->object->getShortTableName(), $this->allowedExternals)
         ) {
             $this->redirectNow(
                 $this->getRequest()->getUrl()->setPath(sprintf('director/%s/render', $this->getType()))
