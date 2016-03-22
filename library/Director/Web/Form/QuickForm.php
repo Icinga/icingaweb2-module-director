@@ -156,6 +156,19 @@ abstract class QuickForm extends Zend_Form
         ));
     }
 
+    protected function addSimpleDisplayGroup($elements, $name, $options)
+    {
+        if (! array_key_exists('decorators', $options)) {
+            $options['decorators'] = array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            );
+        }
+        return $this->addDisplayGroup($elements, $name, $options);
+
+    }
+
     protected function createIdElement()
     {
         $this->detectName();
