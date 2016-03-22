@@ -363,6 +363,7 @@ abstract class QuickForm extends Zend_Form
     public function prepareElements()
     {
         if (! $this->didSetup) {
+            $this->beforeSetup();
             $this->setup();
             $this->addSubmitButtonIfSet();
             $this->onSetup();
