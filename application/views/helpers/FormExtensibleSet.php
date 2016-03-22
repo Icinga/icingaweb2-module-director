@@ -144,7 +144,9 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
                     . '</li>';
         }
 
-        return '<ul class="extensible-set">' . "\n  "
+        return '<ul class="extensible-set'
+             . ($sorted ? ' sortable' : '')
+             . '">' . "\n  "
              . implode("\n  ", $elements)
              . "</ul>\n";
     }
