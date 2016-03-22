@@ -290,6 +290,10 @@ abstract class QuickForm extends Zend_Form
         return $url;
     }
 
+    protected function beforeSetup()
+    {
+    }
+
     public function setup()
     {
     }
