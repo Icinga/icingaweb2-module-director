@@ -48,7 +48,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addHidden('object_type', 'object');
         $this->addImportsElement();
         $imports = $this->getSentOrObjectValue('imports');
-        if (empty($imports)) {
+        if ($this->isNew() && empty($imports)) {
             return $this->groupMainProperties();
         }
 
