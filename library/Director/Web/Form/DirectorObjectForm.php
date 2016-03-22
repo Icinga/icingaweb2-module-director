@@ -711,6 +711,35 @@ abstract class DirectorObjectForm extends QuickForm
         list($set[$key + 1], $set[$key]) = array($set[$key], $set[$key + 1]);
     }
 
+    protected function beforeSetup()
+    {
+        if (!$this->hasBeenSent()) {
+            return;
+        }
+
+        $post = $values = $this->getRequest()->getPost();
+
+        foreach ($post as $key => $value) {
+
+            if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
+                $values[$m[1]] = array_filter($values[$m[1]], 'strlen');
+                switch ($m[3]) {
+                    case 'MOVE_UP':
+                        $this->moveUpInSet($values[$m[1]], $m[2]);
+                        break;
+                    case 'MOVE_DOWN':
+                        $this->moveDownInSet($values[$m[1]], $m[2]);
+                        break;
+                    case 'REMOVE':
+                        $this->removeFromSet($values[$m[1]], $m[2]);
+                        break;
+                }
+
+                $this->getRequest()->setPost($m[1], $values[$m[1]]);
+            }
+        }
+    }
+
     protected function onRequest()
     {
         $values = array();
@@ -727,26 +756,6 @@ abstract class DirectorObjectForm extends QuickForm
                 $el = $this->getElement($key);
                 if ($el && ! $el->getIgnore()) {
                     $values[$key] = $value;
-                }
-            }
-
-            foreach ($post as $key => $value) {
-
-                if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
-                    $values[$m[1]] = array_filter($values[$m[1]], 'strlen');
-                    switch ($m[3]) {
-                        case 'MOVE_UP':
-                            $this->moveUpInSet($values[$m[1]], $m[2]);
-                            break;
-                        case 'MOVE_DOWN':
-                            $this->moveDownInSet($values[$m[1]], $m[2]);
-                            break;
-                        case 'REMOVE':
-                            $this->removeFromSet($values[$m[1]], $m[2]);
-                            break;
-                    }
-
-                    $this->getRequest()->setPost($m[1], $values[$m[1]]);
                 }
             }
         }
