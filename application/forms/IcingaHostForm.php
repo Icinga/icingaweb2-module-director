@@ -25,6 +25,13 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
+        if ($this->isNew() && $this->isObject() && $this->allowsExperimental()) {
+            $this->addBoolean('create_live', array(
+                'label'  => $this->translate('Create immediately'),
+                'ignore' => true,
+            ), 'n');
+        }
+
         $this->addGroupsElement()
              ->addImportsElement()
              ->addDisplayNameElement()
@@ -75,6 +82,16 @@ class IcingaHostForm extends DirectorObjectForm
         $this->addCheckCommandElements()
              ->addCheckExecutionElements()
              ->setButtons();
+    }
+
+    protected function beforeSuccessfulRedirect()
+    {
+        if ($this->allowsExperimental() && $this->getSentValue('create_live') === 'y') {
+            $host = $this->getObject();
+            if ($this->api()->createObjectAtRuntime($host)) {
+                $this->api()->checkHostNow($host->object_name);
+            }
+        }
     }
 
     protected function addGroupsElement()

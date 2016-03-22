@@ -27,6 +27,10 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $resolvedImports = false;
 
+    private $allowsExperimental;
+
+    private $api;
+
     protected function object($values = array())
     {
         if ($this->object === null) {
@@ -465,6 +469,7 @@ abstract class DirectorObjectForm extends QuickForm
             'email',
             'pager',
             'enable_notifications',
+            'create_live',
             'disabled',
         );
 
@@ -603,8 +608,12 @@ abstract class DirectorObjectForm extends QuickForm
                 $object->getUrlParams()
             );
         }
-
+        $this->beforeSuccessfulRedirect();
         $this->redirectOnSuccess($msg);
+    }
+
+    protected function beforeSuccessfulRedirect()
+    {
     }
 
     protected function addBoolean($key, $options, $default = null)
@@ -1243,6 +1252,19 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    protected function allowsExperimental()
+    {
+        // NO, it is NOT a good idea to use this. You'll break your monitoring
+        // and nobody will help you.
+        if ($this->allowsExperimental === null) {
+            $this->allowsExperimental = $this->db->getSetting(
+                'experimental_features'
+            ) === 'allow';
+        }
+
+        return $this->allowsExperimental;
+    }
+
     protected function enumStates()
     {
         $set = new StateFilterSet();
@@ -1253,6 +1275,17 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $set = new TypeFilterSet();
         return $set->enumAllowedValues();
+    }
+
+    public function setApi($api)
+    {
+        $this->api = $api;
+        return $this;
+    }
+
+    protected function api()
+    {
+        return $this->api;
     }
 
     private function dummyForTranslation()
