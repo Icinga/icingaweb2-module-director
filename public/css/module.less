@@ -297,7 +297,6 @@ form {
 }
 
 dd.active ul.extensible-set, ul.extensible-set.sortable {
-    border: 1px solid @gray-lighter;
 
     li {
         display: list-item;
@@ -316,13 +315,17 @@ dd.active ul.extensible-set, ul.extensible-set.sortable {
         padding: 0.25em 0.5em;
         margin: 0;
     }
+}
 
-    select.extend-set, input.extend-set {
-        display: inline;
-    }
+dd.active ul.extensible-set {
+    border: 1px solid @gray-lighter;
 
     input[type=submit]:first-of-type {
         border-width: 1px;
+    }
+
+    select.extend-set, input.extend-set {
+        display: inline;
     }
 }
 
