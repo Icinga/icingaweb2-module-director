@@ -34,6 +34,12 @@
             if (el.name.match(/__MOVE_UP$/)) {
                 var $li = $(el).closest('li');
                 var $prev = $li.prev()
+                if ($li.find('input[type=text].autosubmit')) {
+                    if (iid = $prev.find('input[type=text]').attr('id')) {
+                        $li.closest('.container').data('activeExtensibleEntry', iid);
+                    }
+                    return true;
+                }
                 if ($prev.length) {
                     $prev.before($li.detach());
                     this.fixRelatedActions($li.closest('ul'));
@@ -44,6 +50,12 @@
             } else if (el.name.match(/__MOVE_DOWN$/)) {
                 var $li = $(el).closest('li');
                 var $next = $li.next()
+                if ($li.find('input[type=text].autosubmit')) {
+                    if (iid = $next.find('input[type=text]').attr('id')) {
+                        $li.closest('.container').data('activeExtensibleEntry', iid);
+                    }
+                    return true;
+                }
                 if ($next.length && ! $next.find('.extend-set').length) {
                     $next.after($li.detach());
                     this.fixRelatedActions($li.closest('ul'));
@@ -152,6 +164,10 @@
             this.putFocusOnFirstObjectTypeElement($container);
             this.highlightFormErrors($container);
             this.hideInactiveFormDescriptions($container);
+            if (iid = $container.data('activeExtensibleEntry')) {
+                $('#' + iid).focus();
+                $container.removeData('activeExtensibleEntry');
+            }
         },
 
         restoreContainerFieldsets: function($container)
