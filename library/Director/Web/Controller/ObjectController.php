@@ -186,7 +186,7 @@ abstract class ObjectController extends ActionController
         );
 
         $form->handleRequest();
-        $this->render('object/form', null, true);
+        $this->setViewScript('object/form');
     }
 
     public function cloneAction()

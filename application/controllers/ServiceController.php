@@ -52,6 +52,14 @@ class ServiceController extends ObjectController
         }
     }
 
+    public function addAction()
+    {
+        parent::addAction();
+        if ($this->host) {
+            $this->view->title = $this->host->object_name . ': ' . $this->view->title;
+        }
+    }
+
     public function assignAction()
     {
         $this->getTabs()->activate('assign');
