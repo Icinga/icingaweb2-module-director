@@ -10,6 +10,15 @@
 <?php if ($object->disabled === 'y'): ?>
 <p class="error"><?= $this->translate('This object will not be deployed as it has been disabled') ?></p>
 <?php endif ?>
+<?php if ($object->isExternal()): ?>
+<p><?= $this->translate(
+    'This is an external object. It has been imported from Icinga 2 throught the'
+    . ' Core API and cannot be managed with the Icinga Director. It is however'
+    . ' perfectly valid to create objects using this or referring to this object.'
+    . ' You might also want to define related Fields to make work based on this'
+    . ' object more enjoyable'
+) ?></p>
+<?php endif ?>
 <pre<?php if ($object->disabled === 'y'): ?> class="disabled"<?php endif ?>><?= $this->escape($object) ?><?php if ($this->extraObjects): ?>
 <?= implode('', $this->extraObjects) ?>
 <?php endif ?></pre>
