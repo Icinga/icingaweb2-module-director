@@ -86,14 +86,14 @@ if (!$this->hasDeploymentEndpoint) {
 
 $all = array(
     $this->translate('Define whatever you want to be monitored') => array(
-        array('wrench',   $this->translate('Commands'), 'director/commands', statSummary($this, 'command')),
         array('host',     $this->translate('Host objects'), 'director/hosts', statSummary($this, 'host')),
         array('services', $this->translate('Monitored Services'), 'director/services', statSummary($this, 'service')),
+        array('wrench',   $this->translate('Commands'), 'director/commands', statSummary($this, 'command')),
     ),
     $this->translate('Alert your users') => array(
         array('users',    $this->translate('Users / Contacts'), 'director/users', statSummary($this, 'user')),
-        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
         array('megaphone', $this->translate('Notifications'), 'director/notifications', $this->translate('Schedule your notifications.') . ' ' . statSummary($this, 'notification')),
+        array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
         array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
