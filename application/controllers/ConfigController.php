@@ -121,6 +121,10 @@ class ConfigController extends ActionController
             ->setConnection($this->db())
             ->setConfigChecksum($checksum);
 
+        if ($deploymentId) {
+            $this->view->table->setDeploymentId($deploymentId);
+        }
+
         $this->view->config = IcingaConfig::load(
             Util::hex2binary($this->params->get('checksum')),
             $this->db()
@@ -130,6 +134,18 @@ class ConfigController extends ActionController
     // Show a single file
     public function fileAction()
     {
+        $tabs = $this->configTabs()->add('file', array(
+            'label'     => $this->translate('Rendered file'),
+            'url'       => $this->getRequest()->getUrl(),
+        ))->activate('file');
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('back'),
+            'director/config/files',
+            $this->getConfigTabParams(),
+            array('class' => 'icon-left-big')
+        );
+
         $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('config_checksum')), $this->db());
         $filename = $this->view->filename = $this->params->get('file_path');
         $this->view->title = sprintf(
@@ -141,23 +157,7 @@ class ConfigController extends ActionController
 
     public function showAction()
     {
-        $tabs = $this->getTabs();
-
-        if ($deploymentId = $this->params->get('deployment_id')) {
-            $tabs->add('deployment', array(
-                'label'     => $this->translate('Deployment'),
-                'url'       => 'director/deployment/show',
-                'urlParams' => array(
-                    'id' => $deploymentId
-                )
-            ));
-        }
-
-        $tabs->add('config', array(
-            'label'     => $this->translate('Config'),
-            'url'       => $this->getRequest()->getUrl(),
-        ))->activate('config');
-
+        $this->configTabs()->activate('config');
         $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('checksum')), $this->db());
     }
 
@@ -189,5 +189,44 @@ class ConfigController extends ActionController
             )
         );
         return $this->view->tabs;
+    }
+
+    protected function configTabs()
+    {
+        $tabs = $this->getTabs();
+
+        if ($deploymentId = $this->params->get('deployment_id')) {
+            $tabs->add('deployment', array(
+                'label'     => $this->translate('Deployment'),
+                'url'       => 'director/deployment/show',
+                'urlParams' => array(
+                    'id' => $deploymentId
+                )
+            ));
+        }
+
+        $tabs->add('config', array(
+            'label'     => $this->translate('Config'),
+            'url'       => 'director/config/files',
+            'urlParams' => $this->getConfigTabParams()
+        ));
+
+        return $tabs;
+    }
+
+    protected function getConfigTabParams()
+    {
+        $params = array(
+            'checksum' => $this->params->get(
+                'config_checksum',
+                $this->params->get('checksum')
+            )
+        );
+
+        if ($deploymentId = $this->params->get('deployment_id')) {
+            $params['deployment_id'] = $deploymentId;
+        }
+
+        return $params;
     }
 }

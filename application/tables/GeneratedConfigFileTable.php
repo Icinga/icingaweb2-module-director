@@ -6,6 +6,8 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class GeneratedConfigFileTable extends QuickTable
 {
+    protected $deploymentId;
+
     public function getColumns()
     {
         $columns = array(
@@ -27,13 +29,22 @@ class GeneratedConfigFileTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url(
-            'director/config/file',
-            array(
-                'config_checksum' => $row->config_checksum,
-                'file_path' => $row->file_path
-            )
+        $params = array(
+            'config_checksum' => $row->config_checksum,
+            'file_path'       => $row->file_path
         );
+
+        if ($this->deploymentId) {
+            $params['deployment_id'] = $this->deploymentId;
+        }
+
+        return $this->url('director/config/file', $params);
+    }
+
+    public function setDeploymentId($id)
+    {
+        $this->deploymentId = $id;
+        return $this;
     }
 
     public function getTitles()
