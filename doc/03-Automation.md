@@ -124,3 +124,11 @@ default in case none is given. And of course your Icinga2 installation
 needs to have a corresponding `ApiListener` (look at your enabled
 features) listening at the given port.
 
+You can run the `kickstart` from the CLI if you don't use a tool for
+automation.
+
+    icingacli director kickstart run
+
+You can rerun the kickstart if you have to reimport changed local
+config, even when the beforementioned check tells you you don't need to.
+Or you could use the import/synchronisation features of Director.

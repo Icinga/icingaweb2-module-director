@@ -18,4 +18,4 @@ Currently there is a bug in Icinga Web 2 that broke automagic cache invalidation
 I want to set ... on a host object
 ----------------------------------
 
-You might have realized that a couple of options are not available on concrete object implementations or apply rules. It is one of our main goal to keep daily work with Director fast and simple. Want exceptions, special configurations? No problem, but please provide dedicated templates. Still not convinced? Let us know your opinions, tell us what your are missing and what we could do better.
+You might have realized that a couple of options are not available on concrete object implementations or apply rules. It is one of our main goals to keep daily work with Director fast and simple. Want exceptions, special configurations? No problem, but please provide dedicated templates. Still not convinced? Let us know your opinions, tell us what your are missing and what we could do better.
