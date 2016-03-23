@@ -609,7 +609,8 @@ CREATE TABLE icinga_service_field (
 CREATE TABLE icinga_service_assignment (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   service_id INT(10) UNSIGNED NOT NULL,
-  filter_string TEXT NOT NULL,  
+  filter_string TEXT NOT NULL,
+  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
   PRIMARY KEY (id),
   CONSTRAINT icinga_service_assignment
     FOREIGN KEY service (service_id)
@@ -1258,4 +1259,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 89;
+      schema_version = 90;

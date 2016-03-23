@@ -25,6 +25,7 @@ CREATE TYPE enum_command_object_type AS ENUM('object', 'template', 'external_obj
 CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply', 'external_object');
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
 CREATE TYPE enum_type_name AS ENUM('DowntimeStart', 'DowntimeEnd', 'DowntimeRemoved', 'Custom', 'Acknowledgement', 'Problem', 'Recovery', 'FlappingStart', 'FlappingEnd');
+CREATE TYPE enum_assign_type AS ENUM('assign', 'ignore');
 CREATE TYPE enum_sync_rule_object_type AS ENUM(
   'host',
   'service',
@@ -759,6 +760,7 @@ CREATE TABLE icinga_service_assignment (
   id bigserial,
   service_id integer NOT NULL,
   filter_string TEXT NOT NULL,
+  assign_type enum_assign_type NOT NULL DEFAULT 'assign',
   PRIMARY KEY (id),
   CONSTRAINT icinga_service_assignment
     FOREIGN KEY (service_id)
@@ -1468,7 +1470,6 @@ CREATE TABLE icinga_notification_inheritance (
 CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance (notification_id, weight);
 
 
--- set current schema version
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (89, NOW());
+  VALUES (90, NOW());
