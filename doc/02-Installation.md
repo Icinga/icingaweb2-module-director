@@ -2,7 +2,7 @@ Installation
 ============
 
 These are the instructions for manual Director installations. You can
-learn moree about how to automate this in the [automation](03-Automation.md) section
+learn more about how to automate this in the [automation](03-Automation.md) section
 of this documentation.
 
 Requirements
