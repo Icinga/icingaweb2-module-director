@@ -15,3 +15,7 @@ My Director doesn't look as good as on your screenshots
 
 Currently there is a bug in Icinga Web 2 that broke automagic cache invalidation. So when updating a module you might be forced to do SHIFT-Reload or similar in your browser. Please note that proxies in the way between you and Icinga Web 2 might currently lead to similar issues.
 
+I want to set ... on a host object
+----------------------------------
+
+You might have realized that a couple of options are not available on concrete object implementations or apply rules. It is one of our main goal to keep daily work with Director fast and simple. Want exceptions, special configurations? No problem, but please provide dedicated templates. Still not convinced? Let us know your opinions, tell us what your are missing and what we could do better.
