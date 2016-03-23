@@ -1,5 +1,7 @@
 <?php
 
+use Icinga\Application\Icinga;
+
 $prefix = '\\Icinga\\Module\\Director\\';
 
 $this->provideHook('monitoring/HostActions');
@@ -29,3 +31,17 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierExtractFromDN');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromAdSid');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromLatin1');
+
+if (Icinga::app()->isCli()) {
+    return;
+}
+
+$screenshotRoute = new Zend_Controller_Router_Route(
+    'screenshot/director/:subdir/:file',
+    array(
+        'module'        => 'director',
+        'controller'    => 'screenshot',
+    )
+);
+
+$this->addRoute('screenshot/director', $screenshotRoute);
