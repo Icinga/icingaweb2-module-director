@@ -395,7 +395,10 @@ class ExtensibleSet
     {
         $parts = array();
 
-        if ($this->ownValues !== null) {
+        // TODO: It would be nice if we could use empty arrays to override
+        //       inherited ones
+        // if ($this->ownValues !== null) {
+        if (!empty($this->ownValues)) {
             $parts[] = c::renderKeyValue(
                 $key,
                 $this->renderArray($this->ownValues),
@@ -403,7 +406,7 @@ class ExtensibleSet
             );
         }
 
-        if (! empty($this->plusValues)) {
+        if (!empty($this->plusValues)) {
             $parts[] = c::renderKeyOperatorValue(
                 $key,
                 '+=',
@@ -412,7 +415,7 @@ class ExtensibleSet
             );
         }
 
-        if (! empty($this->minusValues)) {
+        if (!empty($this->minusValues)) {
             $parts[] = c::renderKeyOperatorValue(
                 $key,
                 '-=',
