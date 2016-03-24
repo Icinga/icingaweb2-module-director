@@ -2,10 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\IcingaObjectTable;
+use Icinga\Module\Director\Web\Table\QuickTable;
 
-// TODO: quickform once apply has been moved elsewhere
-class IcingaServiceTable extends IcingaObjectTable
+class IcingaServiceTable extends QuickTable
 {
     protected $searchColumns = array(
         'service',
@@ -14,10 +13,16 @@ class IcingaServiceTable extends IcingaObjectTable
     public function getColumns()
     {
         return array(
-            'id'          => 's.id',
-            'service'     => 's.object_name',
-            'object_type' => 's.object_type',
+            'id'               => 's.id',
+            'service'          => 's.object_name',
+            'object_type'      => 's.object_type',
+            'check_command_id' => 's.check_command_id',
         );
+    }
+
+    protected function listTableClasses()
+    {
+        return array_merge(array('assignment-table'), parent::listTableClasses());
     }
 
     protected function getActionUrl($row)
@@ -31,6 +36,41 @@ class IcingaServiceTable extends IcingaObjectTable
         }
 
         return $this->url('director/service', $params);
+    }
+
+    protected function renderRow($row)
+    {
+        $v = $this->view();
+        $extra = $this->appliedOnes($row->id);
+        $htm = "  <tr" . $this->getRowClassesString($row) . ">\n";
+        $htm .= '<td>' . $v->qlink($row->service, $this->getActionUrl($row));
+        if (empty($extra)) {
+            if ($row->check_command_id) {
+                $htm .= ' ' . $v->qlink(
+                    'Create apply-rule',
+                    'director/service/apply',
+                    array('template' => $row->service),
+                    array('class'    => 'icon-plus')
+                );
+            }
+
+        } else {
+            $htm .= '. Related apply rules: <ul class="apply-rules">';
+            foreach ($extra as $id => $service) {
+                $htm .= '<li>'
+                    . $v->qlink($service, 'director/service', array('id' => $id))
+                    . '</li>';
+            }
+            $htm .= '</ul>';
+            $htm .= $v->qlink(
+                'Add more',
+                'director/service/apply',
+                array('template' => $row->service),
+                array('class' => 'icon-plus')
+            );
+        }
+        $htm .= '</td>';
+        return $htm . "  </tr>\n";
     }
 
     public function getTitles()
@@ -52,12 +92,29 @@ class IcingaServiceTable extends IcingaObjectTable
         return $query;
     }
 
+    protected function appliedOnes($id)
+    {
+        $db = $this->connection()->getConnection();
+        $query = $db->select()->from(
+            array('s' => 'icinga_service'),
+            array(
+                'id'         => 's.id',
+                'objectname' => 's.object_name',
+            )
+        )->join(
+            array('i' => 'icinga_service_inheritance'),
+            'i.service_id = s.id',
+            array()
+        )->where('i.parent_service_id = ?', $id)->where('s.object_type = ?', 'apply');
+
+        return $db->fetchPairs($query);
+    }
+
     public function getBaseQuery()
     {
-        // TODO: remove apply
         return $this->getUnfilteredQuery()->where(
             's.object_type IN (?)',
-            array('template', 'apply')
+            array('template')
         );
     }
 }
