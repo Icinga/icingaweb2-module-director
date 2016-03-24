@@ -240,8 +240,8 @@ class KickstartHelper
                 $master,
                 $this->getHost(),
                 $this->getPort(),
-                $ep->getResolvedProperty('host', $ep->object_name),
-                $ep->getResolvedProperty('port'),
+                $ep->get('host', $ep->object_name),
+                $ep->get('port'),
                 $e->getMessage()
             );
         }
@@ -304,8 +304,8 @@ class KickstartHelper
         $ep = $this->deploymentEndpoint;
 
         $client = new RestApiClient(
-            $ep->getResolvedProperty('host', $ep->object_name),
-            $ep->getResolvedProperty('port')
+            $ep->get('host', $ep->object_name),
+            $ep->get('port')
         );
 
         $apiuser = $this->apiUser();
