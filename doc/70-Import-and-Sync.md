@@ -31,9 +31,9 @@ The only tricky part here are the chosen Properties. You must know them and you
 are required to fill them in, no way around this right now. Also please choose one
 column as your key column.
 
-In case you want to avoid trouble please make this the column that corresponds your
-desired object name for the objects you are going to import. Rows duplicating this
-property will be considered erroneous, the Import would fail.
+In case you want to avoid trouble please make this the column that corresponds to
+your desired object name for the objects you are going to import. Rows duplicating
+this property will be considered erroneous, the Import would fail.
 
 #### Property modifiers
 
