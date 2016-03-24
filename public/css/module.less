@@ -516,12 +516,11 @@ fieldset {
     }
 
     &.collapsed {
-
         legend {
             margin: 0;
         }
 
-        dd, dt {
+        dd, dt, ul {
             display: none;
         }
 
@@ -551,6 +550,31 @@ form dt label {
     &:hover {
         text-decoration: underline;
         cursor: pointer;
+    }
+}
+
+ul.assign-rule {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    select, input[type=text] {
+        min-width: auto;
+    }
+
+    select.assign-type {
+        width: 8em;
+    }
+
+    select.assign-operator {
+        width: 3em;
+    }
+
+    select.assign-property {
+        width: 12em;
+    }
+
+    input.assign-expression {
+        width: 12em;
     }
 }
 
@@ -755,6 +779,39 @@ table.icinga-objects {
         content: '\e829';
     }
 
+}
+
+table.assignment-table {
+    ul.apply-rules {
+        margin: 1em 0 1em 0;
+        padding: 0;
+        border: 1px solid @gray-lighter;
+
+        li {
+            display: block;
+
+            a {
+                display: block;
+                float: none;
+                background-color: white;
+                padding: 0.3em 1.5em;
+                &:hover {
+                    background-color: @icinga-blue;
+                    color: white;
+                    text-decoration: none;
+                }
+            }
+        }
+    }
+    a {
+        color: @icinga-blue;
+        float: right;
+
+        &:first-child {
+            float: none;
+            color: inherit;
+        }
+    }
 }
 
 div.content.compact table.icinga-objects thead {
