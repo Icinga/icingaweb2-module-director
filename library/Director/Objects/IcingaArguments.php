@@ -262,7 +262,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     ) {
         $args = array();
         foreach ($this->arguments as $arg) {
-            $args[$arg->argument_name] = $arg->toPlainObject($resolved, $skipDefaults);
+            $args[$arg->argument_name] = $arg->toPlainObject(
+                $resolved,
+                $skipDefaults,
+                null,
+                $resolveIds
+            );
         }
 
         return $args;
