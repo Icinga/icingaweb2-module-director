@@ -136,6 +136,13 @@ abstract class QuickTable implements Paginatable
             $query->limit($this->getLimit(), $this->getOffset());
         }
 
+        $this->applyFiltersToQuery($query);
+
+        return $db->fetchAll($query);
+    }
+
+    protected function applyFiltersToQuery($query)
+    {
         $filter = null;
         $enforced = $this->enforcedFilters;
         if ($this->filter && ! $this->filter->isEmpty()) {
@@ -150,7 +157,7 @@ abstract class QuickTable implements Paginatable
             $query->where($this->renderFilter($filter));
         }
 
-        return $db->fetchAll($query);
+        return $query;
     }
 
     public function getPaginator()
@@ -164,8 +171,11 @@ abstract class QuickTable implements Paginatable
     public function count()
     {
         $db = $this->connection()->getConnection();
+        $query = clone($this->getBaseQuery());
+        $query->reset('order')->columns(array('COUNT(*)'));
+        $this->applyFiltersToQuery($query);
 
-        return $db->fetchOne($this->getBaseQuery()->reset('order')->columns(array('COUNT(*)')));
+        return $db->fetchOne($query);
     }
 
     public function limit($count = null, $offset = null)
