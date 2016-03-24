@@ -432,7 +432,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    protected function assignments()
+    public function assignments()
     {
         if ($this->assignments === null) {
             $this->assignments = new IcingaObjectAssignments($this);
