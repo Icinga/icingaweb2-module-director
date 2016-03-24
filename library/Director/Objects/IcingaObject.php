@@ -1716,6 +1716,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($this->isApplyRule()) {
+            $props['assignments'] = $this->assignments()->getUnmodifiedPlain();
+        }
+
         foreach ($this->relatedSets() as $property => $set) {
             if ($set->isEmpty()) {
                 continue;
