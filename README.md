@@ -10,7 +10,7 @@ It tries to target two main audiences:
 What makes Icinga Director so special is the fact that it tries to target both
 of them at once.
 
-![Icinga Director](https://www.icinga.org/wp-content/uploads/2016/02/director_main_screen.png)
+![Icinga Director](screenshot/director/readme/director_main_screen.png)
 
 Learn more about the Director in the documentation:
 
@@ -18,6 +18,7 @@ Learn more about the Director in the documentation:
 * [Installation](doc/02-Installation.md)
 * [Automation](doc/03-Automation.md)
 * [Getting started](doc/04-Getting-started.md) 
+* [Import and Synchronization](doc/70-Import-and-Sync.md)
 * [REST API](doc/70-REST-API.md) 
 * [FAQ](doc/80-FAQ.md)
 
