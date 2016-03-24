@@ -31,12 +31,17 @@ class AssignRenderer
 
     public function renderAssign()
     {
-        return 'assign where ' . $this->renderFilter($this->filter);
+        return $this->render('assign');
     }
 
     public function renderIgnore()
     {
-        return 'ignore where ' . $this->renderFilter($this->filter);
+        return $this->render('ignore');
+    }
+
+    public function render($type)
+    {
+        return $type . ' where ' . $this->renderFilter($this->filter);
     }
 
     protected function renderFilter(Filter $filter)
