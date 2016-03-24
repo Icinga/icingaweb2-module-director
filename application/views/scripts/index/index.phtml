@@ -89,15 +89,13 @@ $all = array(
         array('host',     $this->translate('Host objects'), 'director/hosts', statSummary($this, 'host')),
         array('services', $this->translate('Monitored Services'), 'director/services', statSummary($this, 'service')),
         array('wrench',   $this->translate('Commands'), 'director/commands', statSummary($this, 'command')),
-    ),
-    $this->translate('Alert your users') => array(
         array('users',    $this->translate('Users / Contacts'), 'director/users', statSummary($this, 'user')),
         array('megaphone', $this->translate('Notifications'), 'director/notifications', $this->translate('Schedule your notifications.') . ' ' . statSummary($this, 'notification')),
         array('calendar', $this->translate('Timeperiods'), 'director/timeperiods', statSummary($this, 'timeperiod')),
-        array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
         array('wrench',   $this->translate('Deployment'), 'director/config/deployments', $this->translate('Config deployment') . pendingDeployments($this), $this->undeployedActivities ? 'warning' : 'ok'),
+        array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
         array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint') . ( $this->hasDeploymentEndpoint ? '' : '. ' . $this->translate('None could be used for deployments right now')), $this->hasDeploymentEndpoint ? '' : 'critical'),
         array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
