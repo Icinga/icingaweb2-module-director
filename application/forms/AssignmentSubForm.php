@@ -1,0 +1,75 @@
+<?php
+
+namespace Icinga\Module\Director\Forms;
+
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Web\Form\QuickSubForm;
+
+class AssignmentSubForm extends QuickSubForm
+{
+    protected $_disableLoadDefaultDecorators = true;
+
+    public function setup()
+    {
+        $this->addElement('select', 'assign_type', array(
+            'multiOptions' => array(
+                'assign' => 'assign where',
+                'ignore' => 'ignore where',
+            ),
+            'class' => 'assign-type',
+            'value' => 'assign'
+        ));
+        $this->addElement('select', 'property', array(
+            'label' => $this->translate('Property'),
+            'class' => 'assign-property autosubmit',
+            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->db))
+        ));
+        $this->addElement('select', 'operator', array(
+            'label' => $this->translate('Operator'),
+            'multiOptions' => array(
+                '='  => '=',
+                '!=' => '!=',
+                '>'  => '>',
+                '>=' => '>=',
+                '<=' => '<=',
+                '<'  => '<',
+            ),
+            'required' => $this->valueIsEmpty($this->getValue('property')),
+            'value' => '=',
+            'class' => 'assign-operator',
+        ));
+
+        $this->addElement('text', 'expression', array(
+            'label'       => $this->translate('Expression'),
+            'placeholder' => $this->translate('Expression'),
+            'class'       => 'assign-expression',
+            'required'    => !$this->valueIsEmpty($this->getValue('property'))
+        ));
+/*
+        $this->addElement('submit', 'remove', array(
+            'label'  => '-',
+            'ignore' => true
+        ));
+        $this->addElement('submit', 'add', array(
+            'label'  => '+',
+            'ignore' => true
+        ));
+*/
+        foreach ($this->getElements() as $el) {
+            $el->setDecorators(array('ViewHelper'));
+        }
+    }
+
+    public function loadDefaultDecorators()
+    {
+        $this->setDecorators(array(
+            'FormElements',
+            array('HtmlTag', array(
+                'tag' => 'li',
+            )),
+                array('FormErrors'),
+        ));
+
+        return $this;
+    }
+}
