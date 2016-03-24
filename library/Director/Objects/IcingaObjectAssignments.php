@@ -20,7 +20,7 @@ class IcingaObjectAssignments
         if (! $object->isApplyRule()) {
             throw new ProgrammingError(
                 'I can only assign for applied objects, got %s',
-                $object->object_name
+                $object->object_type
             );
         }
 
