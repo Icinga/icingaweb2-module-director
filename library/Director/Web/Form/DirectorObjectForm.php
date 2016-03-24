@@ -1024,15 +1024,6 @@ abstract class DirectorObjectForm extends QuickForm
         return ! $this->valueIsEmpty($this->getSentOrObjectValue('object_type'));
     }
 
-    protected function valueIsEmpty($value)
-    {
-        if (is_array($value)) {
-            return empty($value);
-        }
-
-        return strlen($value) === 0;
-    }
-
     protected function addZoneElement()
     {
         if ($this->isTemplate()) {

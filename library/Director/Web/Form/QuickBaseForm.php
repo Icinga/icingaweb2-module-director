@@ -109,6 +109,15 @@ abstract class QuickBaseForm extends Zend_Form
         return FormLoader::load($name, $module);
     }
 
+    protected function valueIsEmpty($value)
+    {
+        if (is_array($value)) {
+            return empty($value);
+        }
+
+        return strlen($value) === 0;
+    }
+
     public function translate($string)
     {
         if ($this->icingaModuleName === null) {
