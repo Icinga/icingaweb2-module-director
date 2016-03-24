@@ -156,6 +156,10 @@ class Db extends DbConnection
     public function storeSetting($name, $value)
     {
         $db = $this->db();
+        if ($this->getSetting($name) === $value) {
+            return $this;
+        }
+
         $updated = $db->update(
             'director_setting',
             array('setting_value' => $value),
