@@ -214,6 +214,10 @@ class ShowController extends ActionController
     protected function createObject($type, $props)
     {
         $props = json_decode($props);
+        return IcingaObject::createByType($type, array(
+            'object_name' => $props->object_name,
+            'object_type' => $props->object_type,
+        ), $this->db())->setProperties((array) $props);
         return IcingaObject::createByType($type, (array) $props, $this->db());
     }
 }
