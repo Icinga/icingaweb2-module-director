@@ -1468,7 +1468,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($resolved) {
             $p = $this->getResolvedProperties();
         } else {
-            $p = $this->getProperties();
+            $p = $this->properties;
         }
 
         foreach ($p as $k => $v) {
