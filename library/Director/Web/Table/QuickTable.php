@@ -39,7 +39,7 @@ abstract class QuickTable implements Paginatable
         return array();
     }
 
-    private function getRowClassesString($row)
+    protected function getRowClassesString($row)
     {
         return $this->createClassAttribute($this->getRowClasses($row));
     }
@@ -70,7 +70,7 @@ abstract class QuickTable implements Paginatable
     protected function renderRow($row)
     {
         $htm = "  <tr" . $this->getRowClassesString($row) . ">\n";
-        $firstRow = true;
+        $firstCol = true;
 
         foreach ($this->getTitles() as $key => $title) {
 
@@ -83,11 +83,11 @@ abstract class QuickTable implements Paginatable
 
             $value = null;
 
-            if ($firstRow) {
+            if ($firstCol) {
                 if ($val !== null && $url = $this->getActionUrl($row)) {
                     $value = $this->view()->qlink($val, $this->getActionUrl($row));
                 }
-                $firstRow = false;
+                $firstCol = false;
             }
 
             if ($value === null) {
