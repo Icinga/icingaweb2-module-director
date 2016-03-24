@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Data\Filter\Filter;
@@ -78,6 +77,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     private $ranges;
 
     private $arguments;
+
+    private $assignments;
 
     private $shouldBeRemoved = false;
 
@@ -297,6 +298,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
+        if ($this->isApplyRule() && $this->assignments !== null && $this->assignments()->hasBeenModified()) {
+            return true;
+        }
+
         foreach ($this->loadedRelatedSets as $set) {
             if ($set->hasBeenModified()) {
                 return true;
@@ -419,6 +424,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->arguments()->setArguments($value);
         return $this;
+    }
+
+    protected function setAssignments($value)
+    {
+        $this->assignments()->setValues($value);
+        return $this;
+    }
+
+    protected function assignments()
+    {
+        if ($this->assignments === null) {
+            $this->assignments = new IcingaObjectAssignments($this);
+        }
+
+        return $this->assignments;
     }
 
     protected function getRanges()
@@ -909,24 +929,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function getAssignments()
     {
-        if (! $this->isApplyRule()) {
-            throw new ProgrammingError('Assignments are available only for apply rules');
-        }
-
-        if (! $this->hasBeenLoadedFromDb()) {
-            return array();
-        }
-
-        $db = $this->getDb();
-
-        $query = $db->select()->from(
-            array('a' => $this->getTableName() . '_assignment'),
-            array(
-                'filter_string' => 'a.filter_string',
-            )
-        )->where('a.' . $this->getShortTableName() . '_id = ?', (int) $this->id);
-
-        return $db->fetchCol($query);
+        return $this->assignments()->getValues();
     }
 
     public function hasProperty($key)
@@ -975,7 +978,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeImports()
             ->storeRanges()
             ->storeRelatedSets()
-            ->storeArguments();
+            ->storeArguments()
+            ->storeAssignments();
     }
 
     protected function beforeStore()
@@ -1035,6 +1039,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         if ($this->supportsArguments()) {
             $this->arguments !== null && $this->arguments()->store();
+        }
+
+        return $this;
+    }
+
+    protected function storeAssignments()
+    {
+        if ($this->isApplyRule()) {
+            $this->assignments !== null && $this->assignments()->store();
         }
 
         return $this;
@@ -1284,20 +1297,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderAssignments()
     {
         if ($this->isApplyRule()) {
-            $rules = $this->getAssignments();
-
-            if (empty($rules)) {
-                return '';
-            }
-
-            $filters = array();
-            foreach ($rules as $rule) {
-                $filters[] = AssignRenderer::forFilter(
-                    Filter::fromQueryString($rule)
-                )->renderAssign();
-            }
-
-            return "\n    " . implode("\n    ", $filters) . "\n";
+            return $this->assignments()->toConfigString();
         } else {
             return '';
         }
@@ -1535,6 +1535,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $resolved,
                 $skipDefaults
             );
+        }
+
+        if ($this->isApplyRule()) {
+            $props['assignments'] = $this->assignments()->getPlain();
         }
 
         if ($this->supportsCustomVars()) {

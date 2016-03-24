@@ -1,0 +1,270 @@
+<?php
+
+namespace Icinga\Module\Director\Objects;
+
+use Icinga\Data\Filter\Filter;
+use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\IcingaConfig\AssignRenderer;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+
+class IcingaObjectAssignments
+{
+    protected $object;
+
+    protected $stored;
+
+    protected $current;
+
+    public function __construct(IcingaObject $object)
+    {
+        if (! $object->isApplyRule()) {
+            throw new ProgrammingError(
+                'I can only assign for applied objects, got %s',
+                $object->object_name
+            );
+        }
+
+        $this->object = $object;
+    }
+
+    public function store()
+    {
+        if ($this->hasBeenModified()) {
+            $this->reallyStore();
+            return true;
+        }
+
+        return false;
+    }
+
+    public function setValues($values)
+    {
+        if (is_string($values)) {
+            return $this->setValues(array($values));
+        }
+
+        $this->current = array();
+        ksort($values);
+
+        foreach ($values as $key => $value) {
+            if (is_numeric($key)) {
+                $this->addRule($value);
+            } else {
+                if (is_string($value)) {
+                    $this->addRule($value, $key);
+                    continue;
+                }
+
+                foreach ($value as $type => $strings) {
+                    if (is_numeric($type)) {
+                        $type = 'assign';
+                    }
+
+                    if (is_string($strings)) {
+                        $this->addRule($strings, $type);
+                    } else {
+                        foreach ($strings as $string) {
+                            $this->addRule($string, $type);
+                        }
+                    }
+                }
+            }
+        }
+
+        return $this;
+    }
+
+    public function getFormValues()
+    {
+        $result = array();
+        foreach ($this->getCurrent() as $rule) {
+            $f = array(
+                'assign_type' => $rule['assign_type']
+            );
+
+            $filter = Filter::fromQueryString($rule['filter_string']);
+echo get_class($filter); exit;
+        }
+    }
+
+    protected function addRule($string, $type = 'assign')
+    {
+        // TODO: validate
+        $this->current[] = array(
+            'assign_type'   => $type,
+            'filter_string' => $this->rerenderFilter($string)
+        );
+
+        return $this;
+    }
+
+    public function getValues()
+    {
+        return $this->getCurrent();
+    }
+
+    public function getUnmodifiedValues()
+    {
+        return $this->getStored();
+    }
+
+    public function toConfigString()
+    {
+        return $this->renderRules($this->getCurrent());
+    }
+
+    public function toUnmodifiedConfigString()
+    {
+        return $this->renderRules($this->getStored());
+    }
+
+    protected function renderRules($rules)
+    {
+        if (empty($rules)) {
+            return '';
+        }
+
+        $filters = array();
+
+        foreach ($rules as $rule) {
+            $filters[] = AssignRenderer::forFilter(
+                Filter::fromQueryString($rule['filter_string'])
+            )->render($rule['assign_type']);
+        }
+
+        return "\n    " . implode("\n    ", $filters) . "\n";
+    }
+
+    public function getPlain()
+    {
+        if ($this->current === null) {
+            if (! $this->object->hasBeenLoadedFromDb()) {
+                return array();
+            }
+
+            $this->current = $this->getStored();
+        }
+
+        return $this->createPlain($this->current);
+    }
+
+    public function getUnmodifiedPlain()
+    {
+        if (! $this->object->hasBeenLoadedFromDb()) {
+            return array();
+        }
+
+        return $this->createPlain($this->getStored());
+    }
+
+    public function hasBeenModified()
+    {
+        if ($this->current === null) {
+            return false;
+        }
+
+        return json_encode($this->getCurrent()) !== json_encode($this->getStored());
+    }
+
+    protected function getCurrent()
+    {
+        if ($this->current === null) {
+            $this->current = $this->getStored();
+        }
+
+        return $this->current;
+    }
+
+    protected function getStored()
+    {
+        if ($this->stored === null) {
+            $this->stored = $this->loadFromDb();
+        }
+
+        return $this->stored;
+    }
+
+    protected function rerenderFilter($string)
+    {
+        return rawurldecode(Filter::fromQueryString($string)->toQueryString());
+    }
+
+    protected function createPlain($dbRows)
+    {
+        $result = array();
+        foreach ($dbRows as $row) {
+            if (! array_key_exists($row['assign_type'], $result)) {
+                $result[$row['assign_type']] = array();
+            }
+
+            $result[$row['assign_type']][] = $row['filter_string'];
+        }
+
+        return $result;
+    }
+
+    protected function getDb()
+    {
+        return $this->object->getDb();
+    }
+
+    protected function loadFromDb()
+    {
+        $db = $this->getDb();
+        $object = $this->object;
+
+        $query = $db->select()->from(
+            $this->getTableName(),
+            array('assign_type', 'filter_string')
+        )->where($this->createWhere())->order('assign_type', 'filter_string');
+
+        $this->stored = array();
+        foreach ($db->fetchAll($query) as $row) {
+            $this->stored[] = (array) $row;
+        }
+
+        return $this->stored;
+    }
+
+    protected function createWhere()
+    {
+        return $this->getRelationColumn()
+            . ' = '
+            . $this->getObjectId();
+    }
+
+    protected function getObjectId()
+    {
+        return (int) $this->object->id;
+    }
+
+    protected function getRelationColumn()
+    {
+        return $this->object->getShortTableName() . '_id';
+    }
+
+    protected function getTableName()
+    {
+        return $this->object->getTableName() . '_assignment';
+    }
+
+    protected function reallyStore()
+    {
+        $db          = $this->getDb();
+        $table       = $this->getTableName();
+        $objectId    = $this->object->id;
+        $relationCol = $this->getRelationColumn();
+
+        $db->delete($table, $this->createWhere());
+
+        foreach ($this->getCurrent() as $row) {
+            $data = (array) $row;
+            $data[$relationCol] = $objectId;
+            $db->insert($table, $data);
+        }
+
+        $this->stored = $this->current;
+
+        return $this;
+    }
+}
