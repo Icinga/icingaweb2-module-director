@@ -761,14 +761,24 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
             $post = $this->getRequest()->getPost();
+            // ?? $this->populate($post);
+            if (array_key_exists('assignlist', $post)) {
+                $object->assignments()->setFormValues($post['assignlist']);
+            }
+
             foreach ($post as $key => $value) {
                 $el = $this->getElement($key);
                 if ($el && ! $el->getIgnore()) {
                     $values[$key] = $value;
                 }
             }
+
         }
         if ($object instanceof IcingaObject) {
+            if ($object->isApplyRule()) {
+                $this->setElementValue('assignlist', $object->assignments()->getFormValues());
+            }
+
             $this->handleProperties($object, $values);
             $this->handleCustomVars($object, $post);
             $this->handleRanges($object, $values);
@@ -1037,7 +1047,7 @@ abstract class DirectorObjectForm extends QuickForm
             'description'  => $this->translate(
                 'Icinga cluster zone. Allows to manually override Directors decisions'
                 . ' of where to deploy your config to. You should consider not doing so'
-                . ' unless you gained enough knowledge of you an Icinga Cluster stack'
+                . ' unless you gained deep understanding of how an Icinga Cluster stack'
                 . ' works'
             ),
             'multiOptions' => $this->optionalEnum($zones)
