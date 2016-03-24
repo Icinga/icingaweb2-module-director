@@ -105,7 +105,8 @@ class IcingaServiceTable extends QuickTable
             array('i' => 'icinga_service_inheritance'),
             'i.service_id = s.id',
             array()
-        )->where('i.parent_service_id = ?', $id)->where('s.object_type = ?', 'apply');
+        )->where('i.parent_service_id = ?', $id)
+         ->where('s.object_type = ?', 'apply');
 
         return $db->fetchPairs($query);
     }
@@ -115,6 +116,7 @@ class IcingaServiceTable extends QuickTable
         return $this->getUnfilteredQuery()->where(
             's.object_type IN (?)',
             array('template')
-        );
+        )->order('CASE WHEN s.check_command_id IS NULL THEN 1 ELSE 0 END')
+         ->order('s.object_name');
     }
 }
