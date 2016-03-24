@@ -1,0 +1,14 @@
+apply Service "___TEST___service" {
+    display_name = "Whatever service"
+    vars.test1 = "string"
+    vars.test2 = 17
+    vars.test3 = false
+    vars.test4 = {
+        "a" = [ "dict", "ionary" ]
+        "this" = "is"
+    }
+
+    assign where match("127.*", host.address)
+    assign where host.vars.env == "test"
+}
+
