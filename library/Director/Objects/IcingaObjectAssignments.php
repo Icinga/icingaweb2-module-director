@@ -44,9 +44,13 @@ class IcingaObjectAssignments
         }
 
         $this->current = array();
+        if (is_object($values)) {
+            $values = (array) $values;
+        }
+
         ksort($values);
 
-        foreach ($values as $key => $value) {
+        foreach ((array) $values as $key => $value) {
             if (is_numeric($key)) {
                 $this->addRule($value);
             } else {
@@ -83,8 +87,51 @@ class IcingaObjectAssignments
             );
 
             $filter = Filter::fromQueryString($rule['filter_string']);
-echo get_class($filter); exit;
+            if (!$filter->isExpression()) {
+                throw new IcingaException(
+                    'We currently support only flat filters in our forms, got %',
+                    (string) $filter
+                );
+            }
+
+            $f['property']   = $filter->getColumn();
+            $f['operator']   = $filter->getSign();
+            $f['expression'] = trim(stripcslashes($filter->getExpression()), '"');
+
+            $result[] = $f;
         }
+
+        return $result;
+    }
+
+    public function setFormValues($values)
+    {
+        $rows = array();
+
+        foreach ($values as $key => $val) {
+            if (! is_numeric($key)) {
+                // Skip buttons or similar
+                continue;
+            }
+
+            if (!array_key_exists($val['assign_type'], $rows)) {
+                $rows[$val['assign_type']] = array();
+            }
+
+            if (empty($val['property'])) {
+                continue;
+            }
+
+            $rows[$val['assign_type']][] = $this->rerenderFilter(
+                implode('', array(
+                    $val['property'],
+                    $val['operator'],
+                    '"' . addcslashes($val['expression'], '"') . '"'
+                ))
+            );
+        }
+
+        return $this->setValues($rows);
     }
 
     protected function addRule($string, $type = 'assign')
