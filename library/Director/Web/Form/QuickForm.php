@@ -9,12 +9,11 @@ use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
 use Exception;
-use Zend_Form;
 
 /**
  * QuickForm wants to be a base class for simple forms
  */
-abstract class QuickForm extends Zend_Form
+abstract class QuickForm extends QuickBaseForm
 {
     const ID = '__FORM_NAME';
 
@@ -60,14 +59,6 @@ abstract class QuickForm extends Zend_Form
      */
     protected $didSetup = false;
 
-    /**
-     * The Icinga module this form belongs to. Usually only set if the
-     * form is initialized through the FormLoader
-     */
-    protected $icingaModule;
-
-    protected $icingaModuleName;
-
     protected $hintCount = 0;
 
     protected $isApiRequest = false;
@@ -75,20 +66,6 @@ abstract class QuickForm extends Zend_Form
     public function __construct($options = null)
     {
         parent::__construct($this->handleOptions($options));
-
-        $basedir = Icinga::app()
-            ->getModuleManager()
-            ->getModule('director')
-            ->getLibDir()
-            . '/Director/Web/Form';
-
-        $this->addPrefixPaths(array(
-            array(
-                'prefix'    => __NAMESPACE__ . '\\Element\\',
-                'path'      => $basedir . '/Element',
-                'type'      => static::ELEMENT
-            )
-        ));
 
         $this->setMethod('post');
         $this->setAction(Url::fromRequest());
@@ -102,21 +79,6 @@ abstract class QuickForm extends Zend_Form
                 'Form'
             )
         );
-    }
-
-    protected function handleOptions($options = null)
-    {
-        if ($options === null) {
-            return $options;
-        }
-
-        if (array_key_exists('icingaModule', $options)) {
-            $this->icingaModule = $options['icingaModule'];
-            $this->icingaModuleName = $this->icingaModule->getName();
-            unset($options['icingaModule']);
-        }
-
-        return $options;
     }
 
     protected function addSubmitButtonIfSet()
@@ -212,15 +174,6 @@ abstract class QuickForm extends Zend_Form
         return $this->isApiRequest;
     }
 
-    protected function loadForm($name, Module $module = null)
-    {
-        if ($module === null) {
-            $module = $this->icingaModule;
-        }
-
-        return FormLoader::load($name, $module);
-    }
-
     public function regenerateCsrfToken()
     {
         if (! $element = $this->getElement(self::CSRF)) {
@@ -236,49 +189,6 @@ abstract class QuickForm extends Zend_Form
     {
         $this->removeElement(self::CSRF);
         return $this;
-    }
-
-    public function addHidden($name, $value = null)
-    {
-        $this->addElement('hidden', $name);
-        $el = $this->getElement($name);
-        $el->setDecorators(array('ViewHelper'));
-        if ($value !== null) {
-            $this->setDefault($name, $value);
-            $el->setValue($value);
-        }
-    
-        return $this;
-    }
-
-    public function addHtmlHint($html, $options = array())
-    {
-        return $this->addHtml('<div class="hint">' . $html . '</div>', $options);
-    }
-
-    public function addHtml($html, $options = array())
-    {
-        if (array_key_exists('name', $options)) {
-            $name = $options['name'];
-            unset($options['name']);
-        } else {
-            $name = '_HINT' . ++$this->hintCount;
-        }
-
-        $this->addElement('simpleNote', $name, $options);
-        $this->getElement($name)
-            ->setValue($html)
-            ->setIgnore(true)
-            ->setDecorators(array('ViewHelper'));
-
-        return $this;
-    }
-
-    public function optionalEnum($enum)
-    {
-        return array(
-            null => $this->translate('- please choose -')
-        ) + $enum;
     }
 
     public function setSuccessUrl($url, $params = null)
@@ -322,12 +232,6 @@ abstract class QuickForm extends Zend_Form
         }
 
         return parent::setAction($action);
-    }
-
-    public function setIcingaModule(Module $module)
-    {
-        $this->icingaModule = $module;
-        return $this;
     }
 
     public function hasBeenSubmitted()
@@ -418,15 +322,6 @@ abstract class QuickForm extends Zend_Form
         }
 
         return $this;
-    }
-
-    public function translate($string)
-    {
-        if ($this->icingaModuleName === null) {
-            return t($string);
-        } else {
-            return mt($this->icingaModuleName, $string);
-        }
     }
 
     public function onSuccess()
