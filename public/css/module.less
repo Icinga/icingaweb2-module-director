@@ -120,6 +120,19 @@ form input[type=submit]:first-of-type {
     border-width: 2px;
 }
 
+form input[type=submit].link-button {
+  color: @icinga-blue;
+  background: none;
+  border: none;
+  padding: 0;
+
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 form p.description {
   padding: 1em 1em;
   margin: 0;
