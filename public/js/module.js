@@ -223,7 +223,7 @@
         fixFieldsetInfo: function($fieldset) {
             if ($fieldset.hasClass('collapsed')) {
                 if ($fieldset.find('legend span.element-count').length === 0) {
-                    var cnt = $fieldset.find('dt').length;
+                    var cnt = $fieldset.find('dt, li').length;
                     $fieldset.find('legend').append($('<span class="element-count"> (' + cnt + ')</span>'));
                 }
             } else {
