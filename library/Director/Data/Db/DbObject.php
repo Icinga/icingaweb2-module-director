@@ -398,12 +398,18 @@ abstract class DbObject
      */
     public function getProperties()
     {
+        //return $this->properties;
         $res = array();
         foreach ($this->listProperties() as $key) {
             $res[$key] = $this->get($key);
         }
 
         return $res;
+    }
+
+    protected function getPropertiesForDb()
+    {
+        return $this->properties;
     }
 
     public function listProperties()
@@ -650,7 +656,7 @@ abstract class DbObject
      */
     protected function insertIntoDb()
     {
-        $properties = $this->getProperties();
+        $properties = $this->getPropertiesForDb();
         if ($this->autoincKeyName !== null) {
             unset($properties[$this->autoincKeyName]);
         }
