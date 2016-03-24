@@ -106,6 +106,9 @@
         formElementFocus: function(ev)
         {
             var $input = $(ev.currentTarget);
+            if ($input.closest('form.editor').length) {
+               return;
+            }
             var $dd = $input.closest('dd');
             $dd.find('p.description').show();
             if ($dd.attr('id') && $dd.attr('id').match(/button/)) {
@@ -114,6 +117,7 @@
             var $li = $input.closest('li');
             var $dt = $dd.prev();
             var $form = $dt.closest('form');
+
             $form.find('dt, dd, li').removeClass('active');
             $li.addClass('active');
             $dt.addClass('active');
