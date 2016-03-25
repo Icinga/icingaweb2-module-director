@@ -4,11 +4,20 @@ Frequently Asked Questions
 I got an exception...
 ---------------------
 
-* "Refusing to render the configuration, your DB layer corrupts binary data. You might be affected by Zend Framework bug #655"
+    Refusing to render the configuration, your DB layer corrupts binary data. You might be affected by Zend Framework bug #655
 
 Sad but true. Zend Framework 1.12.16 and 1.12.17 silently corrupt binary data. You can either wait for 1.12.18 or downgrade to an earlier version. Debian Stable currently ships 1.12.9, but as they backported the involved erraneous security bug their version is affected too.
 
 You could also manually fix this issue in `/usr/share/php/Zend/Db/Adapter/Pdo/Abstract.php`. Search for the `_quote` function and delete the line saying `$value = addcslashes($value, "\000\032");`. Please note that doing so would fix all problems, but re-introduce a potential security issue affecting the MSSQL and Sqlite adapters.
+
+    SQLSTATE[HY000]: General error: 2014 Cannot execute queries while other unbuffered queries are active.
+
+This happens with some PHP versions, we have not been able to figure out which ones and why. However, we found a workaround and and fixed this in Icinga Web 2. Please pull from the current Icinga Web 2 master or at least apply this fix to your installation:
+
+https://git.icinga.org/?p=icingaweb2.git;a=commitdiff;h=ea871ea032c78f58fa43bd672b96c5a66339fcf3;js=1
+
+You probably didn't notice this error before as in most environments the IDO for historical reasons isn't configured for UTF-8.
+
 
 My Director doesn't look as good as on your screenshots
 -------------------------------------------------------
