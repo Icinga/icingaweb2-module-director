@@ -735,6 +735,9 @@ class Db extends DbConnection
         )->order('o.object_name');
 
         $res = $this->db()->fetchCol($select);
+        if (empty($res)) {
+            return array();
+        }
 
         return array_combine($res, $res);
     }
