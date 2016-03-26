@@ -36,10 +36,27 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addGroupsElement()
              ->addDisabledElement()
              ->groupMainProperties()
+             ->addAssignmentElements()
              ->addCheckCommandElements()
              ->addCheckExecutionElements()
              ->addAgentAndZoneElements()
              ->setButtons();
+    }
+
+    protected function addAssignmentElements()
+    {
+        if (!$this->object || !$this->object->isApplyRule()) {
+            return $this;
+        }
+
+        $sub = new AssignListSubForm();
+        $sub->setObject($this->getObject());
+        $sub->setup();
+        $sub->setOrder(30);
+
+        $this->addSubForm($sub, 'assignlist');
+
+        return $this;
     }
 
     protected function setupHostRelatedElements()
