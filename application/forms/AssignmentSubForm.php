@@ -7,7 +7,9 @@ use Icinga\Module\Director\Web\Form\QuickSubForm;
 
 class AssignmentSubForm extends QuickSubForm
 {
+    // @codingStandardsIgnoreStart
     protected $_disableLoadDefaultDecorators = true;
+    // @codingStandardsIgnoreEnd
 
     public function setup()
     {
