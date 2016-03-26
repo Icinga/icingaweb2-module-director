@@ -32,6 +32,12 @@ https://git.icinga.org/?p=icingaweb2.git;a=commitdiff;h=ea871ea032c78f58fa43bd67
 You probably didn't notice this error before as in most environments the IDO for historical reasons isn't configured for UTF-8.
 
 
+Import succeeded but nothing happened
+-------------------------------------
+
+Import and Sync are different tasks, you need to `Run` both of them. This allows us to combine multiple import sources, even it if some of them are slow or failing from time to time. It's easy to oversee those links right now, we'll fix this soon.
+
+
 My Director doesn't look as good as on your screenshots
 -------------------------------------------------------
 
