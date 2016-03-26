@@ -48,8 +48,8 @@ class IcingaServiceTable extends QuickTable
             if ($row->check_command_id) {
                 $htm .= ' ' . $v->qlink(
                     'Create apply-rule',
-                    'director/service/apply',
-                    array('template' => $row->service),
+                    'director/service/add',
+                    array('apply' => $row->service),
                     array('class'    => 'icon-plus')
                 );
             }
@@ -64,8 +64,8 @@ class IcingaServiceTable extends QuickTable
             $htm .= '</ul>';
             $htm .= $v->qlink(
                 'Add more',
-                'director/service/apply',
-                array('template' => $row->service),
+                'director/service/add',
+                array('apply' => $row->service),
                 array('class' => 'icon-plus')
             );
         }
