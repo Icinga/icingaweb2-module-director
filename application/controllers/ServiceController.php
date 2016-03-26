@@ -10,6 +10,8 @@ class ServiceController extends ObjectController
 {
     protected $host;
 
+    protected $apply;
+
     protected function beforeTabs()
     {
         if ($this->host) {
@@ -27,15 +29,16 @@ class ServiceController extends ObjectController
             $this->host = IcingaHost::load($host, $this->db());
         }
 
+        if ($apply = $this->params->get('apply')) {
+            $this->apply = IcingaService::load(
+                array('object_name' => $apply, 'object_type' => 'template'),
+                $this->db()
+            );
+        }
+
         parent::init();
 
-        if ($this->object && $this->object->object_type === 'apply') {
-            $this->getTabs()->add('assign', array(
-                'url'       => 'director/service/assign',
-                'urlParams' => $this->object->getUrlParams(),
-                'label'     => $this->translate('Assign')
-            ));
-
+        if ($this->object) {
             if ($this->host) {
                 foreach ($this->getTabs()->getTabs() as $tab) {
                     $tab->getUrl()->setParam('host', $this->host->object_name);
@@ -58,31 +61,64 @@ class ServiceController extends ObjectController
         if ($this->host) {
             $this->view->title = $this->host->object_name . ': ' . $this->view->title;
         }
+
+        if ($this->apply) {
+            $this->view->title = sprintf(
+                $this->translate('Apply "%s"'),
+                $this->apply->object_name
+            );
+
+            $form = $this->view->form;
+            if (!$form->hasBeenSent()) {
+                $form->populate(array(
+                    'imports'     => $this->apply->object_name,
+                    'object_name' => $this->apply->object_name,
+                    'object_type' => 'apply',
+                ));
+            }
+        }
+    }
+
+    public function editAction()
+    {
+        parent::editAction();
+        $object = $this->object;
+        if ($object->isTemplate()
+            && $object->getResolvedProperty('check_command_id')
+        ) {
+
+            $this->view->actionLinks .= ' ' . $this->view->qlink(
+                'Create apply-rule',
+                'director/service/add',
+                array('apply' => $object->object_name),
+                array('class'    => 'icon-plus')
+            );
+
+        }
     }
 
     public function assignAction()
     {
-        $this->getTabs()->activate('assign');
-        $this->view->form = $form = $this->loadForm('icingaServiceAssignment');
-        $form
-            ->setIcingaObject($this->object)
-            ->setDb($this->db());
-        if ($id = $this->params->get('rule_id')) {
-            $this->view->actionLinks = $this->view->qlink(
-                $this->translate('back'),
-                $this->getRequest()->getUrl()->without('rule_id'),
-                null,
-                array('class' => 'icon-left-big')
-            );
-            $form->loadObject($id);
-        }
-        $form->handleRequest();
+        $service = $this->object;
+        $this->view->stayHere = true;
 
-        $this->view->table = $this->loadTable('icingaObjectAssignment')
-            ->setObject($this->object);
+        $this->view->actionLinks = $this->view->qlink(
+            $this->translate('back'),
+            $this->getRequest()->getUrl()->without('rule_id'),
+            null,
+            array('class' => 'icon-left-big')
+        );
 
-        $this->view->title = 'Assign service to host';
-        $this->render('object/fields', null, true); // TODO: render table
+        $this->getTabs()->activate('applied');
+        $this->view->title = sprintf(
+            $this->translate('Apply: %s'),
+            $service->object_name
+        );
+        $this->view->table = $this->loadTable('IcingaAppliedService')
+            ->setService($service)
+            ->setConnection($this->db());
+
+        $this->setViewScript('objects/table');
     }
 
     public function loadForm($name)
