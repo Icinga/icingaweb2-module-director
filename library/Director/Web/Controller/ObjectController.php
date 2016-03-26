@@ -135,7 +135,7 @@ abstract class ObjectController extends ActionController
             $this->translate('Config preview: %s'),
             $object->object_name
         );
-        $this->render('object/show', null, true);
+        $this->setViewScript('object/show');
     }
 
     public function editAction()
@@ -254,7 +254,7 @@ abstract class ObjectController extends ActionController
             ->loadTable('icingaObjectDatafield')
             ->setObject($object);
 
-        $this->render('object/fields', null, true);
+        $this->setViewScript('object/fields');
     }
 
     public function historyAction()
@@ -274,7 +274,7 @@ abstract class ObjectController extends ActionController
                 ->setLastDeployedId($lastDeployedId)
                 ->filterObject('icinga_' . $type, $this->object->object_name)
         );
-        $this->render('object/history', null, true);
+        $this->setViewScript('object/history');
     }
 
     protected function getType()
