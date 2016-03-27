@@ -393,6 +393,13 @@ constants
         ));
     }
 
+    public function getHostGroupObjects()
+    {
+        return $this->getDirectorObjects('HostGroup', 'HostGroup', 'hostgroups', array(
+            'display_name'          => 'display_name',
+        ));
+    }
+
     public function getCheckCommandObjects()
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
