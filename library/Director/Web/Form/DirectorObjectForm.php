@@ -1212,12 +1212,12 @@ abstract class DirectorObjectForm extends QuickForm
             return array();
         }
 
-        $tpl = array_combine($tpl, $tpl);
-        $id = $object->object_name;
+        $id = $object->id;
 
         if (array_key_exists($id, $tpl)) {
             unset($tpl[$id]);
         }
+        $tpl = array_combine($tpl, $tpl);
         return $tpl;
     }
 
