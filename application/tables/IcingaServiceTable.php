@@ -94,12 +94,23 @@ class IcingaServiceTable extends QuickTable
 
     protected function appliedOnes($id)
     {
+        if ($this->connection()->isPgsql()) {
+            $nameCol = "s.object_name || COALESCE(': ' || ARRAY_TO_STRING(ARRAY_AGG("
+                . "a.assign_type || ' where ' || a.filter_string"
+                . " ORDER BY a.assign_type, a.filter_string), ', '), '')";
+        } else {
+            $nameCol = "s.object_name || COALESCE(': ' || GROUP_CONCAT("
+                . "a.assign_type || ' where ' || a.filter_string"
+                . " ORDER BY a.assign_type, a.filter_string SEPARATOR ', '"
+                . "), '')";
+        }
+
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('s' => 'icinga_service'),
             array(
                 'id'         => 's.id',
-                'objectname' => 's.object_name',
+                'objectname' => $nameCol,
             )
         )->join(
             array('i' => 'icinga_service_inheritance'),
@@ -107,6 +118,12 @@ class IcingaServiceTable extends QuickTable
             array()
         )->where('i.parent_service_id = ?', $id)
          ->where('s.object_type = ?', 'apply');
+
+        $query->joinLeft(
+            array('a' => 'icinga_service_assignment'),
+            'a.service_id = s.id',
+            array()
+        )->group('s.id');
 
         return $db->fetchPairs($query);
     }
