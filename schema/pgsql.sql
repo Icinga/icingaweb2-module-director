@@ -1159,6 +1159,7 @@ CREATE TABLE icinga_notification_assignment (
   id bigserial,
   notification_id integer NOT NULL,
   filter_string TEXT NOT NULL,
+  assign_type enum_assign_type NOT NULL DEFAULT 'assign',
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_assignment
     FOREIGN KEY (notification_id)
@@ -1472,4 +1473,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (90, NOW());
+  VALUES (91, NOW());

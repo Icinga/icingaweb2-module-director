@@ -1035,6 +1035,7 @@ CREATE TABLE icinga_notification_assignment (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   notification_id INT(10) UNSIGNED NOT NULL,
   filter_string TEXT NOT NULL,  
+  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_assignment
     FOREIGN KEY notification (notification_id)
@@ -1259,4 +1260,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 90;
+      schema_version = 91;
