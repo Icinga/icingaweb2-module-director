@@ -575,6 +575,11 @@ class Db extends DbConnection
         return $this->enumIcingaObjects('command');
     }
 
+    public function enumTimeperiods()
+    {
+        return $this->enumIcingaObjects('timeperiod');
+    }
+
     public function enumCheckcommands()
     {
         $filters = array(

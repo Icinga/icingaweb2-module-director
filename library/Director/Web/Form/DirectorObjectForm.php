@@ -1153,6 +1153,23 @@ abstract class DirectorObjectForm extends QuickForm
             )
         );
 
+        $periods = $this->db->enumTimeperiods();
+        if (!empty($periods)) {
+
+            $this->addElement(
+                'select',
+                'check_period_id',
+                array(
+                    'label' => $this->translate('Check period'),
+                    'description' => $this->translate(
+                        'The name of a time period which determines when this'
+                        . ' object should be monitored. Not limited by default.'
+                    ),
+                    'multiOptions' => $this->optionalEnum($periods),
+                )
+            );
+        }
+
         $this->optionalBoolean(
             'enable_active_checks',
             $this->translate('Execute active checks'),
@@ -1192,6 +1209,7 @@ abstract class DirectorObjectForm extends QuickForm
         $elements = array(
             'check_interval',
             'retry_interval',
+            'check_period_id',
             'enable_active_checks',
             'enable_passive_checks',
             'enable_notifications',
