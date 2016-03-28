@@ -93,10 +93,21 @@ class IcingaCommandArgument extends IcingaObject
             $data['description'] = $this->description;
         }
 
-        if (array_keys($data) === array('value')) {
-            return $data['value'];
+        if ($resolveIds) {
+            if (array_keys($data) === array('value')) {
+                return $data['value'];
+            } else {
+                return (object) $data;
+            }
         } else {
-            return $data;
+            unset($data['value']);
+            unset($data['order']);
+            $data['sort_order'] = $this->sort_order;
+            $data['command_id']    = $this->command_id;
+            $data['argument_name'] = $this->argument_name;
+            $data['argument_value'] = $this->argument_value;
+            $data['argument_format'] = $this->argument_format;
+            return (object) $data;
         }
     }
 
