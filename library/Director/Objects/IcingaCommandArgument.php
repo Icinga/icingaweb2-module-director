@@ -81,11 +81,11 @@ class IcingaCommandArgument extends IcingaObject
             $data['set_if'] = $this->set_if;
         }
 
-        if ($this->required) {
+        if ($this->required !== null) {
             $data['required'] = $this->required === 'y';
         }
 
-        if ($this->repeat_key) {
+        if ($this->repeat_key !== null) {
             $data['repeat_key'] = $this->repeat_key === 'y';
         }
 
