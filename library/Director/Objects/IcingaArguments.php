@@ -70,6 +70,10 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     public function get($key)
     {
         if (array_key_exists($key, $this->arguments)) {
+            if ($this->arguments[$key]->shouldBeRemoved()) {
+                return null;
+            }
+
             return $this->arguments[$key];
         }
 
@@ -79,10 +83,15 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     public function set($key, $value)
     {
         $argument = IcingaCommandArgument::create($this->mungeCommandArgument($key, $value));
+        $key = $argument->argument_name;
         if (array_key_exists($key, $this->arguments)) {
             $this->arguments[$key]->replaceWith($argument);
+            if ($this->arguments[$key]->hasBeenModified()) {
+                $this->modified = true;
+            }
         } else {
             $this->add($argument);
+            $this->modified = true;
         }
 
         return $this;
@@ -121,7 +130,6 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
                         $attrs['argument_value'] = '/* Unable to fetch function body through API */';
                         $attrs['argument_format'] = 'expression';
                     } else {
-                        var_dump($value);
                         die('Unable to resolve command argument');
                     }
                 } else {
@@ -130,7 +138,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
                         $attrs['argument_value'] = $argValue;
                         $attrs['argument_format'] = 'string';
                     } else {
-                        $attrs['argument_value'] = json_encode($argValue);
+                        $attrs['argument_value'] = $argValue;
                         $attrs['argument_format'] = 'json';
                     }
                 }
@@ -140,7 +148,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
                 $attrs['argument_value'] = $value;
                 $attrs['argument_format'] = 'string';
             } else {
-                $attrs['argument_value'] = json_encode($value);
+                $attrs['argument_value'] = $value;
                 $attrs['argument_format'] = 'json';
             }
         }
@@ -177,11 +185,10 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             array_keys($this->arguments),
             array_keys($arguments)
         ) as $arg) {
-            $this->remove($arg);
+            $this->arguments[$arg]->markForRemoval();
+            $this->modified = true;
         }
 
-        // Didn't check diff;
-        $this->modified = true;
         return $this;
     }
 
@@ -247,7 +254,8 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         )->where('o.object_name = ?', $this->object->object_name)
         ->order('a.sort_order')->order('a.argument_name');
 
-        $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'id');
+        $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'argument_name');
+var_dump(count($this->arguments));
         $this->cloneStored();
         $this->refreshIndex();
 
@@ -262,6 +270,10 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     ) {
         $args = array();
         foreach ($this->arguments as $arg) {
+            if ($arg->shouldBeRemoved()) {
+                continue;
+            }
+
             $args[$arg->argument_name] = $arg->toPlainObject(
                 $resolved,
                 $skipDefaults,
@@ -276,8 +288,8 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     public function toUnmodifiedPlainObject()
     {
         $args = array();
-        foreach ($this->storedArguments as $arg) {
-            $args[] = $arg->toPlainObject();
+        foreach ($this->storedArguments as $key => $arg) {
+            $args[$arg->argument_name] = $arg->toPlainObject();
         }
 
         return $args;
@@ -301,9 +313,22 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     {
         $db = $this->object->getConnection();
 
-        foreach ($this->arguments as $argument) {
-            $argument->command_id = $this->object->id;
-            $argument->store($db);
+        $dummy = IcingaCommandArgument::create();
+
+        $deleted = array();
+        foreach ($this->arguments as $key => $argument) {
+            if ($argument->shouldBeRemoved()) {
+                $argument->delete();
+                unset($this->arguments[$key]);
+                $deleted[] = $key;
+            } else {
+                $argument->command_id = $this->object->id;
+                $argument->store($db);
+            }
+        }
+
+        foreach ($deleted as $key) {
+            unset($this->arguments[$key]);
         }
 
         return $this;
@@ -317,6 +342,10 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
         $args = array();
         foreach ($this->arguments as $arg) {
+            if ($arg->shouldBeRemoved()) {
+                continue;
+            }
+
             $args[$arg->argument_name] = $arg->toConfigString();
         }
         return c::renderKeyValue('arguments', c::renderDictionary($args));
