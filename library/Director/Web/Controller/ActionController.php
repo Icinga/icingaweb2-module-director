@@ -219,6 +219,18 @@ abstract class ActionController extends Controller
         return $this;
     }
 
+    protected function getApiIfAvailable()
+    {
+        if ($this->api === null) {
+            if ($this->db->hasDeploymentEndpoint()) {
+                $endpoint = $this->db()->getDeploymentEndpoint();
+                $this->api = $endpoint->api();
+            }
+        }
+
+        return $this->api;
+    }
+
     protected function api($endpointName = null)
     {
         if ($this->api === null) {

@@ -148,7 +148,7 @@ abstract class ObjectController extends ActionController
         $formName = 'icinga' . $type;
         $this->view->form = $form = $this->loadForm($formName)
             ->setDb($this->db())
-            ->setApi($this->api());
+            ->setApi($this->getApiIfAvailable());
         $form->setObject($object);
 
         $this->view->title = $object->object_name;
@@ -177,7 +177,7 @@ abstract class ObjectController extends ActionController
         $url = sprintf('director/%ss', $ltype);
         $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
-            ->setApi($this->api())
+            ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
         $this->view->title = sprintf(
