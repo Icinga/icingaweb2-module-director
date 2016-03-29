@@ -1235,6 +1235,11 @@ abstract class DirectorObjectForm extends QuickForm
         if (array_key_exists($id, $tpl)) {
             unset($tpl[$id]);
         }
+
+        if (empty($tpl)) {
+            return array();
+        }
+
         $tpl = array_combine($tpl, $tpl);
         return $tpl;
     }
