@@ -24,11 +24,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function setupServiceElements()
     {
-        $this->addObjectTypeElement();
-        if (! $this->hasObjectType()) {
-            return $this->groupMainProperties();
-        }
-
+        $this->addHidden('object_type', 'template');
 
         $this->addNameElement()
              ->addHostObjectElement()
