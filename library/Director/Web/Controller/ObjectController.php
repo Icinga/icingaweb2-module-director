@@ -185,8 +185,14 @@ abstract class ObjectController extends ActionController
             ucfirst($ltype)
         );
 
+        $this->beforeHandlingAddRequest($form);
+
         $form->handleRequest();
         $this->setViewScript('object/form');
+    }
+
+    protected function beforeHandlingAddRequest($form)
+    {
     }
 
     public function cloneAction()

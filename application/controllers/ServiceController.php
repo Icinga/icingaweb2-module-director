@@ -79,6 +79,20 @@ class ServiceController extends ObjectController
         }
     }
 
+    protected function beforeHandlingAddRequest($form)
+    {
+        if ($this->apply) {
+            if (!$form->hasBeenSent()) {
+                $form->populate(array(
+                    'imports'     => $this->apply->object_name,
+                    'object_name' => $this->apply->object_name,
+                    'object_type' => 'apply',
+                ));
+                $form->getObject()->object_type = 'apply';
+            }
+        }
+    }
+
     public function editAction()
     {
         parent::editAction();
