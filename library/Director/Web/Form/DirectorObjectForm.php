@@ -1153,6 +1153,17 @@ abstract class DirectorObjectForm extends QuickForm
             )
         );
 
+        $this->addElement(
+            'text',
+            'max_check_attempts',
+            array(
+                'label' => $this->translate('Max check attempts'),
+                'description' => $this->translate(
+                    'Defines after how many check attempts a new hard state is reached'
+                )
+            )
+        );
+
         $periods = $this->db->enumTimeperiods();
         if (!empty($periods)) {
 
@@ -1209,6 +1220,7 @@ abstract class DirectorObjectForm extends QuickForm
         $elements = array(
             'check_interval',
             'retry_interval',
+            'max_check_attempts',
             'check_period_id',
             'enable_active_checks',
             'enable_passive_checks',
