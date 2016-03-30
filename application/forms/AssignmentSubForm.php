@@ -24,7 +24,7 @@ class AssignmentSubForm extends QuickSubForm
         $this->addElement('select', 'property', array(
             'label' => $this->translate('Property'),
             'class' => 'assign-property autosubmit',
-            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->db))
+            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->db, 'host.'))
         ));
         $this->addElement('select', 'operator', array(
             'label' => $this->translate('Operator'),
