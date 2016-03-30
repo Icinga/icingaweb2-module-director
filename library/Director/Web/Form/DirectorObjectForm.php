@@ -162,10 +162,26 @@ abstract class DirectorObjectForm extends QuickForm
         if (! is_array($elements)) {
             $elements = array($elements);
         }
+
+        // These are optional elements, they might exist or not. We still want
+        // to see exception for other ones
+        $skipLegally = array('check_period_id');
+
+        $skip = array();
         foreach ($elements as $k => $v) {
             if (is_string($v)) {
-                $elements[$k] = $this->getElement($v);
+                $el = $this->getElement($v);
+                if (!$el && in_array($v, $skipLegally)) {
+                    $skip[] = $k;
+                    continue;
+                }
+
+                $elements[$k] = $el;
             }
+        }
+
+        foreach ($skip as $k) {
+            unset($elements[$k]);
         }
 
         if (! array_key_exists($group, $this->displayGroups)) {
