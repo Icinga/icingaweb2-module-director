@@ -77,39 +77,63 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
-    public static function enumProperties(DbConnection $connection = null)
+    public static function enumProperties(DbConnection $connection = null, $prefix = '')
     {
-        $properties = array_merge(
-            array('name'),
-            static::create()->listProperties()
-        );
-        $props = mt('director', 'Properties');
-        $vars  = mt('director', 'Custom variables');
-        $properties = array(
-            $props => array_combine($properties, $properties),
-            $vars => array()
+        $hostProperties = array($prefix . 'name' => 'name');
+        $realProperties = static::create()->listProperties();
+        sort($realProperties);
+
+        $blacklist = array(
+            'id',
+            'object_name',
+            'object_type',
+            'disabled',
+            'has_agent',
+            'master_should_connect',
+            'accept_config',
         );
 
-        unset($properties[$props]['object_name']);
-        unset($properties[$props]['object_type']);
+        foreach ($realProperties as $prop) {
+            if (in_array($prop, $blacklist)) {
+                continue;
+            }
 
+            if (substr($prop, -3) === '_id') {
+                $prop = substr($prop, 0, -3);
+            }
+
+            $hostProperties[$prefix . $prop] = $prop;
+        }
+
+        $hostVars = array();
         if ($connection !== null) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
                 if ($var->datatype) {
-                    $properties[$vars]['vars.' . $var->varname] = sprintf(
+                    $hostVars[$prefix . 'vars.' . $var->varname] = sprintf(
                         '%s (%s)',
                         $var->varname,
                         $var->caption
                     );
                 } else {
-                    $properties[$vars]['vars.' . $var->varname] = $var->varname;
+                    $hostVars[$prefix . 'vars.' . $var->varname] = $var->varname;
                 }
             }
         }
 
         //$properties['vars.*'] = 'Other custom variable';
-        ksort($properties[$vars]);
-        ksort($properties[$props]);
+        ksort($hostVars);
+
+
+        $props = mt('director', 'Host properties');
+        $vars  = mt('director', 'Custom variables');
+        $properties = array(
+            $props => $hostProperties,
+        );
+
+        if (!empty($hostVars)) {
+            $properties[$vars] = $hostVars;
+        }
+
         return $properties;
     }
 
