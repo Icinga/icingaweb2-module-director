@@ -229,10 +229,17 @@ class KickstartHelper
             );
         }
 
+        $ep = $this->deploymentEndpoint;
+
+        $epHost = $ep->get('host');
+        if (!$epHost) {
+            $epHost = $ep->object_name;
+        }
+
         try {
             $this->switchToDeploymentApi()->getStatus();
         } catch (Exception $e) {
-            $ep = $this->deploymentEndpoint;
+
             throw new ConfigurationError(
                 'I was unable to re-establish a connection to the Endpoint "%s" (%s:%d).'
                 . ' When reconnecting to the configured Endpoint (%s:%d) I get an error: %s'
@@ -240,7 +247,7 @@ class KickstartHelper
                 $master,
                 $this->getHost(),
                 $this->getPort(),
-                $ep->get('host', $ep->object_name),
+                $epHost,
                 $ep->get('port'),
                 $e->getMessage()
             );
@@ -303,8 +310,13 @@ class KickstartHelper
         unset($this->api);
         $ep = $this->deploymentEndpoint;
 
+        $epHost = $ep->get('host');
+        if (!$epHost) {
+            $epHost = $ep->object_name;
+        }
+
         $client = new RestApiClient(
-            $ep->get('host', $ep->object_name),
+            $epHost,
             $ep->get('port')
         );
 
