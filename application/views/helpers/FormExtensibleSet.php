@@ -217,7 +217,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 
         return '<input type="submit" class="related-action action-add"'
             . ' name="' . $name . '___ADD"'
-            . ' value="&#xe805;"'
+            . ' value="&#x271a;"'
             . ' title="' . $v->translate('Add a new entry') . '"'
             . $disabled
             . ' />';
@@ -229,7 +229,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 
         return '<input type="submit" class="related-action action-remove"'
             . ' name="' . $name . '_' . $cnt . '__REMOVE' . '"'
-            . ' value="&#xe804;"'
+            . ' value="&#x2672;"'
             . ' title="' . $v->translate('Remove this entry') . '"'
             . $disabled
             . ' />';
@@ -241,7 +241,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 
         return '<input type="submit" class="related-action action-move-up"'
             . ' name="' . $name . '_' . $cnt . '__MOVE_UP"'
-            . ' value="&#xe825;"'
+            . ' value="&#x25b2;"'
             . ' title="' . $v->translate('Move up') . '"'
             . $disabled
             . ' />';
@@ -253,7 +253,7 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
 
         return '<input type="submit" class="related-action action-move-down"'
             . ' name="' . $name . '_' . $cnt . '__MOVE_DOWN"'
-            . ' value="&#xe828;"'
+            . ' value="&#x25bc;"'
             . ' title="' . $v->translate('Move down') . '"'
             . $disabled
             . ' />';
