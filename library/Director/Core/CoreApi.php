@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Core;
 
 use Exception;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -21,7 +22,7 @@ class CoreApi
     }
 
     // Todo: type
-    public function setDb($db)
+    public function setDb(Db $db)
     {
         $this->db = $db;
         return $this;
@@ -275,6 +276,22 @@ constants
     public function getActiveStageName()
     {
         return current($this->listModuleStages('director', true));
+    }
+
+    public function getActiveChecksum(Db $conn)
+    {
+        $db = $conn->getConnection();
+        $stage = $this->getActiveStageName();
+        if (! $stage) {
+            return null;
+        }
+
+        $query = $db->select()->from(
+            array('l' => 'director_deployment_log'),
+            array('checksum' => $conn->dbHexFunc('l.config_checksum'))
+        )->where('l.stage_name = ?', $stage);
+
+        return $db->fetchOne($query);
     }
 
     protected function getDirectorObjects($type, $single, $plural, $map)
