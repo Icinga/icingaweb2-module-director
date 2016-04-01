@@ -7,8 +7,14 @@ use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Data\Db\DbObject;
 
+/**
+ * Generate, show and deploy Icinga 2 configuration
+ */
 class ConfigCommand extends Command
 {
+    /**
+     * Re-render the current configuration
+     */
     public function renderAction()
     {
         $config = new IcingaConfig($this->db());
@@ -28,6 +34,41 @@ class ConfigCommand extends Command
                 "Config with checksum %s already exists\n",
                 $checksum
             );
+        }
+    }
+
+    public function deployAction()
+    {
+        $api = $this->api();
+        $db = $this->db();
+
+        $checksum = $this->params->get('checksum');
+        if ($checksum) {
+            $config = IcingaConfig::load(Util::hex2binary($checksum), $db);
+        } else {
+            $config = IcingaConfig::generate($db);
+            $checksum = $config->getHexChecksum();
+        }
+
+        $api->wipeInactiveStages($db);
+        $current = $api->getActiveChecksum($db);
+        if ($current === $checksum) {
+            if ($this->params->get('force')) {
+                echo "Config matches active stage, deploying anyway\n";
+            } else {
+                echo "Config matches active stage, nothing to do\n";
+
+                return;
+            }
+
+        } else {
+            if ($api->dumpConfig($config, $db)) {
+                printf("Config '%s' has been deployed\n", $checksum);
+            } else {
+                $this->fail(
+                    sprintf("Failed to deploy config '%s'\n", $checksum)
+                );
+            }
         }
     }
 
