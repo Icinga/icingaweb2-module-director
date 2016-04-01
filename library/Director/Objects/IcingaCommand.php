@@ -33,6 +33,10 @@ class IcingaCommand extends IcingaObject
         'timeout' => 'timeout',
     );
 
+    protected $relations = array(
+        'zone'             => 'IcingaZone',
+    );
+
     protected static $pluginDir;
 
     /**
