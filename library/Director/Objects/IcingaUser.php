@@ -35,4 +35,9 @@ class IcingaUser extends IcingaObject
         'states' => 'StateFilterSet',
         'types'  => 'TypeFilterSet',
     );
+
+    protected $relations = array(
+        'period' => 'IcingaTimePeriod',
+        'zone'   => 'IcingaZone',
+    );
 }
