@@ -78,7 +78,7 @@ class IcingaCommand extends IcingaObject
     {
         $command = $this->command;
         $prefix = '';
-        if (preg_match('~^([A-Z][A-Za-z0-9]+\s\+\s)(.+?)$~', $command, $m)) {
+        if (preg_match('~^([A-Z][A-Za-z0-9_]+\s\+\s)(.+?)$~', $command, $m)) {
             $prefix  = $m[1];
             $command = $m[2];
         } elseif ($command[0] !== '/') {
