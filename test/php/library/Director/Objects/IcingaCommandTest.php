@@ -29,6 +29,35 @@ class IcingaCommandTest extends BaseTestCase
         $command->arguments()->get('-H')->required = true;
     }
 
+    public function testCommandsWithArgumentsCanBeModified()
+    {
+        $command = $this->command();
+        $command->arguments = array(
+            '-H' => '$host$'
+        );
+
+        $command->arguments = array(
+            '-x' => (object) array(
+                'required' => true
+            )
+        );
+
+        $this->assertEquals(
+            null,
+            $command->arguments()->get('-H')
+        );
+
+        $this->assertEquals(
+            'y',
+            $command->arguments()->get('-x')->get('required')
+        );
+
+        $this->assertEquals(
+            true,
+            $command->toPlainObject()->arguments['-x']->required
+        );
+    }
+
     protected function command()
     {
         return IcingaCommand::create(
@@ -39,11 +68,11 @@ class IcingaCommandTest extends BaseTestCase
         );
     }
 
-    public function XXtearDown()
+    public function tearDown()
     {
         $db = $this->getDb();
-        if (IcingaTimePeriod::exists($this->testPeriodName, $db)) {
-            IcingaTimePeriod::load($this->testPeriodName, $db)->delete();
+        if (IcingaCommand::exists($this->testCommandName, $db)) {
+            IcingaCommand::load($this->testCommandName, $db)->delete();
         }
     }
 }
