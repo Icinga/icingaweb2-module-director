@@ -100,20 +100,24 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     protected function mungeCommandArgument($key, $value)
     {
         $attrs = array(
-            'argument_name' => $key,
+            'argument_name' => (string) $key,
         );
 
         $map = array(
             'skip_key'    => 'skip_key',
             'repeat_key'  => 'repeat_key',
             'required'    => 'required',
-            'order'       => 'sort_order',
+            // 'order'       => 'sort_order',
             'description' => 'description',
             'set_if'      => 'set_if',
         );
 
         $argValue = null;
         if (is_object($value)) {
+            if (property_exists($value, 'order')) {
+                $attrs['sort_order'] = (string) $value->order;
+            }
+
             foreach ($map as $apiKey => $dbKey) {
                 if (property_exists($value, $apiKey)) {
                     $attrs[$dbKey] = $value->$apiKey;
