@@ -37,6 +37,12 @@ class ConfigCommand extends Command
         }
     }
 
+    /**
+     * Deploy the current configuration
+     *
+     * Does nothing if config didn't change unless you provide
+     * the --force parameter
+     */
     public function deployAction()
     {
         $api = $this->api();
