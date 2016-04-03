@@ -125,6 +125,11 @@ class IcingaNotificationForm extends DirectorObjectForm
 
     protected function addPeriodElement()
     {
+        $periods = $this->db->enumTimeperiods();
+        if (empty($periods)) {
+            return $this;
+        }
+
         $this->addElement(
             'select',
             'period',
@@ -133,7 +138,8 @@ class IcingaNotificationForm extends DirectorObjectForm
                 'description' => $this->translate(
                     'The name of a time period which determines when this'
                     . ' notification should be triggered. Not set by default.'
-                )
+                ),
+                'multiOptions' => $this->optionalEnum($periods),
             )
         );
 
