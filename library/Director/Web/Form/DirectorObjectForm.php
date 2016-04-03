@@ -1086,7 +1086,7 @@ abstract class DirectorObjectForm extends QuickForm
                 . ' matters when importing properties from multiple templates: last one'
                 . ' wins'
             ),
-            'required'     => $this->isObject(),
+            'required'     => !$this->isTemplate(),
             'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'class'        => 'autosubmit'
