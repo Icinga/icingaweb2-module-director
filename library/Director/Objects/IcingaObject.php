@@ -426,6 +426,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    protected function getArguments()
+    {
+        return $this->arguments()->toPlainObject();
+    }
+
     protected function setAssignments($value)
     {
         $this->assignments()->setValues($value);
@@ -1704,8 +1709,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->supportsArguments()) {
             $args = $this->arguments()->toUnmodifiedPlainObject();
-            if (! empty($arguments)) {
-                $props['arguments'] = $arguments;
+            if (! empty($args)) {
+                $props['arguments'] = $args;
             }
         }
 
