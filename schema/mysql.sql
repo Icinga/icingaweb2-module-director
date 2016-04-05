@@ -105,7 +105,7 @@ CREATE TABLE director_datalist (
 
 CREATE TABLE director_datalist_entry (
   list_id INT(10) UNSIGNED NOT NULL,
-  entry_name VARCHAR(255) DEFAULT NULL,
+  entry_name VARCHAR(255) NOT NULL,
   entry_value TEXT DEFAULT NULL,
   format enum ('string', 'expression', 'json'),
   PRIMARY KEY (list_id, entry_name),
@@ -319,7 +319,7 @@ CREATE TABLE icinga_command_field (
 
 CREATE TABLE icinga_command_var (
   command_id INT(10) UNSIGNED NOT NULL,
-  varname VARCHAR(255) DEFAULT NULL,
+  varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format ENUM('string', 'expression', 'json') NOT NULL DEFAULT 'string',
   PRIMARY KEY (command_id, varname),
@@ -482,7 +482,7 @@ CREATE TABLE icinga_host_field (
 
 CREATE TABLE icinga_host_var (
   host_id INT(10) UNSIGNED NOT NULL,
-  varname VARCHAR(255) DEFAULT NULL,
+  varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'), -- immer string vorerst
   PRIMARY KEY (host_id, varname),
@@ -577,7 +577,7 @@ CREATE TABLE icinga_service_inheritance (
 
 CREATE TABLE icinga_service_var (
   service_id INT(10) UNSIGNED NOT NULL,
-  varname VARCHAR(255) DEFAULT NULL,
+  varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'),
   PRIMARY KEY (service_id, varname),
@@ -825,7 +825,7 @@ CREATE TABLE icinga_user_types_set (
 
 CREATE TABLE icinga_user_var (
   user_id INT(10) UNSIGNED NOT NULL,
-  varname VARCHAR(255) DEFAULT NULL,
+  varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format ENUM('string', 'json', 'expression') NOT NULL DEFAULT 'string',
   PRIMARY KEY (user_id, varname),
@@ -958,7 +958,7 @@ CREATE TABLE icinga_notification (
 
 CREATE TABLE icinga_notification_var (
   notification_id INT(10) UNSIGNED NOT NULL,
-  varname VARCHAR(255) DEFAULT NULL,
+  varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format enum ('string', 'json', 'expression'),
   PRIMARY KEY (notification_id, varname),
@@ -1260,4 +1260,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 91;
+      schema_version = 92;
