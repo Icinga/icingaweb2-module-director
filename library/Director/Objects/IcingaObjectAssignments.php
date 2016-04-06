@@ -49,28 +49,17 @@ class IcingaObjectAssignments
         }
 
         ksort($values);
-
-        foreach ((array) $values as $key => $value) {
-            if (is_numeric($key)) {
+        foreach ((array) $values as $type => $value) {
+            if (is_numeric($type)) {
                 $this->addRule($value);
             } else {
                 if (is_string($value)) {
-                    $this->addRule($value, $key);
+                    $this->addRule($value, $type);
                     continue;
                 }
 
-                foreach ($value as $type => $strings) {
-                    if (is_numeric($type)) {
-                        $type = 'assign';
-                    }
-
-                    if (is_string($strings)) {
-                        $this->addRule($strings, $type);
-                    } else {
-                        foreach ($strings as $string) {
-                            $this->addRule($string, $type);
-                        }
-                    }
+                foreach ($value as $key => $strings) {
+                    $this->addRule($strings, $type);
                 }
             }
         }
