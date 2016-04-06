@@ -111,13 +111,20 @@ class IcingaObjectAssignments
                 continue;
             }
 
+            if (is_numeric($val['expression'])) {
+                $expression = $val['expression'];
+            } else {
+                $expression = '"' . addcslashes($val['expression'], '"') . '"';
+            }
+
             $rows[$val['assign_type']][] = $this->rerenderFilter(
                 implode('', array(
                     $val['property'],
                     $val['operator'],
-                    '"' . addcslashes($val['expression'], '"') . '"'
+                    $expression,
                 ))
             );
+
         }
 
         return $this->setValues($rows);
