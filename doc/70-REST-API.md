@@ -487,3 +487,24 @@ Content-Type: application/json
 }
 ```
 
+### Agent Tickets
+
+The Director is very helpful when it goes to manage your Icinga Agents. In
+case you want to fetch tickets through the API, please do as follows:
+
+    GET director/host/ticket?name=apitest
+
+```
+HTTP/1.1 200 OK
+Date: Thu, 07 Apr 2016 22:19:24 GMT
+Server: Apache
+Content-Length: 43
+Content-Type: application/json
+```
+
+```json
+"5de9883080e03278039bce57e4fbdbe8fd262c40"
+```
+
+Please expect an error in case the host does not exist or has not been
+configured to be an Icinga Agent.

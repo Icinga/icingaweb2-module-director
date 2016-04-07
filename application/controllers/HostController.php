@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
@@ -81,6 +82,20 @@ class HostController extends ObjectController
         $this->view->master = $this->db()->getDeploymentEndpointName();
         $this->view->masterzone = $this->db()->getMasterZoneName();
         $this->view->globalzone = $this->db()->getDefaultGlobalZoneName();
+    }
+
+    public function ticketAction()
+    {
+        if (! $this->getRequest()->isApiRequest() || ! $this->object) {
+            throw new NotFoundError('Not found');
+        }
+
+        $host = $this->object;
+        if ($host->getResolvedProperty('has_agent') !== 'y') {
+            throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
+        }
+
+        return $this->sendJson(Util::getIcingaTicket($host->object_name, $this->api()->getTicketSalt()));
     }
 
     public function renderAction()
