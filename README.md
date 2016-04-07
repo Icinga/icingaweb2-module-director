@@ -10,7 +10,7 @@ It tries to target two main audiences:
 What makes Icinga Director so special is the fact that it tries to target both
 of them at once.
 
-![Icinga Director](screenshot/director/readme/director_main_screen.png)
+![Icinga Director](doc/screenshot/director/readme/director_main_screen.png)
 
 Learn more about the Director in the documentation:
 
