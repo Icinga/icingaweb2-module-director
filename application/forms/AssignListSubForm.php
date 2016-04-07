@@ -30,6 +30,7 @@ class AssignListSubForm extends QuickSubForm
             foreach ($this->object->assignments()->getFormValues() as $values) {
                 $idx++;
                 $sub = new AssignmentSubForm();
+                $sub->setObject($this->object);
                 $sub->setup();
                 $sub->populate($values);
                 $this->addSubForm($sub, $idx);
@@ -38,6 +39,7 @@ class AssignListSubForm extends QuickSubForm
 
         $idx++;
         $sub = new AssignmentSubForm();
+        $sub->setObject($this->object);
         $sub->setup();
         $this->addSubForm($sub, $idx);
         $this->addElement('submit', 'addmore', array(

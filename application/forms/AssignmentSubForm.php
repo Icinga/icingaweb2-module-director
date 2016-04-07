@@ -3,10 +3,13 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\QuickSubForm;
 
 class AssignmentSubForm extends QuickSubForm
 {
+    protected $object;
+
     // @codingStandardsIgnoreStart
     protected $_disableLoadDefaultDecorators = true;
     // @codingStandardsIgnoreEnd
@@ -24,7 +27,7 @@ class AssignmentSubForm extends QuickSubForm
         $this->addElement('select', 'property', array(
             'label' => $this->translate('Property'),
             'class' => 'assign-property autosubmit',
-            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->db, 'host.'))
+            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->object->getConnection(), 'host.'))
         ));
         $this->addElement('select', 'operator', array(
             'label' => $this->translate('Operator'),
@@ -60,6 +63,12 @@ class AssignmentSubForm extends QuickSubForm
         foreach ($this->getElements() as $el) {
             $el->setDecorators(array('ViewHelper'));
         }
+    }
+
+    public function setObject(IcingaObject $object)
+    {
+        $this->object = $object;
+        return $this;
     }
 
     public function loadDefaultDecorators()
