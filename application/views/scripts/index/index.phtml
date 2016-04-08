@@ -95,7 +95,7 @@ $all = array(
     ),
     $this->translate('Deploy configuration to your Icinga nodes') => array(
         array('wrench',   $this->translate('Deployment'), 'director/config/deployments', $this->translate('Config deployment') . pendingDeployments($this), $this->undeployedActivities ? 'warning' : 'ok'),
-        array('book',   $this->translate('Audit log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
+        array('book',   $this->translate('Activity Log'), 'director/config/activities', $this->translate('Wondering about what changed why? Track you changes!'), 'ok'),
         array('lock-open-alt', $this->translate('Api users'), 'director/apiusers', statSummary($this, 'apiuser')),
         array('cloud',    $this->translate('Endpoints'), 'director/endpoints', statSummary($this, 'endpoint') . ( $this->hasDeploymentEndpoint ? '' : '. ' . $this->translate('None could be used for deployments right now')), $this->hasDeploymentEndpoint ? '' : 'critical'),
         array('globe',    $this->translate('Zones'), 'director/zones', statSummary($this, 'zone')),
