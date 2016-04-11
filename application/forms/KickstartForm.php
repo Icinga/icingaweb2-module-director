@@ -155,16 +155,15 @@ class KickstartForm extends QuickForm
             $db = $resource->getDbAdapter();
 
             try {
-                $query = $db->select()->from('dual', '(1)');
-                $db->fetchOne($query);
+                $db->fetchOne('SELECT 1');
 
             } catch (Exception $e) {
                 $this->getElement('resource')
                     ->addError('Could not connect to database: ' . $e->getMessage());
 
                 $hint = $this->translate(
-                    'Please make sure that your database grants enough permissions'
-                    . ' and that you deployed the correct %s.'
+                    'Please make sure that your database exists and your user has'
+                  . ' been granted enough permissions'
                 );
 
                 $this->addHtmlHint($hint, array('name' => 'HINT_db_perms'));
