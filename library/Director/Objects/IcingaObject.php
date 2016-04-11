@@ -358,6 +358,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::get($key);
     }
 
+    public function setProperties($props)
+    {
+        if (is_array($props)) {
+            if (array_key_exists('object_type', $props) && key($props) !== 'object_type') {
+                $type = $props['object_type'];
+                unset($props['object_type']);
+                $props = array('object_type' => $type) + $props;
+            }
+        }
+        return parent::setProperties($props);
+    }
+
     public function set($key, $value)
     {
         if ($key === 'vars') {
