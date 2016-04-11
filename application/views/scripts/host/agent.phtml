@@ -8,6 +8,8 @@
 $cert   = $this->escape($this->certname);
 $master = $this->escape($this->master);
 ?>
+Please check the <a href="http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client">Icinga 2 Client documentation</a> for more related information. The Director-assisted setup corresponds to configuring the <a href="http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client#icinga2-client-configuration-command-bridge">Client as Command Execution Bridge</a>.
+
 <h2>When using the node wizard</h2>
 <p>Ticket : <code><?= $this->escape($ticket) ?></code></p>
 <h2>Linux commandline</h2>
@@ -15,11 +17,9 @@ $master = $this->escape($this->master);
 <pre>
 #!/bin/bash
 
-# TODO, Eventually:
-# apt-get install --no-install-recommends icinga2 nagios-plugins
-# or yum install ...
-
-# This generates and signs your required certificates
+# This generates and signs your required certificates. Please do not
+# forget to install the Icinga 2 package and your desired monitoring
+# plugins first:
 
 ICINGA_PKI_DIR=/etc/icinga2/pki
 ICINGA_USER=nagios
