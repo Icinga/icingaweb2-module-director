@@ -32,6 +32,12 @@ https://git.icinga.org/?p=icingaweb2.git;a=commitdiff;h=ea871ea032c78f58fa43bd67
 You probably didn't notice this error before as in most environments the IDO for historical reasons isn't configured for UTF-8.
 
 
+Connection lost to DB while....
+-------------------------------
+
+In case you are creating large configs or handling huge imports with the Director it could happen that the default conservative max package size of your MySQL server bites you. Raise `max packet size` to a reasonable value, this will usually fix this issue.
+
+
 Import succeeded but nothing happened
 -------------------------------------
 
@@ -42,6 +48,7 @@ My Director doesn't look as good as on your screenshots
 -------------------------------------------------------
 
 Currently there is a bug in Icinga Web 2 that broke automagic cache invalidation. So when updating a module you might be forced to do SHIFT-Reload or similar in your browser. Please note that proxies in the way between you and Icinga Web 2 might currently lead to similar issues.
+
 
 I want to set ... on a host object
 ----------------------------------
