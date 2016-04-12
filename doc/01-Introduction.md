@@ -49,23 +49,3 @@ multiple masters and satellites.
 
 Using the Icinga 2 Agent? Perfect, the Director will make your life much
 easier!
-
-
-Limited in your choices?
-------------------------
-
-Icinga2 configuration is a full-blown DSL, not just a configuration format.
-It provides endless possibilities, the very same thing can be accomplished
-in various ways. Director tries hard to offer you as many of those while
-strictly trying to keep things simple.
-
-You are absoletely right if you might think that this is not an easy task.
-We do our best to offer you as much flexibility as possible. In case you
-miss a feature or have a cool idea of what else we could add please let
-us know. Just file an issue or a feature request at our issue tracker:
-
-  https://dev.icinga.org
-
-The Icinga project is and remains Open Source Software and lives from
-community ideas and contributions.
-
