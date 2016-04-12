@@ -12,7 +12,7 @@ class IcingaCloneObjectForm extends QuickForm
     public function setup()
     {
         $this->addElement('text', 'new_object_name', array(
-            'label'    => 'New name',
+            'label'    => $this->translate('New name'),
             'required' => true,
             'value'    => $this->object->object_name,
         ));
