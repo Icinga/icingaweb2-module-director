@@ -77,7 +77,7 @@ dedicated templates for your zones. Usually this requires one template
 per Satellite zone.
 
 You are not required to deal with Agent Zones, as the Director does
-this for you. Please refer to [Working with agents](14-Working-with-agents.md)
+this for you. Please refer to [Working with agents](24-Working-with-agents.md)
 for related examples.
 
 Currently the GUI does not allow you to set the zone property on single
