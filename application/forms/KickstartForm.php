@@ -163,7 +163,7 @@ class KickstartForm extends QuickForm
 
                 $hint = $this->translate(
                     'Please make sure that your database exists and your user has'
-                  . ' been granted enough permissions'
+                    . ' been granted enough permissions'
                 );
 
                 $this->addHtmlHint($hint, array('name' => 'HINT_db_perms'));
