@@ -41,7 +41,7 @@ resource = "Director DB"
 Hint: `/etc/icingaweb2/modules/director/config.ini` is usually the full
 path to this config file.
 
-#### Schema migrations
+#### Schema creation and migrations
 
 You do not need to manually care about creating the schema and to migrate
 it for newer versions. Just `grant` the configured user all permissions on
