@@ -1,5 +1,5 @@
-Working with Agents and Config Zones
-====================================
+<a id="Working-with-agents"></a>Working with Agents and Config Zones
+====================================================================
 
 Working with Icinga 2 Agents can be quite tricky, as each Agent needs
 it's own Endpoint and Zone definition, correct parent, peering host and
