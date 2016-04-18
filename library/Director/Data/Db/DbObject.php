@@ -305,7 +305,9 @@ abstract class DbObject
             throw new IE('Trying to set invalid key %s', $key);
         }
 
-        if ($value === $this->get($key)) {
+        if ((is_numeric($value) || is_string($value))
+            && (string) $value === (string) $this->get($key)
+        ) {
             return $this;
         }
 
@@ -321,6 +323,7 @@ abstract class DbObject
         if ($value === $this->properties[$key]) {
             return $this;
         }
+
         $this->hasBeenModified = true;
         $this->modifiedProperties[$key] = true;
         $this->properties[$key] = $value;
