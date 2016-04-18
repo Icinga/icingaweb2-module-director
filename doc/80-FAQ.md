@@ -13,7 +13,7 @@ When deploying your first configuration, you might get this error:
     Refusing to render the configuration, your DB layer corrupts
     binary data. You might be affected by Zend Framework bug #655
 
-Sad but true. Zend Framework 1.12.16 and 1.12.17 silently corrupt binary data. You can either wait for 1.12.18 or downgrade to an earlier version. Debian Stable currently ships 1.12.9, but as they backported the involved erraneous security bug their version is affected too.
+Zend Framework 1.12.16 and 1.12.17 silently [corrupt binary data](https://github.com/zendframework/zf1/issues/655). This has been [fixed](https://github.com/zendframework/zf1/pull/670) with [1.12.18](https://github.com/zendframework/zf1/releases/tag/release-1.12.18), please either upgrade or downgrade to an earlier version. Debian Stable currently ships 1.12.9, but as they backported the involved erraneous security bug their version is affected too. When you work on a RedHat-based distribution please follow [Bug 1328032](https://bugzilla.redhat.com/show_bug.cgi?id=1328032).
 
 You could also manually fix this issue in `/usr/share/php/Zend/Db/Adapter/Pdo/Abstract.php`. Search for the `_quote` function and delete the line saying `$value = addcslashes($value, "\000\032");`. Please note that doing so would fix all problems, but re-introduce a potential security issue affecting the MSSQL and Sqlite adapters.
 
