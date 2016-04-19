@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Data\Filter\Filter;
@@ -1108,6 +1109,41 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function onDelete()
     {
         DirectorActivityLog::logRemoval($this, $this->connection);
+    }
+
+    public function renderToConfig(IcingaConfig $config)
+    {
+        if ($this->isDisabled() || $this->isExternal()) {
+            return;
+        }
+
+        $type = $this->getShortTableName();
+
+        if ($this->isTemplate()) {
+            $filename = strtolower($type) . '_templates';
+        } elseif ($this->isApplyRule()) {
+            $filename = strtolower($type) . '_apply';
+        } else {
+            $filename = strtolower($type) . 's';
+        }
+
+        $config->configFile(
+            'zones.d/' . $this->getRenderingZone($config)
+        )->addObject($this);
+    }
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        if ($this->zone_id) {
+            // Config has a lookup cache, is faster:
+            return $config->getZoneName($this->zone_id);
+        }
+
+        if ($this->isTemplate() || $this->isApplyRule()) {
+            return $this->connection->getDefaultGlobalZoneName();
+        }
+
+        return $this->connection->getMasterZoneName();
     }
 
     protected function renderImports()
