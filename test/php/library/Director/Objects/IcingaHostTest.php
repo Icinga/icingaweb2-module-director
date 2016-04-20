@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -269,6 +270,56 @@ class IcingaHostTest extends BaseTestCase
         $host = $this->host();
         $host->zone = 'invalid';
         $host->store($this->getDb());
+    }
+
+    public function testRendersToTheCorrectZone()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $host = $this->host()->setConnection($db);
+
+        $config = new IcingaConfig($db);
+        $host->renderToConfig($config);
+        $this->assertEquals(
+            array('zones.d/master.conf'),
+            $config->getFileNames()
+        );
+
+        $zone = $this->newObject('zone', '___TEST___zone');
+        $zone->store($db);
+
+        $config = new IcingaConfig($db);
+        $host->zone = '___TEST___zone';
+        $host->renderToConfig($config);
+        $this->assertEquals(
+            array('zones.d/___TEST___zone.conf'), 
+            $config->getFileNames()
+        );
+
+        $host->has_agent = true;
+        $host->master_should_connect = true;
+        $host->accept_config = true;
+
+        $config = new IcingaConfig($db);
+        $host->renderToConfig($config);
+        $this->assertEquals(
+            array('zones.d/___TEST___zone.conf'), 
+            $config->getFileNames()
+        );
+
+        $host->object_type = 'template';
+        $host->zone_id = null;
+
+        $config = new IcingaConfig($db);
+        $host->renderToConfig($config);
+        $this->assertEquals(
+            array('zones.d/director-global.conf'),
+            $config->getFileNames()
+        );
+
     }
 
     protected function getDummyRelatedProperties()

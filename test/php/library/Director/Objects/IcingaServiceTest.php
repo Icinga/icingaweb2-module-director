@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Test\BaseTestCase;
@@ -188,6 +189,23 @@ class IcingaServiceTest extends BaseTestCase
         $this->assertEquals(
             $this->loadRendered('service2'),
             (string) $service
+        );
+    }
+
+    public function testRendersToTheCorrectZone()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $service = $this->service()->setConnection($db);
+
+        $config = new IcingaConfig($db);
+        $service->renderToConfig($config);
+        $this->assertEquals(
+            array('zones.d/master.conf'),
+            $config->getFileNames()
         );
     }
 
