@@ -8,6 +8,7 @@ use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Data\Filter\Filter;
 use Icinga\Web\Notification;
+use Icinga\Web\Url;
 
 class SyncruleController extends ActionController
 {
@@ -23,10 +24,19 @@ class SyncruleController extends ActionController
 
     public function runAction()
     {
-        $sync = new Sync(SyncRule::load($this->params->get('id'), $this->db()));
+        $id = $this->params->get('id');
+        $sync = new Sync(SyncRule::load($id, $this->db()));
         if ($runId = $sync->apply()) {
             Notification::success('Source has successfully been synchronized');
-            $this->redirectNow('director/list/syncrule');
+            $this->redirectNow(
+                Url::fromPath(
+                    'director/syncrule/history',
+                    array(
+                        'id'     => $id,
+                        'run_id' => $runId
+                    )
+                )
+            );
         } else {
         }
     }
