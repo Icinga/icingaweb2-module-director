@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Data\Filter\Filter;
 use Icinga\Web\Notification;
@@ -120,7 +121,17 @@ class SyncruleController extends ActionController
             ->enforceFilter(Filter::where('rule_id', $id))
             ->setConnection($this->db());
 
-        $this->setViewScript('list/table');
+        if ($runId = $this->params->get('run_id')) {
+            $db = $this->db();
+            $this->view->run = SyncRun::load($runId, $db);
+            $this->view->formerId = $db->fetchActivityLogIdByChecksum(
+                $this->view->run->last_former_activity
+            );
+
+            $this->view->lastId = $db->fetchActivityLogIdByChecksum(
+                $this->view->run->last_related_activity
+            );
+        }
     }
 
     protected function prepareRuleTabs($ruleId = null)
