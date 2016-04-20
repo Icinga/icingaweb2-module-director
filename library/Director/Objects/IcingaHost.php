@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHost extends IcingaObject
@@ -149,6 +150,50 @@ class IcingaHost extends IcingaObject
     public function hasCheckCommand()
     {
         return $this->getResolvedProperty('check_command_id') !== null;
+    }
+
+    public function renderToConfig(IcingaConfig $config)
+    {
+        parent::renderToConfig($config);
+        $this->renderAgentZoneAndEndpoint($config);
+    }
+
+    public function renderAgentZoneAndEndpoint(IcingaConfig $config = null)
+    {
+        if (!$this->isObject()) {
+            return;
+        }
+
+        if ($this->getResolvedProperty('has_agent') !== 'y') {
+            return;
+        }
+
+        $name = $this->object_name;
+        if (IcingaEndpoint::exists($name, $this->connection)) {
+            return;
+        }
+
+        $props = array(
+            'object_name'  => $name,
+            'object_type'  => 'object',
+            'log_duration' => 0
+        );
+
+        if ($this->getResolvedProperty('master_should_connect') === 'y') {
+            $props['host'] = $this->getResolvedProperty('address');
+        }
+
+        $props['zone_id'] = $this->getResolvedProperty('zone_id');
+
+        $endpoint = IcingaEndpoint::create($props);
+        $zone = IcingaZone::create(array(
+            'object_name' => $name,
+            'parent'      => $this->connection->getMasterZoneName()
+        ), $this->connection)->setEndpointList(array($name));
+
+        $pre = 'zones.d/' . $this->getRenderingZone() . '/';
+        $config->configFile($pre . 'agent_endpoints')->addObject($endpoint);
+        $config->configFile($pre . 'agent_zones')->addObject($zone);
     }
 
     /**
