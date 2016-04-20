@@ -49,7 +49,7 @@ class SyncruleController extends ActionController
         }
 
         $form->handleRequest();
-        $this->render('object/form', null, true);
+        $this->setViewScript('object/form');
     }
 
     public function propertyAction()
@@ -70,7 +70,7 @@ class SyncruleController extends ActionController
         $this->view->table = $this->loadTable('syncproperty')
             ->enforceFilter(Filter::where('rule_id', $id))
             ->setConnection($this->db());
-        $this->render('list/table', null, true);
+        $this->setViewScript('list/table');
     }
 
     public function editpropertyAction()
@@ -106,7 +106,7 @@ class SyncruleController extends ActionController
         $this->view->table = $this->loadTable('syncproperty')
             ->enforceFilter(Filter::where('rule_id', $rule_id))
             ->setConnection($this->db());
-        $this->render('list/table', null, true);
+        $this->setViewScript('list/table');
     }
 
     protected function prepareRuleTabs($ruleId = null)
