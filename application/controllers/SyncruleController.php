@@ -56,18 +56,21 @@ class SyncruleController extends ActionController
     public function propertyAction()
     {
         $this->view->stayHere = true;
+
+        $db = $this->db();
         $id = $this->params->get('rule_id');
+        $rule = SyncRule::load($id, $db);
+
         $this->prepareRuleTabs($id)->activate('property');
 
-        $this->view->addLink = $this->view->icon('plus')
-            . ' '
-            .  $this->view->qlink(
-                $this->translate('Add sync property rule'),
-                'director/syncrule/addproperty',
-                array('rule_id' => $id)
-            );
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add sync property rule'),
+            'director/syncrule/addproperty',
+            array('rule_id' => $id),
+            array('class' => 'icon-plus')
+        );
 
-        $this->view->title = $this->translate('Sync properties');
+        $this->view->title = $this->translate('Sync properties') . ': ' . $rule->rule_name;
         $this->view->table = $this->loadTable('syncproperty')
             ->enforceFilter(Filter::where('rule_id', $id))
             ->setConnection($this->db());
@@ -84,26 +87,49 @@ class SyncruleController extends ActionController
         $this->view->stayHere = true;
         $edit = false;
 
+        $db = $this->db();
+        $ruleId = $this->params->get('rule_id');
+        $rule = SyncRule::load($ruleId, $db);
+
         if ($id = $this->params->get('id')) {
             $edit = true;
         }
 
-        $form = $this->view->form = $this->loadForm('syncProperty')->setDb($this->db());
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('back'),
+            'director/syncrule/property',
+            array('rule_id' => $ruleId),
+            array('class' => 'icon-left-big')
+        );
+
+        $form = $this->view->form = $this->loadForm('syncProperty')->setDb($db);
 
         if ($edit) {
             $form->loadObject($id);
             $rule_id = $form->getObject()->rule_id;
-            $form->setRule(SyncRule::load($rule_id, $this->db()));
+            $form->setRule(SyncRule::load($rule_id, $db));
         } elseif ($rule_id = $this->params->get('rule_id')) {
-            $form->setRule(SyncRule::load($rule_id, $this->db()));
+            $form->setRule(SyncRule::load($rule_id, $db));
         }
-        $form->setSuccessUrl('director/syncrule/property', array('rule_id' => $rule_id));
 
+        $form->setSuccessUrl('director/syncrule/property', array('rule_id' => $rule_id));
         $form->handleRequest();
 
         $this->prepareRuleTabs($rule_id)->activate('property');
 
-        $this->view->title = $this->translate('Sync property'); // add/edit
+        if ($edit) {
+            $this->view->title = sprintf(
+                $this->translate('Sync "%s": %s'),
+                $form->getObject()->destination_field,
+                $rule->rule_name
+            );
+        } else {
+            $this->view->title = sprintf(
+                $this->translate('Add sync property: %s'),
+                $rule->rule_name
+            );
+        }
+
         $this->view->table = $this->loadTable('syncproperty')
             ->enforceFilter(Filter::where('rule_id', $rule_id))
             ->setConnection($this->db());
@@ -114,15 +140,17 @@ class SyncruleController extends ActionController
     {
         $this->view->stayHere = true;
 
+        $db = $this->db();
         $id = $this->params->get('id');
+        $rule = SyncRule::load($id, $db);
+
         $this->prepareRuleTabs($id)->activate('history');
-        $this->view->title = $this->translate('Sync history');
+        $this->view->title = $this->translate('Sync history') . ': ' . $rule->rule_name;
         $this->view->table = $this->loadTable('syncRun')
             ->enforceFilter(Filter::where('rule_id', $id))
             ->setConnection($this->db());
 
         if ($runId = $this->params->get('run_id')) {
-            $db = $this->db();
             $this->view->run = SyncRun::load($runId, $db);
             $this->view->formerId = $db->fetchActivityLogIdByChecksum(
                 $this->view->run->last_former_activity

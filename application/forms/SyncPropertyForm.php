@@ -25,7 +25,6 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addHtml(sprintf('<h3>%s</h3>', $this->getView()->escape($this->rule->rule_name)));
         $this->addHidden('rule_id', $this->rule_id);
 
         $this->addElement('select', 'source_id', array(
