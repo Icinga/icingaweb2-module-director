@@ -71,7 +71,7 @@ class SyncRunTable extends QuickTable
         $query = $db->select()->from(
             array('sr' => 'sync_run'),
             array()
-        )->order('rule_name');
+        )->order('start_time DESC');
 
         return $query;
     }
