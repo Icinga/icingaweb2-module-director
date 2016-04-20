@@ -259,7 +259,6 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         ->order('a.sort_order')->order('a.argument_name');
 
         $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'argument_name');
-var_dump(count($this->arguments));
         $this->cloneStored();
         $this->refreshIndex();
 
