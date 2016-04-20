@@ -32,41 +32,23 @@ class SyncruleController extends ActionController
 
     public function indexAction()
     {
-        $edit = false;
-
-        if ($id = $this->params->get('id')) {
-            $edit = true;
-        }
-
-        if ($edit) {
-            $this->view->title = $this->translate('Edit sync rule');
-            $this->getTabs()->add('edit', array(
-                'url'       => 'director/syncrule/edit',
-                'urlParams' => array('id' => $id),
-                'label'     => $this->view->title,
-            ))->add('property', array(
-                'label' => $this->translate('Properties'),
-                'url'   => 'director/syncrule/property',
-                'urlParams' => array('rule_id' => $id)
-            ))->activate('edit');
-        } else {
-            $this->view->title = $this->translate('Add sync rule');
-            $this->getTabs()->add('add', array(
-                'url'       => 'director/syncrule/add',
-                'label'     => $this->view->title,
-            ))->activate('add');
-        }
-
         $form = $this->view->form = $this->loadForm('syncRule')
             ->setSuccessUrl('director/list/syncrule')
             ->setDb($this->db());
 
-        if ($edit) {
+        if ($id = $this->params->get('id')) {
+            $this->prepareRuleTabs($id)->activate('edit');
             $form->loadObject($id);
+            $this->view->title = sprintf(
+                $this->translate('Sync rule: %s'),
+                $form->getObject()->rule_name
+            );
+        } else {
+            $this->view->title = $this->translate('Add sync rule');
+            $this->prepareRuleTabs()->activate('add');
         }
 
         $form->handleRequest();
-
         $this->render('object/form', null, true);
     }
 
@@ -74,6 +56,7 @@ class SyncruleController extends ActionController
     {
         $this->view->stayHere = true;
         $id = $this->params->get('rule_id');
+        $this->prepareRuleTabs($id)->activate('property');
 
         $this->view->addLink = $this->view->icon('plus')
             . ' '
@@ -82,17 +65,8 @@ class SyncruleController extends ActionController
                 'director/syncrule/addproperty',
                 array('rule_id' => $id)
             );
-        $this->getTabs()->add('edit', array(
-            'url'       => 'director/syncrule/edit',
-            'urlParams' => array('id' => $id),
-            'label'     => $this->translate('Edit sync rule'),
-        ))->add('property', array(
-            'label' => $this->translate('Properties'),
-            'url'   => 'director/syncrule/property',
-            'urlParams' => array('rule_id' => $id)
-        ))->activate('property');
 
-        $this->view->title = $this->translate('Sync properties: ');
+        $this->view->title = $this->translate('Sync properties');
         $this->view->table = $this->loadTable('syncproperty')
             ->enforceFilter(Filter::where('rule_id', $id))
             ->setConnection($this->db());
@@ -126,32 +100,32 @@ class SyncruleController extends ActionController
 
         $form->handleRequest();
 
-        $tabs = $this->getTabs()->add('edit', array(
-            'url'       => 'director/syncrule/edit',
-            'urlParams' => array('id' => $rule_id),
-            'label'     => $this->translate('Edit sync rule'),
-        ));
-
-        if ($edit) {
-            $tabs->add('property', array(
-                'label' => $this->translate('Properties'),
-                'url'   => 'director/syncrule/property',
-                'urlParams' => array('rule_id' => $rule_id)
-            ));
-        } else {
-            $tabs->add('property', array(
-                'label' => $this->translate('Properties'),
-                'url'   => 'director/syncrule/property',
-                'urlParams' => array('rule_id' => $rule_id)
-            ));
-        }
-
-        $tabs->activate('property');
+        $this->prepareRuleTabs($rule_id)->activate('property');
 
         $this->view->title = $this->translate('Sync property'); // add/edit
         $this->view->table = $this->loadTable('syncproperty')
             ->enforceFilter(Filter::where('rule_id', $rule_id))
             ->setConnection($this->db());
         $this->render('list/table', null, true);
+    }
+
+    protected function prepareRuleTabs($ruleId = null)
+    {
+        if ($ruleId) {
+            return $this->getTabs()->add('edit', array(
+                'url'       => 'director/syncrule/edit',
+                'urlParams' => array('id' => $ruleId),
+                'label'     => $this->translate('Sync rule'),
+            ))->add('property', array(
+                'label' => $this->translate('Properties'),
+                'url'   => 'director/syncrule/property',
+                'urlParams' => array('rule_id' => $ruleId)
+            ));
+        } else {
+            return $this->getTabs()->add('add', array(
+                'url'       => 'director/syncrule/add',
+                'label'     => $this->translate('Sync rule'),
+            ));
+        }
     }
 }
