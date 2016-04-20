@@ -109,6 +109,20 @@ class SyncruleController extends ActionController
         $this->setViewScript('list/table');
     }
 
+    public function historyAction()
+    {
+        $this->view->stayHere = true;
+
+        $id = $this->params->get('id');
+        $this->prepareRuleTabs($id)->activate('history');
+        $this->view->title = $this->translate('Sync history');
+        $this->view->table = $this->loadTable('syncRun')
+            ->enforceFilter(Filter::where('rule_id', $id))
+            ->setConnection($this->db());
+
+        $this->setViewScript('list/table');
+    }
+
     protected function prepareRuleTabs($ruleId = null)
     {
         if ($ruleId) {
@@ -120,6 +134,10 @@ class SyncruleController extends ActionController
                 'label' => $this->translate('Properties'),
                 'url'   => 'director/syncrule/property',
                 'urlParams' => array('rule_id' => $ruleId)
+            ))->add('history', array(
+                'label' => $this->translate('History'),
+                'url'   => 'director/syncrule/history',
+                'urlParams' => array('id' => $ruleId)
             ));
         } else {
             return $this->getTabs()->add('add', array(
