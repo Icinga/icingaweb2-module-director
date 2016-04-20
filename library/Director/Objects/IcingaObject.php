@@ -155,6 +155,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        ksort($this->loadedMultiRelations);
         return $this->loadedMultiRelations;
     }
 
