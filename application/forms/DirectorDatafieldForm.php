@@ -74,6 +74,8 @@ class DirectorDatafieldForm extends DirectorObjectForm
                 $el->setValue($val);
             }
         }
+
+        $this->setButtons();
     }
 
     protected function addSettings($class = null)
