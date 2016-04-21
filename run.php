@@ -32,6 +32,8 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromAdSid');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromLatin1');
 
+$this->provideHook('director/Job', $prefix . 'Job\\HousekeepingJob');
+
 if (Icinga::app()->isCli()) {
     return;
 }
