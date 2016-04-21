@@ -2,9 +2,11 @@
 
 namespace Icinga\Module\Director\Hook;
 
+use Icinga\Module\Director\Db;
+
 abstract class JobHook
 {
-    protected $settings = array();
+    private $db;
 
     public function getName()
     {
@@ -19,6 +21,17 @@ abstract class JobHook
         }
 
         return $class;
+    }
+
+    public function setDb(Db $db)
+    {
+        $this->db = $db;
+        return $this;
+    }
+
+    protected function db()
+    {
+        return $this->db;
     }
 
     abstract public run();
