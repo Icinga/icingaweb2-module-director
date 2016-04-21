@@ -60,6 +60,27 @@ in `Configuration / Application`. In a typical environment you'll probably drop 
 module to `/usr/share/icingaweb2/modules/director`. Please note that the directory
 name MUST be `director` and not `icingaweb2-module-director` or anything else.
 
+Installation using git:
+
+    cd /usr/share/icingaweb2/modules/
+    git clone https://github.com/Icinga/icingaweb2-module-director.git director
+
+Installation using the release tar.gz
+Don't forget to change the release version 
+    
+    cd /usr/share/icingaweb2/modules/
+    wget https://github.com/Icinga/icingaweb2-module-director/archive/v1.0.0.tar.gz
+    tar xfvz v1.0.0.tar.gz
+    mv icingaweb2-module-director-1.0.0 director
+
+    
+Installation using the release .zip
+Don't forget to change the release version 
+   
+    cd /usr/share/icingaweb2/modules/
+    wget https://github.com/Icinga/icingaweb2-module-director/archive/1.0.0.zip
+    mv icingaweb2-module-director-1.0.0 director
+
 
 ### Run the graphical kickstart wizard
 
