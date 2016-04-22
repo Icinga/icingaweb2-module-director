@@ -1107,6 +1107,14 @@ CREATE TABLE import_source (
   source_name VARCHAR(64) NOT NULL,
   key_column VARCHAR(64) NOT NULL,
   provider_class VARCHAR(72) NOT NULL,
+  import_state ENUM(
+    'unknown',
+    'in-sync',
+    'pending-changes',
+    'failing'
+  ) NOT NULL DEFAULT 'unknown',
+  last_error_message TEXT DEFAULT NULL,
+  last_attempt DATETIME DEFAULT NULL,
   PRIMARY KEY (id),
   INDEX search_idx (key_column)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1294,4 +1302,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 94;
+      schema_version = 95;
