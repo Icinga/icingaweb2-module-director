@@ -33,6 +33,11 @@ abstract class JobHook
         return $class;
     }
 
+    public static function getSuggestedRunInterval(QuickForm $form)
+    {
+        return 900;
+    }
+
     /**
      * Override this method if you want to extend the settings form
      *
