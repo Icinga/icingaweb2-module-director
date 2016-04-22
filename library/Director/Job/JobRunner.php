@@ -25,13 +25,8 @@ class JobRunner
         if ($this->shouldFork()) {
             $this->fork($job);
         } else {
-            $this->run($job);
+            $job->run();
         }
-    }
-
-    protected function run(Job $job)
-    {
-        $job->run();
     }
 
     protected function fork(Job $job)
@@ -45,7 +40,7 @@ class JobRunner
         return true;
     }
 
-    protected getRegisteredJobs()
+    protected function getRegisteredJobs()
     {
     }
 }
