@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Job;
 
 use Icinga\Module\Director\Db\Housekeeping;
 use Icinga\Module\Director\Hook\JobHook;
+use Icinga\Module\Director\Web\Form\QuickForm;
 
 class HousekeepingJob extends JobHook
 {
@@ -12,6 +13,14 @@ class HousekeepingJob extends JobHook
     public function run()
     {
         $this->housekeeping()->runAllTasks();
+    }
+
+    public static function getDescription(QuickForm $form)
+    {
+        return $form->translate(
+            'The Housekeeping job provides various task that keep your Director'
+            . ' database fast and clean'
+        );
     }
 
     public function isPending()
