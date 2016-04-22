@@ -25,4 +25,24 @@ class DirectorJob extends DbObjectWithSettings
     );
 
     protected $settingsTable = 'director_job_setting';
+
+    protected $settingsRemoteId = 'job_id';
+
+    public function isPending()
+    {
+        if ($this->ts_last_attempt === null) {
+            return true;
+        }
+
+        if (strtotime($this->unixts_last_attempt) + $this->run_interval < time()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function lastAttemptSucceeded()
+    {
+        return $this->last_attempt_succeeded === 'y';
+    }
 }
