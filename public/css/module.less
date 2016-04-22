@@ -722,7 +722,6 @@ table.tinystats {
 }
 
 /* Simple table, test */
-
 table.syncstate {
     tr td:first-child {
         padding-left: 2em;
@@ -748,6 +747,41 @@ table.syncstate {
     }
 
     tr.failing td:first-child::before {
+        content: '\e804';
+        color: @color-critical;
+    }
+}
+
+table.jobs {
+    tr td:first-child {
+        padding-left: 2em;
+        &::before {
+            font-family: 'ifont';
+            // icon-help:
+            content: '\e85b';
+            float: left;
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.ok td:first-child::before {
+        content: '\e803';
+        color: @color-ok;
+    }
+
+    tr.warning td:first-child::before {
+        content: '\e864';
+        color: @color-warning;
+    }
+
+    tr.pending td:first-child::before {
+        content: '\e864';
+        color: @color-pending;
+    }
+
+    tr.critical td:first-child::before {
         content: '\e804';
         color: @color-critical;
     }
