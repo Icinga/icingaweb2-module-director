@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
@@ -31,7 +32,8 @@ class IndexController extends ActionController
                 'label' => $this->translate('Overview')
             ))->activate('overview');
 
-            $this->fetchSyncState();
+            $this->fetchSyncState()
+                 ->fetchJobState();
         }
     }
 
@@ -56,6 +58,31 @@ class IndexController extends ActionController
         }
 
         $this->view->syncState = $state;
+
+        return $this;
+    }
+
+    protected function fetchJobState()
+    {
+        $jobs = DirectorJob::loadAll($this->db());
+        if (count($jobs) > 0) {
+            $state = 'ok';
+        } else {
+            $state = null;
+        }
+
+        foreach ($jobs as $job) {
+            if ($job->isPending()) {
+                $state = 'pending';
+            } elseif (! $job->lastAttemptSucceeded()) {
+                $state = 'critical';
+                break;
+            }
+        }
+
+        $this->view->jobState = $state;
+
+        return $this;
     }
 
     protected function hasDeploymentEndpoint()
