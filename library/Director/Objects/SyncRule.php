@@ -28,6 +28,8 @@ class SyncRule extends DbObject
         'last_attempt'       => null,
     );
 
+    private $sync;
+
     private $filter;
 
     public function listInvolvedSourceIds()
@@ -73,14 +75,23 @@ class SyncRule extends DbObject
         return $this->filter()->matches($row);
     }
 
-    public function checkForChanges()
+    public function checkForChanges($apply = false)
     {
+        $hadChanges = false;
+
         Benchmark::measure('Checking sync rule ' . $this->rule_name);
         try {
-            $sync = new Sync($this);
+            $sync = $this->sync();
             if ($sync->hasModifications()) {
                 Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
                 $this->sync_state = 'pending-changes';
+                if ($apply && $sync->apply()) {
+                    Benchmark::measure('Successfully synced rule ' . $rule->rule_name);
+                    $this->sync_state = 'in-sync';
+                }
+
+                $hadChanges = true;
+
             } else {
                 Benchmark::measure('No modifications for sync rule ' . $this->rule_name);
                 $this->sync_state = 'in-sync';
@@ -95,6 +106,22 @@ class SyncRule extends DbObject
         if ($this->hasBeenModified()) {
             $this->store();
         }
+
+        return $hadChanges;
+    }
+
+    public function applyChanges()
+    {
+        return $this->checkForChanges(true);
+    }
+
+    protected function sync()
+    {
+        if ($this->sync === null) {
+            $this->sync = new Sync($this);
+        }
+
+        return $this->sync;
     }
 
     protected function filter()
