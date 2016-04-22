@@ -8,6 +8,7 @@ class JobsController extends ActionController
 {
     public function indexAction()
     {
+        $this->setAutoRefreshInterval(10);
         $this->view->title = $this->translate('Jobs');
 
         $this->getTabs()->add('jobs', array(
