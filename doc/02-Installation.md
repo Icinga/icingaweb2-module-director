@@ -42,7 +42,7 @@ Web-based Configuration
 
 The following steps should guide you through the web-based Kickstart wizard.
 In case you prefer automated configuration, you should check the dedicated
-[documentation section](doc/03-Automation.md).
+[documentation section](03-Automation.md).
 
 ### Create a Database resource
 
