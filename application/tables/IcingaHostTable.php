@@ -73,6 +73,7 @@ class IcingaHostTable extends IcingaObjectTable
         $db = $this->connection()->getConnection();
         $sub = clone($this->getBaseQuery());
         $sub->columns($this->getColumns());
+        $this->applyFiltersToQuery($sub);
         $query = $db->select()->from(
             array('sub' => $sub),
             'COUNT(*)'
