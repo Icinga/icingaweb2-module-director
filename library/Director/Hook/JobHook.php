@@ -3,10 +3,20 @@
 namespace Icinga\Module\Director\Hook;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Web\Form\QuickForm;
 
 abstract class JobHook
 {
     private $db;
+
+    public static function getDescription(QuickForm $form)
+    {
+        return false;
+    }
+
+    abstract public function run();
+
+    abstract public function isPending();
 
     public function getName()
     {
@@ -23,6 +33,17 @@ abstract class JobHook
         return $class;
     }
 
+    /**
+     * Override this method if you want to extend the settings form
+     *
+     * @param  QuickForm $form QuickForm that should be extended
+     * @return QuickForm
+     */
+    public static function addSettingsFormFields(QuickForm $form)
+    {
+        return $form;
+    }
+
     public function setDb(Db $db)
     {
         $this->db = $db;
@@ -34,7 +55,5 @@ abstract class JobHook
         return $this->db;
     }
 
-    abstract public run();
 
-    abstract public function isPending();
 }
