@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Util;
 
 /**
  * Generate, show and deploy Icinga 2 configuration
