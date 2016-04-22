@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class IndexController extends ActionController
@@ -29,7 +30,32 @@ class IndexController extends ActionController
                 'url' => $this->getRequest()->getUrl(),
                 'label' => $this->translate('Overview')
             ))->activate('overview');
+
+            $this->fetchSyncState();
         }
+    }
+
+    protected function fetchSyncState()
+    {
+        $syncs = SyncRule::loadAll($this->db());
+        if (count($syncs) > 0) {
+            $state = 'ok';
+        } else {
+            $state = null;
+        }
+
+        foreach ($syncs as $sync) {
+            if ($sync->sync_state !== 'in-sync') {
+                if ($sync->sync_state === 'failing') {
+                    $state = 'critical';
+                    break;
+                } else {
+                    $state = 'warning';
+                }
+            }
+        }
+
+        $this->view->syncState = $state;
     }
 
     protected function hasDeploymentEndpoint()
