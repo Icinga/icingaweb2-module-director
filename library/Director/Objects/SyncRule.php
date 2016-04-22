@@ -2,8 +2,11 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Import\Sync;
+use Exception;
 
 class SyncRule extends DbObject
 {
@@ -68,6 +71,30 @@ class SyncRule extends DbObject
         }
 
         return $this->filter()->matches($row);
+    }
+
+    public function checkForChanges()
+    {
+        Benchmark::measure('Checking sync rule ' . $this->rule_name);
+        try {
+            $sync = new Sync($this);
+            if ($sync->hasModifications()) {
+                Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
+                $this->sync_state = 'pending-changes';
+            } else {
+                Benchmark::measure('No modifications for sync rule ' . $this->rule_name);
+                $this->sync_state = 'in-sync';
+            }
+
+            $this->last_error_message = null;
+        } catch (Exception $e) {
+            $this->sync_state = 'failing';
+            $this->last_error_message = $e->getMessage();
+        }
+
+        if ($this->hasBeenModified()) {
+            $this->store();
+        }
     }
 
     protected function filter()
