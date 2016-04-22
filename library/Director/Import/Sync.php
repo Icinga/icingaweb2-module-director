@@ -105,6 +105,8 @@ class Sync
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified[] = $object;
+            } elseif ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+                $modified[] = $object;
             }
         }
 
