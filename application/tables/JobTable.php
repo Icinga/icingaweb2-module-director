@@ -57,7 +57,6 @@ class JobTable extends QuickTable
         $view = $this->view();
         return array(
             'job_name' => $view->translate('Job name'),
-            'object_type'  => $view->translate('Object type'),
         );
     }
 
