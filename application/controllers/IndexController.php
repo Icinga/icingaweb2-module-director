@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Module\Director\Objects\DirectorJob;
+use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
@@ -33,6 +34,7 @@ class IndexController extends ActionController
             ))->activate('overview');
 
             $this->fetchSyncState()
+                 ->fetchImportState()
                  ->fetchJobState();
         }
     }
@@ -58,6 +60,31 @@ class IndexController extends ActionController
         }
 
         $this->view->syncState = $state;
+
+        return $this;
+    }
+
+    protected function fetchImportState()
+    {
+        $srcs = ImportSource::loadAll($this->db());
+        if (count($srcs) > 0) {
+            $state = 'ok';
+        } else {
+            $state = null;
+        }
+
+        foreach ($srcs as $src) {
+            if ($src->import_state !== 'in-sync') {
+                if ($src->import_state === 'failing') {
+                    $state = 'critical';
+                    break;
+                } else {
+                    $state = 'warning';
+                }
+            }
+        }
+
+        $this->view->importState = $state;
 
         return $this;
     }
