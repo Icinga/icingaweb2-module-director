@@ -233,8 +233,14 @@ class IcingaConfig
         return $checksums;
     }
 
-    protected function getZoneName($id)
+    // TODO: prepare lookup cache if empty?
+    public function getZoneName($id)
     {
+        if (! array_key_exists($id, $this->zoneMap)) {
+            $zone = IcingaZone::loadWithAutoIncId($id, $this->connection);
+            $this->zoneMap[$id] = $zone->object_name;
+        }
+
         return $this->zoneMap[$id];
     }
 
@@ -546,7 +552,7 @@ class IcingaConfig
         return in_array($type, $types);
     }
 
-    protected function configFile($name, $suffix = '.conf')
+    public function configFile($name, $suffix = '.conf')
     {
         $filename = $name . $suffix;
         if (! array_key_exists($filename, $this->files)) {
