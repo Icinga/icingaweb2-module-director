@@ -14,12 +14,15 @@ class SyncRule extends DbObject
     protected $autoincKeyName = 'id';
 
     protected $defaultProperties = array(
-        'id'                => null,
-        'rule_name'         => null,
-        'object_type'       => null,
-        'update_policy'     => null,
-        'purge_existing'    => null,
-        'filter_expression' => null,
+        'id'                 => null,
+        'rule_name'          => null,
+        'object_type'        => null,
+        'update_policy'      => null,
+        'purge_existing'     => null,
+        'filter_expression'  => null,
+        'sync_state'         => 'unknown',
+        'last_error_message' => null,
+        'last_attempt'       => null,
     );
 
     private $filter;
