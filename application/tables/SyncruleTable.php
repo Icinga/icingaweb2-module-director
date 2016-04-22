@@ -9,13 +9,12 @@ use Exception;
 
 class SyncruleTable extends QuickTable
 {
-    protected $revalidate = false;
-
     public function getColumns()
     {
         return array(
             'id'                => 's.id',
             'rule_name'         => 's.rule_name',
+            'sync_state'        => 's.sync_state',
             'object_type'       => 's.object_type',
             'update_policy'     => 's.update_policy',
             'purge_existing'    => 's.purge_existing',
@@ -25,7 +24,7 @@ class SyncruleTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/syncrule/edit', array('id' => $row->id));
+        return $this->url('director/syncrule', array('id' => $row->id));
     }
 
     protected function listTableClasses()
@@ -45,25 +44,7 @@ class SyncruleTable extends QuickTable
 
     protected function getRowClasses($row)
     {
-        if (! $this->revalidate) {
-            return array();
-        }
-
-        try {
-            // $mod = Sync::hasModifications(
-            $sync = new Sync(SyncRule::load($row->id, $this->connection()));
-            $mod = $sync->getExpectedModifications();
-
-            if (count($mod) > 0) {
-                $row->rule_name = $row->rule_name . ' (' . count($mod) . ')';
-                return 'pending-changes';
-            } else {
-                return 'in-sync';
-            }
-        } catch (Exception $e) {
-            $row->rule_name = $row->rule_name . ' (' . $e->getMessage() . ')';
-            return 'failing';
-        }
+        return $row->sync_state;
     }
 
     public function getTitles()
