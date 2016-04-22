@@ -9,8 +9,6 @@ use Exception;
 
 class ImportsourceTable extends QuickTable
 {
-    protected $revalidate = false;
-
     protected $searchColumns = array(
         'source_name',
     );
@@ -18,9 +16,11 @@ class ImportsourceTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'             => 's.id',
-            'source_name'    => 's.source_name',
-            'provider_class' => 's.provider_class',
+            'id'                 => 's.id',
+            'source_name'        => 's.source_name',
+            'provider_class'     => 's.provider_class',
+            'import_state'       => 's.import_state',
+            'last_error_message' => 's.last_error_message',
         );
     }
 
@@ -44,25 +44,11 @@ class ImportsourceTable extends QuickTable
 
     protected function getRowClasses($row)
     {
-        if (! $this->revalidate) {
-            return array();
+        if ($row->import_state === 'failing' && $row->last_error_message) {
+            $row->source_name .= ' (' . $row->last_error_message . ')';
         }
-        try {
-            $import = new Import(ImportSource::load($row->id, $this->connection()));
-            if ($import->providesChanges()) {
-                $row->source_name = sprintf(
-                    '%s (%s)',
-                    $row->source_name,
-                    $this->view()->translate('has changes')
-                );
-                return 'pending-changes';
-            } else {
-                return 'in-sync';
-            }
-        } catch (Exception $e) {
-            $row->source_name = $row->source_name . ' (' . $e->getMessage() . ')';
-            return 'failing';
-        }
+
+        return $row->import_state;
     }
 
     public function getBaseQuery()
