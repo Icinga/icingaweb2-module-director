@@ -204,7 +204,7 @@ class IcingaServiceTest extends BaseTestCase
         $config = new IcingaConfig($db);
         $service->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/master.conf'),
+            array('zones.d/master/services.conf'),
             $config->getFileNames()
         );
     }

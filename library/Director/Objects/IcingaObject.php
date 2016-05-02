@@ -122,7 +122,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-
     private function loadMultiRelation($property)
     {
         if ($this->hasBeenLoadedFromDb()) {
@@ -1129,7 +1128,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config)
+            'zones.d/' . $this->getRenderingZone($config) . '/' . $filename
         )->addObject($this);
     }
 
