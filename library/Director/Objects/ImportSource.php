@@ -20,7 +20,7 @@ class ImportSource extends DbObjectWithSettings
         'source_name'        => null,
         'provider_class'     => null,
         'key_column'         => null,
-        'import_state'       => null,
+        'import_state'       => 'unknown',
         'last_error_message' => null,
         'last_attempt'       => null,
     );
