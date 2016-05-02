@@ -79,12 +79,12 @@ PASSWORD="***"
 test -z "$PASSWORD" || USERNAME="$USERNAME:$PASSWORD"
 
 test -z "$BODY" && curl -u "$USERNAME" \
-  -i http://icingaweb/icingaweb/$URL \
+  -i https://icingaweb/icingaweb/$URL \
   -H 'Accept: application/json' \
   -X $METHOD
 
 test -z "$BODY" || curl -u "$USERNAME" \
-  -i http://icingaweb/icingaweb/$URL \
+  -i https://icingaweb/icingaweb/$URL \
   -H 'Accept: application/json' \
   -X $METHOD \
   -d "$BODY"
