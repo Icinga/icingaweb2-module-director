@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
@@ -33,9 +34,21 @@ class IndexController extends ActionController
                 'label' => $this->translate('Overview')
             ))->activate('overview');
 
-            $this->fetchSyncState()
-                 ->fetchImportState()
-                 ->fetchJobState();
+            $migrations = new Migrations($this->db());
+
+            if ($migrations->hasPendingMigrations()) {
+                $this->view->migrationsForm = $this
+                    ->loadForm('applyMigrations')
+                    ->setMigrations($migrations)
+                    ->handleRequest();
+            }
+
+            try {
+                $this->fetchSyncState()
+                     ->fetchImportState()
+                     ->fetchJobState();
+            } catch (Exception $e) {
+            }
         }
     }
 

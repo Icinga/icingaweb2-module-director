@@ -84,6 +84,11 @@ if (!$this->hasDeploymentEndpoint) {
     echo $this->form;
 }
 
+if ($this->migrationsForm) {
+    echo '<h1>' . $this->translate('There are pending database schema migrations') . "</h2>\n";
+    echo $this->migrationsForm;
+}
+
 $all = array(
     $this->translate('Define whatever you want to be monitored') => array(
         array('host',     $this->translate('Host objects'), 'director/hosts', statSummary($this, 'host')),
