@@ -1062,6 +1062,18 @@ abstract class DbObject
         return self::$prefetched[$class];
     }
 
+    public static function clearPrefetchCache()
+    {
+        $class = get_called_class();
+        if (! array_key_exists($class, self::$prefetched)) {
+            return false;
+        }
+
+        unset(self::$prefetched[$class]);
+        unset(self::$prefetchedNames[$class]);
+        unset(self::$prefetchStats[$class]);
+    }
+
     public static function exists($id, DbConnection $connection)
     {
         if (static::getPrefetched($id)) {
