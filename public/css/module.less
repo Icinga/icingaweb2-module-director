@@ -975,6 +975,50 @@ table.activity-log {
     }
 }
 
+table.config-diff {
+
+    tr th:first-child {
+        padding-left: 2em;
+    }
+
+    tr td:first-child {
+        padding-left: 2em;
+        &::before {
+            font-family: 'ifont';
+            // icon-help:
+            content: '\e85b';
+            float: left;
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.file-unmodified td:first-child::before {
+        // icon-ok
+        color: @color-ok;
+        content: '\e803';
+    }
+
+    tr.file-created td:first-child::before {
+        // icon-plus
+        color: @color-pending;
+        content: '\e805';
+    }
+
+    tr.file-removed td:first-child::before {
+        // icon-cancel
+        color: @color-critical;
+        content: '\e804';
+    }
+
+    tr.file-modified td:first-child::before {
+        // icon-flapping
+        color: @color-warning;
+        content: '\e85d';
+    }
+}
+
 .tree li a {
   display: inline-block;
   padding-left: 2.4em;
