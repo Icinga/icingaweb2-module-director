@@ -34,9 +34,11 @@ span.disabled {
   color: @gray-light;
 }
 
-.controls span a {
-  color: @icinga-blue;
-  margin-right: 1em;
+.controls span.action-links {
+  a {
+    color: @icinga-blue;
+    margin-right: 1em;
+  }
 }
 
 pre.disabled {
@@ -404,9 +406,15 @@ a:hover::before {
   text-decoration: none;
 }
 
+h1 {
+    min-width: 27em;
+}
+
 ul.main-actions {
   margin: 0;
   padding: 0;
+  min-width: 36em;
+
   li {
     list-style-type: none;
 
@@ -415,7 +423,6 @@ ul.main-actions {
     padding: 0;
     clear: both;
     width: 19em;
-    min-width: 16em;
     vertical-align: top;
 
     a {
@@ -450,7 +457,6 @@ ul.main-actions {
         }
 
         padding: 1em;
-        font-size: 1.1em;
         color: #666;
         font-weight: bold;
         display: block;
@@ -477,8 +483,9 @@ ul.main-actions {
 #layout.poor-layout ul.main-actions {
   li {
     a { height: 12em; }
+    width: 18em;
     > a > i {
-      font-size: 2.4em;
+      font-size: 2em;
     }
   }
 }
@@ -487,7 +494,7 @@ ul.main-actions {
 #layout.twocols ul.main-actions {
   li {
     a { height: 12em; }
-    width: 16em;
+    width: 17em;
     > a > i {
       font-size: 1.8em;
     }
