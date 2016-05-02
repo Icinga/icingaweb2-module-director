@@ -1,5 +1,13 @@
-Preparing your Icinga 2 environment for the Director
-====================================================
+Getting started
+===============
+
+When new to the Director please make your first steps with a naked Icinga
+environment. Director is not allowed to modify existing configuration in
+`/etc/icinga2`. And while importing existing config is possible (happens for
+example automagically at kickstart time), it is a pretty advanced task you
+should not tackle at the early beginning.
+
+
 
 Create an API user
 ------------------
@@ -21,14 +29,22 @@ checking your clients, you will have to create them.
 The easiest way to set up Icinga 2 with a `zone` and `endpoint` is by
 running the [Icinga 2 Setup Wizard](http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client#icinga2-client-installation-master-setup).
 
-Start with a new, empty Icinga setup. Director is not allowed to modify
-existing configuration in `/etc/icinga2`, and while importing existing
-config is possible (happens for example automagically at kickstart time)
-this is an advanced task you should not tackle at the early beginning.
-
 Take some time to really understand how to work with Icinga Director first.
 
-Working with Agents and Config Zones
-====================================
 
-Hint: Large: max packet size
+Other topics that might interest you
+------------------------------------
+
+* [Working with agents](24-Working-with-agents.md)
+* [Undstanding how Icinga Director works](10-How-it-works.md)
+
+What you should not try to start with
+-------------------------------------
+
+Director has not bee built to help you with managing existing hand-crafted
+configuration in /etc/icinga2. There are cases where it absolutely would
+make sense to combine the Director with manual configuration. You can also
+use multiple tools owning separare config packages. But these are pretty
+advanced topics.
+
+
