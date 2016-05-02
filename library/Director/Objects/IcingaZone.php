@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class IcingaZone extends IcingaObject
@@ -38,6 +39,21 @@ class IcingaZone extends IcingaObject
         }
 
         return c::renderKeyValue('endpoints', c::renderArray($endpoints));
+    }
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        // If the zone has a parent zone...
+        if ($this->get('parent_id')) {
+            // ...we render the zone object to the parent zone
+            return $this->parent;
+        } elseif ($this->is_global === 'y') {
+            // ...additional global zones are rendered to our global zone...
+            return $this->connection->getDefaultGlobalZoneName();
+        } else {
+            // ...and all the other zones are rendered to our master zone
+            return $this->connection->getMasterZoneName();
+        }
     }
 
     public function setEndpointList($list)
