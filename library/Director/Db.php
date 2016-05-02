@@ -789,6 +789,32 @@ class Db extends DbConnection
         return $binary;
     }
 
+    public function enumDeployedConfigs()
+    {
+        $db = $this->db();
+
+        $columns = array(
+            'checksum' => $this->dbHexFunc('c.checksum'),
+        );
+
+        if ($this->isPgsql()) {
+            $columns['caption'] = 'SUBSTRING(' . $columns['checksum'] . ' FROM 1 FOR 7)';
+        } else {
+            $columns['caption'] = 'SUBSTRING(' . $columns['checksum'] . ', 1, 7)';
+        }
+
+        $query = $db->select()->from(
+            array('l' => 'director_deployment_log'),
+            $columns
+        )->joinLeft(
+            array('c' => 'director_generated_config'),
+            'c.checksum = l.config_checksum',
+            array()
+        )->order('l.start_time DESC');
+
+        return $db->fetchPairs($query);
+    }
+
     public function getUncollectedDeployments()
     {
         $db = $this->db();
