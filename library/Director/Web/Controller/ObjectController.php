@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Url;
 
@@ -103,23 +104,22 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
         $this->getTabs()->activate('render');
         $object = $this->object;
+        $this->view->isDisabled = $object->disabled === 'y';
+        $this->view->isExternal = $object->isExternal();
 
         if ($this->params->shift('resolved')) {
-            $this->view->object = $object::fromPlainObject(
+            $object = $object::fromPlainObject(
                 $object->toPlainObject(true),
                 $object->getConnection()
             );
 
-            if ($object->imports()->count() > 0) {
-                $this->view->actionLinks = $this->view->qlink(
-                    $this->translate('Show normal'),
-                    $this->getRequest()->getUrl()->without('resolved'),
-                    null,
-                    array('class' => 'icon-resize-small state-warning')
-                );
-            }
+            $this->view->actionLinks = $this->view->qlink(
+                $this->translate('Show normal'),
+                $this->getRequest()->getUrl()->without('resolved'),
+                null,
+                array('class' => 'icon-resize-small state-warning')
+            );
         } else {
-            $this->view->object = $object;
 
             if ($object->supportsImports() && $object->imports()->count() > 0) {
                 $this->view->actionLinks = $this->view->qlink(
@@ -130,6 +130,18 @@ abstract class ObjectController extends ActionController
                 );
             }
         }
+
+        if ($this->view->isExternal) {
+            $object->object_type = 'object';
+        }
+
+        if ($this->view->isDisabledd) {
+            $object->disabled = 'n';
+        }
+
+        $this->view->object = $object;
+        $this->view->config = new IcingaConfig($this->db());
+        $object->renderToConfig($this->view->config);
 
         $this->view->title = sprintf(
             $this->translate('Config preview: %s'),
