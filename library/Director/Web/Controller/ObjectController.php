@@ -239,10 +239,9 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
 
         $this->getTabs()->activate('fields');
-        $title = $this->translate('%s template "%s": custom fields');
+
         $this->view->title = sprintf(
-            $title,
-            $this->translate(ucfirst($type)),
+            $this->translate('Custom fields: %s'),
             $object->object_name
         );
 
