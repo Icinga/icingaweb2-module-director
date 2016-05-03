@@ -37,10 +37,10 @@ $section->add($this->translate('Hosts'))->setUrl('director/hosts')->setPriority(
 $section->add($this->translate('Services'))->setUrl('director/services')->setPriority(40);
 $section->add($this->translate('Commands'))->setUrl('director/commands')->setPriority(50);
 $section->add($this->translate('Users'))->setUrl('director/users')->setPriority(70);
-$section->add($this->translate('Import / Sync'))
+$section->add($this->translate('Automation'))
     ->setUrl('director/list/importsource')
     ->setPriority(901);
-$section->add($this->translate('Deployments / History'))
+$section->add($this->translate('Config history'))
     ->setUrl('director/config/deployments')
     ->setPriority(902)
     ->setRenderer('ConfigHealthItemRenderer');
