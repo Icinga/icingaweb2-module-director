@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaZone;
@@ -78,7 +79,24 @@ class HostController extends ObjectController
         $this->view->title = 'Agent deployment instructions';
         // TODO: Fail when no ticket
         $this->view->certname = $this->object->object_name;
-        $this->view->ticket = Util::getIcingaTicket($this->view->certname, $this->api()->getTicketSalt());
+
+        try {
+            $this->view->ticket = Util::getIcingaTicket(
+                $this->view->certname,
+                $this->api()->getTicketSalt()
+            );
+
+        } catch (Exception $e) {
+            $this->view->ticket = 'ERROR';
+            $this->view->error = sprintf(
+                $this->translate(
+                    'A ticket for this agent could not have been requested from'
+                    . ' your deployment endpoint: %s'
+                ),
+                $e->getMessage()
+            );
+        }
+
         $this->view->master = $this->db()->getDeploymentEndpointName();
         $this->view->masterzone = $this->db()->getMasterZoneName();
         $this->view->globalzone = $this->db()->getDefaultGlobalZoneName();
@@ -95,7 +113,12 @@ class HostController extends ObjectController
             throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
         }
 
-        return $this->sendJson(Util::getIcingaTicket($host->object_name, $this->api()->getTicketSalt()));
+        return $this->sendJson(
+            Util::getIcingaTicket(
+                $host->object_name,
+                $this->api()->getTicketSalt()
+            )
+        );
     }
 
     public function renderAction()

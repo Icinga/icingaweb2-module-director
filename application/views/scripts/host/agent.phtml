@@ -8,7 +8,11 @@
 $cert   = $this->escape($this->certname);
 $master = $this->escape($this->master);
 ?>
-Please check the <a href="http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client">Icinga 2 Client documentation</a> for more related information. The Director-assisted setup corresponds to configuring the <a href="http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client#icinga2-client-configuration-command-bridge">Client as Command Execution Bridge</a>.
+<p>Please check the <a href="http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client">Icinga 2 Client documentation</a> for more related information. The Director-assisted setup corresponds to configuring the <a href="http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client#icinga2-client-configuration-command-bridge">Client as Command Execution Bridge</a>.</p>
+
+<?php if ($this->error): ?>
+<p class="error"><?= $this->escape($this->error) ?></p>
+<?php endif ?>
 
 <h2>When using the node wizard</h2>
 <p>Ticket : <code><?= $this->escape($ticket) ?></code></p>
@@ -49,7 +53,7 @@ icinga2 pki request --host <?= $master ?> \
 include "constants.conf"
 include &lt;itl&gt;
 include &lt;plugins&gt;
-include &lt;plugins-contrib&gt;
+// include &lt;plugins-contrib&gt;
 
 object FileLogger "main-log" {
   severity = "information"
