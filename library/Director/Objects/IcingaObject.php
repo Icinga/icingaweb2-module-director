@@ -1134,9 +1134,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getRenderingZone(IcingaConfig $config = null)
     {
-        if ($this->zone_id) {
+        if ($zoneId = $this->getResolvedProperty('zone_id')) {
             // Config has a lookup cache, is faster:
-            return $config->getZoneName($this->zone_id);
+            return $config->getZoneName($zoneId);
         }
 
         if ($this->isTemplate() || $this->isApplyRule()) {
