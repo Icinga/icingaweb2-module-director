@@ -162,13 +162,18 @@ class IcingaService extends IcingaObject
 
     protected function renderCustomExtensions()
     {
-        if ($this->command_endpoint_id !== null
-            || $this->object_type !== 'object'
-            || $this->getResolvedProperty('use_agent') !== 'y') {
+        // A hand-crafted command endpoint overrides use_agent
+        if ($this->command_endpoint_id !== null) {
             return '';
         }
 
-        if ($this->hasBeenAssignedToHostTemplate()) {
+        // In case use_agent isn't defined, do nothing
+        // TODO: what if we inherit use_agent and override it with 'n'?
+        if ($this->use_agent !== 'y') {
+            return '';
+        }
+
+        if ($this->hasBeenAssignedToHostTemplate() || $this->object_type !== 'object') {
             return c::renderKeyValue('command_endpoint', 'host.name');
         } else {
             return $this->renderRelationProperty('host', $this->host_id, 'command_endpoint');
