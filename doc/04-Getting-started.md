@@ -28,6 +28,32 @@ this is an advanced task you should not tackle at the early beginning.
 
 Take some time to really understand how to work with Icinga Director first.
 
+First steps on the Frontend
+====================================
+Create a host
+------------------
+
+First we create a `host template` which we will name `director-generic-host`. The default check we will use for a Host is `hostalive`.
+
+Click on the interface on Icinga Director > Host Objects > Add Host and `add a template`. For details have a look at the screenshots below:
+
+![add host section](screenshot/director/04-getting-started/01-add_a_host.png)
+
+![add host template](screenshot/director/04-getting-started/02-add_host_template.png)
+
+Now we can add our first host. Go to Icinga Director > Host Objects > Add Host and choose `Object`:
+
+![add host object](screenshot/director/04-getting-started/03-add_a_host_object.png)
+
+Deploy your Config
+------------------
+
+It is time to deploy our first configuration. Click on 
+Deployments/ History > Render config > Deploy to master
+
+
+
+
 Working with Agents and Config Zones
 ====================================
 
