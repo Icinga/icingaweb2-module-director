@@ -980,7 +980,19 @@ table.activity-log {
 
     tr.undeployed td, tr.undeployed a {
         color: @gray;
+    }
+
+    tr.undeployed {
         background-color: @gray-lightest;
+        &.active {
+            background-color: @gray-lighter;
+        }
+        &:hover {
+            background-color: @gray-light;
+            td, a {
+                color: @text-color;
+            }
+        }
     }
 
     tr.undeployed td:first-child::before {
