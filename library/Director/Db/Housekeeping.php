@@ -64,6 +64,11 @@ class Housekeeping
         );
     }
 
+    public function hasPendingTasks()
+    {
+        return count($this->getPendingTaskSummary()) > 0;
+    }
+
     public function runAllTasks()
     {
         $result = array();

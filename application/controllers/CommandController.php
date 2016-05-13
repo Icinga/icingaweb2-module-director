@@ -10,7 +10,7 @@ class CommandController extends ObjectController
     public function init()
     {
         parent::init();
-        if ($this->object) {
+        if ($this->object && ! $this->object->isExternal()) {
             $this->getTabs()->add('arguments', array(
                 'url'       => 'director/command/arguments',
                 'urlParams' => array('name' => $this->object->object_name),
@@ -22,7 +22,10 @@ class CommandController extends ObjectController
     public function argumentsAction()
     {
         $this->getTabs()->activate('arguments');
-        $this->view->title = $this->translate('Command arguments');
+        $this->view->title = sprintf(
+            $this->translate('Command arguments: %s'),
+            $this->object->object_name
+        );
 
         $this->view->table = $this
             ->loadTable('icingaCommandArgument')

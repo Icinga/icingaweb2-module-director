@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -171,6 +172,56 @@ class ConfigController extends ActionController
                 array('checksum' => $config->getHexChecksum())
             )
         );
+    }
+
+    public function diffAction()
+    {
+        $db = $this->db();
+        $this->view->title = $this->translate('Config diff');
+
+        $tabs = $this->getTabs()->add('diff', array(
+            'label'     => $this->translate('Config diff'),
+            'url'       => $this->getRequest()->getUrl()
+        ))->activate('diff');
+
+        $leftSum  = $this->view->leftSum  = $this->params->get('left');
+        $rightSum = $this->view->rightSum = $this->params->get('right');
+        $left  = IcingaConfig::load(Util::hex2binary($leftSum), $db);
+
+        $this->view->configs = $db->enumDeployedConfigs();
+        if ($rightSum === null) {
+            return;
+        }
+
+        $right = IcingaConfig::load(Util::hex2binary($rightSum), $db);
+        $this->view->table = $this
+            ->loadTable('ConfigFileDiff')
+            ->setConnection($this->db())
+            ->setLeftChecksum($leftSum)
+            ->setRightChecksum($rightSum);
+    }
+
+    public function filediffAction()
+    {
+        $db = $this->db();
+        $leftSum  = $this->params->get('left');
+        $rightSum = $this->params->get('right');
+        $filename = $this->view->filename = $this->params->get('file_path');
+
+        $left = IcingaConfig::load(Util::hex2binary($leftSum), $db);
+        $right = IcingaConfig::load(Util::hex2binary($rightSum), $db);
+
+        $leftFile  = $left->getFile($filename);
+        $rightFile = $right->getFile($filename);
+
+        $d = ConfigDiff::create($leftFile, $rightFile);
+
+        $this->view->title = sprintf(
+            $this->translate('Config file "%s"'),
+            $filename
+        );
+
+        $this->view->output = $d->renderHtml();
     }
 
     protected function overviewTabs()

@@ -105,6 +105,8 @@ class Sync
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified[] = $object;
+            } elseif ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+                $modified[] = $object;
             }
         }
 
@@ -671,9 +673,6 @@ class Sync
     /**
      * Runs a SyncRule and applies all resulting changes
      *
-     * TODO: Should return the id of the related sync_history table entry.
-     *       Such a table does not yet exist, so 42 is the answer right now.
-     *
      * @return int
      */
     public function apply()
@@ -738,7 +737,6 @@ class Sync
         $this->run->set('duration_ms', (int) round(
             (microtime(true) - $this->runStartTime) * 1000
         ))->store();
-
 
         return $this->run->id;
     }

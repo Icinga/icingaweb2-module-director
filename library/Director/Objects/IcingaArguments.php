@@ -82,7 +82,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     public function set($key, $value)
     {
-        $argument = IcingaCommandArgument::create($this->mungeCommandArgument($key, $value));
+        $argument = IcingaCommandArgument::create(
+            $this->mungeCommandArgument($key, $value)
+        )->set('command_id', $this->object->id);
         $key = $argument->argument_name;
         if (array_key_exists($key, $this->arguments)) {
             $this->arguments[$key]->replaceWith($argument);

@@ -45,21 +45,28 @@ class DeploymentLogTable extends QuickTable
 
     public function getColumns()
     {
+        $db = $this->connection();
+
         $columns = array(
             'id'                => 'l.id',
             'peer_identity'     => 'l.peer_identity',
+            'identifier'        => "l.peer_identity || ' (' || SUBSTRING(",
             'start_time'        => 'l.start_time',
             'stage_collected'   => 'l.stage_collected',
             'dump_succeeded'    => 'l.dump_succeeded',
             'stage_name'        => 'l.stage_name',
             'startup_succeeded' => 'l.startup_succeeded',
-            'checksum'          => 'LOWER(HEX(c.checksum))',
+            'checksum'          => $db->dbHexFunc('c.checksum'),
             'duration'          => "l.duration_dump || 'ms'",
         );
 
         if ($this->connection->isPgsql()) {
-            $columns['checksum'] = "LOWER(ENCODE(c.checksum, 'hex'))";
+            $columns['identifier'] .= $columns['checksum'] . ' FROM 1 FOR 7)';
+        } else {
+            $columns['identifier'] .= $columns['checksum'] . ', 1, 7)';
         }
+
+        $columns['identifier'] .= " || ')'";
 
         return $columns;
     }
@@ -73,8 +80,8 @@ class DeploymentLogTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'peer_identity'     => $view->translate('Icinga Node'),
-            'start_time'        => $view->translate('Time'),
+            'identifier' => $view->translate('Icinga Node'),
+            'start_time' => $view->translate('Time'),
         );
     }
 

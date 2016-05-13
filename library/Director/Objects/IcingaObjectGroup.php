@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+
 abstract class IcingaObjectGroup extends IcingaObject
 {
     protected $supportsImports = true;
@@ -13,4 +15,9 @@ abstract class IcingaObjectGroup extends IcingaObject
         'disabled'              => 'n',
         'display_name'          => null,
     );
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        return $this->connection->getDefaultGlobalZoneName();
+    }
 }

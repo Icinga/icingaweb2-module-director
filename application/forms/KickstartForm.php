@@ -27,9 +27,10 @@ class KickstartForm extends QuickForm
         $this->migrateDbLabel   = $this->translate('Apply schema migrations');
 
         $this->addResourceConfigElements();
+        $this->addResourceDisplayGroup();
+
         if (!$this->config()->get('db', 'resource')
             || ($this->config()->get('db', 'resource') !== $this->getResourceName())) {
-            $this->addResourceDisplayGroup();
             return;
         }
 
@@ -66,6 +67,9 @@ class KickstartForm extends QuickForm
             ));
 
             $this->addHtmlHint($hint, array('name' => 'HINT_ready'));
+            $this->getDisplayGroup('config')->addElements(
+                array($this->getElement('HINT_ready'))
+            );
 
             return;
         }
@@ -168,7 +172,6 @@ class KickstartForm extends QuickForm
 
                 $this->addHtmlHint($hint, array('name' => 'HINT_db_perms'));
             }
-
         }
     }
 
@@ -214,10 +217,11 @@ class KickstartForm extends QuickForm
     {
         $elements = array(
             'HINT_no_resource',
-            'HINT_ready',
             'resource',
+            'HINT_ready',
             'HINT_schema',
-            'HINT_db_perms'
+            'HINT_db_perms',
+            'HINT_config_store'
         );
 
         $this->addDisplayGroup($elements, 'config', array(
@@ -258,26 +262,41 @@ class KickstartForm extends QuickForm
         try {
             $config->saveIni();
             $this->setSuccessMessage($this->translate('Configuration has been stored'));
+
+            return true;
         } catch (Exception $e) {
             $this->getElement('resource')->addError(
                 sprintf(
-                    $this->translate('Unable to store the configuration to "%s"'),
+                    $this->translate(
+                        'Unable to store the configuration to "%s". Please check'
+                        . ' file permissions or manually store the content shown below'
+                    ),
                     $config->getConfigFile()
                 )
-            )->removeDecorator('description');
-            $this->addHtmlHint(
-                '<pre>' . $config . '</pre>'
             );
-        }
+            $this->addHtmlHint(
+                '<pre>' . $config . '</pre>',
+                array('name' => 'HINT_config_store')
+            );
 
+            $this->getDisplayGroup('config')->addElements(
+                array($this->getElement('HINT_config_store'))
+            );
+            $this->removeElement('HINT_ready');
+
+            return false;
+        }
     }
 
     public function onSuccess()
     {
         try {
             if ($this->getSubmitLabel() === $this->storeConfigLabel) {
-                $this->storeResourceConfig();
-                return parent::onSuccess();
+                if ($this->storeResourceConfig()) {
+                    return parent::onSuccess();
+                } else {
+                    return;
+                }
             }
 
             if ($this->getSubmitLabel() === $this->createDbLabel

@@ -122,7 +122,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-
     private function loadMultiRelation($property)
     {
         if ($this->hasBeenLoadedFromDb()) {
@@ -155,6 +154,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        ksort($this->loadedMultiRelations);
         return $this->loadedMultiRelations;
     }
 
@@ -1128,15 +1128,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config)
+            'zones.d/' . $this->getRenderingZone($config) . '/' . $filename
         )->addObject($this);
     }
 
     public function getRenderingZone(IcingaConfig $config = null)
     {
-        if ($this->zone_id) {
+        if ($zoneId = $this->getResolvedProperty('zone_id')) {
             // Config has a lookup cache, is faster:
-            return $config->getZoneName($this->zone_id);
+            return $config->getZoneName($zoneId);
         }
 
         if ($this->isTemplate() || $this->isApplyRule()) {

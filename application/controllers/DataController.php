@@ -137,7 +137,7 @@ class DataController extends ActionController
         $listId = $list->id;
 
         $form = $this->view->form = $this->loadForm('directorDatalistentry')
-            ->setSuccessUrl('director/data/listentry')
+            ->setSuccessUrl('director/data/listentry?list_id=' . $listId)
             ->setList($list)
             ->setDb($this->db());
 

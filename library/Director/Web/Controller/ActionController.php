@@ -152,6 +152,12 @@ abstract class ActionController extends Controller
                 'label' => $this->translate('Sync rule'),
                 'url'   => 'director/list/syncrule'
             )
+        )->add(
+            'jobs',
+            array(
+                'label' => $this->translate('Jobs'),
+                'url'   => 'director/jobs'
+            )
         );
         return $this->view->tabs;
     }

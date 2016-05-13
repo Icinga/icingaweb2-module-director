@@ -284,7 +284,7 @@ class IcingaHostTest extends BaseTestCase
         $config = new IcingaConfig($db);
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/master.conf'),
+            array('zones.d/master/hosts.conf'),
             $config->getFileNames()
         );
 
@@ -295,7 +295,7 @@ class IcingaHostTest extends BaseTestCase
         $host->zone = '___TEST___zone';
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/___TEST___zone.conf'), 
+            array('zones.d/___TEST___zone/hosts.conf'), 
             $config->getFileNames()
         );
 
@@ -306,7 +306,7 @@ class IcingaHostTest extends BaseTestCase
         $config = new IcingaConfig($db);
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/___TEST___zone.conf'), 
+            array('zones.d/___TEST___zone/hosts.conf'), 
             $config->getFileNames()
         );
 
@@ -316,7 +316,7 @@ class IcingaHostTest extends BaseTestCase
         $config = new IcingaConfig($db);
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/director-global.conf'),
+            array('zones.d/director-global/host_templates.conf'),
             $config->getFileNames()
         );
 

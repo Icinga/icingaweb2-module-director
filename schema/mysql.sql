@@ -140,6 +140,32 @@ CREATE TABLE director_datafield_setting (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE director_job (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  job_name VARCHAR(64) NOT NULL,
+  job_class VARCHAR(72) NOT NULL,
+  disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  run_interval INT(10) UNSIGNED NOT NULL, -- seconds
+  last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
+  ts_last_attempt DATETIME DEFAULT NULL,
+  ts_last_error DATETIME DEFAULT NULL,
+  last_error_message TEXT,
+  PRIMARY KEY (id),
+  UNIQUE KEY (job_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE director_job_setting (
+  job_id INT UNSIGNED NOT NULL,
+  setting_name VARCHAR(64) NOT NULL,
+  setting_value TEXT DEFAULT NULL,
+  PRIMARY KEY (job_id, setting_name),
+  CONSTRAINT job_settings
+    FOREIGN KEY director_job (job_id)
+    REFERENCES director_job (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE director_schema_migration (
   schema_version SMALLINT UNSIGNED NOT NULL,
   migration_time DATETIME NOT NULL,
@@ -1081,6 +1107,14 @@ CREATE TABLE import_source (
   source_name VARCHAR(64) NOT NULL,
   key_column VARCHAR(64) NOT NULL,
   provider_class VARCHAR(72) NOT NULL,
+  import_state ENUM(
+    'unknown',
+    'in-sync',
+    'pending-changes',
+    'failing'
+  ) NOT NULL DEFAULT 'unknown',
+  last_error_message TEXT DEFAULT NULL,
+  last_attempt DATETIME DEFAULT NULL,
   PRIMARY KEY (id),
   INDEX search_idx (key_column)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1214,6 +1248,14 @@ CREATE TABLE sync_rule (
   update_policy ENUM('merge', 'override', 'ignore') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
   filter_expression TEXT DEFAULT NULL,
+  sync_state ENUM(
+    'unknown',
+    'in-sync',
+    'pending-changes',
+    'failing'
+  ) NOT NULL DEFAULT 'unknown',
+  last_error_message VARCHAR(255) DEFAULT NULL,
+  last_attempt DATETIME DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1260,4 +1302,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 92;
+      schema_version = 95;

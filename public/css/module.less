@@ -34,9 +34,11 @@ span.disabled {
   color: @gray-light;
 }
 
-.controls span a {
-  color: @icinga-blue;
-  margin-right: 1em;
+.controls span.action-links {
+  a {
+    color: @icinga-blue;
+    margin-right: 1em;
+  }
 }
 
 pre.disabled {
@@ -404,9 +406,15 @@ a:hover::before {
   text-decoration: none;
 }
 
+h1 {
+    min-width: 27em;
+}
+
 ul.main-actions {
   margin: 0;
   padding: 0;
+  min-width: 36em;
+
   li {
     list-style-type: none;
 
@@ -415,7 +423,6 @@ ul.main-actions {
     padding: 0;
     clear: both;
     width: 19em;
-    min-width: 16em;
     vertical-align: top;
 
     a {
@@ -450,7 +457,6 @@ ul.main-actions {
         }
 
         padding: 1em;
-        font-size: 1.1em;
         color: #666;
         font-weight: bold;
         display: block;
@@ -477,8 +483,9 @@ ul.main-actions {
 #layout.poor-layout ul.main-actions {
   li {
     a { height: 12em; }
+    width: 18em;
     > a > i {
-      font-size: 2.4em;
+      font-size: 2em;
     }
   }
 }
@@ -487,7 +494,7 @@ ul.main-actions {
 #layout.twocols ul.main-actions {
   li {
     a { height: 12em; }
-    width: 16em;
+    width: 17em;
     > a > i {
       font-size: 1.8em;
     }
@@ -722,7 +729,6 @@ table.tinystats {
 }
 
 /* Simple table, test */
-
 table.syncstate {
     tr td:first-child {
         padding-left: 2em;
@@ -748,6 +754,41 @@ table.syncstate {
     }
 
     tr.failing td:first-child::before {
+        content: '\e804';
+        color: @color-critical;
+    }
+}
+
+table.jobs {
+    tr td:first-child {
+        padding-left: 2em;
+        &::before {
+            font-family: 'ifont';
+            // icon-help:
+            content: '\e85b';
+            float: left;
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.ok td:first-child::before {
+        content: '\e803';
+        color: @color-ok;
+    }
+
+    tr.warning td:first-child::before {
+        content: '\e864';
+        color: @color-warning;
+    }
+
+    tr.pending td:first-child::before {
+        content: '\e864';
+        color: @color-pending;
+    }
+
+    tr.critical td:first-child::before {
         content: '\e804';
         color: @color-critical;
     }
@@ -926,11 +967,56 @@ table.activity-log {
     }
 
     tr.undeployed td, tr.undeployed a {
-        font-weight: bold;
+        color: @gray;
+        background-color: @gray-lightest;
     }
 
     tr.undeployed td:first-child::before {
         color: @gray;
+    }
+}
+
+table.config-diff {
+
+    tr th:first-child {
+        padding-left: 2em;
+    }
+
+    tr td:first-child {
+        padding-left: 2em;
+        &::before {
+            font-family: 'ifont';
+            // icon-help:
+            content: '\e85b';
+            float: left;
+            font-weight: bold;
+            margin-left: -1.5em;
+            line-height: 1.5em;
+        }
+    }
+
+    tr.file-unmodified td:first-child::before {
+        // icon-ok
+        color: @color-ok;
+        content: '\e803';
+    }
+
+    tr.file-created td:first-child::before {
+        // icon-plus
+        color: @color-pending;
+        content: '\e805';
+    }
+
+    tr.file-removed td:first-child::before {
+        // icon-cancel
+        color: @color-critical;
+        content: '\e804';
+    }
+
+    tr.file-modified td:first-child::before {
+        // icon-flapping
+        color: @color-warning;
+        content: '\e85d';
     }
 }
 

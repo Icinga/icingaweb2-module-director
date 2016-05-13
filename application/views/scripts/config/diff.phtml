@@ -1,0 +1,31 @@
+<div class="controls">
+<?= $this->tabs ?>
+<h1><?= $this->escape($this->title) ?></h1>
+<span class="action-links" data-base-target="_next">
+<?= $this->addLink ?>
+</span>
+<form action="<?= $this->url ?>" method="GET">
+<?= $this->formSelect(
+    'left',
+    $this->leftSum,
+    array('class' => 'autosubmit'),
+    array(null => $this->translate('- please choose -')) + $this->configs
+)
+?>
+<?= $this->formSelect(
+    'right',
+    $this->rightSum,
+    array('class' => 'autosubmit'),
+    array(null => $this->translate('- please choose -')) + $this->configs
+)
+?>
+</form>
+</div>
+
+<div class="content" data-base-target="_next">
+<?php if (count($this->table)): ?>
+<div>
+<?= $this->table->render() ?>
+</div>
+<?php endif ?>
+</div>
