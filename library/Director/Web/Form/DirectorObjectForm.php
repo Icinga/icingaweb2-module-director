@@ -565,6 +565,18 @@ abstract class DirectorObjectForm extends QuickForm
         return $el;
     }
 
+    protected function setSentValue($name, $value)
+    {
+        if ($this->hasBeenSent()) {
+            $request = $this->getRequest();
+            if ($value !== null && $request->isPost() && $request->getPost($name) !== null) {
+                $request->setPost($name, $value);
+            }
+        }
+
+        return $this->setElementValue($name, $value);
+    }
+
     protected function setElementValue($name, $value = null, $inherited = null, $inheritedFrom = null)
     {
         $el = $this->getElement($name);
