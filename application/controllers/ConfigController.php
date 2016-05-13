@@ -227,16 +227,16 @@ class ConfigController extends ActionController
     protected function overviewTabs()
     {
         $this->view->tabs = $this->getTabs()->add(
-            'deploymentlog',
-            array(
-                'label' => $this->translate('Deployments'),
-                'url'   => 'director/config/deployments'
-            )
-        )->add(
             'activitylog',
             array(
                 'label' => $this->translate('Activity Log'),
                 'url'   => 'director/config/activities'
+            )
+        )->add(
+            'deploymentlog',
+            array(
+                'label' => $this->translate('Deployments'),
+                'url'   => 'director/config/deployments'
             )
         );
         return $this->view->tabs;

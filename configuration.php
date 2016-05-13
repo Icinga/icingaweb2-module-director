@@ -41,6 +41,6 @@ $section->add($this->translate('Automation'))
     ->setUrl('director/list/importsource')
     ->setPriority(901);
 $section->add($this->translate('Config history'))
-    ->setUrl('director/config/deployments')
+    ->setUrl('director/config/activities')
     ->setPriority(902)
     ->setRenderer('ConfigHealthItemRenderer');
