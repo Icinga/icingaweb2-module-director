@@ -36,7 +36,7 @@ Other topics that might interest you
 ------------------------------------
 
 * [Working with agents](24-Working-with-agents.md)
-* [Undstanding how Icinga Director works](10-How-it-works.md)
+* [Understanding how Icinga Director works](10-How-it-works.md)
 
 What you should not try to start with
 -------------------------------------
