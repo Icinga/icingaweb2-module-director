@@ -354,12 +354,14 @@ class IcingaConfig
             ->createFileFromDb('timePeriod')
             ->createFileFromDb('hostGroup')
             ->createFileFromDb('host')
-            ->autogenerateAgents()
             ->createFileFromDb('serviceGroup')
             ->createFileFromDb('service')
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ;
+
+        $this->configFile('zones.d/director-global/commands')
+             ->prepend("library \"methods\"\n\n");
 
         $this->generationTime = (int) ((microtime(true) - $start) * 1000);
 
@@ -408,46 +410,6 @@ class IcingaConfig
         return $this;
     }
 
-    protected function autogenerateAgents()
-    {
-        $zones = array();
-        $endpoints = array();
-        foreach (IcingaHost::prefetchAll($this->connection) as $host) {
-            if ($host->object_type !== 'object') {
-                continue;
-            }
-
-            if ($host->getResolvedProperty('has_agent') !== 'y') {
-                continue;
-            }
-
-            $name = $host->object_name;
-            if (IcingaEndpoint::exists($name, $this->connection)) {
-                continue;
-            }
-
-            $props = array(
-                'object_name'  => $name,
-                'object_type'  => 'object',
-                'log_duration' => 0
-            );
-            if ($host->getResolvedProperty('master_should_connect') === 'y') {
-                $props['host'] = $host->getResolvedProperty('address');
-                $props['zone_id'] = $host->getResolvedProperty('zone_id');
-            }
-
-            $endpoints[] = IcingaEndpoint::create($props);
-            $zones[] = IcingaZone::create(array(
-                'object_name' => $name,
-                'parent'      => $this->connection->getMasterZoneName()
-            ), $this->connection)->setEndpointList(array($name));
-        }
-
-        $this->createFileForObjects('endpoint', $endpoints);
-        $this->createFileForObjects('zone', $zones);
-        return $this;
-    }
-
     protected function createFileFromDb($type)
     {
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
@@ -459,69 +421,16 @@ class IcingaConfig
     protected function createFileForObjects($type, $objects)
     {
         Benchmark::measure(sprintf('Generating %ss: %s', $type, count($objects)));
-        if (empty($objects)) {
-            return $this;
-        }
-
-        $masterZone = $this->connection->getMasterZoneName();
-        $globalZone = $this->connection->getDefaultGlobalZoneName();
-        $file = null;
-
         foreach ($objects as $object) {
-            if ($object->disabled === 'y') {
-                continue;
-            }
-
             if ($object->isExternal()) {
                 if ($type === 'zone') {
                     $this->zoneMap[$object->id] = $object->object_name;
                 }
-
-                continue;
-            } elseif ($object->isTemplate()) {
-                $filename = strtolower($type) . '_templates';
-            } else {
-                $filename = strtolower($type) . 's';
             }
 
-            // Zones get special handling
-            if ($type === 'zone') {
-                $this->zoneMap[$object->id] = $object->object_name;
-                // If the zone has a parent zone...
-                if ($object->parent_id) {
-                    // ...we render the zone object to the parent zone
-                    $zone = $object->parent;
-                } elseif ($object->is_global === 'y') {
-                    // ...additional global zones are rendered to our global zone...
-                    $zone = $globalZone;
-                } else {
-                    // ...and all the other zones are rendered to our master zone
-                    $zone = $masterZone;
-                }
-            // Zone definitions for all other objects are respected...
-            } elseif ($object->hasProperty('zone_id') && ($zone_id = $object->zone_id)) {
-                $zone = $this->getZoneName($zone_id);
-            // ...and if there is no zone defined, special rules take place
-            } else {
-                if ($this->typeWantsMasterZone($type)) {
-                    $zone = $masterZone;
-                } elseif ($this->typeWantsGlobalZone($type)) {
-                    $zone = $globalZone;
-                } else {
-                    throw new ProgrammingError(
-                        'I have no idea of how to deploy a "%s" object',
-                        $type
-                    );
-                }
-            }
+            $object->renderToConfig($this);
+        }
 
-            $filename = 'zones.d/' . $zone . '/' . $filename;
-            $file = $this->configFile($filename);
-            $file->addObject($object);
-        }
-        if ($file && $type === 'command') {
-            $file->prepend("library \"methods\"\n\n");
-        }
         Benchmark::measure(sprintf('%ss done', $type, count($objects)));
         return $this;
     }
