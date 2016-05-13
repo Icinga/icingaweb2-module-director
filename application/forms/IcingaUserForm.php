@@ -27,15 +27,18 @@ class IcingaUserForm extends DirectorObjectForm
             ));
         }
 
-        $this->addElement('text', 'email', array(
-            'label' => $this->translate('Email'),
-            'description' => $this->translate('The Email address of the user.')
-        ));
+        if (! $this->isTemplate()) {
 
-        $this->addElement('text', 'pager', array(
-            'label' => $this->translate('Pager'),
-            'description' => $this->translate('The pager address of the user.')
-        ));
+            $this->addElement('text', 'email', array(
+                'label' => $this->translate('Email'),
+                'description' => $this->translate('The Email address of the user.')
+            ));
+
+            $this->addElement('text', 'pager', array(
+                'label' => $this->translate('Pager'),
+                'description' => $this->translate('The pager address of the user.')
+            ));
+        }
 
         $this->addGroupsElement()
              ->addImportsElement()
