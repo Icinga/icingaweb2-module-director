@@ -420,6 +420,10 @@ class IcingaConfig
 
     protected function createFileForObjects($type, $objects)
     {
+        if (empty($objects)) {
+            return $this;
+        }
+
         Benchmark::measure(sprintf('Generating %ss: %s', $type, count($objects)));
         foreach ($objects as $object) {
             if ($object->isExternal()) {
