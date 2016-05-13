@@ -1,0 +1,4 @@
+object CheckCommand "___TEST___command" {
+    command = [ PluginDir + "/tmp/bla" ]
+}
+

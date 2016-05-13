@@ -87,7 +87,7 @@ class IcingaCommand extends IcingaObject
         if (preg_match('~^([A-Z][A-Za-z0-9_]+\s\+\s)(.+?)$~', $command, $m)) {
             $prefix  = $m[1];
             $command = $m[2];
-        } elseif ($command[0] !== '/') {
+        } elseif (! $this->isAbsolutePath($command)) {
             $prefix = 'PluginDir + ';
             $command = '/' . $command;
         }
@@ -95,6 +95,13 @@ class IcingaCommand extends IcingaObject
         array_unshift($parts, c::alreadyRendered($prefix . c::renderString(array_shift($parts))));
         
         return c::renderKeyValue('command', c::renderArray($parts));
+    }
+
+    protected function isAbsolutePath($path)
+    {
+         return $path[0] === '/'
+            || $path[0] === '\\'
+            || preg_match('/^[A-Z]:\\\/', substr($path, 0, 3));
     }
 
     public static function setPluginDir($pluginDir)
