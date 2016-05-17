@@ -10,33 +10,39 @@ use Icinga\Module\Director\Util;
 
 class ConfigJob extends JobHook
 {
-    protected $housekeeping;
-
     public function run()
     {
-        $this->housekeeping()->runAllTasks();
     }
+
+    public static function addSettingsFormFields(QuickForm $form)
+    {
+        $form->addElement('select', 'deploy_when_changed', array(
+            'label'        => $form->translate('Deploy modified config'),
+            'description'  => $form->translate(
+                'This allows you to immediately deploy a modified configuration'
+            ),
+            'value'        => 'n',
+            'multiOptions' => array(
+                'y'  => $form->translate('Yes'),
+                'n'  => $form->translate('No'),
+            )
+        ));
+
+        return $form;
+    }
+
 
     public function isPending()
     {
-        return $this->housekeeping()->hasPendingTasks();
+        return false;
     }
 
     public static function getDescription(QuickForm $form)
     {
         return $form->translate(
-            'The Housekeeping job provides various task that keep your Director'
-            . ' database fast and clean'
+            'The Config job allows you to generate and eventually deploy your'
+            . 'Icinga 2 configuration'
         );
-    }
-
-    protected function housekeeping()
-    {
-        if ($this->housekeeping === null) {
-            $this->housekeeping = new Housekeeping($this->db());
-        }
-
-        return $this->housekeeping;
     }
 
     /**
