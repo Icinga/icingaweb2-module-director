@@ -195,7 +195,7 @@ class Import
      */
     protected function prepareImportedProperty($key, $rawValue)
     {
-        if (is_array($rawValue)) {
+        if (is_array($rawValue) || is_bool($rawValue)) {
             $value = json_encode($rawValue);
             $format = 'json';
         } elseif ($rawValue instanceof stdClass) {
