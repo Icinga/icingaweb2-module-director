@@ -277,9 +277,13 @@ class KickstartHelper
     {
         $db = $this->db;
         foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
-            if (! $object::exists($object->object_name, $db)) {
-                $object->store();
+            if ($object::exists($object->object_name, $db)) {
+                $new = $object::load($object->object_name, $db)->replaceWith($object);
+            } else {
+                $new = $object;
             }
+    
+            $new->store();
         }
 
         return $this;
