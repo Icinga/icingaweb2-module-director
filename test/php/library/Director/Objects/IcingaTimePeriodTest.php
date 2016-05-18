@@ -79,6 +79,25 @@ class IcingaTimePeriodTest extends BaseTestCase
         return $object;
     }
 
+    public function testIsActiveWorksForWeekdayRanges()
+    {
+        $period = $this->createTestPeriod();
+
+        $newRanges = array(
+            'monday'    => '00:00-24:00',
+            'tuesday'   => '18:00-24:00',
+            'wednesday' => '00:00-24:00',
+        );
+        $period->ranges = $newRanges;
+
+        // Tuesday:
+        $this->assertFalse($period->isActive(strtotime('2016-05-17 10:00:00')));
+        // Wednesday:
+        $this->assertTrue($period->isActive(strtotime('2016-05-18 10:00:00')));
+        // Thursday:
+        $this->assertFalse($period->isActive(strtotime('2016-05-19 10:00:00')));
+    }
+
     protected function loadTestPeriod()
     {
         return IcingaTimePeriod::load($this->testPeriodName, $this->getDb());

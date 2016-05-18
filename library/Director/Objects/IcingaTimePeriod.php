@@ -39,4 +39,21 @@ class IcingaTimePeriod extends IcingaObject
         // @codingStandardsIgnoreEnd
         return c::renderKeyValue('update', $this->update_method);
     }
+
+    public function isActive($now = null)
+    {
+        if ($now === null) {
+            $now = time();
+        }
+
+        foreach ($this->ranges()->getRanges() as $range) {
+            if ($range->isActive($now)) {
+                return true;
+            }
+        }
+
+        // TODO: no range currently means (and renders) "never", Icinga behaves
+        //       different. Figure out whether and how we should support this
+        return false;
+    }
 }
