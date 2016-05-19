@@ -43,6 +43,18 @@ class ActivityLogTable extends QuickTable
         return array_merge(array('activity-log'), parent::listTableClasses());
     }
 
+    public function render()
+    {
+        $data = $this->fetchData();
+
+        $htm = '<table' . $this->createClassAttribute($this->listTableClasses()) . '>' . "\n"
+             . $this->renderTitles($this->getTitles());
+        foreach ($data as $row) {
+            $htm .= $this->renderRow($row);
+        }
+        return $htm . "</tbody>\n</table>\n";
+    }
+
     protected function renderRow($row)
     {
         $row->change_time = strftime('%H:%M:%S', $row->ts_change_time);

@@ -44,7 +44,7 @@ abstract class QuickTable implements Paginatable
         return $this->createClassAttribute($this->getRowClasses($row));
     }
 
-    private function createClassAttribute($classes)
+    protected function createClassAttribute($classes)
     {
         $str = $this->createClassesString($classes);
         if (strlen($str) > 0) {
