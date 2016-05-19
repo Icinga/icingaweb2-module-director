@@ -2,6 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Table\IcingaObjectTable;
+
 abstract class ObjectsController extends ActionController
 {
     protected $dummy;
@@ -37,15 +41,22 @@ abstract class ObjectsController extends ActionController
             return;
         }
 
+        /** @var IcingaObject $object */
         $object = $this->dummyObject();
         if ($object->isGroup()) {
             $type = substr($type, 0, -5);
         }
 
-        $tabs = $this->getTabs()->add('objects', array(
+        $tabs->add('objects', array(
             'url'   => sprintf('director/%ss', strtolower($type)),
             'label' => $this->translate(ucfirst($type) . 's'),
         ));
+        if ($object->supportsImports()) {
+            $tabs->add('templates', array(
+                'url'   => sprintf('director/%ss/templates', strtolower($type)),
+                'label' => $this->translate('Templates'),
+            ));
+        }
         if ($object->supportsGroups() || $object->isGroup()) {
             $tabs->add('objectgroups', array(
                 'url'   => sprintf('director/%sgroups', $type),
@@ -68,11 +79,15 @@ abstract class ObjectsController extends ActionController
         $type = $this->getType();
         $ltype = strtolower($type);
         $this->assertPermission('director/' . $type . 's/read');
+        /** @var IcingaObject $dummy */
         $dummy = $this->dummyObject();
 
         if (! in_array(ucfirst($type), $this->globalTypes)) {
             if ($dummy->isGroup()) {
                 $this->getTabs()->activate('objectgroups');
+                $table = 'icinga' . ucfirst($type);
+            } else if ($dummy->isTemplate()) {
+                $this->getTabs()->activate('templates');
                 $table = 'icinga' . ucfirst($type);
             } else {
                 $this->getTabs()->activate('objects');
@@ -82,13 +97,29 @@ abstract class ObjectsController extends ActionController
             $table = 'icinga' . ucfirst($type);
         }
 
+        /** @var IcingaObjectTable $table */
+        $table = $this->loadTable($table)->setConnection($this->db());
+
         if ($dummy->isTemplate()) {
             $addParams = array('type' => 'template');
+            $this->getTabs()->activate('templates');
+            $title = $this->translate('Icinga ' . ucfirst($ltype) . ' Templates');
             $addTitle = $this->translate('Add %s template');
+            $table->enforceFilter(Filter::expression('object_type', '=', 'template'));
         } else {
-            $addParams = array();
+            $addParams = array('type' => 'object');
+            $title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
             $addTitle = $this->translate('Add %s');
+            if (
+                $dummy->supportsImports()
+                && array_key_exists('object_type', $table->getColumns())
+                && ! in_array(ucfirst($type), $this->globalTypes)
+            ) {
+                $table->enforceFilter(Filter::expression('object_type', '!=', 'template'));
+            }
         }
+
+        $this->view->title = $title;
 
         $this->view->addLink = $this->view->qlink(
             sprintf($addTitle, $this->translate(ucfirst($ltype))),
@@ -97,8 +128,6 @@ abstract class ObjectsController extends ActionController
             array('class' => 'icon-plus')
         );
 
-        $this->view->title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
-        $table = $this->loadTable($table)->setConnection($this->db());
         $filterEditor = $table->getFilterEditor($this->getRequest());
         $filter = $filterEditor->getFilter();
 
@@ -168,6 +197,11 @@ abstract class ObjectsController extends ActionController
         $this->setViewScript('objects/table');
     }
 
+    public function templatesAction()
+    {
+        $this->indexAction();
+    }
+
     public function templatetreeAction()
     {
         $this->getTabs()->activate('tree');
@@ -182,10 +216,13 @@ abstract class ObjectsController extends ActionController
             $class = $this->getObjectClassname();
             $this->dummy = $class::create(array());
             if ($this->dummy->hasProperty('object_type')) {
-                if (false === strpos($this->getRequest()->getControllerName(), 'template')) {
-                    $this->dummy->object_type = 'object';
-                } else {
+                if (
+                    strpos($this->getRequest()->getControllerName(), 'template') !== false
+                    || strpos($this->getRequest()->getActionName(), 'templates') !== false
+                ) {
                     $this->dummy->object_type = 'template';
+                } else {
+                    $this->dummy->object_type = 'object';
                 }
             }
         }
