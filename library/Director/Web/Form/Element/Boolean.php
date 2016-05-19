@@ -48,8 +48,12 @@ class Boolean extends ZfSelect
         return parent::setValue($value);
     }
 
+    /**
+     * @codingStandardsIgnoreStart
+     */
     protected function _translateOption($option, $value)
     {
+        // @codingStandardsIgnoreEnd
         if (!isset($this->_translated[$option]) && !empty($value)) {
             $this->options[$option] = mt('director', $value);
             if ($this->options[$option] === $value) {
