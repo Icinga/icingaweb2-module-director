@@ -26,7 +26,8 @@ class ActivityLogTable extends QuickTable
             'ts_change_time'  => 'UNIX_TIMESTAMP(l.change_time)',
             'author'          => 'l.author',
             'action'          => 'l.action_name',
-            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' ' || REPLACE(l.object_type, 'icinga_', '')"
+            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
+                               . " || REPLACE(l.object_type, 'icinga_', '')"
                                . " || ' \"' || l.object_name || '\"'",
             'action_name'     => 'l.action_name',
         );
