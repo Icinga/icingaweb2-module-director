@@ -173,11 +173,7 @@ class IcingaService extends IcingaObject
             return '';
         }
 
-        if ($this->hasBeenAssignedToHostTemplate() || $this->object_type !== 'object') {
-            return c::renderKeyValue('command_endpoint', 'host.name');
-        } else {
-            return $this->renderRelationProperty('host', $this->host_id, 'command_endpoint');
-        }
+        return c::renderKeyValue('command_endpoint', 'host_name');
     }
 
     /**
