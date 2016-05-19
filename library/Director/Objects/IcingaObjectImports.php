@@ -105,6 +105,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $this->imports = array();
+        $this->modified = true;
         return $this->add($import);
     }
 
