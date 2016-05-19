@@ -15,6 +15,21 @@ class ExtensibleSet extends FormElement
 
    // private $multiOptions;
 
+    public function getValue()
+    {
+        $value = parent::getValue();
+        if (! is_array($value)) {
+            $value = array($value);
+        }
+        $value = array_filter($value, 'strlen');
+
+        if (empty($value)) {
+            return null;
+        }
+
+        return $value;
+    }
+
     public function isValid($value, $context = null)
     {
         if ($value === null) {
