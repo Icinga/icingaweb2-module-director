@@ -5,16 +5,28 @@ namespace Icinga\Module\Director\Job;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\JobHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Objects\SyncRule;
 
 class SyncJob extends JobHook
 {
+    protected $rule;
+
     public function run()
     {
         if ($this->getSetting('apply_changes') === 'y') {
             $this->syncRule()->applyChanges();
-        } else{
+        } else {
             $this->syncRule()->checkForChanges();
         }
+    }
+
+    protected function syncRule()
+    {
+        if ($this->rule === null) {
+            $this->rule = SyncRule::load($this->getSetting('rule_id'), $this->db());
+        }
+
+        return $this->rule;
     }
 
     public static function getDescription(QuickForm $form)
