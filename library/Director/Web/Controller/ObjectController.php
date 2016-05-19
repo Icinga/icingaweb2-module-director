@@ -135,7 +135,7 @@ abstract class ObjectController extends ActionController
             $object->object_type = 'object';
         }
 
-        if ($this->view->isDisabledd) {
+        if ($this->view->isDisabled) {
             $object->disabled = 'n';
         }
 
