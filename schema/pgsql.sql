@@ -1244,6 +1244,9 @@ CREATE TABLE import_source (
   source_name character varying(64) NOT NULL,
   key_column character varying(64) NOT NULL,
   provider_class character varying(72) NOT NULL,
+  import_state enum_sync_state NOT NULL DEFAULT 'unknown',
+  last_error_message character varying(255) NULL DEFAULT NULL,
+  last_attempt timestamp with time zone NULL DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1513,4 +1516,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (94, NOW());
+  VALUES (95, NOW());
