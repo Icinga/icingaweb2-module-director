@@ -46,6 +46,7 @@ CREATE TYPE enum_sync_state AS ENUM(
     'pending-changes',
     'failing'
 );
+CREATE TYPE enum_host_service AS ENUM('host', 'service');
 
 
 CREATE TABLE director_activity_log (
@@ -1155,6 +1156,7 @@ CREATE TABLE icinga_notification (
   object_name CHARACTER VARYING(255) DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
+  apply_to enum_host_service NULL DEFAULT NULL,
   host_id integer DEFAULT NULL,
   service_id integer DEFAULT NULL,
   times_begin integer DEFAULT NULL,
@@ -1516,4 +1518,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (95, NOW());
+  VALUES (96, NOW());
