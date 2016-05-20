@@ -813,11 +813,11 @@ abstract class DirectorObjectForm extends QuickForm
             foreach ($post as $key => $value) {
                 $el = $this->getElement($key);
                 if ($el && ! $el->getIgnore()) {
-                    $values[$key] = $value;
+                    $values[$key] = $el->setValue($value)->getValue();
                 }
             }
-
         }
+
         if ($object instanceof IcingaObject) {
             if ($object->isApplyRule()) {
                 $this->setElementValue('assignlist', $object->assignments()->getFormValues());
