@@ -564,19 +564,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($this->importedObjects === null) {
             $this->importedObjects = array();
             foreach ($this->imports()->listImportNames() as $import) {
-                if (is_array($this->getKeyName())) {
-                    // Affects services only:
-                    $this->importedObjects[$import] = self::load(
-                        array('object_name' => $import),
-                        $this->connection
-                    );
-                } else {
-                    $this->importedObjects[$import] = self::load($import, $this->connection);
-                }
+                $this->importedObjects[$import] = $this->loadImportedObject($import);
             }
         }
 
         return $this->importedObjects;
+    }
+
+    protected function loadImportedObject($name)
+    {
+        if (is_array($this->getKeyName())) {
+            // Affects services only:
+            return self::load(
+                array('object_name' => $import),
+                $this->connection
+            );
+        } else {
+            return self::load($name, $this->connection);
+        }
     }
 
     public function clearImportedObjects()
