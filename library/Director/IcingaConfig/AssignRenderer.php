@@ -12,6 +12,7 @@ use Icinga\Data\Filter\FilterEqual;
 use Icinga\Data\Filter\FilterGreaterThan;
 use Icinga\Data\Filter\FilterLessThan;
 use Icinga\Data\Filter\FilterMatch;
+use Icinga\Data\Filter\FilterMatchNot;
 use Icinga\Data\Filter\FilterNotEqual;
 use Icinga\Exception\QueryException;
 
@@ -74,6 +75,21 @@ class AssignRenderer
             } else {
                 return sprintf(
                     'match(%s, %s)',
+                    $expression,
+                    $column
+                );
+            }
+
+        } elseif ($filter instanceof FilterMatchNot) {
+            if (strpos($expression, '*') === false) {
+                return sprintf(
+                    '%s != %s',
+                    $column,
+                    $expression
+                );
+            } else {
+                return sprintf(
+                    '! match(%s, %s)',
                     $expression,
                     $column
                 );
