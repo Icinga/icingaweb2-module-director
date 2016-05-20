@@ -576,7 +576,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if (is_array($this->getKeyName())) {
             // Affects services only:
             return self::load(
-                array('object_name' => $import),
+                array('object_name' => $name),
                 $this->connection
             );
         } else {
