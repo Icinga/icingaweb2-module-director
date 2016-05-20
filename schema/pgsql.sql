@@ -40,6 +40,12 @@ CREATE TYPE enum_sync_rule_object_type AS ENUM(
 );
 CREATE TYPE enum_sync_rule_update_policy AS ENUM('merge', 'override', 'ignore');
 CREATE TYPE enum_sync_property_merge_policy AS ENUM('override', 'merge');
+CREATE TYPE enum_sync_state AS ENUM(
+    'unknown',
+    'in-sync',
+    'pending-changes',
+    'failing'
+);
 
 
 CREATE TABLE director_activity_log (
@@ -1355,6 +1361,9 @@ CREATE TABLE sync_rule (
   update_policy enum_sync_rule_update_policy NOT NULL,
   purge_existing enum_boolean NOT NULL DEFAULT 'n',
   filter_expression text DEFAULT NULL,
+  sync_state enum_sync_state NOT NULL DEFAULT 'unknown',
+  last_error_message character varying(255) NULL DEFAULT NULL,
+  last_attempt timestamp with time zone NULL DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1473,4 +1482,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (92, NOW());
+  VALUES (93, NOW());
