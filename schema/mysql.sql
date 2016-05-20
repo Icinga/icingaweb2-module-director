@@ -146,12 +146,18 @@ CREATE TABLE director_job (
   job_class VARCHAR(72) NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   run_interval INT(10) UNSIGNED NOT NULL, -- seconds
+  timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
   last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
   ts_last_attempt DATETIME DEFAULT NULL,
   ts_last_error DATETIME DEFAULT NULL,
   last_error_message TEXT,
   PRIMARY KEY (id),
-  UNIQUE KEY (job_name)
+  UNIQUE KEY (job_name),
+  CONSTRAINT director_job_period
+    FOREIGN KEY timeperiod (timeperiod_id)
+    REFERENCES icinga_timeperiod (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_job_setting (
@@ -1303,4 +1309,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 96;
+      schema_version = 97;
