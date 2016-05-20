@@ -191,7 +191,7 @@ class IcingaHost extends IcingaObject
             'parent'      => $this->connection->getMasterZoneName()
         ), $this->connection)->setEndpointList(array($name));
 
-        $pre = 'zones.d/' . $this->getRenderingZone() . '/';
+        $pre = 'zones.d/' . $this->getRenderingZone($config) . '/';
         $config->configFile($pre . 'agent_endpoints')->addObject($endpoint);
         $config->configFile($pre . 'agent_zones')->addObject($zone);
     }
