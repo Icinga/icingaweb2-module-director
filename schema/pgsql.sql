@@ -158,7 +158,7 @@ CREATE UNIQUE INDEX datalist_list_name ON director_datalist (list_name);
 
 CREATE TABLE director_datalist_entry (
   list_id integer NOT NULL,
-  entry_name character varying(255) DEFAULT NULL,
+  entry_name character varying(255) NOT NULL,
   entry_value text DEFAULT NULL,
   format enum_property_format,
   PRIMARY KEY (list_id, entry_name),
@@ -414,7 +414,7 @@ CREATE TABLE icinga_command_field (
 
 CREATE TABLE icinga_command_var (
   command_id integer NOT NULL,
-  varname character varying(255) DEFAULT NULL,
+  varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format NOT NULL DEFAULT 'string',
   PRIMARY KEY (command_id, varname),
@@ -609,7 +609,7 @@ COMMENT ON COLUMN icinga_host_field.host_id IS 'Makes only sense for templates';
 
 CREATE TABLE icinga_host_var (
   host_id integer NOT NULL,
-  varname character varying(255) DEFAULT NULL,
+  varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format, -- immer string vorerst
   PRIMARY KEY (host_id, varname),
@@ -718,7 +718,7 @@ CREATE INDEX service_inheritance_service_parent ON icinga_service_inheritance (p
 
 CREATE TABLE icinga_service_var (
   service_id integer NOT NULL,
-  varname character varying(255) DEFAULT NULL,
+  varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format,
   PRIMARY KEY (service_id, varname),
@@ -1000,7 +1000,7 @@ COMMENT ON COLUMN icinga_user_types_set.merge_behaviour IS 'override: = [], exte
 
 CREATE TABLE icinga_user_var (
   user_id integer NOT NULL,
-  varname character varying(255) DEFAULT NULL,
+  varname character varying(255) NOT NULL,
   varvalue text DEFAULT NULL,
   format enum_property_format NOT NULL DEFAULT 'string',
   PRIMARY KEY (user_id, varname),
@@ -1437,7 +1437,7 @@ COMMENT ON COLUMN icinga_notification_types_set.merge_behaviour IS 'override: = 
 
 CREATE TABLE icinga_notification_var (
   notification_id integer NOT NULL,
-  varname VARCHAR(255) DEFAULT NULL,
+  varname VARCHAR(255) NOT NULL,
   varvalue TEXT DEFAULT NULL,
   format enum_property_format,
   PRIMARY KEY (notification_id, varname),
@@ -1473,4 +1473,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (91, NOW());
+  VALUES (92, NOW());
