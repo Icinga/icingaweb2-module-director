@@ -208,9 +208,7 @@ abstract class DirectorObjectForm extends QuickForm
             foreach ($values as $key => $value) {
                 try {
                     $object->set($key, $value);
-                    if ($key === 'imports') {
-                        $object->importedObjects();
-                    } elseif ($object instanceof IcingaObject) {
+                    if ($object instanceof IcingaObject) {
                         $object->resolveUnresolvedRelatedProperties();
                     }
 
