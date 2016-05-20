@@ -208,37 +208,6 @@ CREATE TABLE director_datafield_setting (
 CREATE INDEX director_datafield_datafield ON director_datafield_setting (datafield_id);
 
 
-CREATE TABLE director_job (
-  id serial,
-  job_name character varying(64) NOT NULL,
-  job_class character varying(72) NOT NULL,
-  disabled enum_boolean NOT NULL DEFAULT 'n',
-  run_interval integer NOT NULL, -- seconds
-  last_attempt_succeeded enum_boolean DEFAULT NULL,
-  ts_last_attempt timestamp with time zone DEFAULT NULL,
-  ts_last_error timestamp with time zone DEFAULT NULL,
-  last_error_message text NULL DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-
-CREATE UNIQUE INDEX director_job_unique_job_name ON director_job (job_name);
-
-
-CREATE TABLE director_job_setting (
-  job_id integer NOT NULL,
-  setting_name character varying(64) NOT NULL,
-  setting_value text DEFAULT NULL,
-  PRIMARY KEY (job_id, setting_name),
-  CONSTRAINT director_job_setting_job
-    FOREIGN KEY (job_id)
-    REFERENCES director_job (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
-
-CREATE INDEX director_job_setting_job ON director_job_setting (job_id);
-
-
 CREATE TABLE director_schema_migration (
   schema_version SMALLINT NOT NULL,
   migration_time TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -355,6 +324,43 @@ COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_key IS 'monday, ...';
 COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_value IS '00:00-24:00, ...';
 COMMENT ON COLUMN icinga_timeperiod_range.range_type IS 'include -> ranges {}, exclude ranges_ignore {} - not yet';
 COMMENT ON COLUMN icinga_timeperiod_range.merge_behaviour IS 'set -> = {}, add -> += {}, substract -> -= {}';
+
+
+CREATE TABLE director_job (
+  id serial,
+  job_name character varying(64) NOT NULL,
+  job_class character varying(72) NOT NULL,
+  disabled enum_boolean NOT NULL DEFAULT 'n',
+  run_interval integer NOT NULL, -- seconds
+  timeperiod_id integer DEFAULT NULL,
+  last_attempt_succeeded enum_boolean DEFAULT NULL,
+  ts_last_attempt timestamp with time zone DEFAULT NULL,
+  ts_last_error timestamp with time zone DEFAULT NULL,
+  last_error_message text NULL DEFAULT NULL,
+  CONSTRAINT director_job_period
+    FOREIGN KEY (timeperiod_id)
+    REFERENCES icinga_timeperiod (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX director_job_unique_job_name ON director_job (job_name);
+
+
+CREATE TABLE director_job_setting (
+  job_id integer NOT NULL,
+  setting_name character varying(64) NOT NULL,
+  setting_value text DEFAULT NULL,
+  PRIMARY KEY (job_id, setting_name),
+  CONSTRAINT director_job_setting_job
+    FOREIGN KEY (job_id)
+    REFERENCES director_job (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX director_job_setting_job ON director_job_setting (job_id);
 
 
 CREATE TABLE icinga_command (
@@ -1518,4 +1524,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (96, NOW());
+  VALUES (97, NOW());
