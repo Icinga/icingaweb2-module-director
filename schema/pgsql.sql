@@ -49,6 +49,11 @@ CREATE TYPE enum_sync_state AS ENUM(
 CREATE TYPE enum_host_service AS ENUM('host', 'service');
 
 
+CREATE OR REPLACE FUNCTION unix_timestamp(timestamp with time zone) RETURNS bigint AS '
+        SELECT EXTRACT(EPOCH FROM $1)::bigint AS result
+' LANGUAGE sql;
+
+
 CREATE TABLE director_activity_log (
   id bigserial,
   object_type character varying(64) NOT NULL,
@@ -1524,4 +1529,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (97, NOW());
+  VALUES (98, NOW());
