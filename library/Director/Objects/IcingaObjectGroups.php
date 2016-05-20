@@ -304,7 +304,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $this->storedGroups = array();
         foreach ($this->groups as $k => $v) {
             $this->storedGroups[$k] = clone($v);
+            $this->storedGroups[$k]->id = $v->id;
         }
+
+        $this->modified = false;
     }
 
     protected function getGroupClass()
