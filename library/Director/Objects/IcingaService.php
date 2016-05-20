@@ -85,6 +85,16 @@ class IcingaService extends IcingaObject
         );
     }
 
+    public function isApplyRule()
+    {
+        if ($this->hasBeenAssignedToHostTemplate()) {
+            return true;
+        }
+
+        return $this->hasProperty('object_type')
+            && $this->object_type === 'apply';
+    }
+
     protected function setKey($key)
     {
         if (is_int($key)) {
@@ -119,22 +129,6 @@ class IcingaService extends IcingaObject
         }
 
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
-    }
-
-    protected function renderObjectHeader()
-    {
-        if ($this->hasBeenAssignedToHostTemplate()) {
-
-            return sprintf(
-                "%s %s %s {\n",
-                'apply',
-                $this->getType(),
-                c::renderString($this->getObjectName())
-            );
-
-        } else {
-            return parent::renderObjectHeader();
-        }
     }
 
     protected function renderAssignments()
