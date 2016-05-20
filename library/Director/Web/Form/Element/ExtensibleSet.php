@@ -32,7 +32,9 @@ class ExtensibleSet extends FormElement
 
     protected function _filterValue(&$value, &$key)
     {
-        $value = array_filter($value, 'strlen');
+        if ($value !== null) {
+            $value = array_filter($value, 'strlen');
+        }
         return parent::_filterValue($value, $key);
     }
 
