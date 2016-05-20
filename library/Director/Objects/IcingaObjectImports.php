@@ -81,9 +81,18 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public function set($import)
     {
+        if ($import === null) {
+            if (empty($this->imports)) {
+                return $this;
+            } else {
+                return $this->clear();
+            }
+        }
+
         if (! is_array($import)) {
             $import = array($import);
         }
+
         $existing = array_keys($this->imports);
         $new = array();
         $class = $this->getImportClass();
@@ -105,7 +114,6 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $this->imports = array();
-        $this->modified = true;
         return $this->add($import);
     }
 
@@ -301,6 +309,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         foreach ($this->objects as $k => $v) {
             $this->storedImports[$k] = clone($v);
         }
+        $this->modified = false;
     }
 
     protected function getImportClass()
