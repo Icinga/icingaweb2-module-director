@@ -149,7 +149,7 @@ class IcingaNotificationForm extends DirectorObjectForm
 
         $this->addElement(
             'select',
-            'period',
+            'period_id',
             array(
                 'label' => $this->translate('Time period'),
                 'description' => $this->translate(
