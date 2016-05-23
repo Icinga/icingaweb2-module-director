@@ -273,7 +273,9 @@ class Db extends DbConnection
     public function fetchActivityLogIdByChecksum($checksum)
     {
         $sql = 'SELECT id FROM director_activity_log WHERE checksum = ?';
-        return $this->db()->fetchOne($sql, $this->quoteBinary($checksum));
+        return $this->db()->fetchOne(
+            $this->db()->quoteInto($sql,  $this->quoteBinary($checksum))
+        );
     }
 
     public function fetchActivityLogEntry($checksum)
