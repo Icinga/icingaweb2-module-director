@@ -162,13 +162,15 @@ class SyncruleController extends ActionController
 
         if ($runId = $this->params->get('run_id')) {
             $this->view->run = SyncRun::load($runId, $db);
-            $this->view->formerId = $db->fetchActivityLogIdByChecksum(
-                $this->view->run->last_former_activity
-            );
+            if ($this->view->run->last_former_activity !== null) {
+                $this->view->formerId = $db->fetchActivityLogIdByChecksum(
+                    $this->view->run->last_former_activity
+                );
 
-            $this->view->lastId = $db->fetchActivityLogIdByChecksum(
-                $this->view->run->last_related_activity
-            );
+                $this->view->lastId = $db->fetchActivityLogIdByChecksum(
+                    $this->view->run->last_related_activity
+                );
+            }
         }
     }
 
