@@ -23,6 +23,10 @@ class PropertyModifierReplace extends PropertyModifierHook
 
     public function transform($value)
     {
-        return str_replace($this->settings['string'], $this->settings['replacement'], $value);
+        return str_replace(
+            $this->getSetting('string'),
+            $this->getSetting('replacement'),
+            $value
+        );
     }
 }
