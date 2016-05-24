@@ -84,7 +84,9 @@ abstract class QuickForm extends QuickBaseForm
     protected function addSubmitButtonIfSet()
     {
         if (false !== ($label = $this->getSubmitLabel())) {
-            $el = $this->createElement('submit', $label)->setLabel($label)->setDecorators(array('ViewHelper'));
+            $el = $this->createElement('submit', $label)
+                ->setLabel($label)
+                ->setDecorators(array('ViewHelper'));
             $this->submitButtonName = $el->getName();
             $this->addElement($el);
 
@@ -296,12 +298,16 @@ abstract class QuickForm extends QuickBaseForm
 
     public function handleRequest(Request $request = null)
     {
-        if ($request !== null) {
+        if ($request === null) {
+            $request = $this->getRequest();
+        } else {
             $this->setRequest($request);
         }
 
+        $this->prepareElements();
+
         if ($this->hasBeenSent()) {
-            $post = $this->getRequest()->getPost();
+            $post = $request->getPost();
             if ($this->hasBeenSubmitted()) {
                 $this->beforeValidation($post);
                 if ($this->isValid($post)) {
@@ -416,7 +422,13 @@ abstract class QuickForm extends QuickBaseForm
     public function hasBeenSent()
     {
         if ($this->hasBeenSent === null) {
-            $req = $this->getRequest();
+
+            if ($this->request === null) {
+                $req = Icinga::app()->getFrontController()->getRequest();
+            } else {
+                $req = $this->request;
+            }
+
             if ($req->isPost()) {
                 $post = $req->getPost();
                 $this->hasBeenSent = array_key_exists(self::ID, $post) &&
