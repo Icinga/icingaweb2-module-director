@@ -13,6 +13,7 @@ class IcingaNotification extends IcingaObject
         'object_name'           => null,
         'object_type'           => null,
         'disabled'              => 'n',
+        'apply_to'              => null,
         'host_id'               => null,
         'service_id'            => null,
         // 'users'                 => null,
