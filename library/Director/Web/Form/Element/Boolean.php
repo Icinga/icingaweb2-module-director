@@ -33,6 +33,7 @@ class Boolean extends ZfSelect
         return $value === 'y'
             || $value === 'n'
             || $value === null
+            || $value === ''
             || $value === true
             || $value === false;
     }
@@ -43,6 +44,8 @@ class Boolean extends ZfSelect
             $value = 'y';
         } elseif ($value === false) {
             $value = 'n';
+        } elseif ($value === '') {
+            $value = null;
         }
 
         return parent::setValue($value);
