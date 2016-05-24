@@ -20,11 +20,74 @@
              */
             this.module.on('rendered', this.rendered);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
+            this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
             this.module.on('focus', 'form input', this.formElementFocus);
             this.module.on('focus', 'form textarea', this.formElementFocus);
             this.module.on('focus', 'form select', this.formElementFocus);
             this.module.icinga.logger.debug('Director module initialized');
+        },
+
+        detailTabClick: function(ev)
+        {
+            var $a = $(ev.currentTarget);
+            if ($a.closest('#col2').length === 0) {
+                return;
+            }
+
+            this.alignDetailLinks();
+        },
+
+        alignDetailLinks: function()
+        {
+            var self = this;
+            var $a = $('#col2 div.controls ul.tabs li.active a');
+            if ($a.length !== 1) {
+                return;
+            }
+
+            var $leftTable = $('#col1 div.content').find('table.icinga-objects');
+            if ($leftTable.length !== 1) {
+                return;
+            }
+
+            var tabPath = self.pathFromHref($a);
+
+            $leftTable.find('tr').each(function(idx, tr) {
+                var $tr = $(tr);
+                if ($tr.is('[href]')) {
+                    self.setHrefPath($tr, tabPath);
+                } else {
+                    // Unfortunately we currently run BEFORE the  action table
+                    // handler
+                    var $a = $tr.find('a[href].rowaction');
+                    if ($a.length === 0) {
+                        $a = $tr.find('a[href]').first();
+                    }
+
+                    if ($a.length) {
+                        self.setHrefPath($a, tabPath);
+                    }
+                }
+            });
+
+            $leftTable.find('tr[href]').each(function(idx, tr) {
+                var $tr = $(tr);
+                self.setHrefPath($tr, tabPath);
+            });
+        },
+
+        pathFromHref: function($el)
+        {
+            return this.module.icinga.utils.parseUrl($el.attr('href')).path
+        },
+
+        setHrefPath: function($el, path)
+        {
+            var a = this.module.icinga.utils.getUrlHelper();
+            a.href = $el.attr('href');
+            a.pathname = path;
+            $el.attr('href', a.href);
         },
 
         extensibleSetAction: function(ev)
@@ -172,6 +235,7 @@
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
+            this.alignDetailLinks();
         },
 
         restoreContainerFieldsets: function($container)
