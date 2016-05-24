@@ -18,7 +18,6 @@ class PropertyModifierReplace extends PropertyModifierHook
         $form->addElement('text', 'replacement', array(
             'label'       => 'Replacement',
             'description' => $form->translate('Your replacement string'),
-            'required'    => true,
         ));
     }
 
