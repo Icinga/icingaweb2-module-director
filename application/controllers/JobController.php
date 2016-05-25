@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-use Icinga\Module\Director\Objects\Job;
+use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Data\Filter\Filter;
 use Icinga\Web\Notification;
 use Icinga\Web\Url;
@@ -15,16 +15,25 @@ class JobController extends ActionController
         $this->indexAction();
     }
 
-    public function editAction()
+    public function indexAction()
     {
-        $this->indexAction();
+        if (! ($id = $this->params->get('id'))) {
+            return $this->editAction();
+        }
+
+        $this->prepareTabs($id)->activate('show');
+        $this->view->job = DirectorJob::load($id, $this->db());
+        $this->view->title = sprintf(
+            $this->translate('Job: %s'),
+            $this->view->job->job_name
+        );
     }
 
     public function runAction()
     {
         // TODO: Form, POST
         $id = $this->params->get('id');
-        $job = Job::load($id, $this->db());
+        $job = DirectorJob::load($id, $this->db());
         if ($job->run()) {
             Notification::success('Job has successfully been completed');
             $this->redirectNow(
@@ -38,7 +47,7 @@ class JobController extends ActionController
         }
     }
 
-    public function indexAction()
+    public function editAction()
     {
         $form = $this->view->form = $this->loadForm('directorJob')
             ->setSuccessUrl('director/job')
@@ -63,15 +72,19 @@ class JobController extends ActionController
     protected function prepareTabs($id = null)
     {
         if ($id) {
-            return $this->getTabs()->add('edit', array(
-                'url'       => 'director/job/edit',
+            return $this->getTabs()->add('show', array(
+                'url'       => 'director/job',
                 'urlParams' => array('id' => $id),
                 'label'     => $this->translate('Job'),
+            ))->add('edit', array(
+                'url'       => 'director/job/edit',
+                'urlParams' => array('id' => $id),
+                'label'     => $this->translate('Config'),
             ));
         } else {
             return $this->getTabs()->add('add', array(
                 'url'       => 'director/job/add',
-                'label'     => $this->translate('Job'),
+                'label'     => $this->translate('Add a job'),
             ));
         }
     }
