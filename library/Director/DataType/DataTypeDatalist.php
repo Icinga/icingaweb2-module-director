@@ -23,7 +23,7 @@ class DataTypeDatalist extends DataTypeHook
 
         $select = $db->select()
             ->from('director_datalist_entry', array('entry_name', 'entry_value'))
-            ->where('list_id = ?', $this->settings['datalist_id'])
+            ->where('list_id = ?', $this->getSetting('datalist_id'))
             ->order('entry_value ASC');
 
         return $db->fetchPairs($select);
