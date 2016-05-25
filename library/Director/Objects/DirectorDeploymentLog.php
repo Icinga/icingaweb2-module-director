@@ -3,6 +3,9 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Util;
 
 class DirectorDeploymentLog extends DbObject
 {
@@ -11,6 +14,8 @@ class DirectorDeploymentLog extends DbObject
     protected $keyName = 'id';
 
     protected $autoincKeyName = 'id';
+
+    protected $config;
 
     protected $defaultProperties = array(
         'id'                     => null,
@@ -30,4 +35,50 @@ class DirectorDeploymentLog extends DbObject
         'username'               => null,
         'startup_log'            => null,
     );
+
+    public function getConfigHexChecksum()
+    {
+        return Util::binary2hex($this->config_checksum);
+    }
+
+    public function getConfig()
+    {
+        if ($this->config === null) {
+            $this->config = IcingaConfig::load($this->config_checksum);
+        }
+
+        return $this->config;
+    }
+
+    public function configEquals(IcingaConfig $config)
+    {
+        return $this->config_checksum === $config->getChecksum();
+    }
+
+    public function getDeploymentTimestamp()
+    {
+        return strtotime($this->start_time);
+    }
+
+    public static function hasDeployments(Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            'director_deployment_log',
+            array('c' => 'COUNT(*)')
+        );
+
+        return (int) $db->fetchOne($query) > 0;
+    }
+
+    public static function loadLatest(Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            'director_deployment_log',
+            array('id' => 'MAX(id)')
+        );
+
+        return static::load($db->fetchOne($query), $connection);
+    }
 }
