@@ -132,6 +132,24 @@ class IcingaConfig
         return $config;
     }
 
+    public static function loadByActivityChecksum($checksum, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            array('c' => self::$table),
+            array('checksum' => 'c.checksum')
+        )->join(
+            array('l' => 'director_activity_log'),
+            'l.checksum = c.last_activity_checksum',
+            array()
+        )->where(
+            'last_activity_checksum = ?',
+            $connection->quoteBinary(Util::hex2binary($checksum))
+        )->order('l.id DESC')->limit(1);
+
+        return self::load($db->fetchOne($query), $connection);
+    }
+
     public static function generate(Db $connection)
     {
         $config = new static($connection);
