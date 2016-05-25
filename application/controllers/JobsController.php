@@ -10,11 +10,7 @@ class JobsController extends ActionController
     {
         $this->setAutoRefreshInterval(10);
         $this->view->title = $this->translate('Jobs');
-
-        $this->getTabs()->add('jobs', array(
-            'url'       => 'director/jobs',
-            'label'     => $this->translate('Jobs'),
-        ))->activate('jobs');
+        $this->setImportTabs()->activate('jobs');
 
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add'),
