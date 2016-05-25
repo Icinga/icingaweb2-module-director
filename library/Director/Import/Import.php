@@ -174,6 +174,9 @@ class Import
         foreach ($this->data as & $row) {
             foreach ($modifiers as $key => $mods) {
                 foreach ($mods as $mod) {
+                    if (! property_exists($row, $key)) {
+                        continue;
+                    }
                     if (is_array($row->$key)) {
                         foreach ($row->$key as & $k) {
                             $k = $mod->transform($k);
