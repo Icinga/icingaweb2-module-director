@@ -140,7 +140,7 @@ class ShowController extends ActionController
             . ' <pre'
             . ($object->disabled === 'y' ? ' class="disabled"' : '')
             . '>'
-            . $this->view->escape((string) $object)
+            . $this->view->escape($object->toConfigString())
             . '</pre>';
     }
 
