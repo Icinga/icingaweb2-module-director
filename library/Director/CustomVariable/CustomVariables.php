@@ -220,6 +220,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         $out = '';
 
+        ksort($this->vars);
         foreach ($this->vars as $key => $var) {
             $out .= c::renderKeyValue(
                 'vars.' . c::escapeIfReserved($key),
