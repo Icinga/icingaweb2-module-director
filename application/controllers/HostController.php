@@ -75,7 +75,7 @@ class HostController extends ObjectController
 
     public function agentAction()
     {
-        $this->getTabs()->activate('agent');
+        $this->gracefullyActivateTab('agent');
         $this->view->title = 'Agent deployment instructions';
         // TODO: Fail when no ticket
         $this->view->certname = $this->object->object_name;

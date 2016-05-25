@@ -53,16 +53,14 @@ abstract class ObjectController extends ActionController
                 'label'     => $this->translate('History')
             ));
 
-            if ($object->hasBeenLoadedFromDb()
-                && $object->supportsFields()
-                && ($object->isTemplate() || $type === 'command')
-            ) {
+            if ($this->hasFields()) {
                 $tabs->add('fields', array(
                     'url'       => sprintf('director/%s/fields', $type),
                     'urlParams' => $params,
                     'label'     => $this->translate('Fields')
                 ));
             }
+
         } else {
             $this->beforeTabs();
             $this->getTabs()->add('add', array(
@@ -337,6 +335,17 @@ abstract class ObjectController extends ActionController
         return $this->object;
     }
 
+    protected function hasFields()
+    {
+        if (! ($object = $this->object)) {
+            return false;
+        }
+
+        return $object->hasBeenLoadedFromDb()
+            && $object->supportsFields()
+            && ($object->isTemplate() || $this->getType() === 'command');
+    }
+
     protected function handleApiRequest()
     {
         $request = $this->getRequest();
@@ -432,6 +441,20 @@ abstract class ObjectController extends ActionController
                 throw new NotFoundError('No such object available');
             }
         }
+    }
+
+    protected function gracefullyActivateTab($name)
+    {
+        $tabs = $this->getTabs();
+
+        if ($tabs->has($name)) {
+            return $tabs->activate($name);
+        }
+
+        $req = $this->getRequest();
+        $this->redirectNow(
+            $req->getUrl()->setPath('director/' . $req->getControllerName())
+        );
     }
 
     protected function beforeTabs()

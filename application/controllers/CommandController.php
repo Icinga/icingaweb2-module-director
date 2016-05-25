@@ -21,7 +21,7 @@ class CommandController extends ObjectController
 
     public function argumentsAction()
     {
-        $this->getTabs()->activate('arguments');
+        $this->gracefullyActivateTab('arguments');
         $this->view->title = sprintf(
             $this->translate('Command arguments: %s'),
             $this->object->object_name
