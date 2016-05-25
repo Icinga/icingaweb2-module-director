@@ -16,7 +16,10 @@ abstract class JobHook
 
     abstract public function run();
 
-    abstract public function isPending();
+    public function isPending()
+    {
+        // TODO: Can be overridden, double-check whether this is necessary
+    }
 
     public function getName()
     {
