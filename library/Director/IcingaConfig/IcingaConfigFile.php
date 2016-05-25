@@ -19,6 +19,8 @@ class IcingaConfigFile
 
     protected $cntTemplate = 0;
 
+    protected $cntApply = 0;
+
     public function prepend($content)
     {
         $this->content = $content . $this->content;
@@ -102,6 +104,9 @@ class IcingaConfigFile
                     break;
                 case 'template':
                     $this->cntTemplate++;
+                    break;
+                case 'apply':
+                    $this->cntApply++;
                     break;
             }
         }
