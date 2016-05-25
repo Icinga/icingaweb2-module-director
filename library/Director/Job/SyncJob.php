@@ -13,20 +13,24 @@ class SyncJob extends JobHook
 
     public function run()
     {
-        if ($this->getSetting('apply_changes') === 'y') {
-            $this->syncRule()->applyChanges();
+        $db = $this->db();
+        $id = $this->getSetting('rule_id');
+        if ($id === '__ALL__') {
+            foreach (SyncRule::loadAll($db) as $rule) {
+                $this->runForRule($rule);
+            }
         } else {
-            $this->syncRule()->checkForChanges();
+            $this->runForRule(SyncRule::load($id, $db));
         }
     }
 
-    protected function syncRule()
+    protected function runForRule(SyncRule $rule)
     {
-        if ($this->rule === null) {
-            $this->rule = SyncRule::load($this->getSetting('rule_id'), $this->db());
+        if ($this->getSetting('apply_changes') === 'y') {
+            $rule->applyChanges();
+        } else {
+            $rule->checkForChanges();
         }
-
-        return $this->rule;
     }
 
     public static function getDescription(QuickForm $form)
@@ -87,9 +91,5 @@ class SyncJob extends JobHook
             null      => $form->translate('- please choose -'),
             '__ALL__' => $form->translate('Run all rules at once')
         ) + $res;
-    }
-
-    public function isPending()
-    {
     }
 }
