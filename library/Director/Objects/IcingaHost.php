@@ -186,10 +186,16 @@ class IcingaHost extends IcingaObject
         $props['zone_id'] = $this->getResolvedProperty('zone_id');
 
         $endpoint = IcingaEndpoint::create($props);
+
         $zone = IcingaZone::create(array(
             'object_name' => $name,
-            'parent'      => $this->connection->getMasterZoneName()
         ), $this->connection)->setEndpointList(array($name));
+
+        if ($props['zone_id']) {
+            $zone->parent_id = $props['zone_id'];
+        } else {
+            $zone->parent = $this->connection->getMasterZoneName();
+        }
 
         $pre = 'zones.d/' . $this->getRenderingZone($config) . '/';
         $config->configFile($pre . 'agent_endpoints')->addObject($endpoint);
