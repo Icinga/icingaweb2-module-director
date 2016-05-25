@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Job;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorJob;
 
 class JobRunner
 {
@@ -20,7 +21,7 @@ class JobRunner
         }
     }
 
-    protected function run(Job $job)
+    protected function run(DirectorJob $job)
     {
         if ($this->shouldFork()) {
             $this->fork($job);
@@ -29,7 +30,7 @@ class JobRunner
         }
     }
 
-    protected function fork(Job $job)
+    protected function fork(DirectorJob $job)
     {
         $cmd = 'icingacli director job run ' . $job->id;
         $output = `$cmd`;
@@ -37,10 +38,12 @@ class JobRunner
 
     protected function shouldFork()
     {
+        return false;
         return true;
     }
 
-    protected function getRegisteredJobs()
+    protected function getConfiguredJobs()
     {
+        return DirectorJob::loadAll($this->db);
     }
 }
