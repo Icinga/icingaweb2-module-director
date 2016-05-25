@@ -4,10 +4,13 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
     private $host;
+
+    private $apply;
 
     public function setup()
     {
@@ -22,9 +25,23 @@ class IcingaServiceForm extends DirectorObjectForm
         }
     }
 
+    public function createApplyRuleFor(IcingaService $service)
+    {
+        $this->apply = $service;
+        $object = $this->object();
+        $object->imports = $service->object_name;
+        $object->object_type = 'apply';
+        $object->object_name = $service->object_name;
+        return $this;
+    }
+
     protected function setupServiceElements()
     {
-        $this->addHidden('object_type', 'template');
+        if ($this->object) {
+            $this->addHidden('object_type', $this->object->object_type);
+        } else {
+            $this->addHidden('object_type', 'template');
+        }
 
         $this->addNameElement()
              ->addHostObjectElement()

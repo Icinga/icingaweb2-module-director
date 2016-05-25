@@ -67,15 +67,6 @@ class ServiceController extends ObjectController
                 $this->translate('Apply "%s"'),
                 $this->apply->object_name
             );
-
-            $form = $this->view->form;
-            if (!$form->hasBeenSent()) {
-                $form->populate(array(
-                    'imports'     => $this->apply->object_name,
-                    'object_name' => $this->apply->object_name,
-                    'object_type' => 'apply',
-                ));
-            }
         }
     }
 
@@ -83,12 +74,7 @@ class ServiceController extends ObjectController
     {
         if ($this->apply) {
             if (!$form->hasBeenSent()) {
-                $form->populate(array(
-                    'imports'     => $this->apply->object_name,
-                    'object_name' => $this->apply->object_name,
-                    'object_type' => 'apply',
-                ));
-                $form->getObject()->object_type = 'apply';
+                $form->createApplyRuleFor($this->apply);
             }
         }
     }
