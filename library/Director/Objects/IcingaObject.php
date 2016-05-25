@@ -610,6 +610,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getResolvedProperty($key, $default = null)
     {
+        if (array_key_exists($key, $this->unresolvedRelatedProperties)) {
+            $this->resolveUnresolvedRelatedProperty($key);
+            $this->invalidateResolveCache();
+        }
+
         $properties = $this->getResolvedProperties();
         if (property_exists($properties, $key)) {
             return $properties->$key;
