@@ -33,7 +33,7 @@ class JobsCommand extends Command
 
     protected function hasBeenDisabled()
     {
-        return false;
+        return $this->db()->getSetting('disable_all_jobs') === 'y';
     }
 
     protected function runScheduledImports()
