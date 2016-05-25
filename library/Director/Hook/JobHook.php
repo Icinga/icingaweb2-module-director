@@ -2,12 +2,22 @@
 
 namespace Icinga\Module\Director\Hook;
 
+use Icinga\Application\Icinga;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 abstract class JobHook
 {
     private $db;
+
+    private $output   = array();
+
+    private $warnings = array();
+
+    private $errors   = array();
+
+    private $jobDefinition;
 
     public static function getDescription(QuickForm $form)
     {
@@ -19,6 +29,17 @@ abstract class JobHook
     public function isPending()
     {
         // TODO: Can be overridden, double-check whether this is necessary
+    }
+
+    public function setDefinition(DirectorJob $definition)
+    {
+        $this->jobDefinition = $definition;
+        return $this;
+    }
+
+    protected function getSetting($key, $default = null)
+    {
+        return $this->jobDefinition->getSetting($key, $default);
     }
 
     public function getName()
@@ -63,5 +84,35 @@ abstract class JobHook
         return $this->db;
     }
 
+    protected function output($message)
+    {
+        $this->output[] = $message;
+        return $this;
+    }
 
+    /**
+     * printf helper method
+     *
+     * @param  string $message Format string
+     * @param  mixed  ...$arg  Format string argument
+     *
+     * @return self
+     */
+    protected function printf($message)
+    {
+        $args = array_slice(func_get_args(), 1);
+        return $this->output(vsprintf($message, $args));
+    }
+
+    protected function warning($message)
+    {
+        $this->warnings[] = $message;
+        return $this;
+    }
+
+    protected function error($message)
+    {
+        $this->errors[] = $message;
+        return $this;
+    }
 }
