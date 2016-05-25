@@ -274,7 +274,7 @@ class Db extends DbConnection
     {
         $sql = 'SELECT id FROM director_activity_log WHERE checksum = ?';
         return $this->db()->fetchOne(
-            $this->db()->quoteInto($sql,  $this->quoteBinary($checksum))
+            $this->db()->quoteInto($sql, $this->quoteBinary($checksum))
         );
     }
 
