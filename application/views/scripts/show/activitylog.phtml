@@ -58,6 +58,18 @@ $url = $this->url()->without('checksum')->without('show');
     ?></td>
   </tr>
 <?php endif ?>
+<?php if ($this->hasBeenEnabled): ?>
+  <tr>
+    <th><?= $this->translate('Rendering') ?></th>
+    <td><?= $this->translate('This object has been enabled') ?></td>
+  </tr>
+<?php endif ?>
+<?php if ($this->hasBeenDisabled): ?>
+  <tr>
+    <th><?= $this->translate('Rendering') ?></th>
+    <td><?= $this->translate('This object has been disabled') ?></td>
+  </tr>
+<?php endif ?>
   <tr>
     <th><?= $this->translate('Checksum') ?></th>
     <td><?= $this->entry->checksum ?></td>
