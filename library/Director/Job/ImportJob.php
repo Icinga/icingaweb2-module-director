@@ -29,7 +29,7 @@ class ImportJob extends JobHook
         try {
             if ($import->providesChanges()) {
 
-               if ($this->getSetting('run_import') === 'y') {
+                if ($this->getSetting('run_import') === 'y') {
                     if ($import->run()) {
                         $source->import_state = 'in-sync';
                     } else {
