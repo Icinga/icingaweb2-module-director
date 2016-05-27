@@ -73,9 +73,7 @@ class ServiceController extends ObjectController
     protected function beforeHandlingAddRequest($form)
     {
         if ($this->apply) {
-            if (!$form->hasBeenSent()) {
-                $form->createApplyRuleFor($this->apply);
-            }
+            $form->createApplyRuleFor($this->apply);
         }
     }
 
