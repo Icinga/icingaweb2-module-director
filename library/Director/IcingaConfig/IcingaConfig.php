@@ -376,6 +376,7 @@ class IcingaConfig
             ->createFileFromDb('service')
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
+            ->createFileFromDb('notification')
             ;
 
         $this->configFile('zones.d/director-global/commands')
