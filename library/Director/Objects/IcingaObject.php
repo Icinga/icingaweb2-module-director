@@ -525,6 +525,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if (! array_key_exists($k, $value)) {
                     $unset[] = $k;
                 }
+                // check if there is a var in a different case
+                foreach (array_keys($value) as $newKey) {
+                    if (strtolower($k) === strtolower($newKey) && $k !== $newKey) {
+                        $unset[] = $k;
+                    }
+                }
             }
             foreach ($unset as $k) {
                 unset($this->vars()->$k);
@@ -535,6 +541,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this;
         } elseif (substr($key, 0, 5) === 'vars.') {
             //TODO: allow for deep keys
+            // check if there is a var in a different case
+            foreach ($this->vars() as $oldKey => $v) {
+                if (strtolower($oldKey) === strtolower($key) && $oldKey !== $key) {
+                    unset($this->vars()->$oldKey);
+                }
+            }
             $this->vars()->set(substr($key, 5), $value);
             return $this;
         } elseif (substr($key, 0, 10) === 'arguments.') {
@@ -1994,6 +2006,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($object->supportsCustomVars()) {
             $myVars = $this->vars();
             foreach ($vars as $key => $var) {
+                // check if there is a var in a different case
+                foreach ($myVars as $oldKey => $v) {
+                    if (strtolower($oldKey) === strtolower($key) && $oldKey !== $key) {
+                        unset($myVars->$oldKey);
+                    }
+                }
                 $myVars->set($key, $var);
             }
         }
