@@ -16,8 +16,49 @@ abstract class IcingaObjectGroup extends IcingaObject
         'display_name'          => null,
     );
 
+    /**
+     * Render groups without extra object_types
+     *
+     * @param IcingaConfig $config
+     */
+    public function renderToConfig(IcingaConfig $config)
+    {
+        if ($this->isDisabled() || $this->isExternal()) {
+            return;
+        }
+
+        $type = $this->getShortTableName();
+
+        $filename = strtolower($type) . 's';
+
+        $config->configFile(
+            'zones.d/' . $this->getRenderingZone($config) . '/' . $filename
+        )->addObject($this);
+    }
+
     public function getRenderingZone(IcingaConfig $config = null)
     {
         return $this->connection->getDefaultGlobalZoneName();
     }
+
+    /**
+     * Will always be an apply, when it supports applies
+     *
+     * @return bool
+     */
+    public function isApplyRule()
+    {
+        return $this->supportsApplyRules();
+    }
+
+    /**
+     * No extra object types
+     * 
+     * @return string
+     */
+    protected function getObjectTypeName()
+    {
+        return 'object';
+    }
+
 }
