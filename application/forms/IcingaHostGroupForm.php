@@ -19,6 +19,19 @@ class IcingaHostGroupForm extends DirectorObjectForm
         $this->addGroupDisplayNameElement()
              ->addAssignmentElements()
              ->setButtons();
+        $this->addAssignmentElements();
+    }
+
+    public function addAssignmentElements()
+    {
+        $sub = new AssignListSubForm();
+        $sub->setObject($this->object());
+        $sub->setup();
+        $sub->setOrder(30);
+
+        $this->addSubForm($sub, 'assignlist');
+
+        return $this;
     }
 
     protected function addAssignmentElements()
