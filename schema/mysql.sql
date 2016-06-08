@@ -700,6 +700,19 @@ CREATE TABLE icinga_hostgroup_inheritance (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_hostgroup_assignment (
+  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  hostgroup_id INT(10) UNSIGNED NOT NULL,
+  filter_string TEXT NOT NULL,
+  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_hostgroup_assignment
+  FOREIGN KEY hostgroup (hostgroup_id)
+  REFERENCES icinga_hostgroup (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE icinga_servicegroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
@@ -1313,4 +1326,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 108;
+      schema_version = 109;
