@@ -6,7 +6,8 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 abstract class IcingaObjectGroup extends IcingaObject
 {
-    protected $supportsImports = true;
+    // TODO: re-enable when used
+    protected $supportsImports = false;
 
     protected $defaultProperties = array(
         'id'                    => null,
@@ -53,7 +54,7 @@ abstract class IcingaObjectGroup extends IcingaObject
 
     /**
      * No extra object types
-     * 
+     *
      * @return string
      */
     protected function getObjectTypeName()
