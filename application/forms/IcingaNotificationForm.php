@@ -41,6 +41,24 @@ class IcingaNotificationForm extends DirectorObjectForm
             return $this;
         }
 
+        $this->addElement(
+            'select',
+            'apply_to',
+            array(
+                'label' => $this->translate('Apply to'),
+                'description' => $this->translate(
+                    'Whether this notification should affect hosts or services'
+                ),
+                'required'    => true,
+                'multiOptions' => $this->optionalEnum(
+                    array(
+                        'host'    => $this->translate('Hosts'),
+                        'service' => $this->translate('Services'),
+                    )
+                )
+            )
+        );
+
         $sub = new AssignListSubForm();
         $sub->setObject($this->getObject());
         $sub->setup();

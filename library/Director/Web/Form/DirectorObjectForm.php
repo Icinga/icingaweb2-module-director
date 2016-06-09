@@ -493,6 +493,7 @@ abstract class DirectorObjectForm extends QuickForm
             'groups',
             'users',
             'user_groups',
+            'apply_to',
             'command_id', // Notification
             'notification_interval',
             'period_id',

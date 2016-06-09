@@ -111,6 +111,43 @@ class IcingaNotification extends IcingaObject
         );
     }
 
+    /**
+     * Do not render internal property apply_to
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderApply_to()
+    {
+        // @codingStandardsIgnoreEnd
+        return '';
+    }
+
+    protected function renderObjectHeader()
+    {
+        if ($this->isApplyRule()) {
+            if (($to = $this->get('apply_to')) === null) {
+                throw new ConfigurationError(
+                    'Applied notification "%s" has no valid object type',
+                    $this->getObjectName()
+                );
+            }
+
+            return sprintf(
+                "%s %s to %s %s {\n",
+                $this->getObjectTypeName(),
+                $this->getType(),
+                ucfirst($to),
+                c::renderString($this->getObjectName())
+            );
+
+        } else {
+            return parent::renderObjectHeader();
+        }
+    }
+
     protected function setKey($key)
     {
         if (is_int($key)) {
