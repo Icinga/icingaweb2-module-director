@@ -223,7 +223,7 @@ class Housekeeping
         if ($this->connection->getDbType() === 'pgsql') {
                 $sql = 'DELETE FROM imported_property'
                      . ' USING imported_property AS p'
-                     . ' LEFT JOIN import_row_property AS rp ON'
+                     . ' LEFT JOIN imported_row_property AS rp ON'
                      . ' rp.property_checksum = p.checksum'
                      . ' WHERE imported_property.checksum = p.checksum AND'
                      . ' rp.property_checksum IS NULL';
