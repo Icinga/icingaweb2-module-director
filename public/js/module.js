@@ -47,7 +47,14 @@
             return;
 
             var self = this;
-            var $a = $('#col2 div.controls ul.tabs li.active a');
+            var $tabs = $('#col2 div.controls ul.tabs');
+
+            // if less than 3 tabs - usually add form (+ close)
+            if ($tabs.find('li a[href!=#]').length < 3) {
+                return;
+            }
+
+            var $a = $tabs.find('li.active a');
             if ($a.length !== 1) {
                 return;
             }
