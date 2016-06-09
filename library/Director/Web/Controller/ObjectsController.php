@@ -44,7 +44,10 @@ abstract class ObjectsController extends ActionController
         /** @var IcingaObject $object */
         $object = $this->dummyObject();
         if ($object->isGroup()) {
+            /** @var IcingaObject $type */
             $type = substr($type, 0, -5);
+            $baseObject = substr($this->getObjectClassname(), 0, -5);
+            $object = $baseObject::create(array());
         }
 
         $tabs->add('objects', array(
@@ -57,7 +60,7 @@ abstract class ObjectsController extends ActionController
                 'label' => $this->translate('Templates'),
             ));
         }
-        if ($object->supportsGroups() || $object->isGroup()) {
+        if ($object->supportsGroups()) {
             $tabs->add('objectgroups', array(
                 'url'   => sprintf('director/%sgroups', $type),
                 'label' => $this->translate('Groups')
