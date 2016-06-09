@@ -1,1 +1,8 @@
 .*
+PGScripts/
+PKGBUILD*
+icingaweb2-module-director/
+pkg/
+src/
+*.gz
+*.xz
