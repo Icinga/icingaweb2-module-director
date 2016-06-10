@@ -7,7 +7,7 @@
 </div>
 
 <div class="content">
-<?php if ($object->disabled === 'y'): ?>
+<?php if ($this->isDisabled): ?>
 <p class="error"><?= $this->translate('This object will not be deployed as it has been disabled') ?></p>
 <?php endif ?>
 <?php if ($this->isExternal): ?>
