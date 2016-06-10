@@ -115,7 +115,7 @@ class IcingaCommand extends IcingaObject
     {
          return $path[0] === '/'
             || $path[0] === '\\'
-            || preg_match('/^[A-Z]:\\\/', substr($path, 0, 3));
+            || preg_match('/^[A-Za-z]:\\\/', substr($path, 0, 3));
     }
 
     public static function setPluginDir($pluginDir)
