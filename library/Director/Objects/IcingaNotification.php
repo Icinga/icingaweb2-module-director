@@ -136,11 +136,11 @@ class IcingaNotification extends IcingaObject
             }
 
             return sprintf(
-                "%s %s to %s %s {\n",
+                "%s %s %s to %s {\n",
                 $this->getObjectTypeName(),
                 $this->getType(),
-                ucfirst($to),
-                c::renderString($this->getObjectName())
+                c::renderString($this->getObjectName()),
+                ucfirst($to)
             );
 
         } else {
