@@ -102,7 +102,6 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
         $this->getTabs()->activate('render');
         $object = $this->object;
-        $this->view->isDisabled = $object->disabled === 'y';
         $this->view->isExternal = $object->isExternal();
 
         if ($this->params->shift('resolved')) {
@@ -131,10 +130,6 @@ abstract class ObjectController extends ActionController
 
         if ($this->view->isExternal) {
             $object->object_type = 'object';
-        }
-
-        if ($this->view->isDisabled) {
-            $object->disabled = 'n';
         }
 
         $this->view->object = $object;
