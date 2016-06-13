@@ -1389,8 +1389,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ));
 
         if ($this->isDisabled()) {
-            return "// --- This object has been disabled ---\n// \n// "
-                . str_replace("\n", "\n// ", $str);
+            return "/* --- This object has been disabled ---\n"
+                . $str . "*/\n";
         } else {
             return $str;
         }
