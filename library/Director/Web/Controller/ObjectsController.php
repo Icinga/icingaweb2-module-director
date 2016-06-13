@@ -173,7 +173,7 @@ abstract class ObjectsController extends ActionController
         $this->getTabs()->activate('tree');
         $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
         $this->view->objectTypeName = $this->getType();
-        $this->render('objects/tree', null, true);
+        $this->setViewScript('objects/tree');
     }
 
     protected function dummyObject()

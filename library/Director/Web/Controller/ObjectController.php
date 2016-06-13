@@ -223,7 +223,7 @@ abstract class ObjectController extends ActionController
             array('class' => 'icon-left-big')
         );
 
-        $this->render('object/form', null, true);
+        $this->setViewScript('object/form');
     }
 
     public function fieldsAction()
