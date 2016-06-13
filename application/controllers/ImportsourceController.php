@@ -66,13 +66,12 @@ class ImportsourceController extends ActionController
         $id = $this->params->get('source_id');
         $this->prepareTabs($id)->activate('modifier');
 
-        $this->view->addLink = $this->view->icon('plus')
-            . ' '
-            . $this->view->qlink(
-                $this->translate('Add property modifier'),
-                'director/importsource/addmodifier',
-                array('source_id' => $id)
-            );
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add property modifier'),
+            'director/importsource/addmodifier',
+            array('source_id' => $id),
+            array('class' => 'icon-plus')
+        );
 
         $this->view->title = $this->translate('Property modifiers');
         $this->view->table = $this->loadTable('propertymodifier')
