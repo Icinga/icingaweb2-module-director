@@ -356,16 +356,8 @@ class IcingaConfig
             );
         }
 
-        $this->configFile(
-            sprintf(
-                'zones.d/%s/001-director-basics',
-                $this->connection->getDefaultGlobalZoneName()
-            )
-        )->prepend(
-            "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
-        );
-
         $this
+            ->prepareGlobalBasics()
             ->createFileFromDb('zone')
             ->createFileFromDb('endpoint')
             ->createFileFromDb('command')
@@ -385,6 +377,71 @@ class IcingaConfig
         $this->generationTime = (int) ((microtime(true) - $start) * 1000);
 
         return $this;
+    }
+
+    protected function prepareGlobalBasics()
+    {
+        $this->configFile(
+            sprintf(
+                'zones.d/%s/001-director-basics',
+                $this->connection->getDefaultGlobalZoneName()
+            )
+        )->prepend(
+            "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+            . $this->renderMagicApplyFor()
+        );
+
+        return $this;
+    }
+
+    protected function renderMagicApplyFor()
+    {
+        if (! $this->usesMagicApplyFor()) {
+            return '';
+        }
+
+        return sprintf(
+            '
+apply Service for (title => params in host.vars["%s"]) {
+  if (typeof(params["imports"]) in [Array, String]) {
+    import params["imports"]
+  } else {
+    import title
+  }
+
+  if (typeof(params["vars"]) == Dictionary) {
+    vars += params
+  }
+
+  if (typeof(params["host_name"]) == String) {
+    host_name = params["host_name"]
+  }
+}
+',
+            $this->getMagicApplyVarName()
+        );
+    }
+
+    protected function getMagicApplyVarName()
+    {
+        return $this->connection->getSetting(
+            'magic_apply_for',
+            '_director_apply_for'
+        );
+    }
+
+    protected function usesMagicApplyFor()
+    {
+        $db = $this->db;
+        $query = $db->select()->from(
+            array('hv' => 'icinga_host_var'),
+            array('c' => 'COUNT(*)')
+        )->where(
+            'hv.varname = ?',
+            $this->getMagicApplyVarName()
+        );
+
+        return $db->fetchOne($query);
     }
 
     protected function loadFromDb($checksum)
