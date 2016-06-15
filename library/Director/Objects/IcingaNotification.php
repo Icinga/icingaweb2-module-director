@@ -52,7 +52,7 @@ class IcingaNotification extends IcingaObject
     );
 
     protected $intervalProperties = array(
-        'notification_interval' => 'notification_interval',
+        'notification_interval' => 'interval',
         'times_begin'           => 'times_begin',
         'times_end'             => 'times_end',
     );
