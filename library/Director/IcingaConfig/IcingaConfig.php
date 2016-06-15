@@ -377,6 +377,7 @@ class IcingaConfig
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ->createFileFromDb('notification')
+            ->createFileFromDb('dependency')
             ;
 
         $this->configFile('zones.d/director-global/commands')
@@ -478,7 +479,8 @@ class IcingaConfig
             'user',
             'userGroup',
             'timePeriod',
-            'notification'
+            'notification',
+            'dependency'
         );
 
         return in_array($type, $types);

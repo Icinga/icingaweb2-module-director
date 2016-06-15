@@ -7,7 +7,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 class IcingaDependencyTable extends IcingaObjectTable
 {
     protected $searchColumns = array( //TODO, check on this
-        'child_host',
+        'child_host_id',
     );
 
     public function getColumns()

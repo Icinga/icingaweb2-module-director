@@ -1,4 +1,8 @@
+/** TODO add these changes to main mysql file, when ready **/
 /** TODO skip drop table when ready **/
+DROP TABLE IF EXISTS icinga_dependency_assignment;
+DROP TABLE IF EXISTS icinga_dependency_states_set;
+DROP TABLE IF EXISTS icinga_dependency_inheritance;
 DROP TABLE IF EXISTS icinga_dependency;
 
 CREATE TABLE icinga_dependency (
@@ -11,9 +15,9 @@ CREATE TABLE icinga_dependency (
   parent_service_id INT(10) UNSIGNED DEFAULT NULL,
   child_host_id INT(10) UNSIGNED DEFAULT NULL,
   child_service_id INT(10) UNSIGNED DEFAULT NULL,
-  disable_checks ENUM('y', 'n') NOT NULL DEFAULT 'n',
-  disable_notifications ENUM('y', 'n') NOT NULL DEFAULT 'y',
-  ignore_soft_states ENUM('y', 'n') NOT NULL DEFAULT 'y',
+  disable_checks ENUM('y', 'n'),
+  disable_notifications ENUM('y', 'n'),
+  ignore_soft_states ENUM('y', 'n'),
   period_id INT(10) UNSIGNED DEFAULT NULL,
     zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),

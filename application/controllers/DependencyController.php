@@ -4,10 +4,10 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaNotification;
+use Icinga\Module\Director\Objects\IcingaDependency;
 use Icinga\Module\Director\Objects\IcingaService;
 
-class NotificationController extends ObjectController
+class DependencyController extends ObjectController
 {
     public function init()
     {
@@ -45,7 +45,7 @@ class NotificationController extends ObjectController
                     $params['service_id'] = $this->view->service->id;
                 }
 
-                $this->object = IcingaNotification::load($params, $db);
+                $this->object = IcingaDependency::load($params, $db);
             } else {
                 parent::loadObject();
             }

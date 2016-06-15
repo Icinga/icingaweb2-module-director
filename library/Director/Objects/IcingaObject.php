@@ -1134,7 +1134,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif ($this->isApplyRule()) {
             $filename = strtolower($type) . '_apply';
         } else {
-            $filename = strtolower($type) . 's';
+            $filename = preg_replace("/cys$/","cies",strtolower($type) . 's');
         }
 
         $config->configFile(
