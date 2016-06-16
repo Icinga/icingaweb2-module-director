@@ -108,7 +108,7 @@ class ConfigJob extends JobHook
     {
         if ($this->isWithinGracePeriod()) {
             return $deployment->getDeploymentTimestamp()
-                + $this->getSetting('grace_period'))
+                + $this->getSetting('grace_period')
                 - time();
         }
 
