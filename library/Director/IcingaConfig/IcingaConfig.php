@@ -134,7 +134,7 @@ class IcingaConfig
 
     public static function exists($checksum, Db $connection)
     {
-        $db = $connnection->getDbAdapter();
+        $db = $connection->getDbAdapter();
         $query = $db->select()->from(
             array('c' => self::$table),
             array('checksum' => $connection->dbHexFunc('c.checksum'))
