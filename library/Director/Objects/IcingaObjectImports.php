@@ -175,14 +175,18 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
-        if (array_key_exists($import, $this->imports)) {
-            return $this;
-        }
-
         if ($import instanceof $class) {
+            if (array_key_exists($import->object_name, $this->imports)) {
+                return $this;
+            }
+
             $this->imports[$import->object_name] = $import->object_name;
             $this->objects[$import->object_name] = $import;
         } elseif (is_string($import)) {
+            if (array_key_exists($import, $this->imports)) {
+                return $this;
+            }
+
             $this->imports[$import] = $import;
         }
 
