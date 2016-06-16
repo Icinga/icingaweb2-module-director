@@ -15,7 +15,7 @@ class JobRunner
     public function runPendingJobs()
     {
         foreach ($this->getConfiguredJobs() as $job) {
-            if ($job->isPending()) {
+            if ($job->shouldRun()) {
                 $this->run($job);
             }
         }

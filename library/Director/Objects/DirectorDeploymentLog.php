@@ -71,6 +71,19 @@ class DirectorDeploymentLog extends DbObject
         return (int) $db->fetchOne($query) > 0;
     }
 
+    public static function getConfigChecksumForStageName(Db $connection, $stage)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()
+            ->from('director_deployment_log', array('c' => $connection->dbHexFunc('config_checksum')))
+            ->where('stage_name = ?')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL')
+            ->order('stage_name');
+
+        return $db->fetchOne($query, $stage);
+    }
+
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();

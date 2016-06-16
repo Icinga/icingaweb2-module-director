@@ -9,10 +9,12 @@ class DirectorJobForm extends DirectorObjectForm
 {
     public function setup()
     {
+        $jobTypes = $this->enumJobTypes();
+
         $this->addElement('select', 'job_class', array(
             'label'        => $this->translate('Job Type'),
             'required'     => true,
-            'multiOptions' => $this->optionalEnum($this->enumJobTypes()),
+            'multiOptions' => $this->optionalEnum($jobTypes),
             'description'  => $this->translate(
                 'These are different available job types'
             ),

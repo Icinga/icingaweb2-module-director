@@ -379,8 +379,6 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addField($field, $value, $inheritedValue, $inheritFrom);
         }
 
-
-
         foreach ($checkFields as $field) {
             $varname = $field->varname;
             if (property_exists($vars, $varname)) {
@@ -968,7 +966,7 @@ abstract class DirectorObjectForm extends QuickForm
             return $objectProperty;
         }
 
-        if (!$this->valueIsEmpty($val = $this->getElement($name)->getValue())) {
+        if (($el = $this->getElement($name)) && !$this->valueIsEmpty($val = $el->getValue())) {
             return $val;
         }
 

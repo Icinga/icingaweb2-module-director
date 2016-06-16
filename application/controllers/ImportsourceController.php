@@ -57,7 +57,7 @@ class ImportsourceController extends ActionController
                 ->setConnection($this->db())
                 ->setImportSource($source)
         );
-        $this->render('list/table', null, true);
+        $this->setViewScript('list/table');
     }
 
     public function modifierAction()
@@ -77,7 +77,7 @@ class ImportsourceController extends ActionController
         $this->view->table = $this->loadTable('propertymodifier')
             ->enforceFilter(Filter::where('source_id', $id))
             ->setConnection($this->db());
-        $this->render('list/table', null, true);
+        $this->setViewScript('list/table');
     }
 
     public function indexAction()
@@ -98,7 +98,22 @@ class ImportsourceController extends ActionController
         }
 
         $form->handleRequest();
-        $this->render('object/form', null, true);
+        $this->setViewScript('object/form');
+    }
+
+    public function historyAction()
+    {
+        $url = $this->getRequest()->getUrl();
+        $id = $url->shift('id');
+        if ($url->shift('action') === 'remove') {
+            $this->view->form = $this->loadForm('removeImportrun');
+        }
+
+        $this->prepareTabs($id)->activate('history');
+        $this->view->title = $this->translate('Import run history');
+        $this->view->stats = $this->db()->fetchImportStatistics();
+        $this->prepareTable('importrun');
+        $this->view->table->enforceFilter(Filter::where('source_id', $id));
     }
 
     public function editmodifierAction()
@@ -135,7 +150,7 @@ class ImportsourceController extends ActionController
             ->enforceFilter(Filter::where('source_id', $source_id))
             ->setConnection($this->db());
 
-        $this->render('list/table', null, true);
+        $this->setViewScript('list/table');
     }
 
     protected function prepareTabs($id = null)
@@ -149,6 +164,9 @@ class ImportsourceController extends ActionController
             ))->add('modifier', array(
                 'url'       => 'director/importsource/modifier' . '?source_id=' . $id,
                 'label'     => $this->translate('Modifiers'),
+            ))->add('history', array(
+                'url'       => 'director/importsource/history' . '?id=' . $id,
+                'label'     => $this->translate('History'),
             ))->add('preview', array(
                 'url'       => 'director/importsource/preview' . '?id=' . $id,
                 'label'     => $this->translate('Preview'),
