@@ -61,7 +61,7 @@ class ConfigJob extends JobHook
         $db = $this->db();
 
         return IcingaConfig::exists(
-            DirectorDeploymentLog::loadLatest($db)->getConfigHexChecksum(),
+            $this->lastDeployment()->getConfigHexChecksum(),
             $db
         );
     }
