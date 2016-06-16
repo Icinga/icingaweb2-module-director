@@ -73,8 +73,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $imports;
 
-    private $importedObjects;
-
     private $ranges;
 
     private $arguments;
@@ -557,39 +555,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->imports;
     }
 
-    // TODO: what happens if imports change at runtime?
-    public function importedObjects()
-    {
-        $this->assertImportsSupport();
-        if ($this->importedObjects === null) {
-            $this->importedObjects = array();
-            foreach ($this->imports()->listImportNames() as $import) {
-                $this->importedObjects[$import] = $this->loadImportedObject($import);
-            }
-        }
-
-        return $this->importedObjects;
-    }
-
-    protected function loadImportedObject($name)
-    {
-        if (is_array($this->getKeyName())) {
-            // Affects services only:
-            return self::load(
-                array('object_name' => $name),
-                $this->connection
-            );
-        } else {
-            return self::load($name, $this->connection);
-        }
-    }
-
-    public function clearImportedObjects()
-    {
-        $this->importedObjects = null;
-        return $this;
-    }
-
     public function setImports($imports)
     {
         if (! is_array($imports) && $imports !== null) {
@@ -598,7 +563,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $this->imports()->set($imports);
         if ($this->imports()->hasBeenModified()) {
-            $this->clearImportedObjects();
             $this->invalidateResolveCache();
         }
     }
@@ -779,7 +743,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $vals['_MERGED_']    = (object) array();
         $vals['_INHERITED_'] = (object) array();
         $vals['_ORIGINS_']   = (object) array();
-        $objects = $this->importedObjects();
+        $objects = $this->imports()->getObjects();
 
         $get          = 'get'         . $what;
         $getInherited = 'getInherited' . $what;
@@ -793,6 +757,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if (in_array($key, $blacklist)) {
                     continue;
                 }
+
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
                 $vals['_INHERITED_']->$key = $value;
@@ -1658,7 +1623,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if ($resolved) {
                 if ($this->supportsImports()) {
                     $set = clone($set);
-                    foreach ($this->importedObjects() as $parent) {
+                    foreach ($this->imports()->getObjects() as $parent) {
                         $set->inheritFrom($parent->getRelatedSet($property));
                     }
                 }

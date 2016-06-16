@@ -196,6 +196,16 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    public function getObjects()
+    {
+        $list = array();
+        foreach ($this->listImportNames() as $name) {
+            $list[$name] = $this->getObject($name);
+        }
+
+        return $list;
+    }
+
     protected function getObject($name)
     {
         if (array_key_exists($name, $this->objects)) {
