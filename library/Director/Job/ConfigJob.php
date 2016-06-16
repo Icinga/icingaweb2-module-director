@@ -128,7 +128,7 @@ class ConfigJob extends JobHook
     {
         return DirectorDeploymentLog::getConfigChecksumForStageName(
             $this->db(),
-            $api->getActiveStageName()
+            $this->api()->getActiveStageName()
         );
     }
 
