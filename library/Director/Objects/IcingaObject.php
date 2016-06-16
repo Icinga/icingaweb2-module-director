@@ -1531,6 +1531,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                         }
 
                         $k = $relKey;
+                    } else {
+                        throw new ProgrammingError('No such relation: %s', $relKey);
                     }
                 }
             }
