@@ -966,7 +966,7 @@ abstract class DirectorObjectForm extends QuickForm
             return $objectProperty;
         }
 
-        if ($el = $this->getElement($name) && !$this->valueIsEmpty($val = $el->getValue())) {
+        if (($el = $this->getElement($name)) && !$this->valueIsEmpty($val = $el->getValue())) {
             return $val;
         }
 
