@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class IcingaNotification extends IcingaObject
@@ -51,7 +52,7 @@ class IcingaNotification extends IcingaObject
     );
 
     protected $intervalProperties = array(
-        'notification_interval' => 'notification_interval',
+        'notification_interval' => 'interval',
         'times_begin'           => 'times_begin',
         'times_end'             => 'times_end',
     );
@@ -109,6 +110,43 @@ class IcingaNotification extends IcingaObject
             'times',
             c::renderDictionary($times)
         );
+    }
+
+    /**
+     * Do not render internal property apply_to
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderApply_to()
+    {
+        // @codingStandardsIgnoreEnd
+        return '';
+    }
+
+    protected function renderObjectHeader()
+    {
+        if ($this->isApplyRule()) {
+            if (($to = $this->get('apply_to')) === null) {
+                throw new ConfigurationError(
+                    'Applied notification "%s" has no valid object type',
+                    $this->getObjectName()
+                );
+            }
+
+            return sprintf(
+                "%s %s %s to %s {\n",
+                $this->getObjectTypeName(),
+                $this->getType(),
+                c::renderString($this->getObjectName()),
+                ucfirst($to)
+            );
+
+        } else {
+            return parent::renderObjectHeader();
+        }
     }
 
     protected function setKey($key)

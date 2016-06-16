@@ -1123,7 +1123,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function renderToConfig(IcingaConfig $config)
     {
-        if ($this->isDisabled() || $this->isExternal()) {
+        if ($this->isExternal()) {
             return;
         }
 
@@ -1373,7 +1373,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function toConfigString()
     {
-        return implode(array(
+        $str = implode(array(
             $this->renderObjectHeader(),
             $this->renderImports(),
             $this->renderProperties(),
@@ -1387,6 +1387,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderAssignments(),
             $this->renderSuffix()
         ));
+
+        if ($this->isDisabled()) {
+            return "/* --- This object has been disabled ---\n"
+                . $str . "*/\n";
+        } else {
+            return $str;
+        }
     }
 
     public function isGroup()

@@ -12,13 +12,8 @@ class NotificationController extends ObjectController
     public function init()
     {
         parent::init();
+        // TODO: Check if this is still needed, remove it otherwise
         if ($this->object && $this->object->object_type === 'apply') {
-            $this->getTabs()->add('assign', array(
-                'url'       => 'director/notification/assign',
-                'urlParams' => $this->object->getUrlParams(),
-                'label'     => 'Assign'
-            ));
-
             if ($host = $this->params->get('host')) {
                 foreach ($this->getTabs()->getTabs() as $tab) {
                     $tab->getUrl()->setParam('host', $host);
@@ -31,30 +26,6 @@ class NotificationController extends ObjectController
                 }
             }
         }
-    }
-
-    public function assignAction()
-    {
-        $this->getTabs()->activate('assign');
-        $this->view->form = $form = $this->loadForm('icingaNotificationAssignment');
-        $form
-            ->setIcingaObject($this->object)
-            ->setDb($this->db());
-        if ($id = $this->params->get('rule_id')) {
-            $this->view->actionLinks = $this->view->qlink(
-                $this->translate('back'),
-                $this->getRequest()->getUrl()->without('rule_id'),
-                null,
-                array('class' => 'icon-left-big')
-            );
-            $form->loadObject($id);
-        }
-        $form->handleRequest();
-
-        $this->view->table = $this->loadTable('icingaObjectAssignment')
-            ->setObject($this->object);
-        $this->view->title = 'Assign notification';
-        $this->render('object/fields', null, true); // TODO: render table
     }
 
     protected function loadObject()

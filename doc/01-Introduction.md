@@ -7,7 +7,7 @@ favorite Icinga config deployment tool. Even if you prefer plain text
 files and manual configuration, chances are good that the Director will
 change your mind.
 
-Director is here to make your life easier. As a Icinga 2 pro you know
+Director is here to make your life easier. As an Icinga 2 pro you know
 all the knobs an tricks Icinga2 provides. However, you are not willing
 to do the same work again and again. Someone wants to add a new server,
 tweak some thresholds, adjust notifications? They shouldn't need to
