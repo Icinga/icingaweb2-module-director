@@ -52,9 +52,18 @@ class ConfigJob extends JobHook
 
     protected function shouldGenerate()
     {
-        return $this->getSetting('force_generate')
-                // -> last config?!
-            || $this->db()->countActivitiesSinceLastDeployedConfig() > 0;
+        return $this->getSetting('force_generate') === 'y'
+            || ! $this->configForLatestActivityExists();
+    }
+
+    protected function configForLatestActivityExists()
+    {
+        $db = $this->db();
+
+        return IcingaConfig::exists(
+            DirectorDeploymentLog::loadLatest($db)->getConfigHexChecksum(),
+            $db
+        );
     }
 
     protected function shouldDeploy(IcingaConfig $config)
