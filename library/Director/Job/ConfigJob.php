@@ -60,7 +60,6 @@ class ConfigJob extends JobHook
     protected function shouldDeploy(IcingaConfig $config)
     {
         $db = $this->db();
-
         if ($this->getSetting('deploy_when_changed') !== 'y') {
             return false;
         }
@@ -75,7 +74,7 @@ class ConfigJob extends JobHook
             return false;
         }
 
-        if ($this->lastDeployment()->configEquals($config)) {
+        if ($this->getActiveChecksum() === $config->getChecksum()) {
             return false;
         }
 
@@ -86,6 +85,7 @@ class ConfigJob extends JobHook
 
     protected function deploy(IcingaConfig $config)
     {
+        $this->clearLastDeployment();
         $db = $this->db();
         $api = $this->api();
         $api->wipeInactiveStages($db);
@@ -104,6 +104,17 @@ class ConfigJob extends JobHook
         return time() - $this->getSetting('grace_period');
     }
 
+    public function getRemainingGraceTime()
+    {
+        if ($this->isWithinGracePeriod()) {
+            return $deployment->getDeploymentTimestamp()
+                + $this->getSetting('grace_period'))
+                - time();
+        }
+
+        return 0;
+    }
+
     protected function isWithinGracePeriod()
     {
         if ($deployment = $this->lastDeployment()) {
@@ -113,6 +124,14 @@ class ConfigJob extends JobHook
         return false;
     }
 
+    protected function getActiveChecksum()
+    {
+        return DirectorDeploymentLog::getConfigChecksumForStageName(
+            $db,
+            $api->getActiveStageName()
+        );
+    }
+
     protected function lastDeployment()
     {
         if ($this->lastDeployment === null) {
@@ -120,6 +139,12 @@ class ConfigJob extends JobHook
         }
 
         return $this->lastDeployment;
+    }
+
+    protected function clearLastDeployment()
+    {
+        $this->lastDeployment = null;
+        return $this;
     }
 
     public static function addSettingsFormFields(QuickForm $form)
@@ -168,71 +193,5 @@ class ConfigJob extends JobHook
             'The Config job allows you to generate and eventually deploy your'
             . 'Icinga 2 configuration'
         );
-    }
-
-    /**
-     * Re-render the current configuration
-     */
-    public function renderConfig()
-    {
-        $config = new IcingaConfig($this->db());
-        Benchmark::measure('Rendering config');
-        if ($config->hasBeenModified()) {
-            Benchmark::measure('Config rendered, storing to db');
-            $config->store();
-            Benchmark::measure('All done');
-            $checksum = $config->getHexChecksum();
-            $this->printf(
-                "New config with checksum %s has been generated\n",
-                $checksum
-            );
-        } else {
-            $checksum = $config->getHexChecksum();
-            $this->printf(
-                "Config with checksum %s already exists\n",
-                $checksum
-            );
-        }
-    }
-
-    /**
-     * Deploy the current configuration
-     *
-     * Does nothing if config didn't change unless you provide
-     * the --force parameter
-     */
-    public function deployAction()
-    {
-        $api = $this->api();
-        $db = $this->db();
-
-        $checksum = $this->params->get('checksum');
-        if ($checksum) {
-            $config = IcingaConfig::load(Util::hex2binary($checksum), $db);
-        } else {
-            $config = IcingaConfig::generate($db);
-            $checksum = $config->getHexChecksum();
-        }
-
-        $api->wipeInactiveStages($db);
-        $current = $api->getActiveChecksum($db);
-        if ($current === $checksum) {
-            if ($this->params->get('force')) {
-                echo "Config matches active stage, deploying anyway\n";
-            } else {
-                echo "Config matches active stage, nothing to do\n";
-
-                return;
-            }
-
-        } else {
-            if ($api->dumpConfig($config, $db)) {
-                $this->printf("Config '%s' has been deployed\n", $checksum);
-            } else {
-                $this->fail(
-                    sprintf("Failed to deploy config '%s'\n", $checksum)
-                );
-            }
-        }
     }
 }
