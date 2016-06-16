@@ -132,6 +132,20 @@ class IcingaConfig
         return $config;
     }
 
+    public static function exists($checksum, Db $connection)
+    {
+        $db = $connnection->getDbAdapter();
+        $query = $db->select()->from(
+            array('c' => self::$table),
+            array('checksum' => $connection->dbHexFunc('c.checksum'))
+        )->where(
+            'checksum = ?',
+            $connection->quoteBinary(Util::hex2binary($checksum))
+        );
+
+        return $db->fetchOne($query) === $checksum;
+    }
+
     public static function loadByActivityChecksum($checksum, Db $connection)
     {
         $db = $connection->getDbAdapter();
