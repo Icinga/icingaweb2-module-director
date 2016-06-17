@@ -1147,53 +1147,64 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
 
         foreach ($this->properties as $key => $value) {
-
-            if (substr($key, -3) === '_id') {
-                $short = substr($key, 0, -3);
-                if ($this->hasUnresolvedRelatedProperty($key)) {
-                    $out .= c::renderKeyValue(
-                        $short, // NOT
-                        c::renderString($this->$short)
-                    );
-
-                    continue;
-                }
-            }
-
-            if ($value === null) {
-                continue;
-            }
             if (in_array($key, $blacklist)) {
                 continue;
             }
 
-            $method = 'render' . ucfirst($key);
-            if (method_exists($this, $method)) {
-                $out .= $this->$method($value);
-            } else {
-                if ($this->propertyIsBoolean($key)) {
-                    if ($value !== $this->defaultProperties[$key]) {
-                        $out .= c::renderKeyValue(
-                            $this->booleans[$key],
-                            c::renderBoolean($value)
-                        );
-                    }
-                } elseif ($this->propertyIsInterval($key)) {
-                    $out .= c::renderKeyValue(
-                        $this->intervalProperties[$key],
-                        c::renderInterval($value)
-                    );
-                } elseif (substr($key, -3) === '_id'
-                     && $this->hasRelation($relKey = substr($key, 0, -3))
-                ) {
-                    $out .= $this->renderRelationProperty($relKey, $value);
-                } else {
-                    $out .= c::renderKeyValue($key, c::renderString($value));
-                }
-            }
+            $out .= $this->renderObjectProperty($key, $value);
         }
 
         return $out;
+    }
+
+    protected function renderObjectProperty($key, $value)
+    {
+        if (substr($key, -3) === '_id') {
+            $short = substr($key, 0, -3);
+            if ($this->hasUnresolvedRelatedProperty($key)) {
+                return c::renderKeyValue(
+                    $short, // NOT
+                    c::renderString($this->$short)
+                );
+
+                return '';
+            }
+        }
+
+        if ($value === null) {
+            return '';
+        }
+
+        $method = 'render' . ucfirst($key);
+        if (method_exists($this, $method)) {
+            return $this->$method($value);
+        }
+
+        if ($this->propertyIsBoolean($key)) {
+            if ($value === $this->defaultProperties[$key]) {
+                return '';
+            } else {
+                return c::renderKeyValue(
+                    $this->booleans[$key],
+                    c::renderBoolean($value)
+                );
+            }
+        }
+
+        if ($this->propertyIsInterval($key)) {
+            return c::renderKeyValue(
+                $this->intervalProperties[$key],
+                c::renderInterval($value)
+            );
+        }
+
+        if (substr($key, -3) === '_id'
+             && $this->hasRelation($relKey = substr($key, 0, -3))
+        ) {
+            return $this->renderRelationProperty($relKey, $value);
+        }
+
+        return c::renderKeyValue($key, c::renderString($value));
     }
 
     protected function renderBooleanProperty($key)
