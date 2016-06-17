@@ -7,7 +7,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 class IcingaDependencyTable extends IcingaObjectTable
 {
     protected $searchColumns = array( //TODO, check on this
-        'child_host_id',
+        'dependency',
     );
 
     public function getColumns()
@@ -119,6 +119,10 @@ class IcingaDependencyTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        return $this->getUnfilteredQuery();
+        return $this->getUnfilteredQuery()->where(
+            'd.object_type IN (?)',
+            array('template')
+        )->order('d.object_name');
+
     }
 }

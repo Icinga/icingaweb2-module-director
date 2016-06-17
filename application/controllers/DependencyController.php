@@ -45,6 +45,12 @@ class DependencyController extends ObjectController
             $this->service = IcingaService::load(array("host_id" => $host_id, "object_name" => $service), $this->db());
         }
 
+        if ($apply = $this->params->get('apply')) {
+            $this->apply = IcingaDependency::load(
+                array('object_name' => $apply, 'object_type' => 'template'),
+                $this->db()
+            );
+        }
 
         // TODO: Check if this is still needed, remove it otherwise
         if ($this->object && $this->object->object_type === 'apply') {
@@ -141,6 +147,14 @@ class DependencyController extends ObjectController
 
         return $form;
     }
+
+    protected function beforeHandlingAddRequest($form)
+    {
+        if ($this->apply) {
+            $form->createApplyRuleFor($this->apply);
+        }
+    }
+
 
 
 }

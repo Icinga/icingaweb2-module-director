@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaDependency;
 
 class IcingaDependencyForm extends DirectorObjectForm
 {
@@ -48,7 +49,14 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function setupDependencyElements() {
 
-        $this->addObjectTypeElement();
+        if ($this->object) {
+            $this->addHidden('object_type', $this->object->object_type);
+        } else {
+            $this->addHidden('object_type', 'template');
+        }
+
+
+//        $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
             $this->groupMainProperties();
             return;
@@ -300,7 +308,7 @@ class IcingaDependencyForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 30,
+            'order' => 25,
             'legend' => $this->translate('Related Objects')
         ));
 
@@ -347,5 +355,16 @@ class IcingaDependencyForm extends DirectorObjectForm
 
         return $obj;
     }
+
+    public function createApplyRuleFor(IcingaDependency $dependency)
+    {
+        $this->apply = $dependency;
+        $object = $this->object();
+        $object->imports = $dependency->object_name;
+        $object->object_type = 'apply';
+        $object->object_name = $dependency->object_name;
+        return $this;
+    }
+
 
 }
