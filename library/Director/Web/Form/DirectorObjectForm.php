@@ -73,7 +73,6 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        $this->object->importedObjects();
         $object->resolveUnresolvedRelatedProperties();
         return $this;
     }
