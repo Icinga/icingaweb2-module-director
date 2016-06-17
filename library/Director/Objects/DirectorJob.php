@@ -89,9 +89,7 @@ class DirectorJob extends DbObjectWithSettings
     public function isWithinTimeperiod()
     {
         if ($this->hasTimeperiod()) {
-            if (! $this->timeperiod()->isActive()) {
-                return false;
-            }
+            return $this->timeperiod()->isActive();
         } else {
             return true;
         }
@@ -109,6 +107,6 @@ class DirectorJob extends DbObjectWithSettings
 
     protected function timeperiod()
     {
-        return IcingaTimeperiod::load($this->timeperiod_id, $this->db);
+        return IcingaTimePeriod::loadWithAutoIncId($this->timeperiod_id, $this->connection);
     }
 }
