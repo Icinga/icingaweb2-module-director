@@ -13,9 +13,9 @@ class IcingaDependencyTable extends IcingaObjectTable
     public function getColumns()
     {
         return array(
-            'id'                    => 'n.id',
-            'object_type'           => 'n.object_type',
-            'dependency'            => 'n.object_name',
+            'id'                    => 'd.id',
+            'object_type'           => 'd.object_type',
+            'dependency'            => 'd.object_name',
         );
     }
 
@@ -73,11 +73,11 @@ class IcingaDependencyTable extends IcingaObjectTable
     protected function appliedOnes($id)
     {
         if ($this->connection()->isPgsql()) {
-            $nameCol = "s.object_name || COALESCE(': ' || ARRAY_TO_STRING(ARRAY_AGG("
+            $nameCol = "d.object_name || COALESCE(': ' || ARRAY_TO_STRING(ARRAY_AGG("
                 . "a.assign_type || ' where ' || a.filter_string"
                 . " ORDER BY a.assign_type, a.filter_string), ', '), '')";
         } else {
-            $nameCol = "s.object_name || COALESCE(': ' || GROUP_CONCAT("
+            $nameCol = "d.object_name || COALESCE(': ' || GROUP_CONCAT("
                 . "a.assign_type || ' where ' || a.filter_string"
                 . " ORDER BY a.assign_type, a.filter_string SEPARATOR ', '"
                 . "), '')";
@@ -85,23 +85,23 @@ class IcingaDependencyTable extends IcingaObjectTable
 
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
-            array('s' => 'icinga_dependency'),
+            array('d' => 'icinga_dependency'),
             array(
-                'id'         => 's.id',
+                'id'         => 'd.id',
                 'objectname' => $nameCol,
             )
         )->join(
             array('i' => 'icinga_dependency_inheritance'),
-            'i.dependency_id = s.id',
+            'i.dependency_id = d.id',
             array()
         )->where('i.parent_dependency_id = ?', $id)
-         ->where('s.object_type = ?', 'apply');
+         ->where('d.object_type = ?', 'apply');
 
         $query->joinLeft(
             array('a' => 'icinga_dependency_assignment'),
-            'a.dependency_id = s.id',
+            'a.dependency_id = d.id',
             array()
-        )->group('s.id');
+        )->group('d.id');
 
         return $db->fetchPairs($query);
     }
@@ -110,7 +110,7 @@ class IcingaDependencyTable extends IcingaObjectTable
     {
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
-            array('n' => 'icinga_dependency'),
+            array('d' => 'icinga_dependency'),
             array()
         );
 

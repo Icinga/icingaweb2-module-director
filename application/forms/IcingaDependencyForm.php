@@ -3,24 +3,59 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 
 class IcingaDependencyForm extends DirectorObjectForm
 {
+    private $host;
+    private $service;
+
+    private $apply;
+
+
     public function setup()
     {
+        if (!$this->isNew() && $this->host === null) {
+            $this->host = $this->object->getResolvedRelated('child_host');    
+        }
+
+        if (!$this->isNew() && $this->service === null) {
+            $this->service = $this->object->getResolvedRelated('child_service');    
+        }
+
+
+        if (($this->host === null) && ($this->service === null)) {
+
+            $this->setupDependencyElements();
+        } else {
+            $this->setupObjectRelatedElements();
+        }
+
+    }
+
+    public function setHost(IcingaHost $host)
+    {
+        $this->host = $host;
+        return $this;
+    }
+
+    public function setService(IcingaService $service)
+    {
+        $this->service = $service;
+        return $this;
+    }
+
+    protected function setupDependencyElements() {
+
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
             $this->groupMainProperties();
             return;
         }
 
-        $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Dependency'),
-            'required'    => true,
-            'description' => $this->translate('Icinga object name for this dependency')
-        ));
-
-        $this->addDisabledElement()
+        $this->addNameElement()
+             ->addDisabledElement()
              ->addImportsElement()
              ->addObjectsElement()
              ->addBooleanElements()
@@ -30,6 +65,62 @@ class IcingaDependencyForm extends DirectorObjectForm
              ->groupMainProperties()
              ->setButtons();
     }
+
+    protected function setupObjectRelatedElements() {
+
+        //TODO apply is not working for the templates
+        $this->addHidden('object_type', 'object');
+        if ($this->host) {
+		$this->addHidden('child_host_id', $this->host->id);
+		if ($this->host->object_type == 'template') {
+			if ($this->service && $this->service->object_type == "object") {
+				$this->addHidden('apply_to', 'service');
+			} else {
+                                $this->addHidden('apply_to', 'host');
+                        }
+                }
+        }
+        if ($this->service) {
+                $this->addHidden('child_service_id', $this->service->id);
+                if ($this->service->object_type == 'template') $this->addHidden('apply_to', 'service');
+        }
+		
+        $this->addImportsElement();
+        $imports = $this->getSentOrObjectValue('imports');
+        if ($this->isNew() && empty($imports)) {
+            return $this->groupMainProperties();
+        }
+	
+	$this->addNameElement()
+             ->addDisabledElement()
+             ->addObjectsElement()
+             ->addPeriodElement()
+             ->addBooleanElements()
+             ->addEventFilterElements(array('states'))
+             ->groupMainProperties()
+             ->setButtons();
+
+        if ($this->hasBeenSent()) {
+            $name = $this->getValue('object_name');
+            if (!strlen($name)) {
+                $this->setElementValue('object_name', end($imports));
+                $this->object->object_name = end($imports);
+            }
+        }
+    }
+
+
+    protected function addNameElement()
+    {
+        $this->addElement('text', 'object_name', array(
+            'label'       => $this->translate('Name'),
+            'required'    => true,
+            'description' => $this->translate('Name for the Icinga dependency you are going to create')
+        ));
+
+        return $this;
+    }
+
 
     protected function addAssignmentElements()
     {
@@ -162,7 +253,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         }
 
 	// If configuring Object, allow selection of child host and/or service, otherwise apply rules will determine child object.
-        if ($this->isObject()) {
+        if ($this->isObject() && $this->host===null && $this->service===null) {
 
             if (!empty($hosts) && $this->isObject()) {
                 $this->addElement(

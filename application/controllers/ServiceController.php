@@ -39,11 +39,22 @@ class ServiceController extends ObjectController
         parent::init();
 
         if ($this->object) {
+            $tabs = $this->getTabs();
             if ($this->host) {
-                foreach ($this->getTabs()->getTabs() as $tab) {
+                foreach ($tabs->getTabs() as $tab) {
                     $tab->getUrl()->setParam('host', $this->host->object_name);
                 }
             }
+            if ($this->object->object_type != "apply") {
+                $urlparams['name']=$this->object->object_name;
+                if ($this->host) $urlparams['host']=$this->host->object_name;
+                $tabs->add('service_dependencies', array(
+                    'url'       => 'director/service/dependencies',
+                    'urlParams' => $urlparams,
+                    'label'     => 'Service Dependencies'
+                ));	
+            }
+
         }
 
         if ($this->host) {
@@ -53,6 +64,7 @@ class ServiceController extends ObjectController
                 'label'     => $this->translate('Services'),
             ));
         }
+
     }
 
     public function addAction()
@@ -149,4 +161,35 @@ class ServiceController extends ObjectController
 
         return $this->object;
     }
+
+    // TODO impelment dependencies action
+    public function dependenciesAction()
+    {
+        $service = $this->object;
+        
+	$urlparams['service']=$this->object->object_name;
+        if ($this->host) $urlparams['host']=$this->host->object_name;
+ 
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add dependency'),
+            'director/dependency/add',
+            $urlparams,
+            array('class' => 'icon-plus')
+        );
+
+        $this->getTabs()->activate('service_dependencies');
+        $this->view->title = sprintf(
+            $this->translate('Dependencies: %s'),
+            $service->object_name
+        );
+
+	//TODO filter services?  null if for host ?
+        $this->view->table = $this->loadTable('IcingaServiceDependency');
+	if ($this->host) $this->view->table->setHost($this->host);
+	if ($service) $this->view->table->setService($service);
+	$this->view->table->enforceFilter('child_service_id', $service->id)
+		->setConnection($this->db());
+    }
+
+
 }

@@ -104,4 +104,128 @@ class IcingaDependency extends IcingaObject
 
         return $this;
     }
+
+    public function getOnDeleteUrl()
+    {
+        if ($this->child_service_id) {
+            return 'director/service/dependencies?name='.rawurlencode($this->child_service).'&host='.rawurlencode($this->child_host);
+	} else if ($this->child_host_id) {
+            return 'director/host/dependencies?name='.rawurlencode($this->child_host);
+        } else {
+            return parent::getOnDeleteUrl();
+        }
+    }
+
+    protected function renderAssignments()
+    {
+        if ($this->hasBeenAssignedToHostTemplateService()) {
+	    $filter = sprintf(
+                'assign where "%s" in host.templates && service.name == "%s"',
+                $this->child_host, $this->child_service
+            );
+            return "\n    " . $filter . "\n";
+        }
+        if ($this->hasBeenAssignedToHostTemplate()) {
+	    $filter = sprintf(
+                'assign where "%s" in host.templates',
+                $this->child_host
+            );
+            return "\n    " . $filter . "\n";
+        }
+        
+        if ($this->hasBeenAssignedToServiceTemplate()) {
+	    $filter = sprintf(
+                'assign where "%s" in service.templates',
+                $this->child_service
+            );
+            return "\n    " . $filter . "\n";
+        }
+        
+        return parent::renderAssignments();
+    }
+
+    protected function hasBeenAssignedToHostTemplate()
+    {
+        return $this->child_host_id && $this->getRelatedObject(
+            'child_host',
+            $this->child_host_id
+        )->object_type === 'template';
+    }
+
+    protected function hasBeenAssignedToServiceTemplate()
+    {
+        return $this->child_service_id && $this->getRelatedObject(
+            'child_service',
+            $this->child_service_id
+        )->object_type === 'template';
+    }
+
+    protected function hasBeenAssignedToHostTemplateService()
+    {
+        if (!$this->hasBeenAssignedToHostTemplate()) return false;
+	return $this->child_service_id && $this->getRelatedObject(
+            'child_service',
+            $this->child_service_id
+        )->object_type === 'object';
+    }
+
+    /**
+     * Render child_host_id as host_name
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderChild_host_id()
+    {
+        // @codingStandardsIgnoreEnd
+
+        if ($this->hasBeenAssignedToHostTemplate()) {
+            return '';
+        }
+
+        return $this->renderRelationProperty('child_host', $this->child_host_id, 'child_host');
+    }
+
+    /**
+     * Render child_service_id as host_name
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderChild_service_id()
+    {
+        // @codingStandardsIgnoreEnd
+        if ($this->hasBeenAssignedToServiceTemplate()) {
+            return '';
+        }
+
+        if ($this->hasBeenAssignedToHostTemplateService()) {
+            return '';
+        }
+
+
+        return $this->renderRelationProperty('child_service', $this->child_service_id, 'child_service');
+    }
+    public function isApplyRule()
+    {
+        if ($this->hasBeenAssignedToHostTemplate()) {
+            return true;
+        }
+
+        if ($this->hasBeenAssignedToServiceTemplate()) {
+            return true;
+        }
+
+
+        return $this->hasProperty('object_type')
+            && $this->object_type === 'apply';
+    }
+
+
+
+
 }

@@ -406,8 +406,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 return parent::set($key . '_id', null);
             }
 
-            $this->unresolvedRelatedProperties[$key . '_id'] = $value;
-            return $this;
+            if ($key=="child_service" || $key=="parent_service") {
+                //TODO, skip for related services...requires array for key
+                return $this;
+            }
+
+	    $this->unresolvedRelatedProperties[$key . '_id'] = $value;
+	    return $this;
         }
 
         if ($this->propertyIsMultiRelation($key)) {
@@ -1712,6 +1717,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if ($this->hasProperty('service_id') && $this->service_id) {
                 $params['service'] = $this->service;
             }
+
+            if ($this->hasProperty('child_host_id') && $this->child_host_id) {
+                $params['host'] = $this->child_host;
+            }
+            
+            if ($this->hasProperty('child_service_id') && $this->child_service_id) {
+                $params['service'] = $this->child_service;
+            }
+
         }
 
         return $params;
@@ -1719,7 +1733,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getOnDeleteUrl()
     {
-        return 'director/' . strtolower($this->getShortTableName()) . 's';
+	$plural= preg_replace('/cys$/','cies', strtolower($this->getShortTableName()) . 's');
+        return 'director/'.$plural;
     }
 
     public function toJson(

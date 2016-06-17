@@ -207,6 +207,7 @@ abstract class QuickForm extends QuickBaseForm
 
     public function getSuccessUrl()
     {
+
         $url = $this->successUrl ?: $this->getAction();
         if (! $url instanceof Url) {
             $url = Url::fromPath($url);
@@ -362,6 +363,8 @@ abstract class QuickForm extends QuickBaseForm
 
         $url = $this->getSuccessUrl();
         $this->notifySuccess($this->getSuccessMessage($message));
+	echo "DEBUG Here $url";
+	//exit;
         $this->redirectAndExit($url);
     }
 

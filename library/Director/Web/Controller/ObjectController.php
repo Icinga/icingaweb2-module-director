@@ -127,14 +127,17 @@ abstract class ObjectController extends ActionController
                 );
             }
         }
-
         if ($this->view->isExternal) {
             $object->object_type = 'object';
         }
 
+
         $this->view->object = $object;
         $this->view->config = new IcingaConfig($this->db());
         $object->renderToConfig($this->view->config);
+	//echo "DEBUG";
+	//exit;
+
 
         $this->view->title = sprintf(
             $this->translate('Config preview: %s'),
