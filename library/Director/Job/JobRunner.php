@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Job;
 
+use Icinga\Application\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorJob;
 
@@ -16,6 +17,7 @@ class JobRunner
     {
         foreach ($this->getConfiguredJobs() as $job) {
             if ($job->shouldRun()) {
+                Logger::info('Director JobRunner is starting "%s"', $job->job_name);
                 $this->run($job);
             }
         }

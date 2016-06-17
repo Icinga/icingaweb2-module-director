@@ -101,11 +101,12 @@ class ConfigJob extends JobHook
         $api->wipeInactiveStages($db);
 
         $checksum = $config->getHexChecksum();
+        $this->info('Director ConfigJob ready to deploy "%s"', $checksum);
         if ($api->dumpConfig($config, $db)) {
-            $this->printf("Config '%s' has been deployed\n", $checksum);
+            $this->info('Director ConfigJob deployed config "%s"', $checksum);
             $api->collectLogFiles($db);
         } else {
-            $this->fail(sprintf("Failed to deploy config '%s'\n", $checksum));
+            throw new IcingaException('Failed to deploy config "%s"', $checksum);
         }
     }
 

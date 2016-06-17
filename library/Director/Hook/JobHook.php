@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Hook;
 
 use Icinga\Application\Icinga;
+use Icinga\Application\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -10,12 +11,6 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 abstract class JobHook
 {
     private $db;
-
-    private $output   = array();
-
-    private $warnings = array();
-
-    private $errors   = array();
 
     private $jobDefinition;
 
@@ -84,12 +79,6 @@ abstract class JobHook
         return $this->db;
     }
 
-    protected function output($message)
-    {
-        $this->output[] = $message;
-        return $this;
-    }
-
     /**
      * printf helper method
      *
@@ -98,21 +87,21 @@ abstract class JobHook
      *
      * @return self
      */
-    protected function printf($message)
+    protected function info($message)
     {
-        $args = array_slice(func_get_args(), 1);
-        return $this->output(vsprintf($message, $args));
+        call_user_func_array(Loger::info, func_num_args());
+        return $this;
     }
 
     protected function warning($message)
     {
-        $this->warnings[] = $message;
+        call_user_func_array(Loger::warn, func_num_args());
         return $this;
     }
 
     protected function error($message)
     {
-        $this->errors[] = $message;
+        call_user_func_array(Logger::error, func_num_args());
         return $this;
     }
 }
