@@ -89,19 +89,19 @@ abstract class JobHook
      */
     protected function info($message)
     {
-        call_user_func_array(Logger::info, func_num_args());
+        call_user_func_array('Logger::info', func_num_args());
         return $this;
     }
 
     protected function warning($message)
     {
-        call_user_func_array(Logger::warn, func_num_args());
+        call_user_func_array('Logger::warn', func_num_args());
         return $this;
     }
 
     protected function error($message)
     {
-        call_user_func_array(Logger::error, func_num_args());
+        call_user_func_array('Logger::error', func_num_args());
         return $this;
     }
 }
