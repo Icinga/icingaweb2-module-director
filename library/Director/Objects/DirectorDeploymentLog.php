@@ -76,10 +76,7 @@ class DirectorDeploymentLog extends DbObject
         $db = $connection->getDbAdapter();
         $query = $db->select()
             ->from('director_deployment_log', array('c' => $connection->dbHexFunc('config_checksum')))
-            ->where('stage_name = ?')
-            ->where('stage_collected IS NULL')
-            ->where('startup_succeeded IS NULL')
-            ->order('stage_name');
+            ->where('stage_name = ?');
 
         return $db->fetchOne($query, $stage);
     }

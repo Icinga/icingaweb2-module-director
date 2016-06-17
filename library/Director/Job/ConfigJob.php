@@ -29,6 +29,8 @@ class ConfigJob extends JobHook
         if ($this->shouldDeploy($config)) {
             $this->deploy($config);
         }
+
+        $this->clearLastDeployment();
     }
 
     protected function api()
@@ -83,7 +85,7 @@ class ConfigJob extends JobHook
             return false;
         }
 
-        if ($this->getActiveChecksum() === $config->getChecksum()) {
+        if ($this->getActiveChecksum() === $config->getHexChecksum()) {
             return false;
         }
 
@@ -94,7 +96,6 @@ class ConfigJob extends JobHook
 
     protected function deploy(IcingaConfig $config)
     {
-        $this->clearLastDeployment();
         $db = $this->db();
         $api = $this->api();
         $api->wipeInactiveStages($db);
