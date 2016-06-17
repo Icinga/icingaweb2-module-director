@@ -72,8 +72,8 @@ abstract class DirectorObjectForm extends QuickForm
                 $object->imports = $el->getValue();
             }
         }
-
-        $this->object->importedObjects();
+//Fatal error: Call to undefined method Icinga\Module\Director\Objects\IcingaHost::importedObjects() in /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php on line 76
+       // $this->object->importedObjects();
         $object->resolveUnresolvedRelatedProperties();
         return $this;
     }
