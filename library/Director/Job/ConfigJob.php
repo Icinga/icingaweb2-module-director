@@ -29,6 +29,8 @@ class ConfigJob extends JobHook
         if ($this->shouldDeploy($config)) {
             $this->deploy($config);
         }
+
+        $this->clearLastDeployment();
     }
 
     protected function api()
@@ -83,7 +85,7 @@ class ConfigJob extends JobHook
             return false;
         }
 
-        if ($this->getActiveChecksum() === $config->getChecksum()) {
+        if ($this->getActiveChecksum() === $config->getHexChecksum()) {
             return false;
         }
 
@@ -94,17 +96,17 @@ class ConfigJob extends JobHook
 
     protected function deploy(IcingaConfig $config)
     {
-        $this->clearLastDeployment();
         $db = $this->db();
         $api = $this->api();
         $api->wipeInactiveStages($db);
 
         $checksum = $config->getHexChecksum();
+        $this->info('Director ConfigJob ready to deploy "%s"', $checksum);
         if ($api->dumpConfig($config, $db)) {
-            $this->printf("Config '%s' has been deployed\n", $checksum);
+            $this->info('Director ConfigJob deployed config "%s"', $checksum);
             $api->collectLogFiles($db);
         } else {
-            $this->fail(sprintf("Failed to deploy config '%s'\n", $checksum));
+            throw new IcingaException('Failed to deploy config "%s"', $checksum);
         }
     }
 

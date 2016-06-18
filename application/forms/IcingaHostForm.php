@@ -41,6 +41,7 @@ class IcingaHostForm extends DirectorObjectForm
              ->addClusteringElements()
              ->addCheckCommandElements()
              ->addCheckExecutionElements()
+             ->addExtraInfoElements()
              ->setButtons();
     }
 

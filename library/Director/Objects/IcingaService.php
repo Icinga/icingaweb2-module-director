@@ -76,6 +76,8 @@ class IcingaService extends IcingaObject
 
     protected $keyName = array('host_id', 'object_name');
 
+    protected $prioritizedProperties = array('host_id');
+
     public function getCheckCommand()
     {
         $id = $this->getResolvedProperty('check_command_id');

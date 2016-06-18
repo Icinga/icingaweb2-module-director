@@ -23,10 +23,10 @@ class JobsCommand extends Command
             return;
         }
 
-        if ($this->params->shift('once')) {
-            $this->runAllPendingJobs();
-        } else {
+        if ($this->params->shift('forever')) {
             $this->runforever();
+        } else {
+            $this->runAllPendingJobs();
         }
     }
 

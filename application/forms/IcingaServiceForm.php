@@ -52,6 +52,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addAssignmentElements()
              ->addCheckCommandElements()
              ->addCheckExecutionElements()
+             ->addExtraInfoElements()
              ->addAgentAndZoneElements()
              ->setButtons();
     }
@@ -86,6 +87,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addDisabledElement()
              ->groupMainProperties()
              ->addCheckCommandElements()
+             ->addExtraInfoElements()
              ->setButtons();
 
         if ($this->hasBeenSent()) {
@@ -115,7 +117,6 @@ class IcingaServiceForm extends DirectorObjectForm
 
         return $this;
     }
-
 
     protected function addHostObjectElement()
     {

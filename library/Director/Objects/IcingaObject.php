@@ -57,6 +57,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $loadedRelatedSets = array();
 
+    // Will be rendered first, before imports
+    protected $prioritizedProperties = array();
+
     /**
      * Array of interval property names
      *
@@ -72,8 +75,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     private $groups;
 
     private $imports;
-
-    private $importedObjects;
 
     private $ranges;
 
@@ -557,39 +558,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->imports;
     }
 
-    // TODO: what happens if imports change at runtime?
-    public function importedObjects()
-    {
-        $this->assertImportsSupport();
-        if ($this->importedObjects === null) {
-            $this->importedObjects = array();
-            foreach ($this->imports()->listImportNames() as $import) {
-                $this->importedObjects[$import] = $this->loadImportedObject($import);
-            }
-        }
-
-        return $this->importedObjects;
-    }
-
-    protected function loadImportedObject($name)
-    {
-        if (is_array($this->getKeyName())) {
-            // Affects services only:
-            return self::load(
-                array('object_name' => $name),
-                $this->connection
-            );
-        } else {
-            return self::load($name, $this->connection);
-        }
-    }
-
-    public function clearImportedObjects()
-    {
-        $this->importedObjects = null;
-        return $this;
-    }
-
     public function setImports($imports)
     {
         if (! is_array($imports) && $imports !== null) {
@@ -598,7 +566,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $this->imports()->set($imports);
         if ($this->imports()->hasBeenModified()) {
-            $this->clearImportedObjects();
             $this->invalidateResolveCache();
         }
     }
@@ -779,7 +746,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $vals['_MERGED_']    = (object) array();
         $vals['_INHERITED_'] = (object) array();
         $vals['_ORIGINS_']   = (object) array();
-        $objects = $this->importedObjects();
+        $objects = $this->imports()->getObjects();
 
         $get          = 'get'         . $what;
         $getInherited = 'getInherited' . $what;
@@ -793,6 +760,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if (in_array($key, $blacklist)) {
                     continue;
                 }
+
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
                 $vals['_INHERITED_']->$key = $value;
@@ -1175,60 +1143,82 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderProperties()
     {
         $out = '';
-        $blacklist = array(
+        $blacklist = array_merge(array(
             'id',
             'object_name',
             'object_type',
-        );
+        ), $this->prioritizedProperties);
 
         foreach ($this->properties as $key => $value) {
-
-            if (substr($key, -3) === '_id') {
-                $short = substr($key, 0, -3);
-                if ($this->hasUnresolvedRelatedProperty($key)) {
-                    $out .= c::renderKeyValue(
-                        $short, // NOT
-                        c::renderString($this->$short)
-                    );
-
-                    continue;
-                }
-            }
-
-            if ($value === null) {
-                continue;
-            }
             if (in_array($key, $blacklist)) {
                 continue;
             }
 
-            $method = 'render' . ucfirst($key);
-            if (method_exists($this, $method)) {
-                $out .= $this->$method($value);
-            } else {
-                if ($this->propertyIsBoolean($key)) {
-                    if ($value !== $this->defaultProperties[$key]) {
-                        $out .= c::renderKeyValue(
-                            $this->booleans[$key],
-                            c::renderBoolean($value)
-                        );
-                    }
-                } elseif ($this->propertyIsInterval($key)) {
-                    $out .= c::renderKeyValue(
-                        $this->intervalProperties[$key],
-                        c::renderInterval($value)
-                    );
-                } elseif (substr($key, -3) === '_id'
-                     && $this->hasRelation($relKey = substr($key, 0, -3))
-                ) {
-                    $out .= $this->renderRelationProperty($relKey, $value);
-                } else {
-                    $out .= c::renderKeyValue($key, c::renderString($value));
-                }
-            }
+            $out .= $this->renderObjectProperty($key, $value);
         }
 
         return $out;
+    }
+
+    protected function renderPrioritizedProperties()
+    {
+        $out = '';
+
+        foreach ($this->prioritizedProperties as $key) {
+            $out .= $this->renderObjectProperty($key, $this->properties[$key]);
+        }
+
+        return $out;
+    }
+
+    protected function renderObjectProperty($key, $value)
+    {
+        if (substr($key, -3) === '_id') {
+            $short = substr($key, 0, -3);
+            if ($this->hasUnresolvedRelatedProperty($key)) {
+                return c::renderKeyValue(
+                    $short, // NOT
+                    c::renderString($this->$short)
+                );
+
+                return '';
+            }
+        }
+
+        if ($value === null) {
+            return '';
+        }
+
+        $method = 'render' . ucfirst($key);
+        if (method_exists($this, $method)) {
+            return $this->$method($value);
+        }
+
+        if ($this->propertyIsBoolean($key)) {
+            if ($value === $this->defaultProperties[$key]) {
+                return '';
+            } else {
+                return c::renderKeyValue(
+                    $this->booleans[$key],
+                    c::renderBoolean($value)
+                );
+            }
+        }
+
+        if ($this->propertyIsInterval($key)) {
+            return c::renderKeyValue(
+                $this->intervalProperties[$key],
+                c::renderInterval($value)
+            );
+        }
+
+        if (substr($key, -3) === '_id'
+             && $this->hasRelation($relKey = substr($key, 0, -3))
+        ) {
+            return $this->renderRelationProperty($relKey, $value);
+        }
+
+        return c::renderKeyValue($key, c::renderString($value));
     }
 
     protected function renderBooleanProperty($key)
@@ -1375,6 +1365,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $str = implode(array(
             $this->renderObjectHeader(),
+            $this->renderPrioritizedProperties(),
             $this->renderImports(),
             $this->renderProperties(),
             $this->renderRanges(),
@@ -1566,6 +1557,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                         }
 
                         $k = $relKey;
+                    } else {
+                        throw new ProgrammingError('No such relation: %s', $relKey);
                     }
                 }
             }
@@ -1658,7 +1651,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if ($resolved) {
                 if ($this->supportsImports()) {
                     $set = clone($set);
-                    foreach ($this->importedObjects() as $parent) {
+                    foreach ($this->imports()->getObjects() as $parent) {
                         $set->inheritFrom($parent->getRelatedSet($property));
                     }
                 }

@@ -73,7 +73,6 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        $this->object->importedObjects();
         $object->resolveUnresolvedRelatedProperties();
         return $this;
     }
@@ -1300,6 +1299,70 @@ abstract class DirectorObjectForm extends QuickForm
 
         $tpl = array_combine($tpl, $tpl);
         return $tpl;
+    }
+
+    protected function addExtraInfoElements()
+    {
+        $this->addElement('textarea', 'notes', array(
+            'label'   => $this->translate('Notes'),
+            'description' => $this->translate(
+                'Additional notes for this object'
+            ),
+            'rows'    => 2,
+            'columns' => 60,
+        ));
+
+        $this->addElement('text', 'notes_url', array(
+            'label'   => $this->translate('Notes URL'),
+            'description' => $this->translate(
+                'An URL pointing to additional notes for this object'
+            ),
+        ));
+
+        $this->addElement('text', 'action_url', array(
+            'label'   => $this->translate('Action URL'),
+            'description' => $this->translate(
+                'An URL leading to additional actions for this object. Often used'
+                . ' with Icinga Classic, rarely with Icinga Web 2 as it provides'
+                . ' far better possibilities to integrate addons'
+            ),
+        ));
+
+        $this->addElement('text', 'icon_image', array(
+            'label'   => $this->translate('Icon image'),
+            'description' => $this->translate(
+                'An URL pointing to an icon for this object. Try "tux.png" for icons'
+                . ' relative to public/img/icons or "cloud" (no extension) for items'
+                . ' from the Icinga icon font'
+            ),
+        ));
+
+        $this->addElement('text', 'icon_image_alt', array(
+            'label'   => $this->translate('Icon image alt'),
+            'description' => $this->translate(
+                'Alternative text to be shown in case above icon is missing'
+            ),
+        ));
+
+        $elements = array(
+            'notes',
+            'notes_url',
+            'action_url',
+            'icon_image',
+            'icon_image_alt',
+        );
+
+        $this->addDisplayGroup($elements, 'extrainfo', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order'  => 75,
+            'legend' => $this->translate('Additional properties')
+        ));
+
+        return $this;
     }
 
     protected function addEventFilterElements()
