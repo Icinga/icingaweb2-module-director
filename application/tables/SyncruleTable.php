@@ -12,13 +12,14 @@ class SyncruleTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'id'                => 's.id',
-            'rule_name'         => 's.rule_name',
-            'sync_state'        => 's.sync_state',
-            'object_type'       => 's.object_type',
-            'update_policy'     => 's.update_policy',
-            'purge_existing'    => 's.purge_existing',
-            'filter_expression' => 's.filter_expression',
+            'id'                 => 's.id',
+            'rule_name'          => 's.rule_name',
+            'sync_state'         => 's.sync_state',
+            'object_type'        => 's.object_type',
+            'update_policy'      => 's.update_policy',
+            'purge_existing'     => 's.purge_existing',
+            'filter_expression'  => 's.filter_expression',
+            'last_error_message' => 's.last_error_message',
         );
     }
 
@@ -44,6 +45,10 @@ class SyncruleTable extends QuickTable
 
     protected function getRowClasses($row)
     {
+        if ($row->sync_state === 'failing' && $row->last_error_message) {
+            $row->rule_name .= ' (' . $row->last_error_message . ')';
+        }
+
         return $row->sync_state;
     }
 
