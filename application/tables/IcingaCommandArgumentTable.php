@@ -28,7 +28,7 @@ class IcingaCommandArgumentTable extends QuickTable
             'id'             => 'ca.id',
             'command_id'     => 'c.id',
             'command'        => 'c.object_name',
-            'argument_name'  => 'ca.argument_name',
+            'argument_name'  => "COALESCE(ca.argument_name, '(none)')",
             'argument_value' => 'ca.argument_value',
         );
     }
