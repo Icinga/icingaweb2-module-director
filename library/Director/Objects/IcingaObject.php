@@ -275,7 +275,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             } else {
                 $obj_key=array("host_id" => null, "object_name" => $this->unresolvedRelatedProperties[$name]);
             }
-        }
+        } 
         $object = $class::load(
             $obj_key,
             $this->connection

@@ -210,8 +210,24 @@ class IcingaDependency extends IcingaObject
             return '';
         }
 
-        return $this->renderRelationProperty('child_host', $this->child_host_id, 'child_host');
+        return $this->renderRelationProperty('child_host', $this->child_host_id, 'child_host_name');
     }
+
+    /**
+     * Render parent_host_id as parent_host_name
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderParent_host_id()
+    {
+        // @codingStandardsIgnoreEnd
+
+        return $this->renderRelationProperty('parent_host', $this->parent_host_id, 'parent_host_name');
+    }
+
 
     /**
      * Render child_service_id as host_name
@@ -236,8 +252,23 @@ class IcingaDependency extends IcingaObject
             return '';
         }
 
-        return $this->renderRelationProperty('child_service', $this->child_service_id, 'child_service');
+        return $this->renderRelationProperty('child_service', $this->child_service_id, 'child_service_name');
     }
+
+    /**
+     * Render parent_service_id as parent_service_name
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderParent_service_id()
+    {
+            return $this->renderRelationProperty('parent_service', $this->parent_service_id, 'parent_service_name');
+    }
+
+
     public function isApplyRule()
     {
         if ($this->hasBeenAssignedToHostTemplate()) {
