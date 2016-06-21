@@ -145,8 +145,6 @@ class HostController extends ObjectController
             $host->object_name
         );
 
-	//TODO fileter services?  null if for host ?
-
         $this->view->table = $this->loadTable('IcingaHostDependency')
             ->setHost($host)
             ->enforceFilter('child_host_id', $host->id)

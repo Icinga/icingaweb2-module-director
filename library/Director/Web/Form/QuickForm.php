@@ -363,8 +363,6 @@ abstract class QuickForm extends QuickBaseForm
 
         $url = $this->getSuccessUrl();
         $this->notifySuccess($this->getSuccessMessage($message));
-	echo "DEBUG Here $url";
-	//exit;
         $this->redirectAndExit($url);
     }
 
