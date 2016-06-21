@@ -201,7 +201,7 @@ class Housekeeping
                      . ' LEFT JOIN import_rowset_row AS rsr ON'
                      . ' rsr.row_checksum = r.checksum'
                      . ' WHERE imported_row.checksum = r.checksum AND'
-                     . ' rsr.rsr_checksum IS NULL';
+                     . ' rsr.row_checksum IS NULL';
         } else {
                 $sql = 'DELETE r.* FROM imported_row r LEFT JOIN imported_rowset_row rsr'
                      . ' ON rsr.row_checksum = r.checksum WHERE rsr.row_checksum IS NULL';
