@@ -47,12 +47,6 @@ class IcingaServiceDependencyTable extends QuickTable
             $params['id'] = $row->id;
         } else {
             $params = array('name' => $row->dependency);
-            if ($row->host !== null) {
-                $params['host'] = $row->host;
-            }
-            if ($row->service !== null) {
-                $params['service'] = $row->service;
-            }
         }
 
         return $this->url('director/dependency', $params);

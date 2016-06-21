@@ -11,6 +11,7 @@ class IcingaDependencyForm extends DirectorObjectForm
 {
     private $host;
     private $service;
+    private $service_id; //use when adding dependency to service apply rule
 
     private $apply;
 
@@ -47,6 +48,13 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
+    public function setServiceId($id)
+    {
+        $this->service_id = $id;
+        return $this;
+    }
+
+
     protected function setupDependencyElements() {
 
         if ($this->object) {
@@ -55,8 +63,6 @@ class IcingaDependencyForm extends DirectorObjectForm
             $this->addHidden('object_type', 'template');
         }
 
-
-//        $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
             $this->groupMainProperties();
             return;
@@ -76,7 +82,6 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function setupObjectRelatedElements() {
 
-        //TODO apply is not working for the templates
         $this->addHidden('object_type', 'object');
         if ($this->host) {
 		$this->addHidden('child_host_id', $this->host->id);
@@ -91,6 +96,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         if ($this->service) {
                 $this->addHidden('child_service_id', $this->service->id);
                 if ($this->service->object_type == 'template') $this->addHidden('apply_to', 'service');
+                if ($this->service->object_type == 'apply') $this->addHidden('apply_to', 'service');
         }
 		
         $this->addImportsElement();

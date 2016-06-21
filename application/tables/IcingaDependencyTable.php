@@ -6,7 +6,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
 class IcingaDependencyTable extends IcingaObjectTable
 {
-    protected $searchColumns = array( //TODO, check on this
+    protected $searchColumns = array( 
         'dependency',
     );
 

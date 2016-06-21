@@ -265,8 +265,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $short = substr($name, 0, -3);
         $class = $this->getRelationClass($short);
+	$obj_key = $this->unresolvedRelatedProperties[$name];
+
+	# related services need array key
+	if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
+		$host_id_prop=str_replace("service","host",$name);
+		if (isset($this->properties[$host_id_prop])) {
+			$obj_key=array("host_id" => $this->properties[$host_id_prop], "object_name" => $this->unresolvedRelatedProperties[$name]);
+		} else {
+			$obj_key=array("host_id" => null, "object_name" => $this->unresolvedRelatedProperties[$name]);
+		}
+	}
         $object = $class::load(
-            $this->unresolvedRelatedProperties[$name],
+            $obj_key,
             $this->connection
         );
 
@@ -404,11 +415,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($this->hasRelation($key)) {
             if (strlen($value) === 0) {
                 return parent::set($key . '_id', null);
-            }
-
-            if ($key=="child_service" || $key=="parent_service") {
-                //TODO, skip for related services...requires array for key
-                return $this;
             }
 
 	    $this->unresolvedRelatedProperties[$key . '_id'] = $value;

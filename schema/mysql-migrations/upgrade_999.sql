@@ -1,9 +1,3 @@
-/** TODO add these changes to main mysql file, when ready **/
-/** TODO skip drop table when ready **/
-DROP TABLE IF EXISTS icinga_dependency_assignment;
-DROP TABLE IF EXISTS icinga_dependency_states_set;
-DROP TABLE IF EXISTS icinga_dependency_inheritance;
-DROP TABLE IF EXISTS icinga_dependency;
 
 CREATE TABLE icinga_dependency (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,

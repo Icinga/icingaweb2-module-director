@@ -17,10 +17,41 @@ class DependencyController extends ObjectController
 
     protected function beforeTabs()
     {
-	if ($this->service) {
+        if ($this->object) {
+            if ($this->object->child_service_id) {
+		$this->service = IcingaService::load(array("id" => $this->object->child_service_id), $this->db());
+            }
+            if ($this->object->child_host_id) {
+                $this->host = IcingaHost::loadWithAutoIncId($this->object->child_host_id, $this->db());
+            }
+        } else {
+
+            if ($host = $this->params->get('host')) {
+                $this->host = IcingaHost::load($host, $this->db());
+            }
+            if ($service_id = $this->params->get('service_id')) {
+                $this->service = IcingaService::load(array("id" => $service_id), $this->db());
+            } else if ($service = $this->params->get('service')) {
+                   $host_id = ($this->host ? $this->host->id : null);
+                   $this->service = IcingaService::load(array("host_id" => $host_id, "object_name" => $service), $this->db());
+            }
+        }
+ 
+	if ($this->service) { 
+            $params=array();
+            if ($this->service->object_type == "apply") {
+                $params['id'] = $this->service->id;
+            } else if ($this->service->object_type == "template") {
+                $params['name']=$this->service->object_name;
+            } else {
+                $params['name']=$this->service->object_name;
+                if ($this->host) {
+		    $params['host']=$this->host->object_name;
+                }
+            }
             $this->getTabs()->add('service', array(
                 'url'       => 'director/service',
-                'urlParams' => array('name' => $this->service->object_name),
+                'urlParams' => $params,
                 'label'     => $this->translate('Service'),
             ));
         } else {
@@ -36,14 +67,7 @@ class DependencyController extends ObjectController
 
     public function init()
     {
-        if ($host = $this->params->get('host')) {
-            $this->host = IcingaHost::load($host, $this->db());
-        }
-
-        if ($service = $this->params->get('service')) {
-            $host_id = ($this->host ? $this->host->id : null);
-            $this->service = IcingaService::load(array("host_id" => $host_id, "object_name" => $service), $this->db());
-        }
+        parent::init();
 
         if ($apply = $this->params->get('apply')) {
             $this->apply = IcingaDependency::load(
@@ -52,25 +76,13 @@ class DependencyController extends ObjectController
             );
         }
 
-        // TODO: Check if this is still needed, remove it otherwise
-        if ($this->object && $this->object->object_type === 'apply') {
-            if ($host = $this->params->get('host')) {
-                foreach ($this->getTabs()->getTabs() as $tab) {
-                    $tab->getUrl()->setParam('host', $host);
-                }
-            }
-
-            if ($service = $this->params->get('service')) {
-                foreach ($this->getTabs()->getTabs() as $tab) {
-                    $tab->getUrl()->setParam('service', $service);
-                }
-            }
-        }
-        parent::init();
-
         if ($this->service) {
-            $urlParams['name']= $this->service->object_name;
-            if ($this->host) $urlParams['host'] = $this->host->object_name;
+            if ($this->service->object_type=="apply") {
+		$urlParams['id']= $this->service->id;
+            } else {
+                $urlParams['name']= $this->service->object_name;
+                if ($this->host) $urlParams['host'] = $this->host->object_name;
+            }
             $this->getTabs()->add('service_dependencies', array(
                 'url'       => 'director/service/dependencies',
                 'urlParams' => $urlParams,
@@ -93,19 +105,6 @@ class DependencyController extends ObjectController
             if ($name = $this->params->get('name')) {
                 $params = array('object_name' => $name);
                 $db = $this->db();
-
-                if ($hostname = $this->params->get('host')) {
-                    $this->view->host = IcingaHost::load($hostname, $db);
-                    $params['child_host_id'] = $this->view->host->id;
-                }
-
-                if ($service = $this->params->get('service')) {
-                    $svcKey['object_name']=$service;
-                    $svcKey['host_id']=($this->view->host ? $this->view->host->id : null);
-
-                    $this->view->service = IcingaService::load($svcKey, $db);
-                    $params['child_service_id'] = $this->view->service->id;
-                }
 
                 $this->object = IcingaDependency::load($params, $db);
             } else {

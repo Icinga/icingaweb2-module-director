@@ -108,7 +108,11 @@ class IcingaDependency extends IcingaObject
     public function getOnDeleteUrl()
     {
         if ($this->child_service_id) {
-            return 'director/service/dependencies?name='.rawurlencode($this->child_service).'&host='.rawurlencode($this->child_host);
+            if ($this->hasBeenAssignedToServiceApply()) {
+                return 'director/service/dependencies?id='.rawurlencode($this->child_service_id);
+            } else {
+                return 'director/service/dependencies?name='.rawurlencode($this->child_service).'&host='.rawurlencode($this->child_host);
+            }
 	} else if ($this->child_host_id) {
             return 'director/host/dependencies?name='.rawurlencode($this->child_host);
         } else {
@@ -118,6 +122,18 @@ class IcingaDependency extends IcingaObject
 
     protected function renderAssignments()
     {
+        if ($this->hasBeenAssignedToServiceApply()) {
+
+            $tmpService= $this->getRelatedObject('child_service', $this->child_service_id);
+	    $assigns = $tmpService->assignments()->toConfigString();
+
+            $filter = sprintf(
+                '%s && service.name == "%s"', 
+                trim($assigns), $this->child_service
+            );
+            return "\n    " . $filter . "\n";
+        }
+
         if ($this->hasBeenAssignedToHostTemplateService()) {
 	    $filter = sprintf(
                 'assign where "%s" in host.templates && service.name == "%s"',
@@ -169,6 +185,15 @@ class IcingaDependency extends IcingaObject
         )->object_type === 'object';
     }
 
+    protected function hasBeenAssignedToServiceApply()
+    {
+        return $this->child_service_id && $this->getRelatedObject(
+            'child_service',
+            $this->child_service_id
+        )->object_type === 'apply';
+    }
+
+
     /**
      * Render child_host_id as host_name
      *
@@ -207,6 +232,9 @@ class IcingaDependency extends IcingaObject
             return '';
         }
 
+        if ($this->hasBeenAssignedToServiceApply()) {
+            return '';
+        }
 
         return $this->renderRelationProperty('child_service', $this->child_service_id, 'child_service');
     }
@@ -220,6 +248,9 @@ class IcingaDependency extends IcingaObject
             return true;
         }
 
+        if ($this->hasBeenAssignedToServiceApply()) {
+            return true;
+        }
 
         return $this->hasProperty('object_type')
             && $this->object_type === 'apply';
