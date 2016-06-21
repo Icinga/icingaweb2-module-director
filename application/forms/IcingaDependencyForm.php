@@ -84,28 +84,28 @@ class IcingaDependencyForm extends DirectorObjectForm
 
         $this->addHidden('object_type', 'object');
         if ($this->host) {
-		$this->addHidden('child_host_id', $this->host->id);
-		if ($this->host->object_type == 'template') {
-			if ($this->service && $this->service->object_type == "object") {
-				$this->addHidden('apply_to', 'service');
-			} else {
-                                $this->addHidden('apply_to', 'host');
-                        }
+            $this->addHidden('child_host_id', $this->host->id);
+            if ($this->host->object_type == 'template') {
+                if ($this->service && $this->service->object_type == "object") {
+                    $this->addHidden('apply_to', 'service');
+                } else {
+                    $this->addHidden('apply_to', 'host');
                 }
+            }
         }
         if ($this->service) {
                 $this->addHidden('child_service_id', $this->service->id);
                 if ($this->service->object_type == 'template') $this->addHidden('apply_to', 'service');
                 if ($this->service->object_type == 'apply') $this->addHidden('apply_to', 'service');
         }
-		
+
         $this->addImportsElement();
         $imports = $this->getSentOrObjectValue('imports');
         if ($this->isNew() && empty($imports)) {
             return $this->groupMainProperties();
         }
-	
-	$this->addNameElement()
+
+       $this->addNameElement()
              ->addDisabledElement()
              ->addObjectsElement()
              ->addPeriodElement()
@@ -228,7 +228,7 @@ class IcingaDependencyForm extends DirectorObjectForm
     protected function addObjectsElement()
     {
         $hosts = $this->enumAllowedHosts();
-	
+
         if (!empty($hosts)) {
             $this->addElement(
                 'select',
@@ -246,9 +246,9 @@ class IcingaDependencyForm extends DirectorObjectForm
             );
 
         }
-	
-	$sent_parent=$this->getSentOrObjectValue("parent_host_id");
-	$parent_services = $this->enumAllowedServices($sent_parent);
+
+        $sent_parent=$this->getSentOrObjectValue("parent_host_id");
+        $parent_services = $this->enumAllowedServices($sent_parent);
 
         if (!empty($parent_services)) {
             $this->addElement(
@@ -266,7 +266,7 @@ class IcingaDependencyForm extends DirectorObjectForm
 
         }
 
-	// If configuring Object, allow selection of child host and/or service, otherwise apply rules will determine child object.
+        // If configuring Object, allow selection of child host and/or service, otherwise apply rules will determine child object.
         if ($this->isObject() && $this->host===null && $this->service===null) {
 
             if (!empty($hosts) && $this->isObject()) {
@@ -307,7 +307,7 @@ class IcingaDependencyForm extends DirectorObjectForm
             }
         }
 
-	$elements=array('parent_host_id','child_host_id','parent_service_id','child_service_id');
+        $elements=array('parent_host_id','child_host_id','parent_service_id','child_service_id');
         $this->addDisplayGroup($elements, 'related_objects', array(
             'decorators' => array(
                 'FormElements',
@@ -334,27 +334,27 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function enumAllowedServices($host_id = null)
     {
-	/** returns service enumeration.  If host_id is given, services are limited to service on that host, plus all service apply rules
-	    (no attempt is made to further limit apply rules)
+        /** returns service enumeration.  If host_id is given, services are limited to service on that host, plus all service apply rules
+            (no attempt is made to further limit apply rules)
             If host_id is null, only service apply rules are returned
         **/
 
-	$obj=array();
-	if ($host_id != null) { 
-        	$obj = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $host_id));
-	}
+        $obj=array();
+        if ($host_id != null) { 
+            $obj = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $host_id));
+        }
 
-	asort($obj); // do sorting here to keep object services separate from apply rule services
-	$obj2 = $this->db->enum('icinga_service', null, array ('object_type IN (?)' => "apply"));
-	asort($obj2);
+        asort($obj); // do sorting here to keep object services separate from apply rule services
+        $obj2 = $this->db->enum('icinga_service', null, array ('object_type IN (?)' => "apply"));
+        asort($obj2);
 
-	// indicate filter string in apply rule services
-	foreach ($obj2 as $id=>$label) {
-		$assigns = $this->db->enum('icinga_service_assignment',array('service_id','filter_string'),array('service_id = (?)' => $id));
-		$obj2[$id]=$label.": via assign '".$assigns[$id]."'";
-	} 
+        // indicate filter string in apply rule services
+        foreach ($obj2 as $id=>$label) {
+            $assigns = $this->db->enum('icinga_service_assignment',array('service_id','filter_string'),array('service_id = (?)' => $id));
+            $obj2[$id]=$label.": via assign '".$assigns[$id]."'";
+        } 
 
-	$obj += $obj2;
+        $obj += $obj2;
         if (empty($obj)) {
             return array();
         }

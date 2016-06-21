@@ -55,7 +55,7 @@ class ServiceController extends ObjectController
                 'url'       => 'director/service/dependencies',
                 'urlParams' => $urlparams,
                 'label'     => 'Service Dependencies'
-            ));	
+            ));
 
         }
 
@@ -190,10 +190,10 @@ class ServiceController extends ObjectController
         );
 
         $this->view->table = $this->loadTable('IcingaServiceDependency');
-	if ($this->host) $this->view->table->setHost($this->host);
-	if ($service) $this->view->table->setService($service);
-	$this->view->table->enforceFilter('child_service_id', $service->id)
-		->setConnection($this->db());
+        if ($this->host) $this->view->table->setHost($this->host);
+        if ($service) $this->view->table->setService($service);
+        $this->view->table->enforceFilter('child_service_id', $service->id)
+            ->setConnection($this->db());
     }
 
 

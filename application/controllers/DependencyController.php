@@ -19,7 +19,7 @@ class DependencyController extends ObjectController
     {
         if ($this->object) {
             if ($this->object->child_service_id) {
-		$this->service = IcingaService::load(array("id" => $this->object->child_service_id), $this->db());
+                $this->service = IcingaService::load(array("id" => $this->object->child_service_id), $this->db());
             }
             if ($this->object->child_host_id) {
                 $this->host = IcingaHost::loadWithAutoIncId($this->object->child_host_id, $this->db());
@@ -37,7 +37,7 @@ class DependencyController extends ObjectController
             }
         }
  
-	if ($this->service) { 
+        if ($this->service) { 
             $params=array();
             if ($this->service->object_type == "apply") {
                 $params['id'] = $this->service->id;
@@ -46,7 +46,7 @@ class DependencyController extends ObjectController
             } else {
                 $params['name']=$this->service->object_name;
                 if ($this->host) {
-		    $params['host']=$this->host->object_name;
+                    $params['host']=$this->host->object_name;
                 }
             }
             $this->getTabs()->add('service', array(
@@ -78,7 +78,7 @@ class DependencyController extends ObjectController
 
         if ($this->service) {
             if ($this->service->object_type=="apply") {
-		$urlParams['id']= $this->service->id;
+                $urlParams['id']= $this->service->id;
             } else {
                 $urlParams['name']= $this->service->object_name;
                 if ($this->host) $urlParams['host'] = $this->host->object_name;
@@ -119,8 +119,8 @@ class DependencyController extends ObjectController
     {
         parent::addAction();
         if ($this->service) {
-		$this->view->title = $this->service->object_name . ': ' . $this->view->title;
-	} else {
+            $this->view->title = $this->service->object_name . ': ' . $this->view->title;
+        } else {
             if ($this->host) {
                 $this->view->title = $this->host->object_name . ': ' . $this->view->title;
             }

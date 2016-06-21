@@ -1317,7 +1317,7 @@ abstract class DirectorObjectForm extends QuickForm
                     'The host/service states you want to get notifications for'
                 ),
             ));
-	}
+        }
 
         if (in_array('types', $elements)) {
             $this->addElement('extensibleSet', 'types', array(

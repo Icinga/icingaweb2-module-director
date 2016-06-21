@@ -265,17 +265,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $short = substr($name, 0, -3);
         $class = $this->getRelationClass($short);
-	$obj_key = $this->unresolvedRelatedProperties[$name];
+        $obj_key = $this->unresolvedRelatedProperties[$name];
 
-	# related services need array key
-	if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
-		$host_id_prop=str_replace("service","host",$name);
-		if (isset($this->properties[$host_id_prop])) {
-			$obj_key=array("host_id" => $this->properties[$host_id_prop], "object_name" => $this->unresolvedRelatedProperties[$name]);
-		} else {
-			$obj_key=array("host_id" => null, "object_name" => $this->unresolvedRelatedProperties[$name]);
-		}
-	}
+        # related services need array key
+        if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
+            $host_id_prop=str_replace("service","host",$name);
+            if (isset($this->properties[$host_id_prop])) {
+                $obj_key=array("host_id" => $this->properties[$host_id_prop], "object_name" => $this->unresolvedRelatedProperties[$name]);
+            } else {
+                $obj_key=array("host_id" => null, "object_name" => $this->unresolvedRelatedProperties[$name]);
+            }
+        }
         $object = $class::load(
             $obj_key,
             $this->connection
@@ -417,8 +417,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 return parent::set($key . '_id', null);
             }
 
-	    $this->unresolvedRelatedProperties[$key . '_id'] = $value;
-	    return $this;
+            $this->unresolvedRelatedProperties[$key . '_id'] = $value;
+            return $this;
         }
 
         if ($this->propertyIsMultiRelation($key)) {
@@ -1739,7 +1739,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getOnDeleteUrl()
     {
-	$plural= preg_replace('/cys$/','cies', strtolower($this->getShortTableName()) . 's');
+        $plural= preg_replace('/cys$/','cies', strtolower($this->getShortTableName()) . 's');
         return 'director/'.$plural;
     }
 

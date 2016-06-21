@@ -21,15 +21,15 @@ abstract class ObjectsController extends ActionController
 
         $tabs = $this->getTabs();
         $type = $this->getType();
-	$ptype = preg_replace('/cys/','cies',$type.'s');
-	$ltype = strtolower($type);
+        $ptype = preg_replace('/cys/','cies',$type.'s');
+        $ltype = strtolower($type);
         $pltype = strtolower($ptype);
 
         if (in_array(ucfirst($type), $this->globalTypes)) {
 
             foreach ($this->globalTypes as $tabType) {
                 $ltabType = strtolower($tabType);
-		$pltabType = preg_replace('/cys/','cies',$ltabType.'s');
+                $pltabType = preg_replace('/cys/','cies',$ltabType.'s');
                 $tabs->add($ltabType, array(
                     'label' => $this->translate(ucfirst($pltype)),
                     'url'   => sprintf('director/%s', $pltabType)
@@ -69,7 +69,7 @@ abstract class ObjectsController extends ActionController
         }
 
         $type = $this->getType();
-	$ptype = preg_replace('/cys$/','cies',$type.'s');
+        $ptype = preg_replace('/cys$/','cies',$type.'s');
         $ltype = strtolower($type);
         $pltype = strtolower($ptype);
 

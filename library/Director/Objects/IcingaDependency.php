@@ -19,9 +19,9 @@ class IcingaDependency extends IcingaObject
         'parent_service_id'            => null,
         'child_host_id'               => null,
         'child_service_id'            => null,
-	'disable_checks'              => null,
-	'disable_notifications'       => null,
-	'ignore_soft_states'          => null,
+        'disable_checks'              => null,
+        'disable_notifications'       => null,
+        'ignore_soft_states'          => null,
         'period_id'             => null,
         'zone_id'               => null,
     );
@@ -47,7 +47,7 @@ class IcingaDependency extends IcingaObject
 
     protected $booleans = array(
         'disable_checks' => 'disable_checks',
-	'disable_notifications' => 'disable_notifications',
+        'disable_notifications' => 'disable_notifications',
         'ignore_soft_states' => 'ignore_soft_states'
     );
 
@@ -113,7 +113,7 @@ class IcingaDependency extends IcingaObject
             } else {
                 return 'director/service/dependencies?name='.rawurlencode($this->child_service).'&host='.rawurlencode($this->child_host);
             }
-	} else if ($this->child_host_id) {
+        } else if ($this->child_host_id) {
             return 'director/host/dependencies?name='.rawurlencode($this->child_host);
         } else {
             return parent::getOnDeleteUrl();
@@ -125,7 +125,7 @@ class IcingaDependency extends IcingaObject
         if ($this->hasBeenAssignedToServiceApply()) {
 
             $tmpService= $this->getRelatedObject('child_service', $this->child_service_id);
-	    $assigns = $tmpService->assignments()->toConfigString();
+            $assigns = $tmpService->assignments()->toConfigString();
 
             $filter = sprintf(
                 '%s && service.name == "%s"', 
@@ -135,14 +135,14 @@ class IcingaDependency extends IcingaObject
         }
 
         if ($this->hasBeenAssignedToHostTemplateService()) {
-	    $filter = sprintf(
+            $filter = sprintf(
                 'assign where "%s" in host.templates && service.name == "%s"',
                 $this->child_host, $this->child_service
             );
             return "\n    " . $filter . "\n";
         }
         if ($this->hasBeenAssignedToHostTemplate()) {
-	    $filter = sprintf(
+            $filter = sprintf(
                 'assign where "%s" in host.templates',
                 $this->child_host
             );
@@ -150,7 +150,7 @@ class IcingaDependency extends IcingaObject
         }
         
         if ($this->hasBeenAssignedToServiceTemplate()) {
-	    $filter = sprintf(
+            $filter = sprintf(
                 'assign where "%s" in service.templates',
                 $this->child_service
             );
@@ -179,7 +179,7 @@ class IcingaDependency extends IcingaObject
     protected function hasBeenAssignedToHostTemplateService()
     {
         if (!$this->hasBeenAssignedToHostTemplate()) return false;
-	return $this->child_service_id && $this->getRelatedObject(
+        return $this->child_service_id && $this->getRelatedObject(
             'child_service',
             $this->child_service_id
         )->object_type === 'object';
