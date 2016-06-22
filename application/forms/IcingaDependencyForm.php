@@ -332,34 +332,55 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $obj;
     }
 
-    protected function enumAllowedServices($host_id = null)
+    protected function enumAllowedServices($host_id = null, &$host_templates_done = null)
     {
-        /** returns service enumeration.  If host_id is given, services are limited to service on that host, plus all service apply rules
+        /** returns service enumeration.  If host_id is given, services are limited to services on that host, or those inherited via host template, 
+            plus all service apply rules
             (no attempt is made to further limit apply rules)
             If host_id is null, only service apply rules are returned
         **/
 
-        $obj=array();
+        $r_services=array();
+        $apply_services=array();
+        $host_template_services=array();
+        $host_services=array();
+
+        if ( $host_templates_done === null) { //don't redo applied service enumeration on recursive calls
+            $apply_services = $this->db->enum('icinga_service', null, array ('object_type IN (?)' => "apply"));
+            // indicate filter string in apply rule services
+            foreach ($apply_services as $id=>&$label) {
+                $assigns = $this->db->enum('icinga_service_assignment',array('service_id','filter_string'),array('service_id = (?)' => $id));
+                $apply_services[$id]=$label.": via assign '".$assigns[$id]."'";
+            } 
+            asort($apply_services);
+        }
+
         if ($host_id != null) { 
-            $obj = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $host_id));
+            $host_services = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $host_id));
+            asort($host_services);
+
+            //services for applicable templates 
+            $host_templates_done=array();
+            $tmp_host=IcingaHost::loadWithAutoIncId($host_id, $this->db);
+            $host_templates = $tmp_host->importedObjects(); 
+
+            foreach ($host_templates as $host_template => $template_obj) {
+                if (in_array($template_obj->id, $host_templates_done)) continue;
+               
+                $host_templates_done[]=$template_obj->id;
+                $get_template_services = $this->enumAllowedServices($template_obj->id, $host_templates_done); //recursively get services for this host's template tree
+                // indicate host template name in 'inherited' services
+                foreach ($get_template_services as $id => &$label) {
+                    if (!preg_match("/via host template/", $label)) $get_template_services[$id]= $label.': via host template '.$host_template;
+                }
+                $host_template_services+=$get_template_services;   
+            }
+            asort($host_template_services);
         }
 
-        asort($obj); // do sorting here to keep object services separate from apply rule services
-        $obj2 = $this->db->enum('icinga_service', null, array ('object_type IN (?)' => "apply"));
-        asort($obj2);
-
-        // indicate filter string in apply rule services
-        foreach ($obj2 as $id=>$label) {
-            $assigns = $this->db->enum('icinga_service_assignment',array('service_id','filter_string'),array('service_id = (?)' => $id));
-            $obj2[$id]=$label.": via assign '".$assigns[$id]."'";
-        } 
-
-        $obj += $obj2;
-        if (empty($obj)) {
-            return array();
-        }
-
-        return $obj;
+        $r_services += $host_services += $host_template_services += $apply_services;
+      
+        return $r_services;
     }
 
     public function createApplyRuleFor(IcingaDependency $dependency)
