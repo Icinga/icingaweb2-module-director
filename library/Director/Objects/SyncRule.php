@@ -86,7 +86,7 @@ class SyncRule extends DbObject
                 Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
                 $this->sync_state = 'pending-changes';
                 if ($apply && $sync->apply()) {
-                    Benchmark::measure('Successfully synced rule ' . $rule->rule_name);
+                    Benchmark::measure('Successfully synced rule ' . $this->rule_name);
                     $this->sync_state = 'in-sync';
                 }
 
