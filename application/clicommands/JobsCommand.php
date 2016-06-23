@@ -32,8 +32,23 @@ class JobsCommand extends Command
 
     protected function runforever()
     {
+        // We'll terminate ourselves after 24h for now:
+        $runUnless = time() + 86400;
+
+        // We'll exit in case more than 100MB of memory are still in use
+        // after the last job execution:
+        $maxMem = 100 * 1024 * 1024;
+
         while (true) {
             $this->runAllPendingJobs();
+            if (memory_get_usage() > $maxMem) {
+                exit(0);
+            }
+
+            if (time() > $runUnless) {
+                exit(0);
+            }
+
             sleep(2);
         }
     }
