@@ -1,5 +1,5 @@
-Import and Synchronization
-==========================
+<a id="Import-and-Sync"></a>Import and Synchronization
+======================================================
 
 Icinga Director offers very powerful mechanisms when it comes to fetching data
 from external data sources.

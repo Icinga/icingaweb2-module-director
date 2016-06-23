@@ -1,5 +1,5 @@
-Working with custom variables
-=============================
+<a id="Handling-custom-variables"></a>Working with custom variables
+===================================================================
 
 Icinga Director allows you to work with custom variables in a very
 powerful way. It implements the concept of `Data fields`. If you want

@@ -1,5 +1,5 @@
-Installation
-============
+<a id="Installation"></a>Installation
+=====================================
 
 These are the instructions for manual Director installations. You can
 learn more about how to automate this in the [automation](03-Automation.md) section

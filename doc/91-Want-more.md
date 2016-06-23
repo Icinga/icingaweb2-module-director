@@ -1,5 +1,5 @@
-Want more?
-==========
+<a id="Want-more"></a>Want more?
+================================
 
 Icinga2 configuration is a full-blown DSL, not just a configuration
 format. It provides endless possibilities, the very same thing can
