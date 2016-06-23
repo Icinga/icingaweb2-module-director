@@ -98,10 +98,8 @@ CREATE TABLE icinga_dependency_assignment (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
-/** TODO update schema version when ready 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (999, NOW());
+  VALUES (98, NOW());
 
-**/

@@ -1409,4 +1409,4 @@ CREATE TABLE icinga_dependency_assignment (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 97;
+      schema_version = 98;

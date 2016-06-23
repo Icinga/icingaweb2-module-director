@@ -362,7 +362,7 @@ class IcingaDependencyForm extends DirectorObjectForm
             //services for applicable templates 
             $host_templates_done=array();
             $tmp_host=IcingaHost::loadWithAutoIncId($host_id, $this->db);
-            $host_templates = $tmp_host->importedObjects(); 
+            $host_templates = $tmp_host->imports()->getObjects();
 
             foreach ($host_templates as $host_template => $template_obj) {
                 if (in_array($template_obj->id, $host_templates_done)) continue;
