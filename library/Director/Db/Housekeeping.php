@@ -198,7 +198,7 @@ class Housekeeping
         if ($this->connection->getDbType() === 'pgsql') {
                 $sql = 'DELETE FROM imported_row'
                      . ' USING imported_row AS r'
-                     . ' LEFT JOIN import_rowset_row AS rsr ON'
+                     . ' LEFT JOIN imported_rowset_row AS rsr ON'
                      . ' rsr.row_checksum = r.checksum'
                      . ' WHERE imported_row.checksum = r.checksum AND'
                      . ' rsr.row_checksum IS NULL';
