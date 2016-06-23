@@ -50,6 +50,40 @@ class SyncRule extends DbObject
         ));
     }
 
+    public function getLastSyncTimestamp()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            array('sr' => 'sync_run'),
+            'sr.start_time'
+        )->where('sr.rule_id = ?', $this->id)
+        ->order('sr.start_time DESC')
+        ->limit(1);
+
+        return $db->fetchOne($query);
+    }
+
+    public function getLastSyncRunId()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            array('sr' => 'sync_run'),
+            'sr.id'
+        )->where('sr.rule_id = ?', $this->id)
+        ->order('sr.start_time DESC')
+        ->limit(1);
+
+        return $db->fetchOne($query);
+    }
+
     public function getPriorityForNextProperty()
     {
         if (! $this->hasBeenLoadedFromDb()) {
@@ -113,6 +147,11 @@ class SyncRule extends DbObject
     public function applyChanges()
     {
         return $this->checkForChanges(true);
+    }
+
+    public function getCurrentSyncRunId()
+    {
+        return $this->currentSyncRunId;
     }
 
     protected function sync()
