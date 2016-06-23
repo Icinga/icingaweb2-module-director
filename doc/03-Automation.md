@@ -1,5 +1,5 @@
 <a id="Automation"></a>Automation - Configuration management
-=====================================
+============================================================
 
 Director has been designed to work in distributed environments. In case
 you're using tools like Puppet, Ansible, Salt (R)?ex or similar, this

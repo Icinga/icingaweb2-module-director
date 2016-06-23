@@ -1,5 +1,5 @@
-How it works
-============
+<a id="How-it-works"></a>How it works
+=====================================
 
 This chapter wants to give you some basic understanding off how the
 Director works with your Icinga installation. At least once you start

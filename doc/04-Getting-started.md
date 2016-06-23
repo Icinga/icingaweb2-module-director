@@ -1,5 +1,5 @@
-Getting started
-===============
+<a id="Getting-started"></a>Getting started
+===========================================
 
 When new to the Director please make your first steps with a naked Icinga
 environment. Director is not allowed to modify existing configuration in

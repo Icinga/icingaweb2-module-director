@@ -122,8 +122,8 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             $msg = $this->translate('No action taken, object has not been modified');
         }
         $this->setSuccessUrl(
-            'director/director/command',
-            array('name' => $cmd->argument_name)
+            'director/command/arguments',
+            array('name' => $cmd->object_name)
         );
 
         $this->redirectOnSuccess($msg);

@@ -1,5 +1,5 @@
-The Icinga Director REST API
-============================
+<a id="REST-API"></a>The Icinga Director REST API
+=================================================
 
 Introduction
 ------------

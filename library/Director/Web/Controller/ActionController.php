@@ -201,7 +201,7 @@ abstract class ActionController extends Controller
 
     protected function prepareAndRenderTable($name)
     {
-        $this->prepareTable($name)->render('list/table', null, true);
+        $this->prepareTable($name)->setViewScript('list/table');
     }
 
     // TODO: just return json_last_error_msg() for PHP >= 5.5.0

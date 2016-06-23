@@ -3,92 +3,74 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Job\JobRunner;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Application\Benchmark;
+use Icinga\Application\Logger;
 use Exception;
 
 class JobsCommand extends Command
 {
     public function runAction()
     {
-        if ($this->hasBeenDisabled()) {
+        $job = $this->params->shift();
+        if ($job) {
+            echo "Running (theoretically) $job\n";
             return;
         }
 
-        $this->runScheduledImports()
-             ->runScheduledSyncs()
-             ->syncCoreStages()
-             ->runScheduledDeployments()
-             ;
+        if ($this->params->shift('forever')) {
+            $this->runforever();
+        } else {
+            $this->runAllPendingJobs();
+        }
     }
 
-    public function renderconfigAction()
+    protected function runforever()
     {
-        IcingaConfig::generate($this->db());
+        // We'll terminate ourselves after 24h for now:
+        $runUnless = time() + 86400;
+
+        // We'll exit in case more than 100MB of memory are still in use
+        // after the last job execution:
+        $maxMem = 100 * 1024 * 1024;
+
+        while (true) {
+            $this->runAllPendingJobs();
+            if (memory_get_usage() > $maxMem) {
+                exit(0);
+            }
+
+            if (time() > $runUnless) {
+                exit(0);
+            }
+
+            sleep(2);
+        }
+    }
+
+    protected function runAllPendingJobs()
+    {
+        $jobs = new JobRunner($this->db());
+
+        try {
+            if ($this->hasBeenDisabled()) {
+                return;
+            }
+
+            $jobs->runPendingJobs();
+        } catch (Exception $e) {
+            Logger::error('Director Job Error: ' . $e->getMessage());
+            sleep(10);
+        }
     }
 
     protected function hasBeenDisabled()
     {
         return $this->db()->getSetting('disable_all_jobs') === 'y';
-    }
-
-    protected function runScheduledImports()
-    {
-        foreach (ImportSource::loadAll($this->db()) as $source) {
-            Benchmark::measure('Starting with import ' . $source->source_name);
-            try {
-
-                $import = new Import($source);
-                if ($import->providesChanges()) {
-                    printf('Import "%s" provides changes, triggering run... ', $source->source_name);
-                    Benchmark::measure('Found changes for ' . $source->source_name);
-                    if ($import->run()) {
-                        Benchmark::measure('Import succeeded for ' . $source->source_name);
-                        print "SUCCEEDED\n";
-                    }
-                }
-            } catch (Exception $e) {
-                echo $this->screen->colorize('ERROR: ' . $e->getMessage(), 'red') . "\n";
-                Benchmark::measure('FAILED');
-            }
-        }
-
-        return $this;
-    }
-
-    protected function runScheduledSyncs()
-    {
-        // TODO: import-triggered:
-        //      foreach $rule->involvedImports() -> if changedsince -> ... syncChangedRows
-
-        foreach (SyncRule::loadAll($this->db) as $rule) {
-            Benchmark::measure('Checking sync rule ' . $rule->rule_name);
-            $sync = new Sync($rule);
-            if ($sync->hasModifications()) {
-                printf('Sync rule "%s" provides changes, triggering sync... ', $rule->rule_name);
-                Benchmark::measure('Got modifications for sync rule ' . $rule->rule_name);
-
-                if ($sync->apply()) {
-                    Benchmark::measure('Successfully synced rule ' . $rule->rule_name);
-                    print "SUCCEEDED\n";
-                }
-            }
-        }
-
-        return $this;
-    }
-
-    protected function syncCoreStages()
-    {
-        return $this;
-    }
-
-    protected function runScheduledDeployments()
-    {
-        return $this;
     }
 }

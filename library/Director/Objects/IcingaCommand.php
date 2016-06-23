@@ -58,16 +58,25 @@ class IcingaCommand extends IcingaObject
 
     protected function renderObjectHeader()
     {
-        if ($this->getResolvedProperty('methods_execute') === 'PluginNotification') {
-            return sprintf(
-                "%s %s %s {\n",
-                $this->getObjectTypeName(),
-                'NotificationCommand',
-                c::renderString($this->getObjectName())
-            );
+        $execute = $this->getResolvedProperty('methods_execute');
+
+        if ($execute === 'PluginNotification') {
+            return $this->renderObjectHeaderWithType('NotificationCommand');
+        } elseif ($execute === 'PluginEvent') {
+            return $this->renderObjectHeaderWithType('EventCommand');
         } else {
             return parent::renderObjectHeader();
         }
+    }
+
+    protected function renderObjectHeaderWithType($type)
+    {
+        return sprintf(
+            "%s %s %s {\n",
+            $this->getObjectTypeName(),
+            $type,
+            c::renderString($this->getObjectName())
+        );
     }
 
     public function mungeCommand($value)

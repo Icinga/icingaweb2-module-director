@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Hook\JobHook;
+use Exception;
 
 class DirectorJob extends DbObjectWithSettings
 {
@@ -45,7 +46,31 @@ class DirectorJob extends DbObjectWithSettings
 
     public function run()
     {
-        $this->job()->setDefinition($this)->run();
+        $job = $this->job()->setDefinition($this);
+        $this->ts_last_attempt = date('Y-m-d H:i:s');
+
+        try {
+            $job->run();
+            $this->last_attempt_succeeded = 'y';
+        } catch (Exception $e) {
+            $this->ts_last_error = date('Y-m-d H:i:s');
+            $this->last_error_message = $e->getMessage();
+            $this->last_attempt_succeeded = 'n';
+        }
+
+        if ($this->hasBeenModified()) {
+            $this->store();
+        }
+    }
+
+    public function shouldRun()
+    {
+        return (! $this->hasBeenDisabled()) && $this->isPending();
+    }
+
+    public function hasBeenDisabled()
+    {
+        return $this->disabled === 'y';
     }
 
     public function isPending()
@@ -54,7 +79,7 @@ class DirectorJob extends DbObjectWithSettings
             return $this->isWithinTimeperiod();
         }
 
-        if (strtotime($this->unixts_last_attempt) + $this->run_interval < time()) {
+        if (strtotime($this->ts_last_attempt) + $this->run_interval < time()) {
             return $this->isWithinTimeperiod();
         }
 
@@ -64,9 +89,7 @@ class DirectorJob extends DbObjectWithSettings
     public function isWithinTimeperiod()
     {
         if ($this->hasTimeperiod()) {
-            if (! $this->timeperiod()->isActive()) {
-                return false;
-            }
+            return $this->timeperiod()->isActive();
         } else {
             return true;
         }
@@ -84,6 +107,6 @@ class DirectorJob extends DbObjectWithSettings
 
     protected function timeperiod()
     {
-        return IcingaTimeperiod::load($this->timeperiod_id, $this->db);
+        return IcingaTimePeriod::loadWithAutoIncId($this->timeperiod_id, $this->connection);
     }
 }

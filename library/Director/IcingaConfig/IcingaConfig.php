@@ -132,6 +132,20 @@ class IcingaConfig
         return $config;
     }
 
+    public static function exists($checksum, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            array('c' => self::$table),
+            array('checksum' => $connection->dbHexFunc('c.checksum'))
+        )->where(
+            'checksum = ?',
+            $connection->quoteBinary(Util::hex2binary($checksum))
+        );
+
+        return $db->fetchOne($query) === $checksum;
+    }
+
     public static function loadByActivityChecksum($checksum, Db $connection)
     {
         $db = $connection->getDbAdapter();
@@ -401,17 +415,26 @@ class IcingaConfig
             return '';
         }
 
+        $varname = $this->getMagicApplyVarName();
+
         return sprintf(
             '
 apply Service for (title => params in host.vars["%s"]) {
-  if (typeof(params["imports"]) in [Array, String]) {
-    import params["imports"]
+
+  override = host.vars["%s_vars"][title]
+
+  if (typeof(params["templates"]) in [Array, String]) {
+    import params["templates"]
   } else {
     import title
   }
 
-  if (typeof(params["vars"]) == Dictionary) {
+  if (typeof(params.vars) == Dictionary) {
     vars += params
+  }
+
+  if (typeof(override.vars) == Dictionary) {
+    vars += override.vars
   }
 
   if (typeof(params["host_name"]) == String) {
@@ -419,7 +442,8 @@ apply Service for (title => params in host.vars["%s"]) {
   }
 }
 ',
-            $this->getMagicApplyVarName()
+            $varname,
+            $varname
         );
     }
 

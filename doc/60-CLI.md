@@ -1,5 +1,5 @@
-Director CLI
-============
+<a id="CLI"></a>Director CLI
+============================
 
 Large parts of the Director's functionality are also available on your CLI.
 

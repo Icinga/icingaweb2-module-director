@@ -9,10 +9,12 @@ class DirectorJobForm extends DirectorObjectForm
 {
     public function setup()
     {
+        $jobTypes = $this->enumJobTypes();
+
         $this->addElement('select', 'job_class', array(
             'label'        => $this->translate('Job Type'),
             'required'     => true,
-            'multiOptions' => $this->optionalEnum($this->enumJobTypes()),
+            'multiOptions' => $this->optionalEnum($jobTypes),
             'description'  => $this->translate(
                 'These are different available job types'
             ),
@@ -45,6 +47,24 @@ class DirectorJobForm extends DirectorObjectForm
             ),
             'value' => $jobClass::getSuggestedRunInterval($this)
         ));
+
+        $periods = $this->db->enumTimeperiods();
+        if (!empty($periods)) {
+
+            $this->addElement(
+                'select',
+                'timeperiod_id',
+                array(
+                    'label' => $this->translate('Time period'),
+                    'description' => $this->translate(
+                        'The name of a time period within this job should be active.'
+                        . ' Supports only simple time periods (weekday and multiple'
+                        . ' time definitions)'
+                    ),
+                    'multiOptions' => $this->optionalEnum($periods),
+                )
+            );
+        }
 
         $this->addElement('text', 'job_name', array(
             'label'       => $this->translate('Job name'),

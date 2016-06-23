@@ -7,6 +7,8 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaHostServiceTable extends QuickTable
 {
+    protected $title;
+
     protected $host;
 
     protected $searchColumns = array(
@@ -22,6 +24,12 @@ class IcingaHostServiceTable extends QuickTable
             'service'     => 's.object_name',
             'object_type' => 's.object_type',
         );
+    }
+
+    public function setTitle($title)
+    {
+        $this->title = $title;
+        return $this;
     }
 
     public function setHost(IcingaHost $host)
@@ -48,7 +56,7 @@ class IcingaHostServiceTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'service' => $view->translate('Servicename'),
+            'service' => $this->title ?: $view->translate('Servicename'),
         );
     }
 
