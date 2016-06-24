@@ -61,7 +61,9 @@ class SyncruleController extends ActionController
     {
         $id = $this->params->get('id');
         $rule = SyncRule::load($id, $this->db());
-        if ($rule->applyChanges()) {
+        $changed = $rule->applyChanges();
+
+        if ($changed) {
             $runId = $rule->getCurrentSyncRunId();
             Notification::success('Source has successfully been synchronized');
             $this->redirectNow(
@@ -73,10 +75,13 @@ class SyncruleController extends ActionController
                     )
                 )
             );
+        } elseif ($rule->sync_state === 'in-sync') {
+            Notification::success('Nothing changed, rule is in sync');
         } else {
             Notification::error('Synchronization failed');
-            $this->redirectNow('director/list/syncrule');
         }
+
+        $this->redirectNow('director/syncrule?id=' . $id);
     }
 
     public function propertyAction()
