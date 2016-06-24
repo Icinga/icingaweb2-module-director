@@ -29,6 +29,39 @@ class ImportSource extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'source_id';
 
+    public function fetchLatestRun()
+    {
+        return $this->fetchLastRunBefore(time());
+    }
+
+    public function fetchLastRunBefore($timestamp)
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        if ($timestamp === null) {
+            $timestamp = time();
+        }
+
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            array('ir' => 'import_run'),
+            'ir.id'
+        )->where('ir.source_id = ?', $this->id)
+        ->where('ir.end_time < ?', date('Y-m-d H:i:s', $timestamp))
+        ->order('ir.end_time DESC')
+        ->limit(1);
+
+        $runId = $db->fetchOne($query);
+
+        if ($runId) {
+            return ImportRun::fromDb($this->connection);
+        } else {
+            return null;
+        }
+    }
+
     public function fetchRowModifiers()
     {
         $db = $this->getDb();
