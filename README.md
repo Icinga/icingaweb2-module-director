@@ -24,7 +24,7 @@ and in case you also do so, the [Automation chapter](doc/03-Automation.md) could
 be worth a read. When upgrading, you should also have a look at our [Changelog](doc/82-Changelog.md).
 
 You could be interested in understanding how the [Director works](doc/10-How-it-works.md)
-internally. [Working with agents](24-Working-with-agents.md) is a topic that
+internally. [Working with agents](doc/24-Working-with-agents.md) is a topic that
 affects many Icinga administrators. Other interesting entry points might be
 [Import and Synchronization](doc/70-Import-and-Sync.md), our [CLI interface](doc/60-CLI.md),
 the [REST API](doc/70-REST-API.md) and last but not least our [FAQ](doc/80-FAQ.md).
