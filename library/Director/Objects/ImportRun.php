@@ -28,9 +28,9 @@ class ImportRun extends DbObject
             array('r' => 'imported_row'),
             $columns
         )->joinLeft(
-            array('rsr' => 'rowset_checksum'),
+            array('rsr' => 'imported_rowset_row'),
             'rsr.row_checksum = r.checksum',
-            'r.object_name'
+            array()
         )->where(
             'rsr.rowset_checksum = ?',
             $this->getConnection()->quoteBinary($this->rowset_checksum)
