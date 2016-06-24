@@ -30,6 +30,8 @@ class SyncRule extends DbObject
 
     private $sync;
 
+    private $currentSyncRunId;
+
     private $filter;
 
     public function listInvolvedSourceIds()
@@ -119,9 +121,10 @@ class SyncRule extends DbObject
             if ($sync->hasModifications()) {
                 Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
                 $this->sync_state = 'pending-changes';
-                if ($apply && $sync->apply()) {
+                if ($apply && $runId = $sync->apply()) {
                     Benchmark::measure('Successfully synced rule ' . $this->rule_name);
                     $this->sync_state = 'in-sync';
+                    $this->currentSyncRunId = $runId;
                 }
 
                 $hadChanges = true;
