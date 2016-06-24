@@ -29,7 +29,7 @@ class ImportSource extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'source_id';
 
-    public function fetchLatestRun()
+    public function fetchLastRun()
     {
         return $this->fetchLastRunBefore(time());
     }
@@ -49,14 +49,14 @@ class ImportSource extends DbObjectWithSettings
             array('ir' => 'import_run'),
             'ir.id'
         )->where('ir.source_id = ?', $this->id)
-        ->where('ir.end_time < ?', date('Y-m-d H:i:s', $timestamp))
-        ->order('ir.end_time DESC')
+        ->where('ir.start_time < ?', date('Y-m-d H:i:s', $timestamp))
+        ->order('ir.start_time DESC')
         ->limit(1);
 
         $runId = $db->fetchOne($query);
 
         if ($runId) {
-            return ImportRun::fromDb($this->connection);
+            return ImportRun::load($runId, $this->getConnection());
         } else {
             return null;
         }
