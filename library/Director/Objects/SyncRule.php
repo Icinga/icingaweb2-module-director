@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Import\PurgeStrategy\PurgeStrategy;
 use Icinga\Module\Director\Import\Sync;
 use Exception;
 
@@ -30,6 +31,8 @@ class SyncRule extends DbObject
 
     private $sync;
 
+    private $purgeStrategy;
+
     private $currentSyncRunId;
 
     private $filter;
@@ -50,6 +53,17 @@ class SyncRule extends DbObject
                    ->order('s.source_name')
             )
         ));
+    }
+
+    public function fetchInvolvedImportSources()
+    {
+        $sources = array();
+
+        foreach ($this->listInvolvedSourceIds() as $sourceId) {
+            $sources[$sourceId] = ImportSource::load($sourceId, $this->getConnection());
+        }
+
+        return $sources;
     }
 
     public function getLastSyncTimestamp()
@@ -117,6 +131,8 @@ class SyncRule extends DbObject
 
         Benchmark::measure('Checking sync rule ' . $this->rule_name);
         try {
+            $this->last_attempt = date('Y-m-d H:i:s');
+            $this->sync_state = 'unknown';
             $sync = $this->sync();
             if ($sync->hasModifications()) {
                 Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
@@ -136,6 +152,7 @@ class SyncRule extends DbObject
 
             $this->last_error_message = null;
         } catch (Exception $e) {
+throw $e;
             $this->sync_state = 'failing';
             $this->last_error_message = $e->getMessage();
         }
@@ -173,6 +190,25 @@ class SyncRule extends DbObject
         }
 
         return $this->filter;
+    }
+
+    public function purgeStrategy()
+    {
+        if ($this->purgeStrategy === null) {
+            $this->purgeStrategy = $this->loadConfiguredPurgeStrategy();
+        }
+
+        return $this->purgeStrategy;
+    }
+
+    // TODO: Allow for more
+    protected function loadConfiguredPurgeStrategy()
+    {
+        if ($this->purge_existing) {
+            return PurgeStrategy::load('ImportRunBased', $this);
+        } else {
+            return PurgeStrategy::load('PurgeNothing', $this);
+        }
     }
 
     public function fetchSyncProperties()
