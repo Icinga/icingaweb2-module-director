@@ -152,9 +152,9 @@ class SyncRule extends DbObject
 
             $this->last_error_message = null;
         } catch (Exception $e) {
-throw $e;
             $this->sync_state = 'failing';
             $this->last_error_message = $e->getMessage();
+            // TODO: Store last error details / trace?
         }
 
         if ($this->hasBeenModified()) {
@@ -162,6 +162,11 @@ throw $e;
         }
 
         return $hadChanges;
+    }
+
+    public function getExpectedModifications()
+    {
+        return $this->sync()->getExpectedModifications();
     }
 
     public function applyChanges()
