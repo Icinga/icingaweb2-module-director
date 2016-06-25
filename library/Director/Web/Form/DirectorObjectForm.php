@@ -27,6 +27,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $resolvedImports = false;
 
+    protected $listUrl;
+
     private $allowsExperimental;
 
     private $api;
@@ -625,6 +627,12 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
+    public function setListUrl($url)
+    {
+        $this->listUrl = $url;
+        return $this;
+    }
+
     public function onSuccess()
     {
         $object = $this->object();
@@ -854,7 +862,9 @@ abstract class DirectorObjectForm extends QuickForm
             );
         }
 
-        if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
+        if ($this->listUrl) {
+            $url = $this->listUrl;
+        } elseif ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
             $url = $object->getOnDeleteUrl();
         } else {
             $url = $this->getSuccessUrl()->without(

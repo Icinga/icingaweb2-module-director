@@ -84,15 +84,14 @@ class ImportsourceController extends ActionController
     {
         $id = $this->params->get('id');
 
-        $form = $this->view->form = $this->loadForm('importSource')
-            ->setSuccessUrl('director/list/importsource')
-            ->setDb($this->db());
+        $form = $this->view->form = $this->loadForm('importSource')->setDb($this->db());
 
         if ($id) {
-            $form->loadObject($id);
+            $form->loadObject($id)->setListUrl('director/list/importsource');
             $this->prepareTabs($id)->activate('edit');
             $this->view->title = $this->translate('Edit import source');
         } else {
+            $form->setSuccessUrl('director/list/importsource');
             $this->view->title = $this->translate('Add import source');
             $this->prepareTabs()->activate('add');
         }
