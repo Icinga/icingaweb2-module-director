@@ -28,6 +28,15 @@ class SyncruleController extends ActionController
         } else {
             $this->view->run = null;
         }
+        $this->view->checkForm = $this
+            ->loadForm('syncCheck')
+            ->setSyncRule($rule)
+            ->handleRequest();
+
+        $this->view->runForm = $this
+            ->loadForm('syncRun')
+            ->setSyncRule($rule)
+            ->handleRequest();
     }
 
     public function addAction()

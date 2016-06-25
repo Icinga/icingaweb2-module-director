@@ -43,6 +43,8 @@ TODO: check whether...
       - there have been activities since then
 */ ?></p>
 <?php endif ?>
+<?= $this->checkForm ?>
+<?= $this->runForm ?>
 <?php if ($this->run): ?>
  <h3><?= $this->translate('Last sync run details') ?></h3>
  <?= $this->render('syncrule/syncRunDetails.phtml') ?><br />
@@ -51,8 +53,5 @@ TODO: check whether...
     $this->translate("It has been renamed since then, it's former name was %s"),
     $run->rule_name
 )) ?>
-
-<pre><?= $this->escape( print_r($this->run->getProperties(), 1)); ?></pre>
-
 <?php endif ?>
 <?php endif ?>
