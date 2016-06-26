@@ -21,14 +21,6 @@ class ListController extends ActionController
         $this->prepareAndRenderTable('importsource');
     }
 
-    public function importrunAction()
-    {
-        $this->setImportTabs()->activate('importrun');
-        $this->view->title = $this->translate('Import runs');
-        $this->view->stats = $this->db()->fetchImportStatistics();
-        $this->prepareAndRenderTable('importrun');
-    }
-
     public function syncruleAction()
     {
         $this->view->addLink = $this->view->qlink(
