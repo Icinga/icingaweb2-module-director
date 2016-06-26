@@ -83,19 +83,21 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function addSubmitButtonIfSet()
     {
-        if (false !== ($label = $this->getSubmitLabel())) {
-            $el = $this->createElement('submit', $label)
-                ->setLabel($label)
-                ->setDecorators(array('ViewHelper'));
-            $this->submitButtonName = $el->getName();
-            $this->addElement($el);
-
-            $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT')
-                ->setLabel($label)
-                ->setDecorators(array('ViewHelper'));
-            $this->fakeSubmitButtonName = $fakeEl->getName();
-            $this->addElement($fakeEl);
+        if (false === ($label = $this->getSubmitLabel())) {
+            return;
         }
+
+        $el = $this->createElement('submit', $label)
+            ->setLabel($label)
+            ->setDecorators(array('ViewHelper'));
+        $this->submitButtonName = $el->getName();
+        $this->addElement($el);
+
+        $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT')
+            ->setLabel($label)
+            ->setDecorators(array('ViewHelper'));
+        $this->fakeSubmitButtonName = $fakeEl->getName();
+        $this->addElement($fakeEl);
 
         $this->addDisplayGroup(
             array($this->fakeSubmitButtonName),
