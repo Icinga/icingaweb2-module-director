@@ -81,6 +81,7 @@ class ImportSource extends DbObjectWithSettings
         Benchmark::measure('Starting with import ' . $this->source_name);
         try {
             $import = new Import($this);
+            $this->last_attempt = date('Y-m-d H:i:s');
             if ($import->providesChanges()) {
                 Benchmark::measure('Found changes for ' . $this->source_name);
                 $this->hadChanges = true;
@@ -99,7 +100,7 @@ class ImportSource extends DbObjectWithSettings
         } catch (Exception $e) {
             $this->import_state = 'failing';
             Benchmark::measure('Import failed for ' . $this->source_name);
-            $this->last_error_message = 'ERR: ' . $e->getMessage();
+            $this->last_error_message = $e->getMessage();
         }
 
         if ($this->hasBeenModified()) {
