@@ -8,15 +8,17 @@ class ImportrunController extends ActionController
 {
     public function indexAction()
     {
+        $id = $this->getRequest()->getUrl()->getParams()->shift('id');
         $this->view->title = $this->translate('Import run');
-        $table = $this->loadTable('importedrows')
+        $table = $this
+            ->loadTable('importedrows')
             ->setConnection($this->db())
             ->setChecksum(
-                $this->db()->getImportrunRowsetChecksum($this->params->get('id'))
+                $this->db()->getImportrunRowsetChecksum($id)
             );
+
         $this->view->table = $this->applyPaginationLimits($table);
-        //$this->view->table->enforceFilter('id', $this->params->shift('id'));
-        // $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
-        $this->render('list/table', null, true);
+        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
+        $this->setViewScript('list/table');
     }
 }
