@@ -12,8 +12,20 @@ class IcingaServiceForm extends DirectorObjectForm
 
     private $apply;
 
+    private $hostGenerated = false;
+
+    public function setHostGenerated($hostGenerated = true)
+    {
+        $this->hostGenerated = $hostGenerated;
+        return $this;
+    }
+
     public function setup()
     {
+        if ($this->hostGenerated) {
+            return $this->setupHostGenerated();
+        }
+
         if (!$this->isNew() && $this->host === null) {
             $this->host = $this->object->getResolvedRelated('host');
         }
@@ -55,6 +67,22 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addExtraInfoElements()
              ->addAgentAndZoneElements()
              ->setButtons();
+    }
+
+    protected function setupHostGenerated()
+    {
+        $this->addNameElement()
+             ->addImportsElement()
+             ->addDisabledElement();
+
+        $this->setSubmitLabel(
+            $this->translate('Override vars')
+        );
+
+        foreach (array('object_name', 'imports') as $name) {
+            $this->getElement($name)->setAttrib('disabled', 'disabled');
+            $this->getElement($name)->setRequired(false);
+        }
     }
 
     protected function addAssignmentElements()
@@ -210,5 +238,28 @@ class IcingaServiceForm extends DirectorObjectForm
         )->where('object_type = ?', 'object')->order('display');
 
         return $db->fetchPairs($select);
+    }
+
+    public function onSuccess()
+    {
+        if (! $this->hostGenerated) {
+            return parent::onSuccess();
+        }
+
+        $modified =array();
+        foreach ($this->object->vars() as $key => $var) {
+            $modified[$key] = $var->getValue();
+        }
+
+        $host = $this->host;
+        if (empty($modified)) {
+            unset($host->vars()->_director_apply_override);
+        } else {
+            $host->vars()->_director_apply_override = $modified;
+        }   
+
+        if ($host->hasBeenModified()) {
+            $host->store();
+        }
     }
 }
