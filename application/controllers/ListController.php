@@ -9,6 +9,8 @@ class ListController extends ActionController
 {
     public function importsourceAction()
     {
+        $this->setAutoRefreshInterval(10);
+
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add import source'),
             'director/importsource/add',
@@ -23,6 +25,8 @@ class ListController extends ActionController
 
     public function syncruleAction()
     {
+        $this->setAutoRefreshInterval(10);
+
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add sync rule'),
             'director/syncrule/add',
