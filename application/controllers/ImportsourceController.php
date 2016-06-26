@@ -11,14 +11,50 @@ use Icinga\Web\Url;
 
 class ImportsourceController extends ActionController
 {
+    public function indexAction()
+    {
+        $id = $this->params->get('id');
+        $this->prepareTabs($id)->activate('show');
+        $source = $this->view->source = ImportSource::load($id, $this->db());
+        $this->view->title = sprintf(
+            $this->translate('Import source: %s'),
+            $source->source_name
+        );
+
+        $this->view->checkForm = $this
+            ->loadForm('ImportCheck')
+            ->setImportSource($source)
+            ->handleRequest();
+
+        $this->view->runForm = $this
+            ->loadForm('ImportRun')
+            ->setImportSource($source)
+            ->handleRequest();
+    }
+
     public function addAction()
     {
-        $this->indexAction();
+        $this->editAction();
     }
 
     public function editAction()
     {
-        $this->indexAction();
+        $id = $this->params->get('id');
+
+        $form = $this->view->form = $this->loadForm('importSource')->setDb($this->db());
+
+        if ($id) {
+            $form->loadObject($id)->setListUrl('director/list/importsource');
+            $this->prepareTabs($id)->activate('edit');
+            $this->view->title = $this->translate('Edit import source');
+        } else {
+            $form->setSuccessUrl('director/list/importsource');
+            $this->view->title = $this->translate('Add import source');
+            $this->prepareTabs()->activate('add');
+        }
+
+        $form->handleRequest();
+        $this->setViewScript('object/form');
     }
 
     public function runAction()
@@ -80,26 +116,6 @@ class ImportsourceController extends ActionController
         $this->setViewScript('list/table');
     }
 
-    public function indexAction()
-    {
-        $id = $this->params->get('id');
-
-        $form = $this->view->form = $this->loadForm('importSource')->setDb($this->db());
-
-        if ($id) {
-            $form->loadObject($id)->setListUrl('director/list/importsource');
-            $this->prepareTabs($id)->activate('edit');
-            $this->view->title = $this->translate('Edit import source');
-        } else {
-            $form->setSuccessUrl('director/list/importsource');
-            $this->view->title = $this->translate('Add import source');
-            $this->prepareTabs()->activate('add');
-        }
-
-        $form->handleRequest();
-        $this->setViewScript('object/form');
-    }
-
     public function historyAction()
     {
         $url = $this->getRequest()->getUrl();
@@ -157,9 +173,12 @@ class ImportsourceController extends ActionController
         $tabs = $this->getTabs();
 
         if ($id) {
-            $tabs->add('edit', array(
-                'url'       => 'director/importsource/edit' . '?id=' . $id,
+            $tabs->add('show', array(
+                'url'       => 'director/importsource' . '?id=' . $id,
                 'label'     => $this->translate('Import source'),
+            ))->add('edit', array(
+                'url'       => 'director/importsource/edit' . '?id=' . $id,
+                'label'     => $this->translate('Modify'),
             ))->add('modifier', array(
                 'url'       => 'director/importsource/modifier' . '?source_id=' . $id,
                 'label'     => $this->translate('Modifiers'),
