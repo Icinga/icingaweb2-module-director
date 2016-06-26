@@ -420,7 +420,7 @@ class IcingaConfig
             '
 apply Service for (title => params in host.vars["%s"]) {
 
-  override = host.vars["%s_vars"][title]
+  var override = host.vars["%s_vars"][title]
 
   if (typeof(params["templates"]) in [Array, String]) {
     import params["templates"]
