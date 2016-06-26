@@ -18,7 +18,7 @@ abstract class PurgeStrategy
         return $this->rule;
     }
 
-    abstract function listObjectsToPurge();
+    abstract public function listObjectsToPurge();
 
     /**
      * @return PurgeStrategy
