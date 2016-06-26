@@ -18,9 +18,11 @@ class SyncRunForm extends QuickForm
 
     public function setup()
     {
-        $this->submitLabel = $this->translate(
-            'Trigger this Sync'
-        );
+        $this->submitLabel = false;
+        $this->addElement('submit', 'submit', array(
+            'label' => $this->translate('Trigger this Sync'),
+            'decorators' => array('ViewHelper')
+        ));
     }
 
     public function onSuccess()

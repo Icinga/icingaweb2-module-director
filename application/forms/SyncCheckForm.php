@@ -18,9 +18,11 @@ class SyncCheckForm extends QuickForm
 
     public function setup()
     {
-        $this->submitLabel = $this->translate(
-            'Check for changes'
-        );
+        $this->submitLabel = false;
+        $this->addElement('submit', 'submit', array(
+            'label' => $this->translate('Check for changes'),
+            'decorators' => array('ViewHelper')
+        ));
     }
 
     public function onSuccess()
@@ -56,7 +58,7 @@ class SyncCheckForm extends QuickForm
             $this->setSuccessMessage(
                 $this->translate('Nothing would change, this rule is still in sync')
             );
-        parent::onSuccess();
+            parent::onSuccess();
         } else {
             $this->addError($this->translate('Checking this sync rule failed'));
         }
