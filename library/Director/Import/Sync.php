@@ -645,18 +645,22 @@ class Sync
         }
 
         $noAction = array();
+        foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
+            if (array_key_exists($key, $newObjects)) {
+                // Object has been touched, do not delete
+                continue;
+            }
+
+            if (array_key_exists($key, $this->objects)) {
+                $object = $this->objects[$key];
+                if (! $object->hasBeenModified()) {
+                    $object->markForRemoval();
+                }
+            }
+        }
 
         foreach ($this->objects as $key => $object) {
-
-            if (array_key_exists($key, $newObjects)) {
-                // Stats?
-
-            } elseif ($object->hasBeenLoadedFromDb() && $this->rule->purge_existing === 'y') {
-                $object->markForRemoval();
-
-                // TODO: this is for stats, preview, summary:
-                // $this->remove[] = $object;
-            } else {
+            if (! $object->hasBeenModified() && ! $object->shouldBeRemoved()) {
                 $noAction[] = $key;
             }
         }
