@@ -57,28 +57,9 @@ class ImportsourceController extends ActionController
         $this->setViewScript('object/form');
     }
 
-    public function runAction()
-    {
-        $id = $this->params->get('id');
-        $import = new Import(ImportSource::load($id, $this->db()));
-        if ($runId = $import->run()) {
-            Notification::success('Import succeeded');
-            $this->redirectNow(Url::fromPath('director/importrun', array('id' => $runId)));
-        } else {
-            Notification::success('Import skipped, no changes detected');
-            $this->redirectNow('director/list/importrun');
-        }
-    }
-
     public function previewAction()
     {
         $id = $this->params->get('id');
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Run'),
-            'director/importsource/run',
-            array('id' => $id)
-        );
 
         $source = ImportSource::load($id, $this->db());
         $this->prepareTabs($id)->activate('preview');
