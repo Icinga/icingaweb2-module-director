@@ -26,7 +26,7 @@ class ImportsourceTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url('director/importsource/edit', array('id' => $row->id));
+        return $this->url('director/importsource', array('id' => $row->id));
     }
 
     public function getTitles()
