@@ -17,13 +17,14 @@ class JobsCommand extends Command
 {
     public function runAction()
     {
+        $forever = $this->params->shift('forever');
         $job = $this->params->shift();
         if ($job) {
             echo "Running (theoretically) $job\n";
             return;
         }
 
-        if ($this->params->shift('forever')) {
+        if ($forever) {
             $this->runforever();
         } else {
             $this->runAllPendingJobs();
