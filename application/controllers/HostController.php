@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
@@ -75,6 +76,17 @@ class HostController extends ObjectController
 
     public function agentAction()
     {
+        switch ($this->params->get('download')) {
+            case 'windows-kickstart':
+                header('Content-type: application/octet-stream');
+                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.ps1');
+
+                $wizard = $this->view->wizard = new AgentWizard($this->object);
+                $wizard->setTicketSalt($this->api()->getTicketSalt());
+                echo $wizard->renderWindowsInstaller();
+                exit;
+        }
+
         $this->gracefullyActivateTab('agent');
         $this->view->title = 'Agent deployment instructions';
         // TODO: Fail when no ticket
@@ -85,6 +97,10 @@ class HostController extends ObjectController
                 $this->view->certname,
                 $this->api()->getTicketSalt()
             );
+
+            $wizard = $this->view->wizard = new AgentWizard($this->object);
+            $wizard->setTicketSalt($this->api()->getTicketSalt());
+            $this->view->windows = $wizard->renderWindowsInstaller();
 
         } catch (Exception $e) {
             $this->view->ticket = 'ERROR';
