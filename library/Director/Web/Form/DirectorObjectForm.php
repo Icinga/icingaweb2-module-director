@@ -608,7 +608,7 @@ abstract class DirectorObjectForm extends QuickForm
             return;
         }
 
-        $txtInherited = $this->translate(' (inherited from "%s")');
+        $txtInherited = ' ' . $this->translate(' (inherited from "%s")');
         if ($el instanceof Zf_Select) {
             $multi = $el->getMultiOptions();
             if (is_bool($inherited)) {
@@ -950,9 +950,7 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        // Has Object:
-
-        if (!$resolved && $this->hasBeenSent()) {
+        if ($this->hasBeenSent()) {
             if (!$this->valueIsEmpty($value = $this->getSentValue($name))) {
                 return $value;
             }
