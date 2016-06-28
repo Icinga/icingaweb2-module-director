@@ -2,10 +2,12 @@
 
 namespace Icinga\Module\Director\Job;
 
+use Exception;
 use Icinga\Application\Benchmark;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Hook\JobHook;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -19,6 +21,7 @@ class ConfigJob extends JobHook
     public function run()
     {
         $db = $this->db();
+        $this->clearLastDeployment();
 
         if ($this->shouldGenerate()) {
             $config = IcingaConfig::generate($db);
@@ -63,7 +66,7 @@ class ConfigJob extends JobHook
         $db = $this->db();
 
         return IcingaConfig::exists(
-            $this->lastDeployment()->getConfigHexChecksum(),
+            Util::binary2hex(DirectorActivityLog::loadLatest($db)->checksum),
             $db
         );
     }
@@ -104,7 +107,15 @@ class ConfigJob extends JobHook
         $this->info('Director ConfigJob ready to deploy "%s"', $checksum);
         if ($api->dumpConfig($config, $db)) {
             $this->info('Director ConfigJob deployed config "%s"', $checksum);
-            $api->collectLogFiles($db);
+
+            // TODO: Loop and try multiple times?
+            sleep(2);
+            try {
+                $api->collectLogFiles($db);
+            } catch (Exception $e) {
+                // Ignore those errors, Icinga may be reloading
+            }
+
         } else {
             throw new IcingaException('Failed to deploy config "%s"', $checksum);
         }
