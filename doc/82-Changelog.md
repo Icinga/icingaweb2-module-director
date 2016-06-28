@@ -29,6 +29,10 @@
   objects that vanished at involved Import Sources between multiple Import and
   Sync Runs.
 
+### Data Types
+* Booleans, Integers and Arrays are now first-class citizens when dealing with
+  custom variables
+
 ### More
 
 * We are still preparing the release, changelog is incomplete at the time of
