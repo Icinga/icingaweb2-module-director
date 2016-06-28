@@ -46,8 +46,8 @@ class DirectorActivityLog extends DbObject
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $query = $db->select()->from($this->table, array('id' => 'MAX(id)'));
-        return static::load($db->fetchOne($query));
+        $query = $db->select()->from('director_activity_log', array('id' => 'MAX(id)'));
+        return static::load($db->fetchOne($query), $connection);
     }
 
     public static function logCreation(DbObject $object, Db $db)
