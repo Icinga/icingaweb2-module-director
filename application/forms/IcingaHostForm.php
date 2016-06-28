@@ -74,6 +74,25 @@ class IcingaHostForm extends DirectorObjectForm
                 'description' => $this->translate('Whether the agent is configured to accept config'),
                 'required'    => true
             ));
+
+            $this->addHidden('command_endpoint_id', null);
+            $this->setSentValue('command_endpoint_id', null);
+        } else {
+            $this->addElement('select', 'command_endpoint_id', array(
+                'label' => $this->translate('Command endpoint'),
+                'description' => $this->translate(
+                    'Setting a command endpoint allows you to force host checks'
+                    . ' to be executed by a specific endpoint. Please carefully'
+                    . ' study the related Icinga documentation before using this'
+                    . ' feature'
+                ),
+                'multiOptions' => $this->optionalEnum($this->enumEndpoints())
+            ));
+
+            foreach (array('master_should_connect', 'accept_config') as $key) {
+                $this->addHidden($key, null);
+                $this->setSentValue($key, null);
+            }
         }
 
         $elements = array(
@@ -81,6 +100,7 @@ class IcingaHostForm extends DirectorObjectForm
             'has_agent',
             'master_should_connect',
             'accept_config',
+            'command_endpoint_id',
         );
         $this->addDisplayGroup($elements, 'clustering', array(
             'decorators' => array(
@@ -174,6 +194,23 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         return $this;
+    }
+
+    protected function enumEndpoints()
+    {
+        $db = $this->db->getDbAdapter();
+        $select = $db->select()->from(
+            'icinga_endpoint',
+            array(
+                'id',
+                'object_name'
+            )
+        )->where(
+            'object_type IN (?)',
+            array('object', 'external_object')
+        )->order('object_name');
+
+        return $db->fetchPairs($select);
     }
 
     protected function enumHostgroups()
