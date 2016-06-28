@@ -14,7 +14,7 @@ class PropertyModifierBitmask extends PropertyModifierHook
             'label'       => 'Bitmask',
             'description' => $form->translate(
                 'The numeric bitmask you want to apply. In case you have a hexadecimal'
-                . ' or binary mask please transform it to a deximal number first. The'
+                . ' or binary mask please transform it to a decimal number first. The'
                 . ' result of this modifier is a boolean value, telling whether the'
                 . ' given mask applies to the numeric value in your source column'
             ),

@@ -202,7 +202,7 @@ class ConfigJob extends JobHook
     {
         return $form->translate(
             'The Config job allows you to generate and eventually deploy your'
-            . 'Icinga 2 configuration'
+            . ' Icinga 2 configuration'
         );
     }
 }
