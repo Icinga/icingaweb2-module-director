@@ -36,11 +36,11 @@ class JobRunner
     {
         $cmd = 'icingacli director job run ' . $job->id;
         $output = `$cmd`;
+        // TODO: capture output
     }
 
     protected function shouldFork()
     {
-        return false;
         return true;
     }
 
