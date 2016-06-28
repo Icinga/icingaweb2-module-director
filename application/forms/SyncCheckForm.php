@@ -28,7 +28,7 @@ class SyncCheckForm extends QuickForm
     public function onSuccess()
     {
         if ($this->rule->checkForChanges()) {
-            $this->setSuccessMessage(
+            $this->notifySuccess(
                 $this->translate(('This Sync Rule would apply new changes'))
             );
             $html = '';
