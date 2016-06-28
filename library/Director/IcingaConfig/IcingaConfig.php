@@ -282,73 +282,65 @@ class IcingaConfig
         $fileTable = IcingaConfigFile::$table;
         $fileKey = IcingaConfigFile::$keyName;
 
-        $this->db->beginTransaction();
-        try {
-            $existingQuery = $this->db->select()
-                ->from($fileTable, 'checksum')
-                ->where('checksum IN (?)', array_map(array($this, 'dbBin'), $this->getFilesChecksums()));
+        $existingQuery = $this->db->select()
+            ->from($fileTable, 'checksum')
+            ->where('checksum IN (?)', array_map(array($this, 'dbBin'), $this->getFilesChecksums()));
 
-            $existing = $this->db->fetchCol($existingQuery);
+        $existing = $this->db->fetchCol($existingQuery);
 
-            foreach ($existing as $key => $val) {
-                if (is_resource($val)) {
-                    $existing[$key] = stream_get_contents($val);
-                }
+        foreach ($existing as $key => $val) {
+            if (is_resource($val)) {
+                $existing[$key] = stream_get_contents($val);
+            }
+        }
+
+        $missing = array_diff($this->getFilesChecksums(), $existing);
+        $stored = array();
+
+        /** @var IcingaConfigFile $file */
+        foreach ($this->files as $name => $file) {
+            $checksum = $file->getChecksum();
+            if (! in_array($checksum, $missing)) {
+                continue;
             }
 
-            $missing = array_diff($this->getFilesChecksums(), $existing);
-            $stored = array();
-
-            /** @var IcingaConfigFile $file */
-            foreach ($this->files as $name => $file) {
-                $checksum = $file->getChecksum();
-                if (! in_array($checksum, $missing)) {
-                    continue;
-                }
-
-                if (array_key_exists($checksum, $stored)) {
-                    continue;
-                }
-
-                $stored[$checksum] = true;
-
-                $this->db->insert(
-                    $fileTable,
-                    array(
-                        $fileKey       => $this->dbBin($checksum),
-                        'content'      => $file->getContent(),
-                        'cnt_object'   => $file->getObjectCount(),
-                        'cnt_template' => $file->getTemplateCount()
-                    )
-                );
+            if (array_key_exists($checksum, $stored)) {
+                continue;
             }
 
-            $activity = $this->dbBin($this->getLastActivityChecksum());
+            $stored[$checksum] = true;
+
             $this->db->insert(
-                self::$table,
+                $fileTable,
                 array(
-                    'duration'                => $this->generationTime,
-                    'first_activity_checksum' => $activity,
-                    'last_activity_checksum'  => $activity,
-                    'checksum'                => $this->dbBin($this->getChecksum()),
+                    $fileKey       => $this->dbBin($checksum),
+                    'content'      => $file->getContent(),
+                    'cnt_object'   => $file->getObjectCount(),
+                    'cnt_template' => $file->getTemplateCount()
                 )
             );
-            /** @var IcingaConfigFile $file */
-            foreach ($this->files as $name => $file) {
-                $this->db->insert(
-                    'director_generated_config_file',
-                    array(
-                        'config_checksum' => $this->dbBin($this->getChecksum()),
-                        'file_checksum'   => $this->dbBin($file->getChecksum()),
-                        'file_path'       => $name,
-                    )
-                );
-            }
+        }
 
-            $this->db->commit();
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            throw $e;
+        $activity = $this->dbBin($this->getLastActivityChecksum());
+        $this->db->insert(
+            self::$table,
+            array(
+                'duration'                => $this->generationTime,
+                'first_activity_checksum' => $activity,
+                'last_activity_checksum'  => $activity,
+                'checksum'                => $this->dbBin($this->getChecksum()),
+            )
+        );
+        /** @var IcingaConfigFile $file */
+        foreach ($this->files as $name => $file) {
+            $this->db->insert(
+                'director_generated_config_file',
+                array(
+                    'config_checksum' => $this->dbBin($this->getChecksum()),
+                    'file_checksum'   => $this->dbBin($file->getChecksum()),
+                    'file_path'       => $name,
+                )
+            );
         }
 
         return $this;
