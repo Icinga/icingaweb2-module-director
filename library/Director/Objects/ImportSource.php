@@ -84,7 +84,7 @@ class ImportSource extends DbObjectWithSettings
             $this->last_attempt = date('Y-m-d H:i:s');
             if ($import->providesChanges()) {
                 Benchmark::measure('Found changes for ' . $this->source_name);
-                $this->hadChanges = true;
+                $hadChanges = true;
                 $this->import_state = 'pending-changes';
 
                 if ($runImport && $import->run()) {
