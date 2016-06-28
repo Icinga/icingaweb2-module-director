@@ -83,7 +83,7 @@ class HostController extends ObjectController
 
                 $wizard = $this->view->wizard = new AgentWizard($this->object);
                 $wizard->setTicketSalt($this->api()->getTicketSalt());
-                echo $wizard->renderWindowsInstaller();
+                echo preg_replace('/\n/', "\r\n", $wizard->renderWindowsInstaller());
                 exit;
         }
 
