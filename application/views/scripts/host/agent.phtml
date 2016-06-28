@@ -12,9 +12,10 @@ $master = $this->escape($this->master);
 
 <?php if ($this->error): ?>
 <p class="error"><?= $this->escape($this->error) ?></p>
-<?php endif ?>
+</div>
+<?php return; endif ?>
 
-<h2>When using the node wizard</h2>
+<h2>For manual configuration</h2>
 <p>Ticket : <code><?= $this->escape($ticket) ?></code></p>
 <h2>Windows Kickstart Script</h2>
 <?= $this->qlink(
