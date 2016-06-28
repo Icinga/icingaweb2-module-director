@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -685,62 +686,69 @@ class Sync
         $db = $this->db;
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
-        $formerActivityChecksum = Util::hex2binary(
-            $db->getLastActivityChecksum()
-        );
-        $created = 0;
-        $modified = 0;
-        $deleted = 0;
-        foreach ($objects as $object) {
-            if ($object instanceof IcingaObject && $object->isTemplate()) {
-                // TODO: allow to sync templates
-                if ($object->hasBeenModified()) {
-                    throw new IcingaException(
-                        'Sync is not allowed to modify template "%s"',
-                        $object->$objectKey
-                    );
-                }
-                continue;
-            }
 
-            if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
-                $object->delete($db);
-                $deleted++;
-                continue;
-            }
-
-            if ($object->hasBeenModified()) {
-                if ($object->hasBeenLoadedFromDb()) {
-                    $modified++;
-                } else {
-                    $created++;
-                }
-                $object->store($db);
-            }
-        }
-
-        $runProperties = array(
-            'objects_created'  => $created,
-            'objects_deleted'  => $deleted,
-            'objects_modified' => $modified,
-        );
-
-        if ($created + $deleted + $modified > 0) {
-            // TODO: What if this has been the very first activity?
-            $runProperties['last_former_activity'] = $db->quoteBinary($formerActivityChecksum);
-            $runProperties['last_related_activity'] = $db->quoteBinary(Util::hex2binary(
+        try {
+            $formerActivityChecksum = Util::hex2binary(
                 $db->getLastActivityChecksum()
-            ));
+            );
+            $created = 0;
+            $modified = 0;
+            $deleted = 0;
+            foreach ($objects as $object) {
+                if ($object instanceof IcingaObject && $object->isTemplate()) {
+                    // TODO: allow to sync templates
+                    if ($object->hasBeenModified()) {
+                        throw new IcingaException(
+                            'Sync is not allowed to modify template "%s"',
+                            $object->$objectKey
+                        );
+                    }
+                    continue;
+                }
+
+                if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+                    $object->delete($db);
+                    $deleted++;
+                    continue;
+                }
+
+                if ($object->hasBeenModified()) {
+                    if ($object->hasBeenLoadedFromDb()) {
+                        $modified++;
+                    } else {
+                        $created++;
+                    }
+                    $object->store($db);
+                }
+            }
+
+            $runProperties = array(
+                'objects_created'  => $created,
+                'objects_deleted'  => $deleted,
+                'objects_modified' => $modified,
+            );
+
+            if ($created + $deleted + $modified > 0) {
+                // TODO: What if this has been the very first activity?
+                $runProperties['last_former_activity'] = $db->quoteBinary($formerActivityChecksum);
+                $runProperties['last_related_activity'] = $db->quoteBinary(Util::hex2binary(
+                    $db->getLastActivityChecksum()
+                ));
+            }
+
+            $this->run->setProperties($runProperties)->store();
+
+            $dba->commit();
+
+            // Store duration after commit, as the commit might take some time
+            $this->run->set('duration_ms', (int) round(
+                (microtime(true) - $this->runStartTime) * 1000
+            ))->store();
+
+        } catch (Exception $e) {
+            $dba->rollBack();
+            throw $e;
         }
-
-        $this->run->setProperties($runProperties)->store();
-
-        $dba->commit();
-
-        // Store duration after commit, as the commit might take some time
-        $this->run->set('duration_ms', (int) round(
-            (microtime(true) - $this->runStartTime) * 1000
-        ))->store();
 
         return $this->run->id;
     }
