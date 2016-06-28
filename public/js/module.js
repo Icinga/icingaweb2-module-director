@@ -30,6 +30,9 @@
 
         detailTabClick: function(ev)
         {
+            // Temporarily disabled
+            return;
+
             var $a = $(ev.currentTarget);
             if ($a.closest('#col2').length === 0) {
                 return;
@@ -40,6 +43,9 @@
 
         alignDetailLinks: function()
         {
+            // Temporarily disabled
+            return;
+
             var self = this;
             var $a = $('#col2 div.controls ul.tabs li.active a');
             if ($a.length !== 1) {
