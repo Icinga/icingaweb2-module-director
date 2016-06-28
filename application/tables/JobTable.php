@@ -39,6 +39,11 @@ class JobTable extends QuickTable
         if ($row->unixts_last_attempt === null) {
             return 'pending';
         }
+
+        if ($row->last_attempt_succeeded === 'n' && $row->last_error_message) {
+            $row->job_name .= ' (' . $row->last_error_message . ')';
+        }
+
         if ($row->unixts_last_attempt + $row->run_interval < time()) {
             return 'pending';
         }
