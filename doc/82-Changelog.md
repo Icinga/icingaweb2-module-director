@@ -6,7 +6,7 @@
 
 ### Fixed a lot of issues and related features
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://dev.icinga.org/projects/icingaweb2-module-director/roadmap)
+  [roadmap](https://dev.icinga.org/versions/301)
 
 ### Icinga Agent handling
 * A lot of effort has been put into making config deployment easier for
