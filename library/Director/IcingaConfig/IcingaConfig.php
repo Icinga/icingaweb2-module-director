@@ -372,8 +372,13 @@ class IcingaConfig
         $start = microtime(true);
 
         // Raise limits. TODO: do this in a failsafe way, and only if necessary
-        ini_set('memory_limit', '768M');
+        if ((string) ini_get('memory_limit') !== '-1') {
+            ini_set('memory_limit', '1024M');
+        }
+
         ini_set('max_execution_time', 0);
+        // Workaround for https://bugs.php.net/bug.php?id=68606 or similar
+        ini_set('zend.enable_gc', 0);
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
 
@@ -402,6 +407,8 @@ class IcingaConfig
              ->prepend("library \"methods\"\n\n");
 
         PrefetchCache::forget();
+        IcingaHost::clearAllPrefetchCaches();
+
         $this->generationTime = (int) ((microtime(true) - $start) * 1000);
 
         return $this;
