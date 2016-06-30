@@ -27,6 +27,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $resolvedImports = false;
 
+    protected $listUrl;
+
     private $allowsExperimental;
 
     private $api;
@@ -609,7 +611,7 @@ abstract class DirectorObjectForm extends QuickForm
             return;
         }
 
-        $txtInherited = $this->translate(' (inherited from "%s")');
+        $txtInherited = ' ' . $this->translate(' (inherited from "%s")');
         if ($el instanceof Zf_Select) {
             $multi = $el->getMultiOptions();
             if (is_bool($inherited)) {
@@ -626,6 +628,12 @@ abstract class DirectorObjectForm extends QuickForm
                 $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
             }
         }
+    }
+
+    public function setListUrl($url)
+    {
+        $this->listUrl = $url;
+        return $this;
     }
 
     public function onSuccess()
@@ -857,7 +865,9 @@ abstract class DirectorObjectForm extends QuickForm
             );
         }
 
-        if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
+        if ($this->listUrl) {
+            $url = $this->listUrl;
+        } elseif ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
             $url = $object->getOnDeleteUrl();
         } else {
             $url = $this->getSuccessUrl()->without(
@@ -943,9 +953,7 @@ abstract class DirectorObjectForm extends QuickForm
             }
         }
 
-        // Has Object:
-
-        if (!$resolved && $this->hasBeenSent()) {
+        if ($this->hasBeenSent()) {
             if (!$this->valueIsEmpty($value = $this->getSentValue($name))) {
                 return $value;
             }

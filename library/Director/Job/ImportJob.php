@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Job;
 
 use Exception;
 use Icinga\Module\Director\Hook\JobHook;
-use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
@@ -25,27 +24,10 @@ class ImportJob extends JobHook
 
     protected function runForSource(ImportSource $source)
     {
-        $import = new Import($source);
-        try {
-            if ($import->providesChanges()) {
-
-                if ($this->getSetting('run_import') === 'y') {
-                    if ($import->run()) {
-                        $source->import_state = 'in-sync';
-                    } else {
-                        $source->import_state = 'failing';
-                    }
-                } else {
-                    $source->import_state = 'pending-changes';
-                }
-            }
-
-        } catch (Exception $e) {
-            $source->import_state = 'failing';
-            $source->last_error_message = $e->getMessage();
-        }
-        if ($source->hasBeenModified()) {
-            $source->store();
+        if ($this->getSetting('run_import') === 'y') {
+            $source->runImport();
+        } else {
+            $source->checkForChanges();
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -322,43 +323,49 @@ class Import
 
         $db->beginTransaction();
 
-        if ($this->isEmpty()) {
-            $newRows = array();
-            $newProperties = array();
-        } else {
-            $newRows = $this->newChecksums('imported_row', $this->rowChecksums);
-            $newProperties = $this->newChecksums('imported_property', array_keys($this->properties));
-        }
+        try {
 
-        $db->insert('imported_rowset', array('checksum' => $this->quoteBinary($rowset)));
-
-        foreach ($newProperties as $checksum) {
-            $db->insert('imported_property', $this->properties[$checksum]);
-        }
-
-        foreach ($newRows as $row) {
-            $db->insert('imported_row', $rows[$row]);
-            foreach ($this->rowProperties[$row] as $property) {
-                $db->insert('imported_row_property', array(
-                    'row_checksum'      => $this->quoteBinary($row),
-                    'property_checksum' => $property
-                ));
+            if ($this->isEmpty()) {
+                $newRows = array();
+                $newProperties = array();
+            } else {
+                $newRows = $this->newChecksums('imported_row', $this->rowChecksums);
+                $newProperties = $this->newChecksums('imported_property', array_keys($this->properties));
             }
+
+            $db->insert('imported_rowset', array('checksum' => $this->quoteBinary($rowset)));
+
+            foreach ($newProperties as $checksum) {
+                $db->insert('imported_property', $this->properties[$checksum]);
+            }
+
+            foreach ($newRows as $row) {
+                $db->insert('imported_row', $rows[$row]);
+                foreach ($this->rowProperties[$row] as $property) {
+                    $db->insert('imported_row_property', array(
+                        'row_checksum'      => $this->quoteBinary($row),
+                        'property_checksum' => $property
+                    ));
+                }
+            }
+
+            foreach (array_keys($rows) as $row) {
+                $db->insert(
+                    'imported_rowset_row',
+                    array(
+                        'rowset_checksum' => $this->quoteBinary($rowset),
+                        'row_checksum'    => $this->quoteBinary($row)
+                    )
+                );
+            }
+
+            $db->commit();
+
+            $this->rowsetExists = true;
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
         }
-
-        foreach (array_keys($rows) as $row) {
-            $db->insert(
-                'imported_rowset_row',
-                array(
-                    'rowset_checksum' => $this->quoteBinary($rowset),
-                    'row_checksum'    => $this->quoteBinary($row)
-                )
-            );
-        }
-
-        $db->commit();
-
-        $this->rowsetExists = true;
     }
 
     /**

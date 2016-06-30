@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Import\PurgeStrategy\PurgeStrategy;
 use Icinga\Module\Director\Import\Sync;
 use Exception;
 
@@ -30,6 +31,10 @@ class SyncRule extends DbObject
 
     private $sync;
 
+    private $purgeStrategy;
+
+    private $currentSyncRunId;
+
     private $filter;
 
     public function listInvolvedSourceIds()
@@ -48,6 +53,51 @@ class SyncRule extends DbObject
                    ->order('s.source_name')
             )
         ));
+    }
+
+    public function fetchInvolvedImportSources()
+    {
+        $sources = array();
+
+        foreach ($this->listInvolvedSourceIds() as $sourceId) {
+            $sources[$sourceId] = ImportSource::load($sourceId, $this->getConnection());
+        }
+
+        return $sources;
+    }
+
+    public function getLastSyncTimestamp()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            array('sr' => 'sync_run'),
+            'sr.start_time'
+        )->where('sr.rule_id = ?', $this->id)
+        ->order('sr.start_time DESC')
+        ->limit(1);
+
+        return $db->fetchOne($query);
+    }
+
+    public function getLastSyncRunId()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            array('sr' => 'sync_run'),
+            'sr.id'
+        )->where('sr.rule_id = ?', $this->id)
+        ->order('sr.start_time DESC')
+        ->limit(1);
+
+        return $db->fetchOne($query);
     }
 
     public function getPriorityForNextProperty()
@@ -81,13 +131,16 @@ class SyncRule extends DbObject
 
         Benchmark::measure('Checking sync rule ' . $this->rule_name);
         try {
+            $this->last_attempt = date('Y-m-d H:i:s');
+            $this->sync_state = 'unknown';
             $sync = $this->sync();
             if ($sync->hasModifications()) {
                 Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
                 $this->sync_state = 'pending-changes';
-                if ($apply && $sync->apply()) {
-                    Benchmark::measure('Successfully synced rule ' . $rule->rule_name);
+                if ($apply && $runId = $sync->apply()) {
+                    Benchmark::measure('Successfully synced rule ' . $this->rule_name);
                     $this->sync_state = 'in-sync';
+                    $this->currentSyncRunId = $runId;
                 }
 
                 $hadChanges = true;
@@ -101,6 +154,7 @@ class SyncRule extends DbObject
         } catch (Exception $e) {
             $this->sync_state = 'failing';
             $this->last_error_message = $e->getMessage();
+            // TODO: Store last error details / trace?
         }
 
         if ($this->hasBeenModified()) {
@@ -110,9 +164,19 @@ class SyncRule extends DbObject
         return $hadChanges;
     }
 
+    public function getExpectedModifications()
+    {
+        return $this->sync()->getExpectedModifications();
+    }
+
     public function applyChanges()
     {
         return $this->checkForChanges(true);
+    }
+
+    public function getCurrentSyncRunId()
+    {
+        return $this->currentSyncRunId;
     }
 
     protected function sync()
@@ -131,6 +195,25 @@ class SyncRule extends DbObject
         }
 
         return $this->filter;
+    }
+
+    public function purgeStrategy()
+    {
+        if ($this->purgeStrategy === null) {
+            $this->purgeStrategy = $this->loadConfiguredPurgeStrategy();
+        }
+
+        return $this->purgeStrategy;
+    }
+
+    // TODO: Allow for more
+    protected function loadConfiguredPurgeStrategy()
+    {
+        if ($this->purge_existing) {
+            return PurgeStrategy::load('ImportRunBased', $this);
+        } else {
+            return PurgeStrategy::load('PurgeNothing', $this);
+        }
     }
 
     public function fetchSyncProperties()

@@ -1,5 +1,4 @@
-function Icinga2AgentInstaller {
-
+function Icinga2AgentModule {
     #
     # Setup parameters which can be accessed
     # with -<ParamName>
@@ -13,12 +12,13 @@ function Icinga2AgentInstaller {
         # Agent configuration
         [string]$ParentZone,
         [bool]$AcceptConfig               = $TRUE,
-        [array]$Endpoints,
+        [array]$ParentEndpoints,
 
         # Agent installation / update
-        [string]$DownloadUrl              = 'http://packages.icinga.org/windows/',
+        [string]$DownloadUrl              = 'https://packages.icinga.org/windows/',
         [bool]$AllowUpdates               = $FALSE,
         [array]$InstallerHashes,
+        [bool]$FlushApiDirectory          = $FALSE,
 
         # Agent signing
         [string]$CAServer,
@@ -41,10 +41,11 @@ function Icinga2AgentInstaller {
         agent_version    = $InstallAgentVersion;
         parent_zone      = $ParentZone;
         accept_config    = $AcceptConfig;
-        endpoints        = $Endpoints;
+        endpoints        = $ParentEndpoints;
         download_url     = $DownloadUrl;
         allow_updates    = $AllowUpdates;
         installer_hashes = $InstallerHashes;
+        flush_api_dir    = $FlushApiDirectory;
         ca_server        = $CAServer;
         ca_port          = $CAPort;
         force_cert       = $ForceCertificateGeneration;
@@ -118,10 +119,12 @@ function Icinga2AgentInstaller {
     # Todo: Adding exit 1 here results in an script
     # error we should take care off before adding it
     # again
+    # Deprecated: Do no longer use!
     #
     $installer | Add-Member -membertype ScriptMethod -name 'exception' -value {
         param([string]$message, [string[]]$args)
         $Error.clear();
+        $this.warn('Calling deprecated function exception. Use throw instead.');
         throw 'Exception: ' + $message;
     }
 
@@ -131,7 +134,28 @@ function Icinga2AgentInstaller {
     # from the stack
     #
     $installer | Add-Member -membertype ScriptMethod -name 'printLastException' -value {
-        Write-Host $this.error($error[$error.count - 1].FullyQualifiedErrorId) -ForegroundColor red;
+        # Todo: Improve this entire handling
+        #       for writing exception messages
+        #       in general we should only see
+        #       the actual thrown error instead of
+        #       an stack trace where the error occured
+        #Write-Host $this.error($error[$error.count - 1].FullyQualifiedErrorId) -ForegroundColor red;
+        Write-Host $_.Exception.Message -ForegroundColor red;
+    }
+    
+    #
+    # this function will print an info message
+    # or throw an exception, based on the 
+    # provided exitcode
+    # (0 = ok, anything else => exception)
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'printAndAssertResultBasedOnExitCode' -value {
+        param([string]$result, [string]$exitcode)
+        if ($exitcode -ne 0) {
+            throw $result;
+        } else {
+            $this.info($result);
+        }
     }
 
     #
@@ -177,6 +201,7 @@ function Icinga2AgentInstaller {
         $this.setProperty('initialized', $TRUE);
         # Set the default config dir
         $this.setProperty('config_dir', $Env:ProgramData + '\icinga2\etc\icinga2\');
+        $this.setProperty('api_dir', $Env:ProgramData + '\icinga2\var\lib\icinga2\api\');
         # Generate endpoint nodes based on iput
         # parameters
         $this.generateEndpointNodes();
@@ -192,7 +217,7 @@ function Icinga2AgentInstaller {
         $principal = New-Object System.Security.Principal.WindowsPrincipal($identity)
 
         if (-not $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            $this.exception("You require to run this script as administrator.");
+            throw 'You require to run this script as administrator.';
             return $FALSE;
         }
         return $TRUE;
@@ -205,7 +230,7 @@ function Icinga2AgentInstaller {
     $installer | Add-Member -membertype ScriptMethod -name 'generateEndpointNodes' -value {
 
         if (-Not $this.config('endpoints')) {
-            $this.exception('You require to specify atleast one endpoint with parameter -Endpoints <nodes>');
+            throw 'You require to specify atleast one endpoint with parameter -Endpoints <nodes>';
         }
 
         $endpoint_objects = '';
@@ -260,10 +285,10 @@ function Icinga2AgentInstaller {
             if ($WebStatusCode.StatusCode -eq 200) {
                 Invoke-WebRequest "$url" -OutFile $this.getInstallerPath();
             } else {
-                $this.exception('Failed to download Icinga 2 Agent Installer from URL');
+                throw 'Failed to download Icinga 2 Agent Installer from URL';
             }
         } catch {
-             $this.exception('Unable to download Icinga 2 Agent from ' + $url + '. Error: ' + $_.Exception.Message);
+             throw 'Unable to download Icinga 2 Agent from ' + $url + '. Error: ' + $_.Exception.Message;
         }
     }
 
@@ -286,7 +311,7 @@ function Icinga2AgentInstaller {
             }
         }
 
-        $this.exception('Failed to verify against any provided installer hash.');
+        throw 'Failed to verify against any provided installer hash.';
         return;
     }
 
@@ -314,7 +339,7 @@ function Icinga2AgentInstaller {
     $installer | Add-Member -membertype ScriptMethod -name 'installAgent' -value {
         $this.downloadInstaller();
         if (-Not $this.installerExists()) {
-            $this.exception('Failed to setup Icinga 2 Agent. Installer package not found.');
+            throw 'Failed to setup Icinga 2 Agent. Installer package not found.';
         }
         $this.verifyInstallerChecksumAndThrowException();
         $this.info('Installing Icinga 2 Agent');
@@ -330,11 +355,11 @@ function Icinga2AgentInstaller {
     $installer | Add-Member -membertype ScriptMethod -name 'updateAgent' -value {
         $this.downloadInstaller();
         if (-Not $this.installerExists()) {
-            $this.exception('Failed to update Icinga 2 Agent. Installer package not found.');
+            throw 'Failed to update Icinga 2 Agent. Installer package not found.';
         }
         $this.verifyInstallerChecksumAndThrowException()
         if (-Not $this.getProperty('uninstall_id')) {
-            $this.exception('Failed to update Icinga 2 Agent. Uninstaller is not specified.');
+            throw 'Failed to update Icinga 2 Agent. Uninstaller is not specified.';
         }
 
         $this.info('Removing previous Icinga 2 Agent version...');
@@ -342,6 +367,7 @@ function Icinga2AgentInstaller {
         $this.info('Installing new Icinga 2 Agent version...');
         Start-Process $this.getInstallerPath() -ArgumentList "/quiet" -wait;
         $this.info('Agent successfully updated.');
+        $this.setProperty('cur_install_dir', $this.getProperty('def_install_dir'));
         $this.setProperty('require_restart', 'true');
     }    
 
@@ -442,6 +468,33 @@ function Icinga2AgentInstaller {
             Remove-Item $this.getInstallerPath() | out-null
         }
     }
+    
+    #
+    # Get Api directory if Icinga 2
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'getApiDirectory' -value {
+        return $this.getProperty('api_dir');
+    }
+    
+    #
+    # Should we remove the Api directory content
+    # from the Agent? Can be defined by setting the
+    # -RemoveApiDirectory argument of the function builder
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'shouldFlushIcingaApiDirectory' -value {
+        return $this.config('flush_api_dir');
+    }
+    
+    #
+    # Flush all content from the Icinga 2 Agent
+    # Api directory, but keep the folder structure
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'flushIcingaApiDirectory' -value {    
+        if (Test-Path $this.getApiDirectory()) {
+            $this.info('Flushing content of ' + $this.getApiDirectory());    
+            Get-ChildItem -Path $this.getApiDirectory() -Recurse | Remove-Item -force -recurse    
+        }
+    }
 
     #
     # Restart the Icinga 2 service and get the
@@ -454,7 +507,7 @@ function Icinga2AgentInstaller {
         Start-Sleep -Seconds 2;
         $service = Get-WmiObject -Class Win32_Service -Filter "Name='icinga2'"
         if (-Not ($service.State -eq 'Running')) {
-            $this.exception('Failed to restart Icinga 2 service.');
+            throw 'Failed to restart Icinga 2 service.';
         } else {
             $this.info('Icinga 2 Agent successfully restarted.');
             $this.setProperty('require_restart', '');
@@ -476,30 +529,24 @@ include "constants.conf"
 include <itl>
 include <plugins>
 // include <plugins-contrib>
-
 if (!globals.contains("NscpPath")) {
   NscpPath = dirname(msi_get_component_path("{5C45463A-4AE9-4325-96DB-6E239C034F93}"))
 }
-
 object FileLogger "main-log" {
   severity = "information"
   path = LocalStateDir + "/log/icinga2/icinga2.log"
 }
-
 // TODO: improve establish connection handling
 object Endpoint "' + $this.config('agent_name') + '" {}
 ' + $this.getProperty('endpoint_objects') + '
 object Zone "' + $this.config('parent_zone') + '" {
   endpoints = [ ' + $this.getProperty('endpoint_nodes') +' ]
 }
-
 object Zone "director-global" { global = true }
-
 object Zone "' + $this.config('agent_name') + '" {
   parent = "' + $this.config('parent_zone') + '"
   endpoints = [ "' + $this.config('agent_name') + '" ]
 }
-
 object ApiListener "api" {
   cert_path = SysconfDir + "/icinga2/pki/' + $this.config('agent_name') + '.crt"
   key_path = SysconfDir + "/icinga2/pki/' + $this.config('agent_name') + '.key"
@@ -519,7 +566,7 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'hasConfigChanged' -value {
 
         if (-Not $this.getProperty('new_icinga_config')) {
-            $this.exception('New Icinga 2 configuration not generated. Please call "generateIcingaConfiguration" before.');
+            throw 'New Icinga 2 configuration not generated. Please call "generateIcingaConfiguration" before.';
         }
 
         $oldConfigHash = $this.getHashFromString($this.getProperty('old_icinga_config'));
@@ -588,7 +635,7 @@ object ApiListener "api" {
         param([string]$result, [string]$expected)
         if ($result -And $expected) {
             if (-Not ($result -Like $expected)) {
-                $this.exception($result);
+                throw $result;
             } else {
                 $this.info($result);
             }
@@ -604,7 +651,7 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'generateCertificates' -value {
 
         if (-Not $this.config('agent_name') -Or -Not $this.config('ca_server') -Or -Not $this.config('ticket')) {
-            $this.exception('One or more of the following arguments is missing: -AgentName <name> -CAServer <server> -Ticket <ticket>');
+            throw 'One or more of the following arguments is missing: -AgentName <name> -CAServer <server> -Ticket <ticket>';
         }
 
         $icingaPkiDir = $this.getProperty('config_dir') + 'pki\';
@@ -614,29 +661,17 @@ object ApiListener "api" {
         # Generate the certificate
         $this.info("Generating Icinga 2 certificates");
         $result = &$icingaBinary @('pki', 'new-cert', '--cn', $this.config('agent_name'), '--key', ($icingaPkiDir + $agentName + '.key'), '--cert', ($icingaPkiDir + $agentName + '.crt'));
-        if ($LASTEXITCODE -ne 0) {
-            $this.exception($result);
-        } else {
-            $this.info($result);
-        }
+        $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
 
         # Save Certificate
         $this.info("Storing Icinga 2 certificates");
         $result = &$icingaBinary @('pki', 'save-cert', '--key', ($icingaPkiDir + $agentName + '.key'), '--trustedcert', ($icingaPkiDir + 'trusted-master.crt'), '--host', $this.config('ca_server'));
-        if ($LASTEXITCODE -ne 0) {
-            $this.exception($result);
-        } else {
-            $this.info($result);
-        }
+        $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
 
         # Request certificate
         $this.info("Requesting Icinga 2 certificates");
         $result = &$icingaBinary @('pki', 'request', '--host', $this.config('ca_server'), '--port', $this.config('ca_port'), '--ticket', $this.config('ticket'), '--key', ($icingaPkiDir + $agentName + '.key'), '--cert',  ($icingaPkiDir + $agentName + '.crt'), '--trustedcert', ($icingaPkiDir + 'trusted-master.crt'), '--ca', ($icingaPkiDir + 'ca.crt'));
-        if ($LASTEXITCODE -ne 0) {
-            $this.exception($result);
-        } else {
-            $this.info($result);
-        }
+        $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
 
         $this.setProperty('require_restart', 'true');
     }
@@ -651,7 +686,8 @@ object ApiListener "api" {
         $agentName = $this.config('agent_name');
         if (
             ((Test-Path ($icingaPkiDir + $agentName + '.key')) `
-            -And (Test-Path ($icingaPkiDir + $agentName + '.crt')))
+            -And (Test-Path ($icingaPkiDir + $agentName + '.crt')) `
+            -And (Test-Path ($icingaPkiDir + 'ca.crt')))
         ) {
             return $TRUE;
         }
@@ -710,13 +746,13 @@ object ApiListener "api" {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'checkConfigInputParametersAndThrowException' -value {
         if (-Not $this.config('agent_name')) {
-            $this.exception('Argument -AgentName <name> required for config generation.');
+            throw 'Argument -AgentName <name> required for config generation.';
         }
         if (-Not $this.config('parent_zone')) {
-            $this.exception('Argument -ParentZone <name> required for config generation.');
+            throw 'Argument -ParentZone <name> required for config generation.';
         }
         if (-Not $this.getProperty('endpoint_nodes') -Or -Not $this.getProperty('endpoint_objects')) {
-            $this.exception('Argument -Endpoints <name> requires atleast one defined endpoint.');
+            throw 'Argument -Endpoints <name> requires atleast one defined endpoint.';
         }        
     }
 
@@ -727,7 +763,7 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'isIcingaConfigValid' -value {
         param([bool] $checkInternal = $TRUE)
         if (-Not $this.config('parent_zone') -And $checkInternal) {
-            $this.exception('Parent Zone not defined. Please specify it with -ParentZone <name>');
+            throw 'Parent Zone not defined. Please specify it with -ParentZone <name>';
         }
         $icingaBinary = $this.getInstallPath() + '\sbin\icinga2.exe';
         $output = &$icingaBinary @('daemon', '-C');
@@ -745,18 +781,44 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'madeChanges' -value {
         return $this.getProperty('require_restart');
     }
+    
+    #
+    # Apply possible configuration changes to
+    # our Icinga 2 Agent
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'applyPossibleConfigChanges' -value {
+        if ($this.hasConfigChanged()) {
+            $this.backupDefaultConfig();
+            $this.writeConfig();
+
+            # Check if the config is valid and rollback otherwise
+            if (-Not $this.isIcingaConfigValid()) {
+                $this.error('Icinga 2 config validation failed. Rolling back to previous version.');
+                $this.rollbackConfig();
+                if ($this.isIcingaConfigValid($FALSE)) {
+                    $this.info('Rollback of Icinga 2 configuration successfull.');
+                } else {
+                    throw 'Icinga 2 config rollback failed. Please check the icinga2.log';
+                }
+            } else {
+                $this.info('Icinga 2 configuration check successfull.');
+            }
+        } else {
+            $this.info('icinga2.conf did not change. Nothing to do');
+        }
+    }
 
     #
     # This function will try to load all
     # data from the system and setup the
     # entire Agent without user interaction
     # including download and update if
-    # specified
+    # specified. Returnd 0 or 1 as exit code
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'unattendedInstall' -value {        
-        try {        
+    $installer | Add-Member -membertype ScriptMethod -name 'installIcinga2Agent' -value {        
+        try {
             if (-Not $this.isAdmin()) {
-                return $FALSE;
+                return 1;
             }        
             # Try to locate the current
             # Installation data from the Agent
@@ -775,7 +837,7 @@ object ApiListener "api" {
                     $this.installAgent();
                     $this.cleanupAgentInstaller();
                 } else {
-                    $this.exception('Icinga 2 Agent is not installed and not allowed of beeing installed. Nothing to do.');
+                    throw 'Icinga 2 Agent is not installed and not allowed of beeing installed. Nothing to do.';
                 }
             }
 
@@ -786,40 +848,22 @@ object ApiListener "api" {
             }
 
             $this.generateIcingaConfiguration();
-
-            if ($this.hasConfigChanged()) {
-                $this.backupDefaultConfig();
-                $this.writeConfig();
-
-                # Check if the config is valid and rollback otherwise
-                if (-Not $this.isIcingaConfigValid()) {
-                    $this.error('Icinga 2 config validation failed. Rolling back to previous version.');
-                    $this.rollbackConfig();
-                    if ($this.isIcingaConfigValid($FALSE)) {
-                        $this.info('Rollback of Icinga 2 configuration successfull.');
-                    } else {
-                        $this.exception('Icinga 2 config rollback failed. Please check the icinga2.log');
-                    }
-                } else {
-                    $this.info('Icinga 2 configuration check successfull.');
-                }
-            } else {
-                $this.info('icinga2.conf did not change. Nothing to do');
-            }
+            $this.applyPossibleConfigChanges();
 
             if ($this.madeChanges()) {
+                if ($this.shouldFlushIcingaApiDirectory()) {
+                    $this.flushIcingaApiDirectory();
+                }
                 $this.restartAgent();
             } else {
                 $this.info('No changes detected.');
-            }        
+            }
+            return 0            
         } catch {
             $this.printLastException();
-            return $FALSE;
+            return 1
         }
-
-        return $TRUE;
     }
 
     return $installer
 }
-

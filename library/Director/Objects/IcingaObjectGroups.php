@@ -351,4 +351,11 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             }
         }
     }
+
+    public function __destruct()
+    {
+        unset($this->storedGroups);
+        unset($this->groups);
+        unset($this->object);
+    }
 }

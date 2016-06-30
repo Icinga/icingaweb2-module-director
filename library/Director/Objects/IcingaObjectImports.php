@@ -370,4 +370,12 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             }
         }
     }
+
+    public function __destruct()
+    {
+        unset($this->storedImport);
+        unset($this->imports);
+        unset($this->objects);
+        unset($this->object);
+    }
 }

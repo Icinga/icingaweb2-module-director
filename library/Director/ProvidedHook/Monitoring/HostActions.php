@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 
+use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -12,6 +13,15 @@ use Icinga\Web\Url;
 class HostActions extends HostActionsHook
 {
     public function getActionsForHost(Host $host)
+    {
+        try {
+            return $this->getThem($host);
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
+    protected function getThem(Host $host)
     {
         $db = $this->db();
         if (! $db) {

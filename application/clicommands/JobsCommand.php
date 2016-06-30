@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Job\JobRunner;
+use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -17,13 +18,15 @@ class JobsCommand extends Command
 {
     public function runAction()
     {
-        $job = $this->params->shift();
-        if ($job) {
-            echo "Running (theoretically) $job\n";
-            return;
+        $forever = $this->params->shift('forever');
+        $jobId = $this->params->shift();
+        if ($jobId) {
+            $job = DirectorJob::load($jobId, $this->db());
+            $job->run();
+            exit(0);
         }
 
-        if ($this->params->shift('forever')) {
+        if ($forever) {
             $this->runforever();
         } else {
             $this->runAllPendingJobs();

@@ -1,14 +1,14 @@
 # Icinga Web 2 - Head for multiple monitoring backends.
 # Copyright (C) 2016 Icinga Development Team
 # This file is distributed under the same license as Director Module.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Thomas Widhalm <widhalmt@widhalm.or.at>, 2016.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Director Module (1.0.0)\n"
+"Project-Id-Version: Director Module (1.1.0)\n"
 "Report-Msgid-Bugs-To: dev@icinga.org\n"
-"POT-Creation-Date: 2016-04-06 13:10+0200\n"
-"PO-Revision-Date: 2016-04-07 22:31+0200\n"
+"POT-Creation-Date: 2016-06-28 14:15+0200\n"
+"PO-Revision-Date: 2016-06-28 14:27+0200\n"
 "Last-Translator: Thomas Widhalm <widhalmt@widhalm.or.at>\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Language-Team: \n"
 "X-Generator: Poedit 1.8.7.1\n"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:583
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:611
 #, php-format
 msgid " (inherited from \"%s\")"
 msgstr "(geerbt von \"%s\")"
@@ -28,7 +28,7 @@ msgstr "(geerbt von \"%s\")"
 msgid "%d files"
 msgstr "%d Dateien"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:32
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:37
 #, php-format
 msgid "%d files rendered in %0.2fs"
 msgstr "%d Dateien in %0.2fs erstellt "
@@ -58,17 +58,22 @@ msgstr "%d Objekte, %d Vorlagen"
 msgid "%d of them are templates"
 msgstr "%d davon sind Vorlagen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:156
+#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:151
 #, php-format
 msgid "%s \"%s\" has been created"
 msgstr "%s \"%s\" wurde erstellt"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:163
+#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:158
 #, php-format
 msgid "%s \"%s\" has been deleted"
 msgstr "%s \"%s\" wurde gelöscht"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:170
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaImportObjectForm.php:35
+#, php-format
+msgid "%s \"%s\" has been imported\""
+msgstr "%s \"%s\" wurde importiert\""
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:165
 #, php-format
 msgid "%s \"%s\" has been modified"
 msgstr "%s \"%s\" wurde geändert"
@@ -79,25 +84,29 @@ msgid "%s config changes happend since the last deployed configuration"
 msgstr ""
 "%s Konfigurationsänderungen seit der letzten ausgebrachten Konfiguration"
 
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/runSummary.phtml:10
+#, php-format
+msgid "%s objects have been modified"
+msgstr "%s Objekte wurden verändert"
+
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:63
 #, php-format
 msgid "%s related group objects have been created"
 msgstr "%s verwandte Gruppenobjekte wurden erstellt"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:230
-#, php-format
-msgid "%s template \"%s\": custom fields"
-msgstr "%s Vorlage \"%s\": benutzerdefinierte Felder"
-
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:994
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1031
 msgid "- click to add more -"
 msgstr "- Hier klicken um mehr hinzuzufügen -"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:589
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:620
 msgid "- inherited -"
 msgstr "- geerbt -"
 
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/diff.phtml:12
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/diff.phtml:19
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickBaseForm.php:78
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:83
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:91
 msgid "- please choose -"
 msgstr "- bitte wählen -"
 
@@ -112,14 +121,14 @@ msgstr ""
 "Kenntnisse über LDAP Filter. Einfache Filter können wie folgt aussehen: "
 "operatingsystem=*server*"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:34
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaObjectFieldForm.php:120
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:34
 msgid "A description about the field"
 msgstr "Eine Beschreibung des Feldes"
 
 # Geschlecht kann hier leider nicht bestimmt werden -ThW
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaTimePeriodRangeForm.php:60
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:611
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:648
 #, php-format
 msgid "A new %s has successfully been created"
 msgstr "Ein neuer %s wurde erfolgreich erstellt"
@@ -140,6 +149,23 @@ msgstr ""
 "Bezeichnungen wie \"Hosts aus Puppet\" oder \"Benutzer aus LDAP\" bieten "
 "sich an"
 
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:72
+msgid ""
+"A short name identifying this job. Use something meaningful, like \"Import "
+"Puppet Hosts\""
+msgstr ""
+"Eine kurzer Name um diesen Auftrag zu bezeichnen. Sprechende Bezeichnungen "
+"wie \"Puppet Hosts importieren\" bieten sich an"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:109
+#, php-format
+msgid ""
+"A ticket for this agent could not have been requested from your deployment "
+"endpoint: %s"
+msgstr ""
+"Für diesen Agenten konnte kein Ticket vom Deployment-Endpoint angefordert "
+"werden: %s"
+
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:79
 #, php-format
 msgid ""
@@ -149,15 +175,15 @@ msgstr ""
 "Insgesamt wurde die Konfiguration %d mal seit dem letzten Ausbringen geändert"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:46
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:120
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:124
 msgid "API user"
 msgstr "API Benutzer"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1208
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1245
 msgid "Accept passive checks"
 msgstr "Passive Checkergebnisse akzeptieren"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:72
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:73
 msgid "Accepts config"
 msgstr "Akzeptiert Konfiguration"
 
@@ -166,25 +192,35 @@ msgstr "Akzeptiert Konfiguration"
 msgid "Acknowledgement"
 msgstr "Bestätigung"
 
-#: /usr/share/icingaweb2/modules/director/application/tables/ActivityLogTable.php:63
+#: /usr/share/icingaweb2/modules/director/application/tables/ActivityLogTable.php:89
+#: /usr/share/icingaweb2/modules/director/application/tables/ConfigFileDiffTable.php:65
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:42
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:47
 msgid "Action"
 msgstr "Aktion"
 
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1331
+msgid "Action URL"
+msgstr "Aktions-URL"
+
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:16
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:67
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:79
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Table/QuickTable.php:235
 msgid "Actions"
 msgstr "Aktionen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:89
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:187
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/syncRunDetails.phtml:11
+msgid "Activity"
+msgstr "Aktivität"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:90
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:232
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:103
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:110
 msgid "Activity Log"
 msgstr "Aktivitätslog"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:273
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:277
 #, php-format
 msgid "Activity Log: %s"
 msgstr "Aktivitätslog: %s"
@@ -193,11 +229,12 @@ msgstr "Aktivitätslog: %s"
 msgid "Activity log entry"
 msgstr "Aktivitätslogeintrag"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:457
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobsController.php:16
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:472
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:69
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:68
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:90
 #, php-format
 msgid "Add %s"
@@ -207,6 +244,10 @@ msgstr "%s hinzufügen"
 #, php-format
 msgid "Add %s template"
 msgstr "%s Vorlage hinzufügen"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobController.php:87
+msgid "Add a job"
+msgstr "Auftrag hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/views/helpers/FormExtensibleSet.php:221
 msgid "Add a new entry"
@@ -224,53 +265,66 @@ msgstr "Datenliste hinzufügen"
 msgid "Add data list entry"
 msgstr "Datenlisteneintrag hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/DatalistentryController.php:37
-msgid "Add entry"
-msgstr "Eintrag hinzufügen"
-
-#: /usr/share/icingaweb2/modules/director/application/controllers/DataController.php:119
 #: /usr/share/icingaweb2/modules/director/application/controllers/DatafieldController.php:34
+#: /usr/share/icingaweb2/modules/director/application/controllers/DataController.php:119
 msgid "Add field"
 msgstr "Feld hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:97
-#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:13
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:52
+#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:15
 msgid "Add import source"
 msgstr "Importquelle hinzufügen"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobController.php:64
+msgid "Add job"
+msgstr "Auftrag hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/DataController.php:13
 #: /usr/share/icingaweb2/modules/director/application/controllers/DataController.php:95
 msgid "Add list"
 msgstr "Liste hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/AssignListSubForm.php:44
+#: /usr/share/icingaweb2/modules/director/application/forms/AssignListSubForm.php:46
 msgid "Add more"
 msgstr "Mehr hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:184
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:189
 #, php-format
 msgid "Add new Icinga %s"
 msgstr "Neuen Icinga %s hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:72
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:87
 msgid "Add property modifier"
 msgstr "Eigenschaftsmodifikator hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:57
+#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:60
 msgid "Add service"
 msgstr "Service hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/SyncpropertyController.php:35
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:81
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:107
 msgid "Add sync property rule"
 msgstr "Regel für Synchronisationseigenschaft hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:35
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:53
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:168
+#, php-format
+msgid "Add sync property: %s"
+msgstr "Synchronisationseigenschaft hinzufügen: %s"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:31
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:61
 msgid "Add sync rule"
 msgstr "Synchronisationsregel hinzufügen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:252
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1317
+msgid "Additional notes for this object"
+msgstr "Weitere Notizen zu diesem Objekt"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1370
+msgid "Additional properties"
+msgstr "Weitere Eigenschaften"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:251
 msgid "All custom variables (vars)"
 msgstr "Alle benutzerdefinierten Variablen (vars)"
 
@@ -301,7 +355,7 @@ msgid "Allow to use only these db resources (comma separated list)"
 msgstr ""
 "Nur die Verwendung dieser DB Ressourcen erlauben (kommaseparierte Liste)"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:170
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:191
 msgid ""
 "Alternative name for this host. Might be a host alias or and kind of string "
 "helping your users to identify this host"
@@ -309,7 +363,7 @@ msgstr ""
 "Alternativer Name für diesen Host. Kann ein Alias oder jede Zeichenkette "
 "sein, die Benutzern hilft, diesen Host zu identifizieren"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:92
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:95
 msgid ""
 "Alternative name for this user. In case your object name is a username, this "
 "could be the full name of the corresponding person"
@@ -318,7 +372,35 @@ msgstr ""
 "Benutzername ist, könnte hier der vollständige Name der betreffenden Person "
 "hinterlegt werden"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1121
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1351
+msgid "Alternative text to be shown in case above icon is missing"
+msgstr "Alternativer Text der angezeigt werden soll, falls obiges Icon fehlt"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1333
+msgid ""
+"An URL leading to additional actions for this object. Often used with Icinga "
+"Classic, rarely with Icinga Web 2 as it provides far better possibilities to "
+"integrate addons"
+msgstr ""
+"Eine URL zu weiteren Aktionen für dieses Objekt. Wird oft mit Icinga "
+"Classic, jedoch selten mit Icinga Web 2 genutzt, da dieses viel bessere "
+"Möglichkeiten zur Integration von Addons bietet"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1326
+msgid "An URL pointing to additional notes for this object"
+msgstr "Eine URL zu Notizen für dieses Objekt"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1342
+msgid ""
+"An URL pointing to an icon for this object. Try \"tux.png\" for icons "
+"relative to public/img/icons or \"cloud\" (no extension) for items from the "
+"Icinga icon font"
+msgstr ""
+"Eine URL zu einem Icon für dieses Objekt. \"tux.png\" für Icons relativ zu "
+"public/img/icons oder \"cloud\" (ohne Erweiterung) für Objekte aus dem "
+"Icinga Icon-Fundus"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1158
 msgid ""
 "An alternative display name for this group. If you wonder how this could be "
 "helpful just leave it blank"
@@ -345,7 +427,7 @@ msgstr ""
 msgid "Any first (leftmost) component"
 msgstr "Beliebige erste (linkeste) Komponente"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:99
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:104
 msgid "Api users"
 msgstr "Api Benutzer"
 
@@ -354,15 +436,24 @@ msgstr "Api Benutzer"
 msgid "Apply \"%s\""
 msgstr "Apply \"%s\""
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1023
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:60
+msgid "Apply changes"
+msgstr "Änderungen anwenden"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1060
 msgid "Apply rule"
 msgstr "Apply Regel"
 
+#: /usr/share/icingaweb2/modules/director/application/forms/ApplyMigrationsForm.php:15
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:27
 msgid "Apply schema migrations"
 msgstr "Schema-Migrations-Scripte anwenden"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:128
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:48
+msgid "Apply to"
+msgstr "Anwenden auf"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:112
 #, php-format
 msgid "Apply: %s"
 msgstr "Apply: %s"
@@ -379,58 +470,70 @@ msgstr "Argument Makros"
 msgid "Argument name"
 msgstr "Argumentname"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:258
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:257
 msgid "Arguments"
 msgstr "Argumente"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaAssignServiceToHostForm.php:78
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationAssignmentForm.php:83
 msgid "Assign"
 msgstr "Assign"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:98
-msgid "Audit log"
-msgstr "Revisionsaufzeichnung"
-
-#: /usr/share/icingaweb2/modules/director/application/tables/ActivityLogTable.php:62
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:33
 msgid "Author"
 msgstr "Autor"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:27
+#: /usr/share/icingaweb2/modules/director/configuration.php:40
+msgid "Automation"
+msgstr "Automatisierung"
+
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaObjectFieldForm.php:111
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:27
 msgid "Caption"
 msgstr "Überschrift"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1136
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1173
 msgid "Check command"
 msgstr "Check-Kommando"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:157
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1137
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:192
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1174
 msgid "Check command definition"
 msgstr "Check-Kommandodefinition"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:146
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:147
 msgid "Check execution"
 msgstr "Check-Ausführung"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1156
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportCheckForm.php:25
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncCheckForm.php:23
+msgid "Check for changes"
+msgstr "Auf Änderungen prüfen"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1193
 msgid "Check interval"
 msgstr "Check-Intervall"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1190
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1227
 msgid "Check period"
 msgstr "Checkzeitraum"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:62
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportCheckForm.php:48
+msgid "Checking this Import Source failed"
+msgstr "Überprüfen dieser Importquelle fehlgeschlagen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncCheckForm.php:63
+msgid "Checking this sync rule failed"
+msgstr "Überprüfen dieser Synchronisationsregel fehlgeschlagen"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:74
 msgid "Checksum"
 msgstr "Prüfsumme"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:33
-msgid "Choose a object type"
+msgid "Choose an object type"
 msgstr "Einen Objekttyp auswählen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:111
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:157
 msgid "Choose the host this single service should be assigned to"
 msgstr "Host wählen, dem dieser einzelne Service zugewiesen werden soll"
 
@@ -438,7 +541,7 @@ msgstr "Host wählen, dem dieser einzelne Service zugewiesen werden soll"
 msgid "Chose an (optional) parent zone"
 msgstr "Eine (optionale) Elternzone auswählen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:164
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:169
 msgid "Clone"
 msgstr "Klonen"
 
@@ -447,7 +550,7 @@ msgstr "Klonen"
 msgid "Clone \"%s\""
 msgstr "Klone \"%s\""
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:209
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:214
 #, php-format
 msgid "Clone Icinga %s"
 msgstr "Klone Icinga %s"
@@ -456,20 +559,25 @@ msgstr "Klone Icinga %s"
 msgid "Clone the object as is, preserving imports"
 msgstr "Objekt vollständig unter Erhalt der Vererbung klonen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1062
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1099
 msgid "Cluster Zone"
 msgstr "Cluster Zone"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandForm.php:55
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:12
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaCommandTable.php:32
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1351
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1452
 msgid "Command"
 msgstr "Kommando"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/CommandController.php:25
-msgid "Command arguments"
-msgstr "Kommandoargumente"
+#: /usr/share/icingaweb2/modules/director/application/controllers/CommandController.php:26
+#, php-format
+msgid "Command arguments: %s"
+msgstr "Kommandoargumente: %s"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:82
+msgid "Command endpoint"
+msgstr "Kommandoendpunkt"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaCommandTable.php:33
 msgid "Command line"
@@ -483,12 +591,12 @@ msgstr "Kommandoname"
 msgid "Command type"
 msgstr "Kommandotyp"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:156
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:157
 msgid "Command-specific custom vars"
 msgstr "Kommandospezifische benutzerdefinierte Variablen"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:38
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:91
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:96
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceCoreApi.php:60
 msgid "Commands"
 msgstr "Kommandos"
@@ -501,30 +609,41 @@ msgstr "Bedingung (set_if)"
 msgid "Condition format"
 msgstr "Bedingungsformat"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:113
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:209
 #: /usr/share/icingaweb2/modules/director/application/controllers/DeploymentController.php:31
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:114
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:260
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobController.php:82
 msgid "Config"
 msgstr "Konfiguration"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:97
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:102
 msgid "Config deployment"
 msgstr "Ausrollen der Konfiguration"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:78
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:79
 msgid "Config deployment failed"
 msgstr "Ausrollen der Konfiguration fehlgeschlagen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:152
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:180
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:183
+msgid "Config diff"
+msgstr "Konfigurationsunterschied"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:153
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:220
 #, php-format
 msgid "Config file \"%s\""
 msgstr "Konfigurationsdatei \"%s\""
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:68
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:69
 msgid "Config has been submitted, validation is going on"
 msgstr "Konfiguration wurde übergeben, Überprüfung ist im Gange"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:135
+#: /usr/share/icingaweb2/modules/director/configuration.php:43
+msgid "Config history"
+msgstr "Konfigurationshistorie"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:140
 #, php-format
 msgid "Config preview: %s"
 msgstr "Konfigurationsvorschau: %s"
@@ -533,13 +652,13 @@ msgstr "Konfigurationsvorschau: %s"
 msgid "Configs"
 msgstr "Konfigurationen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/IndexController.php:22
-#: /usr/share/icingaweb2/modules/director/application/controllers/IndexController.php:24
+#: /usr/share/icingaweb2/modules/director/application/controllers/IndexController.php:26
+#: /usr/share/icingaweb2/modules/director/application/controllers/IndexController.php:28
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:32
 msgid "Configuration"
 msgstr "Konfiguration"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:261
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:264
 msgid "Configuration has been stored"
 msgstr "Konfiguration wurde gespeichert"
 
@@ -551,35 +670,44 @@ msgstr "Datenbankschema erstellen"
 msgid "Create immediately"
 msgstr "Sofort erstellen"
 
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncRunTable.php:55
+msgid "Created"
+msgstr "Erstellt"
+
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/StateFilterSet.php:26
 msgid "Critical"
 msgstr "Kritisch"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:239
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:238
 msgid "Custom expression"
 msgstr "Benutzerdefinierter Ausdruck"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:237
+#, php-format
+msgid "Custom fields: %s"
+msgstr "Benutzerdefinierte Felder: \"%s\""
 
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/TypeFilterSet.php:25
 msgid "Custom notification"
 msgstr "Benutzerdefinierte Benachrichtigung"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:136
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:137
 msgid "Custom properties"
 msgstr "Benutzerdefinierte Eigenschaften"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:61
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:60
 msgid "Custom variable"
 msgstr "Benutzerdefinierte Variable"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:251
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:250
 msgid "Custom variable (vars.)"
 msgstr "Benutzerdefinierte Variable (vars.)"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Objects/IcingaHost.php:128
+#: /usr/share/icingaweb2/modules/director/library/Director/Objects/IcingaHost.php:129
 msgid "Custom variables"
 msgstr "Benutzerdefinierte Variablen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:190
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:192
 msgid "DB Resource"
 msgstr "Datenbankressource"
 
@@ -599,7 +727,7 @@ msgstr ""
 "Datenfelder erlauben das Anpassen der Eingabekontrollen von "
 "benutzerdefinierten Variablen."
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:107
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:113
 msgid "Data fields make sure that configuration fits your rules"
 msgstr ""
 "Datenfelder sorgen dafür, dass die Konfiguration in vorgegebene Regeln passt."
@@ -637,7 +765,7 @@ msgstr ""
 msgid "Data type"
 msgstr "Datentyp"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:231
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:234
 msgid "Database backend"
 msgstr "Datenbankbackend"
 
@@ -654,36 +782,51 @@ msgstr "Datum"
 msgid "Day(s)"
 msgstr "Tag(e)"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:104
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:109
 msgid "Define and manage imports from various data sources"
 msgstr "Definiert und verwaltet Importe von diversen Datenquellen"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:107
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:113
 msgid "Define data fields"
 msgstr "Datenfelder definieren"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:105
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:110
 msgid "Define how imported data should be synchronized with Icinga"
 msgstr ""
 "Definieren, wie importierte Daten mit Icinga synchronisiert werden sollen"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:88
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:41
+msgid ""
+"Define what should happen when an object with a matching key already exists. "
+"You could merge it's properties (import source wins), replace it completely "
+"with the imported object or ignore it (helpful for one-time imports)"
+msgstr ""
+"Angeben, was geschehen soll wenn ein Objekt mit gleichem Schlüssel bereits "
+"existiert. Die Eigenschaften können zusammengeführt (Importquelle gewinnt), "
+"durch das importierte Objekt ersetzt oder ignoriert (hilfreich für einmalige "
+"Importe) werden"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:93
 msgid "Define whatever you want to be monitored"
 msgstr "Angeben, was überwacht werden soll"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1178
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1215
 msgid "Defines after how many check attempts a new hard state is reached"
 msgstr ""
 "Legt fest, nach wie vielen Versuchen ein neuer Hard State erreicht wird"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:107
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:142
 msgid "Delay unless the first notification should be sent"
 msgstr "Verzögerung bis die erste Benachrichtigung verschickt werden soll"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaObjectFieldForm.php:144
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:848
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:887
 msgid "Delete"
 msgstr "Löschen"
+
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncRunTable.php:57
+msgid "Deleted"
+msgstr "Gelöscht"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierSplit.php:13
 msgid "Delimiter"
@@ -693,18 +836,22 @@ msgstr "Trenner"
 msgid "Deploy"
 msgstr "Ausbringen"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:96
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:101
 msgid "Deploy configuration to your Icinga nodes"
 msgstr "Konfiguration auf Icinga Knoten ausbringen"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:178
+msgid "Deploy modified config"
+msgstr "Veränderte Konfiguration ausbringen"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/config/show.phtml:7
 msgid "Deploy to master"
 msgstr "Auf den Master ausbringen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:104
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:200
 #: /usr/share/icingaweb2/modules/director/application/controllers/DeploymentController.php:25
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:97
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:105
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:251
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:102
 msgid "Deployment"
 msgstr "Deployment"
 
@@ -716,18 +863,14 @@ msgstr "Deployment Details"
 msgid "Deployment time"
 msgstr "Deployment Zeit"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:34
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:181
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:35
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:238
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:98
 msgid "Deployments"
 msgstr "Deployments"
 
-#: /usr/share/icingaweb2/modules/director/configuration.php:43
-msgid "Deployments / History"
-msgstr "Deployments / Historie"
-
-#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:33
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaObjectFieldForm.php:119
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:33
 msgid "Description"
 msgstr "Beschreibung"
 
@@ -735,7 +878,7 @@ msgstr "Beschreibung"
 msgid "Destination"
 msgstr "Ziel"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:42
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:41
 msgid "Destination Field"
 msgstr "Zielfeld"
 
@@ -743,15 +886,20 @@ msgstr "Zielfeld"
 msgid "Diff"
 msgstr "Diff"
 
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:28
+msgid "Diff with other config"
+msgstr "Mit anderer Konfiguration vergleichen"
+
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:66
 msgid "Director database schema has not been created yet"
 msgstr "Datenbankschema für Director wurde noch nicht erstellt"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1107
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:35
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1144
 msgid "Disabled"
 msgstr "Deaktiviert"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1108
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1145
 msgid "Disabled objects will not be deployed"
 msgstr "Deaktivierte Objekte werden nicht ausgebracht"
 
@@ -760,16 +908,16 @@ msgstr "Deaktivierte Objekte werden nicht ausgebracht"
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaServiceGroupTable.php:33
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaTimePeriodTable.php:32
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaUserGroupTable.php:33
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1119
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1156
 msgid "Display Name"
 msgstr "Anzeigename"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:168
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:90
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:189
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:93
 msgid "Display name"
 msgstr "Anzeigename"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:103
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:108
 msgid "Do more with your data"
 msgstr "Mehr mit Daten anfangen"
 
@@ -790,18 +938,15 @@ msgid "Downtime starts"
 msgstr "Downtime startet"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:50
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/syncRunDetails.phtml:7
 msgid "Duration"
 msgstr "Dauer"
-
-#: /usr/share/icingaweb2/modules/director/application/controllers/DatalistentryController.php:31
-msgid "Edit entry"
-msgstr "Eintrag bearbeiten"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/DatafieldController.php:28
 msgid "Edit field"
 msgstr "Feld bearbeiten"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:95
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:49
 msgid "Edit import source"
 msgstr "Importquelle bearbeiten"
 
@@ -815,18 +960,12 @@ msgstr "Liste bearbeiten"
 msgid "Edit sync property rule"
 msgstr "Synchronisationseigenschaftsregel bearbeiten"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:42
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:88
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:132
-msgid "Edit sync rule"
-msgstr "Synchronisationsregel bearbeiten"
-
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:31
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:33
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaUserTable.php:39
 msgid "Email"
 msgstr "E-Mail"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1220
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1257
 msgid "Enable event handler"
 msgstr "Eventhandler aktivieren"
 
@@ -837,7 +976,7 @@ msgstr "Eventhandler aktivieren"
 msgid "Endpoint"
 msgstr "Endpunkt"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:86
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:90
 msgid "Endpoint Name"
 msgstr "Name des Endpunkts"
 
@@ -850,7 +989,7 @@ msgid "Endpoint template name"
 msgstr "Name der Endpunktsvorlage"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaZoneTable.php:39
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:100
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:105
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceCoreApi.php:61
 msgid "Endpoints"
 msgstr "Endpunkte"
@@ -859,22 +998,31 @@ msgstr "Endpunkte"
 msgid "Entries"
 msgstr "Einträge"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:65
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:66
 msgid "Establish connection"
 msgstr "Verbindung herstellen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1202
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1239
 msgid "Execute active checks"
 msgstr "Aktive Checks ausführen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:45
-#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:46
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:46
+msgid "Execution interval for this job, in seconds"
+msgstr "Ausführungsintervall dieses Auftrags, in Sekunden"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:48
+#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:49
 msgid "Expression"
 msgstr "Ausdruck"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:77
 msgid "Failed"
 msgstr "Fehlgeschlagen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaImportObjectForm.php:41
+#, php-format
+msgid "Failed to import %s \"%s\""
+msgstr "Import von %s fehlgeschlagen \"%s\""
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaObjectFieldForm.php:147
 msgid "Field has been removed"
@@ -890,11 +1038,12 @@ msgstr "Feldname"
 msgid "Field type"
 msgstr "Feldtyp"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:62
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:60
 msgid "Fields"
 msgstr "Felder"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/GeneratedConfigFileTable.php:54
+#: /usr/share/icingaweb2/modules/director/application/tables/ConfigFileDiffTable.php:66
 msgid "File"
 msgstr "Datei"
 
@@ -902,16 +1051,12 @@ msgstr "Datei"
 msgid "Filter"
 msgstr "Filter"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:150
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:60
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:69
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:149
 msgid "Filter Expression"
 msgstr "Filterausdruck"
 
-#: /usr/share/icingaweb2/modules/director/application/tables/IcingaObjectAssignmentTable.php:42
-msgid "Filter string"
-msgstr "Filterzeichenkette"
-
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:105
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:140
 msgid "First notification delay"
 msgstr "Verzögerung der ersten Benachrichtigung"
 
@@ -931,8 +1076,12 @@ msgstr "Flapping beginnt"
 msgid "Flatten all inherited properties, strip imports"
 msgstr "Alle vererbten Eigenschaften flach machen, Importierte entfernen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:344
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:369
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:164
+msgid "Force rendering"
+msgstr "Erstellen erzwingen"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:352
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:377
 msgid "Form has successfully been sent"
 msgstr "Formular wurde erfolgreich abgeschickt"
 
@@ -945,7 +1094,7 @@ msgstr "Format"
 msgid "Former object"
 msgstr "Vorheriges Objekt"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:99
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:100
 msgid "Generated config"
 msgstr "Erzeugte Konfiguration"
 
@@ -961,37 +1110,43 @@ msgstr "Globale Zone"
 msgid "Glue"
 msgstr "Kleben"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:261
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:190
+msgid "Grace period"
+msgstr "Gnadenfrist"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:260
 msgid "Group membership"
 msgstr "Gruppenmitgliedschaft"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:124
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:125
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:70
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:145
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:171
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:73
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:52
 msgid "Groups"
 msgstr "Gruppen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/InspectController.php:24
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:52
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:168
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:231
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:53
 msgid "History"
 msgstr "Historie"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:21
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostVarForm.php:15
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:107
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:14
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:153
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaEndpointTable.php:51
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostVarTable.php:32
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1348
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1449
 msgid "Host"
 msgstr "Host"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:146
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:167
 msgid "Host address"
 msgstr "Hostadresse"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:148
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:169
 msgid ""
 "Host address. Usually an IPv4 address, but may be any kind of address your "
 "check plugin is able to deal with"
@@ -1003,11 +1158,11 @@ msgstr ""
 msgid "Host configs"
 msgstr "Host-Konfigurationen"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:89
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:94
 msgid "Host objects"
 msgstr "Hostobjekte"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Objects/IcingaHost.php:127
+#: /usr/share/icingaweb2/modules/director/library/Director/Objects/IcingaHost.php:128
 msgid "Host properties"
 msgstr "Hosteigenschaften"
 
@@ -1021,7 +1176,7 @@ msgstr "Hostgruppe"
 msgid "Hostgroups"
 msgstr "Hostgruppen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:128
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:149
 msgid ""
 "Hostgroups that should be directly assigned to this node. Hostgroups can be "
 "useful for various reasons. You might assign service checks based on "
@@ -1043,7 +1198,8 @@ msgid "Hostname"
 msgstr "Hostname"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:36
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:179
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:55
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:225
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/StateFilterSet.php:19
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceCoreApi.php:62
 msgid "Hosts"
@@ -1053,7 +1209,7 @@ msgstr "Hosts"
 msgid "IP address / hostname of remote node"
 msgstr "IP Adresse / Hostname des entfernten Knoten"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:98
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:102
 msgid ""
 "IP address / hostname of your Icinga node. Please note that this information "
 "will only be used for the very first connection to your Icinga instance. The "
@@ -1069,7 +1225,7 @@ msgstr ""
 "Eigenschaft entweder eine IP Adresse oder einen auflösbaren Hostname "
 "enthält. Der Director muss diesen Endpunkt erreichen können"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:154
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:175
 msgid "IPv6 address"
 msgstr "IPv6 Adresse"
 
@@ -1077,8 +1233,8 @@ msgstr "IPv6 Adresse"
 msgid "Icinga "
 msgstr "Icinga "
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:91
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:169
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:112
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:215
 msgid "Icinga Agent and zone settings"
 msgstr "Icinga Agenten- und Zoneneinstellungen"
 
@@ -1091,15 +1247,15 @@ msgstr "Icinga-DSL"
 msgid "Icinga Director"
 msgstr "Icinga-Director"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:96
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:100
 msgid "Icinga Host"
 msgstr "Icinga-Host"
 
-#: /usr/share/icingaweb2/modules/director/application/tables/DeploymentLogTable.php:76
+#: /usr/share/icingaweb2/modules/director/application/tables/DeploymentLogTable.php:83
 msgid "Icinga Node"
 msgstr "Icinga-Knoten"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1064
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1101
 msgid ""
 "Icinga cluster zone. Allows to manually override Directors decisions of "
 "where to deploy your config to. You should consider not doing so unless you "
@@ -1137,7 +1293,7 @@ msgstr "Icinga-Objektname für diese Servicegruppe"
 msgid "Icinga object name for this user group"
 msgstr "Icinga-Objektname für diese Benutzergruppe"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:56
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:57
 msgid "Icinga2 Agent"
 msgstr "Icinga-2-Agent"
 
@@ -1146,33 +1302,43 @@ msgstr "Icinga-2-Agent"
 msgid "Icinga2 Objects: %s"
 msgstr "Icinga-2-Objekte: %s"
 
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1340
+msgid "Icon image"
+msgstr "Icon Bild"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1349
+msgid "Icon image alt"
+msgstr "Icon Bild alternativ"
+
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandForm.php:49
 msgid "Identifier for the Icinga command you are going to create"
 msgstr "Bezeichner für das Icinga-Kommando, das erstellt werden soll"
 
-#: /usr/share/icingaweb2/modules/director/configuration.php:40
-msgid "Import / Sync"
-msgstr "Import / Synchronisierung"
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:50
+msgid "Ignore"
+msgstr "Ignorieren"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:104
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:109
 msgid "Import data sources"
 msgstr "Import-Datenquellen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:146
-msgid "Import history"
-msgstr "Importhistorie"
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaImportObjectForm.php:25
+#, php-format
+msgid "Import external \"%s\""
+msgstr "Externe \"%s\" importieren"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportrunController.php:11
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportrunController.php:12
 msgid "Import run"
 msgstr "Importlauf"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:27
-msgid "Import runs"
-msgstr "Importläufe"
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:109
+msgid "Import run history"
+msgstr "Importlaufhistorie"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:149
-#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:20
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:159
+#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:22
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:140
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:46
 msgid "Import source"
 msgstr "Importquelle"
 
@@ -1180,12 +1346,17 @@ msgstr "Importquelle"
 msgid "Import source name"
 msgstr "Name der Importquelle"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:51
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:68
 #, php-format
 msgid "Import source preview: \"%s\""
 msgstr "Vorschau der Importquelle: \"%s\""
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1085
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:20
+#, php-format
+msgid "Import source: %s"
+msgstr "Importquelle: %s"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1122
 msgid ""
 "Importable templates, add as many as you want. Please note that order "
 "matters when importing properties from multiple templates: last one wins"
@@ -1194,16 +1365,35 @@ msgstr ""
 "Reihenfolge wichtig ist, wenn Eigenschaften von mehreren Vorlagen geerbt "
 "werden: Der letzte Eintrag gewinnt"
 
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportRunForm.php:35
+msgid "Imported new data from this Import Source"
+msgstr "Neue Daten von dieser Import-Datenquelle importiert"
+
 #: /usr/share/icingaweb2/modules/director/application/tables/ImportrunTable.php:42
 msgid "Imported rows"
 msgstr "Importierte Reihen"
 
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaImportObjectForm.php:15
+msgid ""
+"Importing an object means that it's type will change from \"external\" to "
+"\"object\". That way it will make part of the next deployment. So in case "
+"you imported this object from your Icinga node make sure to remove it from "
+"your local configuration before issueing the next deployment. In case of a "
+"conflict nothing bad will happen, just your config won't deploy."
+msgstr ""
+"Ein Objekt zu importieren bedeutet, dass es von einem \"externen Objekt\" zu "
+"einem \"Objekt\" verändert wird. Damit wird es mit der nächsten "
+"Konfiguration ausgerollt. Falls dieses Objekt aus dem Icinga Knoten "
+"importiert wurde, muss es aus vor dem nächsten Ausrollen aus der lokalen "
+"Konfiguration entfernt werden. Sollte ein Konflikt auftreten, geschieht "
+"nichts weiter, als dass die Konfiguration nicht ausgerollt werden kann."
+
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostTable.php:42
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1083
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1120
 msgid "Imports"
 msgstr "Importe"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:255
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:254
 msgid "Inheritance (import)"
 msgstr "Vererbung (Import)"
 
@@ -1215,6 +1405,57 @@ msgstr "Inspizieren"
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandForm.php:25
 msgid "Internal commands"
 msgstr "Interne Kommandos"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:53
+#, php-format
+msgid "It has been renamed since then, it's former name was %s"
+msgstr "Es wurde seither umbenannt. Sein bisheriger Name war %s"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:9
+msgid ""
+"It's currently unknown whether we are in sync with this Import Source. You "
+"should either check for changes or trigger a new Import Run."
+msgstr ""
+"Aktuell ist unbekannt ob die Konfiguration mit dieser Importquelle synchron "
+"ist. Es sollte auf Änderungen geprüft oder ein neuer Importlauf angestoßen "
+"werden."
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:14
+msgid ""
+"It's currently unknown whether we are in sync with this rule. You should "
+"either check for changes or trigger a new Sync Run."
+msgstr ""
+"Aktuell ist unbekannt, ob die Konfiguration mit dieser Regel synchron ist. "
+"Es sollte auf Änderungen geprüft oder ein neuer Importlauf angestoßen werden."
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobController.php:78
+msgid "Job"
+msgstr "Auftrag"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobController.php:60
+#, php-format
+msgid "Job %s"
+msgstr "Auftrag %s"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:15
+msgid "Job Type"
+msgstr "Auftragstyp"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:70
+#: /usr/share/icingaweb2/modules/director/application/tables/JobTable.php:64
+msgid "Job name"
+msgstr "Auftragsname"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobController.php:27
+#, php-format
+msgid "Job: %s"
+msgstr "Auftrag: %s"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/JobsController.php:12
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:111
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:152
+msgid "Jobs"
+msgstr "Aufträge"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:31
 msgid "Keep the DN as is"
@@ -1233,7 +1474,7 @@ msgstr "Schlüssel"
 msgid "Key column name"
 msgstr "Schlüsselspaltenname"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:248
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:251
 msgid "Kickstart wizard"
 msgstr "Kickstart Assistent"
 
@@ -1247,14 +1488,18 @@ msgstr "LDAP Suchbasis"
 msgid "Label"
 msgstr "Bezeichnung"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:116
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:151
 msgid "Last notification"
 msgstr "Letzte Benachrichtigung"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:23
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/config/show.phtml:16
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:23
 msgid "Last related activity"
-msgstr "Letzte verwandte Aktivität"
+msgstr "Zuletzt verwendete Konfiguration"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:49
+msgid "Last sync run details"
+msgstr "Details des letzten Imports"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:63
 msgid ""
@@ -1286,9 +1531,9 @@ msgstr "Listenname"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:41
 msgid "Log Duration"
-msgstr "Dauer aufzeichnen"
+msgstr "Behaltefrist des Logs"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:499
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:515
 msgid "Main properties"
 msgstr "Haupteigenschaften"
 
@@ -1297,11 +1542,15 @@ msgstr "Haupteigenschaften"
 msgid "Mandatory"
 msgstr "Pflicht"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1176
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1213
 msgid "Max check attempts"
 msgstr "Maximale Checkwiederholungen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:164
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:48
+msgid "Merge"
+msgstr "Zusammenführen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:163
 msgid "Merge Policy"
 msgstr "Zusammenführungsrichtlinie"
 
@@ -1313,20 +1562,29 @@ msgstr ""
 "z.B. monday, tuesday, 2016-01-28 - Mehr Beispiele finden sich in der "
 "Dokumentation"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:134
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncRunTable.php:56
+msgid "Modified"
+msgstr "Geändert"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:144
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportRowModifierForm.php:37
 msgid "Modifier"
 msgstr "Modifikator"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:152
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:165
 msgid "Modifiers"
 msgstr "Modifikatoren"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:162
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:223
+msgid "Modify"
+msgstr "Ändere"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatalistentryForm.php:40
 msgid "Modify data list entry"
 msgstr "Datenlisteneintrag verändern"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:90
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:95
 msgid "Monitored Services"
 msgstr "Überwachte Services"
 
@@ -1344,8 +1602,8 @@ msgstr "MySQL Schema"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaApiUserForm.php:14
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostVarForm.php:22
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:92
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceVarForm.php:22
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:139
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostVarTable.php:33
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaServiceVarTable.php:33
 msgid "Name"
@@ -1359,7 +1617,7 @@ msgstr "Name der Icinga-Endpunkt-Vorlage, die erstellt werden soll"
 msgid "Name for the Icinga endpoint you are going to create"
 msgstr "Name des Icinga-Endpunkt, der erstellt werden soll"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:95
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:142
 msgid "Name for the Icinga service you are going to create"
 msgstr "Name des Icinga-Service, der erstellt werden soll"
 
@@ -1375,16 +1633,25 @@ msgstr "Name der Icinga-Zeitraum-Vorlage, die erstellt werden soll"
 msgid "Name for the Icinga zone you are going to create"
 msgstr "Name der Icinga-Zone, die erstellt werden soll"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:161
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:177
 msgid "New import source"
 msgstr "Neue Importquelle"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCloneObjectForm.php:15
+msgid "New name"
+msgstr "Neuer Name"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:51
 msgid "New object"
 msgstr "Neues Objekt"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaZoneForm.php:29
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:670
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:64
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:707
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:173
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:185
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:68
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:70
 msgid "No"
 msgstr "Nein"
 
@@ -1398,17 +1665,21 @@ msgid "No API user configured, you might run the kickstart helper"
 msgstr ""
 "Kein API Benutzer konfiguriert. Der kickstart helper sollte ausgeführt werden"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:122
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaTimePeriodRangeForm.php:70
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:619
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:122
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:656
 msgid "No action taken, object has not been modified"
 msgstr "Keine Aktion durchgeführt, das Objekt wurde nicht verändert"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/runSummary.phtml:4
+msgid "No changes have been made"
+msgstr "Keine Änderungen wurden gemacht"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:55
 msgid "No database has been configured for Icinga Director"
 msgstr "Keine Datenbank für den Icinga-Director wurde konfiguriert"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:183
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:185
 msgid ""
 "No database resource has been configured yet. Please choose a resource to "
 "complete your config"
@@ -1416,7 +1687,7 @@ msgstr ""
 "Es wurde bisher keine Datenbankressource konfiguriert. Bitte eine Ressource "
 "auswählen, um die Konfiguration zu vervollständigen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:39
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:40
 msgid "No database schema has been created yet"
 msgstr "Kein Datenbankschema wurde bisher erstellt"
 
@@ -1428,24 +1699,49 @@ msgstr "Kein Objekt gefunden"
 msgid "No object has been defined yet"
 msgstr "Kein Objekt wurde bisher definiert"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:100
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:105
 msgid "None could be used for deployments right now"
 msgstr "Keines kann momentan zum Ausbringen verwendet werden"
 
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1315
+msgid "Notes"
+msgstr "Notizen"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1324
+msgid "Notes URL"
+msgstr "Notizen-URL"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRunForm.php:40
+msgid "Nothing changed, rule is in sync"
+msgstr "Keine Änderung, Regel ist synchron"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportCheckForm.php:41
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportRunForm.php:41
+msgid ""
+"Nothing to do, data provided by this Import Source didn't change since the "
+"last import run"
+msgstr ""
+"Keine Aktion nötig. Die Daten von dieser Importquelle haben sich seit dem "
+"letzten Lauf nicht geändert"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncCheckForm.php:59
+msgid "Nothing would change, this rule is still in sync"
+msgstr "Es würde sich nichts ändern, diese Regel ist noch synchron"
+
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:18
-#: /usr/share/icingaweb2/modules/director/application/tables/IcingaNotificationTable.php:31
+#: /usr/share/icingaweb2/modules/director/application/tables/IcingaNotificationTable.php:36
 msgid "Notification"
 msgstr "Benachrichtigung"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:156
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:191
 msgid "Notification command"
 msgstr "Benachrichtigungskommando"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:87
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:122
 msgid "Notification interval"
 msgstr "Benachrichtigungsintervall"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:93
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:98
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
@@ -1453,8 +1749,8 @@ msgstr "Benachrichtigungen"
 msgid "OK"
 msgstr "Ok"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1014
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1019
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1051
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1056
 msgid "Object"
 msgstr "Objekt"
 
@@ -1474,13 +1770,13 @@ msgstr "Objekt wurde wiederhergestellt"
 msgid "Object name"
 msgstr "Objektname"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:286
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:285
 msgid "Object properties"
 msgstr "Objekteigenschaften"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaTimePeriodForm.php:13
-#: /usr/share/icingaweb2/modules/director/application/tables/SyncruleTable.php:74
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1027
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncruleTable.php:50
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1064
 msgid "Object type"
 msgstr "Objekttyp"
 
@@ -1504,6 +1800,10 @@ msgstr "Ein externes Objekt wurde erstellt, es wird nicht ausgebracht"
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:28
 msgid "One object has been defined"
 msgstr "Ein Objekt wurde definiert"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/runSummary.phtml:7
+msgid "One object has been modified"
+msgstr "Ein Objekt wurde verändert"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierSplit.php:16
 msgid "One or more characters that should be used to split this string"
@@ -1536,7 +1836,7 @@ msgstr ""
 "Nur setzen, wenn der Wert des Arguments numereisch ist. Zeichenketten als "
 "Wert werden nicht unterstützt"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:30
+#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:33
 msgid "Operator"
 msgstr "Operator"
 
@@ -1556,11 +1856,15 @@ msgstr ""
 msgid "Other available fields"
 msgstr "Andere verfügbare Felder"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:230
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:229
 msgid "Other sources"
 msgstr "Andere Quellen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/IndexController.php:30
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:79
+msgid "Override vars"
+msgstr "Variablen überschreiben"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/IndexController.php:34
 msgid "Overview"
 msgstr "Überblick"
 
@@ -1568,7 +1872,7 @@ msgstr "Überblick"
 msgid "Owner"
 msgstr "Besitzer"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:36
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:38
 msgid "Pager"
 msgstr "Pager"
 
@@ -1577,9 +1881,14 @@ msgid "Parent Zone"
 msgstr "Übergeordnete Zone"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaApiUserForm.php:19
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:128
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:132
 msgid "Password"
 msgstr "Passwort"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/ApplyMigrationsForm.php:22
+msgid "Pending database schema migrations have successfully been applied"
+msgstr ""
+"Ausstehende Datenbankschemamigrationsskripte wurden erfolgreich angewandt"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Util.php:183
 msgid "Please ask an administrator to grant you access to resources"
@@ -1589,7 +1898,27 @@ msgstr "Zugriff auf Ressourcen kann durch Administrator gewährt werden"
 msgid "Please choose a data list that can be used for map lookups"
 msgstr "Eine Datenliste auswählen, die für Map lookups verwendet wird"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:201
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:48
+msgid ""
+"Please choose your import source that should be executed. You could create "
+"different schedules for different sources or also opt for running all of "
+"them at once."
+msgstr ""
+"Eine Importquelle die ausgeführt werden soll auswählen. Es können "
+"verschiedene Zeitpläne für verschiedene Quellen erstellt oder alle "
+"gleichzeitig ausgeführt werden."
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:50
+msgid ""
+"Please choose your synchronization rule that should be executed. You could "
+"create different schedules for different rules or also opt for running all "
+"of them at once."
+msgstr ""
+"Eine Synchronisationsregel die ausgeführt werden soll auswählen. Es können "
+"verschiedene Zeitpläne für verschiedene Regeln erstellt oder alle "
+"gleichzeitig ausgeführt werden."
+
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:203
 #, php-format
 msgid "Please click %s to create new DB resources"
 msgstr "%s klicken, um neue Datenbankressourcen zu erstellen"
@@ -1599,15 +1928,13 @@ msgstr "%s klicken, um neue Datenbankressourcen zu erstellen"
 msgid "Please click %s to create new resources"
 msgstr "%s klicken, um neue Ressourcen zu erstellen"
 
-# Geschlecht kann leider nicht bestimmt werden -ThW
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:166
-#, php-format
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:169
 msgid ""
-"Please make sure that your database grants enough permissions and that you "
-"deployed the correct %s."
+"Please make sure that your database exists and your user has been granted "
+"enough permissions"
 msgstr ""
-"Überprüfen, ob die Datenbank genug Berechtigungen verleiht und der richtige "
-"%s ausgebracht wurde."
+"Überprüfen, ob die Datenbank existiert und der Benutzer ausreichende "
+"Berechtigungen hat"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:27
 msgid "Please provide a rule name"
@@ -1639,7 +1966,7 @@ msgid "Plugin commands"
 msgstr "Plugin-Kommandos"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:36
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:110
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:114
 msgid "Port"
 msgstr "Port"
 
@@ -1651,9 +1978,9 @@ msgstr "Position"
 msgid "PostgreSQL schema"
 msgstr "PostgreSQL Schema"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:155
 #: /usr/share/icingaweb2/modules/director/application/controllers/InspectController.php:20
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:48
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:171
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:49
 msgid "Preview"
 msgstr "Vorschau"
 
@@ -1665,43 +1992,36 @@ msgstr "Problem"
 msgid "Problem handling"
 msgstr "Problembehandlung"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1226
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1263
 msgid "Process performance data"
 msgstr "Performancedaten verarbeiten"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:48
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:90
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:137
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:143
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:225
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceLdap.php:67
 msgid "Properties"
 msgstr "Eigenschaften"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:25
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportRowModifierForm.php:22
+#: /usr/share/icingaweb2/modules/director/application/forms/AssignmentSubForm.php:28
 #: /usr/share/icingaweb2/modules/director/application/tables/PropertymodifierTable.php:36
 msgid "Property"
 msgstr "Eigenschaft"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:77
+#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:93
 msgid "Property modifiers"
 msgstr "Eigenschaftsmodifikatoren"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:106
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:112
 msgid "Provide data lists"
 msgstr "Datenlisten bereitstellen"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:106
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:112
 msgid "Provide data lists to make life easier for your users"
 msgstr "Datenlisten erleichtern Anwendern die Arbeit"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:50
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:55
 msgid "Purge"
 msgstr "Bereinigen"
-
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:51
-msgid "Purge existing values."
-msgstr "Existierende Werte bereinigen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/TimeperiodController.php:16
 msgid "Ranges"
@@ -1719,11 +2039,11 @@ msgstr "Erholung"
 msgid "Remove this entry"
 msgstr "Diesen Eintrag entfernen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:27
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:28
 msgid "Render config"
 msgstr "Konfiguration erstellen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:138
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:139
 msgid "Rendered file"
 msgstr "Erzeugte Datei"
 
@@ -1732,9 +2052,18 @@ msgstr "Erzeugte Datei"
 msgid "Rendered in %0.2fs, deployed in %0.2fs"
 msgstr "Erstellt in %0.2fs, ausgebracht in %0.2fs"
 
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:63
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:69
+msgid "Rendering"
+msgstr "Erstellen"
+
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:89
 msgid "Repeat key"
 msgstr "Schlüssel wiederholen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:49
+msgid "Replace"
+msgstr "Ersetzen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:97
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaObjectDatafieldTable.php:47
@@ -1745,11 +2074,11 @@ msgstr "Benötigt"
 msgid "Restore former object"
 msgstr "Vorheriges Objekt wiederherstellen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1165
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1202
 msgid "Retry interval"
 msgstr "Wiederholungsintervall"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1167
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1204
 msgid ""
 "Retry interval, will be applied after a state change unless the next hard "
 "state is reached"
@@ -1762,23 +2091,41 @@ msgid "Return lookup key unmodified"
 msgstr "Suchschlüssel unverändert zurück geben"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:26
-#: /usr/share/icingaweb2/modules/director/application/tables/SyncruleTable.php:73
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncRunTable.php:61
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncruleTable.php:49
 msgid "Rule name"
 msgstr "Regelname"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:42
-msgid "Run"
-msgstr "Ausführen"
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:84
+msgid "Run all imports at once"
+msgstr "Alle Importe gleichzeitig ausführen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:136
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:92
+msgid "Run all rules at once"
+msgstr "Alle Regeln gleichzeitig ausführen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:140
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:58
 msgid "Run import"
 msgstr "Import ausführen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:150
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:44
+msgid "Run interval"
+msgstr "Laufintervall"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:196
 msgid "Run on agent"
 msgstr "Auf Agent ausführen"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:93
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:111
+msgid ""
+"Schedule and automate Import, Syncronization, Config Deployment, "
+"Housekeeping and more"
+msgstr ""
+"Import, Synchronisation, Ausrollen der Konfiguration, Bereinigung und mehr "
+"planen und automatisieren"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:98
 msgid "Schedule your notifications."
 msgstr "Benachrichtigungen planen."
 
@@ -1786,8 +2133,8 @@ msgstr "Benachrichtigungen planen."
 msgid "Search..."
 msgstr "Suchen..."
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:54
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1214
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:57
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1251
 msgid "Send notifications"
 msgstr "Benachrichtigungen senden"
 
@@ -1798,7 +2145,7 @@ msgstr "Senden an"
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceVarForm.php:15
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:15
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaServiceVarTable.php:32
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1349
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1450
 msgid "Service"
 msgstr "Service"
 
@@ -1806,7 +2153,7 @@ msgstr "Service"
 msgid "Service configs"
 msgstr "Servicekonfigurationen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:129
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:175
 msgid ""
 "Service groups that should be directly assigned to this service. "
 "Servicegroups can be useful for various reasons. They are helpful to "
@@ -1827,23 +2174,24 @@ msgid "Servicegroup"
 msgstr "Servicegruppe"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaAppliedServiceTable.php:45
-#: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostServiceTable.php:51
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaServiceTable.php:80
+#: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostServiceTable.php:59
 msgid "Servicename"
 msgstr "Servicename"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:37
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:53
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:56
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/StateFilterSet.php:23
 msgid "Services"
 msgstr "Services"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:65
+#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:68
 #, php-format
 msgid "Services: %s"
 msgstr "Services: %s"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:131
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:130
 msgid "Set based on filter"
 msgstr "Basierend auf Filter setzen"
 
@@ -1856,15 +2204,25 @@ msgstr "Keinen Wert setzen (null)"
 msgid "Set null"
 msgstr "null setzen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:41
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:84
+msgid ""
+"Setting a command endpoint allows you to force host checks to be executed by "
+"a specific endpoint. Please carefully study the related Icinga documentation "
+"before using this feature"
+msgstr ""
+"Das Setzen eines Kommandoenpunkts erlaubt das Ausführen von Host-Checks auf "
+"einem bestimmten Endpoint. Bitte nicht verwenden, ohne die entsprechende "
+"Icinga-Dokumentation gelesen zu haben"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:44
 msgid "Show"
 msgstr "Zeigen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:115
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:114
 msgid "Show normal"
 msgstr "Normal anzeigen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:126
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:123
 msgid "Show resolved"
 msgstr "Aufgelöst anzeigen"
 
@@ -1877,16 +2235,16 @@ msgstr "Ungefiltert zeigen"
 msgid "Size"
 msgstr "Größe"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:196
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:195
 msgid "Source Column"
 msgstr "Quellspalte"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:96
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:109
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:95
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:108
 msgid "Source Expression"
 msgstr "Quellausdruck"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:32
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:31
 msgid "Source Name"
 msgstr "Quellenname"
 
@@ -1899,12 +2257,12 @@ msgid "Source field"
 msgstr "Quellenfeld"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/ImportrunTable.php:40
-#: /usr/share/icingaweb2/modules/director/application/tables/ImportsourceTable.php:36
 #: /usr/share/icingaweb2/modules/director/application/tables/SyncpropertyTable.php:41
+#: /usr/share/icingaweb2/modules/director/application/tables/ImportsourceTable.php:36
 msgid "Source name"
 msgstr "Quellenname"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:285
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:284
 msgid "Special properties"
 msgstr "Spezielle Eigenschaften"
 
@@ -1912,11 +2270,17 @@ msgstr "Spezielle Eigenschaften"
 msgid "Stage name"
 msgstr "Phasenname"
 
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncRunTable.php:54
+#: /usr/share/icingaweb2/modules/director/application/tables/SyncRunTable.php:62
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/syncRunDetails.phtml:3
+msgid "Start time"
+msgstr "Startzeit"
+
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:62
 msgid "Startup"
 msgstr "Start"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1304
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1405
 msgid "State and transition type filters"
 msgstr "Status- und Übergangstypen-Filter"
 
@@ -1924,15 +2288,15 @@ msgstr "Status- und Übergangstypen-Filter"
 msgid "State changes"
 msgstr "Zustandsänderungen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1278
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1379
 msgid "States"
 msgstr "Zustände"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:30
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/config/files.phtml:35
 msgid "Statistics"
 msgstr "Statistiken"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:461
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:476
 msgid "Store"
 msgstr "Speichern"
 
@@ -1942,11 +2306,11 @@ msgstr "Konfiguration speichern"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:32
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:71
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:436
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:451
 msgid "String"
 msgstr "Zeichenkette"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:154
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:158
 msgid "Submit"
 msgstr "Absenden"
 
@@ -1958,26 +2322,60 @@ msgstr "Gelungen"
 msgid "Suggested fields"
 msgstr "Vorgeschlagene Felder"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:95
-msgid "Sync properties: "
-msgstr "Synchronisationseigenschaften: "
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:162
+#, php-format
+msgid "Sync \"%s\": %s"
+msgstr "\"%s\": \"%s\" synchronisieren"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:151
-msgid "Sync property"
-msgstr "Synchronisationseigenschaft"
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:188
+msgid "Sync history"
+msgstr "Synchronisationshistorie"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:42
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:152
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:72
+#, php-format
+msgid ""
+"Sync only part of your imported objects with this rule. Icinga Web 2 filter "
+"syntax is allowed, so this could look as follows: %s"
+msgstr ""
+"Nur einen Teil der importierten Objekte mit dieser Regel synchronisieren. "
+"Die Icinga Web 2 Filter Syntax kann verwendet werden. z.B: %s"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:113
+msgid "Sync properties"
+msgstr "Synchronisationseigenschaften"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ListController.php:38
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:219
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:240
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:146
 msgid "Sync rule"
 msgstr "Synchronisationsregel"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:105
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:21
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:57
+#, php-format
+msgid "Sync rule: %s"
+msgstr "Synchronisationsregel: %s"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/history.phtml:13
+msgid "Sync run details"
+msgstr "Synchronisationslaufdetails"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRunForm.php:43
+msgid "Synchronization failed"
+msgstr "Synchronisation fehlgeschlagen"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:48
+msgid "Synchronization rule"
+msgstr "Synchronisationsregel"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:110
 msgid "Synchronize"
 msgstr "Synchronisieren"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:83
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1011
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1015
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:82
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1048
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1052
 msgid "Template"
 msgstr "Vorlage"
 
@@ -1985,21 +2383,49 @@ msgstr "Vorlage"
 msgid "Template tree"
 msgstr "Vorlagenbaum"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:178
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:224
 #: /usr/share/icingaweb2/modules/director/application/tables/GeneratedConfigFileTable.php:56
 msgid "Templates"
 msgstr "Vorlagen"
 
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:37
+msgid "The \"Import\" job allows to run import actions at regular intervals"
+msgstr ""
+"Der \"Import\" Auftrag erlaubt das Ausführen von Importen in regelmäßigen "
+"Abständen"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:39
+msgid "The \"Sync\" job allows to run sync actions at regular intervals"
+msgstr ""
+"Der \"Sync\" Auftrag erlaubt das Ausführen von Synchronisationen in "
+"regelmäßigen Abständen"
+
 # Geschlecht kann leider nicht bestimmt werden -Thw
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaTimePeriodRangeForm.php:59
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:610
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:647
 #, php-format
 msgid "The %s has successfully been stored"
 msgstr "Die %s wurde erfolgreich gespeichert"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:32
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:204
+msgid ""
+"The Config job allows you to generate and eventually deploy yourIcinga 2 "
+"configuration"
+msgstr ""
+"Der \"Konfiguration\" Auftrag erlaubt das Erstellen und Ausrollen der Icinga "
+"2 Konfiguration"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:34
 msgid "The Email address of the user."
 msgstr "Die E-Mail-Adresse des Benutzers."
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/HousekeepingJob.php:21
+msgid ""
+"The Housekeeping job provides various task that keep your Director database "
+"fast and clean"
+msgstr ""
+"Der \"Bereinigen\" Auftrag bietet verschiedene Aktionen, die die Director-"
+"Datenbank schnell und sauber halten"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceLdap.php:69
 msgid ""
@@ -2014,8 +2440,8 @@ msgstr ""
 msgid "The argument %s has successfully been stored"
 msgstr "Das Argument %s wurde erfolgreich gespeichert"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:29
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaObjectFieldForm.php:115
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:29
 msgid "The caption which should be displayed"
 msgstr "Die Beschriftung, die angezeigt werden soll"
 
@@ -2034,7 +2460,7 @@ msgstr ""
 "bedeutet, das aktuell keine Leerzeichen in Plugin-Namen und Pfaden "
 "unterstützt werden."
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:130
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:134
 msgid "The corresponding password"
 msgstr "Das entsprechende Passwort"
 
@@ -2050,7 +2476,7 @@ msgstr "Der erste (linkeste) CN"
 msgid "The first (leftmost) OU"
 msgstr "Die erste (linkeste) OU"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1281
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1382
 msgid "The host/service states you want to get notifications for"
 msgstr ""
 "Die Host/Service Stati, für die Benachrichtigungen versandt werden sollen"
@@ -2059,11 +2485,21 @@ msgstr ""
 msgid "The last (rightmost) OU"
 msgstr "Die letzte (rechteste) OU"
 
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/job/index.phtml:36
+#, php-format
+msgid "The last attempt failed at %s: %s"
+msgstr "Der letzte Versuch schlug um %s: %s fehl"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/job/index.phtml:31
+#, php-format
+msgid "The last attempt succeeded at %s"
+msgstr "Der letzte Versuch war um %s erfolgreich"
+
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:42
 msgid "The log duration time."
 msgstr "Die Dauer der Aufzeichnungen."
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:139
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:174
 msgid ""
 "The name of a time period which determines when this notification should be "
 "triggered. Not set by default."
@@ -2071,13 +2507,21 @@ msgstr ""
 "Der Name des Zeitraumes, der angibt, wann diese Benachrichtigung ausgelöst "
 "werden soll. Kein Default-Wert."
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1192
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1229
 msgid ""
 "The name of a time period which determines when this object should be "
 "monitored. Not limited by default."
 msgstr ""
 "Der Name des Zeitraumes, der angibt, wann dieses Objekt überwacht wird. "
 "Standardmäßig nicht eingeschränkt."
+
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:60
+msgid ""
+"The name of a time period within this job should be active. Supports only "
+"simple time periods (weekday and multiple time definitions)"
+msgstr ""
+"Der Name des Zeitraums innerhalb derer dieser Auftrag aktiv sein soll. "
+"Erlaubt nur einfache Zeiträume (Wochentag und mehrere Zeitangaben)"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostVarForm.php:16
 msgid "The name of the host"
@@ -2087,7 +2531,7 @@ msgstr "Der Name des Hosts"
 msgid "The name of the service"
 msgstr "Der Name des Service"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:89
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:124
 msgid ""
 "The notification interval (in seconds). This interval is used for active "
 "notifications. Defaults to 30 minutes. If set to 0, re-notifications are "
@@ -2097,7 +2541,19 @@ msgstr ""
 "aktive Benachrichtigungen verwendet. Default-Wert ist 30 Minuten. Wird er "
 "auf 0 gesetzt, sind Benachrichtungswiederholungen deaktiviert."
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:37
+#: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierBitmask.php:16
+msgid ""
+"The numeric bitmask you want to apply. In case you have a hexadecimal or "
+"binary mask please transform it to a deximal number first. The result of "
+"this modifier is a boolean value, telling whether the given mask applies to "
+"the numeric value in your source column"
+msgstr ""
+"Die numerische Bitmaske, die angelegt werden soll. Hexadezimale und binäre "
+"Masken müssen zuvor in eine dezimale Zahl umgewandelt werden. Das Ergebnis "
+"ist ein boole'scher Wert, der angibt, ob die Maske auf den numerischen Wert "
+"in der Quellspalte zutrifft"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:39
 msgid "The pager address of the user."
 msgstr "Die Pageradresse des Benutzers."
 
@@ -2113,7 +2569,7 @@ msgstr ""
 msgid "The port of the endpoint."
 msgstr "Der Port des Endpunkts"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:113
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:117
 msgid ""
 "The port you are going to use. The default port 5665 will be used if none is "
 "set"
@@ -2121,7 +2577,7 @@ msgstr ""
 "Der Port, der genutzt werden soll. Wird kein Wert gesetzt, gilt der Default-"
 "Wert 5665"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1289
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1390
 msgid "The state transition types you want to get notifications for"
 msgstr ""
 "Die Arten von Statusänderungen, für die Benachrichtigungen verschickt werden "
@@ -2158,8 +2614,28 @@ msgid ""
 msgstr ""
 "Es sind keine Datenfelder verfügbar. Ein Administrator kann welche anlegen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:50
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:25
+msgid ""
+"There are pending changes for this Import Source. You should trigger a new "
+"Import Run."
+msgstr ""
+"Es gibt ausstehende Änderungen für diese Importquelle. Ein neuer Importlauf "
+"sollte angestoßen werden."
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:30
+msgid ""
+"There are pending changes for this Sync Rule. You should trigger a new Sync "
+"Run."
+msgstr ""
+"Es gibt ausstehende Änderungen für diese Synchronisationsregel. Ein neuer "
+"Synchronisationslauf sollte angestoßen werden."
+
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:51
 msgid "There are pending database migrations"
+msgstr "Es sind Datenbankmigrationen ausständig"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:88
+msgid "There are pending database schema migrations"
 msgstr "Es sind Datenbankmigrationen ausständig"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/object/deploymentLink.phtml:8
@@ -2177,6 +2653,10 @@ msgstr ""
 "An diesem Objekt wurden %d Änderungen vorgenommen, nichts Anderes wurde "
 "verändert"
 
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:19
+msgid "These are different available job types"
+msgstr "Verschiedene verfügbare Auftragstypen"
+
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportSourceForm.php:26
 msgid ""
 "These are different data providers fetching data from various sources. You "
@@ -2189,11 +2669,36 @@ msgstr ""
 "geschriebenes) Icinga Web 2 Modul diese Funktionalität nachrüsten, da "
 "Importquellen als Hook in Director realisiert werden"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:61
-msgid "This allows to filter for specific parts"
-msgstr "Erlaubt das Filtern nach spezifischen Teilen"
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:31
+#, php-format
+msgid "This Import Source failed when last checked at %s: %s"
+msgstr "Diese Importquelle schlug bei der letzten Prüfung um %s fehl: %s"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:152
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportCheckForm.php:35
+msgid "This Import Source provides modified data"
+msgstr "Diese Importquelle stellt veränderte Daten zur Verfügung"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:15
+#, php-format
+msgid "This Import Source was last found to by in sync at %s."
+msgstr "Diese Importquelle war zuletzt synchron um %s."
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:36
+#, php-format
+msgid "This Sync Rule failed when last checked at %s: %s"
+msgstr ""
+"Diese Synchronisationsregel schlug bei der letzten Prüfung um %s fehl: %s"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:9
+msgid "This Sync Rule has never been run before."
+msgstr "Diese Synchronisationsregel wurde noch nie ausgeführt."
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:20
+#, php-format
+msgid "This Sync Rule was last found to by in Sync at %s."
+msgstr "Diese Synchronisationsregel war zuletzt synchron um %s."
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:151
 msgid ""
 "This allows to filter for specific parts within the given source expression. "
 "You are allowed to refer all imported columns. Examples: host=www* would set "
@@ -2206,7 +2711,15 @@ msgstr ""
 "setzen, bei denen die Host Eigenschaft mit \"www\" beginnt. Komplexes "
 "Beispiel: host=www*&!(address=127.*|address6=::1)"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:198
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:37
+msgid "This allows to temporarily disable this job"
+msgstr "Erlaubt das vorübergehende Deaktivieren dieses Auftrags"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:180
+msgid "This allows you to immediately deploy a modified configuration"
+msgstr "Dies erlaubt das sofortige Ausrollen einer veränderten Konfiguration"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:200
 msgid "This has to be a MySQL or PostgreSQL database"
 msgstr "Muss eine MySQL oder PostgeSQL Datenbank sein"
 
@@ -2224,7 +2737,7 @@ msgstr ""
 "werden. Außerdem können darauf bezugnehmende Felder erstellt werden, um die "
 "Arbeit zu erleichtern"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:88
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:92
 msgid ""
 "This is the name of the Endpoint object (and certificate name) you created "
 "for your ApiListener object. In case you are unsure what this means please "
@@ -2233,6 +2746,29 @@ msgstr ""
 "Der Name (und Zertifikatsname) des Endpunkt-Objekts, der für das ApiListener-"
 "Objekt erstellt wurde. Bei Unklarheit, was damit gemeint ist, sollte die "
 "Dokumentation erneut zu Rate gezogen werden"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/job/index.phtml:42
+msgid "This job has not been executed yet"
+msgstr "Dieser Auftrag wurde bisher nicht ausgeführt"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/job/index.phtml:22
+#, php-format
+msgid "This job runs every %ds and is currently pending"
+msgstr "Dieser Auftrag läuft alle %d und ist aktuell ausständig"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/job/index.phtml:24
+#, php-format
+msgid "This job runs every %ds."
+msgstr "Dieser Auftrag läuft alle %d."
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/job/index.phtml:13
+#, php-format
+msgid ""
+"This job would run every %ds. It has been disabled and will therefore not be "
+"executed as scheduled"
+msgstr ""
+"Dieser Auftrag würde alle %d ausgeführt. Er ist deaktiviert und wird deshalb "
+"nicht wie geplant ausgeführt"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportSourceForm.php:65
 msgid ""
@@ -2254,12 +2790,30 @@ msgstr ""
 msgid "This must be an import source column (property)"
 msgstr "Muss eine Spalte der Importquelle sein (Eigenschaft)"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:135
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:70
+msgid "This object has been disabled"
+msgstr "Dieses Objekt wurde deaktiviert"
+
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:64
+msgid "This object has been enabled"
+msgstr "Dieses Objekt wurde aktiviert"
+
+#: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:130
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/object/show.phtml:11
 msgid "This object will not be deployed as it has been disabled"
 msgstr "Das Objekt wird nicht ausgebracht, da es deaktiviert wurde"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:864
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/host/agent.phtml:30
+msgid ""
+"This requires the Icinga Agent to be installed. It generates and signs it's "
+"certificate and it also generates a minimal icinga2.conf to get your agent "
+"connected to it's parents"
+msgstr ""
+"Dafür muss der Icinga Agent installiert sein. Es erstellt und signiert sein "
+"Zertifikat und erstellt eine minimale icinga2.conf mit der der Agent mit den "
+"übergeordneten Systemen verbunden wird"
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:903
 #, php-format
 msgid "This template is still in use by %d other objects"
 msgstr "Diese Vorlage ist noch in Verwendung durch %d andere Objekte"
@@ -2268,11 +2822,12 @@ msgstr "Diese Vorlage ist noch in Verwendung durch %d andere Objekte"
 msgid "This will be the visible caption for this entry"
 msgstr "Die sichtbare Bezeichnung für diesen Eintrag"
 
-#: /usr/share/icingaweb2/modules/director/application/tables/DeploymentLogTable.php:77
+#: /usr/share/icingaweb2/modules/director/application/tables/DeploymentLogTable.php:84
 msgid "Time"
 msgstr "Zeit"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:137
+#: /usr/share/icingaweb2/modules/director/application/forms/DirectorJobForm.php:58
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:172
 msgid "Time period"
 msgstr "Zeitraum"
 
@@ -2302,7 +2857,7 @@ msgid "Timeperiod template name"
 msgstr "Zeitraumvorlagenname"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaTimePeriodRangeTable.php:50
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:94
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:99
 msgid "Timeperiods"
 msgstr "Zeiträume"
 
@@ -2310,12 +2865,12 @@ msgstr "Zeiträume"
 msgid "Timerperiods"
 msgstr "Zeiträume"
 
-#: /usr/share/icingaweb2/modules/director/application/tables/ActivityLogTable.php:61
 #: /usr/share/icingaweb2/modules/director/application/tables/ImportrunTable.php:41
+#: /usr/share/icingaweb2/modules/director/application/tables/ActivityLogTable.php:90
 msgid "Timestamp"
 msgstr "Zeitstempel"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1286
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1387
 msgid "Transition types"
 msgstr "Änderungsstypen"
 
@@ -2323,16 +2878,33 @@ msgstr "Änderungsstypen"
 msgid "Tree"
 msgstr "Baum"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:190
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportRunForm.php:25
+msgid "Trigger Import Run"
+msgstr "Importlauf anstoßen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRunForm.php:23
+msgid "Trigger this Sync"
+msgstr "Diese Synchronisation anstoßen"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/ImportRunForm.php:48
+msgid "Triggering this Import Source failed"
+msgstr "Anstoßen dieser Importquelle schlug fehl"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:189
 #: /usr/share/icingaweb2/modules/director/library/Director/DataType/DataTypeSqlQuery.php:26
 #, php-format
 msgid "Unable to fetch data: %s"
 msgstr "Daten konnten nicht geholt werden: %s"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:265
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:271
 #, php-format
-msgid "Unable to store the configuration to \"%s\""
-msgstr "Konfiguration kann nicht nach \"%s\" gespeichert werden"
+msgid ""
+"Unable to store the configuration to \"%s\". Please check file permissions "
+"or manually store the content shown below"
+msgstr ""
+"Die Konfiguration kann nicht nach \"%s\" gespeichert werden. Bitte "
+"Dateisystemberechtigungen prüfen oder den unten angegebenen Inhalt manuell "
+"speichern"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Db/Housekeeping.php:49
 msgid "Undeployed configurations"
@@ -2378,13 +2950,13 @@ msgstr "Aktualisierungsmethode"
 msgid "Update Policity"
 msgstr "Aktualisierungsrichtlinie"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:229
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:228
 msgid "Used sources"
 msgstr "Verwendete Quellen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:16
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaApiUserTable.php:31
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1352
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1453
 msgid "User"
 msgstr "Benutzer"
 
@@ -2392,11 +2964,11 @@ msgstr "Benutzer"
 msgid "User for the Icinga host template you are going to create"
 msgstr "Benutzer der Icinga-Host-Vorlage, die erstellt werden soll"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:70
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:105
 msgid "User groups"
 msgstr "Benutzergruppen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:74
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:77
 msgid ""
 "User groups that should be directly assigned to this user. Groups can be "
 "useful for various reasons. You might prefer to send notifications to groups "
@@ -2406,12 +2978,12 @@ msgstr ""
 "Gruppen können für verschiedene Aufgaben verwendet werden. Eventuell ist es "
 "besser, Benachrichtigungen an Gruppen statt an einzelne Benutzer zu schicken"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:72
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:107
 msgid "User groups that should be notified by this notifications"
 msgstr ""
 "Benutzergruppen, die durch diese Benachrichtigungen verständigt werden sollen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:120
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:123
 msgid "User properties"
 msgstr "Benutzereigenschaften"
 
@@ -2435,32 +3007,32 @@ msgid "Username for the Icinga host you are going to create"
 msgstr "Benutzername für den Icinga-Host, der erstellt werden soll"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:39
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:48
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:83
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceCoreApi.php:64
 msgid "Users"
 msgstr "Benutzer"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:92
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:97
 msgid "Users / Contacts"
 msgstr "Benutzer / Kontakte"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:50
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:85
 msgid "Users that should be notified by this notifications"
 msgstr "Benutzer, die durch diese Benachrichtigungen verständigt werden sollen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:155
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:176
 msgid "Usually your hosts main IPv6 address"
 msgstr "Üblicherweise die Haupt-IPv6-Adresse des Hosts"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/CustomvarForm.php:21
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatalistentryForm.php:24
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:44
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:53
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostVarForm.php:27
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceVarForm.php:27
-#: /usr/share/icingaweb2/modules/director/application/tables/IcingaCommandArgumentTable.php:52
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:44
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:53
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostVarTable.php:34
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaServiceVarTable.php:34
+#: /usr/share/icingaweb2/modules/director/application/tables/IcingaCommandArgumentTable.php:52
 msgid "Value"
 msgstr "Wert"
 
@@ -2472,7 +3044,7 @@ msgstr "Werttyp"
 msgid "Variable name"
 msgstr "Variablenname"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1232
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1269
 msgid "Volatile"
 msgstr "Sprunghaft (Volatile)"
 
@@ -2480,7 +3052,7 @@ msgstr "Sprunghaft (Volatile)"
 msgid "Warning"
 msgstr "Warnung"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1029
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1066
 msgid ""
 "What kind of object this should be. Templates allow full access to any "
 "property, they are your building blocks for \"real\" objects. External "
@@ -2519,11 +3091,29 @@ msgstr "Was soll geschehen, wenn die (DNS) Auflösung fehlschlägt?"
 msgid "What should we extract from the DN?"
 msgstr "Was soll aus dem DN extrahiert werden?"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:118
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:192
+msgid ""
+"When deploying configuration, wait at least this amount of seconds unless "
+"the next deployment should take place"
+msgstr ""
+"Beim Ausrollen einer Konfiguration mindestens diese Anzahl an Sekunden "
+"warten, bevor das nächste Ausrollen durchgeführt wird"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:153
 msgid "When the last notification should be sent"
 msgstr "Wann soll die letzte Nachricht versandt werden?"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:73
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:166
+msgid ""
+"Whether rendering should be forced. If not enforced, this job re-renders the "
+"configuration only when there have been activities since the last rendered "
+"config"
+msgstr ""
+"Ob das Erstellen erzwungen werden soll. Wird es nicht erzwungen, wird die "
+"Konfiguration nur erstellt, falls seit dem letzten Erstellen Aktivitäten "
+"durchgeführt wurden"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:74
 msgid "Whether the agent is configured to accept config"
 msgstr "Soll der Agent Konfiguration annehmen?"
 
@@ -2535,18 +3125,14 @@ msgstr ""
 "Ist der Wert des Arguments eine Zeichenkette (erlaubt Makros wie $host$) "
 "oder eine Icinga-DSL-Lambda-Funktion? (wird in {{ ... }} eingeschlossen"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:152
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:198
 msgid ""
 "Whether the check commmand for this service should be executed on the Icinga "
 "agent"
 msgstr ""
 "Soll das Kommando für diesen Service auf dem Icinga-Agent ausgeführt werden?"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:40
-msgid "Whether the field should be merged, replaced or ignored"
-msgstr "Soll das Feld zusammengeführt, ersetzt oder ignoriert werden?"
-
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:67
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:68
 msgid ""
 "Whether the parent (master) node should actively try to connect to this agent"
 msgstr ""
@@ -2565,7 +3151,7 @@ msgstr ""
 msgid "Whether this argument should be required"
 msgstr "Soll dieses Argument erforderlich sein?"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1233
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1270
 msgid "Whether this check is volatile."
 msgstr "Ist dieser Check sprunghaft (volatile)?"
 
@@ -2573,9 +3159,13 @@ msgstr "Ist dieser Check sprunghaft (volatile)?"
 msgid "Whether this field should be mandatory"
 msgstr "Soll dieses Feld Pflicht sein?"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:58
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:59
 msgid "Whether this host has the Icinga 2 Agent installed"
 msgstr "Hat dieser Host den Icinga-2-Agent installiert?"
+
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:50
+msgid "Whether this notification should affect hosts or services"
+msgstr "Soll diese Benachrichtigung Hosts oder Services betreffen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:91
 msgid ""
@@ -2598,31 +3188,41 @@ msgstr ""
 "Soll diese Zone überall verfügbar sein? Beachte, dass es selten zielführend "
 "ist, globale Zonen in verteilten Umgebungen zu verteilen"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1209
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1246
 msgid "Whether to accept passive check results for this object"
 msgstr "Sollen passive Checkergebnisse für dieses Objekt akzeptiert werden?"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1203
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1240
 msgid "Whether to actively check this object"
 msgstr "Soll dieses Objekt aktiv geprüft werden?"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1221
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1258
 msgid "Whether to enable event handlers this object"
 msgstr "Sollen Event-Handler für dieses Objekt aktiviert werden?"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1227
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1264
 msgid "Whether to process performance data provided by this object"
 msgstr "Sollen Performancedaten von diesem Objekt verarbeitet werden?"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1215
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:57
+msgid ""
+"Whether to purge existing objects. This means that objects of the same type "
+"will be removed from Director in case they no longer exist at your import "
+"source."
+msgstr ""
+"Sollen existierende Objekte entfernt werden? Das bedeutet, dass Objekte "
+"desselben Typs aus dem Director entfernt werden, falls sie in der "
+"Importquelle nicht mehr vorhanden sein sollten."
+
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1252
 msgid "Whether to send notifications for this object"
 msgstr "Sollen Benachrichtigungen für dieses Objekt verschickt werden?"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:55
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:58
 msgid "Whether to send notifications for this user"
 msgstr "Sollen Benachrichtigungen für diesen Benutzer verschickt werden?"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:166
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:165
 msgid ""
 "Whether you want to merge or replace the destination field. Makes no "
 "difference for strings"
@@ -2638,7 +3238,7 @@ msgstr ""
 "Wird als benutzerdefinierte Variable gespeichert, wenn dieser Eintrag aus "
 "der Liste gewählt wird"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:98
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:103
 msgid "Wondering about what changed why? Track you changes!"
 msgstr "Hier kann nachvollzogen werden, was weshalb verändert wurde."
 
@@ -2648,11 +3248,28 @@ msgid "YES, please delete \"%s\""
 msgstr "JA, bitte \"%s\" löschen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaZoneForm.php:30
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:669
+#: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:63
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:706
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:172
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:184
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:67
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:69
 msgid "Yes"
 msgstr "Ja"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:122
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:60
+#: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:62
+msgid ""
+"You could immediately apply eventual changes or just learn about them. In "
+"case you do not want them to be applied immediately, defining a job still "
+"makes sense. You will be made aware of available changes in your Director "
+"GUI."
+msgstr ""
+"Änderungen können sofort angewandt oder nur angezeigt werden. Falls sie "
+"nicht sofort angewandt werden, ist es immer noch sinnvoll, einen Auftrag zu "
+"erstellen. Verfügbare Änderungen werden in der Director-GUI angezeigt."
+
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:126
 msgid "Your Icinga 2 API username"
 msgstr "Der Icinga-2-API Benutzername"
 
@@ -2663,13 +3280,13 @@ msgid ""
 msgstr ""
 "Die LDAP Suchbasis. Meist etwas wie OU=Users,OU=HQ,DC=your,DC=company,DC=tld"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:60
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:61
 #, php-format
 msgid "Your database looks good, you are ready to %s"
 msgstr ""
 "Datenbank sieht gut aus. Icinga Director sollte jetzt fertig für %s sein."
 
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:77
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:81
 msgid ""
 "Your installation of Icinga Director has not yet been prepared for "
 "deployments. This kickstart wizard will assist you with setting up the "
@@ -2679,7 +3296,7 @@ msgstr ""
 "Konfiguration vorbereitet. Dieser Kickstart-Assistent hilft bei der "
 "Einrichtung der Verbindung zum Icinga 2 Server"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1157
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1194
 msgid "Your regular check interval"
 msgstr "Der übliche Check-Intervall"
 
@@ -2690,7 +3307,7 @@ msgstr "Die Ersatzzeichenkette"
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:21
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaEndpointTable.php:52
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaZoneTable.php:38
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1350
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1451
 msgid "Zone"
 msgstr "Zone"
 
@@ -2698,30 +3315,31 @@ msgstr "Zone"
 msgid "Zone name"
 msgstr "Zonenname"
 
-#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:101
+#: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:106
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceCoreApi.php:65
 msgid "Zones"
 msgstr "Zonen"
 
-#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:143
+#: /usr/share/icingaweb2/modules/director/application/controllers/TimeperiodController.php:30
+#: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:144
 #: /usr/share/icingaweb2/modules/director/application/controllers/DataController.php:40
 #: /usr/share/icingaweb2/modules/director/application/controllers/DataController.php:150
-#: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:120
-#: /usr/share/icingaweb2/modules/director/application/controllers/TimeperiodController.php:30
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:215
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:249
+#: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:104
+#: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:139
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:220
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:253
 msgid "back"
 msgstr "Zurück"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaAssignServiceToHostForm.php:58
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationAssignmentForm.php:55
 msgid "by host group property"
 msgstr "Nach Hostgruppeneigenschaft"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaAssignServiceToHostForm.php:57
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationAssignmentForm.php:54
 msgid "by host property"
 msgstr "Nach Hosteigenschaft"
 
-#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:377
+#: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:392
 msgid "check command"
 msgstr "Check-Kommando"
 
@@ -2733,11 +3351,7 @@ msgstr "z.B. -H oder --hostname, leer bedeutet \"skip_key\""
 msgid "e.g. 5%, $hostname$, $lower$%:$upper$%"
 msgstr "z.B. 5%, $hostname$, $lower$%:$upper$%"
 
-#: /usr/share/icingaweb2/modules/director/application/tables/ImportsourceTable.php:56
-msgid "has changes"
-msgstr "hat Änderungen"
-
-#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:203
+#: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:205
 #: /usr/share/icingaweb2/modules/director/library/Director/Util.php:178
 msgid "here"
 msgstr "hier"
@@ -2779,7 +3393,7 @@ msgstr "Der Anzeigename"
 msgid "the update method"
 msgstr "die Updatemethode"
 
-#: /usr/share/icingaweb2/modules/director/application/forms/IcingaAssignServiceToHostForm.php:56
+#: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationAssignmentForm.php:53
 msgid "to a host group"
 msgstr "zu einer Hostgruppe"
 
@@ -2787,6 +3401,45 @@ msgstr "zu einer Hostgruppe"
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceVarForm.php:33
 msgid "value format"
 msgstr "Wertformat"
+
+#~ msgid "%s template \"%s\": custom fields"
+#~ msgstr "%s Vorlage \"%s\": benutzerdefinierte Felder"
+
+#~ msgid "Add entry"
+#~ msgstr "Eintrag hinzufügen"
+
+#~ msgid "Deployments / History"
+#~ msgstr "Deployments / Historie"
+
+#~ msgid "Edit entry"
+#~ msgstr "Eintrag bearbeiten"
+
+#~ msgid "Edit sync rule"
+#~ msgstr "Synchronisationsregel bearbeiten"
+
+#~ msgid "Filter string"
+#~ msgstr "Filterzeichenkette"
+
+#~ msgid "Import / Sync"
+#~ msgstr "Import / Synchronisierung"
+
+#~ msgid "Import runs"
+#~ msgstr "Importläufe"
+
+#~ msgid "Run"
+#~ msgstr "Ausführen"
+
+#~ msgid "Unable to store the configuration to \"%s\""
+#~ msgstr "Konfiguration kann nicht nach \"%s\" gespeichert werden"
+
+#~ msgid "Audit log"
+#~ msgstr "Revisionslog"
+
+#~ msgid "Purge existing values."
+#~ msgstr "Existierende Werte bereinigen"
+
+#~ msgid "Whether the field should be merged, replaced or ignored"
+#~ msgstr "Soll das Feld zusammengeführt, ersetzt oder ignoriert werden?"
 
 #~ msgid "Alert your users"
 #~ msgstr "Benutzer alarmieren"
@@ -2796,17 +3449,11 @@ msgstr "Wertformat"
 #~ "Deployments verwalten, auf die Revisionsaufzeichnungen und die Historie "
 #~ "zugreifen"
 
-#~ msgid "Custom Variable \"%s\""
-#~ msgstr "Benutzerdefinierte Variable \"%s\""
-
 #~ msgid "Default value"
 #~ msgstr "Default-Wert"
 
 #~ msgid "External Object"
 #~ msgstr "Externes Objekt"
-
-#~ msgid "Modify %s"
-#~ msgstr "Modifiziere %s"
 
 #~ msgid "Name for the Icinga zone (templat) you are going to create"
 #~ msgstr "Name der Icinga-Zone (Vorlage), die erstellt werden soll"

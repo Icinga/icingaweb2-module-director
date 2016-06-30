@@ -1075,6 +1075,13 @@ abstract class DbObject
         unset(self::$prefetchStats[$class]);
     }
 
+    public static function clearAllPrefetchCaches()
+    {
+        self::$prefetched = array();
+        self::$prefetchedNames = array();
+        self::$prefetchStats = array();
+    }
+
     public static function exists($id, DbConnection $connection)
     {
         if (static::getPrefetched($id)) {

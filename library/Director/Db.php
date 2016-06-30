@@ -21,6 +21,8 @@ class Db extends DbConnection
 
     protected $settings;
 
+    protected $masterZoneName;
+
     protected function db()
     {
         return $this->getDbAdapter();
@@ -61,6 +63,15 @@ class Db extends DbConnection
 
     public function getMasterZoneName()
     {
+        if ($this->masterZoneName === null) {
+            $this->masterZoneName = $this->detectMasterZoneName();
+        }
+
+        return $this->masterZoneName;
+    }
+
+    protected function detectMasterZoneName()
+    {
         if ($zone = $this->getSetting('master_zone')) {
             return $zone;
         }
@@ -68,6 +79,7 @@ class Db extends DbConnection
         $db = $this->db();
         $query = $db->select()
             ->from('icinga_zone', 'object_name')
+            ->where('parent_id IS NULL')
             ->where('is_global = ?', 'n');
 
         $zones = $db->fetchCol($query);

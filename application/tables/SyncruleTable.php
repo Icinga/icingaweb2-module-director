@@ -33,16 +33,6 @@ class SyncruleTable extends QuickTable
         return array_merge(array('syncstate'), parent::listTableClasses());
     }
 
-    protected function renderAdditionalActions($row)
-    {
-        return $this->view->qlink(
-            'Run',
-            'director/syncrule/run',
-            array('id' => $row->id),
-            array('data-base-target' => '_main')
-        );
-    }
-
     protected function getRowClasses($row)
     {
         if ($row->sync_state === 'failing' && $row->last_error_message) {

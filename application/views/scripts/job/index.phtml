@@ -41,10 +41,4 @@
 <?php else: ?>
 <?= $this->translate('This job has not been executed yet') ?>
 <?php endif ?>
-
-<pre>
-<?= $this->escape(
-print_r($this->job->getProperties(), 1)
-) ?>
-</pre>
 </div>

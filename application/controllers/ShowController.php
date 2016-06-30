@@ -80,11 +80,6 @@ class ShowController extends ActionController
         $old = $this->oldObject($entry);
         $new = $this->newObject($entry);
 
-        if ($old->disabled === 'y' && $new->disabled === 'n') {
-            $old = null;
-        } elseif ($old->disabled === 'n' && $new->disabled === 'y') {
-            $new = null;
-        }
         $d = ConfigDiff::create(
             $old,
             $new

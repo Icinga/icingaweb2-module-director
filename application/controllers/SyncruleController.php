@@ -12,36 +12,39 @@ use Icinga\Web\Url;
 
 class SyncruleController extends ActionController
 {
+    public function indexAction()
+    {
+        $id = $this->params->get('id');
+        $this->prepareRuleTabs($id)->activate('show');
+        $rule = $this->view->rule = SyncRule::load($id, $this->db());
+        $this->view->title = sprintf(
+            $this->translate('Sync rule: %s'),
+            $rule->rule_name
+        );
+
+        if ($lastRunId = $rule->getLastSyncRunId()) {
+            $this->loadSyncRun($lastRunId);
+
+        } else {
+            $this->view->run = null;
+        }
+        $this->view->checkForm = $this
+            ->loadForm('syncCheck')
+            ->setSyncRule($rule)
+            ->handleRequest();
+
+        $this->view->runForm = $this
+            ->loadForm('syncRun')
+            ->setSyncRule($rule)
+            ->handleRequest();
+    }
+
     public function addAction()
     {
-        $this->indexAction();
+        $this->editAction();
     }
 
     public function editAction()
-    {
-        $this->indexAction();
-    }
-
-    public function runAction()
-    {
-        $id = $this->params->get('id');
-        $sync = new Sync(SyncRule::load($id, $this->db()));
-        if ($runId = $sync->apply()) {
-            Notification::success('Source has successfully been synchronized');
-            $this->redirectNow(
-                Url::fromPath(
-                    'director/syncrule/history',
-                    array(
-                        'id'     => $id,
-                        'run_id' => $runId
-                    )
-                )
-            );
-        } else {
-        }
-    }
-
-    public function indexAction()
     {
         $form = $this->view->form = $this->loadForm('syncRule')
             ->setSuccessUrl('director/list/syncrule')
@@ -61,6 +64,33 @@ class SyncruleController extends ActionController
 
         $form->handleRequest();
         $this->setViewScript('object/form');
+    }
+
+    public function runAction()
+    {
+        $id = $this->params->get('id');
+        $rule = SyncRule::load($id, $this->db());
+        $changed = $rule->applyChanges();
+
+        if ($changed) {
+            $runId = $rule->getCurrentSyncRunId();
+            Notification::success('Source has successfully been synchronized');
+            $this->redirectNow(
+                Url::fromPath(
+                    'director/syncrule/history',
+                    array(
+                        'id'     => $id,
+                        'run_id' => $runId
+                    )
+                )
+            );
+        } elseif ($rule->sync_state === 'in-sync') {
+            Notification::success('Nothing changed, rule is in sync');
+        } else {
+            Notification::error('Synchronization failed');
+        }
+
+        $this->redirectNow('director/syncrule?id=' . $id);
     }
 
     public function propertyAction()
@@ -161,35 +191,49 @@ class SyncruleController extends ActionController
             ->setConnection($this->db());
 
         if ($runId = $this->params->get('run_id')) {
-            $this->view->run = SyncRun::load($runId, $db);
-            if ($this->view->run->last_former_activity !== null) {
-                $this->view->formerId = $db->fetchActivityLogIdByChecksum(
-                    $this->view->run->last_former_activity
-                );
+            $this->loadSyncRun($runId);
+        }
+    }
 
-                $this->view->lastId = $db->fetchActivityLogIdByChecksum(
-                    $this->view->run->last_related_activity
-                );
-            }
+    protected function loadSyncRun($id)
+    {
+        $db = $this->db();
+        $this->view->run = SyncRun::load($id, $db);
+        if ($this->view->run->last_former_activity !== null) {
+            $this->view->formerId = $db->fetchActivityLogIdByChecksum(
+                $this->view->run->last_former_activity
+            );
+
+            $this->view->lastId = $db->fetchActivityLogIdByChecksum(
+                $this->view->run->last_related_activity
+            );
         }
     }
 
     protected function prepareRuleTabs($ruleId = null)
     {
         if ($ruleId) {
-            return $this->getTabs()->add('edit', array(
-                'url'       => 'director/syncrule/edit',
+            $tabs = $this->getTabs()->add('show', array(
+                'url'       => 'director/syncrule',
                 'urlParams' => array('id' => $ruleId),
                 'label'     => $this->translate('Sync rule'),
+            ))->add('edit', array(
+                'url'       => 'director/syncrule/edit',
+                'urlParams' => array('id' => $ruleId),
+                'label'     => $this->translate('Modify'),
             ))->add('property', array(
                 'label' => $this->translate('Properties'),
                 'url'   => 'director/syncrule/property',
                 'urlParams' => array('rule_id' => $ruleId)
-            ))->add('history', array(
+            ));
+
+            $tabs->add('history', array(
                 'label' => $this->translate('History'),
                 'url'   => 'director/syncrule/history',
                 'urlParams' => array('id' => $ruleId)
             ));
+
+            return $tabs;
         } else {
             return $this->getTabs()->add('add', array(
                 'url'       => 'director/syncrule/add',

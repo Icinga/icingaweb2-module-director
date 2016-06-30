@@ -7,6 +7,7 @@ use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -164,6 +165,24 @@ class IcingaConfig
         return self::load($db->fetchOne($query), $connection);
     }
 
+    public static function existsForActivityChecksum($checksum, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            array('c' => self::$table),
+            array('checksum' => $connection->dbHexFunc('c.checksum'))
+        )->join(
+            array('l' => 'director_activity_log'),
+            'l.checksum = c.last_activity_checksum',
+            array()
+        )->where(
+            'last_activity_checksum = ?',
+            $connection->quoteBinary(Util::hex2binary($checksum))
+        )->order('l.id DESC')->limit(1);
+
+        return $db->fetchOne($query) === $checksum;
+    }
+
     public static function generate(Db $connection)
     {
         $config = new static($connection);
@@ -282,73 +301,65 @@ class IcingaConfig
         $fileTable = IcingaConfigFile::$table;
         $fileKey = IcingaConfigFile::$keyName;
 
-        $this->db->beginTransaction();
-        try {
-            $existingQuery = $this->db->select()
-                ->from($fileTable, 'checksum')
-                ->where('checksum IN (?)', array_map(array($this, 'dbBin'), $this->getFilesChecksums()));
+        $existingQuery = $this->db->select()
+            ->from($fileTable, 'checksum')
+            ->where('checksum IN (?)', array_map(array($this, 'dbBin'), $this->getFilesChecksums()));
 
-            $existing = $this->db->fetchCol($existingQuery);
+        $existing = $this->db->fetchCol($existingQuery);
 
-            foreach ($existing as $key => $val) {
-                if (is_resource($val)) {
-                    $existing[$key] = stream_get_contents($val);
-                }
+        foreach ($existing as $key => $val) {
+            if (is_resource($val)) {
+                $existing[$key] = stream_get_contents($val);
+            }
+        }
+
+        $missing = array_diff($this->getFilesChecksums(), $existing);
+        $stored = array();
+
+        /** @var IcingaConfigFile $file */
+        foreach ($this->files as $name => $file) {
+            $checksum = $file->getChecksum();
+            if (! in_array($checksum, $missing)) {
+                continue;
             }
 
-            $missing = array_diff($this->getFilesChecksums(), $existing);
-            $stored = array();
-
-            /** @var IcingaConfigFile $file */
-            foreach ($this->files as $name => $file) {
-                $checksum = $file->getChecksum();
-                if (! in_array($checksum, $missing)) {
-                    continue;
-                }
-
-                if (array_key_exists($checksum, $stored)) {
-                    continue;
-                }
-
-                $stored[$checksum] = true;
-
-                $this->db->insert(
-                    $fileTable,
-                    array(
-                        $fileKey       => $this->dbBin($checksum),
-                        'content'      => $file->getContent(),
-                        'cnt_object'   => $file->getObjectCount(),
-                        'cnt_template' => $file->getTemplateCount()
-                    )
-                );
+            if (array_key_exists($checksum, $stored)) {
+                continue;
             }
 
-            $activity = $this->dbBin($this->getLastActivityChecksum());
+            $stored[$checksum] = true;
+
             $this->db->insert(
-                self::$table,
+                $fileTable,
                 array(
-                    'duration'                => $this->generationTime,
-                    'first_activity_checksum' => $activity,
-                    'last_activity_checksum'  => $activity,
-                    'checksum'                => $this->dbBin($this->getChecksum()),
+                    $fileKey       => $this->dbBin($checksum),
+                    'content'      => $file->getContent(),
+                    'cnt_object'   => $file->getObjectCount(),
+                    'cnt_template' => $file->getTemplateCount()
                 )
             );
-            /** @var IcingaConfigFile $file */
-            foreach ($this->files as $name => $file) {
-                $this->db->insert(
-                    'director_generated_config_file',
-                    array(
-                        'config_checksum' => $this->dbBin($this->getChecksum()),
-                        'file_checksum'   => $this->dbBin($file->getChecksum()),
-                        'file_path'       => $name,
-                    )
-                );
-            }
+        }
 
-            $this->db->commit();
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            throw $e;
+        $activity = $this->dbBin($this->getLastActivityChecksum());
+        $this->db->insert(
+            self::$table,
+            array(
+                'duration'                => $this->generationTime,
+                'first_activity_checksum' => $activity,
+                'last_activity_checksum'  => $activity,
+                'checksum'                => $this->dbBin($this->getChecksum()),
+            )
+        );
+        /** @var IcingaConfigFile $file */
+        foreach ($this->files as $name => $file) {
+            $this->db->insert(
+                'director_generated_config_file',
+                array(
+                    'config_checksum' => $this->dbBin($this->getChecksum()),
+                    'file_checksum'   => $this->dbBin($file->getChecksum()),
+                    'file_path'       => $name,
+                )
+            );
         }
 
         return $this;
@@ -356,11 +367,18 @@ class IcingaConfig
 
     protected function generateFromDb()
     {
+        PrefetchCache::initialize($this->connection);
+
         $start = microtime(true);
 
         // Raise limits. TODO: do this in a failsafe way, and only if necessary
-        ini_set('memory_limit', '768M');
+        if ((string) ini_get('memory_limit') !== '-1') {
+            ini_set('memory_limit', '1024M');
+        }
+
         ini_set('max_execution_time', 0);
+        // Workaround for https://bugs.php.net/bug.php?id=68606 or similar
+        ini_set('zend.enable_gc', 0);
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
 
@@ -388,6 +406,9 @@ class IcingaConfig
 
         $this->configFile('zones.d/director-global/commands')
              ->prepend("library \"methods\"\n\n");
+
+        PrefetchCache::forget();
+        IcingaHost::clearAllPrefetchCaches();
 
         $this->generationTime = (int) ((microtime(true) - $start) * 1000);
 
@@ -421,7 +442,7 @@ class IcingaConfig
             '
 apply Service for (title => params in host.vars["%s"]) {
 
-  override = host.vars["%s_vars"][title]
+  var override = host.vars["%s_vars"][title]
 
   if (typeof(params["templates"]) in [Array, String]) {
     import params["templates"]

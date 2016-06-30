@@ -67,14 +67,14 @@ class ConfigCommand extends Command
                 return;
             }
 
+        }
+
+        if ($api->dumpConfig($config, $db)) {
+            printf("Config '%s' has been deployed\n", $checksum);
         } else {
-            if ($api->dumpConfig($config, $db)) {
-                printf("Config '%s' has been deployed\n", $checksum);
-            } else {
-                $this->fail(
-                    sprintf("Failed to deploy config '%s'\n", $checksum)
-                );
-            }
+            $this->fail(
+                sprintf("Failed to deploy config '%s'\n", $checksum)
+            );
         }
     }
 

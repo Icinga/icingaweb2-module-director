@@ -3,7 +3,8 @@
 
 These are the instructions for manual Director installations. You can
 learn more about how to automate this in the [automation](03-Automation.md) section
-of this documentation.
+of this documentation. In case you already installed Director and want to upgrade
+to the latest version, please [read on here](05-Upgrading.md).
 
 Requirements
 ------------

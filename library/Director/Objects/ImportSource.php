@@ -29,6 +29,39 @@ class ImportSource extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'source_id';
 
+    public function fetchLastRun()
+    {
+        return $this->fetchLastRunBefore(time());
+    }
+
+    public function fetchLastRunBefore($timestamp)
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return null;
+        }
+
+        if ($timestamp === null) {
+            $timestamp = time();
+        }
+
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            array('ir' => 'import_run'),
+            'ir.id'
+        )->where('ir.source_id = ?', $this->id)
+        ->where('ir.start_time < ?', date('Y-m-d H:i:s', $timestamp))
+        ->order('ir.start_time DESC')
+        ->limit(1);
+
+        $runId = $db->fetchOne($query);
+
+        if ($runId) {
+            return ImportRun::load($runId, $this->getConnection());
+        } else {
+            return null;
+        }
+    }
+
     public function fetchRowModifiers()
     {
         $db = $this->getDb();
@@ -48,9 +81,10 @@ class ImportSource extends DbObjectWithSettings
         Benchmark::measure('Starting with import ' . $this->source_name);
         try {
             $import = new Import($this);
+            $this->last_attempt = date('Y-m-d H:i:s');
             if ($import->providesChanges()) {
                 Benchmark::measure('Found changes for ' . $this->source_name);
-                $this->hadChanges = true;
+                $hadChanges = true;
                 $this->import_state = 'pending-changes';
 
                 if ($runImport && $import->run()) {
@@ -66,7 +100,7 @@ class ImportSource extends DbObjectWithSettings
         } catch (Exception $e) {
             $this->import_state = 'failing';
             Benchmark::measure('Import failed for ' . $this->source_name);
-            $this->last_error_message = 'ERR: ' . $e->getMessage();
+            $this->last_error_message = $e->getMessage();
         }
 
         if ($this->hasBeenModified()) {

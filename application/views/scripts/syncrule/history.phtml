@@ -11,74 +11,9 @@
 <div class="content"<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
 <?php if ($this->run): ?>
 <h3><?= $this->translate('Sync run details') ?></h3>
-<table class="key-value-table">
- <tr>
-  <th><?= $this->translate('Start time') ?></th>
-  <td><?= $this->escape($run->start_time) ?></td>
- </tr>
- <tr>
-  <th><?= $this->translate('Duration') ?></th>
-  <td><?= sprintf('%.2fs', $run->duration_ms / 1000) ?></td>
- </tr>
- <tr>
-  <th><?= $this->translate('Activity') ?></th>
-  <td data-base-target="_next"><?php
-    $total = $run->objects_deleted + $run->objects_created + $run->objects_modified;
-    if ($total === 0) {
-        echo $this->translate('No changes have been made');
-    } else {
-        if ($total === 1) {
-            echo $this->translate('One object has been modified');
-        } else {
-            printf(
-                $this->translate('%s objects have been modified'),
-                $total
-            );
-        }
-
-        $activityUrl = sprintf(
-            'director/config/activities?id>%d&id<=%d',
-            $formerId,
-            $lastId
-        );
-
-        $links = array();
-        if ($run->objects_created > 0) {
-            $links[] = $this->qlink(
-                sprintf('%d created', $run->objects_created),
-                $activityUrl,
-                array('action_name' => 'create')
-            );
-        }
-        if ($run->objects_modified > 0) {
-            $links[] = $this->qlink(
-                sprintf('%d modified', $run->objects_modified),
-                $activityUrl,
-                array('action_name' => 'modify')
-            );
-        }
-        if ($run->objects_deleted > 0) {
-            $links[] = $this->qlink(
-                sprintf('%d deleted', $run->objects_deleted),
-                $activityUrl,
-                array('action_name' => 'delete')
-            );
-        }
-
-        if (count($links) > 1) {
-            $links[] = $this->qlink(
-                'Show all actions',
-                $activityUrl
-            );
-        }
-
-        if (! empty($links)) {
-            echo ': ' . implode(', ', $links);
-        }
-    }
-  ?></td>
- </tr>
-</table>
+<?= $this->render('syncrule/syncRunDetails.phtml') ?>
 <?php endif ?>
+<div data-base-target="_main">
 <?= $this->table->render() ?>
+</div>
 </div>

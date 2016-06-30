@@ -11,38 +11,55 @@ use Icinga\Web\Url;
 
 class ImportsourceController extends ActionController
 {
+    public function indexAction()
+    {
+        $id = $this->params->get('id');
+        $this->prepareTabs($id)->activate('show');
+        $source = $this->view->source = ImportSource::load($id, $this->db());
+        $this->view->title = sprintf(
+            $this->translate('Import source: %s'),
+            $source->source_name
+        );
+
+        $this->view->checkForm = $this
+            ->loadForm('ImportCheck')
+            ->setImportSource($source)
+            ->handleRequest();
+
+        $this->view->runForm = $this
+            ->loadForm('ImportRun')
+            ->setImportSource($source)
+            ->handleRequest();
+    }
+
     public function addAction()
     {
-        $this->indexAction();
+        $this->editAction();
     }
 
     public function editAction()
     {
-        $this->indexAction();
-    }
-
-    public function runAction()
-    {
         $id = $this->params->get('id');
-        $import = new Import(ImportSource::load($id, $this->db()));
-        if ($runId = $import->run()) {
-            Notification::success('Import succeeded');
-            $this->redirectNow(Url::fromPath('director/importrun', array('id' => $runId)));
+
+        $form = $this->view->form = $this->loadForm('importSource')->setDb($this->db());
+
+        if ($id) {
+            $form->loadObject($id)->setListUrl('director/list/importsource');
+            $this->prepareTabs($id)->activate('edit');
+            $this->view->title = $this->translate('Edit import source');
         } else {
-            Notification::success('Import skipped, no changes detected');
-            $this->redirectNow('director/list/importrun');
+            $form->setSuccessUrl('director/list/importsource');
+            $this->view->title = $this->translate('Add import source');
+            $this->prepareTabs()->activate('add');
         }
+
+        $form->handleRequest();
+        $this->setViewScript('object/form');
     }
 
     public function previewAction()
     {
         $id = $this->params->get('id');
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Run'),
-            'director/importsource/run',
-            array('id' => $id)
-        );
 
         $source = ImportSource::load($id, $this->db());
         $this->prepareTabs($id)->activate('preview');
@@ -78,27 +95,6 @@ class ImportsourceController extends ActionController
             ->enforceFilter(Filter::where('source_id', $id))
             ->setConnection($this->db());
         $this->setViewScript('list/table');
-    }
-
-    public function indexAction()
-    {
-        $id = $this->params->get('id');
-
-        $form = $this->view->form = $this->loadForm('importSource')
-            ->setSuccessUrl('director/list/importsource')
-            ->setDb($this->db());
-
-        if ($id) {
-            $form->loadObject($id);
-            $this->prepareTabs($id)->activate('edit');
-            $this->view->title = $this->translate('Edit import source');
-        } else {
-            $this->view->title = $this->translate('Add import source');
-            $this->prepareTabs()->activate('add');
-        }
-
-        $form->handleRequest();
-        $this->setViewScript('object/form');
     }
 
     public function historyAction()
@@ -158,9 +154,12 @@ class ImportsourceController extends ActionController
         $tabs = $this->getTabs();
 
         if ($id) {
-            $tabs->add('edit', array(
-                'url'       => 'director/importsource/edit' . '?id=' . $id,
+            $tabs->add('show', array(
+                'url'       => 'director/importsource' . '?id=' . $id,
                 'label'     => $this->translate('Import source'),
+            ))->add('edit', array(
+                'url'       => 'director/importsource/edit' . '?id=' . $id,
+                'label'     => $this->translate('Modify'),
             ))->add('modifier', array(
                 'url'       => 'director/importsource/modifier' . '?source_id=' . $id,
                 'label'     => $this->translate('Modifiers'),
