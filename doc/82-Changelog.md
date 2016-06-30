@@ -13,7 +13,7 @@
   environments with lots of Icinga Agents
 * Related bugs have been fixed, the generated configuration should now work fine
   in distributed environments
-* 
+* A customized Powershell Script for automatic Windows Agent setup is provided
 
 ### Apply Rules
 * It's now possible to work with apply rules in various places
@@ -33,7 +33,3 @@
 * Booleans, Integers and Arrays are now first-class citizens when dealing with
   custom variables
 
-### More
-
-* We are still preparing the release, changelog is incomplete at the time of
-  this writing
