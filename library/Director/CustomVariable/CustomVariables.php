@@ -133,6 +133,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $vars;
     }
 
+    public static function forStoredRows($rows)
+    {
+        $vars = new CustomVariables;
+        foreach ($rows as $row) {
+            $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
+        }
+        $vars->refreshIndex();
+        $vars->setUnmodified();
+
+        return $vars;
+    }
+
     public function storeToDb(IcingaObject $object)
     {
         $db            = $object->getDb();
