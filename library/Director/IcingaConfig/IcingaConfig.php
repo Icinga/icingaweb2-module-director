@@ -7,6 +7,7 @@ use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -162,6 +163,24 @@ class IcingaConfig
         )->order('l.id DESC')->limit(1);
 
         return self::load($db->fetchOne($query), $connection);
+    }
+
+    public static function existsForActivityChecksum($checksum, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            array('c' => self::$table),
+            array('checksum' => $connection->dbHexFunc('c.checksum'))
+        )->join(
+            array('l' => 'director_activity_log'),
+            'l.checksum = c.last_activity_checksum',
+            array()
+        )->where(
+            'last_activity_checksum = ?',
+            $connection->quoteBinary(Util::hex2binary($checksum))
+        )->order('l.id DESC')->limit(1);
+
+        return $db->fetchOne($query) === $checksum;
     }
 
     public static function generate(Db $connection)
@@ -348,6 +367,8 @@ class IcingaConfig
 
     protected function generateFromDb()
     {
+        PrefetchCache::initialize($this->connection);
+
         $start = microtime(true);
 
         // Raise limits. TODO: do this in a failsafe way, and only if necessary
@@ -380,6 +401,7 @@ class IcingaConfig
         $this->configFile('zones.d/director-global/commands')
              ->prepend("library \"methods\"\n\n");
 
+        PrefetchCache::forget();
         $this->generationTime = (int) ((microtime(true) - $start) * 1000);
 
         return $this;
