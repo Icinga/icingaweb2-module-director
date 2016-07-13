@@ -57,7 +57,7 @@ class ImportRun extends DbObject
         return $db->fetchCol($query);
     }
 
-    public function fetchRows($columns, $filter = null)
+    public function fetchRows($columns, $filter = null, $keys = null)
     {
         $db = $this->getDb();
         $binchecksum = $this->rowset_checksum;
@@ -94,6 +94,10 @@ class ImportRun extends DbObject
         $empty = (object) array();
         foreach ($columns as $k => $v) {
             $empty->$k = null;
+        }
+
+        if ($keys !== null) {
+            $query->where('r.object_name IN (?)', $keys);
         }
 
         foreach ($db->fetchAll($query) as $row) {
