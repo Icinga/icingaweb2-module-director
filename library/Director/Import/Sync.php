@@ -61,12 +61,6 @@ class Sync
 
     protected $errors = array();
 
-    protected $hasCombinedKey;
-
-    protected $sourceKeyPattern;
-
-    protected $destinationKeyPattern;
-
     protected $syncProperties;
 
     protected $run;
@@ -234,46 +228,6 @@ class Sync
     }
 
     /**
-     * Whether we have a combined key (e.g. services on hosts)
-     *
-     * @return bool
-     */
-    protected function hasCombinedKey()
-    {
-        if ($this->hasCombinedKey === null) {
-
-            $this->hasCombinedKey = false;
-
-            if ($this->rule->object_type === 'service') {
-                $hasHost = false;
-                $hasObjectName = false;
-
-                foreach ($this->syncProperties as $key => $property) {
-                    if ($property->destination_field === 'host') {
-                        $hasHost = $property->source_expression;
-                    }
-                    if ($property->destination_field === 'object_name') {
-                        $hasObjectName = $property->source_expression;
-                    }
-                }
-
-                if ($hasHost !== false && $hasObjectName !== false) {
-                    $this->hasCombinedKey = true;
-                    $this->sourceKeyPattern = sprintf(
-                        '%s!%s',
-                        $hasHost,
-                        $hasObjectName
-                    );
-
-                    $this->destinationKeyPattern = '${host}!${object_name}';
-                }
-            }
-        }
-
-        return $this->hasCombinedKey;
-    }
-
-    /**
      * Fetch latest imported data rows from all involved import sources
      *
      * @return self
@@ -281,6 +235,9 @@ class Sync
     protected function fetchImportedData()
     {
         $this->imported = array();
+
+        $sourceKeyPattern = $this->rule->getSourceKeyPattern();
+        $combinedKey = $this->rule->hasCombinedKey();
 
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
@@ -293,14 +250,14 @@ class Sync
 
             $this->imported[$sourceId] = array();
             foreach ($rows as $row) {
-                if ($this->hasCombinedKey()) {
-                    $key = SyncUtils::fillVariables($this->sourceKeyPattern, $row);
+                if ($combinedKey) {
+                    $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
 
                     if (array_key_exists($key, $this->imported[$sourceId])) {
                         throw new IcingaException(
                             'Trying to import row "%s" (%s) twice: %s VS %s',
                             $key,
-                            $this->sourceKeyPattern,
+                            $sourceKeyPattern,
                             json_encode($this->imported[$sourceId][$key]),
                             json_encode($row)
                         );
@@ -323,7 +280,7 @@ class Sync
                     continue;
                 }
 
-                if ($this->hasCombinedKey()) {
+                if ($combinedKey) {
                     $this->imported[$sourceId][$key] = $row;
                 } else {
                     $this->imported[$sourceId][$row->$key] = $row;
@@ -367,9 +324,10 @@ class Sync
     protected function loadExistingObjects()
     {
         // TODO: Make object_type (template, object...) and object_name mandatory?
-        if ($this->hasCombinedKey()) {
+        if ($this->rule->hasCombinedKey()) {
 
             $this->objects = array();
+            $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
 
             foreach (IcingaObject::loadAllByType(
                 $this->rule->object_type,
@@ -383,14 +341,14 @@ class Sync
                 }
 
                 $key = SyncUtils::fillVariables(
-                    $this->destinationKeyPattern,
+                    $destinationKeyPattern,
                     $object
                 );
 
                 if (array_key_exists($key, $this->objects)) {
                     throw new IcingaException(
                         'Combined destination key "%s" is not unique, got "%s" twice',
-                        $this->destinationKeyPattern,
+                        $destinationKeyPattern,
                         $key
                     );
                 }
