@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import\PurgeStrategy;
 
+use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Objects\ImportRun;
 use Icinga\Module\Director\Objects\ImportSource;
 
@@ -48,7 +49,8 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
 
     public function listKeysRemovedBetween(ImportRun $runA, ImportRun $runB)
     {
-        $db = $this->getSyncRule()->getDb();
+        $rule = $this->getSyncRule();
+        $db = $rule->getDb();
 
         $selectA = $runA->prepareImportedObjectQuery();
         $selectB = $runB->prepareImportedObjectQuery();
@@ -63,6 +65,16 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
         )->where('b.object_name IS NULL');
 
         $result = $db->fetchCol($query);
+
+        if ($rule->object_type === 'service') {
+            $pattern = $rule->getSourceKeyPattern();
+            $columns = SyncUtils::extractVariableNames($pattern);
+            $rows = $runA->fetchRows($columns, null, $result);
+            $result = array();
+            foreach ($rows as $row) {
+                $result[] = SyncUtils::fillVariables($pattern, $row);
+            }
+        }
 
         if ($result) {
             return array_combine($result, $result);
