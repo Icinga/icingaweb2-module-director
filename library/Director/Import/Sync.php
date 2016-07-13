@@ -392,10 +392,8 @@ class Sync
             // Provide an alias column for our key. TODO: double-check this!
             $key = $source->key_column;
             $this->sourceColumns[$sourceId][$key] = $key;
-            $rows = $this->db->fetchLatestImportedRows(
-                $sourceId,
-                $this->sourceColumns[$sourceId]
-            );
+            $run = $source->fetchLastRun(true);
+            $rows = $run->fetchRows($this->sourceColumns[$sourceId]);
 
             $this->imported[$sourceId] = array();
             foreach ($rows as $row) {
@@ -434,6 +432,8 @@ class Sync
                     $this->imported[$sourceId][$row->$key] = $row;
                 }
             }
+
+            unset($rows);
         }
 
         return $this;

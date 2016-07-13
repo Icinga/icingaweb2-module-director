@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Import\Import;
 use Exception;
@@ -29,15 +30,15 @@ class ImportSource extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'source_id';
 
-    public function fetchLastRun()
+    public function fetchLastRun($required = false)
     {
-        return $this->fetchLastRunBefore(time());
+        return $this->fetchLastRunBefore(time() + 1, $required);
     }
 
-    public function fetchLastRunBefore($timestamp)
+    public function fetchLastRunBefore($timestamp, $required = false)
     {
         if (! $this->hasBeenLoadedFromDb()) {
-            return null;
+            return $this->nullUnlessRequired($required);
         }
 
         if ($timestamp === null) {
@@ -58,8 +59,20 @@ class ImportSource extends DbObjectWithSettings
         if ($runId) {
             return ImportRun::load($runId, $this->getConnection());
         } else {
-            return null;
+            return $this->nullUnlessRequired($required);
         }
+    }
+
+    protected function nullUnlessRequired($required)
+    {
+        if ($required) {
+            throw new NotFoundError(
+                'No data has been imported for "%s" yet',
+                $this->source_name
+            );
+        }
+
+        return null;
     }
 
     public function fetchRowModifiers()
