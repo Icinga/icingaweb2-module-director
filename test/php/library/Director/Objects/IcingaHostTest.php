@@ -84,6 +84,73 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testPropertiesCanBePreservedWhenBeingReplaced()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $this->host()->store($db);
+        $host = IcingaHost::load($this->testHostName, $db);
+
+        $newHost = IcingaHost::create(
+            array(
+                'display_name'  => 'Replaced display',
+                'address'       => '1.2.2.3',
+                'vars'          => array(
+                    'test1'     => 'newstring',
+                    'test2'     => 18,
+                    'initially' => 'set and then preserved',
+                )
+            )
+        );
+
+        $preserve = array('address', 'vars.test1', 'vars.initially');
+        $host->replaceWith($newHost, $preserve);
+        $this->assertEquals(
+            $host->address,
+            '127.0.0.127'
+        );
+
+        $this->assertEquals(
+            $host->{'vars.test2'},
+            18
+        );
+
+        $this->assertEquals(
+            $host->vars()->test2->getValue(),
+            18
+        );
+
+        $this->assertEquals(
+            $host->{'vars.initially'},
+            'set and then preserved'
+        );
+
+        $this->assertFalse(
+            array_key_exists('address', $host->getModifiedProperties()),
+            'Preserved property stays unmodified'
+        );
+
+        $newHost->set('vars.initially', 'changed later on');
+        $newHost->set('vars.test2', 19);
+
+        $host->replaceWith($newHost, $preserve);
+        $this->assertEquals(
+            $host->{'vars.initially'},
+            'set and then preserved'
+        );
+
+        $this->assertEquals(
+            $host->get('vars.test2'),
+            19
+        );
+
+
+        $host->delete();
+    }
+
     public function testDistinctCustomVarsCanBeSetWithoutSideEffects()
     {
         $host = $this->host();

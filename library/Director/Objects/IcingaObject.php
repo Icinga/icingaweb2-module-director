@@ -339,6 +339,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if (substr($key, 0, 5) === 'vars.') {
+            $var = $this->vars()->get(substr($key, 5));
+            if ($var === null) {
+                return $var;
+            } else {
+                return $var->getValue();
+            }
+        }
+
         if ($this->hasRelation($key)) {
             if ($id = $this->get($key . '_id')) {
                 $class = $this->getRelationClass($key);
@@ -1495,9 +1504,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return static::create((array) $plain, $connection);
     }
 
-    public function replaceWith(IcingaObject $object)
+    public function replaceWith(IcingaObject $object, $preserve = null)
     {
-        $this->setProperties((array) $object->toPlainObject());
+        if ($preserve === null) {
+            $this->setProperties((array) $object->toPlainObject());
+        } else {
+            $plain = (array) $object->toPlainObject();
+            foreach ($preserve as $k) {
+                $v = $this->$k;
+                if ($v !== null) {
+                    $plain[$k] = $v;
+                }
+            }
+
+            $this->setProperties($plain);
+        }
         return $this;
     }
 
