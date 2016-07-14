@@ -10,6 +10,7 @@ class TableLoader
 {
     public static function load($name, Module $module = null)
     {
+	$file="";
         if ($module === null) {
             $basedir = Icinga::app()->getApplicationDir('tables');
             $ns = '\\Icinga\\Web\\Tables\\';

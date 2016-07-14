@@ -86,7 +86,6 @@ abstract class ObjectsController extends ActionController
 
 
         $this->assertPermission('director/' . $ptype . '/read');
-        $this->assertPermission('director/' . $type . 's/read');
         /** @var IcingaObject $dummy */
         $dummy = $this->dummyObject();
 
@@ -137,7 +136,6 @@ abstract class ObjectsController extends ActionController
         );
 
         $this->view->title = $this->translate('Icinga ' . ucfirst($pltype));
-        $table = $this->loadTable($table)->setConnection($this->db());
         $filterEditor = $table->getFilterEditor($this->getRequest());
         $filter = $filterEditor->getFilter();
 
