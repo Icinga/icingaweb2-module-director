@@ -36,4 +36,93 @@ class ImportRun extends DbObject
             $this->getConnection()->quoteBinary($this->rowset_checksum)
         );
     }
+
+    public function listColumnNames()
+    {
+        $db = $this->getDb();
+
+        $query = $db->select()->distinct()->from(
+            array('p' => 'imported_property'),
+            'property_name'
+        )->join(
+            array('rp' => 'imported_row_property'),
+            'rp.property_checksum = p.checksum',
+            array()
+        )->join(
+            array('rsr' => 'imported_rowset_row'),
+            'rsr.row_checksum = rp.row_checksum',
+            array()
+        )->where('rsr.rowset_checksum = ?', $this->getConnection()->quoteBinary($this->rowset_checksum));
+
+        return $db->fetchCol($query);
+    }
+
+    public function fetchRows($columns, $filter = null, $keys = null)
+    {
+        $db = $this->getDb();
+        $binchecksum = $this->rowset_checksum;
+
+        $query = $db->select()->from(
+            array('rsr' => 'imported_rowset_row'),
+            array(
+                'object_name'    => 'r.object_name',
+                'property_name'  => 'p.property_name',
+                'property_value' => 'p.property_value',
+                'format'         => 'p.format'
+            )
+        )->join(
+            array('r' => 'imported_row'),
+            'rsr.row_checksum = r.checksum',
+            array()
+        )->join(
+            array('rp' => 'imported_row_property'),
+            'r.checksum = rp.row_checksum',
+            array()
+        )->join(
+            array('p' => 'imported_property'),
+            'p.checksum = rp.property_checksum',
+            array()
+        )->where('rsr.rowset_checksum = ?', $this->getConnection()->quoteBinary($binchecksum))->order('r.object_name');
+
+        if ($columns === null) {
+            $columns = $this->listColumnNames();
+        } else {
+            $query->where('p.property_name IN (?)', $columns);
+        }
+
+        $result = array();
+        $empty = (object) array();
+        foreach ($columns as $k => $v) {
+            $empty->$k = null;
+        }
+
+        if ($keys !== null) {
+            $query->where('r.object_name IN (?)', $keys);
+        }
+
+        foreach ($db->fetchAll($query) as $row) {
+            if (! array_key_exists($row->object_name, $result)) {
+                $result[$row->object_name] = clone($empty);
+            }
+
+            if ($row->format === 'json') {
+                $result[$row->object_name]->{$row->property_name} = json_decode($row->property_value);
+            } else {
+                $result[$row->object_name]->{$row->property_name} = $row->property_value;
+            }
+        }
+
+        if ($filter) {
+            $filtered = array();
+            foreach ($result as $key => $row) {
+                if ($filter->matches($row)) {
+                    $filtered[$key] = $row;
+                }
+            }
+
+            return $filtered;
+        }
+
+        return $result;
+    }
 }

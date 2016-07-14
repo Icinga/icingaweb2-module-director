@@ -56,6 +56,7 @@ class ImportrunTable extends QuickTable
 
     public function getBaseQuery()
     {
+        // TODO: Store row count to rowset
         $db = $this->connection()->getConnection();
 
         $query = $db->select()->from(

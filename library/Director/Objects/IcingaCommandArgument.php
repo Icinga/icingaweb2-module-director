@@ -48,7 +48,8 @@ class IcingaCommandArgument extends IcingaObject
         // No log right now, we have to handle "sub-objects"
     }
 
-    public function replaceWith(IcingaObject $object)
+    // Preserve is not supported
+    public function replaceWith(IcingaObject $object, $preserve = null)
     {
         $this->setProperties((array) $object->toPlainObject(
             false,

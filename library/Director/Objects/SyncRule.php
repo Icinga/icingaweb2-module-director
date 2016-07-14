@@ -37,6 +37,14 @@ class SyncRule extends DbObject
 
     private $filter;
 
+    private $hasCombinedKey;
+
+    private $syncProperties;
+
+    private $sourceKeyPattern;
+
+    private $destinationKeyPattern;
+
     public function listInvolvedSourceIds()
     {
         if (! $this->hasBeenLoadedFromDb()) {
@@ -179,6 +187,24 @@ class SyncRule extends DbObject
         return $this->currentSyncRunId;
     }
 
+    public function getSourceKeyPattern()
+    {
+        if ($this->hasCombinedKey()) {
+            return $this->sourceKeyPattern;
+        } else {
+            return null; // ??
+        }
+    }
+
+    public function getDestinationKeyPattern()
+    {
+        if ($this->hasCombinedKey()) {
+            return $this->destinationKeyPattern;
+        } else {
+            return null; // ??
+        }
+    }
+
     protected function sync()
     {
         if ($this->sync === null) {
@@ -214,6 +240,59 @@ class SyncRule extends DbObject
         } else {
             return PurgeStrategy::load('PurgeNothing', $this);
         }
+    }
+
+    /**
+     * Whether we have a combined key (e.g. services on hosts)
+     *
+     * @return bool
+     */
+    public function hasCombinedKey()
+    {
+        if ($this->hasCombinedKey === null) {
+
+            $this->hasCombinedKey = false;
+
+            if ($this->object_type === 'service') {
+                $hasHost = false;
+                $hasObjectName = false;
+
+                foreach ($this->getSyncProperties() as $key => $property) {
+                    if ($property->destination_field === 'host') {
+                        $hasHost = $property->source_expression;
+                    }
+                    if ($property->destination_field === 'object_name') {
+                        $hasObjectName = $property->source_expression;
+                    }
+                }
+
+                if ($hasHost !== false && $hasObjectName !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasHost,
+                        $hasObjectName
+                    );
+
+                    $this->destinationKeyPattern = '${host}!${object_name}';
+                }
+            }
+        }
+
+        return $this->hasCombinedKey;
+    }
+
+    public function getSyncProperties()
+    {
+        if (! $this->hasBeenLoadedFromDb()) {
+            return array();
+        }
+
+        if ($this->syncProperties === null) {
+            $this->syncProperties = $this->fetchSyncProperties();
+        }
+
+        return $this->syncProperties;
     }
 
     public function fetchSyncProperties()

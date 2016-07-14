@@ -2,24 +2,37 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Data\DataArray\ArrayDatasource;
+use Icinga\Module\Director\Objects\ImportRun;
+use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ImportedrowsTable extends QuickTable
 {
-    protected $checksum;
+    protected $columns;
+
+    protected $importRun;
+
+    public function setImportRun(ImportRun $run)
+    {
+        $this->importRun = $run;
+        return $this;
+    }
+
+    public function setColumns($columns)
+    {
+        $this->columns = $columns;
+        return $this;
+    }
 
     public function getColumns()
     {
-        $db = $this->connection();
-        $cols = $db->listImportedRowsetColumnNames($this->checksum);
-        return array_combine($cols, $cols);
-    }
+        if ($this->columns === null) {
+            $cols = $this->importRun->listColumnNames();
+        } else {
+            $cols = $this->columns;
+        }
 
-    public function setChecksum($checksum)
-    {
-        $this->checksum = $checksum;
-        return $this;
+        return array_combine($cols, $cols);
     }
 
     public function getTitles()
@@ -39,21 +52,6 @@ class ImportedrowsTable extends QuickTable
             $query->limit($this->getLimit(), $this->getOffset());
         }
 
-        // TODO: move to dedicated method in parent class
-        $filter = null;
-        $enforced = $this->enforcedFilters;
-        if ($this->filter && ! $this->filter->isEmpty()) {
-            $filter = $this->filter;
-        } elseif (! empty($enforced)) {
-            $filter = array_shift($enforced);
-        }
-        if ($filter) {
-            foreach ($enforced as $f) {
-                $filter->andFilter($f);
-            }
-            $query->where($this->renderFilter($filter));
-        }
-
         return $query->fetchAll();
     }
 
@@ -65,16 +63,9 @@ class ImportedrowsTable extends QuickTable
     public function getBaseQuery()
     {
         $ds = new ArrayDatasource(
-            $this->connection()->fetchImportedRowsetRows(
-                $this->checksum,
-                null
-            )
+            $this->importRun->fetchRows($this->columns, $this->filter)
         );
 
         return $ds->select()->order('object_name');
-        // TODO: Remove? ->
-        return $this->connection()->createImportedRowsetRowsQuery(
-            $this->checksum
-        )->order('object_name');
     }
 }

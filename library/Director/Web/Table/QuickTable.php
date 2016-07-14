@@ -313,7 +313,7 @@ abstract class QuickTable implements Paginatable
         $filterEditor = Widget::create('filterEditor')
             ->setColumns(array_keys($this->getColumns()))
             ->setSearchColumns($this->getSearchColumns())
-            ->preserveParams('limit', 'sort', 'dir', 'view', 'backend')
+            ->preserveParams('limit', 'sort', 'dir', 'view', 'backend', '_dev')
             ->ignoreParams('page')
             ->handleRequest($request);
 

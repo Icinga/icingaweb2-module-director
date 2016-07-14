@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -60,12 +61,6 @@ class Sync
 
     protected $errors = array();
 
-    protected $hasCombinedKey;
-
-    protected $sourceKeyPattern;
-
-    protected $destinationKeyPattern;
-
     protected $syncProperties;
 
     protected $run;
@@ -115,22 +110,6 @@ class Sync
     }
 
     /**
-     * Extract variable names in the form ${var_name} from a given string
-     *
-     * @param  string $string
-     *
-     * @return array  List of variable names (without ${})
-     */
-    protected function extractVariableNames($string)
-    {
-        if (preg_match_all('/\${([A-Za-z0-9\._-]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
-            return $m[1];
-        } else {
-            return array();
-        }
-    }
-
-    /**
      * Transform the given value to an array
      *
      * @param  array|string|null $value
@@ -146,95 +125,6 @@ class Sync
         } else {
             return array($value);
         }
-    }
-
-    /**
-     * Recursively extract a value from a nested structure
-     *
-     * For a $val looking like
-     *
-     * { 'vars' => { 'disk' => { 'sda' => { 'size' => '256G' } } } }
-     *
-     * and a key vars.disk.sda given as [ 'vars', 'disk', 'sda' ] this would
-     * return { size => '255GB' }
-     *
-     * @param  string $val  The value to extract data from
-     * @param  object $keys A list of nested keys pointing to desired data
-     *
-     * @return mixed
-     */
-    protected function getDeepValue($val, $keys)
-    {
-        $key = array_shift($keys);
-        if (! property_exists($val, $key)) {
-            return null;
-        }
-
-        if (empty($keys)) {
-            return $val->$key;
-        }
-
-        return $this->getDeepValue($val->$key, $keys);
-    }
-
-    /**
-     * Return a specific value from a given row object
-     *
-     * Supports also keys pointing to nested structures like vars.disk.sda
-     *
-     * @param  object $row    stdClass object providing property values
-     * @param  string $string Variable/property name
-     *
-     * @return mixed
-     */
-    public function getSpecificValue($row, $var)
-    {
-        if (strpos($var, '.') === false) {
-            if ($row instanceof IcingaObject) {
-                return $row->$var;
-            }
-            if (! property_exists($row, $var)) {
-                return null;
-            }
-
-            return $row->$var;
-        } else {
-            $parts = explode('.', $var);
-            $main = array_shift($parts);
-            if (! is_object($row->$main)) {
-                throw new IcingaException('Data is not nested, cannot access %s: %s', $var, var_export($row, 1));
-            }
-
-            return $this->getDeepValue($row->$main, $parts);
-        }
-    }
-
-    /**
-     * Fill variables in the given string pattern
-     *
-     * This replaces all occurances of ${var_name} with the corresponding
-     * property $row->var_name of the given row object. Missing variables are
-     * replaced by an empty string. This works also fine in case there are
-     * multiple variables to be found in your string.
-     *
-     * @param  string $string String with opional variables/placeholders
-     * @param  object $row    stdClass object providing property values
-     *
-     * @return string
-     */
-    protected function fillVariables($string, $row)
-    {
-        if (preg_match('/^\${([A-Za-z0-9\._-]+)}$/', $string, $m)) {
-            return $this->getSpecificValue($row, $m[1]);
-        }
-
-        // PHP 5.3 :(
-        $self = $this;
-        $func = function ($match) use ($self, $row) {
-            return $self->getSpecificValue($row, $match[1]);
-        };
-
-        return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
     }
 
     /**
@@ -328,53 +218,13 @@ class Sync
                 $this->sourceColumns[$sourceId] = array();
             }
 
-            foreach ($this->extractVariableNames($p->source_expression) as $varname) {
+            foreach (SyncUtils::extractVariableNames($p->source_expression) as $varname) {
                 $this->sourceColumns[$sourceId][$varname] = $varname;
                 // -> ? $fieldMap[
             }
         }
 
         return $this;
-    }
-
-    /**
-     * Whether we have a combined key (e.g. services on hosts)
-     *
-     * @return bool
-     */
-    protected function hasCombinedKey()
-    {
-        if ($this->hasCombinedKey === null) {
-
-            $this->hasCombinedKey = false;
-
-            if ($this->rule->object_type === 'service') {
-                $hasHost = false;
-                $hasObjectName = false;
-
-                foreach ($this->syncProperties as $key => $property) {
-                    if ($property->destination_field === 'host') {
-                        $hasHost = $property->source_expression;
-                    }
-                    if ($property->destination_field === 'object_name') {
-                        $hasObjectName = $property->source_expression;
-                    }
-                }
-
-                if ($hasHost !== false && $hasObjectName !== false) {
-                    $this->hasCombinedKey = true;
-                    $this->sourceKeyPattern = sprintf(
-                        '%s!%s',
-                        $hasHost,
-                        $hasObjectName
-                    );
-
-                    $this->destinationKeyPattern = '${host}!${object_name}';
-                }
-            }
-        }
-
-        return $this->hasCombinedKey;
     }
 
     /**
@@ -386,26 +236,30 @@ class Sync
     {
         $this->imported = array();
 
+        $sourceKeyPattern = $this->rule->getSourceKeyPattern();
+        $combinedKey = $this->rule->hasCombinedKey();
+
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
 
             // Provide an alias column for our key. TODO: double-check this!
             $key = $source->key_column;
             $this->sourceColumns[$sourceId][$key] = $key;
-            $rows = $this->db->fetchLatestImportedRows(
-                $sourceId,
-                $this->sourceColumns[$sourceId]
+            $run = $source->fetchLastRun(true);
+            $rows = $run->fetchRows(
+                SyncUtils::getRootVariables($this->sourceColumns[$sourceId])
             );
 
             $this->imported[$sourceId] = array();
             foreach ($rows as $row) {
-                if ($this->hasCombinedKey()) {
-                    $key = $this->fillVariables($this->sourceKeyPattern, $row);
+                if ($combinedKey) {
+                    $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
+
                     if (array_key_exists($key, $this->imported[$sourceId])) {
                         throw new IcingaException(
                             'Trying to import row "%s" (%s) twice: %s VS %s',
                             $key,
-                            $this->sourceKeyPattern,
+                            $sourceKeyPattern,
                             json_encode($this->imported[$sourceId][$key]),
                             json_encode($row)
                         );
@@ -428,12 +282,14 @@ class Sync
                     continue;
                 }
 
-                if ($this->hasCombinedKey()) {
+                if ($combinedKey) {
                     $this->imported[$sourceId][$key] = $row;
                 } else {
                     $this->imported[$sourceId][$row->$key] = $row;
                 }
             }
+
+            unset($rows);
         }
 
         return $this;
@@ -470,9 +326,10 @@ class Sync
     protected function loadExistingObjects()
     {
         // TODO: Make object_type (template, object...) and object_name mandatory?
-        if ($this->hasCombinedKey()) {
+        if ($this->rule->hasCombinedKey()) {
 
             $this->objects = array();
+            $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
 
             foreach (IcingaObject::loadAllByType(
                 $this->rule->object_type,
@@ -485,15 +342,15 @@ class Sync
                     }
                 }
 
-                $key = $this->fillVariables(
-                    $this->destinationKeyPattern,
+                $key = SyncUtils::fillVariables(
+                    $destinationKeyPattern,
                     $object
                 );
 
                 if (array_key_exists($key, $this->objects)) {
                     throw new IcingaException(
                         'Combined destination key "%s" is not unique, got "%s" twice',
-                        $this->destinationKeyPattern,
+                        $destinationKeyPattern,
                         $key
                     );
                 }
@@ -539,7 +396,7 @@ class Sync
 
                     $prop = $p->destination_field;
 
-                    $val = $this->fillVariables($p->source_expression, $row);
+                    $val = SyncUtils::fillVariables($p->source_expression, $row);
 
                     if (substr($prop, 0, 5) === 'vars.') {
                         $varName = substr($prop, 5);
