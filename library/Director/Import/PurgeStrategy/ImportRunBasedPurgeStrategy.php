@@ -68,7 +68,9 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
 
         if ($rule->object_type === 'service') {
             $pattern = $rule->getSourceKeyPattern();
-            $columns = SyncUtils::extractVariableNames($pattern);
+            $columns = SyncUtils::getRootVariables(
+                SyncUtils::extractVariableNames($pattern)
+            );
             $rows = $runA->fetchRows($columns, null, $result);
             $result = array();
             foreach ($rows as $row) {

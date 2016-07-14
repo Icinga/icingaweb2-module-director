@@ -246,7 +246,9 @@ class Sync
             $key = $source->key_column;
             $this->sourceColumns[$sourceId][$key] = $key;
             $run = $source->fetchLastRun(true);
-            $rows = $run->fetchRows($this->sourceColumns[$sourceId]);
+            $rows = $run->fetchRows(
+                SyncUtils::getRootVariables($this->sourceColumns[$sourceId])
+            );
 
             $this->imported[$sourceId] = array();
             foreach ($rows as $row) {

@@ -75,6 +75,10 @@ class SyncUtils
         } else {
             $parts = explode('.', $var);
             $main = array_shift($parts);
+            if (! property_exists($row, $main)) {
+                return null;
+            }
+
             if (! is_object($row->$main)) {
                 throw new IcingaException('Data is not nested, cannot access %s: %s', $var, var_export($row, 1));
             }
@@ -107,5 +111,19 @@ class SyncUtils
         };
 
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
+    }
+
+    public static function getRootVariables($vars)
+    {
+        $res = array();
+        foreach ($vars as $p) {
+            if (false === ($pos = strpos($p, '.'))) {
+                $res[] = $p;
+            } else {
+                $res[] = substr($p, 0, $pos);
+            }
+        }
+
+        return array_combine($res, $res);
     }
 }
