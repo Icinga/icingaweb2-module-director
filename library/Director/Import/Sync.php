@@ -552,6 +552,7 @@ class Sync
             $modified = 0;
             $deleted = 0;
             foreach ($objects as $object) {
+                /* TODO: allow template sync
                 if ($object instanceof IcingaObject && $object->isTemplate()) {
                     // TODO: allow to sync templates
                     if ($object->hasBeenModified()) {
@@ -562,6 +563,7 @@ class Sync
                     }
                     continue;
                 }
+                */
 
                 if ($object->shouldBeRemoved()) {
                     $object->delete($db);
