@@ -8,13 +8,14 @@ use Icinga\Module\Director\Web\Form\QuickSubForm;
 
 class AssignmentSubForm extends QuickSubForm
 {
+    /** @var IcingaObject */
     protected $object;
 
     // @codingStandardsIgnoreStart
     protected $_disableLoadDefaultDecorators = true;
     // @codingStandardsIgnoreEnd
 
-    public function setup()
+    public function setup($fallback=false)
     {
         $this->addElement('select', 'assign_type', array(
             'multiOptions' => array(
@@ -24,32 +25,43 @@ class AssignmentSubForm extends QuickSubForm
             'class' => 'assign-type',
             'value' => 'assign'
         ));
-        $this->addElement('select', 'property', array(
-            'label' => $this->translate('Property'),
-            'class' => 'assign-property autosubmit',
-            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->object->getConnection(), 'host.'))
-        ));
-        $this->addElement('select', 'operator', array(
-            'label' => $this->translate('Operator'),
-            'multiOptions' => array(
-                '='  => '=',
-                '!=' => '!=',
-                '>'  => '>',
-                '>=' => '>=',
-                '<=' => '<=',
-                '<'  => '<',
-            ),
-            'required' => $this->valueIsEmpty($this->getValue('property')),
-            'value' => '=',
-            'class' => 'assign-operator',
-        ));
 
-        $this->addElement('text', 'expression', array(
-            'label'       => $this->translate('Expression'),
-            'placeholder' => $this->translate('Expression'),
-            'class'       => 'assign-expression',
-            'required'    => !$this->valueIsEmpty($this->getValue('property'))
-        ));
+        if ($fallback === true) {
+            $this->addElement('text', 'query_string', array(
+                'label'       => $this->translate('Query String'),
+                'placeholder' => $this->translate('Query String'),
+                'class'       => 'assign-querystring',
+            ));
+        }
+        else {
+            $this->addElement('select', 'property', array(
+                'label' => $this->translate('Property'),
+                'class' => 'assign-property autosubmit',
+                'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->object->getConnection(), 'host.'))
+            ));
+            $this->addElement('select', 'operator', array(
+                'label' => $this->translate('Operator'),
+                'multiOptions' => array(
+                    '='  => '=',
+                    '!=' => '!=',
+                    '>'  => '>',
+                    '>=' => '>=',
+                    '<=' => '<=',
+                    '<'  => '<',
+                ),
+                'required' => $this->valueIsEmpty($this->getValue('property')),
+                'value' => '=',
+                'class' => 'assign-operator',
+            ));
+
+            $this->addElement('text', 'expression', array(
+                'label'       => $this->translate('Expression'),
+                'placeholder' => $this->translate('Expression'),
+                'class'       => 'assign-expression',
+                'required'    => !$this->valueIsEmpty($this->getValue('property'))
+            ));
+        }
+
 /*
         $this->addElement('submit', 'remove', array(
             'label'  => '-',
@@ -61,6 +73,7 @@ class AssignmentSubForm extends QuickSubForm
         ));
 */
         foreach ($this->getElements() as $el) {
+            /** @var \Zend_Form_Element $el */
             $el->setDecorators(array('ViewHelper'));
         }
     }

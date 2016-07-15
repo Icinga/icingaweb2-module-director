@@ -7,7 +7,7 @@ use Icinga\Module\Director\Web\Form\QuickSubForm;
 
 class AssignListSubForm extends QuickSubForm
 {
-
+    /** @var IcingaObject */
     protected $object;
 
     public function setObject($object)
@@ -31,7 +31,7 @@ class AssignListSubForm extends QuickSubForm
                 $idx++;
                 $sub = new AssignmentSubForm();
                 $sub->setObject($this->object);
-                $sub->setup();
+                $sub->setup(array_key_exists('query_string', $values));
                 $sub->populate($values);
                 $this->addSubForm($sub, $idx);
             }
