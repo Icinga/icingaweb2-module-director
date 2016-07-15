@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterExpression;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -76,16 +78,19 @@ class IcingaObjectAssignments
             );
 
             $filter = Filter::fromQueryString($rule['filter_string']);
-            if (!$filter->isExpression()) {
-                throw new IcingaException(
-                    'We currently support only flat filters in our forms, got %',
-                    (string) $filter
-                );
+            if ($filter->isExpression()) {
+                #throw new IcingaException(
+                #    'We currently support only flat filters in our forms, got %',
+                #    (string) $filter
+                #);
+                /** @var FilterExpression $filter */
+                $f['property']   = $filter->getColumn();
+                $f['operator']   = $filter->getSign();
+                $f['expression'] = trim(stripcslashes($filter->getExpression()), '"');
             }
-
-            $f['property']   = $filter->getColumn();
-            $f['operator']   = $filter->getSign();
-            $f['expression'] = trim(stripcslashes($filter->getExpression()), '"');
+            else {
+                $f['query_string'] = $rule['filter_string'];
+            }
 
             $result[] = $f;
         }
@@ -107,24 +112,28 @@ class IcingaObjectAssignments
                 $rows[$val['assign_type']] = array();
             }
 
-            if (empty($val['property'])) {
-                continue;
+            if (array_key_exists('query_string', $val)) {
+                $rows[$val['assign_type']][] = $this->rerenderFilter($val['query_string']);
             }
+            else {
+                if (empty($val['property'])) {
+                    continue;
+                }
 
-            if (is_numeric($val['expression'])) {
-                $expression = $val['expression'];
-            } else {
-                $expression = '"' . addcslashes($val['expression'], '"') . '"';
+                if (is_numeric($val['expression'])) {
+                    $expression = $val['expression'];
+                } else {
+                    $expression = '"' . addcslashes($val['expression'], '"') . '"';
+                }
+
+                $rows[$val['assign_type']][] = $this->rerenderFilter(
+                    implode('', array(
+                        $val['property'],
+                        $val['operator'],
+                        $expression,
+                    ))
+                );
             }
-
-            $rows[$val['assign_type']][] = $this->rerenderFilter(
-                implode('', array(
-                    $val['property'],
-                    $val['operator'],
-                    $expression,
-                ))
-            );
-
         }
 
         return $this->setValues($rows);
