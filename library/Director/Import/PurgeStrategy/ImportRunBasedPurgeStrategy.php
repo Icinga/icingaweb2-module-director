@@ -66,6 +66,10 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
 
         $result = $db->fetchCol($query);
 
+        if (empty($result)) {
+            return array();
+        }
+
         if ($rule->object_type === 'service') {
             $pattern = $rule->getSourceKeyPattern();
             $columns = SyncUtils::getRootVariables(
@@ -78,10 +82,10 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
             }
         }
 
-        if ($result) {
-            return array_combine($result, $result);
-        } else {
+        if (empty($result)) {
             return array();
         }
+
+        return array_combine($result, $result);
     }
 }
