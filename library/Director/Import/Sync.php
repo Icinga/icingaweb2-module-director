@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -337,7 +338,7 @@ class Sync
             ) as $object) {
 
                 if ($object instanceof IcingaService) {
-                    if (! $object->host_id) {
+                    if (!$object->host_id) {
                         continue;
                     }
                 }
@@ -357,6 +358,13 @@ class Sync
 
                 $this->objects[$key] = $object;
             }
+        } elseif ($this->rule->object_type === 'service') {
+            // TODO: find a better solution
+            $this->objects = IcingaService::loadAll(
+                $this->db,
+                null,
+                'object_name'
+            );
         } else {
             $this->objects = IcingaObject::loadAllByType(
                 $this->rule->object_type,
@@ -482,6 +490,11 @@ class Sync
         $newObjects = $this->prepareNewObjects();
 
         foreach ($newObjects as $key => $object) {
+            // TODO: explain!
+            if (is_integer($key)) { // || is_array($object->getKeyName())) {
+                throw new NotImplementedError('can not sync against objects with numeric ids');
+            }
+
             if (array_key_exists($key, $this->objects)) {
                 switch ($this->rule->update_policy) {
                     case 'override':
