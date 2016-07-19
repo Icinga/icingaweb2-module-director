@@ -8,7 +8,6 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Web\Url;
 
 abstract class ObjectController extends ActionController
 {
@@ -28,6 +27,7 @@ abstract class ObjectController extends ActionController
         $type = $this->getType();
 
         if ($object = $this->loadObject()) {
+            /** @var IcingaObject $object */
             $this->beforeTabs();
             $params = $object->getUrlParams();
 
@@ -156,7 +156,21 @@ abstract class ObjectController extends ActionController
             ->setApi($this->getApiIfAvailable());
         $form->setObject($object);
 
-        $this->view->title = $object->object_name;
+        if ($object->object_type !== 'object') {
+            $this->view->title = sprintf(
+                '%s %s: %s',
+                $type,
+                ucfirst($object->object_type),
+                $object->object_name
+            );
+        }
+        else {
+            $this->view->title = sprintf(
+                '%s: %s',
+                $type,
+                $object->object_name
+            );
+        }
         $this->view->form->handleRequest();
 
         $this->view->actionLinks = $this->createCloneLink();
