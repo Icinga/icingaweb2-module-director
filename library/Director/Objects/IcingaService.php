@@ -97,6 +97,11 @@ class IcingaService extends IcingaObject
             return true;
         }
 
+        if ($this->isTemplate()) {
+            // TODO: templates support apply
+            return true;
+        }
+
         return $this->hasProperty('object_type')
             && $this->object_type === 'apply';
     }
