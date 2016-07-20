@@ -201,7 +201,7 @@ function Icinga2AgentModule {
         $this.setProperty('initialized', $TRUE);
         # Set the default config dir
         $this.setProperty('config_dir', $Env:ProgramData + '\icinga2\etc\icinga2\');
-        $this.setProperty('api_dir', $Env:ProgramData + '\icinga2\var\lib\icinga2\api\');
+        $this.setProperty('api_dir', $Env:ProgramData + '\icinga2\var\lib\icinga2\api');
         # Generate endpoint nodes based on iput
         # parameters
         $this.generateEndpointNodes();
@@ -229,22 +229,23 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'generateEndpointNodes' -value {
 
-        if (-Not $this.config('endpoints')) {
-            throw 'You require to specify atleast one endpoint with parameter -Endpoints <nodes>';
+        if ($this.config('endpoints')) {
+            $endpoint_objects = '';
+            $endpoint_nodes = '';
+            foreach ($endpoint in $this.config('endpoints')) {
+                $endpoint_objects += 'object Endpoint "' + "$endpoint" +'"{}'+"`n";
+                $endpoint_nodes += '"' + "$endpoint" + '", ';
+            }
+            # Remove the last blank and , from the string
+            if (-Not $endpoint_nodes.length -eq 0) {
+                $endpoint_nodes = $endpoint_nodes.Remove($endpoint_nodes.length - 2, 2);
+            }
+            $this.setProperty('endpoint_nodes', $endpoint_nodes);
+            $this.setProperty('endpoint_objects', $endpoint_objects);
+            $this.setProperty('generate_config', 'true');
+        } else {
+            $this.setProperty('generate_config', 'false');
         }
-
-        $endpoint_objects = '';
-        $endpoint_nodes = '';
-        foreach ($endpoint in $this.config('endpoints')) {
-            $endpoint_objects += 'object Endpoint "' + "$endpoint" +'"{}'+"`n";
-            $endpoint_nodes += '"' + "$endpoint" + '", ';
-        }
-        # Remove the last blank and , from the string
-        if (-Not $endpoint_nodes.length -eq 0) {
-            $endpoint_nodes = $endpoint_nodes.Remove($endpoint_nodes.length - 2, 2);
-        }
-        $this.setProperty('endpoint_nodes', $endpoint_nodes);
-        $this.setProperty('endpoint_objects', $endpoint_objects);
     }
 
     #
@@ -491,8 +492,9 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'flushIcingaApiDirectory' -value {    
         if (Test-Path $this.getApiDirectory()) {
-            $this.info('Flushing content of ' + $this.getApiDirectory());    
-            Get-ChildItem -Path $this.getApiDirectory() -Recurse | Remove-Item -force -recurse    
+            $this.info('Flushing content of ' + $this.getApiDirectory()); 
+            $folder = New-Object -ComObject Scripting.FileSystemObject;
+            $folder.DeleteFolder($this.getApiDirectory());        
         }
     }
 
@@ -515,15 +517,16 @@ function Icinga2AgentModule {
     }
 
     $installer | Add-Member -membertype ScriptMethod -name 'generateIcingaConfiguration' -value {
+        if ($this.getProperty('generate_config') -eq 'true') {
+        
+            $this.checkConfigInputParametersAndThrowException();
 
-        $this.checkConfigInputParametersAndThrowException();
+            $icingaCurrentConfig = '';
+            if (Test-Path $this.getIcingaConfigFile()) {
+                $icingaCurrentConfig = [System.IO.File]::ReadAllText($this.getIcingaConfigFile());
+            }
 
-        $icingaCurrentConfig = '';
-        if (Test-Path $this.getIcingaConfigFile()) {
-            $icingaCurrentConfig = Get-Content $this.getIcingaConfigFile() -Raw;
-        }
-
-        $icingaNewConfig = 
+            $icingaNewConfig = 
 '/** Icinga 2 Config - proposed by Icinga Director */
 include "constants.conf"
 include <itl>
@@ -555,8 +558,9 @@ object ApiListener "api" {
   accept_config = ' + $this.convertBoolToString($this.config('accept_config')) + '
 }'
 
-        $this.setProperty('new_icinga_config', $icingaNewConfig);
-        $this.setProperty('old_icinga_config', $icingaCurrentConfig);        
+            $this.setProperty('new_icinga_config', $icingaNewConfig);
+            $this.setProperty('old_icinga_config', $icingaCurrentConfig);
+        }
     }
 
     #
@@ -565,6 +569,9 @@ object ApiListener "api" {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'hasConfigChanged' -value {
 
+        if ($this.getProperty('generate_config') -eq 'false') {
+            return $FALSE;
+        }
         if (-Not $this.getProperty('new_icinga_config')) {
             throw 'New Icinga 2 configuration not generated. Please call "generateIcingaConfiguration" before.';
         }
@@ -650,30 +657,30 @@ object ApiListener "api" {
     #    
     $installer | Add-Member -membertype ScriptMethod -name 'generateCertificates' -value {
 
-        if (-Not $this.config('agent_name') -Or -Not $this.config('ca_server') -Or -Not $this.config('ticket')) {
-            throw 'One or more of the following arguments is missing: -AgentName <name> -CAServer <server> -Ticket <ticket>';
+        if ($this.config('agent_name') -And $this.config('ca_server') -And $this.config('ticket')) {
+            $icingaPkiDir = $this.getProperty('config_dir') + 'pki\';
+            $icingaBinary = $this.getInstallPath() + '\sbin\icinga2.exe';
+            $agentName = $this.config('agent_name');
+
+            # Generate the certificate
+            $this.info("Generating Icinga 2 certificates");
+            $result = &$icingaBinary @('pki', 'new-cert', '--cn', $this.config('agent_name'), '--key', ($icingaPkiDir + $agentName + '.key'), '--cert', ($icingaPkiDir + $agentName + '.crt'));
+            $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
+
+            # Save Certificate
+            $this.info("Storing Icinga 2 certificates");
+            $result = &$icingaBinary @('pki', 'save-cert', '--key', ($icingaPkiDir + $agentName + '.key'), '--trustedcert', ($icingaPkiDir + 'trusted-master.crt'), '--host', $this.config('ca_server'));
+            $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
+
+            # Request certificate
+            $this.info("Requesting Icinga 2 certificates");
+            $result = &$icingaBinary @('pki', 'request', '--host', $this.config('ca_server'), '--port', $this.config('ca_port'), '--ticket', $this.config('ticket'), '--key', ($icingaPkiDir + $agentName + '.key'), '--cert',  ($icingaPkiDir + $agentName + '.crt'), '--trustedcert', ($icingaPkiDir + 'trusted-master.crt'), '--ca', ($icingaPkiDir + 'ca.crt'));
+            $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
+
+            $this.setProperty('require_restart', 'true');
+        } else  {
+            $this.info('Skipping certificate generation. One or more of the following arguments is not set: -AgentName <name> -CAServer <server> -Ticket <ticket>');
         }
-
-        $icingaPkiDir = $this.getProperty('config_dir') + 'pki\';
-        $icingaBinary = $this.getInstallPath() + '\sbin\icinga2.exe';
-        $agentName = $this.config('agent_name');
-
-        # Generate the certificate
-        $this.info("Generating Icinga 2 certificates");
-        $result = &$icingaBinary @('pki', 'new-cert', '--cn', $this.config('agent_name'), '--key', ($icingaPkiDir + $agentName + '.key'), '--cert', ($icingaPkiDir + $agentName + '.crt'));
-        $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
-
-        # Save Certificate
-        $this.info("Storing Icinga 2 certificates");
-        $result = &$icingaBinary @('pki', 'save-cert', '--key', ($icingaPkiDir + $agentName + '.key'), '--trustedcert', ($icingaPkiDir + 'trusted-master.crt'), '--host', $this.config('ca_server'));
-        $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
-
-        # Request certificate
-        $this.info("Requesting Icinga 2 certificates");
-        $result = &$icingaBinary @('pki', 'request', '--host', $this.config('ca_server'), '--port', $this.config('ca_port'), '--ticket', $this.config('ticket'), '--key', ($icingaPkiDir + $agentName + '.key'), '--cert',  ($icingaPkiDir + $agentName + '.crt'), '--trustedcert', ($icingaPkiDir + 'trusted-master.crt'), '--ca', ($icingaPkiDir + 'ca.crt'));
-        $this.printAndAssertResultBasedOnExitCode($result, $LASTEXITCODE);
-
-        $this.setProperty('require_restart', 'true');
     }
 
     #
@@ -787,14 +794,17 @@ object ApiListener "api" {
     # our Icinga 2 Agent
     #
     $installer | Add-Member -membertype ScriptMethod -name 'applyPossibleConfigChanges' -value {
-        if ($this.hasConfigChanged()) {
+        if ($this.hasConfigChanged() -And $this.getProperty('generate_config') -eq 'true') {
             $this.backupDefaultConfig();
             $this.writeConfig();
 
             # Check if the config is valid and rollback otherwise
             if (-Not $this.isIcingaConfigValid()) {
                 $this.error('Icinga 2 config validation failed. Rolling back to previous version.');
-                $this.rollbackConfig();
+                if (-Not $this.hasCertificates()) {
+                    $this.error('Icinga 2 certificates not found. Please generate the certificates over this module or add them manually.');
+                }
+                # $this.rollbackConfig();
                 if ($this.isIcingaConfigValid($FALSE)) {
                     $this.info('Rollback of Icinga 2 configuration successfull.');
                 } else {
@@ -804,7 +814,7 @@ object ApiListener "api" {
                 $this.info('Icinga 2 configuration check successfull.');
             }
         } else {
-            $this.info('icinga2.conf did not change. Nothing to do');
+            $this.info('icinga2.conf did not change or required parameters not set. Nothing to do');
         }
     }
 
