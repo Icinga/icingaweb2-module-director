@@ -489,6 +489,15 @@ class Db extends DbConnection
         return $this->enumIcingaObjects('command', $filters);
     }
 
+    public function enumEventcommands()
+    {
+        $filters = array(
+            'methods_execute = ?' => 'PluginEvent',
+
+        );
+        return $this->enumIcingaObjects('command', $filters);
+    }
+
     public function enumNotificationCommands()
     {
         $filters = array(

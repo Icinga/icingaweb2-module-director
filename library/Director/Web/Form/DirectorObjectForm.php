@@ -1177,6 +1177,18 @@ abstract class DirectorObjectForm extends QuickForm
         ));
         $this->addToCheckExecutionDisplayGroup('check_command_id');
 
+        $eventCommands = $this->db->enumEventCommands();
+
+        if (! empty($eventCommands)) {
+            $this->addElement('select', 'event_command_id', array(
+                'label' => $this->translate('Event command'),
+                'description'  => $this->translate('Event command definition'),
+                'multiOptions' => $this->optionalEnum($eventCommands),
+                'class'        => 'autosubmit',
+            ));
+            $this->addToCheckExecutionDisplayGroup('event_command_id');
+        }
+
         return $this;
     }
 
