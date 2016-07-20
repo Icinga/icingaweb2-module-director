@@ -13,11 +13,12 @@ class ImportRowModifier extends DbObjectWithSettings
     protected $autoincKeyName = 'id';
 
     protected $defaultProperties = array(
-        'id'             => null,
-        'source_id'      => null,
-        'property_name'  => null,
-        'provider_class' => null,
-        'priority'       => null,
+        'id'              => null,
+        'source_id'       => null,
+        'property_name'   => null,
+        'provider_class'  => null,
+        'target_property' => null,
+        'priority'        => null,
     );
 
     protected $settingsTable = 'import_row_modifier_setting';
@@ -31,6 +32,7 @@ class ImportRowModifier extends DbObjectWithSettings
         if ($this->hookInstance === null) {
             $obj = new $this->provider_class;
             $obj->setSettings($this->getSettings());
+            $obj->setTargetProperty($this->target_property);
             $obj->setDb($this->connection);
             $this->hookInstance = $obj;
         }

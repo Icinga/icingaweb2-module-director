@@ -9,6 +9,8 @@ abstract class PropertyModifierHook
 {
     protected $settings = array();
 
+    private $targetProperty;
+
     private $db;
 
     public function getName()
@@ -26,9 +28,20 @@ abstract class PropertyModifierHook
         return $class;
     }
 
+    public function setTargetProperty($property)
+    {
+        $this->targetProperty = $property;
+        return $this;
+    }
+
+    public function hasTargetProperty()
+    {
+        return $this->targetProperty !== null;
+    }
+
     public function getTargetProperty()
     {
-        return null;
+        return $this->targetProperty;
     }
 
     public function setDb(Db $db)

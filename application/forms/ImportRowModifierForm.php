@@ -25,6 +25,16 @@ class ImportRowModifierForm extends DirectorObjectForm
             'required'     => true,
         ));
 
+        $this->addElement('text', 'target_property', array(
+            'label'        => $this->translate('Target property'),
+            'description'  => $this->translate(
+                'You might want to write the modified value to another (new) property.' 
+                . ' This property name can be defined here, the original property would'
+                . ' remain unmodified. Please leave this blank in case you just want to'
+                . ' modify the value of a specific property'
+            ),
+        ));
+
         $error = false;
         try {
             $mods = $this->enumModifiers();
