@@ -166,26 +166,9 @@ class Import
             )->fetchData();
         }
 
-        $modifiers = $this->source->getRowModifiers();
-
-        if (empty($modifiers)) {
-            return $this->data;
-        }
-
-        foreach ($this->data as & $row) {
-            foreach ($modifiers as $key => $mods) {
-                foreach ($mods as $mod) {
-                    if (! property_exists($row, $key)) {
-                        continue;
-                    }
-                    if (is_array($row->$key)) {
-                        foreach ($row->$key as & $k) {
-                            $k = $mod->transform($k);
-                        }
-                    } else {
-                        $row->$key = $mod->transform($row->$key);
-                    }
-                }
+        if ($this->source->hasRowModifiers()) {
+            foreach ($this->data as & $row) {
+                $this->source->applyModifiersToRow($row);
             }
         }
 

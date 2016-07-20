@@ -77,6 +77,28 @@ class ImportSource extends DbObjectWithSettings
         return null;
     }
 
+    public function applyModifiersToRow(& $row)
+    {
+        $modifiers = $this->getRowModifiers();
+
+        foreach ($modifiers as $key => $mods) {
+            foreach ($mods as $mod) {
+                if (! property_exists($row, $key)) {
+                    continue;
+                }
+                if (is_array($row->$key)) {
+                    foreach ($row->$key as & $k) {
+                        $k = $mod->transform($k);
+                    }
+                } else {
+                    $row->$key = $mod->transform($row->$key);
+                }
+            }
+        }
+
+        return $this;
+    }
+
     public function getRowModifiers()
     {
         if ($this->rowModifiers === null) {
@@ -84,6 +106,11 @@ class ImportSource extends DbObjectWithSettings
         }
 
         return $this->rowModifiers;
+    }
+
+    public function hasRowModifiers()
+    {
+        return count($this->getRowModifiers()) > 0;
     }
 
     public function fetchRowModifiers()
