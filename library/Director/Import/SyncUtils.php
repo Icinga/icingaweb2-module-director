@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Objects\IcingaObject;
 
 class SyncUtils
