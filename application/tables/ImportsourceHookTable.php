@@ -21,7 +21,12 @@ class ImportsourceHookTable extends QuickTable
     public function getColumns()
     {
         if ($this->columnCache === null) {
-            $this->columnCache = $this->sourceHook()->listColumns();
+            $this->columnCache = array_merge(
+                $this->sourceHook()->listColumns(),
+                $this->source->listModifierTargetProperties()
+            );
+
+            sort($this->columnCache);
         }
 
         return $this->columnCache;

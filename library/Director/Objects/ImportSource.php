@@ -99,12 +99,17 @@ class ImportSource extends DbObjectWithSettings
                 if (! property_exists($row, $key)) {
                     continue;
                 }
+
+                $target = $mod->getTargetProperty($key);
+
                 if (is_array($row->$key)) {
-                    foreach ($row->$key as & $k) {
-                        $k = $mod->transform($k);
+                    $new = array();
+                    foreach ($row->$key as $k => $v) {
+                        $new[$k] = $mod->transform($v);
                     }
+                    $row->$target = $new;
                 } else {
-                    $row->$key = $mod->transform($row->$key);
+                    $row->$target = $mod->transform($row->$key);
                 }
             }
         }
@@ -151,6 +156,20 @@ class ImportSource extends DbObjectWithSettings
         }
 
         $this->rowModifiers = $modifiers;
+    }
+
+    public function listModifierTargetProperties()
+    {
+        $list = array();
+        foreach ($this->getRowModifiers() as $rowMods) {
+            foreach ($rowMods as $mod) {
+                if ($mod->hasTargetProperty()) {
+                    $list[$mod->getTargetProperty()] = true;
+                }
+            }
+        }
+
+        return array_keys($list);
     }
 
     public function checkForChanges($runImport = false)

@@ -39,8 +39,12 @@ abstract class PropertyModifierHook
         return $this->targetProperty !== null;
     }
 
-    public function getTargetProperty()
+    public function getTargetProperty($default = null)
     {
+        if ($this->targetProperty === null) {
+            return $default;
+        }
+
         return $this->targetProperty;
     }
 
