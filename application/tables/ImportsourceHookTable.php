@@ -76,24 +76,10 @@ class ImportsourceHookTable extends QuickTable
 
     protected function applyModifiers()
     {
-        $modifiers = $this->source->fetchRowModifiers();
-        if (empty($modifiers)) {
-            return;
-        }
-
-        $propertyModifiers = array();
-
-
-        foreach ($modifiers as $mod) {
-            if (! array_key_exists($mod->property_name, $propertyModifiers)) {
-                $propertyModifiers[$mod->property_name] = array();
-            }
-
-            $propertyModifiers[$mod->property_name][] = $mod->getInstance();
-        }
+        $modifiers = $this->source->getRowModifiers();
 
         foreach ($this->dataCache as & $row) {
-            foreach ($propertyModifiers as $key => $mods) {
+            foreach ($modifiers as $key => $mods) {
                 foreach ($mods as $mod) {
                     if (is_array($row->$key)) {
                         foreach ($row->$key as & $k) {

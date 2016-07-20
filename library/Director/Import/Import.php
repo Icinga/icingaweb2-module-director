@@ -166,7 +166,7 @@ class Import
             )->fetchData();
         }
 
-        $modifiers = $this->prepareModifiers();
+        $modifiers = $this->source->getRowModifiers();
 
         if (empty($modifiers)) {
             return $this->data;
@@ -222,23 +222,6 @@ class Import
         }
 
         return $this->properties[$checksum];
-    }
-
-    // TODO: move to ImportSource, this duplicates logic from preview
-    protected function prepareModifiers()
-    {
-        $modifiers = $this->source->fetchRowModifiers();
-        $propertyModifiers = array();
-
-        foreach ($modifiers as $mod) {
-            if (! array_key_exists($mod->property_name, $propertyModifiers)) {
-                $propertyModifiers[$mod->property_name] = array();
-            }
-
-            $propertyModifiers[$mod->property_name][] = $mod->getInstance();
-        }
-
-        return $propertyModifiers;
     }
 
     /**

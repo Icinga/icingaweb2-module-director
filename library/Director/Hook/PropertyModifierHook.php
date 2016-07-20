@@ -26,28 +26,9 @@ abstract class PropertyModifierHook
         return $class;
     }
 
-    public static function loadById($property_id, Db $connection)
+    public function getTargetProperty()
     {
-        $db = $connection->getDbAdapter();
-        $modifier = $db->fetchRow(
-            $db->select()->from(
-                'import_row_modifier',
-                array('id', 'provider_class')
-            )->where('property_id = ?', $property_id)
-        );
-
-        $settings = $db->fetchPairs(
-            $db->select()->from(
-                'import_row_modifier_settings',
-                array('setting_name', 'setting_value')
-            )->where('modifier_id = ?', $modifier->id)
-        );
-
-        $obj = new $modifier->provider_class;
-        $obj->setSettings($settings);
-        $obj->setDb($db);
-
-        return $obj;
+        return null;
     }
 
     public function setDb(Db $db)

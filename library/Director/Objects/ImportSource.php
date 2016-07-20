@@ -30,6 +30,8 @@ class ImportSource extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'source_id';
 
+    private $rowModifiers;
+
     public function fetchLastRun($required = false)
     {
         return $this->fetchLastRunBefore(time() + 1, $required);
@@ -75,6 +77,15 @@ class ImportSource extends DbObjectWithSettings
         return null;
     }
 
+    public function getRowModifiers()
+    {
+        if ($this->rowModifiers === null) {
+            $this->prepareRowModifiers();
+        }
+
+        return $this->rowModifiers;
+    }
+
     public function fetchRowModifiers()
     {
         $db = $this->getDb();
@@ -85,6 +96,21 @@ class ImportSource extends DbObjectWithSettings
                ->where('source_id = ?', $this->id)
                ->order('priority DESC')
         );
+    }
+
+    protected function prepareRowModifiers()
+    {
+        $modifiers = array();
+
+        foreach ($this->fetchRowModifiers() as $mod) {
+            if (! array_key_exists($mod->property_name, $modifiers)) {
+                $modifiers[$mod->property_name] = array();
+            }
+
+            $modifiers[$mod->property_name][] = $mod->getInstance();
+        }
+
+        $this->rowModifiers = $modifiers;
     }
 
     public function checkForChanges($runImport = false)
