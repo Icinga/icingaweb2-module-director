@@ -1142,6 +1142,7 @@ CREATE TABLE import_row_modifier (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_id INT(10) UNSIGNED NOT NULL,
   property_name VARCHAR(255) NOT NULL,
+  target_property VARCHAR(255) DEFAULT NULL,
   provider_class VARCHAR(72) NOT NULL,
   priority SMALLINT UNSIGNED NOT NULL,
   PRIMARY KEY (id),

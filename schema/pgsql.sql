@@ -1285,6 +1285,7 @@ CREATE TABLE import_row_modifier (
   id bigserial,
   source_id integer NOT NULL,
   property_name character varying(255) NOT NULL,
+  target_property character varying(255) DEFAULT NULL,
   provider_class character varying(72) NOT NULL,
   priority integer NOT NULL,
   PRIMARY KEY (id),
