@@ -19,6 +19,11 @@ class JobsCommand extends Command
     public function runAction()
     {
         $forever = $this->params->shift('forever');
+        if (! $forever && $this->params->getStandalone() === 'forever') {
+            $forever = true;
+            $this->params->shift();
+        }
+
         $jobId = $this->params->shift();
         if ($jobId) {
             $job = DirectorJob::load($jobId, $this->db());
