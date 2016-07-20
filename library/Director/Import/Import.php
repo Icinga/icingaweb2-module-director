@@ -234,10 +234,8 @@ class Import
             if (! array_key_exists($mod->property_name, $propertyModifiers)) {
                 $propertyModifiers[$mod->property_name] = array();
             }
-            $obj = new $mod->provider_class;
-            $obj->setSettings($mod->getSettings());
-            $obj->setDb($this->connection);
-            $propertyModifiers[$mod->property_name][] = $obj;
+
+            $propertyModifiers[$mod->property_name][] = $mod->getInstance();
         }
 
         return $propertyModifiers;

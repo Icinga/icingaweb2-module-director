@@ -88,11 +88,8 @@ class ImportsourceHookTable extends QuickTable
             if (! array_key_exists($mod->property_name, $propertyModifiers)) {
                 $propertyModifiers[$mod->property_name] = array();
             }
-            $obj = new $mod->provider_class;
-            $obj->setSettings($mod->getSettings());
-            $obj->setDb($this->source->getConnection());
-            $propertyModifiers[$mod->property_name][] = $obj;
-            
+
+            $propertyModifiers[$mod->property_name][] = $mod->getInstance();
         }
 
         foreach ($this->dataCache as & $row) {

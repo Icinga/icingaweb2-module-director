@@ -23,4 +23,18 @@ class ImportRowModifier extends DbObjectWithSettings
     protected $settingsTable = 'import_row_modifier_setting';
 
     protected $settingsRemoteId = 'row_modifier_id';
+
+    private $hookInstance;
+
+    public function getInstance()
+    {
+        if ($this->hookInstance === null) {
+            $obj = new $this->provider_class;
+            $obj->setSettings($this->getSettings());
+            $obj->setDb($this->connection);
+            $this->hookInstance = $obj;
+        }
+
+        return $this->hookInstance;
+    }
 }
