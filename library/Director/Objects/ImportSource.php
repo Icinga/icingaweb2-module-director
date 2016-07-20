@@ -77,6 +77,19 @@ class ImportSource extends DbObjectWithSettings
         return null;
     }
 
+    public function applyModifiers(& $data)
+    {
+        $modifiers = $this->getRowModifiers();
+
+        if (! empty($modifiers)) {
+            foreach ($data as &$row) {
+                $this->applyModifiersToRow($row);
+            }
+        }
+
+        return $this;
+    }
+
     public function applyModifiersToRow(& $row)
     {
         $modifiers = $this->getRowModifiers();

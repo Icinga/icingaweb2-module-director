@@ -68,12 +68,7 @@ class ImportsourceHookTable extends QuickTable
             }
 
             $this->dataCache = $query->fetchAll();
-
-            if ($this->source->hasRowModifiers()) {
-                foreach ($this->dataCache as & $row) {
-                    $this->source->applyModifiersToRow($row);
-                }
-            }
+            $this->source->applyModifiers($this->dataCache);
         }
 
         return $this->dataCache;

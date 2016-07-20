@@ -166,12 +166,7 @@ class Import
             )->fetchData();
         }
 
-        if ($this->source->hasRowModifiers()) {
-            foreach ($this->data as & $row) {
-                $this->source->applyModifiersToRow($row);
-            }
-        }
-
+        $this->source->applyModifiers($this->data);
         return $this->data;
     }
 
