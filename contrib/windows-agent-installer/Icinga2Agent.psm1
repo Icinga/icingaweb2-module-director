@@ -83,7 +83,7 @@ function Icinga2AgentModule {
     $installer | Add-Member -membertype ScriptMethod -name 'getProperty' -value {
         param([string] $key)
 
-        # Initialse some variables first 
+        # Initialse some variables first
         # will only be called once
         if (-Not $this.properties.Get_Item('initialized')) {
             $this.init();
@@ -142,10 +142,10 @@ function Icinga2AgentModule {
         #Write-Host $this.error($error[$error.count - 1].FullyQualifiedErrorId) -ForegroundColor red;
         Write-Host $_.Exception.Message -ForegroundColor red;
     }
-    
+
     #
     # this function will print an info message
-    # or throw an exception, based on the 
+    # or throw an exception, based on the
     # provided exitcode
     # (0 = ok, anything else => exception)
     #
@@ -205,11 +205,11 @@ function Icinga2AgentModule {
         # Generate endpoint nodes based on iput
         # parameters
         $this.generateEndpointNodes();
-    }    
+    }
 
     #
     # We require to run this script as admin. Generate the required function here
-    # We might run this script from a non-privileged user. Ensure we have admin 
+    # We might run this script from a non-privileged user. Ensure we have admin
     # rights first. Otherwise abort the script.
     #
     $installer | Add-Member -membertype ScriptMethod -name 'isAdmin' -value {
@@ -252,7 +252,7 @@ function Icinga2AgentModule {
     # Do we require to update the Agent?
     # Might be disabled by user or current version
     # is already installed
-    #    
+    #
     $installer | Add-Member -membertype ScriptMethod -name 'requireAgentUpdate' -value {
         if (-Not $this.config('allow_updates') -Or -Not $this.config('agent_version')) {
             $this.warn('Icinga 2 Agent update installation disabled.');
@@ -352,7 +352,7 @@ function Icinga2AgentModule {
     #
     # Updates the Agent in case allowed and required.
     # Removes previous version of Icinga 2 Agent first
-    #    
+    #
     $installer | Add-Member -membertype ScriptMethod -name 'updateAgent' -value {
         $this.downloadInstaller();
         if (-Not $this.installerExists()) {
@@ -370,7 +370,7 @@ function Icinga2AgentModule {
         $this.info('Agent successfully updated.');
         $this.setProperty('cur_install_dir', $this.getProperty('def_install_dir'));
         $this.setProperty('require_restart', 'true');
-    }    
+    }
 
     #
     # We might have installed the Icinga 2 Agent
@@ -392,12 +392,12 @@ function Icinga2AgentModule {
         }
 
         # Try locating current Icinga 2 Agent installation
-        $localData = Get-ItemProperty $regPath | 
+        $localData = Get-ItemProperty $regPath |
             .{
                 process {
                     if ($_.DisplayName) {
-                        $_ 
-                    } 
+                        $_
+                    }
                 }
             } |
             Where {
@@ -407,10 +407,10 @@ function Icinga2AgentModule {
 
         if ($localData.UninstallString) {
             $this.setProperty('uninstall_id', $localData.UninstallString.Replace("MsiExec.exe ", ""));
-        }        
+        }
         $this.setProperty('def_install_dir', $defaultInstallDir);
         $this.setProperty('cur_install_dir', $localData.InstallLocation);
-        $this.setProperty('agent_version', $localData.DisplayVersion);        
+        $this.setProperty('agent_version', $localData.DisplayVersion);
         $this.setProperty('install_msi_package', 'Icinga2-v' + $this.config('agent_version') + '-' + $architecture + '.msi');
 
         if ($localData.InstallLocation) {
@@ -469,14 +469,14 @@ function Icinga2AgentModule {
             Remove-Item $this.getInstallerPath() | out-null
         }
     }
-    
+
     #
     # Get Api directory if Icinga 2
     #
     $installer | Add-Member -membertype ScriptMethod -name 'getApiDirectory' -value {
         return $this.getProperty('api_dir');
     }
-    
+
     #
     # Should we remove the Api directory content
     # from the Agent? Can be defined by setting the
@@ -485,16 +485,16 @@ function Icinga2AgentModule {
     $installer | Add-Member -membertype ScriptMethod -name 'shouldFlushIcingaApiDirectory' -value {
         return $this.config('flush_api_dir');
     }
-    
+
     #
     # Flush all content from the Icinga 2 Agent
     # Api directory, but keep the folder structure
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'flushIcingaApiDirectory' -value {    
+    $installer | Add-Member -membertype ScriptMethod -name 'flushIcingaApiDirectory' -value {
         if (Test-Path $this.getApiDirectory()) {
-            $this.info('Flushing content of ' + $this.getApiDirectory()); 
+            $this.info('Flushing content of ' + $this.getApiDirectory());
             $folder = New-Object -ComObject Scripting.FileSystemObject;
-            $folder.DeleteFolder($this.getApiDirectory());        
+            $folder.DeleteFolder($this.getApiDirectory());
         }
     }
 
@@ -513,12 +513,12 @@ function Icinga2AgentModule {
         } else {
             $this.info('Icinga 2 Agent successfully restarted.');
             $this.setProperty('require_restart', '');
-        }    
+        }
     }
 
     $installer | Add-Member -membertype ScriptMethod -name 'generateIcingaConfiguration' -value {
         if ($this.getProperty('generate_config') -eq 'true') {
-        
+
             $this.checkConfigInputParametersAndThrowException();
 
             $icingaCurrentConfig = '';
@@ -526,7 +526,7 @@ function Icinga2AgentModule {
                 $icingaCurrentConfig = [System.IO.File]::ReadAllText($this.getIcingaConfigFile());
             }
 
-            $icingaNewConfig = 
+            $icingaNewConfig =
 '/** Icinga 2 Config - proposed by Icinga Director */
 include "constants.conf"
 include <itl>
@@ -592,7 +592,7 @@ object ApiListener "api" {
     # Generate a SHA1 Hash from a provided string
     #
     $installer | Add-Member -membertype ScriptMethod -name 'getHashFromString' -value {
-        param([string]$text)        
+        param([string]$text)
         $algorithm = new-object System.Security.Cryptography.SHA1Managed
         $hash = [System.Text.Encoding]::UTF8.GetBytes($text)
         $hashInBytes = $algorithm.ComputeHash($hash)
@@ -613,7 +613,7 @@ object ApiListener "api" {
     # Create Icinga 2 configuration file based
     # on Director settings
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'writeConfig' -value {        
+    $installer | Add-Member -membertype ScriptMethod -name 'writeConfig' -value {
         # Write new configuration to file
         $this.info('Writing icinga2.conf to ' + $this.getProperty('config_dir'));
         [System.IO.File]::WriteAllText($this.getIcingaConfigFile(), $this.getProperty('new_icinga_config'));
@@ -624,7 +624,7 @@ object ApiListener "api" {
     # Write old coniguration again
     # just in case we received errors
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'rollbackConfig' -value {        
+    $installer | Add-Member -membertype ScriptMethod -name 'rollbackConfig' -value {
         # Write new configuration to file
         $this.info('Rolling back previous icinga2.conf to ' + $this.getProperty('config_dir'));
         [System.IO.File]::WriteAllText($this.getIcingaConfigFile(), $this.getProperty('old_icinga_config'));
@@ -654,7 +654,7 @@ object ApiListener "api" {
     #
     # Generate the Icinga 2 SSL certificate to ensure the communication between the
     # Agent and the Master can be established in first place
-    #    
+    #
     $installer | Add-Member -membertype ScriptMethod -name 'generateCertificates' -value {
 
         if ($this.config('agent_name') -And $this.config('ca_server') -And $this.config('ticket')) {
@@ -713,7 +713,7 @@ object ApiListener "api" {
     # Is the current Agent the version
     # we would like to install?
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'isAgentUpToDate' -value {     
+    $installer | Add-Member -membertype ScriptMethod -name 'isAgentUpToDate' -value {
         if ($this.canInstallAgent() -And $this.getProperty('agent_version') -eq $this.config('agent_version')) {
             return $TRUE;
         }
@@ -760,7 +760,7 @@ object ApiListener "api" {
         }
         if (-Not $this.getProperty('endpoint_nodes') -Or -Not $this.getProperty('endpoint_objects')) {
             throw 'Argument -Endpoints <name> requires atleast one defined endpoint.';
-        }        
+        }
     }
 
     #
@@ -788,7 +788,7 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'madeChanges' -value {
         return $this.getProperty('require_restart');
     }
-    
+
     #
     # Apply possible configuration changes to
     # our Icinga 2 Agent
@@ -825,11 +825,11 @@ object ApiListener "api" {
     # including download and update if
     # specified. Returnd 0 or 1 as exit code
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'installIcinga2Agent' -value {        
+    $installer | Add-Member -membertype ScriptMethod -name 'installIcinga2Agent' -value {
         try {
             if (-Not $this.isAdmin()) {
                 return 1;
-            }        
+            }
             # Try to locate the current
             # Installation data from the Agent
             if ($this.isAgentInstalled()) {
@@ -868,7 +868,7 @@ object ApiListener "api" {
             } else {
                 $this.info('No changes detected.');
             }
-            return 0            
+            return 0
         } catch {
             $this.printLastException();
             return 1
