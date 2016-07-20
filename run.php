@@ -32,6 +32,7 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromAdSid');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromLatin1');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierBitmask');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierMakeBoolean');
 
 $this->provideHook('director/Job', $prefix . 'Job\\HousekeepingJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ConfigJob');
