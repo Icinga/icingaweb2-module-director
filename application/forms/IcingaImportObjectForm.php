@@ -12,7 +12,7 @@ class IcingaImportObjectForm extends QuickForm
     public function setup()
     {
         $this->addNote($this->translate(
-            "Importing an object means that it's type will change from"
+            "Importing an object means that its type will change from"
             . ' "external" to "object". That way it will make part of the'
             . ' next deployment. So in case you imported this object from'
             . ' your Icinga node make sure to remove it from your local'

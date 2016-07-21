@@ -798,7 +798,7 @@ msgstr ""
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:41
 msgid ""
 "Define what should happen when an object with a matching key already exists. "
-"You could merge it's properties (import source wins), replace it completely "
+"You could merge its properties (import source wins), replace it completely "
 "with the imported object or ignore it (helpful for one-time imports)"
 msgstr ""
 "Angeben, was geschehen soll wenn ein Objekt mit gleichem Schlüssel bereits "
@@ -1214,7 +1214,7 @@ msgid ""
 "IP address / hostname of your Icinga node. Please note that this information "
 "will only be used for the very first connection to your Icinga instance. The "
 "Director then relies on a correctly configured Endpoint object. Correctly "
-"configures means that either it's name is resolvable or that it's host "
+"configures means that either its name is resolvable or that its host "
 "property contains either an IP address or a resolvable host name. Your "
 "Director must be able to reach this endpoint"
 msgstr ""
@@ -1375,7 +1375,7 @@ msgstr "Importierte Reihen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaImportObjectForm.php:15
 msgid ""
-"Importing an object means that it's type will change from \"external\" to "
+"Importing an object means that its type will change from \"external\" to "
 "\"object\". That way it will make part of the next deployment. So in case "
 "you imported this object from your Icinga node make sure to remove it from "
 "your local configuration before issueing the next deployment. In case of a "
@@ -1408,7 +1408,7 @@ msgstr "Interne Kommandos"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:53
 #, php-format
-msgid "It has been renamed since then, it's former name was %s"
+msgid "It has been renamed since then, its former name was %s"
 msgstr "Es wurde seither umbenannt. Sein bisheriger Name war %s"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:9
@@ -2805,9 +2805,9 @@ msgstr "Das Objekt wird nicht ausgebracht, da es deaktiviert wurde"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/host/agent.phtml:30
 msgid ""
-"This requires the Icinga Agent to be installed. It generates and signs it's "
+"This requires the Icinga Agent to be installed. It generates and signs its "
 "certificate and it also generates a minimal icinga2.conf to get your agent "
-"connected to it's parents"
+"connected to its parents"
 msgstr ""
 "Dafür muss der Icinga Agent installiert sein. Es erstellt und signiert sein "
 "Zertifikat und erstellt eine minimale icinga2.conf mit der der Agent mit den "

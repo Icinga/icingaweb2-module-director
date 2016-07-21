@@ -52,7 +52,7 @@ Use this command to create a new Icinga object
 
 #### Examples
 
-To create a new host you can provide all it's properties as command line
+To create a new host you can provide all of its properties as command line
 parameters:
 
 ```shell
@@ -255,7 +255,7 @@ The Icinga Director distincts between the following object types:
 
 Please take a lot of care when modifying object types, you should not do so for
 a good reason. The CLI allows you to issue operations that are not allowed in the
-web frontend. Do not use this unless you really understand it's implications. And
+web frontend. Do not use this unless you really understand its implications. And
 remember, with great power comes great responsibility.
 
 

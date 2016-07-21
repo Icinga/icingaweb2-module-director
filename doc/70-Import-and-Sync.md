@@ -51,7 +51,7 @@ binary in your AD? There is a dedicated modifier:
 
 ![SID modifier](screenshot/director/08_import-and-sync/083_director_import_modifier_sid.png)
 
-You do not agree with the way Microsoft represents it's version numbers? Regular
+You do not agree with the way Microsoft represents its version numbers? Regular
 expressions are able to fix everything:
 
 ![Regular expression modifier](screenshot/director/08_import-and-sync/084_director_import_modifier_regex.png)

@@ -20,7 +20,7 @@ objects. This makes deployments much faster. It also makes it easier to
 eventually use Director in parallel with manual configuration or
 configuration shipped by other tools.
 
-Internally, Icinga 2 manages part of it's configuration in it's `var/lib`
+Internally, Icinga 2 manages part of its configuration in its `var/lib`
 directory. This is usually to be found in `/var/lib/icinga2`. Config
 packages are stored to `/var/lib/icinga2/api/packages` once shipped
 through the API. So as soon as you deployed your first configuration
@@ -33,7 +33,7 @@ that new stage. In case it fails, Icinga 2 will keep running with the
 former configuration. When it succeeds, it will terminate the old process
 and keep running with the new configuration.
 
-In either scenario, it writes an exit code and it's startup log to the
+In either scenario, it writes an exit code and its startup log to the
 corresponding stage directory. This allows the Director to check back
 later on to fetch this information. That's why you see all those nice
 startup log outputs along with your deployment history in your frontend.
@@ -56,7 +56,7 @@ true for them:
 The director does not try to create additional zones your nodes do not
 know about. In a distributed environment it is essential that the
 Director can ship parts of the configuration to specific zones and
-other parts to a global zone. The name of it's preferred global zone
+other parts to a global zone. The name of its preferred global zone
 is currently hardcoded to `director-global`. Please make sure that such
 a zone exists on all involved nodes that should get config from the
 Director in a direct or indirect way:
