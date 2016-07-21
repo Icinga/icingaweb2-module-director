@@ -3239,7 +3239,7 @@ msgstr ""
 "der Liste gewählt wird"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/index/index.phtml:103
-msgid "Wondering about what changed why? Track you changes!"
+msgid "Wondering about what changed why? Track your changes!"
 msgstr "Hier kann nachvollzogen werden, was weshalb verändert wurde."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaDeleteObjectForm.php:16
