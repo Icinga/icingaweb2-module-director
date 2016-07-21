@@ -75,8 +75,10 @@ class DirectorDeploymentLog extends DbObject
     {
         $db = $connection->getDbAdapter();
         $query = $db->select()
-            ->from('director_deployment_log', array('c' => $connection->dbHexFunc('config_checksum')))
-            ->where('stage_name = ?');
+            ->from(
+                array('l' => 'director_deployment_log'),
+                array('c' => $connection->dbHexFunc('l.config_checksum'))
+            )->where('l.stage_name = ?');
 
         return $db->fetchOne($query, $stage);
     }
@@ -85,8 +87,8 @@ class DirectorDeploymentLog extends DbObject
     {
         $db = $connection->getDbAdapter();
         $query = $db->select()->from(
-            'director_deployment_log',
-            array('id' => 'MAX(id)')
+            array('l' => 'director_deployment_log'),
+            array('id' => 'MAX(l.id)')
         );
 
         return static::load($db->fetchOne($query), $connection);
