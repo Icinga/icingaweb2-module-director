@@ -30,7 +30,7 @@ executed within that period.
 Execution methods
 -----------------
 
-Jobs are executed on CLI, basically with the `jobs` CLI command and it's
+Jobs are executed on CLI, basically with the `jobs` CLI command and its
 available actions and options. A call to...
 
 ```sh
@@ -64,7 +64,7 @@ So, like the above init script, please expect the Job Runner to terminate at
 any time.
 
 Want so see more details? Add `--verbose` to get colorful log lines on STDERR.
-In case the Job Runner is running with Systemd, those log lines will find it's
+In case the Job Runner is running with Systemd, those log lines will find its
 way to your system log.
 
 Time periods

@@ -18,7 +18,7 @@ always a good idea before an upgrade.
 <a name="git-master"></a>Work with the latest GIT master
 --------------------------------------------------------
 
-Icinga Director is still a very young project. Lot's of changes are going on,
+Icinga Director is still a very young project. Lots of changes are going on,
 a lot of improvements, bug fixes and new features are still being added every
 month. People living on the bleeding edge might prefer to use all of them as
 soon as possible.

@@ -39,7 +39,7 @@ class SyncRuleForm extends DirectorObjectForm
             'label'        => $this->translate('Update Policity'),
             'description'  => $this->translate(
                 'Define what should happen when an object with a matching key'
-                . " already exists. You could merge it's properties (import source"
+                . " already exists. You could merge its properties (import source"
                 . ' wins), replace it completely with the imported object or ignore'
                 . ' it (helpful for one-time imports)'
             ),

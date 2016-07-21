@@ -50,7 +50,7 @@ TODO: check whether...
  <?= $this->render('syncrule/syncRunDetails.phtml') ?><br />
 <?php if ($run->rule_name !== $rule->rule_name): ?>
 <?= $this->escape(sprintf(
-    $this->translate("It has been renamed since then, it's former name was %s"),
+    $this->translate("It has been renamed since then, its former name was %s"),
     $run->rule_name
 )) ?>
 <?php endif ?>

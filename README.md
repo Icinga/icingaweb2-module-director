@@ -41,7 +41,7 @@ they fit your needs. They are being used in productive environments:
 * [AWS - Amazon Web Services](https://github.com/Thomas-Gelf/icingaweb2-module-aws):
   provides an Import Source for Autoscaling Groups on AWS
 * [File-Shipper](https://github.com/Thomas-Gelf/icingaweb2-module-fileshipper):
-  allows Director to ship additional config files with manual config with it's
+  allows Director to ship additional config files with manual config with its
   deployments
 * [PuppetDB](https://github.com/Thomas-Gelf/icingaweb2-module-puppetdb): provides
   an Import Source dealing with your PuppetDB

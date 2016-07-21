@@ -8,7 +8,7 @@ chapter is what you're looking for!
 Generic hints
 -------------
 
-Director keeps all of it's configuration in a relational database. So,
+Director keeps all of its configuration in a relational database. So,
 all you need to tell him is how it can reach and access that db. In case
 you already rolled out Icinga Web 2 you should already be used to handle
 resource definitions.
@@ -31,7 +31,7 @@ charset = "utf8"
 Please note that the charset is required and MUST be `utf8`.
 
 Next you need to tell the Director to use this database resource. Create
-it's `config.ini` with the only required setting:
+its `config.ini` with the only required setting:
 
 ```ini
 [db]
@@ -92,7 +92,7 @@ supported.
 ### Kickstart an empty Director database
 
 The Director kickstart wizard helps you with setting up a connection to
-Icinga2 master node, import it's endpoint and zone definition and it also
+Icinga2 master node, import its endpoint and zone definition and it also
 syncs already configured command definitions. But this wizard is not only
 available through the web frontend, you can perfectly trigger it in an
 idempotent way with Puppet:

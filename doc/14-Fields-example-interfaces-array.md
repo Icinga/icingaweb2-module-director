@@ -7,7 +7,7 @@ and choose the `Define data fields` dashlet:
 
 ![Dashboard - Define data fields](screenshot/director/14_fields-for-interfaces/141_define_datafields.png)
 
-Then create a new data field and select `Array` as it's data type:
+Then create a new data field and select `Array` as its data type:
 
 ![Define data field - Array](screenshot/director/14_fields-for-interfaces/142_add_datafield.png)
 
