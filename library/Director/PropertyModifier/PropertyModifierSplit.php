@@ -16,10 +16,31 @@ class PropertyModifierSplit extends PropertyModifierHook
                 'One or more characters that should be used to split this string'
             )
         ));
+
+        $form->addElement('select', 'when_empty', array(
+            'label'       => $form->translate('When empty'),
+            'required'    => true,
+            'description' => $form->translate(
+                'What should happen when the given string is empty?'
+            ),
+            'value'        => 'empty_array',
+            'multiOptions' => $form->optionalEnum(array(
+                'empty_array' => $form->translate('return an empty array'),
+                'null'        => $form->translate('return NULL'),
+            ))
+        ));
     }
 
     public function transform($value)
     {
+        if (! strlen(trim($value))) {
+            if ($this->getSetting('when_empty', 'empty_array') === 'empty_array') {
+                return array();
+            } else {
+                return null;
+            }
+        }
+
         return preg_split(
             '/' . preg_quote($this->getSetting('delimiter'), '/') . '/',
             $value,
