@@ -235,7 +235,7 @@ class SyncRule extends DbObject
     // TODO: Allow for more
     protected function loadConfiguredPurgeStrategy()
     {
-        if ($this->purge_existing) {
+        if ($this->purge_existing === 'y') {
             return PurgeStrategy::load('ImportRunBased', $this);
         } else {
             return PurgeStrategy::load('PurgeNothing', $this);
