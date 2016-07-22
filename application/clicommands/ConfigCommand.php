@@ -17,6 +17,11 @@ class ConfigCommand extends Command
      */
     public function renderAction()
     {
+        $profile = $this->params->shift('profile');
+        if ($profile) {
+            $this->enableDbProfiler();
+        }
+
         $config = new IcingaConfig($this->db());
         Benchmark::measure('Rendering config');
         if ($config->hasBeenModified()) {
@@ -35,6 +40,44 @@ class ConfigCommand extends Command
                 $checksum
             );
         }
+
+        if ($profile) {
+            $this->dumpDbProfile();
+        }
+    }
+
+    protected function dumpDbProfile()
+    {
+        $profiler = $this->getDbProfiler();
+
+        $totalTime    = $profiler->getTotalElapsedSecs();
+        $queryCount   = $profiler->getTotalNumQueries();
+        $longestTime  = 0;
+        $longestQuery = null;
+
+        foreach ($profiler->getQueryProfiles() as $query) {
+            echo $query->getQuery() . "\n";
+            if ($query->getElapsedSecs() > $longestTime) {
+                $longestTime  = $query->getElapsedSecs();
+                $longestQuery = $query->getQuery();
+            }
+        }
+
+        echo 'Executed ' . $queryCount . ' queries in ' . $totalTime . ' seconds' . "\n";
+        echo 'Average query length: ' . $totalTime / $queryCount . ' seconds' . "\n";
+        echo 'Queries per second: ' . $queryCount / $totalTime . "\n";
+        echo 'Longest query length: ' . $longestTime . "\n";
+        echo "Longest query: \n" . $longestQuery . "\n";
+    }
+
+    protected function getDbProfiler()
+    {
+        return $this->db()->getDbAdapter()->getProfiler();
+    }
+
+    protected function enableDbProfiler()
+    {
+        return $this->getDbProfiler()->setEnabled(true);
     }
 
     /**
