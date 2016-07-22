@@ -247,7 +247,7 @@ CREATE TABLE director_job (
   last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
   ts_last_attempt DATETIME DEFAULT NULL,
   ts_last_error DATETIME DEFAULT NULL,
-  last_error_message TEXT,
+  last_error_message TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY (job_name),
   CONSTRAINT director_job_period
@@ -1265,7 +1265,7 @@ CREATE TABLE sync_rule (
     'pending-changes',
     'failing'
   ) NOT NULL DEFAULT 'unknown',
-  last_error_message VARCHAR(255) DEFAULT NULL,
+  last_error_message TEXT DEFAULT NULL,
   last_attempt DATETIME DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1313,4 +1313,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 105;
+      schema_version = 107;
