@@ -84,7 +84,7 @@ class ImportRun extends DbObject
             array()
         )->where('rsr.rowset_checksum = ?', $this->getConnection()->quoteBinary($binchecksum))->order('r.object_name');
 
-        if ($columns === null) {
+        if ($columns === null || empty($columns)) {
             $columns = $this->listColumnNames();
         } else {
             $query->where('p.property_name IN (?)', $columns);
