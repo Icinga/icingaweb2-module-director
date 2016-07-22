@@ -21,6 +21,7 @@ Icinga objects of a specific type:
 
 Currently the following object types are available on CLI:
 
+* command
 * endpoint
 * host
 * hostgroup
