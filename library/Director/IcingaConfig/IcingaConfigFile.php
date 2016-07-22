@@ -81,6 +81,15 @@ class IcingaConfigFile
         return $this->checksum;
     }
 
+    public function addLegacyObjects($objects)
+    {
+        foreach ($objects as $object) {
+            $this->addLegacyObject($object);
+        }
+
+        return $this;
+    }
+
     public function addObjects($objects)
     {
         foreach ($objects as $object) {
@@ -94,7 +103,18 @@ class IcingaConfigFile
     {
         $this->content .= $object->toConfigString();
         $this->checksum = null;
+        return $this->addObjectStats($object);
+    }
 
+    public function addLegacyObject(IcingaObject $object)
+    {
+        $this->content .= $object->toLegacyConfigString();
+        $this->checksum = null;
+        return $this->addObjectStats($object);
+    }
+
+    protected function addObjectStats(IcingaObject $object)
+    {
         if ($object->hasProperty('object_type')) {
             $type = $object->object_type;
 

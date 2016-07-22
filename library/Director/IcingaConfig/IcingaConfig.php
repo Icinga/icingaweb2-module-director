@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\IcingaConfig;
 use Icinga\Application\Benchmark;
 use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -34,6 +35,8 @@ class IcingaConfig
 
     protected $generationTime;
 
+    protected $configFormat = 'v2';
+
     public static $table = 'director_generated_config';
 
     public function __construct(Db $connection)
@@ -62,6 +65,30 @@ class IcingaConfig
     public function getFileCount()
     {
         return count($this->files);
+    }
+
+    public function getConfigFormat()
+    {
+        return $this->configFormat;
+    }
+
+    public function setConfigFormat($format)
+    {
+        if (! in_array($format, array('v1', 'v2'))) {
+            throw new ConfigurationError(
+                'Only Icinga v1 and v2 config format is supported, got "%s"',
+                $format
+            );
+        }
+
+        $this->configFormat = $format;
+
+        return $this;
+    }
+
+    public function isLegacy()
+    {
+        return $this->configFormat === 'v1';
     }
 
     public function getObjectCount()
