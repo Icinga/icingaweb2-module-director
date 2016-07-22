@@ -246,6 +246,61 @@ class ObjectCommand extends Command
         }
     }
 
+    /**
+     * Clone an existing object
+     *
+     * Use this command to clone a specific object
+     *
+     * USAGE
+     *
+     * icingacli director <type> clone <name> --from <original> [options]
+     *
+     * OPTIONS
+     *   --from <original> The name of the object you want to clone
+     *   --<key> <value>   Override specific properties while cloning
+     *   --replace         In case an object <name> already exists replace
+     *                     it with the clone
+     *   --flat            Do no keep inherited properties but create a flat
+     *                     object with all resolved/inherited properties
+     *
+     * EXAMPLES
+     *
+     *   icingacli director host clone localhost2 --from localhost
+     *
+     *   icingacli director host clone localhost3 --from localhost \
+     *     --address 127.0.0.3
+     */
+    public function cloneAction()
+    {
+        $fromName = $this->params->shiftRequired('from');
+        $from = $this->load($fromName);
+
+        $name = $this->getName();
+        $type = $this->getType();
+
+        $resolve = $this->params->shift('flat');
+        $replace = $this->params->shift('replace');
+
+        $object = $from::fromPlainObject(
+            $from->toPlainObject($resolve),
+            $from->getConnection()
+        )->set('object_name', $name);
+
+        $object->setProperties($this->remainingParams());
+
+        if ($replace && $this->exists($name)) {
+            $object = $this->load($name)->replaceWith($object);
+        }
+
+        if ($object->hasBeenModified() && $object->store()) {
+            printf("%s '%s' has been cloned from %s\n", $type, $name, $fromName);
+            exit(0);
+        }
+
+        printf("%s '%s' has not been modified\n", $this->getType(), $name);
+        exit(0);
+    }
+
     protected function remainingParams()
     {
         if ($json = $this->params->shift('json')) {

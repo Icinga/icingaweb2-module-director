@@ -189,6 +189,36 @@ in JSON format.
 |                 | With this flag you will get all properties              |
 
 
+### Clone an existing object
+
+Use this command to clone a specific object
+
+#### Usage
+
+`icingacli director <type> clone <name> --from <original> [options]`
+
+#### Options
+
+| Option              | Description                                         |
+|---------------------|-----------------------------------------------------|
+| `--from <original>` | The name of the object you want to clone            |
+| `--<key> <value>`   | Override specific properties while cloning          |
+| `--replace`         | In case an object <name> already exists replace it  |
+|                     | with the clone                                      |
+| `--flat`            | Do no keep inherited properties but create a flat   |
+|                     | object with all resolved/inherited properties       |
+
+#### Examples
+
+```shell
+icingacli director host clone localhost2 --from localhost
+```
+
+```shell
+icingacli director host clone localhost3 --from localhost --address 127.0.0.3
+```
+
+
 ### Other interesting tasks
 
 
