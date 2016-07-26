@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Db\DbConnection;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -42,6 +44,7 @@ class IcingaHost extends IcingaObject
         'has_agent'             => null,
         'master_should_connect' => null,
         'accept_config'         => null,
+        'api_key'               => null,
     );
 
     protected $relations = array(
@@ -230,9 +233,34 @@ class IcingaHost extends IcingaObject
      *
      * @return string
      */
+    protected function renderApi_key()
+    {
+        return '';
+    }
+
+    /**
+     * Internal property, will not be rendered
+     *
+     * @return string
+     */
     protected function renderAccept_config()
     {
         // @codingStandardsIgnoreEnd
         return '';
+    }
+
+    public static function loadWithApiKey($key, Db $db)
+    {
+        $query = $db->getDbAdapter()
+            ->select()
+            ->from('icinga_host')
+            ->where('api_key = ?', $key);
+
+        $result = self::loadAll($db, $query);
+        if (count($result) !== 1) {
+            throw new NotFoundError('Got invalid API key "%s"', $key);
+        }
+
+        return current($result);
     }
 }

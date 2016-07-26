@@ -6,6 +6,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Test\BaseTestCase;
+use Icinga\Exception\IcingaException;
 
 class IcingaHostTest extends BaseTestCase
 {
@@ -392,6 +393,89 @@ class IcingaHostTest extends BaseTestCase
 
     }
 
+    public function testWhetherTwoHostsCannotBeStoredWithTheSameApiKey()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $a = IcingaHost::create(array(
+            'object_name' => '___TEST___a',
+            'object_type' => 'object',
+            'api_key' => 'a'
+        ), $db);
+        $b = IcingaHost::create(array(
+            'object_name' => '___TEST___b',
+            'object_type' => 'object',
+            'api_key' => 'a'
+        ), $db);
+
+        $a->store();
+        try {
+            $b->store();
+        } catch (IcingaException $e) {
+            $msg = $e->getMessage();
+            $matchMysql = strpos(
+                $msg,
+                "Duplicate entry 'a' for key 'api_key'"
+            ) !== false;
+
+            $matchPostgres = strpos(
+                $msg,
+                'Unique violation'
+            ) !== false;
+
+            $this->assertTrue(
+                $matchMysql || $matchPostgres,
+                'Exception message does not tell about unique constraint violation'
+            );
+            $a->delete();
+        }
+    }
+
+    public function testWhetherHostCanBeLoadedWithValidApiKey()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        $a = IcingaHost::create(array(
+            'object_name' => '___TEST___a',
+            'object_type' => 'object',
+            'api_key' => 'a1a1a1'
+        ), $db);
+        $b = IcingaHost::create(array(
+            'object_name' => '___TEST___b',
+            'object_type' => 'object',
+            'api_key' => 'b1b1b1'
+        ), $db);
+        $a->store();
+        $b->store();
+
+        $this->assertEquals(
+            IcingaHost::loadWithApiKey('b1b1b1', $db)->object_name,
+            '___TEST___b'
+        );
+
+        $a->delete();
+        $b->delete();
+    }
+
+    /**
+     * @expectedException \Icinga\Exception\NotFoundError
+     */
+    public function testWhetherInvalidApiKeyThrows404()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+        IcingaHost::loadWithApiKey('No___such___key', $db);
+    }
+
     protected function getDummyRelatedProperties()
     {
         return array(
@@ -434,7 +518,7 @@ class IcingaHostTest extends BaseTestCase
     {
         if ($this->hasDb()) {
             $db = $this->getDb();
-            $kill = array($this->testHostName, '___TEST___parent');
+            $kill = array($this->testHostName, '___TEST___parent', '___TEST___a', '___TEST___b');
             foreach ($kill as $name) {
                 if (IcingaHost::exists($name, $db)) {
                     IcingaHost::load($name, $db)->delete();

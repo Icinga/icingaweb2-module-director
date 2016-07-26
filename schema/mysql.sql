@@ -447,8 +447,10 @@ CREATE TABLE icinga_host (
   has_agent ENUM('y', 'n') DEFAULT NULL,
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
+  api_key VARCHAR(40) DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
+  UNIQUE INDEX api_key (api_key),
   KEY search_idx (display_name),
   CONSTRAINT icinga_host_zone
     FOREIGN KEY zone (zone_id)

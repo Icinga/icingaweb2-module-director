@@ -575,6 +575,7 @@ CREATE TABLE icinga_host (
   has_agent enum_boolean DEFAULT NULL,
   master_should_connect enum_boolean DEFAULT NULL,
   accept_config enum_boolean DEFAULT NULL,
+  api_key character varying(40) DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_host_zone
   FOREIGN KEY (zone_id)
@@ -604,6 +605,7 @@ CREATE TABLE icinga_host (
 );
 
 CREATE UNIQUE INDEX object_name_host ON icinga_host (object_name, zone_id);
+CREATE UNIQUE INDEX host_api_key ON icinga_host (api_key);
 CREATE INDEX host_zone ON icinga_host (zone_id);
 CREATE INDEX host_timeperiod ON icinga_host (check_period_id);
 CREATE INDEX host_check_command ON icinga_host (check_command_id);
