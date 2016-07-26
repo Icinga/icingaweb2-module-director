@@ -25,8 +25,6 @@ class ImportsourceHookTable extends QuickTable
                 $this->sourceHook()->listColumns(),
                 $this->source->listModifierTargetProperties()
             );
-
-            sort($this->columnCache);
         }
 
         return $this->columnCache;
