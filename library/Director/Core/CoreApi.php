@@ -490,7 +490,9 @@ constants
                 } else {
                     $deployment->startup_succeeded = 'n';
                 }
-                $deployment->startup_log = $this->getStagedFile($stage, 'startup.log');
+                $deployment->startup_log = $this->shortenStartupLog(
+                    $this->getStagedFile($stage, 'startup.log')
+                );
             }
             $collected = true;
 
@@ -628,5 +630,28 @@ constants
 
         $deployment->store($db);
         return $deployment->dump_succeeded === 'y';
+    }
+
+    protected function shortenStartupLog($log)
+    {
+        $logLen = strlen($log);
+        if ($logLen < 1024 * 60) {
+            return $log;
+        }
+
+        $part = substr($log, 0, 1024 * 20);
+        $parts = explode("\n", $part);
+        array_pop($parts);
+        $begin = implode("\n", $parts) . "\n\n";
+
+        $part = substr($log, -1024 * 20);
+        $parts = explode("\n", $part);
+        array_shift($parts);
+        $end = "\n\n" . implode("\n", $parts);
+
+        return $begin . sprintf(
+            '[..] %d bytes removed by Director [..]',
+            $logLen - (strlen($begin) + strlen($end))
+        ) . $end;
     }
 }
