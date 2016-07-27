@@ -111,7 +111,7 @@ class IcingaObjectAssignments
                 continue;
             }
 
-            if (is_numeric($val['expression'])) {
+            if (is_numeric($val['expression']) || $val['expression'] === "true" || $val['expression'] === "false" || substr($val['expression'], 0, 5) === "host." ) {
                 $expression = $val['expression'];
             } else {
                 $expression = '"' . addcslashes($val['expression'], '"') . '"';
