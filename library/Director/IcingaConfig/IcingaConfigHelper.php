@@ -73,6 +73,10 @@ class IcingaConfigHelper
     //       Parameter? Dedicated method? Always if \n is found?
     public static function renderString($string)
     {
+	// Hard-code the set_if string
+	if($string === "set_if")
+	    return $string;
+
         $special = array(
             '/\\\/',
             '/"/',
