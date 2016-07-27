@@ -302,6 +302,11 @@ abstract class DirectorObjectForm extends QuickForm
                     // TODO: reorder the related code. Create elements once
                     if (property_exists($fields, $mykey)) {
                         $field = $fields->$mykey;
+		    } elseif (property_exists($checkFields, $mykey)) {
+			$field = $checkFields->$mykey;
+		    }
+
+		    if(isset($field)) {
                         $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
                         $name = 'var_' . $datafield->varname;
                         $className = $datafield->datatype;
@@ -313,14 +318,10 @@ abstract class DirectorObjectForm extends QuickForm
                         }
 
                         $value = $el->setValue($value)->getValue();
-                    }
 
-                    if (property_exists($fields, $mykey) && $fields->$mykey->format === 'json') {
-                        $value = json_decode($value);
-                    }
-
-                    if (property_exists($checkFields, $mykey) && $checkFields->$mykey->format === 'json') {
-                        $value = json_decode($value);
+			if($field->format === 'json') {
+			    $value = json_decode($value);
+			}
                     }
 
                     $vars[$mykey] = $value;
