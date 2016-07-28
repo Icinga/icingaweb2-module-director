@@ -135,17 +135,27 @@ class ConfigController extends ActionController
     // Show a single file
     public function fileAction()
     {
+        $fileOnly = $this->params->get('fileOnly');
+        $this->view->highlight = $this->params->get('highlight');
+        $this->view->highlightSeverity = $this->params->get('highlightSeverity');
         $tabs = $this->configTabs()->add('file', array(
             'label'     => $this->translate('Rendered file'),
             'url'       => $this->getRequest()->getUrl(),
         ))->activate('file');
 
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('back'),
-            'director/config/files',
-            $this->getConfigTabParams(),
-            array('class' => 'icon-left-big')
-        );
+        if ($fileOnly) {
+            $tabs->remove('config');
+            if ($tabs->has('deployment')) {
+                $tabs->remove('deployment');
+            }
+        } else {
+            $this->view->addLink = $this->view->qlink(
+                $this->translate('back'),
+                'director/config/files',
+                $this->getConfigTabParams(),
+                array('class' => 'icon-left-big')
+            );
+        }
 
         $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('config_checksum')), $this->db());
         $filename = $this->view->filename = $this->params->get('file_path');

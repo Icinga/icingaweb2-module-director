@@ -65,6 +65,10 @@ pre.logfile {
   overflow: auto;
   white-space: pre;
 
+  a {
+    color: #fff;
+  }
+
   .loglevel, .application {
     font-weight: bold;
   }
@@ -92,6 +96,29 @@ pre.logfile {
   .error-hint {
     color: #fff;
     font-weight: 900;
+  }
+}
+
+pre.generated-config {
+
+  .highlight {
+    padding-left: 0.5em;
+
+    a {
+      color: inherit;
+    }
+
+    &.critical {
+      border-left: 0.5em solid @color-critical;
+    }
+
+    &.warning {
+      border-left: 0.5em solid @color-warning;
+    }
+
+    &.information {
+      border-left: 0.5em solid @color-ok;
+    }
   }
 }
 
