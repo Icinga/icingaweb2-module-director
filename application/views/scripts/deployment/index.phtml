@@ -2,7 +2,36 @@
 
 use Icinga\Util\Format;
 
-function colorize($log) {
+$view = $this;
+$logLink = function ($match) use ($view) {
+
+    $params = array(
+        'config_checksum'   => $view->config_checksum,
+        'file_path'         => $match[4],
+        'deployment_id'     => $view->deployment->id,
+        'fileOnly'          => true,
+    );
+    if (isset($match[5])) {
+        $params['highlight']           = $match[5];
+		$params['highlightSeverity']   = $match[1];
+        $suffix = ': ' . $match[5];
+    } else {
+        $suffix = '';
+    }
+
+    return sprintf(
+        '>%s%s',
+        $match[1] . $match[2],
+        $view->qlink(
+            $match[3] . $match[4],
+            'director/config/file',
+            $params,
+            array('data-base-target' => '_next')
+        )
+    ) . $suffix;
+};
+
+function colorize($log, $logLink) {
     $log = preg_replace(
         '/^(debug|notice|information|warning|critical)\/(\w+)/m',
         '<span class="loglevel \1">\1</span>/<span class="application">\2</span>',
@@ -10,6 +39,21 @@ function colorize($log) {
     );
 
     $log = preg_replace('/([\^]{2,})/', '<span class="error-hint">\1</span>', $log);
+
+    $log = preg_replace_callback(
+        '~\>(information)(\<.+ )'
+        . '(/.+?/api/packages/director/[^/]+/)([^:]+\.conf)$~m',
+        $logLink,
+        $log
+    );
+
+    $log = preg_replace_callback(
+        '~\>(critical|warning)(\<[^\n]+?\n?[^\n]+?in )'
+        . '(/.+?/api/packages/director/[^/]+/)([^:]+\.conf): (\d+)~s',
+        $logLink,
+        $log
+    );
+
     return $log;
 }
 
@@ -85,7 +129,8 @@ if ($deployment->startup_succeeded === null) {
 <h2>Startup log</h2>
 <pre class="logfile">
 <?= colorize(
-    $this->escape($deployment->startup_log)
+    $this->escape($deployment->startup_log),
+    $logLink
 ) ?>
 </pre>
 <?php endif ?>
