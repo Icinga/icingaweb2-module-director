@@ -7,6 +7,7 @@ use Iterator;
 use Countable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -343,6 +344,20 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         foreach ($this->imports as $name => $o) {
             $ret .= '    import ' . c::renderString($name) . "\n";
+        }
+
+        if ($ret !== '') {
+            $ret .= "\n";
+        }
+        return $ret;
+    }
+
+    public function toLegacyConfigString()
+    {
+        $ret = '';
+
+        foreach ($this->imports as $name => $o) {
+            $ret .= c1::renderKeyValue('use', c1::renderString($name));
         }
 
         if ($ret !== '') {

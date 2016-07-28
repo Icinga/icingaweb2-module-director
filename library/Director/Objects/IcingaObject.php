@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\ProgrammingError;
@@ -1098,6 +1099,56 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         DirectorActivityLog::logRemoval($this, $this->connection);
     }
 
+    public function renderToLegacyConfig(IcingaConfig $config)
+    {
+        if ($this->isExternal()) {
+            return;
+        }
+
+        $type = $this->getShortTableName();
+
+        if ($this->isTemplate()) {
+            $filename = strtolower($type) . '_templates';
+        } elseif ($this->isApplyRule()) {
+            $filename = strtolower($type) . '_apply';
+        } else {
+            $filename = strtolower($type) . 's';
+        }
+
+        if ($config->isLegacy()) {
+
+            if ($this->getResolvedProperty('zone_id')) {
+
+                $a = clone($this);
+                $a->enable_active_checks = true;
+
+                $b = clone($this);
+                $a->enable_active_checks = false;
+
+                $config->configFile(
+                    'director/master/' . $filename,
+                    '.cfg'
+                )->addLegacyObject($a);
+
+                $config->configFile(
+                    'director/' . $this->getRenderingZone($config) . '/' . $filename,
+                    '.cfg'
+                )->addLegacyObject($b);
+
+            } else {
+                $config->configFile(
+                    'director/' . $this->getRenderingZone($config) . '/' . $filename,
+                    '.cfg'
+                )->addLegacyObject($this);
+            }
+
+        } else {
+            $config->configFile(
+                'director/' . $this->getRenderingZone($config) . '/' . $filename
+            )->addObject($this);
+        }
+    }
+
     public function renderToConfig(IcingaConfig $config)
     {
         if ($this->isExternal()) {
@@ -1143,10 +1194,76 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    protected function renderLegacyImports()
+    {
+        if ($this->supportsImports()) {
+            return $this->imports()->toLegacyConfigString();
+        } else {
+            return '';
+        }
+    }
+
     // Disabled is a virtual property
     protected function renderDisabled()
     {
         return '';
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function renderLegacyEnable_active_checks()
+    {
+        return $this->renderLegacyBooleanProperty(
+            'enable_active_checks',
+            'active_checks_enabled'
+        );
+    }
+
+    protected function renderLegacyEnable_passive_checks()
+    {
+        return $this->renderLegacyBooleanProperty(
+            'enable_passive_checks',
+            'passive_checks_enabled'
+        );
+    }
+
+    protected function renderLegacyEnable_event_handler()
+    {
+        return $this->renderLegacyBooleanProperty(
+            'enable_active_checks',
+            'event_handler_enabled'
+        );
+    }
+
+    protected function renderLegacyEnable_notifications()
+    {
+        return $this->renderLegacyBooleanProperty(
+            'enable_notifications',
+            'notifications_enabled'
+        );
+    }
+
+    protected function renderLegacyEnable_perfdata()
+    {
+        return $this->renderLegacyBooleanProperty(
+            'enable_perfdata',
+            'process_perf_data'
+        );
+    }
+
+    protected function renderLegacyVolatile()
+    {
+        // @codingStandardsIgnoreEnd
+        return $this->renderLegacyBooleanProperty(
+            'volatile',
+            'is_volatile'
+        );
+    }
+
+    protected function renderLegacyBooleanProperty($property, $legacyKey)
+    {
+        return c1::renderKeyValue($legacyKey, c1::renderBoolean($this->$property));
     }
 
     protected function renderProperties()
@@ -1164,6 +1281,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             $out .= $this->renderObjectProperty($key, $value);
+        }
+
+        return $out;
+    }
+
+    protected function renderLegacyProperties()
+    {
+        $out = '';
+        $blacklist = array_merge(array(
+            'id',
+            'object_name',
+            'object_type',
+        ), array() /* $this->prioritizedProperties */);
+
+        foreach ($this->properties as $key => $value) {
+            if (in_array($key, $blacklist)) {
+                continue;
+            }
+
+            $out .= $this->renderLegacyObjectProperty($key, $value);
         }
 
         return $out;
@@ -1230,6 +1367,48 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return c::renderKeyValue($key, c::renderString($value));
     }
 
+    protected function renderLegacyObjectProperty($key, $value)
+    {
+        if (substr($key, -3) === '_id') {
+            $short = substr($key, 0, -3);
+            if ($this->hasUnresolvedRelatedProperty($key)) {
+                return c1::renderKeyValue(
+                    $short, // NOT
+                    c1::renderString($this->$short)
+                );
+
+                return '';
+            }
+        }
+
+        if ($value === null) {
+            return '';
+        }
+
+        $method = 'renderLegacy' . ucfirst($key);
+        if (method_exists($this, $method)) {
+            return $this->$method($value);
+        }
+
+        $method = 'render' . ucfirst($key);
+        if (method_exists($this, $method)) {
+            return $this->$method($value);
+        }
+
+        if ($this->propertyIsBoolean($key)) {
+            if ($value === $this->defaultProperties[$key]) {
+                return '';
+            } else {
+                return c1::renderKeyValue(
+                    $this->booleans[$key],
+                    c1::renderBoolean($value)
+                );
+            }
+        }
+
+        return c1::renderKeyValue($key, c1::renderString($value));
+    }
+
     protected function renderBooleanProperty($key)
     {
         return c::renderKeyValue($key, c::renderBoolean($this->$key));
@@ -1241,6 +1420,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     protected function renderSuffix()
+    {
+        return "}\n\n";
+    }
+
+    protected function renderLegacySuffix()
     {
         return "}\n\n";
     }
@@ -1368,6 +1552,75 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } else {
             return '';
         }
+    }
+
+    protected function renderLegacyObjectHeader()
+    {
+        $type = strtolower($this->getType());
+
+        if ($this->isTemplate()) {
+            $name = c1::renderKeyValue('name', c1::renderString($this->getObjectName()));
+        } else {
+            $name = c1::renderKeyValue($type . '_name', c1::renderString($this->getObjectName()));
+        }
+
+        $str = sprintf(
+            "define %s {\n$name",
+            $type,
+            $name
+        );
+
+        if ($this->isTemplate()) {
+            $str .= c1::renderKeyValue('register', '0');
+        }
+
+        return $str;
+    }
+
+    public function toLegacyConfigString()
+    {
+        $str = implode(array(
+            $this->renderLegacyObjectHeader(),
+            $this->renderLegacyImports(),
+            $this->renderLegacyProperties(),
+            //$this->renderRanges(),
+            //$this->renderArguments(),
+            //$this->renderRelatedSets(),
+            //$this->renderGroups(),
+            //$this->renderMultiRelations(),
+            //$this->renderCustomExtensions(),
+            //$this->renderCustomVars(),
+            //$this->renderAssignments(),
+            $this->renderLegacySuffix()
+        ));
+
+        $str = $this->alignLegacyProperties($str);
+
+        if ($this->isDisabled()) {
+            return "/* --- This object has been disabled ---\n"
+                . $str . "*/\n";
+        } else {
+            return $str;
+        }
+    }
+
+    protected function alignLegacyProperties($configString)
+    {
+        $lines = preg_split('/\n/', $configString);
+        $len = 24;
+
+        foreach ($lines as &$line) {
+            if (preg_match('/^\s{4}([^\t]+)\t+(.+)$/', $line, $m)) {
+                if ($len - strlen($m[1]) < 0) {
+                    var_dump($m);
+                    exit;
+                }
+
+                $line = '    ' . $m[1] . str_repeat(' ', $len - strlen($m[1])) . $m[2];
+            }
+        }
+
+        return implode("\n", $lines);
     }
 
     public function toConfigString()
