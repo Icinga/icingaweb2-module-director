@@ -57,6 +57,11 @@ class IcingaNotification extends IcingaObject
         'times_end'             => 'times_end',
     );
 
+    protected function prefersGlobalZone()
+    {
+        return false;
+    }
+
     /**
      * We have distinct properties in the db
      *

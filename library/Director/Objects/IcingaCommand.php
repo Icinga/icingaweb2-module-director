@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class IcingaCommand extends IcingaObject
@@ -98,9 +97,9 @@ class IcingaCommand extends IcingaObject
         return $value;
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    protected function prefersGlobalZone()
     {
-        return $this->connection->getDefaultGlobalZoneName();
+        return true;
     }
 
     protected function renderCommand()

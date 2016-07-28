@@ -56,4 +56,9 @@ class IcingaTimePeriod extends IcingaObject
         //       different. Figure out whether and how we should support this
         return false;
     }
+
+    protected function prefersGlobalZone()
+    {
+        return true;
+    }
 }
