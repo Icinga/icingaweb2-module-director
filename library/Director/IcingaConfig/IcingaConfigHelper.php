@@ -100,7 +100,7 @@ class IcingaConfigHelper
 
         $string = preg_replace($special, $replace, $string);
 
-        return '"' . $string . '"';
+        return '"' . self::renderVariablesAsExpression($string) . '"';
     }
 
     public static function renderDictionaryKey($key)
@@ -256,5 +256,9 @@ class IcingaConfigHelper
         }
 
         return $seconds . 's';
+    }
+
+    private static function renderVariablesAsExpression($string) {
+        return preg_replace('/\$\$([\w\.]+)\$\$/', '" + ${1} + "', $string);
     }
 }
