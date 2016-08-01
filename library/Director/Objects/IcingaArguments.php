@@ -228,11 +228,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     public function remove($argument)
     {
         if (array_key_exists($argument, $this->arguments)) {
-            unset($this->arguments[$argument]);
+            $this->arguments[$argument]->markForRemoval();
+            $this->modified = true;
+            $this->refreshIndex();
         }
 
-        $this->modified = true;
-        $this->refreshIndex();
+        return $this;
     }
 
     protected function refreshIndex()
@@ -340,8 +341,6 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $deleted = array();
         foreach ($this->arguments as $key => $argument) {
             if ($argument->shouldBeRemoved()) {
-                $argument->delete();
-                unset($this->arguments[$key]);
                 $deleted[] = $key;
             } else {
                 $argument->command_id = $this->object->id;
@@ -350,6 +349,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         }
 
         foreach ($deleted as $key) {
+            $this->arguments[$key]->delete();
             unset($this->arguments[$key]);
         }
 

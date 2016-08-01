@@ -102,6 +102,25 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         $this->setButtons();
     }
 
+    protected function deleteObject($object)
+    {
+        $cmd = $this->commandObject;
+
+        $msg = sprintf(
+            '%s argument "%s" has been removed',
+            $this->translate($this->getObjectName()),
+            $object->argument_name
+        );
+
+        $url = $this->getSuccessUrl()->without('argument_id');
+
+        $cmd->arguments()->remove($object->argument_name);
+        if ($cmd->store()) {
+            $this->setSuccessUrl($url);
+        }
+
+        $this->redirectOnSuccess($msg);
+    }
 
     public function onSuccess()
     {
