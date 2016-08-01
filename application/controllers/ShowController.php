@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\ConfigDiff;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -73,33 +74,71 @@ class ShowController extends ActionController
         return $tabs;
     }
 
+    protected function getObjectConfig($object)
+    {
+        $config = new IcingaConfig($this->db());
+        $object->renderToConfig($config);
+        return $config;
+    }
+
+    protected function newConfig($entry)
+    {
+        return $this->getObjectConfig($this->newObject($entry));
+    }
+
+    protected function oldConfig($entry)
+    {
+        return $this->getObjectConfig($this->oldObject($entry));
+    }
+
     protected function showDiff($entry)
     {
         $this->view->title = sprintf('%s config diff', $entry->object_name);
         $this->getTabs()->activate('diff');
-        $old = $this->oldObject($entry);
-        $new = $this->newObject($entry);
 
-        $d = ConfigDiff::create(
-            $old,
-            $new
-        );
+        $oldConfig = $this->oldConfig($entry);
+        $newConfig = $this->newConfig($entry);
 
-        $this->view->output = $d->renderHtml();
+        $oldFilenames = $oldConfig->getFileNames();
+        $newFilenames = $newConfig->getFileNames();
+
+        $fileNames = array_merge($oldFilenames, $newFilenames);
+
+        $this->view->diffs = array();
+        foreach ($fileNames as $filename) {
+            if (in_array($filename, $oldFilenames)) {
+                $left = $oldConfig->getFile($filename)->getContent();
+            } else {
+                $left = '';
+            }
+
+            if (in_array($filename, $newFilenames)) {
+                $right = $newConfig->getFile($filename)->getContent();
+            } else {
+                $right = '';
+            }
+            if ($left === $right) {
+                continue;
+            }
+
+            $d = ConfigDiff::create($left, $right);
+
+            $this->view->diffs[$filename] = $d->renderHtml();
+        }
     }
 
     protected function showOld($entry)
     {
         $this->view->title = sprintf('%s former config', $entry->object_name);
         $this->getTabs()->activate('old');
-        $this->showObject($this->oldObject($entry));
+        $this->showConfig($this->oldConfig($entry));
     }
 
     protected function showNew($entry)
     {
         $this->view->title = sprintf('%s new config', $entry->object_name);
         $this->getTabs()->activate('new');
-        $this->showObject($this->newObject($entry));
+        $this->showConfig($this->newConfig($entry));
     }
 
     protected function oldObject($entry)
@@ -122,21 +161,16 @@ class ShowController extends ActionController
         );
     }
 
-    protected function showObject($object)
+    protected function showConfig(IcingaConfig $config)
     {
-        $error = '';
-        if ($object->disabled === 'y') {
-            $error = '<p class="error">'
-                . $this->translate('This object will not be deployed as it has been disabled')
-                . '</p>';
+        $this->view->diffs = array();
+        foreach ($config->getFileNames() as $filename) {
+            $this->view->diffs[$filename] = sprintf(
+                '<pre>%s</pre>',
+                $this->view->escape($config->getFile($filename)->getContent())
+            );
         }
-
-        $this->view->output = $error
-            . ' <pre'
-            . ($object->disabled === 'y' ? ' class="disabled"' : '')
-            . '>'
-            . $this->view->escape($object->toConfigString())
-            . '</pre>';
+        return $this;
     }
 
     protected function showInfo($entry)

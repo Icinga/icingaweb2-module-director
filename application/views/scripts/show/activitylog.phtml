@@ -81,8 +81,10 @@ $url = $this->url()->without('checksum')->without('show');
   </tr>
 <?php endif ?>
 </table>
-<?php if (! empty($this->output)): ?>
-<h1><?= $this->escape($this->title) ?></h1>
-<?= $this->output ?>
+<?php if (! empty($this->diffs)): ?>
+<?php foreach ($this->diffs as $file => $diff): ?>
+<h3><?= $this->escape($file) ?></h3>
+<?= $diff ?>
+<?php endforeach ?>
 <?php endif ?>
 </div>
