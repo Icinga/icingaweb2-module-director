@@ -35,7 +35,7 @@ class IcingaConfig
 
     protected $generationTime;
 
-    protected $configFormat = 'v2';
+    protected $configFormat;
 
     public static $table = 'director_generated_config';
 
@@ -46,6 +46,7 @@ class IcingaConfig
 
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+        $this->configFormat = $this->connection->getSetting('config_format', 'v2');
     }
 
     public function getSize()

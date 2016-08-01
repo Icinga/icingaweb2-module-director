@@ -1151,6 +1151,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function renderToConfig(IcingaConfig $config)
     {
+        if ($config->isLegacy()) {
+            return $this->renderToLegacyConfig($config);
+        }
+
         if ($this->isExternal()) {
             return;
         }
