@@ -91,6 +91,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             if ($this->arguments[$key]->hasBeenModified()) {
                 $this->modified = true;
             }
+        } elseif (array_key_exists($key, $this->storedArguments)) {
+            $this->arguments[$key] = clone($this->storedArguments[$key]);
+            $this->arguments[$key]->replaceWith($argument);
+            if ($this->arguments[$key]->hasBeenModified()) {
+                $this->modified = true;
+            }
         } else {
             $this->add($argument);
             $this->modified = true;
@@ -191,8 +197,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             array_keys($this->arguments),
             array_keys($arguments)
         ) as $arg) {
-            $this->arguments[$arg]->markForRemoval();
-            $this->modified = true;
+            if ($this->arguments[$arg]->hasBeenLoadedFromDb()) {
+                $this->arguments[$arg]->markForRemoval();
+                $this->modified = true;
+            } else {
+                unset($this->arguments[$arg]);
+            }
         }
 
         return $this;
@@ -336,6 +346,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             unset($this->arguments[$key]);
         }
 
+        $this->cloneStored();
         return $this;
     }
 

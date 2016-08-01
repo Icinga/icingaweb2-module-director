@@ -58,6 +58,76 @@ class IcingaCommandTest extends BaseTestCase
         );
     }
 
+    public function testCanBePersistedToDb()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $command = $this->newCommandWithArguments();
+
+        $this->assertEquals(
+            $command->store($db),
+            true
+        );
+
+
+        $command->delete();
+    }
+
+    public function testCanBeLoadedFromDb()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $name = $this->testCommandName;
+        $command = $this->newCommandWithArguments($db);
+        $command->store($db);
+
+        $command = IcingaCommand::load($name, $db);
+        $this->assertEquals(
+            $command->object_name,
+            $name
+        );
+
+        $command->delete();
+    }
+
+    public function testArgumentMotificationsAreDetected()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $command = $this->newCommandWithArguments($db);
+        $command->store($db);
+        $command->arguments()->set('-H', 'no-host');
+        $this->assertTrue($command->hasBeenModified());
+        $this->assertTrue($command->store());
+        $command->delete();
+    }
+
+    protected function newCommandWithArguments()
+    {
+        $command = $this->command();
+        $command->arguments = array(
+            '-H' => '$host$',
+            '-x' => (object) array(
+                'required' => true,
+                'value' => 'bal'
+            )
+        );
+
+        return $command;
+    }
+
     public function testAbsolutePathsAreDetected()
     {
         $command = $this->command();
