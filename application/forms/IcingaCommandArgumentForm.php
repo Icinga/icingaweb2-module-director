@@ -116,7 +116,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
                 $this->translate('The argument %s has successfully been stored'),
                 $object->argument_name
             );
-            $object->store($this->db);
+            $cmd->store($this->db);
         } else {
             $this->setHttpResponseCode(304);
             $msg = $this->translate('No action taken, object has not been modified');
