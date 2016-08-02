@@ -23,6 +23,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
 
         $this->addElement('text', 'argument_name', array(
             'label'       => $this->translate('Argument name'),
+            'filters'     => array('StringTrim'),
             'description' => $this->translate('e.g. -H or --hostname, empty means "skip_key"')
         ));
 
