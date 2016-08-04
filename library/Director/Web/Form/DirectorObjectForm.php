@@ -868,7 +868,7 @@ abstract class DirectorObjectForm extends QuickForm
             $url = $object->getOnDeleteUrl();
         } else {
             $url = $this->getSuccessUrl()->without(
-                array('field_id', 'argument_id')
+                array('field_id', 'argument_id', 'range', 'range_type')
             );
         }
 
