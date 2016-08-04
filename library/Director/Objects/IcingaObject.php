@@ -61,6 +61,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     // Will be rendered first, before imports
     protected $prioritizedProperties = array();
 
+    protected $propertiesNotForRendering = array(
+        'id',
+        'object_name',
+        'object_type',
+    );
+
     /**
      * Array of interval property names
      *
@@ -1278,11 +1284,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderProperties()
     {
         $out = '';
-        $blacklist = array_merge(array(
-            'id',
-            'object_name',
-            'object_type',
-        ), $this->prioritizedProperties);
+        $blacklist = array_merge($this->propertiesNotForRendering, $this->prioritizedProperties);
 
         foreach ($this->properties as $key => $value) {
             if (in_array($key, $blacklist)) {
