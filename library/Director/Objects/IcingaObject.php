@@ -1705,7 +1705,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected static function classByType($type)
     {
         // allow for icinga_host and host
-        $type = preg_replace('/^icinga_/', '', $type);
+        $type = lcfirst(preg_replace('/^icinga_/', '', $type));
 
         if (strpos($type, 'data') === false) {
             $prefix = 'Icinga';

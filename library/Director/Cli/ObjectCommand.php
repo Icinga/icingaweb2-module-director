@@ -322,7 +322,7 @@ class ObjectCommand extends Command
     protected function load($name)
     {
         return IcingaObject::loadByType(
-            lcfirst($this->getType()),
+            $this->getType(),
             $name,
             $this->db()
         );
