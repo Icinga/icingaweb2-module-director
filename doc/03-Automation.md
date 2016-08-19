@@ -13,7 +13,7 @@ all you need to tell him is how it can reach and access that db. In case
 you already rolled out Icinga Web 2 you should already be used to handle
 resource definitions.
 
-The Director needs a `database resource`, and your RDMBS must either by
+The Director needs a `database resource`, and your RDBMS must either by
 MySQL, MariaDB or PostgreSQL. This is how such a resource could look like
 in your `/etc/icingaweb2/resources.ini`:
 
