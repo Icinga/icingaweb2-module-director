@@ -107,7 +107,9 @@ class ImportsourceController extends ActionController
 
         $this->prepareTabs($id)->activate('history');
         $this->view->title = $this->translate('Import run history');
-        $this->view->stats = $this->db()->fetchImportStatistics();
+
+        // TODO: temporarily disabled, find a better place for stats:
+        // $this->view->stats = $this->db()->fetchImportStatistics();
         $this->prepareTable('importrun');
         $this->view->table->enforceFilter(Filter::where('source_id', $id));
     }
