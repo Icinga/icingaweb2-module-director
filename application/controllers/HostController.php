@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
@@ -54,6 +55,7 @@ class HostController extends ObjectController
 
     public function servicesAction()
     {
+        $db = $this->db();
         $host = $this->object;
 
         $this->view->addLink = $this->view->qlink(
@@ -68,10 +70,112 @@ class HostController extends ObjectController
             $this->translate('Services: %s'),
             $host->object_name
         );
-        $this->view->table = $this->loadTable('IcingaHostService')
+
+        $resolver = $this->object->templateResolver();
+
+        $tables = array();
+        $table = $this->loadTable('IcingaHostService')
             ->setHost($host)
+            ->setTitle($this->translate('Individual Service objects'))
             ->enforceFilter('host_id', $host->id)
-            ->setConnection($this->db());
+            ->setConnection($db);
+
+        if (count($table)) {
+            $tables[0] = $table;
+        }
+
+        if ($applied = $host->vars()->get($db->getSetting(
+            'magic_apply_for',
+            '_director_apply_for'
+        ))) {
+            $table = $this->loadTable('IcingaHostAppliedForService')
+                ->setHost($host)
+                ->setDictionary($applied)
+                ->setTitle($this->translate('Generated from host vars'));
+
+            if (count($table)) {
+                $tables[1] = $table;
+            }
+        }
+
+        foreach ($resolver->fetchResolvedParents() as $parent) {
+            $table = $this->loadTable('IcingaHostService')
+                ->setHost($parent)
+                ->enforceFilter('host_id', $parent->id)
+                ->setConnection($db);
+            if (! count($table)) {
+                continue;
+            }
+
+            // dup dup
+            $title = sprintf(
+                'Inherited from %s',
+                $parent->object_name
+            );
+
+            $tables[$title] = $table->setTitle($title);
+        }
+
+        $this->view->tables = $tables;
+    }
+
+    public function appliedserviceAction()
+    {
+        $this->forbiddenWithApiKey();
+        $db = $this->db();
+        $host = $this->object;
+        $serviceName = $this->params->get('service');
+
+        $applied = $host->vars()->get($db->getSetting(
+            'magic_apply_for',
+            '_director_apply_for'
+        ));
+
+        $props = $applied->{$serviceName};
+
+        $parent = IcingaService::create(array(
+            'object_type' => 'template',
+            'object_name' => $this->translate('Host'),
+            'vars'        => $props->vars->getValue(),
+        ), $db);
+
+
+        $service = IcingaService::create(array(
+            'object_type' => 'apply',
+            'object_name' => $serviceName,
+            'host_id'     => $host->id,
+        ), $db);
+
+        if ($templates = $props->templates->getValue()) {
+            $imports = $templates;
+        } else {
+            $imports = $serviceName;
+        }
+
+        if (! is_array($imports)) {
+            $imports = array($imports);
+        }
+
+        // TODO: Validation for $imports? They might not exist!
+        array_unshift($imports, $parent);
+        $service->imports = $imports;
+
+        $this->view->title = sprintf(
+            $this->translate('Applied service: %s'),
+            $serviceName
+        );
+
+        $this->getTabs()->activate('services');
+
+        $this->view->form = $this->loadForm('IcingaService')
+            ->setDb($db)
+            ->setHost($host)
+            ->setHostGenerated()
+            ->setObject($service)
+            ->handleRequest()
+            ;
+
+        $this->setViewScript('object/form');
     }
 
     public function agentAction()

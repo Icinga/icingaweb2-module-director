@@ -591,6 +591,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->imports()->listImportNames();
     }
 
+    public function templateResolver()
+    {
+        // preserve object
+        return new IcingaTemplateResolver($this);
+    }
+
     public function getResolvedProperty($key, $default = null)
     {
         if (array_key_exists($key, $this->unresolvedRelatedProperties)) {
