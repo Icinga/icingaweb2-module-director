@@ -34,7 +34,7 @@ $section = $this->menuSection(
 ));
 
 $section->add($this->translate('Hosts'))->setUrl('director/hosts')->setPriority(30);
-$section->add($this->translate('Services'))->setUrl('director/services')->setPriority(40);
+$section->add($this->translate('Services'))->setUrl('director/services/templates')->setPriority(40);
 $section->add($this->translate('Commands'))->setUrl('director/commands')->setPriority(50);
 $section->add($this->translate('Users'))->setUrl('director/users')->setPriority(70);
 $section->add($this->translate('Automation'))
