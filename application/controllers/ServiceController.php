@@ -80,6 +80,14 @@ class ServiceController extends ObjectController
     public function editAction()
     {
         parent::editAction();
+
+        if ($this->host) {
+            $this->view->subtitle = sprintf(
+                $this->translate('(on %s)'),
+                $this->host->object_name
+            );
+        }
+
         $object = $this->object;
         if ($object->isTemplate()
             && $object->getResolvedProperty('check_command_id')
