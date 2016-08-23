@@ -100,6 +100,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         foreach ($import as $i) {
 
             if ($i instanceof $class) {
+                $this->objects[$i->object_name] = $i;
                 $new[] = $i->object_name;
             } else {
                 $new[] = $i;
