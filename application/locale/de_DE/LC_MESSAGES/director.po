@@ -2947,7 +2947,7 @@ msgid "Update Method"
 msgstr "Aktualisierungsmethode"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:39
-msgid "Update Policity"
+msgid "Update Policy"
 msgstr "Aktualisierungsrichtlinie"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:228
