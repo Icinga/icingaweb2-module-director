@@ -19,6 +19,9 @@ $linkObject = function ($match) use ($view, $decode) {
     if ($match[2] === 'Service') {
         return $match[0];
     }
+    if ($match[2] === 'CheckCommand') {
+        $match[2] = 'command';
+    }
 
     $name = $decode($match[3]);
     return sprintf(
