@@ -36,7 +36,7 @@ class SyncRuleForm extends DirectorObjectForm
         ));
 
         $this->addElement('select', 'update_policy', array(
-            'label'        => $this->translate('Update Policity'),
+            'label'        => $this->translate('Update Policy'),
             'description'  => $this->translate(
                 'Define what should happen when an object with a matching key'
                 . " already exists. You could merge its properties (import source"
