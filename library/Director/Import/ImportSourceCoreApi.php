@@ -62,6 +62,7 @@ class ImportSourceCoreApi extends ImportSourceHook
             'Host'          => $form->translate('Hosts'),
             'HostGroup'     => $form->translate('Hostgroups'),
             'User'          => $form->translate('Users'),
+            'UserGroup'     => $form->translate('Usergroups'),
             'Zone'          => $form->translate('Zones'),
         );
 
