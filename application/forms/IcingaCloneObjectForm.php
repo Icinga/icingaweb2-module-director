@@ -51,12 +51,12 @@ class IcingaCloneObjectForm extends QuickForm
             $object->getConnection()
         )->set('object_name', $newname);
 
-        $this->setSuccessUrl(
-            'director/' . strtolower($object->getShortTableName()),
-            $new->getUrlParams()
-        );
-
         if ($new->store()) {
+            $this->setSuccessUrl(
+                'director/' . strtolower($object->getShortTableName()),
+                $new->getUrlParams()
+            );
+
             $this->redirectOnSuccess($msg);
         } else {
             $this->redirectOnFailure($msg);
