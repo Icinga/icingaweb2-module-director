@@ -15,6 +15,7 @@ class IcingaConfigHelper
         'template',
         'include',
         'include_recursive',
+        'ignore_on_error',
         'library',
         'null',
         'true',
@@ -35,6 +36,8 @@ class IcingaConfigHelper
         'if',
         'else',
         'in',
+        'current_filename',
+        'current_line',
     );
 
     public static function renderKeyValue($key, $value, $prefix = '    ')
