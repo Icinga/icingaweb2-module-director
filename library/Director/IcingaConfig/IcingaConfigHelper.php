@@ -103,6 +103,15 @@ class IcingaConfigHelper
         return '"' . $string . '"';
     }
 
+    public static function renderDictionaryKey($key)
+    {
+        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+            return static::escapeIfReserved($key);
+        } else {
+            return static::renderString($key);
+        }
+    }
+
     // Requires an array
     public static function renderArray($array)
     {
@@ -129,7 +138,16 @@ class IcingaConfigHelper
     {
         $vals = array();
         foreach ($dictionary as $key => $value) {
-            $vals[$key] = rtrim(self::renderKeyValue(self::renderString($key), $value));
+            $vals[$key] = rtrim(
+                self::renderKeyValue(
+                    self::renderDictionaryKey($key),
+                    $value
+                )
+            );
+        }
+
+        if (empty($vals)) {
+            return '{}';
         }
         ksort($vals);
 
