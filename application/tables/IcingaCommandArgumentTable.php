@@ -19,6 +19,7 @@ class IcingaCommandArgumentTable extends QuickTable
         if ($this->connection === null) {
             $this->setConnection($command->getConnection());
         }
+
         return $this;
     }
 
@@ -63,7 +64,7 @@ class IcingaCommandArgumentTable extends QuickTable
             array('c' => 'icinga_command'),
             'ca.command_id = c.id',
             array()
-        );
+        )->order('ca.sort_order')->order('ca.argument_name');
 
         return $query;
     }
