@@ -37,7 +37,13 @@ class IcingaTimePeriod extends IcingaObject
     public function renderUpdate_method()
     {
         // @codingStandardsIgnoreEnd
-        return c::renderKeyValue('update', $this->update_method);
+        return '';
+    }
+
+    protected function renderObjectHeader()
+    {
+        return parent::renderObjectHeader()
+            . '    import "legacy-timeperiod"' . "\n";
     }
 
     public function isActive($now = null)

@@ -39,6 +39,20 @@ class IcingaCommand extends IcingaObject
 
     protected static $pluginDir;
 
+    protected $hiddenExecuteTemplates = array(
+        'PluginCheck'        => 'plugin-check-command',
+        'PluginNotification' => 'plugin-notification-command',
+        'PluginEvent'        => 'plugin-event-command',
+
+        // Special, internal:
+        'IcingaCheck'      => 'icinga-check-command',
+        'ClusterCheck'     => 'cluster-check-command',
+        'ClusterZoneCheck' => 'plugin-check-command',
+        'IdoCheck'         => 'ido-check-command',
+        'RandomCheck'      => 'random-check-command',
+        'CrlCheck'         => 'clr-check-command',
+    );
+
     /**
      * Render the 'medhods_execute' property as 'execute'
      *
@@ -52,19 +66,27 @@ class IcingaCommand extends IcingaObject
     protected function renderMethods_execute()
     {
         // @codingStandardsIgnoreEnd
-        return c::renderKeyValue('execute', $this->methods_execute);
+        return '';
     }
 
     protected function renderObjectHeader()
     {
-        $execute = $this->getResolvedProperty('methods_execute');
-
-        if ($execute === 'PluginNotification') {
-            return $this->renderObjectHeaderWithType('NotificationCommand');
-        } elseif ($execute === 'PluginEvent') {
-            return $this->renderObjectHeaderWithType('EventCommand');
+        if ($this->methods_execute) {
+            $itlImport = sprintf(
+                '    import "%s"' . "\n",
+                $this->hiddenExecuteTemplates[$this->methods_execute]
+            );
         } else {
-            return parent::renderObjectHeader();
+            $itlImport = '';
+        }
+
+        $execute = $this->getResolvedProperty('methods_execute');
+        if ($execute === 'PluginNotification') {
+            return $this->renderObjectHeaderWithType('NotificationCommand') . $itlImport;
+        } elseif ($execute === 'PluginEvent') {
+            return $this->renderObjectHeaderWithType('EventCommand') . $itlImport;
+        } else {
+            return parent::renderObjectHeader() . $itlImport;
         }
     }
 
