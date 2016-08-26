@@ -416,7 +416,7 @@ CREATE INDEX command_inheritance_command_parent ON icinga_command_inheritance (p
 CREATE TABLE icinga_command_argument (
   id serial,
   command_id integer NOT NULL,
-  argument_name character varying(64) DEFAULT NULL,
+  argument_name character varying(64) NOT NULL,
   argument_value text DEFAULT NULL,
   argument_format enum_property_format DEFAULT NULL,
   key_string character varying(64) DEFAULT NULL,
@@ -1532,4 +1532,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (102, NOW());
+  VALUES (103, NOW());

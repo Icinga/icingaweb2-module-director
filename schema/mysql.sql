@@ -311,7 +311,7 @@ CREATE TABLE icinga_command_inheritance (
 CREATE TABLE icinga_command_argument (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   command_id INT(10) UNSIGNED NOT NULL,
-  argument_name VARCHAR(64) COLLATE utf8_bin DEFAULT NULL COMMENT '-x, --host',
+  argument_name VARCHAR(64) COLLATE utf8_bin NOT NULL COMMENT '-x, --host',
   argument_value TEXT DEFAULT NULL,
   argument_format ENUM('string', 'expression', 'json') NULL DEFAULT NULL,
   key_string VARCHAR(64) DEFAULT NULL COMMENT 'Overrides name',
@@ -1312,4 +1312,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 102;
+      schema_version = 103;
