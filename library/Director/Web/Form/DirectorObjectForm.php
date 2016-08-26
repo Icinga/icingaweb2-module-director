@@ -518,6 +518,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    // TODO: unify addField and addCommandField. Do they need to differ?
     protected function addField($field, $value = null, $inherited = null, $inheritedFrom = null)
     {
         $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
@@ -560,6 +561,7 @@ abstract class DirectorObjectForm extends QuickForm
             $this->addElement('text', $name, array('disabled' => 'disabled'));
             $el = $this->getElement($name);
             $el->addError(sprintf('Form element could not be created, %s is missing', $className));
+            $this->addToCommandFieldsDisplayGroup($el);
             return $el;
         }
 
