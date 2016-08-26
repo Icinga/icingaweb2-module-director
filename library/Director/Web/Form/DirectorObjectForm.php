@@ -300,19 +300,21 @@ abstract class DirectorObjectForm extends QuickForm
 
                     // Get value through form element.
                     // TODO: reorder the related code. Create elements once
-                    if (property_exists($fields, $mykey)) {
-                        $field = $fields->$mykey;
-                        $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
-                        $name = 'var_' . $datafield->varname;
-                        $className = $datafield->datatype;
+                    foreach (array($fields, $checkFields) as $fieldSet) {
+                        if (property_exists($fieldSet, $mykey)) {
+                            $field = $fieldSet->$mykey;
+                            $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
+                            $name = 'var_' . $datafield->varname;
+                            $className = $datafield->datatype;
 
-                        if (class_exists($className)) {
-                            $datatype = new $className;
-                            $datatype->setSettings($datafield->getSettings());
-                            $el = $datatype->getFormElement($name, $this);
+                            if (class_exists($className)) {
+                                $datatype = new $className;
+                                $datatype->setSettings($datafield->getSettings());
+                                $el = $datatype->getFormElement($name, $this);
+                            }
+
+                            $value = $el->setValue($value)->getValue();
                         }
-
-                        $value = $el->setValue($value)->getValue();
                     }
 
                     if (property_exists($fields, $mykey) && $fields->$mykey->format === 'json') {
