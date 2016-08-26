@@ -48,6 +48,11 @@ class IcingaCommandArgument extends IcingaObject
         // No log right now, we have to handle "sub-objects"
     }
 
+    public function isSkippingKey()
+    {
+        return $this->skip_key === 'y' || $this->argument_name === null;
+    }
+
     // Preserve is not supported
     public function replaceWith(IcingaObject $object, $preserve = null)
     {
@@ -163,15 +168,14 @@ class IcingaCommandArgument extends IcingaObject
             $data['required'] = c::renderBoolean($this->required);
         }
 
+        if ($this->isSkippingKey()) {
+            $data['skip_key'] = c::renderBoolean('y');
+        }
+
         if ($this->repeat_key) {
             $data['repeat_key'] = c::renderBoolean($this->repeat_key);
         }
 
-/*        if ((int) $this->sort_order !== 0) {
-            $data['order'] = $this->sort_order;
-        }
-
-*/
         if ($this->description) {
             $data['description'] = c::renderString($this->description);
         }

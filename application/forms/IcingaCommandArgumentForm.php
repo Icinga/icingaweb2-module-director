@@ -127,10 +127,17 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
     {
         $object = $this->object();
         $cmd = $this->commandObject;
+        if (! $object->hasBeenLoadedFromDb()) {
+            if ($object->argument_name === null) {
+                $object->skip_key = true;
+                $object->argument_name = $cmd->getNextSkippableKeyName();
+            }
+        }
+
         if ($object->hasBeenModified()) {
             $cmd->arguments()->set(
                 $object->argument_name,
-                IcingaCommandArgument::create($this->getValues(), $this->db)
+                $object
             );
             $msg = sprintf(
                 $this->translate('The argument %s has successfully been stored'),

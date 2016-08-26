@@ -119,6 +119,27 @@ class IcingaCommand extends IcingaObject
         return $value;
     }
 
+    public function getNextSkippableKeyName()
+    {
+        $key = $this->makeSkipKey();
+        $cnt = 1;
+        while (isset($this->arguments()->$key)) {
+            $cnt++;
+            $key = $this->makeSkipKey($cnt);
+        }
+
+        return $key;
+    }
+
+    protected function makeSkipKey($num = null)
+    {
+        if ($num === null) {
+            return '(no key)';
+        }
+
+        return sprintf('(no key.%d)', $num);
+    }
+
     protected function prefersGlobalZone()
     {
         return true;
