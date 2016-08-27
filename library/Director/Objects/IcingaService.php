@@ -139,10 +139,10 @@ class IcingaService extends IcingaObject
             return parent::renderAssignments();
         }
 
-        // TODO: use assignment renderer, escape host
+        // TODO: use assignment renderer?
         $filter = sprintf(
-            'assign where "%s" in host.templates',
-            $this->host
+            'assign where %s in host.templates',
+            c::renderString($this->host)
         );
 
         return "\n    " . $filter . "\n";
