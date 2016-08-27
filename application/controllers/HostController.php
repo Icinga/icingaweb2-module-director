@@ -84,10 +84,7 @@ class HostController extends ObjectController
             $tables[0] = $table;
         }
 
-        if ($applied = $host->vars()->get($db->getSetting(
-            'magic_apply_for',
-            '_director_apply_for'
-        ))) {
+        if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
             $table = $this->loadTable('IcingaHostAppliedForService')
                 ->setHost($host)
                 ->setDictionary($applied)
@@ -126,10 +123,7 @@ class HostController extends ObjectController
         $host = $this->object;
         $serviceName = $this->params->get('service');
 
-        $applied = $host->vars()->get($db->getSetting(
-            'magic_apply_for',
-            '_director_apply_for'
-        ));
+        $applied = $host->vars()->get($db->settings()->magic_apply_for);
 
         $props = $applied->{$serviceName};
 

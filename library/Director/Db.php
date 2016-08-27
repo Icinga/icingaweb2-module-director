@@ -61,6 +61,15 @@ class Db extends DbConnection
         return (int) $db->fetchOne($query);
     }
 
+    public function settings()
+    {
+        if ($this->settings === null) {
+            $this->settings = new Settings($this);
+        }
+
+        return $this->settings;
+    }
+
     public function getMasterZoneName()
     {
         if ($this->masterZoneName === null) {
@@ -72,7 +81,7 @@ class Db extends DbConnection
 
     protected function detectMasterZoneName()
     {
-        if ($zone = $this->getSetting('master_zone')) {
+        if ($zone = $this->settings()->master_zone) {
             return $zone;
         }
 
@@ -93,7 +102,7 @@ class Db extends DbConnection
 
     public function getDefaultGlobalZoneName()
     {
-        return $this->getSetting('default_global_zone', 'director-global');
+        return $this->settings()->default_global_zone;
     }
 
     public function hasDeploymentEndpoint()
@@ -150,63 +159,6 @@ class Db extends DbConnection
     public function getDeploymentEndpoint()
     {
         return IcingaEndpoint::load($this->getDeploymentEndpointName(), $this);
-    }
-
-    public function getSetting($name, $default = null)
-    {
-        if ($this->settings === null) {
-            $this->fetchSettings();
-        }
-
-        if (array_key_exists($name, $this->settings)) {
-            return $this->settings[$name];
-        }
-
-        return $default;
-    }
-
-    public function storeSetting($name, $value)
-    {
-        $db = $this->db();
-        if ($this->getSetting($name) === $value) {
-            return $this;
-        }
-
-        $updated = $db->update(
-            'director_setting',
-            array('setting_value' => $value),
-            $db->quoteInto('setting_name = ?', $name)
-        );
-
-        if ($updated === 0) {
-            $db->insert(
-                'director_setting',
-                array(
-                    'setting_name'  => $name,
-                    'setting_value' => $value,
-                )
-            );
-        }
-
-        if ($this->settings !== null) {
-            $this->settings[$name] = $value;
-        }
-
-        return $this;
-    }
-
-    public function fetchSettings($force = true)
-    {
-        if ($force || $this->settings === null) {
-            $db = $this->db();
-            $query = $db->select()->from(
-                array('s' => 'director_setting'),
-                array('setting_name', 'setting_value')
-            );
-            $this->settings = (array) $db->fetchPairs($query);
-        }
-
-        return $this->settings;
     }
 
     public function getActivitylogNeighbors($id, $type = null, $name = null)

@@ -268,7 +268,7 @@ class KickstartHelper
             $object->store();
         }
 
-        $db->storeSetting('master_zone', $this->deploymentEndpoint->zone);
+        $db->settings()->master_zone = $this->deploymentEndpoint->zone;
 
         return $this;
     }

@@ -1429,7 +1429,7 @@ abstract class DirectorObjectForm extends QuickForm
         // NO, it is NOT a good idea to use this. You'll break your monitoring
         // and nobody will help you.
         if ($this->allowsExperimental === null) {
-            $this->allowsExperimental = $this->db->getSetting(
+            $this->allowsExperimental = $this->db->settings()->get(
                 'experimental_features'
             ) === 'allow';
         }
