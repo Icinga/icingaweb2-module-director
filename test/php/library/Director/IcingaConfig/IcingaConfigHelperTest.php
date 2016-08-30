@@ -41,4 +41,32 @@ class IcingaConfigHelperTest extends BaseTestCase
         $this->assertEquals(c::renderInterval(86400), '1d');
         $this->assertEquals(c::renderInterval(86459), '86459s');
     }
+
+    public function testCorrectlyIdentifiesReservedWords()
+    {
+        $this->assertTrue(c::isReserved('include'), 'include is a reserved word');
+        $this->assertFalse(c::isReserved(0), '(int) 0 is not a reserved word');
+        $this->assertFalse(c::isReserved(1), '(int) 1 is not a reserved word');
+        $this->assertFalse(c::isReserved(true), '(boolean) true is not a reserved word');
+        $this->assertTrue(c::isReserved('true'), '(string) true is a reserved word');
+    }
+
+    public function testWhetherDictionaryRendersCorrectly()
+    {
+        $dict = (object) array(
+            'key1'     => 'bla',
+            'include'  => 'reserved',
+            'spe cial' => 'value',
+            '0'        => 'numeric',
+        );
+        $this->assertEquals(
+            c::renderDictionary($dict),
+            rtrim($this->loadRendered('dict1'))
+        );
+    }
+
+    protected function loadRendered($name)
+    {
+        return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
+    }
 }

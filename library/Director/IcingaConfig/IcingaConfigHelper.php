@@ -105,7 +105,7 @@ class IcingaConfigHelper
 
     public static function renderDictionaryKey($key)
     {
-        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+        if (preg_match('/^[a-z_]+[a-z0-9_]*$/i', $key)) {
             return static::escapeIfReserved($key);
         } else {
             return static::renderString($key);
@@ -168,7 +168,7 @@ class IcingaConfigHelper
 
     public static function isReserved($string)
     {
-        return in_array($string, self::$reservedWords);
+        return in_array($string, self::$reservedWords, true);
     }
 
     public static function escapeIfReserved($string)

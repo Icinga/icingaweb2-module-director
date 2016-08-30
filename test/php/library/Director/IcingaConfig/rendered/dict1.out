@@ -1,0 +1,6 @@
+{
+    @include = reserved
+    key1 = bla
+    "spe cial" = value
+    "0" = numeric
+}
