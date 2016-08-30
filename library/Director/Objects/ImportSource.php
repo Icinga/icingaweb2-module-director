@@ -102,7 +102,7 @@ class ImportSource extends DbObjectWithSettings
 
                 $target = $mod->getTargetProperty($key);
 
-                if (is_array($row->$key)) {
+                if (is_array($row->$key) && ! $mod->hasArraySupport()) {
                     $new = array();
                     foreach ($row->$key as $k => $v) {
                         $new[$k] = $mod->transform($v);

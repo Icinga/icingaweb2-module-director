@@ -28,6 +28,11 @@ abstract class PropertyModifierHook
         return $class;
     }
 
+    public function hasArraySupport()
+    {
+        return false;
+    }
+
     public function setTargetProperty($property)
     {
         $this->targetProperty = $property;
