@@ -16,6 +16,7 @@ class Settings
         'config_format'                  => 'v2',
         'override_services_varname'      => '_override_servicevars',
         'override_services_templatename' => 'host var overrides (Director)',
+        // 'disable_all_jobs'            => null, // 'y'
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     );

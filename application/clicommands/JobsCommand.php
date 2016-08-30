@@ -79,6 +79,6 @@ class JobsCommand extends Command
 
     protected function hasBeenDisabled()
     {
-        return $this->db()->getSetting('disable_all_jobs') === 'y';
+        return $this->db()->settings()->disable_all_jobs === 'y';
     }
 }

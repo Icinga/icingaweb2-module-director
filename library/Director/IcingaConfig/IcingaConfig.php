@@ -46,7 +46,7 @@ class IcingaConfig
 
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
-        $this->configFormat = $this->connection->getSetting('config_format', 'v2');
+        $this->configFormat = $this->connection->settings()->config_format;
     }
 
     public function getSize()
@@ -497,10 +497,7 @@ apply Service for (title => params in host.vars["%s"]) {
 
     protected function getMagicApplyVarName()
     {
-        return $this->connection->getSetting(
-            'magic_apply_for',
-            '_director_apply_for'
-        );
+        return $this->connection->settings()->magic_apply_for;
     }
 
     protected function usesMagicApplyFor()
