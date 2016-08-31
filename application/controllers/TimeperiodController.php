@@ -33,9 +33,9 @@ class TimeperiodController extends ObjectController
                 array('class' => 'icon-left-big')
             );
             $form->loadObject(array(
-                'timeperiod_id'  => $this->object->id,
-                'timeperiod_key' => $name,
-                'range_type'     => $this->params->get('range_type')
+                'timeperiod_id' => $this->object->id,
+                'range_key'     => $name,
+                'range_type'    => $this->params->get('range_type')
             ));
         }
         $form->handleRequest();

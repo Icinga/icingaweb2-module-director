@@ -79,7 +79,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
     {
         $res = array();
         foreach ($this->ranges as $key => $range) {
-            $res[$key] = $range->timeperiod_value;
+            $res[$key] = $range->range_value;
         }
 
         return (object) $res;
@@ -89,7 +89,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
     {
         $res = array();
         foreach ($this->storedRanges as $key => $range) {
-            $res[$key] = $range->timeperiod_value;
+            $res[$key] = $range->range_value;
         }
 
         return (object) $res;
@@ -102,7 +102,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
 
     protected function modify($range, $value)
     {
-        $this->ranges[$range]->timeperiod_key = $value;
+        $this->ranges[$range]->range_key = $value;
     }
 
     public function set($ranges)
@@ -127,17 +127,17 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         }
 
         if (array_key_exists($range, $this->ranges)) {
-            if ($this->ranges[$range]->timeperiod_value === $value) {
+            if ($this->ranges[$range]->range_value === $value) {
                 return $this;
             } else {
-                $this->ranges[$range]->timeperiod_value = $value;
+                $this->ranges[$range]->range_value = $value;
                 $this->modified = true;
             }
         } else {
             $this->ranges[$range] = IcingaTimePeriodRange::create(array(
-                'timeperiod_id'       => $this->object->id,
-                'timeperiod_key'      => $range,
-                'timeperiod_value'    => $value,
+                'timeperiod_id' => $this->object->id,
+                'range_key'     => $range,
+                'range_value'   => $value,
             ));
             $this->modified = true;
         }
@@ -208,10 +208,10 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         $query = $db->select()->from(
             array('o' => $table)
         )->where('o.timeperiod_id = ?', (int) $this->object->id)
-            ->order('o.timeperiod_key');
+            ->order('o.range_key');
 
         $class = $this->getClass();
-        $this->ranges = $class::loadAll($connection, $query, 'timeperiod_key');
+        $this->ranges = $class::loadAll($connection, $query, 'range_key');
         $this->storedRanges = array();
 
         foreach ($this->ranges as $key => $range) {
@@ -259,8 +259,8 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         foreach ($this->ranges as $range) {
             $string .= sprintf(
                 "        %s\t= %s\n",
-                c::renderString($range->timeperiod_key),
-                c::renderString($range->timeperiod_value)
+                c::renderString($range->range_key),
+                c::renderString($range->range_value)
             );
         }
 

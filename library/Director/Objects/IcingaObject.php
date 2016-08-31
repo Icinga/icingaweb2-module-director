@@ -34,6 +34,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $supportsApplyRules = false;
 
+    protected $rangeClass;
+
     protected $type;
 
     /* key/value!! */
@@ -536,14 +538,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->assertRangesSupport();
         if ($this->ranges === null) {
+            $class = $this->getRangeClass();
             if ($this->hasBeenLoadedFromDb()) {
-                $this->ranges = IcingaTimePeriodRanges::loadForStoredObject($this);
+                $this->ranges = $class::loadForStoredObject($this);
             } else {
-                $this->ranges = new IcingaTimePeriodRanges($this);
+                $this->ranges = new $class($this);
             }
         }
 
         return $this->ranges;
+    }
+
+    protected function getRangeClass()
+    {
+        if ($this->rangeClass === null) {
+            $this->rangeClass = get_class($this) . 'Ranges';
+        }
+
+        return $this->rangeClass;
     }
 
     public function arguments()
