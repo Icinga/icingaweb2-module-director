@@ -223,13 +223,13 @@ CREATE TABLE icinga_timeperiod_inheritance (
 
 CREATE TABLE icinga_timeperiod_range (
   timeperiod_id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-  timeperiod_key VARCHAR(255) NOT NULL COMMENT 'monday, ...',
-  timeperiod_value VARCHAR(255) NOT NULL COMMENT '00:00-24:00, ...',
+  range_key VARCHAR(255) NOT NULL COMMENT 'monday, ...',
+  range_value VARCHAR(255) NOT NULL COMMENT '00:00-24:00, ...',
   range_type ENUM('include', 'exclude') NOT NULL DEFAULT 'include'
     COMMENT 'include -> ranges {}, exclude ranges_ignore {} - not yet',
   merge_behaviour ENUM('set', 'add', 'substract') NOT NULL DEFAULT 'set'
     COMMENT 'set -> = {}, add -> += {}, substract -> -= {}',
-  PRIMARY KEY (timeperiod_id, range_type, timeperiod_key),
+  PRIMARY KEY (timeperiod_id, range_type, range_key),
   CONSTRAINT icinga_timeperiod_range_timeperiod
     FOREIGN KEY timeperiod (timeperiod_id)
     REFERENCES icinga_timeperiod (id)
@@ -1312,4 +1312,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 103;
+      schema_version = 104;

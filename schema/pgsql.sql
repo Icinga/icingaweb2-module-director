@@ -312,11 +312,11 @@ CREATE INDEX timeperiod_inheritance_timeperiod_parent ON icinga_timeperiod_inher
 
 CREATE TABLE icinga_timeperiod_range (
   timeperiod_id serial,
-  timeperiod_key character varying(255) NOT NULL,
-  timeperiod_value character varying(255) NOT NULL,
+  range_key character varying(255) NOT NULL,
+  range_value character varying(255) NOT NULL,
   range_type enum_timeperiod_range_type NOT NULL DEFAULT 'include',
   merge_behaviour enum_merge_behaviour NOT NULL DEFAULT 'set',
-  PRIMARY KEY (timeperiod_id, range_type, timeperiod_key),
+  PRIMARY KEY (timeperiod_id, range_type, range_key),
   CONSTRAINT icinga_timeperiod_range_timeperiod
   FOREIGN KEY (timeperiod_id)
     REFERENCES icinga_timeperiod (id)
@@ -1532,4 +1532,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (103, NOW());
+  VALUES (104, NOW());
