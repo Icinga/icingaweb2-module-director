@@ -1616,11 +1616,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderLegacyProperties()
     {
         $out = '';
-        $blacklist = array_merge(array(
-            'id',
-            'object_name',
-            'object_type',
-        ), array() /* $this->prioritizedProperties */);
+        $blacklist = array_merge($this->propertiesNotForRendering,
+            array() /* $this->prioritizedProperties */);
 
         foreach ($this->properties as $key => $value) {
             if (in_array($key, $blacklist)) {
@@ -1691,7 +1688,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this->renderRelationProperty($relKey, $value);
         }
 
-        return c::renderKeyValue($key, c::renderString($value));
+        return c::renderKeyValue($key, c::renderString($value, $this->isApplyRule()));
     }
 
     protected function renderLegacyObjectProperty($key, $value)
@@ -1768,7 +1765,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderCustomVars()
     {
         if ($this->supportsCustomVars()) {
-            return $this->vars()->toConfigString();
+            return $this->vars()->toConfigString($this->isApplyRule());
         } else {
             return '';
         }

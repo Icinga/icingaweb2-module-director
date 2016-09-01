@@ -88,12 +88,12 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->modified;
     }
 
-    public function toConfigStringPrefetchable()
+    public function toConfigStringPrefetchable($renderExpressions = false)
     {
         if (PrefetchCache::shouldBeUsed()) {
-            return PrefetchCache::instance()->renderVar($this);
+            return PrefetchCache::instance()->renderVar($this, $renderExpressions);
         } else {
-            return $this->toConfigString();
+            return $this->toConfigString($renderExpressions);
         }
     }
 

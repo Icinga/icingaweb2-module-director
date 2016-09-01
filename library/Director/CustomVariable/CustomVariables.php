@@ -268,24 +268,24 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this->storedVars;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
         $out = '';
 
         ksort($this->vars);
         foreach ($this->vars as $key => $var) {
             // TODO: ctype_alnum + underscore?
-            $out .= $this->renderSingleVar($key, $var);
+            $out .= $this->renderSingleVar($key, $var, $renderExpressions);
         }
 
         return $out;
     }
 
-    protected function renderSingleVar($key, $var)
+    protected function renderSingleVar($key, $var, $renderExpressions = false)
     {
         return c::renderKeyValue(
             $this->renderKeyName($key),
-            $var->toConfigStringPrefetchable()
+            $var->toConfigStringPrefetchable($renderExpressions)
         );
     }
 
