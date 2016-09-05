@@ -58,6 +58,17 @@ class Settings
     {
         $db = $this->db;
 
+        if ($value === null) {
+            $updated = $db->delete(
+                'director_setting',
+                $db->quoteInto('setting_name = ?', $name)
+            );
+
+            unset($this->cache[$name]);
+
+            return $this;
+        }
+
         if ($this->getSetting($name) === $value) {
             return $this;
         }
