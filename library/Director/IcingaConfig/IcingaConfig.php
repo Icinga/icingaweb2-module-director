@@ -431,8 +431,10 @@ class IcingaConfig
             ->createFileFromDb('notification')
             ;
 
-        $this->configFile('zones.d/director-global/commands')
-             ->prepend("library \"methods\"\n\n");
+        if (! $this->isLegacy()) {
+            $this->configFile('zones.d/director-global/commands')
+                ->prepend("library \"methods\"\n\n");
+        }
 
         PrefetchCache::forget();
         IcingaHost::clearAllPrefetchCaches();
@@ -444,6 +446,10 @@ class IcingaConfig
 
     protected function prepareGlobalBasics()
     {
+        if ($this->isLegacy()) {
+            return $this;
+        }
+
         $this->configFile(
             sprintf(
                 'zones.d/%s/001-director-basics',
