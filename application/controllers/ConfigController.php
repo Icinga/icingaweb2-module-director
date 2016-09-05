@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Web\Notification;
@@ -92,6 +93,18 @@ class ConfigController extends ActionController
         $this->prepareTable('activityLog');
         $this->view->table->setLastDeployedId($lastDeployedId);
         $this->render('list/table', null, true);
+    }
+
+    public function settingsAction()
+    {
+        $this->overviewTabs()->activate('settings');
+        $this->view->title = $this->translate('Settings');
+        $this->view->form = $this
+            ->loadForm('Settings')
+            ->setSettings(new Settings($this->db()))
+            ->handleRequest();
+
+        $this->setViewScript('object/form');
     }
 
     // Show all files for a given config
@@ -247,6 +260,12 @@ class ConfigController extends ActionController
             array(
                 'label' => $this->translate('Deployments'),
                 'url'   => 'director/config/deployments'
+            )
+        )->add(
+            'settings',
+            array(
+                'label' => $this->translate('Settings'),
+                'url'   => 'director/config/settings'
             )
         );
         return $this->view->tabs;
