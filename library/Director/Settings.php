@@ -16,7 +16,7 @@ class Settings
         'config_format'                  => 'v2',
         'override_services_varname'      => '_override_servicevars',
         'override_services_templatename' => 'host var overrides (Director)',
-        // 'disable_all_jobs'            => null, // 'y'
+        'disable_all_jobs'               => 'n', // 'y'
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     );
@@ -29,12 +29,19 @@ class Settings
 
     public function get($key, $default = null)
     {
+        if (null === ($value = $this->getStoredValue($key, $default))) {
+            return $this->getDefaultValue($key);
+        } else {
+            return $value;
+        }
+    }
+
+    public function getStoredValue($key, $default = null)
+    {
         if (null === ($value = $this->getSetting($key))) {
-            if ($default === null) {
-                return $this->getDefaultValue($key);
-            } else {
-                return $default;
-            }
+            return $default;
+        } else {
+            return $value;
         }
     }
 
