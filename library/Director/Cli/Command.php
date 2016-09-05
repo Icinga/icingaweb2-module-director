@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Cli;
 use Icinga\Cli\Command as CliCommand;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Application\Config;
 
 class Command extends CliCommand
 {
@@ -74,7 +75,9 @@ class Command extends CliCommand
     protected function db()
     {
         if ($this->db === null) {
-            $resourceName = $this->Config()->get('db', 'resource');
+            // Hint: not using $this->Config() intentionally. This allows
+            // CLI commands in other modules to use this as a base class.
+            $resourceName = Config::module('director')->get('db', 'resource');
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
