@@ -1010,7 +1010,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->addElement('text', 'range_' . $key, array(
             'label' => 'ranges.' . $key,
-            'value' => $range->timeperiod_value
+            'value' => $range->range_value
         ));
     }
 
