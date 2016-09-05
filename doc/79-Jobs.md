@@ -67,6 +67,13 @@ Want so see more details? Add `--verbose` to get colorful log lines on STDERR.
 In case the Job Runner is running with Systemd, those log lines will find its
 way to your system log.
 
+An example script is included as [contrib](../contrib/systemd/director-jobs.service) and can simply stored in `/etc/systemd/system/director-jobs.service`. To enable and start the job afterwards run:
+
+```
+systemctl enable director-jobs.service
+systemctl start director-jobs.service
+```
+
 Time periods
 ------------
 
