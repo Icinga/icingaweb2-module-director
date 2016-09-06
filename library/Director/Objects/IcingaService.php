@@ -39,6 +39,7 @@ class IcingaService extends IcingaObject
         'icon_image'            => null,
         'icon_image_alt'        => null,
         'use_agent'             => null,
+        'apply_for'             => null,
         'use_var_overrides'     => null,
     );
 
@@ -83,6 +84,13 @@ class IcingaService extends IcingaObject
     protected $keyName = array('host_id', 'object_name');
 
     protected $prioritizedProperties = array('host_id');
+
+    protected $propertiesNotForRendering = array(
+        'id',
+        'object_name',
+        'object_type',
+        'apply_for'
+    );
 
     public function getCheckCommand()
     {
@@ -142,6 +150,23 @@ class IcingaService extends IcingaObject
         }
 
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
+    }
+
+    protected function renderObjectHeader()
+    {
+        if ($this->isApplyRule()
+            && !$this->hasBeenAssignedToHostTemplate()
+            && $this->get('apply_for') !== null) {
+
+            return sprintf(
+                "%s %s %s for (value in %s) {\n",
+                $this->getObjectTypeName(),
+                $this->getType(),
+                c::renderString($this->getObjectName()),
+                $this->get('apply_for')
+            );
+        }
+        return parent::renderObjectHeader();
     }
 
     protected function renderAssignments()

@@ -233,6 +233,28 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
+    public function testApplyFor()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service();
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.test1';
+        $service->assignments = array(
+            'host.vars.env="test"'
+        );
+        $service->store($db);
+
+        $service = IcingaService::loadWithAutoIncId($service->id, $db);
+        $this->assertEquals(
+            $this->loadRendered('service3'),
+            (string) $service
+        );
+    }
     protected function host()
     {
         return IcingaHost::create(array(
