@@ -149,7 +149,7 @@ class IcingaConfigHelper
         if (empty($vals)) {
             return '{}';
         }
-        ksort($vals);
+        ksort($vals, SORT_STRING);
 
         // Prefix for toConfigString?
         return "{\n" . implode("\n", $vals) . "\n}";
