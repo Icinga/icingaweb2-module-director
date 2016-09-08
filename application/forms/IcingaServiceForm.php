@@ -141,6 +141,11 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addHidden('object_type', 'object');
         $this->addImportsElement();
         $imports = $this->getSentOrObjectValue('imports');
+
+        if ($this->hasBeenSent()) {
+            $imports = $this->getElement('imports')->setValue($imports)->getValue();
+        }
+
         if ($this->isNew() && empty($imports)) {
             return $this->groupMainProperties();
         }
@@ -153,7 +158,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->setButtons();
 
         if ($this->hasBeenSent()) {
-            $name = $this->getValue('object_name');
+            $name = $this->getSentOrObjectValue('object_name');
             if (!strlen($name)) {
                 $this->setElementValue('object_name', end($imports));
                 $this->object->object_name = end($imports);
