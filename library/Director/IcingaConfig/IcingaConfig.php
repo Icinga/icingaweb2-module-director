@@ -500,26 +500,27 @@ apply Service for (title => params in host.vars["%s"]) {
   var override = host.vars["%s_vars"][title]
 
   if (typeof(params["templates"]) in [Array, String]) {
-    import params["templates"]
+    for (tpl in params["templates"]) {
+      import tpl
+    }
   } else {
     import title
   }
 
   if (typeof(params.vars) == Dictionary) {
-    vars += params
-  }
-
-  if (typeof(override.vars) == Dictionary) {
-    vars += override.vars
+    vars += params.vars
   }
 
   if (typeof(params["host_name"]) == String) {
     host_name = params["host_name"]
   }
+
+  import "%s"
 }
 ',
             $varname,
-            $varname
+            $varname,
+            $this->connection->settings()->override_services_templatename
         );
     }
 
