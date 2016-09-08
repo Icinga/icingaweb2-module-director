@@ -235,20 +235,27 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         ksort($this->vars);
         foreach ($this->vars as $key => $var) {
             // TODO: ctype_alnum + underscore?
-            if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
-                $out .= c::renderKeyValue(
-                    'vars.' . c::escapeIfReserved($key),
-                    $var->toConfigString()
-                );
-            } else {
-                $out .= c::renderKeyValue(
-                    'vars[' . c::renderString($key) . ']',
-                    $var->toConfigString()
-                );
-            }
+            $out .= $this->renderSingleVar($key, $var);
         }
 
         return $out;
+    }
+
+    protected function renderSingleVar($key, $var)
+    {
+        return c::renderKeyValue(
+            $this->renderKeyName($key),
+            $var->toConfigString()
+        );
+    }
+
+    protected function renderKeyName($key)
+    {
+        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+            return 'vars.' . c::escapeIfReserved($key);
+        } else {
+            return 'vars[' . c::renderString($key) . ']';
+        }
     }
 
     public function __get($key)
