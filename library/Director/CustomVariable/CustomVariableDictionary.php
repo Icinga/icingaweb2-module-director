@@ -93,6 +93,11 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         return $this->value[$key];
     }
 
+    public function __isset($key)
+    {
+        return array_key_exists($key, $this->value);
+    }
+
     public function getInternalValue($key)
     {
         return $this->value[$key];
