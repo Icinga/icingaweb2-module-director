@@ -10,13 +10,7 @@
 <?= $this->form ?>
 <?php foreach ($this->tables as $key => $table): ?>
 <?php if (count($table)): ?>
-<?php if ($key === 0 || $key === 1): ?>
 <?= $table->render() ?>
-<?php else: ?>
-<div data-base-target="_next">
-<?= $table->render() ?>
-</div>
-<?php endif ?>
 <?php endif ?>
 <?php endforeach ?>
 </div>

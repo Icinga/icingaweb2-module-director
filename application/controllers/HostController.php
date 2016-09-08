@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
@@ -98,6 +99,7 @@ class HostController extends ObjectController
         foreach ($resolver->fetchResolvedParents() as $parent) {
             $table = $this->loadTable('IcingaHostService')
                 ->setHost($parent)
+                ->setInheritedBy($host)
                 ->enforceFilter('host_id', $parent->id)
                 ->setConnection($db);
             if (! count($table)) {
@@ -133,7 +135,6 @@ class HostController extends ObjectController
             'vars'        => $props->vars->getValue(),
         ), $db);
 
-
         $service = IcingaService::create(array(
             'object_type' => 'apply',
             'object_name' => $serviceName,
@@ -165,6 +166,49 @@ class HostController extends ObjectController
             ->setDb($db)
             ->setHost($host)
             ->setHostGenerated()
+            ->setObject($service)
+            ->handleRequest()
+            ;
+
+        $this->setViewScript('object/form');
+    }
+
+    public function inheritedserviceAction()
+    {
+        $db = $this->db();
+        $host = $this->object;
+        $serviceName = $this->params->get('service');
+        $from = IcingaHost::load($this->params->get('inheritedFrom'), $this->db());
+
+        $parent = IcingaService::load(
+            array(
+                'object_name' => $serviceName,
+                'host_id'     => $from->id
+            ),
+            $this->db()
+        );
+
+        $parent->object_name = $from->object_name;
+
+        $service = IcingaService::create(array(
+            'object_type' => 'apply',
+            'object_name' => $serviceName,
+            'host_id'     => $host->id,
+            'imports'     => array($parent),
+            'vars'        => $host->getOverriddenServiceVars($serviceName),
+        ), $db);
+
+        $this->view->title = sprintf(
+            $this->translate('Inherited service: %s'),
+            $serviceName
+        );
+
+        $this->getTabs()->activate('services');
+
+        $this->view->form = $this->loadForm('IcingaService')
+            ->setDb($db)
+            ->setHost($host)
+            ->setInheritedFrom($from->object_name)
             ->setObject($service)
             ->handleRequest()
             ;

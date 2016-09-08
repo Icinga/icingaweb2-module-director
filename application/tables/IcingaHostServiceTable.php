@@ -11,6 +11,8 @@ class IcingaHostServiceTable extends QuickTable
 
     protected $host;
 
+    protected $inheritedBy;
+
     protected $searchColumns = array(
         'service',
     );
@@ -38,8 +40,24 @@ class IcingaHostServiceTable extends QuickTable
         return $this;
     }
 
+    public function setInheritedBy(IcingaHost $host)
+    {
+        $this->inheritedBy = $host;
+        return $this;
+    }
+
     protected function getActionUrl($row)
     {
+        if ($target = $this->inheritedBy) {
+            $params = array(
+                'name'          => $target->object_name,
+                'service'       => $row->service,
+                'inheritedFrom' => $row->host,
+            );
+
+            return $this->url('director/host/inheritedservice', $params);
+        }
+
         if ($row->object_type === 'apply') {
             $params['id'] = $row->id;
         } else {
