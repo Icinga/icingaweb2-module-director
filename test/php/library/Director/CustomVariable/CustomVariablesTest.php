@@ -26,6 +26,24 @@ class CustomVariablesTest extends BaseTestCase
         );
     }
 
+    public function testVarsCanBeUnsetAndSetAgain()
+    {
+        $vars = $this->newVars();
+        $vars->one = 'two';
+        unset($vars->one);
+        $vars->one = 'three';
+
+        $res = array();
+        foreach ($vars as $k => $v) {
+            $res[$k] = $v->getValue();
+        }
+
+        $this->assertEquals(
+            array('one' => 'three'),
+            $res
+        );
+    }
+
     protected function indentVarsList($vars)
     {
         return $this->indent . implode(
