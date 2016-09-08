@@ -167,7 +167,10 @@ class IcingaService extends IcingaObject
 
     protected function renderImportHostVarOverrides()
     {
-        return "\n" . '    import "host var overrides (Director)"' . "\n";
+        return sprintf(
+            "\n    import \"%s\"\n",
+            $this->connection->settings()->override_services_templatename
+        );
     }
 
     protected function renderCustomExtensions()
