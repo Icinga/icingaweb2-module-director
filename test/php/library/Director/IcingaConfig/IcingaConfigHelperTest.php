@@ -83,19 +83,21 @@ class IcingaConfigHelperTest extends BaseTestCase
 
     public function testRenderStringWithVariables()
     {
-        $this->assertEquals(c::renderString('Before $$var$$', true), '"Before " + var');
-        $this->assertEquals(c::renderString('$$var$$ After', true), 'var + " After"');
-        $this->assertEquals(c::renderString('$$var$$', true), 'var');
+        $this->assertEquals(c::renderString('Before $var$', true), '"Before " + var');
+        $this->assertEquals(c::renderString('$var$ After', true), 'var + " After"');
+        $this->assertEquals(c::renderString('$var$', true), 'var');
+        $this->assertEquals(c::renderString('$$var$$', true), '"$$var$$"');
+        $this->assertEquals(c::renderString('Before $$var$$ After', true), '"Before $$var$$ After"');
         $this->assertEquals(
-            c::renderString('Before $$name$$ $$name$$ After', true),
+            c::renderString('Before $name$ $name$ After', true),
             '"Before " + name + " " + name + " After"');
         $this->assertEquals(
-            c::renderString('Before $$var1$$ $$var2$$ After', true),
+            c::renderString('Before $var1$ $var2$ After', true),
             '"Before " + var1 + " " + var2 + " After"');
-        $this->assertEquals(c::renderString('$$host.vars.custom$$', true), 'host.vars.custom');
-        $this->assertEquals(c::renderString('$$var"$$', true), '"$$var\"$$"');
+        $this->assertEquals(c::renderString('$host.vars.custom$', true), 'host.vars.custom');
+        $this->assertEquals(c::renderString('$var"$', true), '"$var\"$"');
         $this->assertEquals(
-            c::renderString('\tI am\rrendering\nproperly\fand I $$support$$ "multiple" $$variables$$\$', true),
+            c::renderString('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$', true),
             '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"');
     }
 }

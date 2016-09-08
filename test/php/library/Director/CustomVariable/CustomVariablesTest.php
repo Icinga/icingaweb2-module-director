@@ -48,7 +48,7 @@ class CustomVariablesTest extends BaseTestCase
     {
         $vars = $this->newVars();
         $vars->bla = 'da';
-        $vars->abc = '$$val$$';
+        $vars->abc = '$val$';
         $expected = $this->indentVarsList(array(
             'vars.abc = val',
             'vars.bla = "da"'
