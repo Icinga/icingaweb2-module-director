@@ -242,13 +242,13 @@ class IcingaServiceTest extends BaseTestCase
 
         $db = $this->getDb();
 
-        $service = $this->service('___TEST___service_$$not_replaced$$');
+        $service = $this->service('___TEST___service_$not_replaced$');
         $service->object_type = 'apply';
-        $service->display_name = 'Service: $$replaced$$';
+        $service->display_name = 'Service: $host.vars.replaced$';
         $service->assignments = array(
             'host.address="127.*"',
         );
-        $service->{'vars.custom_var'} = '$$replaced$$';
+        $service->{'vars.custom_var'} = '$host.vars.replaced$';
         $service->store($db);
 
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
@@ -266,10 +266,10 @@ class IcingaServiceTest extends BaseTestCase
 
         $db = $this->getDb();
 
-        $service = $this->service('___TEST___service_$$not_replaced$$');
+        $service = $this->service('___TEST___service_$not_replaced$');
         $service->object_type = 'object';
-        $service->display_name = 'Service: $$not_replaced$$';
-        $service->{'vars.custom_var'} = '$$not_replaced$$';
+        $service->display_name = 'Service: $host.vars.not_replaced$';
+        $service->{'vars.custom_var'} = '$host.vars.not_replaced$';
         $service->store($db);
 
         $service = IcingaService::loadWithAutoIncId($service->id, $db);

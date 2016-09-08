@@ -263,7 +263,7 @@ class IcingaConfigHelper
     }
 
     private static function renderStringWithVariables($string) {
-        $string = preg_replace('/\$\$([\w\.]+)\$\$/', '" + ${1} + "', $string);
+        $string = preg_replace('/(?<!\$)\$([\w\.]+)\$(?!\$)/', '" + ${1} + "', $string);
         $string = '"' . $string . '"';
         if (substr($string, 0, 5) === '"" + ') {
             $string = substr($string, 5);
