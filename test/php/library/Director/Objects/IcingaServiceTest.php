@@ -251,7 +251,7 @@ class IcingaServiceTest extends BaseTestCase
 
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
         $this->assertEquals(
-            $this->loadRendered('service3'),
+            $this->loadRendered('service5'),
             (string) $service
         );
     }
