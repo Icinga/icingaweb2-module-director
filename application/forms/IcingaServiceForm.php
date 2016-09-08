@@ -83,29 +83,27 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function setupHostGenerated()
     {
-        $this->addNameElement()
-             ->addImportsElement()
-             ->addDisabledElement();
+        $msg = $this->translate(
+            'This service has been generated from host properties.'
+        );
+
+        $this->addHtmlHint($msg);
 
         $this->setSubmitLabel(
             $this->translate('Override vars')
         );
-
-        foreach (array('object_name', 'imports') as $name) {
-            $this->getElement($name)->setAttrib('disabled', 'disabled');
-            $this->getElement($name)->setRequired(false);
-        }
     }
 
     protected function setupInherited()
     {
-        $msg = $this->translate(
+        $view = $this->getView();
+        $msg = $view->escape($this->translate(
             'This service has been inherited from %s. Still, you might want'
             . ' to change the following properties for this host only.'
-        );
+        ));
 
         $name = $this->inheritedFrom;
-        $link = $this->getView()->qlink(
+        $link = $view->qlink(
             $name,
             'director/service',
             array(

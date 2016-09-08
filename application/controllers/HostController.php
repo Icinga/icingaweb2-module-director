@@ -132,16 +132,21 @@ class HostController extends ObjectController
         $parent = IcingaService::create(array(
             'object_type' => 'template',
             'object_name' => $this->translate('Host'),
-            'vars'        => $props->vars->getValue(),
         ), $db);
+
+        if (isset($props->vars)) {
+            $parent->vars = $props->vars->getValue();
+        }
 
         $service = IcingaService::create(array(
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->id,
+            'vars'        => $host->getOverriddenServiceVars($serviceName),
         ), $db);
 
-        if ($templates = $props->templates->getValue()) {
+
+        if (isset($props->templates) && $templates = $props->templates->getValue()) {
             $imports = $templates;
         } else {
             $imports = $serviceName;
@@ -152,7 +157,7 @@ class HostController extends ObjectController
         }
 
         // TODO: Validation for $imports? They might not exist!
-        array_unshift($imports, $parent);
+        array_push($imports, $parent);
         $service->imports = $imports;
 
         $this->view->title = sprintf(
