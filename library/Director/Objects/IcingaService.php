@@ -159,7 +159,7 @@ class IcingaService extends IcingaObject
             && $this->get('apply_for') !== null) {
 
             return sprintf(
-                "%s %s %s for (value in %s) {\n",
+                "%s %s %s for (config in %s) {\n",
                 $this->getObjectTypeName(),
                 $this->getType(),
                 c::renderString($this->getObjectName()),
