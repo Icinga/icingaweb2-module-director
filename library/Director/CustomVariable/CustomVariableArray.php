@@ -60,6 +60,8 @@ class CustomVariableArray extends CustomVariable
             $this->setModified();
         }
 
+        $this->deleted = false;
+
         return $this;
     }
 

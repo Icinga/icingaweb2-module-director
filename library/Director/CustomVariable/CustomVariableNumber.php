@@ -49,6 +49,7 @@ class CustomVariableNumber extends CustomVariable
         }
 
         $this->value = $value;
+        $this->deleted = false;
 
         return $this;
     }

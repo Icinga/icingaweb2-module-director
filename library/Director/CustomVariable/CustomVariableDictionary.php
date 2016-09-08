@@ -46,6 +46,8 @@ class CustomVariableDictionary extends CustomVariable implements Countable
             $new[$key] = self::wantCustomVariable($key, $val);
         }
 
+        $this->deleted = false;
+
         // WTF?
         if ($this->value === $new) {
             return $this;

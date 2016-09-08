@@ -36,6 +36,7 @@ class CustomVariableBoolean extends CustomVariable
         }
 
         $this->value = $value;
+        $this->deleted = false;
 
         return $this;
     }

@@ -31,6 +31,8 @@ class CustomVariableString extends CustomVariable
             $this->setModified();
         }
 
+        $this->deleted = false;
+
         return $this;
     }
 

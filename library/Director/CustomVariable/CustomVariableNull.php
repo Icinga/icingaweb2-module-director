@@ -36,6 +36,8 @@ class CustomVariableNull extends CustomVariable
             );
         }
 
+        $this->deleted = false;
+
         return $this;
     }
 
