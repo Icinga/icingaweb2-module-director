@@ -2,15 +2,17 @@
 ===============================
 
 Icinga Director is very upgrade-friendly. Drop the new version to your Icinga
-Web 2 module folder and you're all done. Eventually refresh the page in your
-browser<sup>[[1]](#footnote1)</sup>, and you are ready to go. Should there any
-other actions be required, you will be told so in your frontend.
+Web 2 module folder and you're all done. In case you make use of the
+[Job Runner](79-Jobs.md), you should restart it's service. Eventually refresh
+the page in your browser<sup>[[1]](#footnote1)</sup>, and you are ready to go.
+Should there any other actions be required, you will be told so in your frontend.
 
 Read more about:
 
 * [How to work with the latest GIT master](#git-master)
 * [Upgrading to 1.1.0](#upgrade-to-1.1.0)
 * [Database schema upgrades](#schema-migrations)
+* [Job Runner restart](#restart-jobrunner)
 
 And last but not least, having a look at our [Changelog](82-Changelog.md) is
 always a good idea before an upgrade.
@@ -56,6 +58,18 @@ is no problem at all. They will pop up on your Director Dashboard and can be
 applied with a single click. And if your Director is deployed automatically by
 and automation tool like Puppet, also schema upgrades can easily be handled
 that way. Just follow the [related examples](03-Automation.md) in our documentation.
+
+<a name="restart-jobrunner"></a>Restart the Job Runner service
+--------------------------------------------------------------
+
+The Job Runner forks it's jobs, so usually a changed code base will take effect
+immediately. However, there might be (schema or code) changes involving the Runner
+process itself. To be on the safe side please always restart it after an upgrade,
+even when it's just a quick `git pull`:
+
+```sh
+systemctl restart director-jobs.service
+```
 
 <a name="footnote1">[1]</a>:
 Future Icinga Web 2 version will also take care of this step. We want to be
