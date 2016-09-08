@@ -166,7 +166,7 @@ class IcingaService extends IcingaObject
 
     protected function renderSuffix()
     {
-        if ($this->isApplyRule()) {
+        if ($this->isApplyRule() || $this->usesVarOverrides()) {
             return $this->renderImportHostVarOverrides() . parent::renderSuffix();
         } else {
             return parent::renderSuffix();
@@ -181,10 +181,7 @@ class IcingaService extends IcingaObject
             );
         }
 
-        return sprintf(
-            "\n    import \"%s\"\n",
-            $this->connection->settings()->override_services_templatename
-        );
+        return "\n    import DirectorOverrideTemplate\n";
     }
 
     protected function renderCustomExtensions()

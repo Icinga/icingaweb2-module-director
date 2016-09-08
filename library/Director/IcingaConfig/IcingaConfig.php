@@ -470,9 +470,10 @@ class IcingaConfig
 
         return sprintf(
             '
-const DirectorVarsOverride = "%s"
+const DirectorOverrideVars = "%s"
+const DirectorOverrideTemplate = "%s"
 
-template Service "%s" {
+template Service DirectorOverrideTemplate {
   /**
    * Seems that host is missing when used in a service object, works fine for
    * apply rules
@@ -482,9 +483,9 @@ template Service "%s" {
   }
 
   if (vars) {
-    vars += host.vars[DirectorVarsOverride][name]
+    vars += host.vars[DirectorOverrideVars][name]
   } else {
-    vars = host.vars[DirectorVarsOverride][name]
+    vars = host.vars[DirectorOverrideVars][name]
   }
 }
 ',
@@ -523,12 +524,11 @@ apply Service for (title => params in host.vars["%s"]) {
     host_name = params["host_name"]
   }
 
-  import "%s"
+  import DirectorOverrideTemplate
 }
 ',
             $varname,
-            $varname,
-            $this->connection->settings()->override_services_templatename
+            $varname
         );
     }
 
