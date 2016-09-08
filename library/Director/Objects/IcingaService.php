@@ -38,6 +38,7 @@ class IcingaService extends IcingaObject
         'icon_image'            => null,
         'icon_image_alt'        => null,
         'use_agent'             => null,
+        'use_var_overrides'     => null,
     );
 
     protected $relations = array(
@@ -58,6 +59,7 @@ class IcingaService extends IcingaObject
         'enable_perfdata'       => 'enable_perfdata',
         'volatile'              => 'volatile',
         'use_agent'             => 'use_agent',
+        'use_var_overrides'     => 'use_var_overrides',
     );
 
     protected $intervalProperties = array(
@@ -205,6 +207,11 @@ class IcingaService extends IcingaObject
      * @return string
      */
     public function renderUse_agent()
+    {
+        return '';
+    }
+
+    public function renderUse_var_overrides()
     {
         // @codingStandardsIgnoreEnd
         return '';
