@@ -277,8 +277,8 @@ class IcingaServiceForm extends DirectorObjectForm
                 'description' => $this->translate(
                     'Evaluates the apply for rule for ' .
                     'all objects with the custom attribute specified. ' .
-                    'E.g selecting "host.vars.custom_attr" will generate "for (value in ' .
-                    'host.vars.array_var)" where "value" will be accessible through "$$value$$". ' .
+                    'E.g selecting "host.vars.custom_attr" will generate "for (config in ' .
+                    'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
                     'NOTE: only custom variables of type "Array" are eligible.'
                 )
             ));

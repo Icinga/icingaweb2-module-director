@@ -25,8 +25,10 @@ Then create a new `apply-rule` for the `Service template`:
 ![Define apply rule](screenshot/director/15_apply-for-services/154_create_apply_rule.png)
 
 Now define the `Apply For` property, select the previously defined field `tcp_ports` associated to
-the host template. `Apply For` rule define a variable `value` that can be used as `$$value$$`, it 
-corresponds to the item of the array it will iterate on. Set the `Tcp port` property to `$$value$$`:
+the host template. `Apply For` rule define a variable `config` that can be used as `$config$`, it 
+corresponds to the item of the array it will iterate on. 
+
+Set the `Tcp port` property to `$config$`:
 
 ![Add field to template](screenshot/director/15_apply-for-services/155_configure_apply_for.png)
 
