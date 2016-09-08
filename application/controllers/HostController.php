@@ -120,7 +120,6 @@ class HostController extends ObjectController
 
     public function appliedserviceAction()
     {
-        $this->forbiddenWithApiKey();
         $db = $this->db();
         $host = $this->object;
         $serviceName = $this->params->get('service');

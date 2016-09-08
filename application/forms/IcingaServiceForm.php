@@ -30,6 +30,10 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function setup()
     {
+        if ($this->object->usesVarOverrides()) {
+            return $this->setupForVarOverrides();
+        }
+
         if ($this->hostGenerated) {
             return $this->setupHostGenerated();
         }
@@ -79,6 +83,20 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addExtraInfoElements()
              ->addAgentAndZoneElements()
              ->setButtons();
+    }
+
+    protected function setupForVarOverrides()
+    {
+        $msg = $this->translate(
+            'This service has been generated in an automated way, but still'
+            . ' allows you to override the following properties in a safe way.'
+        );
+
+        $this->addHtmlHint($msg);
+
+        $this->setSubmitLabel(
+            $this->translate('Override vars')
+        );
     }
 
     protected function setupHostGenerated()
@@ -314,7 +332,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        if ($this->hostGenerated || $this->inheritedFrom) {
+        if ($this->hostGenerated || $this->inheritedFrom || $this->object->usesVarOverrides()) {
             return $this->succeedForOverrides();
         }
 

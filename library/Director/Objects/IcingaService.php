@@ -100,6 +100,11 @@ class IcingaService extends IcingaObject
             && $this->object_type === 'apply';
     }
 
+    public function usesVarOverrides()
+    {
+        return $this->use_var_overrides === 'y';
+    }
+
     protected function setKey($key)
     {
         if (is_int($key)) {

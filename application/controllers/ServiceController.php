@@ -79,6 +79,20 @@ class ServiceController extends ObjectController
 
     public function editAction()
     {
+        $object = $this->object;
+
+        if ($this->host && $object->usesVarOverrides()) {
+
+            $parent = IcingaService::create(array(
+                'object_type' => 'template',
+                'object_name' => 'myself',
+                'vars'        => $object->vars,
+            ), $this->db());
+
+            $object->vars = $this->host->getOverriddenServiceVars($object->object_name);
+            $object->imports()->add($parent);
+        }
+
         parent::editAction();
 
         if ($this->host) {
@@ -88,7 +102,6 @@ class ServiceController extends ObjectController
             );
         }
 
-        $object = $this->object;
         if ($object->isTemplate()
             && $object->getResolvedProperty('check_command_id')
         ) {
