@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class IcingaService extends IcingaObject
@@ -167,6 +168,12 @@ class IcingaService extends IcingaObject
 
     protected function renderImportHostVarOverrides()
     {
+        if (! $this->connection) {
+            throw new ProgrammingError(
+                'Cannot render services without an assigned DB connection'
+            );
+        }
+
         return sprintf(
             "\n    import \"%s\"\n",
             $this->connection->settings()->override_services_templatename

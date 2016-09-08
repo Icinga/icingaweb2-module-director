@@ -62,7 +62,16 @@ class IcingaServiceTest extends BaseTestCase
 
     public function testAcceptsAndRendersFlatAssignRules()
     {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
         $service = $this->service();
+
+        // Service apply rule rendering requires access to settings:
+        $service->setConnection($db);
         $service->object_type = 'apply';
         $service->assignments = array(
             'host.address="127.*"',
@@ -82,7 +91,15 @@ class IcingaServiceTest extends BaseTestCase
 
     public function testAcceptsAndRendersStructuredAssignRules()
     {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
         $service = $this->service();
+        // Service apply rule rendering requires access to settings:
+        $service->setConnection($db);
         $service->object_type = 'apply';
         $service->assignments = array(
             'host.address="127.*"',
