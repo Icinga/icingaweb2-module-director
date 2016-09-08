@@ -1427,7 +1427,7 @@ CREATE TABLE sync_property (
   destination_field character varying(64),
   priority smallint NOT NULL,
   filter_expression text DEFAULT NULL,
-  merge_policy enum_sync_property_merge_policy NOT NULL,
+  merge_policy enum_sync_property_merge_policy DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT sync_property_rule
   FOREIGN KEY (rule_id)
@@ -1447,7 +1447,7 @@ CREATE INDEX sync_property_source ON sync_property (source_id);
 
 CREATE TABLE sync_run (
   id bigserial,
-  rule_id integer NOT NULL,
+  rule_id integer DEFAULT NULL,
   rule_name character varying(255) NOT NULL,
   start_time TIMESTAMP WITH TIME ZONE NOT NULL,
   duration_ms integer DEFAULT NULL,
@@ -1533,4 +1533,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (105, NOW());
+  VALUES (106, NOW());
