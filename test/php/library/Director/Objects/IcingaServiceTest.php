@@ -38,6 +38,7 @@ class IcingaServiceTest extends BaseTestCase
         $service->display_name = 'Something else';
         $service->host = 'not yet';
         $service->store($db);
+        $service->delete();
     }
 
     public function testAcceptsAssignRules()
@@ -131,6 +132,7 @@ class IcingaServiceTest extends BaseTestCase
             'host.address="127.*"',
             'host.vars.env="test"'
         );
+
         $service->store($db);
 
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
@@ -143,6 +145,8 @@ class IcingaServiceTest extends BaseTestCase
             'host.address="127.*"',
             $service->toPlainObject()->assignments['assign'][0]
         );
+
+        $service->delete();
     }
 
     public function testStaysUnmodifiedWhenSameFiltersAreSetInDifferentWays()
@@ -207,6 +211,8 @@ class IcingaServiceTest extends BaseTestCase
             $this->loadRendered('service2'),
             (string) $service
         );
+
+        $service->delete();
     }
 
     public function testRendersToTheCorrectZone()
