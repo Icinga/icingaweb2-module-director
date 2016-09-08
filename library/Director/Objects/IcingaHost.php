@@ -205,6 +205,74 @@ class IcingaHost extends IcingaObject
         $config->configFile($pre . 'agent_zones')->addObject($zone);
     }
 
+    public function hasAnyOverridenServiceVars()
+    {
+        $varname = $this->getServiceOverrivesVarname();
+        return isset($this->vars()->$varname);
+    }
+
+    public function getAllOverriddenServiceVars()
+    {
+        if ($this->hasAnyOverridenServiceVars()) {
+            $varname = $this->getServiceOverrivesVarname();
+            return $this->vars()->$varname->getValue();
+        } else {
+            return (object) array();
+        }
+    }
+
+    public function hasOverriddenServiceVars($service)
+    {
+        $all = $this->getAllOverriddenServiceVars();
+        return property_exists($all, $service);
+    }
+
+    public function getOverriddenServiceVars($service)
+    {
+        if ($this->hasOverriddenServiceVars($service)) {
+            $all = $this->getAllOverriddenServiceVars();
+            return $all->$service;
+        } else {
+            return (object) array();
+        }
+    }
+
+    public function overrideServiceVars($service, $vars)
+    {
+        if (empty((array) $vars)) {
+            return $this->unsetOverriddenServiceVars($service);
+        }
+
+        $all = $this->getAllOverriddenServiceVars();
+        $all->$service = $vars;
+        $varname = $this->getServiceOverrivesVarname();
+        $this->vars()->$varname = $all;
+
+        return $this;
+    }
+
+    public function unsetOverriddenServiceVars($service)
+    {
+        if ($this->hasOverriddenServiceVars($service)) {
+            $all = (array) $this->getAllOverriddenServiceVars();
+            unset($all[$service]);
+
+            $varname = $this->getServiceOverrivesVarname();
+            if (empty($all)) {
+                unset($this->vars()->$varname);
+            } else {
+                $this->vars()->$varname = (object) $all;
+            }
+        }
+
+        return $this;
+    }
+
+    protected function getServiceOverrivesVarname()
+    {
+        return $this->connection->settings()->override_services_varname;
+    }
+
     /**
      * Internal property, will not be rendered
      *
