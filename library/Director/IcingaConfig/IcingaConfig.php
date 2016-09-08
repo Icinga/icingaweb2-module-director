@@ -473,6 +473,14 @@ class IcingaConfig
 const DirectorVarsOverride = "%s"
 
 template Service "%s" {
+  /**
+   * Seems that host is missing when used in a service object, works fine for
+   * apply rules
+   */
+  if (! host) {
+    var host = get_host(host_name)
+  }
+
   if (vars) {
     vars += host.vars[DirectorVarsOverride][name]
   } else {
