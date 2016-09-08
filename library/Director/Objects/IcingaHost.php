@@ -239,7 +239,9 @@ class IcingaHost extends IcingaObject
 
     public function overrideServiceVars($service, $vars)
     {
-        if (empty((array) $vars)) {
+        // For PHP < 5.5.0:
+        $array = (array) $vars;
+        if (empty($array)) {
             return $this->unsetOverriddenServiceVars($service);
         }
 

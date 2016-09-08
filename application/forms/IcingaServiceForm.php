@@ -279,19 +279,19 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function succeedForOverrides()
     {
 
-        $vars = (object) array();
+        $vars = array();
         foreach ($this->object->vars() as $key => $var) {
-            $vars->$key = $var->getValue();
+            $vars[$key] = $var->getValue();
         }
 
         $host = $this->host;
         $serviceName = $this->object->object_name;
 
-        $this->host->overrideServiceVars($serviceName, $vars);
+        $this->host->overrideServiceVars($serviceName, (object) $vars);
 
         if ($host->hasBeenModified()) {
             $msg = sprintf(
-                empty((array) $vars)
+                empty($vars)
                 ? $this->translate('All overrides have been removed from "%s"')
                 : $this->translate('The given properties have been stored for "%s"'),
                 $this->translate($host->object_name)
