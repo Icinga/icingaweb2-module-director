@@ -457,10 +457,32 @@ class IcingaConfig
             )
         )->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+            . $this->renderHostOverridableVars()
             . $this->renderMagicApplyFor()
         );
 
         return $this;
+    }
+
+    protected function renderHostOverridableVars()
+    {
+        $settings = $this->connection->settings();
+
+        return sprintf(
+            '
+const DirectorVarsOverride = "%s"
+
+template Service "%s" {
+  if (vars) {
+    vars += host.vars[DirectorVarsOverride][name]
+  } else {
+    vars = host.vars[DirectorVarsOverride][name]
+  }
+}
+',
+            $settings->override_services_varname,
+            $settings->override_services_templatename
+        );
     }
 
     protected function renderMagicApplyFor()

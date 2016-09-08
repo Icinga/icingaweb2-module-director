@@ -10,5 +10,7 @@ apply Service "___TEST___service" {
 
     assign where match("128.*", host.address)
     ignore where host.name == "localhost"
+
+    import "host var overrides (Director)"
 }
 

@@ -156,6 +156,20 @@ class IcingaService extends IcingaObject
         )->object_type === 'template';
     }
 
+    protected function renderSuffix()
+    {
+        if ($this->isApplyRule()) {
+            return $this->renderImportHostVarOverrides() . parent::renderSuffix();
+        } else {
+            return parent::renderSuffix();
+        }
+    }
+
+    protected function renderImportHostVarOverrides()
+    {
+        return "\n" . '    import "host var overrides (Director)"' . "\n";
+    }
+
     protected function renderCustomExtensions()
     {
         // A hand-crafted command endpoint overrides use_agent

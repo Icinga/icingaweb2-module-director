@@ -10,5 +10,7 @@ apply Service "___TEST___service" {
 
     assign where match("127.*", host.address)
     assign where host.vars.env == "test"
+
+    import "host var overrides (Director)"
 }
 
