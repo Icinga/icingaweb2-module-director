@@ -543,7 +543,7 @@ abstract class DirectorObjectForm extends QuickForm
         $this->addElement($el);
         $this->addToCommandFieldsDisplayGroup($el);
         if (! $el->hasErrors()) {
-            $this->setElementValue($name, $value, $inherited, $inheritedFrom);
+            $this->setElementValue($el->getName(), $value, $inherited, $inheritedFrom);
         }
 
         return $el;
