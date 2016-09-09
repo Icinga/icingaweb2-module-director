@@ -6,6 +6,8 @@ class IcingaHostGroup extends IcingaObjectGroup
 {
     protected $table = 'icinga_hostgroup';
 
-    // TODO: move to IcingaObjectGroup when supported for ServiceGroup
-    protected $supportsApplyRules = true;
+    public function supportsAssignments()
+    {
+        return true;
+    }
 }

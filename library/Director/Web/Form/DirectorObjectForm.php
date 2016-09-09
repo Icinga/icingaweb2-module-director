@@ -832,7 +832,7 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         if ($object instanceof IcingaObject) {
-            if ($object->isApplyRule()) {
+            if ($object->supportsAssignments()) {
                 $this->setElementValue('assignlist', $object->assignments()->getFormValues());
             }
 

@@ -25,7 +25,7 @@ class AssignListSubForm extends QuickSubForm
     {
         $idx = -1;
 
-        if ($this->object && $this->object->isApplyRule()) {
+        if ($this->object && $this->object->supportsAssignments()) {
 //            $this->setElementValue('assignlist', $object->assignments()->getFormValues());
             foreach ($this->object->assignments()->getFormValues() as $values) {
                 $idx++;

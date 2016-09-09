@@ -257,9 +257,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsFields;
     }
 
+    /**
+     * Whether this object can be rendered as 'apply Object'
+     *
+     * @return bool
+     */
     public function supportsApplyRules()
     {
         return $this->supportsApplyRules;
+    }
+
+    /**
+     * Whether this object supports 'assign' properties
+     *
+     * @return bool
+     */
+    public function supportsAssignments()
+    {
+        return $this->isApplyRule();
     }
 
     public function resolveUnresolvedRelatedProperties()
@@ -309,7 +324,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
-        if ($this->isApplyRule() && $this->assignments !== null && $this->assignments()->hasBeenModified()) {
+        if ($this->supportsAssignments() && $this->assignments !== null && $this->assignments()->hasBeenModified()) {
             return true;
         }
 
@@ -1081,7 +1096,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function storeAssignments()
     {
-        if ($this->isApplyRule()) {
+        if ($this->supportsAssignments()) {
             $this->assignments !== null && $this->assignments()->store();
         }
 
@@ -1576,7 +1591,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderAssignments()
     {
-        if ($this->isApplyRule()) {
+        if ($this->supportsAssignments()) {
             return $this->assignments()->toConfigString();
         } else {
             return '';
@@ -1908,7 +1923,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             );
         }
 
-        if ($this->isApplyRule()) {
+        if ($this->supportsAssignments()) {
             $props['assignments'] = $this->assignments()->getPlain();
         }
 
@@ -2087,7 +2102,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->isApplyRule()) {
+        if ($this->supportsAssignments()) {
             $props['assignments'] = $this->assignments()->getUnmodifiedPlain();
         }
 

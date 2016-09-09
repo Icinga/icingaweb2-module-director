@@ -17,7 +17,7 @@ class IcingaObjectAssignments
 
     public function __construct(IcingaObject $object)
     {
-        if (! $object->isApplyRule()) {
+        if (! $object->supportsAssignments()) {
             throw new ProgrammingError(
                 'I can only assign for applied objects, got %s',
                 $object->object_type
