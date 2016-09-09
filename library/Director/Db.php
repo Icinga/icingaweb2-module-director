@@ -689,4 +689,16 @@ class Db extends DbConnection
 
         return DirectorDeploymentLog::loadAll($this, $query, 'stage_name');
     }
+
+    public function hasUncollectedDeployments()
+    {
+        $db = $this->db();
+        $query = $db->select()
+            ->from('director_deployment_log', array('cnt' => 'COUNT(*)'))
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL');
+
+        return $db->fetchOne($query) > 0;
+    }
 }

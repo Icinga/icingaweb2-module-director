@@ -19,7 +19,9 @@ class ConfigController extends ActionController
     {
         $this->setAutorefreshInterval(5);
         try {
-            if ($this->getRequest()->getUrl()->shift('checkforchanges')) {
+            if ($this->db()->hasUncollectedDeployments()
+                || $this->getRequest()->getUrl()->shift('checkforchanges')
+            ) {
                 $this->api()->collectLogFiles($this->db());
             }
         } catch (Exception $e) {
