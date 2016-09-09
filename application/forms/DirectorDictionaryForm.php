@@ -10,9 +10,6 @@ class DirectorDictionaryForm extends DirectorObjectForm
     {
         $this->addElement('text', 'dictionary_name', array(
             'label'       => $this->translate('Name'),
-            'description' => $this->translate(
-                'poop'
-            ),
             'required'    => true,
         ));
         $this->addSimpleDisplayGroup(array('dictionary_name'), 'dictionary', array(
