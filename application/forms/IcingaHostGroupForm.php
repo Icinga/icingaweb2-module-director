@@ -21,7 +21,7 @@ class IcingaHostGroupForm extends DirectorObjectForm
              ->setButtons();
     }
 
-    public function addAssignmentElements()
+    protected function addAssignmentElements()
     {
         $sub = new AssignListSubForm();
         $sub->setObject($this->object());
