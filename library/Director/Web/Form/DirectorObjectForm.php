@@ -304,15 +304,7 @@ abstract class DirectorObjectForm extends QuickForm
                         if (property_exists($fieldSet, $mykey)) {
                             $field = $fieldSet->$mykey;
                             $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
-                            $name = 'var_' . $datafield->varname;
-                            $className = $datafield->datatype;
-
-                            if (class_exists($className)) {
-                                $datatype = new $className;
-                                $datatype->setSettings($datafield->getSettings());
-                                $el = $datatype->getFormElement($name, $this);
-                            }
-
+                            $el = $datafield->getFormElement($this);
                             $value = $el->setValue($value)->getValue();
                         }
                     }
@@ -524,31 +516,17 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addField($field, $value = null, $inherited = null, $inheritedFrom = null)
     {
         $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
-        $name = 'var_' . $datafield->varname;
-        $className = $datafield->datatype;
-
-        if (! class_exists($className)) {
-            $this->addElement('text', $name, array('disabled' => 'disabled'));
-            $el = $this->getElement($name);
-            $el->addError(sprintf('Form element could not be created, %s is missing', $className));
-            $this->addToFieldsDisplayGroup($el);
-            return $el;
-        }
-
-        $datatype = new $className;
-        $datatype->setSettings($datafield->getSettings());
-        $el = $datatype->getFormElement($name, $this);
-
-        $el->setLabel($datafield->caption);
-        $el->setDescription($datafield->description);
+        $el = $datafield->getFormElement($this);
 
         if ($field->is_required === 'y' && ! $this->isTemplate() && $inherited === null) {
             $el->setRequired(true);
         }
 
         $this->addElement($el);
-        $this->setElementValue($name, $value, $inherited, $inheritedFrom);
         $this->addToFieldsDisplayGroup($el);
+        if (! $el->hasErrors()) {
+            $this->setElementValue($el->getName(), $value, $inherited, $inheritedFrom);
+        }
 
         return $el;
     }
@@ -556,31 +534,17 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addCommandField($field, $value = null, $inherited = null, $inheritedFrom = null)
     {
         $datafield = DirectorDatafield::load($field->datafield_id, $this->getDb());
-        $name = 'var_' . $datafield->varname;
-        $className = $datafield->datatype;
-
-        if (! class_exists($className)) {
-            $this->addElement('text', $name, array('disabled' => 'disabled'));
-            $el = $this->getElement($name);
-            $el->addError(sprintf('Form element could not be created, %s is missing', $className));
-            $this->addToCommandFieldsDisplayGroup($el);
-            return $el;
-        }
-
-        $datatype = new $className;
-        $datatype->setSettings($datafield->getSettings());
-        $el = $datatype->getFormElement($name, $this);
-
-        $el->setLabel($datafield->caption);
-        $el->setDescription($datafield->description);
+        $el = $datafield->getFormElement($this);
 
         if ($field->is_required === 'y' && ! $this->isTemplate() && $inherited === null) {
             $el->setRequired(true);
         }
 
         $this->addElement($el);
-        $this->setElementValue($name, $value, $inherited, $inheritedFrom);
         $this->addToCommandFieldsDisplayGroup($el);
+        if (! $el->hasErrors()) {
+            $this->setElementValue($name, $value, $inherited, $inheritedFrom);
+        }
 
         return $el;
     }
