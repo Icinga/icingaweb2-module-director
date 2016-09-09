@@ -30,7 +30,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function setup()
     {
-        if ($this->object->usesVarOverrides()) {
+        if ($this->object && $this->object->usesVarOverrides()) {
             return $this->setupForVarOverrides();
         }
 
