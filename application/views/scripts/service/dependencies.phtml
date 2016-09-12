@@ -1,0 +1,18 @@
+<div class="controls">
+<?= $this->tabs ?>
+<h1><?= $this->escape($this->title) ?></h1>
+<span class="action-links">
+<?= $this->addLink ?>
+</span>
+<?php if (count($table) || ($this->filterEditor && ! $this->filterEditor->getFilter()->isEmpty())): ?>
+<?= $this->filterEditor ?>
+<?php endif ?>
+<?= $this->table->getPaginator() ?>
+</div>
+
+<div class="content">
+<?= $this->form ?>
+<?php if (count($table)): ?>
+<?= $this->table->render() ?>
+<?php endif ?>
+</div>

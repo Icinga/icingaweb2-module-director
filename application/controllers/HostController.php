@@ -11,6 +11,9 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
+use Icinga\Data\Filter\FilterAnd;
+use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterExpression;
 
 class HostController extends ObjectController
 {
@@ -33,6 +36,11 @@ class HostController extends ObjectController
                     'label'     => 'Agent'
                 ));
             }
+            $tabs->add('dependencies', array(
+                'url'       => 'director/host/dependencies',
+                'urlParams' => array('name' => $this->object->object_name),
+                'label'     => 'Dependencies'
+            ));
         }
     }
 
@@ -282,4 +290,28 @@ class HostController extends ObjectController
             )
         );
     }
+    public function dependenciesAction()
+    {
+        $host = $this->object;
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add dependency'),
+            'director/dependency/add',
+            array('host' => $host->object_name),
+            array('class' => 'icon-plus')
+        );
+
+        $this->getTabs()->activate('dependencies');
+        $this->view->title = sprintf(
+            $this->translate('Dependencies: %s'),
+            $host->object_name
+        );
+
+        $this->view->table = $this->loadTable('IcingaHostDependency')
+            ->setHost($host)
+            ->enforceFilter('child_host_id', $host->id)
+            ->setConnection($this->db());
+    }
+
+
 }

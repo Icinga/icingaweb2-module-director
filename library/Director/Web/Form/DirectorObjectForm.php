@@ -497,6 +497,9 @@ abstract class DirectorObjectForm extends QuickForm
             'enable_notifications',
             'create_live',
             'disabled',
+            'disable_checks', //Dependencies
+            'disable_notifications',
+            'ignore_soft_states',
         );
 
         $this->addDisplayGroup($elements, 'object_definition', array(
@@ -1353,28 +1356,28 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addEventFilterElements()
+    protected function addEventFilterElements($elements = array('states','types'))
     {
-        $this->addElement('extensibleSet', 'states', array(
-            'label' => $this->translate('States'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
-            'description'  => $this->translate(
-                'The host/service states you want to get notifications for'
-            ),
-        ));
+        if (in_array('states', $elements)) {
+            $this->addElement('extensibleSet', 'states', array(
+                'label' => $this->translate('States'),
+                'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
+                'description'  => $this->translate(
+                    'The host/service states you want to get notifications for'
+                ),
+            ));
+        }
 
-        $this->addElement('extensibleSet', 'types', array(
-            'label' => $this->translate('Transition types'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
-            'description'  => $this->translate(
-                'The state transition types you want to get notifications for'
-            ),
-        ));
+        if (in_array('types', $elements)) {
+            $this->addElement('extensibleSet', 'types', array(
+                'label' => $this->translate('Transition types'),
+                'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
+                'description'  => $this->translate(
+                    'The state transition types you want to get notifications for'
+                ),
+            ));
+        }
 
-        $elements = array(
-            'states',
-            'types',
-        );
         $this->addDisplayGroup($elements, 'event_filters', array(
             'decorators' => array(
                 'FormElements',

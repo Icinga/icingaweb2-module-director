@@ -290,8 +290,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $short = substr($name, 0, -3);
         $class = $this->getRelationClass($short);
+        $obj_key = $this->unresolvedRelatedProperties[$name];
+
+        # related services need array key
+        if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
+            $host_id_prop=str_replace("service","host",$name);
+            if (isset($this->properties[$host_id_prop])) {
+                $obj_key=array("host_id" => $this->properties[$host_id_prop], "object_name" => $this->unresolvedRelatedProperties[$name]);
+            } else {
+                $obj_key=array("host_id" => null, "object_name" => $this->unresolvedRelatedProperties[$name]);
+            }
+        } 
         $object = $class::load(
-            $this->unresolvedRelatedProperties[$name],
+            $obj_key,
             $this->connection
         );
 
@@ -1205,7 +1216,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif ($this->isApplyRule()) {
             $filename = strtolower($type) . '_apply';
         } else {
-            $filename = strtolower($type) . 's';
+            $filename = preg_replace("/cys$/","cies",strtolower($type) . 's');
         }
 
         $config->configFile(
@@ -2023,6 +2034,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if ($this->hasProperty('service_id') && $this->service_id) {
                 $params['service'] = $this->service;
             }
+
+            if ($this->hasProperty('child_host_id') && $this->child_host_id) {
+                $params['host'] = $this->child_host;
+            }
+            
+            if ($this->hasProperty('child_service_id') && $this->child_service_id) {
+                $params['service'] = $this->child_service;
+            }
+
         }
 
         return $params;
@@ -2030,7 +2050,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getOnDeleteUrl()
     {
-        return 'director/' . strtolower($this->getShortTableName()) . 's';
+        $plural= preg_replace('/cys$/','cies', strtolower($this->getShortTableName()) . 's');
+        return 'director/'.$plural;
     }
 
     public function toJson(

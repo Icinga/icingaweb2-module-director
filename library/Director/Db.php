@@ -384,6 +384,7 @@ class Db extends DbConnection
             'command',
             'timeperiod',
             'notification',
+            'dependency',
             'apiuser',
             'endpoint',
             'zone',
