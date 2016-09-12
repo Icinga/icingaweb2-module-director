@@ -51,12 +51,12 @@ abstract class ObjectsController extends ActionController
         }
 
         $tabs->add('objects', array(
-            'url'   => sprintf('director/%ss', strtolower($ptype)),
-            'label' => $this->translate(ucfirst($ptype) . 's'),
+            'url'   => sprintf('director/%s', strtolower($ptype)),
+            'label' => $this->translate(ucfirst($ptype)),
         ));
         if ($object->supportsImports()) {
             $tabs->add('templates', array(
-                'url'   => sprintf('director/%ss/templates', strtolower($type)),
+                'url'   => sprintf('director/%s/templates', strtolower($pltype)),
                 'label' => $this->translate('Templates'),
             ));
         }
