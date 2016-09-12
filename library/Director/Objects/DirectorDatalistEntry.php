@@ -10,12 +10,26 @@ class DirectorDatalistEntry extends DbObject
 
     protected $table = 'director_datalist_entry';
 
+    private $shouldBeRemoved = false;
+
     protected $defaultProperties = array(
         'list_id'       => null,
         'entry_name'    => null,
         'entry_value'   => null,
         'format'        => null,
     );
+
+
+    public function markForRemoval($remove = true)
+    {
+        $this->shouldBeRemoved = $remove;
+        return $this;
+    }
+
+    public function shouldBeRemoved()
+    {
+        return $this->shouldBeRemoved;
+    }
 
     public function onInsert()
     {
