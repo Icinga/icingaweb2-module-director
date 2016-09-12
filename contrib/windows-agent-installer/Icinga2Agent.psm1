@@ -531,6 +531,7 @@ function Icinga2AgentModule {
 include "constants.conf"
 include <itl>
 include <plugins>
+include <windows-plugins>
 // include <plugins-contrib>
 if (!globals.contains("NscpPath")) {
   NscpPath = dirname(msi_get_component_path("{5C45463A-4AE9-4325-96DB-6E239C034F93}"))
