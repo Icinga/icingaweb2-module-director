@@ -402,105 +402,6 @@ class Db extends DbConnection
         return $objects;
     }
 
-    public function fetchLatestImportedRows($source, $desiredColumns = null)
-    {
-        $db = $this->db();
-        if ($desiredColumns === null) {
-            $columns = null;
-        } else {
-            $columns = array();
-            foreach ($desiredColumns as $column) {
-                if (false === ($pos = strpos($column, '.'))) {
-                    $columns[$column] = $column;
-                } else {
-                    $column = substr($column, 0, $pos);
-                    $columns[$column] = $column;
-                }
-            }
-        }
-
-        $lastRun = $db->select()->from(
-            array('r' => 'import_run'),
-            array('checksum' => $this->dbHexFunc('r.rowset_checksum'))
-        );
-
-        if (is_int($source) || ctype_digit($source)) {
-            $lastRun->where('r.source_id = ?', $source);
-        } else {
-            $lastRun->where('r.source_name = ?', $source);
-        }
-
-        $lastRun->order('r.start_time DESC')->limit(1);
-        $checksum = $db->fetchOne($lastRun);
-
-        return $this->fetchImportedRowsetRows($checksum, $columns);
-    }
-
-    public function fetchImportedRowsetRows($checksum, $columns, $filter = null)
-    {
-        $db = $this->db();
-        $binchecksum = Util::hex2binary($checksum);
-
-        $query = $db->select()->from(
-            array('rsr' => 'imported_rowset_row'),
-            array(
-                'object_name'    => 'r.object_name',
-                'property_name'  => 'p.property_name',
-                'property_value' => 'p.property_value',
-                'format'         => 'p.format'
-            )
-        )->join(
-            array('r' => 'imported_row'),
-            'rsr.row_checksum = r.checksum',
-            array()
-        )->join(
-            array('rp' => 'imported_row_property'),
-            'r.checksum = rp.row_checksum',
-            array()
-        )->join(
-            array('p' => 'imported_property'),
-            'p.checksum = rp.property_checksum',
-            array()
-        )->where('rsr.rowset_checksum = ?', $this->quoteBinary($binchecksum))->order('r.object_name');
-
-        if ($columns === null) {
-            $columns = $this->listImportedRowsetColumnNames($checksum);
-        } else {
-            $query->where('p.property_name IN (?)', $columns);
-        }
-
-        $result = array();
-        $empty = (object) array();
-        foreach ($columns as $k => $v) {
-            $empty->$k = null;
-        }
-
-        foreach ($db->fetchAll($query) as $row) {
-            if (! array_key_exists($row->object_name, $result)) {
-                $result[$row->object_name] = clone($empty);
-            }
-
-            if ($row->format === 'json') {
-                $result[$row->object_name]->{$row->property_name} = json_decode($row->property_value);
-            } else {
-                $result[$row->object_name]->{$row->property_name} = $row->property_value;
-            }
-        }
-
-        if ($filter) {
-            $filtered = array();
-            foreach ($result as $key => $row) {
-                if ($filter->matches($row)) {
-                    $filtered[$key] = $row;
-                }
-            }
-
-            return $filtered;
-        }
-
-        return $result;
-    }
-
     public function getLatestImportedChecksum($source)
     {
         $db = $this->db();
@@ -564,26 +465,6 @@ class Db extends DbConnection
         return $result;
     }
 
-    public function listImportedRowsetColumnNames($checksum)
-    {
-        $db = $this->db();
-
-        $query = $db->select()->distinct()->from(
-            array('p' => 'imported_property'),
-            'property_name'
-        )->join(
-            array('rp' => 'imported_row_property'),
-            'rp.property_checksum = p.checksum',
-            array()
-        )->join(
-            array('rsr' => 'imported_rowset_row'),
-            'rsr.row_checksum = rp.row_checksum',
-            array()
-        )->where('rsr.rowset_checksum = ?', $this->quoteBinary(Util::hex2binary($checksum)));
-
-        return $db->fetchCol($query);
-    }
-
     public function enumCommands()
     {
         return $this->enumIcingaObjects('command');
@@ -604,6 +485,15 @@ class Db extends DbConnection
         $filters = array(
             'methods_execute IN (?)' => array('PluginCheck', 'IcingaCheck'),
             
+        );
+        return $this->enumIcingaObjects('command', $filters);
+    }
+
+    public function enumEventcommands()
+    {
+        $filters = array(
+            'methods_execute = ?' => 'PluginEvent',
+
         );
         return $this->enumIcingaObjects('command', $filters);
     }
