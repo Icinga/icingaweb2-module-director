@@ -26,7 +26,7 @@ class AssignmentSubForm extends QuickSubForm
             'value' => 'assign'
         ));
 	$varoptions = IcingaHost::enumProperties($this->object->getConnection(), 'host.');
-	if($this->object->get('apply_to') === "service") {
+	if(array_key_exists('apply_to',$this->object->properties) && $this->object->get('apply_to') === "service") {
 	    $varoptions = array_merge($varoptions, IcingaService::enumProperties($this->object->getConnection(), 'service.'));
 	}
         $this->addElement('select', 'property', array(
