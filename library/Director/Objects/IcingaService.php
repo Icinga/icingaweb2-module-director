@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class IcingaService extends IcingaObject
@@ -77,6 +78,61 @@ class IcingaService extends IcingaObject
     protected $keyName = array('host_id', 'object_name');
 
     protected $prioritizedProperties = array('host_id');
+
+    public static function enumProperties(DbConnection $connection = null, $prefix = '')
+    {
+        $serviceProperties = array($prefix . 'name' => 'name');
+	$realProperties = static::create()->listProperties();
+	sort($realProperties);
+
+	$blacklist = array(
+            'id',
+            'object_name',
+            'object_type',
+        );
+
+        foreach ($realProperties as $prop) {
+            if (in_array($prop, $blacklist)) {
+                continue;
+            }
+
+            if (substr($prop, -3) === '_id') {
+                $prop = substr($prop, 0, -3);
+            }
+
+            $serviceProperties[$prefix . $prop] = $prop;
+        }
+
+        $serviceVars = array();
+        if ($connection !== null) {
+            foreach ($connection->fetchDistinctServiceVars() as $var) {
+                if ($var->datatype) {
+                    $serviceVars[$prefix . 'vars.' . $var->varname] = sprintf(
+                        '%s (%s)',
+                        $var->varname,
+                        $var->caption
+                    );
+                } else {
+                    $serviceVars[$prefix . 'vars.' . $var->varname] = $var->varname;
+                }
+            }
+        }
+
+        ksort($serviceVars);
+
+
+        $props = mt('director', 'Service properties');
+        $vars  = mt('director', 'Service Custom variables');
+        $properties = array(
+            $props => $serviceProperties,
+        );
+
+        if (!empty($serviceVars)) {
+            $properties[$vars] = $serviceVars;
+        }
+
+        return $properties;
+    }
 
     public function getCheckCommand()
     {
