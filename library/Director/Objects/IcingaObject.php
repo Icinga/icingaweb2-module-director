@@ -20,19 +20,29 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $autoincKeyName = 'id';
 
+    /** @var bool Whether this Object supports custom variables */
     protected $supportsCustomVars = false;
 
+    /** @var bool Whether there exist Groups for this object type */
     protected $supportsGroups = false;
 
+    /** @var bool Whether this Object makes use of (time) ranges */
     protected $supportsRanges = false;
 
+    /** @var bool Whether this object supports (command) Arguments */
     protected $supportsArguments = false;
 
+    /** @var bool Whether inheritance via "imports" property is supported */
     protected $supportsImports = false;
 
+    /** @var bool Allows controlled custom var access through Fields */
     protected $supportsFields = false;
 
+    /** @var bool Whether this object can be rendered as 'apply Object' */
     protected $supportsApplyRules = false;
+
+    /** @var bool Whether Sets of object can be defined */
+    protected $supportsSets = false;
 
     protected $rangeClass;
 
@@ -227,31 +237,61 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return null;
     }
 
+    /**
+     * Whether this Object supports custom variables
+     *
+     * @return bool
+     */
     public function supportsCustomVars()
     {
         return $this->supportsCustomVars;
     }
 
+    /**
+     * Whether there exist Groups for this object type
+     *
+     * @return bool
+     */
     public function supportsGroups()
     {
         return $this->supportsGroups;
     }
 
+    /**
+     * Whether this Object makes use of (time) ranges
+     *
+     * @return bool
+     */
     public function supportsRanges()
     {
         return $this->supportsRanges;
     }
 
+    /**
+     * Whether this object supports (command) Arguments
+     *
+     * @return bool
+     */
     public function supportsArguments()
     {
         return $this->supportsArguments;
     }
 
+    /**
+     * Whether this object supports inheritance through the "imports" property
+     *
+     * @return bool
+     */
     public function supportsImports()
     {
         return $this->supportsImports;
     }
 
+    /**
+     * Whether this object allows controlled custom var access through fields
+     *
+     * @return bool
+     */
     public function supportsFields()
     {
         return $this->supportsFields;
