@@ -144,10 +144,17 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
                     . '</li>';
         }
 
+        if (array_key_exists('description', $attribs)) {
+            $description = '<p class="description">' . $v->escape($attribs['description']) . '</p>';
+        } else {
+            $description = '';
+        }
+
         return '<ul class="extensible-set'
              . ($sorted ? ' sortable' : '')
              . '">' . "\n  "
              . implode("\n  ", $elements)
+             . $description
              . "</ul>\n";
     }
 
