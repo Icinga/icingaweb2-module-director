@@ -75,7 +75,7 @@ abstract class ObjectsController extends ActionController
         $this
             ->addObjectsTabs()
             ->setAutorefreshInterval(10)
-            ->addTitle($this->translate(ucfirst(strtolower($type)) . 's'))
+            ->addTitle($this->translate(ucfirst($this->getPluralType())))
             ->actions(new ObjectsActionBar($type, $this->url()));
 
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
@@ -122,6 +122,7 @@ abstract class ObjectsController extends ActionController
             )->content()->add($form);
     }
 
+
     /**
      * Loads the TemplatesTable or the TemplateTreeRenderer
      *
@@ -130,7 +131,6 @@ abstract class ObjectsController extends ActionController
     public function templatesAction()
     {
         $type = $this->getType();
-
         $shortType = IcingaObject::createByType($type)->getShortTableName();
         $this
             ->assertPermission('director/admin')
@@ -285,8 +285,8 @@ abstract class ObjectsController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency'),
             str_replace(
                 'template',
                 '',
@@ -297,11 +297,11 @@ abstract class ObjectsController extends ActionController
 
     protected function getPluralType()
     {
-        return $this->getType() . 's';
+        return preg_replace("/cys$/","cies",$this->getType() . 's');
     }
 
     protected function getPluralBaseType()
     {
-        return $this->getBaseType() . 's';
+        return preg_replace("/cys$/","cies",$this->getBaseType() . 's');
     }
 }
