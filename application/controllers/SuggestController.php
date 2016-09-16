@@ -6,6 +6,7 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Data\Filter\Filter;
 use ipl\Html\Util;
+use Icinga\Module\Director\Objects\HostApplyMatches;
 
 class SuggestController extends ActionController
 {
@@ -90,6 +91,48 @@ class SuggestController extends ActionController
             ->where("object_type = 'object'");
         return $db->fetchCol($query);
     }
+
+    protected function suggestServicenames()
+    {
+        $r=array();
+        $this->assertPermission('director/services');
+        $db = $this->db()->getDbAdapter();
+        $for_host = $this->getRequest()->getPost('for_host');
+        if (!empty($for_host)) {
+            $tmp_host = IcingaHost::load($for_host,$this->db());
+        }
+
+        $query = $db->select()->distinct()
+            ->from('icinga_service', 'object_name')
+            ->order('object_name')
+            ->where("object_type IN ('object','apply')");
+        if (!empty($tmp_host)) {
+            $query->where('host_id = ?',$tmp_host->id);
+        }
+        $r = array_merge($r,$db->fetchCol($query));
+        if (!empty($tmp_host)) {
+            $resolver = $tmp_host->templateResolver();
+            foreach ($resolver->fetchResolvedParents() as $template_obj) {
+                $query = $db->select()->distinct()
+                    ->from('icinga_service', 'object_name')
+                    ->order('object_name')
+                    ->where("object_type IN ('object','apply')")
+                    ->where('host_id = ?', $template_obj->id);
+                $r = array_merge($r,$db->fetchCol($query));
+            }
+
+            $matcher = HostApplyMatches::prepare($tmp_host);
+            foreach ($this->getAllApplyRules() as $rule) {
+                if ($matcher->matchesFilter($rule->filter)) { //TODO
+                    $r[]=$rule->name;
+                }
+            }
+
+        }
+        natcasesort($r);
+        return $r;
+    }
+
 
     protected function suggestHosttemplates()
     {
@@ -199,6 +242,17 @@ class SuggestController extends ActionController
         return $res;
     }
 
+    protected function suggestDependencytemplates()
+    {
+        $this->assertPermission('director/hosts');
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_dependency', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'");
+        return $db->fetchCol($query);
+    }
+
     protected function highlight($val, $search)
     {
         $search = ($search);
@@ -209,4 +263,33 @@ class SuggestController extends ActionController
             $val
         );
     }
+
+    protected function getAllApplyRules()
+    {
+        $allApplyRules=$this->fetchAllApplyRules();
+        foreach ($allApplyRules as $rule) {
+            $rule->filter = Filter::fromQueryString($rule->assign_filter);
+        }
+
+        return $allApplyRules;
+    }
+
+    protected function fetchAllApplyRules()
+    {
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()->from(
+            array('s' => 'icinga_service'),
+            array(
+                'id'            => 's.id',
+                'name'          => 's.object_name',
+                'assign_filter' => 's.assign_filter',
+            )
+        )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
+
+        return $db->fetchAll($query);
+    }
+
+
+
+
 }
