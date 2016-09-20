@@ -338,7 +338,7 @@ abstract class ObjectController extends ActionController
 
         return $object->hasBeenLoadedFromDb()
             && $object->supportsFields()
-            && ($object->isTemplate() || $this->getType() === 'command');
+            && ($object->isTemplate() || $this->getType() === 'command' || $this->getType() === 'host');
     }
 
     protected function handleApiRequest()

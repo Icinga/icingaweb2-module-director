@@ -1166,10 +1166,6 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addCheckCommandElements()
     {
-        if (! $this->isTemplate()) {
-            return $this;
-        }
-
         $this->addElement('select', 'check_command_id', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
@@ -1195,10 +1191,6 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addCheckExecutionElements()
     {
-        if (! $this->isTemplate()) {
-            return $this;
-        }
-
         $this->addElement(
             'text',
             'check_interval',
