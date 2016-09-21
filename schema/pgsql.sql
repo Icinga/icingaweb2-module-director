@@ -325,8 +325,8 @@ CREATE TABLE icinga_timeperiod_range (
 );
 
 CREATE INDEX timeperiod_range_timeperiod ON icinga_timeperiod_range (timeperiod_id);
-COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_key IS 'monday, ...';
-COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_value IS '00:00-24:00, ...';
+COMMENT ON COLUMN icinga_timeperiod_range.range_key IS 'monday, ...';
+COMMENT ON COLUMN icinga_timeperiod_range.range_value IS '00:00-24:00, ...';
 COMMENT ON COLUMN icinga_timeperiod_range.range_type IS 'include -> ranges {}, exclude ranges_ignore {} - not yet';
 COMMENT ON COLUMN icinga_timeperiod_range.merge_behaviour IS 'set -> = {}, add -> += {}, substract -> -= {}';
 
