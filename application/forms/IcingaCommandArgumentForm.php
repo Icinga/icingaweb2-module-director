@@ -75,16 +75,28 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             'description' => $this->translate(
                 'Whether the set_if parameter is a string (allowing macros like $host$)'
                 . ' or an Icinga DSL lambda function (will be enclosed with {{ ... }}'
-            )
+            ),
+            'class' => 'autosubmit',
         ));
 
-        $this->addElement('text', 'set_if', array(
-            'label'       => $this->translate('Condition (set_if)'),
-            'description' => $this->translate(
-                'Only set this parameter if the argument value resolves to a'
-                . ' numeric value. String values are not supported'
-            )
-        ));
+        if ($this->getSentOrObjectValue('set_if_format') === 'expression') {
+            $this->addElement('textarea', 'set_if', array(
+                'label'       => $this->translate('Condition (set_if)'),
+                'description' => $this->translate(
+                    'An Icinga DSL expression that returns a boolean value, e.g.: var cmd = bool(macro("$cmd$"));'
+                    . ' return cmd ...'
+                ),
+                'rows'        => 3
+            ));
+        } else {
+            $this->addElement('text', 'set_if', array(
+                'label'       => $this->translate('Condition (set_if)'),
+                'description' => $this->translate(
+                    'Only set this parameter if the argument value resolves to a'
+                    . ' numeric value. String values are not supported'
+                )
+            ));
+        }
 
         $this->addBoolean('repeat_key', array(
             'label'       => $this->translate('Repeat key'),

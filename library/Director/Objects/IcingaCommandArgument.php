@@ -124,6 +124,7 @@ class IcingaCommandArgument extends IcingaObject
             $data['argument_name'] = $this->argument_name;
             $data['argument_value'] = $this->argument_value;
             $data['argument_format'] = $this->argument_format;
+            $data['set_if_format'] = $this->set_if_format;
             return (object) $data;
         }
     }
@@ -161,7 +162,14 @@ class IcingaCommandArgument extends IcingaObject
         }
 
         if ($this->set_if) {
-            $data['set_if'] = c::renderString($this->set_if);
+            switch ($this->set_if_format) {
+                case 'string':
+                    $data['set_if'] = c::renderString($this->set_if);
+                    break;
+                case 'expression':
+                    $data['set_if'] = c::renderExpression($this->set_if);
+                    break;
+            }
         }
 
         if ($this->required) {
