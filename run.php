@@ -15,6 +15,7 @@ $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeArray');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeBoolean');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDatalist');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeNumber');
+$this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDirectorObject');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeSqlQuery');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeString');
 
