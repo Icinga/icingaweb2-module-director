@@ -29,7 +29,7 @@ So here is the good news: this is no problem at all. It's absolutely legal and
 encouraged to run Director as a pure GIT clone, installed as such:
 
 ```sh
-ICINGAWEB2_MODULES=/usr/share/icingaweb2/modules
+ICINGAWEB_MODULES=/usr/share/icingaweb2/modules
 DIRECTOR_GIT=https://github.com/Icinga/icingaweb2-module-director.git
 git clone $DIRECTOR_GIT $ICINGAWEB_MODULES/director
 ```
