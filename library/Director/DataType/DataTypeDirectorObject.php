@@ -27,7 +27,6 @@ class DataTypeDirectorObject extends DataTypeHook
         $enum = $db->fetchPairs($query);
 
         $params = array(
-            'required'     => true,
             'multiOptions' => array(
                 null => $form->translate('- please choose -'),
             ) + $enum,
