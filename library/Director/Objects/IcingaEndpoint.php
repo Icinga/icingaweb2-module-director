@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -84,5 +85,20 @@ class IcingaEndpoint extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
         return '';
+    }
+
+    /**
+     * Choose rendering target based on the assigned zone
+     *
+     * @param IcingaConfig|null $config
+     * @return string
+     */
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        if ($zone_id = $this->getResolvedProperty('zone_id')) {
+            $zone = IcingaZone::loadWithAutoIncId($zone_id, $this->connection);
+            return $zone->getRenderingZone($config);
+        }
+        else return parent::getRenderingZone($config);
     }
 }
