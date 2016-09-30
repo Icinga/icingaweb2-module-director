@@ -39,7 +39,7 @@ $master = $this->escape($this->master);
     null,
     array('class' => 'icon-download')
 ) ?>
-<p>Just copy &amp; paste this script (and please scroll down for a corresponding icinga2.cfg):</p>
+<p>Just copy &amp; paste this script (and please scroll down for a corresponding icinga2.conf):</p>
 <pre>
 #!/bin/bash
 
@@ -57,7 +57,7 @@ icinga2 pki new-cert --cn <?= $cert ?> \
 
 icinga2 pki save-cert --key $ICINGA_PKI_DIR/<?= $cert ?>.key \
 --trustedcert $ICINGA_PKI_DIR/trusted-master.crt \
---host <?= $master ?> 
+--host <?= $master ?>
 
 icinga2 pki request --host <?= $master ?> \
 --port 5665 \
