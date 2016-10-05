@@ -77,6 +77,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         if ($value instanceof CustomVariable) {
             $value = clone($value);
         } else {
+            if ($value === null) {
+                $this->__unset($key);
+                return $this;
+            }
             $value = CustomVariable::create($key, $value);
         }
 
