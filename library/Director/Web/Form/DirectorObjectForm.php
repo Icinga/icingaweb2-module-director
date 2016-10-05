@@ -214,7 +214,22 @@ abstract class DirectorObjectForm extends QuickForm
                     }
 
                 } catch (Exception $e) {
-                    $this->getElement($key)->addError($e->getMessage());
+
+                    $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
+                    $file = array_pop($file);
+                    $msg = sprintf(
+                        '%s (%s:%d)',
+                        $e->getMessage(),
+                        $file,
+                        $e->getLine()
+                    );
+
+                    if ($el = $this->getElement($key)) {
+                        // TODO: to be preferred $el->addError($e->getMessage());
+                        $this->addError($msg);
+                    } else {
+                        $this->addError($msg);
+                    }
                 }
             }
         }
