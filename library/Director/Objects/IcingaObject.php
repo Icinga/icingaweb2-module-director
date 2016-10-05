@@ -1399,13 +1399,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderLegacyBooleanProperty($property, $legacyKey)
     {
-        return c1::renderKeyValue($legacyKey, c1::renderBoolean($this->$property));
+        return c1::renderKeyValue(
+            $legacyKey,
+            c1::renderBoolean($this->$property)
+        );
     }
 
     protected function renderProperties()
     {
         $out = '';
-        $blacklist = array_merge($this->propertiesNotForRendering, $this->prioritizedProperties);
+        $blacklist = array_merge(
+            $this->propertiesNotForRendering,
+            $this->prioritizedProperties
+        );
 
         foreach ($this->properties as $key => $value) {
             if (in_array($key, $blacklist)) {
@@ -1691,9 +1697,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $type = strtolower($this->getType());
 
         if ($this->isTemplate()) {
-            $name = c1::renderKeyValue('name', c1::renderString($this->getObjectName()));
+            $name = c1::renderKeyValue(
+                'name',
+                c1::renderString($this->getObjectName())
+            );
         } else {
-            $name = c1::renderKeyValue($type . '_name', c1::renderString($this->getObjectName()));
+            $name = c1::renderKeyValue(
+                $type . '_name',
+                c1::renderString($this->getObjectName())
+            );
         }
 
         $str = sprintf(

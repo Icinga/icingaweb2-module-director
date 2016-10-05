@@ -752,6 +752,7 @@ abstract class DbObject
             if ($e instanceof IE) {
                 throw $e;
             }
+
             throw new IE(
                 'Storing %s[%s] failed: %s {%s}',
                 $this->table,
@@ -760,6 +761,7 @@ abstract class DbObject
                 var_export($this->getProperties(), 1) // TODO: Remove properties
             );
         }
+
         $this->modifiedProperties = array();
         $this->hasBeenModified = false;
         $this->loadedProperties = $this->properties;
