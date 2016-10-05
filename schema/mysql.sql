@@ -105,7 +105,7 @@ CREATE TABLE director_datalist (
 
 CREATE TABLE director_datalist_entry (
   list_id INT(10) UNSIGNED NOT NULL,
-  entry_name VARCHAR(255) NOT NULL,
+  entry_name VARCHAR(255) COLLATE utf8_bin NOT NULL;
   entry_value TEXT DEFAULT NULL,
   format enum ('string', 'expression', 'json'),
   PRIMARY KEY (list_id, entry_name),
@@ -1326,4 +1326,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 110;
+      schema_version = 112;
