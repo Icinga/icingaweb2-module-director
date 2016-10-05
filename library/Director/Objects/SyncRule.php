@@ -253,6 +253,7 @@ class SyncRule extends DbObject
 
             $this->hasCombinedKey = false;
 
+            // TODO: Move to Objects
             if ($this->object_type === 'service') {
                 $hasHost = false;
                 $hasObjectName = false;
@@ -276,6 +277,30 @@ class SyncRule extends DbObject
 
                     $this->destinationKeyPattern = '${host}!${object_name}';
                 }
+            } elseif ($this->object_type === 'datalistEntry') {
+                $hasList = false;
+                $hasName = false;
+
+                foreach ($this->getSyncProperties() as $key => $property) {
+                    if ($property->destination_field === 'list_id') {
+                        $hasList = $property->source_expression;
+                    }
+                    if ($property->destination_field === 'entry_name') {
+                        $hasName = $property->source_expression;
+                    }
+                }
+
+                if ($hasList !== false && $hasName !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasList,
+                        $hasName
+                    );
+
+                    $this->destinationKeyPattern = '${list_id}!${entry_name}';
+                }
+
             }
         }
 

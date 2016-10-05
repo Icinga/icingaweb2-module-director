@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Import;
 
 use Icinga\Exception\IcingaException;
-use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Data\Db\DbObject;
 
 class SyncUtils
 {
@@ -65,7 +65,7 @@ class SyncUtils
     public static function getSpecificValue($row, $var)
     {
         if (strpos($var, '.') === false) {
-            if ($row instanceof IcingaObject) {
+            if ($row instanceof DbObject) {
                 return $row->$var;
             }
             if (! property_exists($row, $var)) {

@@ -19,6 +19,20 @@ class DirectorDatalistEntry extends DbObject
         'format'        => null,
     );
 
+    public function replaceWith(DirectorDatalistEntry $object)
+    {
+        $this->entry_value = $object->entry_value;
+        if ($object->format) {
+            $this->format = $object->format;
+        }
+
+        return $this;
+    }
+
+    public function merge(DirectorDatalistEntry $object)
+    {
+        return $this->replaceWith($object);
+    }
 
     public function markForRemoval($remove = true)
     {

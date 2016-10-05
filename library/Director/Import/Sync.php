@@ -101,7 +101,7 @@ class Sync
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified[] = $object;
-            } elseif ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+            } elseif ($object->shouldBeRemoved()) {
                 $modified[] = $object;
             }
         }
@@ -313,7 +313,7 @@ class Sync
 
         $no = array();
         foreach ($this->objects as $k => $o) {
-            if ($o->list_id !== $listId) {
+            if ((int) $o->list_id !== (int) $listId) {
                 $no[] = $k;
             }
         }
@@ -557,13 +557,13 @@ class Sync
                     if ($object->hasBeenModified()) {
                         throw new IcingaException(
                             'Sync is not allowed to modify template "%s"',
-                            $object->$objectKey
+                            $object->object_name
                         );
                     }
                     continue;
                 }
 
-                if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+                if ($object->shouldBeRemoved()) {
                     $object->delete($db);
                     $deleted++;
                     continue;
