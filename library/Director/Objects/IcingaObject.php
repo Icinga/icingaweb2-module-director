@@ -66,6 +66,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected $loadedMultiRelations = array();
 
+    /**
+     * Allows to set properties pointing to related objects by name without
+     * loading the related object.
+     *
+     * @var array
+     */
     protected $unresolvedRelatedProperties = array();
 
     protected $loadedRelatedSets = array();
@@ -115,6 +121,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsInterval($property)
     {
         return array_key_exists($property, $this->intervalProperties);
+    }
+
+    public function propertyIsRelation($property)
+    {
+        if ($key = $this->stripIdSuffix($property)) {
+            return $this->hasRelation($key);
+        } else {
+            return false;
+        }
+    }
+
+    protected function stripIdSuffix($key)
+    {
+        $end = substr($key, -3);
+
+        if ('_id' === $end) {
+            return $end;
+        }
+
+        return false;
     }
 
     public function propertyIsRelatedSet($property)
@@ -213,6 +239,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function getRelationClass($property)
     {
         return __NAMESPACE__ . '\\' . $this->relations[$property];
+    }
+
+    protected function getRelationObjectClass($property)
+    {
+        return $this->relations[$property];
     }
 
     protected function getRelatedObjectName($property, $id)
@@ -317,6 +348,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->isApplyRule();
     }
 
+    /**
+     * It sometimes makes sense to defer lookups for related properties. This
+     * kind of lazy-loading allows us to for example set host = 'localhost' and
+     * render an object even when no such host exists. Think of the activity log,
+     * one might want to visualize a history host or service template even when
+     * the related command has been deleted in the meantime.
+     *
+     * @return self
+     */
     public function resolveUnresolvedRelatedProperties()
     {
         foreach ($this->unresolvedRelatedProperties as $name => $p) {
@@ -1289,6 +1329,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } else {
             return '';
         }
+    }
+
+    protected function renderLegacyRelationProperty($propertyName, $id, $renderKey = null)
+    {
+        return $this->renderLegacyObjectProperty(
+            $renderKey ?: $propertyName,
+            c::renderString($this->getRelatedObjectName($propertyName, $id))
+        );
     }
 
     // Disabled is a virtual property
