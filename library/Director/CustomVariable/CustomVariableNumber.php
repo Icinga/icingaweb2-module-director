@@ -6,22 +6,25 @@ use Icinga\Exception\ProgrammingError;
 
 class CustomVariableNumber extends CustomVariable
 {
+    // Hint: 'F' is intentional, this MUST NOT respect locales
+    const PRECISION = '%.9F';
+
     public function equals(CustomVariable $var)
     {
         if (! $var instanceof CustomVariableNumber) {
             return false;
         }
 
-        // TODO: in case we encounter problems with floats we could
-        //       consider something as follows, but taking more care
-        //       about precision:
-        /*
-        if (is_float($this->value)) {
-            return sprintf($var->getValue(), '%.9F')
-                === sprintf($this->getValue(), '%.9F');
+        $cur = $this->getValue();
+        $new = $var->getValue();
+
+        // Be tolerant when comparing floats:
+        if (is_float($cur) || is_float($new)) {
+            return sprintf(self::PRECISION, $cur)
+                === sprintf(self::PRECISION, $new);
         }
-        */
-        return $var->getValue() === $this->getValue();
+
+        return $cur === $new;
     }
 
     public function getDbFormat()
@@ -59,8 +62,7 @@ class CustomVariableNumber extends CustomVariable
         if (is_int($this->value)) {
             return (string) $this->value;
         } else {
-            // Hint: this MUST NOT respect locales
-            return sprintf('%F', $this->value);
+            return sprintf(self::PRECISION, $this->value);
         }
     }
 }
