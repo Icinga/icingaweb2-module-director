@@ -325,8 +325,8 @@ CREATE TABLE icinga_timeperiod_range (
 );
 
 CREATE INDEX timeperiod_range_timeperiod ON icinga_timeperiod_range (timeperiod_id);
-COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_key IS 'monday, ...';
-COMMENT ON COLUMN icinga_timeperiod_range.timeperiod_value IS '00:00-24:00, ...';
+COMMENT ON COLUMN icinga_timeperiod_range.range_key IS 'monday, ...';
+COMMENT ON COLUMN icinga_timeperiod_range.range_value IS '00:00-24:00, ...';
 COMMENT ON COLUMN icinga_timeperiod_range.range_type IS 'include -> ranges {}, exclude ranges_ignore {} - not yet';
 COMMENT ON COLUMN icinga_timeperiod_range.merge_behaviour IS 'set -> = {}, add -> += {}, substract -> -= {}';
 
@@ -1545,4 +1545,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (111, NOW());
+  VALUES (113, NOW());
