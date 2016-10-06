@@ -27,6 +27,8 @@ class KickstartHelper
 
     protected $loadedZones;
 
+    protected $removeZones;
+
     protected $config = array(
         'endpoint' => null,
         'host'     => null,
@@ -101,6 +103,7 @@ class KickstartHelper
              ->loadZones()
              ->storeZones()
              ->storeEndpoints()
+             ->removeZones()
              ->importCommands();
 
         $this->apiUser()->store();
@@ -178,6 +181,7 @@ class KickstartHelper
     {
         $db = $this->db;
         $existing = $db->listExternal('zone');
+
         foreach ($this->loadedZones as $name => $zone) {
             if ($zone::exists($name, $db)) {
                 $zone = $zone::load($name, $db)->replaceWith($zone);
@@ -185,7 +189,17 @@ class KickstartHelper
             $zone->store();
             unset($existing[$name]);
         }
-        foreach ($existing as $name) {
+
+        $this->removeZones = $existing;
+
+        return $this;
+    }
+
+    protected function removeZones()
+    {
+        $db = $this->db;
+
+        foreach ($this->removeZones as $name) {
             IcingaZone::load($name, $db)->delete();
         }
 
