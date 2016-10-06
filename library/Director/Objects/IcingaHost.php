@@ -110,6 +110,7 @@ class IcingaHost extends IcingaObject
         }
 
         $hostVars = array();
+
         if ($connection !== null) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
                 if ($var->datatype) {
@@ -164,6 +165,10 @@ class IcingaHost extends IcingaObject
     public function renderAgentZoneAndEndpoint(IcingaConfig $config = null)
     {
         if (!$this->isObject()) {
+            return;
+        }
+
+        if ($this->getRenderingZone($config) === self::RESOLVE_ERROR) {
             return;
         }
 

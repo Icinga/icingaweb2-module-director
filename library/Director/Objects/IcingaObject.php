@@ -16,6 +16,8 @@ use Exception;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
+    const RESOLVE_ERROR = '(unable to resolve)';
+
     protected $keyName = 'object_name';
 
     protected $autoincKeyName = 'id';
@@ -1295,9 +1297,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getRenderingZone(IcingaConfig $config = null)
     {
-        if ($zoneId = $this->getResolvedProperty('zone_id')) {
-            // Config has a lookup cache, is faster:
-            return $config->getZoneName($zoneId);
+        if ($this->hasUnresolvedRelatedProperty('zone_id')) {
+            return $this->zone;
+        }
+
+        try {
+            if ($zoneId = $this->getResolvedProperty('zone_id')) {
+                // Config has a lookup cache, is faster:
+                return $config->getZoneName($zoneId);
+            }
+        } catch (Exception $e) {
+            return self::RESOLVE_ERROR;
         }
 
         if ($this->prefersGlobalZone()) {

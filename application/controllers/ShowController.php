@@ -77,6 +77,10 @@ class ShowController extends ActionController
     protected function getObjectConfig($object)
     {
         $config = new IcingaConfig($this->db());
+        if ($object->isExternal()) {
+            $object->object_type = 'object';
+        }
+
         $object->renderToConfig($config);
         return $config;
     }
