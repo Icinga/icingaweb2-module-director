@@ -183,6 +183,7 @@ class SyncPropertyForm extends DirectorObjectForm
         $error = false;
         try {
             $data = $this->listSourceColumns();
+            natsort($data);
         } catch (Exception $e) {
             $data = array();
             $error = sprintf(
