@@ -933,6 +933,12 @@ abstract class DbObject
         return $obj;
     }
 
+    protected static function classWasPrefetched()
+    {
+        $class = get_called_class();
+        return array_key_exists($class, self::$prefetched);
+    }
+
     protected static function getPrefetched($key)
     {
         $class = get_called_class();
@@ -951,8 +957,6 @@ abstract class DbObject
 
     protected static function hasPrefetched($key)
     {
-        // TODO: temporarily disabled as of collisions with services
-        //return false;
         $class = get_called_class();
         if (! array_key_exists($class, self::$prefetchStats)) {
             self::$prefetchStats[$class] = (object) array(
@@ -1088,6 +1092,8 @@ abstract class DbObject
     {
         if (static::getPrefetched($id)) {
             return true;
+        } elseif (static::classWasPrefetched()) {
+            return false;
         }
 
         $class = get_called_class();
