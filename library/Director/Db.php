@@ -244,6 +244,8 @@ class Db extends DbConnection
 
     public function fetchActivityLogEntry($checksum)
     {
+        $db = $this->db();
+
         $sql = 'SELECT id, object_type, object_name, action_name,'
              . ' old_properties, new_properties, author, change_time,'
              . ' %s AS checksum, %s AS parent_checksum'
@@ -255,9 +257,8 @@ class Db extends DbConnection
             $this->dbHexFunc('parent_checksum')
         );
 
-        return $this->db()->fetchRow(
-            $sql,
-            $this->quoteBinary(Util::hex2binary($checksum))
+        return $db->fetchRow(
+            $db->quoteInto($sql, $this->quoteBinary(Util::hex2binary($checksum)))
         );
     }
 
