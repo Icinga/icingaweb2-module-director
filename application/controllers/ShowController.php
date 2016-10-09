@@ -7,6 +7,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Exception;
 
 class ShowController extends ActionController
 {
@@ -81,7 +82,17 @@ class ShowController extends ActionController
             $object->object_type = 'object';
         }
 
-        $object->renderToConfig($config);
+        try {
+            $object->renderToConfig($config);
+        } catch (Exception $e) {
+            $config->configFile(
+                'failed-to-render'
+            )->prepend(
+                "/** Failed to render this object **/\n"
+                . '/*  ' . $e->getMessage() . ' */'
+            );
+        }
+
         return $config;
     }
 
@@ -247,10 +258,17 @@ class ShowController extends ActionController
     protected function createObject($type, $props)
     {
         $props = json_decode($props);
-        return IcingaObject::createByType($type, array(
-            'object_name' => $props->object_name,
-            'object_type' => $props->object_type,
-        ), $this->db())->setProperties((array) $props);
-        return IcingaObject::createByType($type, (array) $props, $this->db());
+        $newProps = array(
+            'object_name' => $props->object_name
+        );
+        if (property_exists($props, 'object_type')) {
+            $newProps['object_type'] = $props->object_type;
+        }
+
+        return IcingaObject::createByType(
+            $type,
+            $newProps,
+            $this->db()
+        )->setProperties((array) $props);
     }
 }
