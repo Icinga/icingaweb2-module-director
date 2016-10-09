@@ -382,15 +382,12 @@ class IcingaHostTest extends BaseTestCase
         $host->object_type = 'template';
         $host->zone_id = null;
 
-        // TODO: this should happen automagically
-        $host->invalidateResolveCache();
         $config = new IcingaConfig($db);
         $host->renderToConfig($config);
         $this->assertEquals(
             array('zones.d/director-global/host_templates.conf'),
             $config->getFileNames()
         );
-
     }
 
     public function testWhetherTwoHostsCannotBeStoredWithTheSameApiKey()
