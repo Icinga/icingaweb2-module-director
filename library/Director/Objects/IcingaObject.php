@@ -126,6 +126,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return array_key_exists($property, $this->intervalProperties);
     }
 
+    /**
+     * Whether a property ends with _id and might refer another object
+     *
+     * @param $property string Property name, like zone_id
+     *
+     * @return bool
+     */
     public function propertyIsRelation($property)
     {
         if ($key = $this->stripIdSuffix($property)) {
@@ -140,7 +147,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $end = substr($key, -3);
 
         if ('_id' === $end) {
-            return $end;
+            return substr($key, 0, -3);
         }
 
         return false;
@@ -234,6 +241,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $sets;
     }
 
+    /**
+     * Whether the given property name is a short name for a relation
+     *
+     * This might be 'zone' for 'zone_id'
+     *
+     * @param string $property Property name
+     *
+     * @return bool
+     */
     public function hasRelation($property)
     {
         return array_key_exists($property, $this->relations);
@@ -431,21 +447,33 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return array_key_exists($name, $this->unresolvedRelatedProperties);
     }
 
+    protected function getRelationId($key)
+    {
+        if ($this->hasUnresolvedRelatedProperty($key)) {
+            $this->resolveUnresolvedRelatedProperty($key);
+        }
+
+        return parent::get($key);
+    }
+
+    protected function getRelatedProperty($key)
+    {
+        $idKey = $key . '_id';
+        if ($this->hasUnresolvedRelatedProperty($idKey)) {
+            return $this->unresolvedRelatedProperties[$idKey];
+        }
+
+        if ($id = $this->get($idKey)) {
+            $class = $this->getRelationClass($key);
+            $object = $class::loadWithAutoIncId($id, $this->connection);
+            return $object->object_name;
+        }
+
+        return null;
+    }
+
     public function get($key)
     {
-        if ($this->hasUnresolvedRelatedProperty($key . '_id')) {
-            return $this->unresolvedRelatedProperties[$key . '_id'];
-        }
-
-        if (substr($key, -3) === '_id') {
-            $short = substr($key, 0, -3);
-            if ($this->hasRelation($short)) {
-                if ($this->hasUnresolvedRelatedProperty($key)) {
-                    $this->resolveUnresolvedRelatedProperty($key);
-                }
-            }
-        }
-
         if (substr($key, 0, 5) === 'vars.') {
             $var = $this->vars()->get(substr($key, 5));
             if ($var === null) {
@@ -455,14 +483,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->hasRelation($key)) {
-            if ($id = $this->get($key . '_id')) {
-                $class = $this->getRelationClass($key);
-                $object = $class::loadWithAutoIncId($id, $this->connection);
-                return $object->object_name;
-            }
+        // e.g. zone_id
+        if ($this->propertyIsRelation($key)) {
+            return $this->getRelationId($key);
+        }
 
-            return null;
+        // e.g. zone
+        if ($this->hasRelation($key)) {
+            return $this->getRelatedProperty($key);
         }
 
         if ($this->propertyIsRelatedSet($key)) {
@@ -518,13 +546,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return parent::set($key, $this->normalizeBoolean($value));
         }
 
-        if ($this->hasRelation($key)) {
-            if (strlen($value) === 0) {
-                return parent::set($key . '_id', null);
-            }
+        // e.g. zone_id
+        if ($this->propertyIsRelation($key)) {
+            return $this->setRelation($key, $value);
+        }
 
-            $this->unresolvedRelatedProperties[$key . '_id'] = $value;
-            return $this;
+        // e.g. zone
+        if ($this->hasRelation($key)) {
+            return $this->setUnresolvedRelation($key, $value);
         }
 
         if ($this->propertyIsMultiRelation($key)) {
@@ -542,6 +571,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return parent::set($key, $value);
+    }
+
+    private function setRelation($key, $value)
+    {
+        if ((int) $key !== (int) $this->$key) {
+            unset($this->unresolvedRelatedProperties[$key]);
+        }
+        return parent::set($key, $value);
+    }
+
+    private function setUnresolvedRelation($key, $value)
+    {
+        if (strlen($value) === 0) {
+            unset($this->unresolvedRelatedProperties[$key . '_id']);
+            return parent::set($key . '_id', null);
+        }
+
+        $this->unresolvedRelatedProperties[$key . '_id'] = $value;
+        return $this;
     }
 
     protected function setRanges($ranges)
