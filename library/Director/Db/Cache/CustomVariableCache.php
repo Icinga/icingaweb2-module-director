@@ -27,7 +27,11 @@ class CustomVariableCache
             'checksum' => '(NULL)',
         );
 
-        if (! $connection->isPgsql()) {
+        if ($connection->isPgsql()) {
+            if ($connection->hasPgExtension('pgcrypto')) {
+                $columns['checksum'] = "DIGEST(v.varvalue || ';' || v.format, 'sha1')";
+            }
+        } else {
             $columns['checksum'] = "UNHEX(SHA1(v.varvalue || ';' || v.format))";
         }
 
@@ -40,6 +44,10 @@ class CustomVariableCache
 
             $id = $row->id;
             unset($row->id);
+
+            if (is_resource($row->checksum)) {
+                $row->checksum = stream_get_contents($row->checksum);
+            }
 
             if (array_key_exists($id, $this->rowsById)) {
                 $this->rowsById[$id][] = $row;

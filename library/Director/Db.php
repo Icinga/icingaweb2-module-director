@@ -632,6 +632,17 @@ class Db extends DbConnection
         return $this->getDbType() === 'pgsql';
     }
 
+    public function hasPgExtension($name)
+    {
+        $db = $this->db();
+        $query = $db->select()->from(
+            array('e' => 'pg_extension'),
+            array('cnt' => 'COUNT(*)')
+        )->where('extname = ?', $name);
+
+        return (int) $db->fetchOne($query) === 1;
+    }
+
     public function dbHexFunc($column)
     {
         if ($this->isPgsql()) {
