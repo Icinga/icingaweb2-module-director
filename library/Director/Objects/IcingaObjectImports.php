@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Countable;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
@@ -218,7 +219,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $class = $this->getImportClass();
         if (is_array($this->object->getKeyName())) {
             // Services only
-            $import = $class::load(array('object_name' => $name), $connection);
+            $import = $class::load(array('object_name' => $name, 'object_type' => 'template'), $connection);
         } else {
             $import = $class::load($name, $connection);
         }
@@ -280,7 +281,17 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             $this->storedImports[$k] = clone($v);
         }
 
-        $this->cloneStored();
+        return $this;
+    }
+
+    protected function loadFromPrefetchCache()
+    {
+        $this->storedImports = $this->objects = PrefetchCache::instance()->imports($this->object);
+        $this->imports = array();
+        foreach ($this->objects as $o) {
+            $this->imports[$o->object_name] = $o->object_name;
+        }
+
         return $this;
     }
 
@@ -336,7 +347,11 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     public static function loadForStoredObject(IcingaObject $object)
     {
         $imports = new static($object);
-        return $imports->loadFromDb();
+        if (PrefetchCache::shouldBeUsed()) {
+            return $imports->loadFromPrefetchCache();
+        } else {
+            return $imports->loadFromDb();
+        }
     }
 
     public function toConfigString()

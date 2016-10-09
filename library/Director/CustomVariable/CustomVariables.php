@@ -249,7 +249,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         return c::renderKeyValue(
             $this->renderKeyName($key),
-            $var->toConfigString()
+            $var->toConfigStringPrefetchable()
         );
     }
 

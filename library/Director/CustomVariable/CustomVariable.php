@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 
 abstract class CustomVariable implements IcingaConfigRenderer
@@ -20,6 +21,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
     protected $loadedFromDb = false;
 
     protected $deleted = false;
+
+    protected $checksum;
 
     protected function __construct($key, $value = null)
     {
@@ -85,6 +88,15 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->modified;
     }
 
+    public function toConfigStringPrefetchable()
+    {
+        if (PrefetchCache::shouldBeUsed()) {
+            return PrefetchCache::instance()->renderVar($this);
+        } else {
+            return $this->toConfigString();
+        }
+    }
+
     public function setModified($modified = true)
     {
         $this->modified = $modified;
@@ -115,6 +127,17 @@ abstract class CustomVariable implements IcingaConfigRenderer
     public function differsFrom(CustomVariable $var)
     {
         return ! $this->equals($var);
+    }
+
+    protected function setChecksum($checksum)
+    {
+        $this->checksum = $checksum;
+        return $this;
+    }
+
+    public function getChecksum()
+    {
+        return $this->checksum;
     }
 
     public static function wantCustomVariable($key, $value)
@@ -181,6 +204,9 @@ abstract class CustomVariable implements IcingaConfigRenderer
                     '%s is not a supported custom variable format',
                     $row->format
                 );
+        }
+        if (property_exists($row, 'checksum')) {
+            $var->setChecksum($row->checksum);
         }
 
         $var->loadedFromDb = true;

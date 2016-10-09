@@ -53,7 +53,8 @@ class IcingaTemplateResolver
         $res = array();
         $class = $this->object;
         foreach ($this->listParentIds() as $id) {
-            $res[] = $class::loadWithAutoIncId($id);
+            $object = $class::loadWithAutoIncId($id, $this->connection);
+            $res[$object->object_name] = $object;
         }
 
         return $res;

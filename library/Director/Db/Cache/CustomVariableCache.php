@@ -16,16 +16,24 @@ class CustomVariableCache
 
     public function __construct(IcingaObject $object)
     {
-        $db = $object->getConnection()->getDbAdapter();
+        $connection = $object->getConnection();
+        $db = $connection->getDbAdapter();
+
+        $columns = array(
+            'id'       => sprintf('v.%s', $object->getVarsIdColumn()),
+            'varname'  => 'v.varname',
+            'varvalue' => 'v.varvalue',
+            'format'   => 'v.format',
+            'checksum' => '(NULL)',
+        );
+
+        if (! $connection->isPgsql()) {
+            $columns['checksum'] = "UNHEX(SHA1(v.varvalue || ';' || v.format))";
+        }
 
         $query = $db->select()->from(
             array('v' => $object->getVarsTableName()),
-            array(
-                'id'       => sprintf('v.%s', $object->getVarsIdColumn()),
-                'varname'  => 'v.varname',
-                'varvalue' => 'v.varvalue',
-                'format'   => 'v.format',
-            )
+            $columns
         );
 
         foreach ($db->fetchAll($query) as $row) {

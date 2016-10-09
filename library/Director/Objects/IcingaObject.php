@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
@@ -998,7 +999,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $this->assertCustomVarsSupport();
         if ($this->vars === null) {
             if ($this->hasBeenLoadedFromDb()) {
-                $this->vars = CustomVariables::loadForStoredObject($this);
+                if (PrefetchCache::shouldBeUsed()) {
+                    $this->vars = PrefetchCache::instance()->vars($this);
+                } else {
+                    $this->vars = CustomVariables::loadForStoredObject($this);
+                }
             } else {
                 $this->vars = new CustomVariables();
             }

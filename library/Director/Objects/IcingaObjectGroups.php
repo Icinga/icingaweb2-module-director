@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Countable;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
@@ -318,7 +319,15 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     public static function loadForStoredObject(IcingaObject $object)
     {
         $groups = new static($object);
-        return $groups->loadFromDb();
+
+        if (PrefetchCache::shouldBeUsed()) {
+            $groups->groups = PrefetchCache::instance()->groups($object);
+            $groups->cloneStored();
+        } else {
+            $groups->loadFromDb();
+        }
+
+        return $groups;
     }
 
     public function toConfigString()
