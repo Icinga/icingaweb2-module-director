@@ -1279,15 +1279,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return;
         }
 
-        $type = $this->getShortTableName();
-
-        if ($this->isTemplate()) {
-            $filename = strtolower($type) . '_templates';
-        } elseif ($this->isApplyRule()) {
-            $filename = strtolower($type) . '_apply';
-        } else {
-            $filename = strtolower($type) . 's';
-        }
+        $filename = $this->getRenderingFilename();
 
         if ($config->isLegacy()) {
 
@@ -1333,6 +1325,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return;
         }
 
+        $config->configFile(
+            'zones.d/' . $this->getRenderingZone($config) . '/' . $this->getRenderingFilename()
+        )->addObject($this);
+    }
+
+    public function getRenderingFilename()
+    {
         $type = $this->getShortTableName();
 
         if ($this->isTemplate()) {
@@ -1343,9 +1342,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $filename = strtolower($type) . 's';
         }
 
-        $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config) . '/' . $filename
-        )->addObject($this);
+        return $filename;
     }
 
     public function getRenderingZone(IcingaConfig $config = null)
