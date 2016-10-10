@@ -15,6 +15,8 @@ class GroupMembershipCache
 
     protected $memberships;
 
+    protected $membershipsById;
+
     /** @var Db Director database connection */
     protected $connection;
 
@@ -33,7 +35,7 @@ class GroupMembershipCache
     protected function loadAllMemberships()
     {
         $db = $this->connection->getDbAdapter();
-        $this->memberships = array();
+        $this->memberships = $this->membershipsById = array();
 
         $type  = $this->type;
         $table = $this->table;
