@@ -11,11 +11,9 @@ class GroupMembershipCache
 
     protected $table;
 
-    protected $groupsClass;
+    protected $groupClass;
 
     protected $memberships;
-
-    protected $membershipsById;
 
     /** @var Db Director database connection */
     protected $connection;
@@ -35,7 +33,7 @@ class GroupMembershipCache
     protected function loadAllMemberships()
     {
         $db = $this->connection->getDbAdapter();
-        $this->memberships = $this->membershipsById = array();
+        $this->memberships = array();
 
         $type  = $this->type;
         $table = $this->table;
@@ -58,11 +56,11 @@ class GroupMembershipCache
         )->order('g.object_name');
 
         foreach ($db->fetchAll($query) as $row) {
-            if (! array_key_exists($row->object_id, $this->membershipsById)) {
-                $this->membershipsById[$row->object_id] = array();
+            if (! array_key_exists($row->object_id, $this->memberships)) {
+                $this->memberships[$row->object_id] = array();
             }
 
-            $this->membershipsById[$row->object_id][$row->group_id] = $row->group_name;
+            $this->memberships[$row->object_id][$row->group_id] = $row->group_name;
         }
     }
 
@@ -87,10 +85,10 @@ class GroupMembershipCache
     public function getGroupsForObject(IcingaObject $object)
     {
         $groups = array();
-        $class = $this->groupsClass;
-
+        $class = $this->groupClass;
         foreach ($this->listGroupIdsForObject($object) as $id) {
-            $groups[] = $class::loadWithAutoIncId($id, $this->connection);
+            $object = $class::loadWithAutoIncId($id, $this->connection);
+            $groups[$object->object_name] = $object;
         }
 
         return $groups;
