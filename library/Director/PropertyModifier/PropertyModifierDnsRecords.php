@@ -20,6 +20,13 @@ class PropertyModifierDnsRecords extends PropertyModifierHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
+        $form->addElement('select', 'record_type', array(
+            'label'        => 'Record type',
+            'description'  => $form->translate('DNS record type'),
+            'multiOptions' => $form->optionalEnum(static::enumTypes()),
+            'required'    => true,
+        ));
+
         $form->addElement('select', 'on_failure', array(
             'label'        => 'On failure',
             'description'  => $form->translate('What should we do if the DNS lookup fails?'),
@@ -30,14 +37,6 @@ class PropertyModifierDnsRecords extends PropertyModifierHook
             )),
             'required'    => true,
         ));
-
-        $form->addElement('select', 'record_type', array(
-            'label'        => 'Record type',
-            'description'  => $form->translate('DNS record type'),
-            'multiOptions' => $form->optionalEnum(static::enumTypes()),
-            'required'    => true,
-        ));
-
     }
 
     protected static function enumTypes()
