@@ -88,7 +88,7 @@ class IcingaHostServiceTable extends QuickTable
             array('h' => 'icinga_host'),
             'h.id = s.host_id',
             array()
-        );
+        )->order('s.object_name');
 
         return $query;
     }
