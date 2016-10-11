@@ -174,6 +174,22 @@ class IcingaCommandTest extends BaseTestCase
         );
     }
 
+    public function testSimpleSetIfIsRendered()
+    {
+        $command = $this->command();
+        $command->command = 'bla';
+        $command->arguments = array(
+            '-a' => (object) array(
+                'set_if' => '$a$',
+            )
+        );
+
+        $this->assertEquals(
+            $this->loadRendered('command7'),
+            (string) $command
+        );
+    }
+
     protected function command()
     {
         return IcingaCommand::create(

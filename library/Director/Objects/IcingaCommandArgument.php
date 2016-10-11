@@ -163,11 +163,12 @@ class IcingaCommandArgument extends IcingaObject
 
         if ($this->set_if) {
             switch ($this->set_if_format) {
-                case 'string':
-                    $data['set_if'] = c::renderString($this->set_if);
-                    break;
                 case 'expression':
                     $data['set_if'] = c::renderExpression($this->set_if);
+                    break;
+                case 'string':
+                default:
+                    $data['set_if'] = c::renderString($this->set_if);
                     break;
             }
         }
