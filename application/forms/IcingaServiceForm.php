@@ -93,8 +93,7 @@ class IcingaServiceForm extends DirectorObjectForm
         );
 
         $this->addHtmlHint($msg);
-
-        $this->setSubmitLabel(
+        $this->setButtons()->setSubmitLabel(
             $this->translate('Override vars')
         );
     }
