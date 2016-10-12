@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\NestingError;
 
 class IcingaTemplateResolver
 {
@@ -20,11 +21,16 @@ class IcingaTemplateResolver
 
     protected static $nameIdx = array();
 
+    protected static $idToName = array();
+
     public function __construct(IcingaObject $object)
     {
         $this->setObject($object);
     }
 
+    /**
+     * Set a specific object for this resolver instance
+     */
     public function setObject(IcingaObject $object)
     {
         $this->object     = $object;
@@ -47,6 +53,11 @@ class IcingaTemplateResolver
         unset(self::$templates[$type]);
     }
 
+    /**
+     * Fetch direct parents
+     *
+     * return IcingaObject[]
+     */
     public function fetchParents()
     {
         // TODO: involve lookup cache
@@ -96,16 +107,7 @@ class IcingaTemplateResolver
 
     public function fetchResolvedParents()
     {
-        // TODO: involve lookup cache
-        $res = array();
-        $class = $this->object;
-        $connection = $this->connection;
-
-        foreach ($this->listResolvedParentIds() as $id) {
-            $res[] = $class::loadWithAutoIncId($id, $connection);
-        }
-
-        return $res;
+        return $this->fetchObjectsById($this->listResolvedParentIds());
     }
 
     public function listResolvedParentIds()
@@ -117,43 +119,88 @@ class IcingaTemplateResolver
     public function listResolvedParentNames()
     {
         $this->requireTemplates();
+        if (array_key_exists($name, self::$nameIdx[$type])) {
+            return array_keys(self::$nameIdx[$type][$name]);
+        }
+
         return $this->resolveParentNames($this->object->object_name);
     }
 
-    public function resolveParentIds($id)
+    public function listParentsById($id)
     {
+        return $this->getNamesForIds($this->resolveParentIds($id));
+    }
+
+    public function listParentsByName($name)
+    {
+        return $this->resolveParentNames($name);
+    }
+
+    protected function resolveParentNames($name, &$list = array())
+    {
+        foreach ($this->listParentNames($name) as $parent) {
+            $this->assertNotInList($parent, $list, $id);
+            $list[$parent] = true;
+            $this->resolveParentIds($parent, $list);
+            unset($list[$parent]);
+            $list[$parent] = true;
+        }
+
+        return array_keys($list);
+    }
+
+    protected function resolveParentIds($id, &$list = array())
+    {
+        foreach ($this->listParentIds($id) as $parent) {
+            $this->assertNotInList($parent, $list, $id);
+            $list[$parent] = true;
+            $this->resolveParentIds($parent, $list);
+            unset($list[$parent]);
+            $list[$parent] = true;
+        }
+
+        return array_keys($list);
+    }
+
+    protected function assertNotInList($id, & $list, $root)
+    {
+        if (array_key_exists($id, $list)) {
+            $list = array_keys($list);
+            array_unshift($list, $root);
+            throw new NestingError(
+                'Loop detected: %s',
+                implode(' -> ', $this->getNamesForIds($list))
+            );
+        }
+    }
+
+    protected function getNamesForIds($ids)
+    {
+        $names = array();
+        foreach ($ids as $id) {
+            $names[] = $this->getNameForId($id);
+        }
+
+        return $names;
+    }
+
+    protected function getNameForId($id)
+    {
+        return self::$idToName[$this->type][$id];
+    }
+
+    protected function fetchObjectsById($ids)
+    {
+        $class = $this->object;
+        $connection = $this->connection;
         $res = array();
 
-        foreach ($this->listParentIds($id) as $parentId) {
-            foreach ($this->resolveParentIds($parentId) as $gpId) {
-                $res[] = $gpId;
-            }
-            $res[] = $parentId;
+        foreach ($ids as $id) {
+            $res[] = $class::loadWithAutoIncId($id, $connection);
         }
 
         return $res;
     }
-
-    public function resolveParentNames($name)
-    {
-        $res = array();
-        foreach ($this->listParentNames($name) as $parentName) {
-            foreach ($this->resolveParentNames($parentName) as $gpName) {
-                $res[] = $gpName;
-            }
-            $res[] = $parentName;
-        }
-
-        return $res;
-    }
-
-    /*
-    public function listChildren()
-    {
-    }
-
-    public function listChildrenIds
-    */
 
     protected function requireTemplates()
     {
@@ -168,15 +215,15 @@ class IcingaTemplateResolver
     {
         $type = $this->type;
 
-        $templates = static::fetchTemplates(
-            $this->db,
-            $type
-        );
+        $templates = $this->fetchTemplates();
 
         $ids = array();
         $names = array();
+        $idToName = array();
 
         foreach ($templates as $row) {
+            $idToName[$row->id] = $row->name;
+
             if ($row->parent_id === null) {
                 continue;
             }
@@ -197,6 +244,7 @@ class IcingaTemplateResolver
         self::$idIdx[$type]     = $ids;
         self::$nameIdx[$type]   = $names;
         self::$templates[$type] = $templates;
+        self::$idToName[$type]  = $idToName;
     }
 
     protected function fetchTemplates()
@@ -221,9 +269,7 @@ class IcingaTemplateResolver
             array('p' => $table),
             'p.id = i.parent_' . $type . '_id',
             array()
-        )//->where("o.object_type = 'template'")
-         ->order('o.id')
-         ->order('i.weight');
+        )->order('o.id')->order('i.weight');
 
         return $db->fetchAll($query);
     }

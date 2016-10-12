@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Url;
@@ -117,24 +118,22 @@ abstract class ObjectController extends ActionController
                 array('class' => 'icon-resize-small state-warning')
             );
         } else {
-
-            if ($object->supportsImports() && $object->imports()->count() > 0) {
-                $this->view->actionLinks = $this->view->qlink(
-                    $this->translate('Show resolved'),
-                    $this->getRequest()->getUrl()->with('resolved', true),
-                    null,
-                    array('class' => 'icon-resize-full')
-                );
+            try {
+                if ($object->supportsImports() && $object->imports()->count() > 0) {
+                    $this->view->actionLinks = $this->view->qlink(
+                        $this->translate('Show resolved'),
+                        $this->getRequest()->getUrl()->with('resolved', true),
+                        null,
+                        array('class' => 'icon-resize-full')
+                    );
+                }
+            } catch (NestingError $e) {
+                // No resolve link with nesting errors
             }
         }
 
-        if ($this->view->isExternal) {
-            $object->object_type = 'object';
-        }
-
         $this->view->object = $object;
-        $this->view->config = new IcingaConfig($this->db());
-        $object->renderToConfig($this->view->config);
+        $this->view->config = $object->toSingleIcingaConfig();
 
         $this->view->title = sprintf(
             $this->translate('Config preview: %s'),

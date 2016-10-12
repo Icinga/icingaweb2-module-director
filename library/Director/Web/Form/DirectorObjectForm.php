@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -235,12 +236,18 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         if ($object instanceof IcingaObject) {
-            $props = (array) $object->toPlainObject(
-                false,
-                false,
-                null,
-                false // Do not resolve IDs
-            );
+            try {
+                $props = (array) $object->toPlainObject(
+                    false,
+                    false,
+                    null,
+                    false // Do not resolve IDs
+                );
+            } catch (NestingError $e) {
+                $this->addUniqueError($e->getMessage());
+                $props = $object->getProperties();
+            }
+
         } else {
             $props = $object->getProperties();
             unset($props['vars']);
@@ -258,12 +265,16 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
+        $inherited = (object) array();
+        $origins   = (object) array();
+
         if ($object->supportsImports()) {
-            $inherited = $object->getInheritedProperties();
-            $origins   = $object->getOriginsProperties();
-        } else {
-            $inherited = (object) array();
-            $origins   = (object) array();
+            try {
+                $inherited = $object->getInheritedProperties();
+                $origins   = $object->getOriginsProperties();
+            } catch (NestingError $e) {
+                $this->addUniqueError($e->getMessage());
+            }
         }
 
         foreach ($props as $k => $v) {
@@ -284,15 +295,25 @@ abstract class DirectorObjectForm extends QuickForm
             return;
         }
 
-        $fields   = $object->getResolvedFields();
-        $inherits = $object->getInheritedVars();
-        $origins  = $object->getOriginsVars();
-        if ($object->hasCheckCommand()) {
-            $checkCommand = $object->getCheckCommand();
-            $checkFields = $checkCommand->getResolvedFields();
-            $checkVars   = $checkCommand->getResolvedVars();
-        } else {
-            $checkFields = (object) array();
+        try {
+            $fields   = $object->getResolvedFields();
+            $inherits = $object->getInheritedVars();
+            $origins  = $object->getOriginsVars();
+        } catch (NestingError $e) {
+            $fields   = $object->getFields();
+            $inherits = (object) array();
+            $origins  = (object) array();
+        }
+        try {
+            if ($object->hasCheckCommand()) {
+                $checkCommand = $object->getCheckCommand();
+                $checkFields = $checkCommand->getResolvedFields();
+                $checkVars   = $checkCommand->getResolvedVars();
+            } else {
+                $checkFields = (object) array();
+            }
+        } catch (NestingError $e) {
+            $checkFields  = (object) array();
         }
 
         if ($this->hasBeenSent()) {
@@ -944,7 +965,12 @@ abstract class DirectorObjectForm extends QuickForm
         if ($object->hasProperty($name)) {
             if ($resolved && $object->supportsImports()) {
                 $this->assertResolvedImports();
-                $objectProperty = $object->getResolvedProperty($name);
+                try {
+                    $objectProperty = $object->getResolvedProperty($name);
+                } catch (NestingError $e) {
+                    $this->addUniqueError($e->getMessage());
+                    $objectProperty = $object->$name;
+                }
             } else {
                 $objectProperty = $object->$name;
             }
@@ -961,6 +987,15 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $default;
+    }
+
+    protected function addUniqueError($msg)
+    {
+        if (! in_array($msg, $this->getErrorMessages())) {
+            $this->addError($msg);
+        }
+
+        return $this;
     }
 
     public function loadObject($id)

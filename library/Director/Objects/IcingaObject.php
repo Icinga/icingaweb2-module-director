@@ -6,6 +6,7 @@ use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -753,7 +754,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $imports = array($imports);
         }
 
-        $this->imports()->set($imports);
+        try {
+            $this->imports()->set($imports);
+        } catch (NestingError $e) {
+            $this->imports = new IcingaObjectImports($this);
+            // Force modification, otherwise it won't be stored when empty
+            $this->imports->setModified()->set($imports);
+        }
+
         if ($this->imports()->hasBeenModified()) {
             $this->invalidateResolveCache();
         }
@@ -926,11 +934,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $db->fetchOne($query);
     }
 
+    protected function triggerLoopDetection()
+    {
+        $this->templateResolver()->listResolvedParentIds();
+    }
+
     protected function resolve($what)
     {
         if ($this->hasResolveCached($what)) {
             return $this->getResolveCached($what);
         }
+
+        // Force exception
+        $this->triggerLoopDetection();
 
         $vals = array();
         $vals['_MERGED_']    = (object) array();
@@ -1282,6 +1298,30 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         DirectorActivityLog::logRemoval($this, $this->connection);
     }
+
+    public function toSingleIcingaConfig()
+    {
+        $config = new IcingaConfig($this->connection);
+        $object = $this;
+        if ($object->isExternal()) {
+            $object = clone($object);
+            $object->object_type = 'object';
+        }
+
+        try {
+            $object->renderToConfig($config);
+        } catch (Exception $e) {
+            $config->configFile(
+                'failed-to-render'
+            )->prepend(
+                "/** Failed to render this object **/\n"
+                . '/*  ' . $e->getMessage() . ' */'
+            );
+        }
+
+        return $config;
+    }
+
 
     public function renderToLegacyConfig(IcingaConfig $config)
     {
