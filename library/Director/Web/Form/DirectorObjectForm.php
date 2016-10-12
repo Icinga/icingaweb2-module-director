@@ -244,7 +244,7 @@ abstract class DirectorObjectForm extends QuickForm
                     false // Do not resolve IDs
                 );
             } catch (NestingError $e) {
-                $this->addUniqueError($e->getMessage());
+                $this->addUniqueErrorMessage($e->getMessage());
                 $props = $object->getProperties();
             }
 
@@ -273,7 +273,7 @@ abstract class DirectorObjectForm extends QuickForm
                 $inherited = $object->getInheritedProperties();
                 $origins   = $object->getOriginsProperties();
             } catch (NestingError $e) {
-                $this->addUniqueError($e->getMessage());
+                $this->addUniqueErrorMessage($e->getMessage());
             }
         }
 
@@ -968,7 +968,7 @@ abstract class DirectorObjectForm extends QuickForm
                 try {
                     $objectProperty = $object->getResolvedProperty($name);
                 } catch (NestingError $e) {
-                    $this->addUniqueError($e->getMessage());
+                    $this->addUniqueErrorMessage($e->getMessage());
                     $objectProperty = $object->$name;
                 }
             } else {
@@ -989,10 +989,10 @@ abstract class DirectorObjectForm extends QuickForm
         return $default;
     }
 
-    protected function addUniqueError($msg)
+    protected function addUniqueErrorMessage($msg)
     {
         if (! in_array($msg, $this->getErrorMessages())) {
-            $this->addError($msg);
+            $this->addErrorMessage($msg);
         }
 
         return $this;

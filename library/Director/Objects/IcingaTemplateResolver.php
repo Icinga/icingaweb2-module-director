@@ -49,8 +49,8 @@ class IcingaTemplateResolver
      */
     public function clearCache()
     {
-        $type = $object->getShortTableName();
-        unset(self::$templates[$type]);
+        unset(self::$templates[$this->type]);
+        return $this;
     }
 
     /**

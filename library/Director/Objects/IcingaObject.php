@@ -117,6 +117,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $cachedPlainUnmodified;
 
+    private $templateResolver;
+
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
@@ -774,8 +776,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function templateResolver()
     {
-        // preserve object
-        return new IcingaTemplateResolver($this);
+        if ($this->templateResolver === null) {
+            $this->templateResolver = new IcingaTemplateResolver($this);
+        }
+
+        return $this->templateResolver;
     }
 
     public function getResolvedProperty($key, $default = null)
@@ -917,6 +922,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function invalidateResolveCache()
     {
         $this->resolveCache = array();
+        if ($this->templateResolver) {
+            $this->templateResolver()->clearCache();
+        }
+
         return $this;
     }
 

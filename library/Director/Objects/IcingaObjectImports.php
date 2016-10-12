@@ -41,6 +41,12 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $this->position = 0;
     }
 
+    public function setModified()
+    {
+        $this->modified = true;
+        return $this;
+    }
+
     public function hasBeenModified()
     {
         return $this->modified;
@@ -83,7 +89,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public function set($import)
     {
-        if ($import === null) {
+        if (empty($import)) {
             if (empty($this->imports)) {
                 return $this;
             } else {
@@ -95,29 +101,31 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             $import = array($import);
         }
 
-        $existing = array_keys($this->imports);
-        $new = array();
-        $class = $this->getImportClass();
-        foreach ($import as $i) {
-
-            if ($i instanceof $class) {
-                $this->objects[$i->object_name] = $i;
-                $new[] = $i->object_name;
-            } else {
-                $new[] = $i;
-            }
-        }
+        $existing = $this->listImportNames();
+        $new = $this->listNamesForGivenImports($import);
 
         if ($existing === $new) {
             return $this;
         }
 
-        if (count($new) === 0) {
-            return $this->clear();
-        }
-
         $this->imports = array();
         return $this->add($import);
+    }
+
+    protected function listNamesForGivenImports($imports)
+    {
+        $list = array();
+        $class = $this->getImportClass();
+        foreach ($imports as $i) {
+
+            if ($i instanceof $class) {
+                $list[] = $i->object_name;
+            } else {
+                $list[] = $i;
+            }
+        }
+
+        return $list;
     }
 
     /**
@@ -137,11 +145,9 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $this->imports = array();
-
         $this->modified = true;
-        $this->refreshIndex();
 
-        return $this;
+        return $this->refreshIndex();
     }
 
     public function remove($import)
@@ -151,21 +157,20 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $this->modified = true;
-        $this->refreshIndex();
 
-        return $this;
+        return $this->refreshIndex();
     }
 
     protected function refreshIndex()
     {
         $this->idx = array_keys($this->imports);
+        return $this;
     }
 
     public function add($import)
     {
         $class = $this->getImportClass();
 
-        // TODO: only one query when adding array
         if (is_array($import)) {
             foreach ($import as $i) {
                 // Gracefully ignore null members or empty strings
@@ -179,12 +184,13 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         if ($import instanceof $class) {
-            if (array_key_exists($import->object_name, $this->imports)) {
+            $name = $import->object_name;
+            if (array_key_exists($name, $this->imports)) {
                 return $this;
             }
 
-            $this->imports[$import->object_name] = $import->object_name;
-            $this->objects[$import->object_name] = $import;
+            $this->imports[$name] = $name;
+            $this->objects[$name] = $import;
         } elseif (is_string($import)) {
             if (array_key_exists($import, $this->imports)) {
                 return $this;
@@ -219,7 +225,13 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $class = $this->getImportClass();
         if (is_array($this->object->getKeyName())) {
             // Services only
-            $import = $class::load(array('object_name' => $name, 'object_type' => 'template'), $connection);
+            $import = $class::load(
+                array(
+                    'object_name' => $name,
+                    'object_type' => 'template'
+                ),
+                $connection
+            );
         } else {
             $import = $class::load($name, $connection);
         }
@@ -250,37 +262,17 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     // TODO: prefetch
     protected function loadFromDb()
     {
-        $db = $this->object->getDb();
-        $connection = $this->object->getConnection();
+        $resolver = $this->object->templateResolver();
+        // Force nesting error
+        $resolver->listResolvedParentIds();
 
-        $type = $this->getType();
-
-        $table = $this->object->getTableName();
-        $query = $db->select()->from(
-            array('o' => $table),
-            array()
-        )->join(
-            array('oi' => $table . '_inheritance'),
-            'oi.' . $type . '_id = o.id',
-            array()
-        )->join(
-            array('i' => $table),
-            'i.id = oi.parent_' . $type . '_id',
-            '*'
-        )->where('o.id = ?', (int) $this->object->id)
-        ->order('oi.weight');
-
-        $class = $this->getImportClass();
-        $this->objects = $class::loadAll($connection, $query, 'object_name');
+        $this->objects = $resolver->fetchParents();
+        $this->imports = array();
         foreach ($this->objects as $k => $obj) {
             $this->imports[$k] = $k;
         }
 
-        $this->storedImports = array();
-        foreach ($this->objects as $k => $v) {
-            $this->storedImports[$k] = clone($v);
-        }
-
+        $this->cloneStored();
         return $this;
     }
 
@@ -297,19 +289,21 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public function store()
     {
-        $objectId = $this->object->id;
+        if (! $this->hasBeenModified()) {
+            return true;
+        }
+
+        $objectId = (int) $this->object->id;
         $type = $this->getType();
 
         $objectCol = $type . '_id';
         $importCol = 'parent_' . $type . '_id';
 
-        if (! $this->hasBeenModified()) {
-            return true;
-        }
-
         if ($this->object->hasBeenLoadedFromDb()) {
-
-            $this->object->db->delete($this->getImportTableName(), $objectCol . ' = ' . $objectId);
+            $this->object->db->delete(
+                $this->getImportTableName(),
+                $objectCol . ' = ' . $objectId
+            );
         }
 
         $weight = 1;
@@ -358,7 +352,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         $ret = '';
 
-        foreach ($this->imports as $name => $o) {
+        foreach ($this->listImportNames() as $name) {
             $ret .= '    import ' . c::renderString($name) . "\n";
         }
 
@@ -372,8 +366,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         $ret = '';
 
-        foreach ($this->imports as $name => $o) {
-            $ret .= c1::renderKeyValue('use', c1::renderString($name));
+        foreach ($this->listImportNames() as $name) {
+            $ret .= c1::renderKeyValue('use', c1::renderString($name)) . "\n";
         }
 
         if ($ret !== '') {
