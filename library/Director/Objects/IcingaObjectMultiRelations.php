@@ -186,7 +186,15 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
             $connection = $this->object->getConnection();
             try {
-                $relation = $class::load($relation, $connection);
+                // Related services can only be objects, used by ServiceSets
+                if ($class === 'Icinga\\Module\\Director\\Objects\\IcingaService') {
+                    $relation = $class::load(array(
+                        'object_name' => $relation,
+                        'object_type' => 'template'
+                    ), $connection);
+                } else {
+                    $relation = $class::load($relation, $connection);
+                }
             } catch (Exception $e) {
 
                 switch ($onError) {
