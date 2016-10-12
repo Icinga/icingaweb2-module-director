@@ -675,7 +675,7 @@ CREATE TABLE icinga_service_set (
   object_name VARCHAR(128) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
-  description TEXT NOT NULL,
+  description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY object_key (object_name, host_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -692,6 +692,24 @@ CREATE TABLE icinga_service_set_service (
   CONSTRAINT service_set_service
     FOREIGN KEY service (service_id)
     REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE icinga_service_set_inheritance (
+  service_set_id INT(10) UNSIGNED NOT NULL,
+  parent_service_set_id INT(10) UNSIGNED NOT NULL,
+  weight MEDIUMINT UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (service_set_id, parent_service_set_id),
+  UNIQUE KEY unique_order (service_set_id, weight),
+  CONSTRAINT icinga_service_set_inheritance_set
+  FOREIGN KEY host (service_set_id)
+  REFERENCES icinga_service_set (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_set_inheritance_parent
+  FOREIGN KEY host (parent_service_set_id)
+  REFERENCES icinga_service_set (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1378,4 +1396,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 114;
+      schema_version = 115;
