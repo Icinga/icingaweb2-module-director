@@ -6,12 +6,6 @@
 -- Director does all the migrations for you and guides you either in
 -- the frontend or provides everything you need for automated migration
 -- handling. Please find more related information in our documentation.
---
--- Please note: PostgreSQL has not all migrations as MySQL have them
---
--- If you have used PostgreSQL prior the first release of director,
--- you might have to recreate the schema.
---
 
 CREATE TYPE enum_activity_action AS ENUM('create', 'delete', 'modify');
 CREATE TYPE enum_boolean AS ENUM('y', 'n');
@@ -36,7 +30,9 @@ CREATE TYPE enum_sync_rule_object_type AS ENUM(
   'usergroup',
   'datalistEntry',
   'endpoint',
-  'zone'
+  'zone',
+  'timePeriod',
+  'serviceSet'
 );
 CREATE TYPE enum_sync_rule_update_policy AS ENUM('merge', 'override', 'ignore');
 CREATE TYPE enum_sync_property_merge_policy AS ENUM('override', 'merge');
@@ -1627,4 +1623,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (115, NOW());
+  VALUES (116, NOW());

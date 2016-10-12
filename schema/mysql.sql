@@ -1337,7 +1337,9 @@ CREATE TABLE sync_rule (
     'usergroup',
     'datalistEntry',
     'endpoint',
-    'zone'
+    'zone',
+    'timePeriod',
+    'serviceSet'
   ) NOT NULL,
   update_policy ENUM('merge', 'override', 'ignore') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1396,4 +1398,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   SET migration_time = NOW(),
-      schema_version = 115;
+      schema_version = 116;
