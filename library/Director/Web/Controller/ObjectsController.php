@@ -25,15 +25,18 @@ abstract class ObjectsController extends ActionController
 
         $tabs = $this->getTabs();
         $type = $this->getType();
+        $ptype = preg_replace('/cys/','cies',$type.'s');
+        $ltype = strtolower($type);
+        $pltype = strtolower($ptype);
 
         if (in_array(ucfirst($type), $this->globalTypes)) {
-            $ltype = strtolower($type);
 
             foreach ($this->globalTypes as $tabType) {
                 $ltabType = strtolower($tabType);
+                $pltabType = preg_replace('/cys/','cies',$ltabType.'s');
                 $tabs->add($ltabType, array(
-                    'label' => $this->translate(ucfirst($ltabType) . 's'),
-                    'url'   => sprintf('director/%ss', $ltabType)
+                    'label' => $this->translate(ucfirst($pltype)),
+                    'url'   => sprintf('director/%s', $pltabType)
                 ));
             }
             $tabs->activate($ltype);
@@ -48,12 +51,12 @@ abstract class ObjectsController extends ActionController
         }
 
         $tabs->add('objects', array(
-            'url'   => sprintf('director/%ss', strtolower($type)),
-            'label' => $this->translate(ucfirst($type) . 's'),
+            'url'   => sprintf('director/%s', strtolower($ptype)),
+            'label' => $this->translate(ucfirst($ptype)),
         ));
         if ($object->supportsImports()) {
             $tabs->add('templates', array(
-                'url'   => sprintf('director/%ss/templates', strtolower($type)),
+                'url'   => sprintf('director/%s/templates', strtolower($pltype)),
                 'label' => $this->translate('Templates'),
             ));
         }
@@ -65,7 +68,7 @@ abstract class ObjectsController extends ActionController
         }
 
         $tabs->add('tree', array(
-            'url'   => sprintf('director/%ss/templatetree', $type),
+            'url'   => sprintf('director/%s/templatetree', $pltype),
             'label' => $this->translate('Tree'),
         ));
     }
@@ -77,8 +80,12 @@ abstract class ObjectsController extends ActionController
         }
 
         $type = $this->getType();
+        $ptype = preg_replace('/cys$/','cies',$type.'s');
         $ltype = strtolower($type);
-        $this->assertPermission('director/' . $type . 's/read');
+        $pltype = strtolower($ptype);
+
+
+        $this->assertPermission('director/' . $ptype . '/read');
         /** @var IcingaObject $dummy */
         $dummy = $this->dummyObject();
 
@@ -127,6 +134,7 @@ abstract class ObjectsController extends ActionController
             array('class' => 'icon-plus')
         );
 
+        $this->view->title = $this->translate('Icinga ' . ucfirst($pltype));
         $filterEditor = $table->getFilterEditor($this->getRequest());
         $filter = $filterEditor->getFilter();
 
@@ -233,8 +241,8 @@ abstract class ObjectsController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'Dependency'),
             str_replace(
                 'template',
                 '',
