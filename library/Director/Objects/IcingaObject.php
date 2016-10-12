@@ -916,12 +916,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $db = $this->getDb();
         $table = $this->getTableName();
-
-        $type = strtolower($this->getType());
-
-        if ($type === 'checkcommand') {
-            $type = 'command';
-        }
+        $type = $this->getShortTableName();
 
         $query = $db->select()->from(
             array('oi' => $table . '_inheritance'),
