@@ -163,6 +163,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return array_key_exists($property, $this->multiRelations);
     }
 
+    public function listMultiRelations()
+    {
+        return array_keys($this->multiRelations);
+    }
+
     public function getMultiRelation($property)
     {
         if (! $this->hasLoadedMultiRelation($property)) {

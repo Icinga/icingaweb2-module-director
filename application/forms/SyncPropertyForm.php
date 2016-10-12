@@ -260,6 +260,9 @@ class SyncPropertyForm extends DirectorObjectForm
             if ($dummy->supportsGroups()) {
                 $special['groups']  = $this->translate('Group membership');
             }
+            if ($dummy->supportsRanges()) {
+                $special['ranges']  = $this->translate('Time ranges');
+            }
         }
 
         foreach ($dummy->listProperties() as $prop) {
@@ -277,6 +280,10 @@ class SyncPropertyForm extends DirectorObjectForm
             }
 
             $props[$prop] = $prop;
+        }
+
+        foreach ($dummy->listMultiRelations() as $prop) {
+            $props[$prop] = sprintf('%s (%s)', $prop, $this->translate('a list'));
         }
 
         ksort($props);
