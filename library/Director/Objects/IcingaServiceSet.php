@@ -21,6 +21,8 @@ class IcingaServiceSet extends IcingaObject
 
     protected $keyName = array('host_id', 'object_name');
 
+    protected $supportsImports = true;
+
     protected $supportsCustomVars = true;
 
     protected $supportsApplyRules = true;
