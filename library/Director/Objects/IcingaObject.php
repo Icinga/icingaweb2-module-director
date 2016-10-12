@@ -946,7 +946,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         // Force exception
-        $this->triggerLoopDetection();
+        if ($this->hasBeenLoadedFromDb()) {
+            $this->triggerLoopDetection();
+        }
 
         $vals = array();
         $vals['_MERGED_']    = (object) array();
