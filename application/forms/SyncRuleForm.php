@@ -9,18 +9,19 @@ class SyncRuleForm extends DirectorObjectForm
     public function setup()
     {
         $availableTypes = array(
-            'command'          => $this->translate('Command'),
-            'endpoint'         => $this->translate('Endpoint'),
             'host'             => $this->translate('Host'),
+            'hostgroup'        => $this->translate('Host group'),
             'service'          => $this->translate('Service'),
+            'servicegroup'     => $this->translate('Service group'),
+            'serviceSet'       => $this->translate('Service Set'),
             'user'             => $this->translate('User'),
-            'hostgroup'        => $this->translate('Hostgroup'),
-            'servicegroup'     => $this->translate('Servicegroup'),
-            'usergroup'        => $this->translate('Usergroup'),
+            'usergroup'        => $this->translate('User group'),
             'datalistEntry'    => $this->translate('Datalist entry'),
+            'command'          => $this->translate('Command'),
+            'timePeriod'       => $this->translate('Time period'),
+            'endpoint'         => $this->translate('Endpoint'),
             'zone'             => $this->translate('Zone'),
         );
-        asort($availableTypes);
 
         $this->addElement('text', 'rule_name', array(
             'label'       => $this->translate('Rule name'),
