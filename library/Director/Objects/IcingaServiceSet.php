@@ -170,14 +170,4 @@ class IcingaServiceSet extends IcingaObject
     {
         return $this->connection->getDefaultGlobalZoneName();
     }
-
-    public function xxisObject()
-    {
-        return true;
-    }
-
-    public function getUrlParams()
-    {
-        return array('name' => $this->object_name);
-    }
 }

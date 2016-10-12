@@ -1405,7 +1405,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         return $this->renderLegacyObjectProperty(
             $renderKey ?: $propertyName,
-            c::renderString($this->getRelatedObjectName($propertyName, $id))
+            c1::renderString($this->getRelatedObjectName($propertyName, $id))
         );
     }
 
@@ -1418,6 +1418,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @codingStandardsIgnoreStart
      */
+    protected function renderLegacyHost_id()
+    {
+        return $this->renderLegacyRelationProperty('host', $this->host_id, 'host_name');
+    }
+
+    protected function renderLegacyTimeout()
+    {
+        return '';
+    }
+
     protected function renderLegacyEnable_active_checks()
     {
         return $this->renderLegacyBooleanProperty(
@@ -1612,6 +1622,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     c1::renderBoolean($value)
                 );
             }
+        }
+
+        if (substr($key, -3) === '_id'
+             && $this->hasRelation($relKey = substr($key, 0, -3))
+        ) {
+            return $this->renderLegacyRelationProperty($relKey, $value);
         }
 
         return c1::renderKeyValue($key, c1::renderString($value));
