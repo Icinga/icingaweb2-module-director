@@ -426,6 +426,7 @@ class IcingaConfig
             ->createFileFromDb('host')
             ->createFileFromDb('serviceGroup')
             ->createFileFromDb('service')
+            ->createFileFromDb('serviceSet')
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ->createFileFromDb('notification')
@@ -504,6 +505,7 @@ template Service DirectorOverrideTemplate {
 
         return sprintf(
             '
+/* Warning: this is experimental and might be removed */
 apply Service for (title => params in host.vars["%s"]) {
 
   var override = host.vars["%s_vars"][title]
