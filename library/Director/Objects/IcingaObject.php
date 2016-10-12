@@ -368,6 +368,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
+     * Whether this object can be part of a 'set'
+     *
+     * @return bool
+     */
+    public function supportsSets()
+    {
+        return $this->supportsSets;
+    }
+
+    /**
      * It sometimes makes sense to defer lookups for related properties. This
      * kind of lazy-loading allows us to for example set host = 'localhost' and
      * render an object even when no such host exists. Think of the activity log,
