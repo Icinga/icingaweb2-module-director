@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -18,9 +19,15 @@ class IcingaObjectAssignments
     public function __construct(IcingaObject $object)
     {
         if (! $object->supportsAssignments()) {
+            if ($object->hasProperty('object_type')) {
+                $type = $object->object_type;
+            } else {
+                $type = get_class($object);
+            }
+
             throw new ProgrammingError(
                 'I can only assign for applied objects, got %s',
-                $object->object_type
+                $type
             );
         }
 
@@ -43,13 +50,14 @@ class IcingaObjectAssignments
             return $this->setValues(array($values));
         }
 
-        $this->current = array();
         if (is_object($values)) {
             $values = (array) $values;
         }
 
+        $this->current = array();
+
         ksort($values);
-        foreach ((array) $values as $type => $value) {
+        foreach ($values as $type => $value) {
             if (is_numeric($type)) {
                 $this->addRule($value);
             } else {
@@ -107,6 +115,16 @@ class IcingaObjectAssignments
                 $rows[$val['assign_type']] = array();
             }
 
+            if (array_key_exists('filter_string', $val)) {
+                $filter = $val['filter_string'];
+
+                if (! $filter->isEmpty()) {
+                    $rows[$val['assign_type']][] = $filter;
+                }
+
+                continue;
+            }
+
             if (empty($val['property'])) {
                 continue;
             }
@@ -132,10 +150,17 @@ class IcingaObjectAssignments
 
     protected function addRule($string, $type = 'assign')
     {
+        if (is_array($string) && array_key_exists('assign_type', $string)) {
+            $type = $string['assign_type'];
+            $string = $string['filter_string'];
+        }
         // TODO: validate
+        //echo "ADD RULE\n";
+        //var_dump($string);
+        //echo "ADD RULE END\n";
         $this->current[] = array(
             'assign_type'   => $type,
-            'filter_string' => $this->rerenderFilter($string)
+            'filter_string' => $string instanceof Filter ? $this->renderFilter($string) : $string
         );
 
         return $this;
@@ -227,9 +252,14 @@ class IcingaObjectAssignments
         return $this->stored;
     }
 
+    protected function renderFilter(Filter $filter)
+    {
+        return rawurldecode($filter->toQueryString());
+    }
+
     protected function rerenderFilter($string)
     {
-        return rawurldecode(Filter::fromQueryString($string)->toQueryString());
+        return $this->renderFilterFilter::fromQueryString($string);
     }
 
     protected function createPlain($dbRows)

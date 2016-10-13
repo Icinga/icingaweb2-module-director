@@ -161,12 +161,12 @@ class IcingaServiceForm extends DirectorObjectForm
             return $this;
         }
 
-        $sub = new AssignListSubForm();
+        $sub = $this->loadForm('assignListSub');
         $sub->setObject($this->getObject());
         $sub->setup();
         $sub->setOrder(30);
 
-        $this->addSubForm($sub, 'assignlist');
+        $this->addSubForm($sub, 'assignments');
 
         return $this;
     }
