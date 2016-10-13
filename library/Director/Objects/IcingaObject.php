@@ -421,7 +421,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $this->resolveUnresolvedRelatedProperties();
 
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
-//var_dump($this->vars()); exit;
             return true;
         }
 
@@ -796,6 +795,51 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $default;
+    }
+
+    public function getInheritedProperty($key, $default = null)
+    {
+        if (array_key_exists($key, $this->unresolvedRelatedProperties)) {
+            $this->resolveUnresolvedRelatedProperty($key);
+            $this->invalidateResolveCache();
+        }
+
+        $properties = $this->getInheritedProperties();
+        if (property_exists($properties, $key)) {
+            return $properties->$key;
+        }
+
+        return $default;
+    }
+
+    public function getInheritedVar($varname)
+    {
+        try {
+            $vars = $this->getInheritedVars();
+        } catch (NestingError $e) {
+            return null;
+        }
+
+        if (property_exists($vars, $varname)) {
+            return $vars->$varname;
+        } else {
+            return null;
+        }
+    }
+
+    public function getOriginForVar($varname)
+    {
+        try {
+            $origins = $this->getOriginsVars();
+        } catch (NestingError $e) {
+            return null;
+        }
+
+        if (property_exists($origins, $varname)) {
+            return $origins->$varname;
+        } else {
+            return null;
+        }
     }
 
     public function getResolvedProperties()
