@@ -42,17 +42,3 @@ $this->provideHook('director/Job', $prefix . 'Job\\HousekeepingJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ConfigJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ImportJob');
 $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
-
-if (Icinga::app()->isCli()) {
-    return;
-}
-
-$screenshotRoute = new Zend_Controller_Router_Route(
-    'screenshot/director/:subdir/:file',
-    array(
-        'module'        => 'director',
-        'controller'    => 'screenshot',
-    )
-);
-
-$this->addRoute('screenshot/director', $screenshotRoute);
