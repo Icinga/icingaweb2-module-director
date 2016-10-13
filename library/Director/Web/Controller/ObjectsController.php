@@ -194,6 +194,29 @@ abstract class ObjectsController extends ActionController
         $this->setViewScript('objects/table');
     }
 
+    public function editAction()
+    {
+        $this->singleTab($this->translate('Multiple objects'));
+        $filter = Filter::fromQueryString($this->params->toString());
+        $dummy = $this->dummyObject();
+        $objects = array();
+        $db = $this->db();
+        foreach ($filter->filters() as $sub) {
+            foreach ($sub->filters() as $ex) {
+                if ($ex->isExpression() && $ex->getColumn() === 'name') {
+                    $name = $ex->getExpression();
+                    $objects[$name] = $dummy::load($name, $db);
+                }
+            }
+        }
+        $this->view->title = sprintf($this->translate('Modify %d objects'), count($objects));
+        $this->view->form = $this->loadForm('IcingaMultiEdit')
+            ->setObjects($objects)
+            ->handleRequest();
+
+        $this->setViewScript('objects/form');
+    }
+
     public function templatesAction()
     {
         $this->indexAction();
