@@ -2071,6 +2071,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'timePeriod';
         } elseif ($type === 'servicegroup') {
             $type = 'serviceGroup';
+        } elseif ($type === 'service_set') {
+            $type = 'serviceSet';
         } elseif ($type === 'apiuser') {
             $type = 'apiUser';
         }
