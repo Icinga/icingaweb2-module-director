@@ -228,6 +228,10 @@ select option {
     padding-top: 0.3em;
 }
 
+select[multiple=multiple] {
+  height: auto;
+}
+
 label {
     line-height: 2em;
 }
@@ -1100,6 +1104,99 @@ table.config-diff {
         content: '\e85d';
     }
 }
+
+
+
+ul.filter-root {
+    margin-top: 0;
+
+    padding-left: 1.5em;
+    list-style-type: none;
+
+    ul {
+        padding-left: 1.5em;
+        list-style-type: none;
+    }
+
+    li::before {
+       font-family: 'ifont';
+        // Formerly: icon-down-open: e821
+        // icon-right-small:
+        content: '\e877';
+        float: left;
+        font-size: 0.75em;
+        margin-left: -1.5em;
+        margin-top: 0.75em;
+    }
+
+    ul.extensible-set {
+        padding-left: 0;
+        border: none;
+        display: inline-block;
+        vertical-align: top;
+        li::before {
+            content: none;
+        }
+    }
+}
+
+div.filter-chain > select.operator {
+    min-width: 5em;
+    max-width: 5em;
+    width: 5em;
+}
+
+div.filter-expression  select.sign, ul.filter-expression  select.sign {
+    min-width: 4em;
+    max-width: 4em;
+    width: 4em;
+
+    &.wide {
+        min-width: 10em;
+        max-width: 10em;
+        width: 10em;
+    }
+}
+
+div.filter-expression, ul.filter-expression {
+    select {
+        min-width: 7em;
+        max-width: 7em;
+        width: 7em;
+    }
+
+    input[type=text] {
+        min-width: 7em;
+        max-width: 7em;
+        width: 7em;
+    }
+}
+
+ul.assign-rule {
+  select.assign-type {
+    vertical-align: top;
+  }
+
+  div.filter-expression, ul.filter-expression, div.filter-chain {
+    display: inline-block;
+  }
+}
+
+input[type=submit].icon-button {
+  display: none;
+  font-family: 'ifont';
+  font-weight: normal;
+  background: none;
+  border: none;
+  padding: 0.2em 0.4em 0.2em 0.4em;
+  margin: 0 0 0 0.2em;
+}
+
+.active input[type=submit].icon-button, li:hover > div > input[type=submit].icon-button  {
+  display: inline;
+}
+
+
 
 .tree li a {
   display: inline-block;
