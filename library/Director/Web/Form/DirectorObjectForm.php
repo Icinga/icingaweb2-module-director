@@ -14,6 +14,7 @@ abstract class DirectorObjectForm extends QuickForm
 {
     protected $db;
 
+    /** @var IcingaObject */
     protected $object;
 
     protected $objectName;
@@ -1151,7 +1152,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addImportsElement()
+    protected function addImportsElement($required = null)
     {
         $enum = $this->enumAllowedTemplates();
         if (empty($enum)) {
@@ -1165,7 +1166,7 @@ abstract class DirectorObjectForm extends QuickForm
                 . ' matters when importing properties from multiple templates: last one'
                 . ' wins'
             ),
-            'required'     => !$this->isTemplate(),
+            'required'     => ($required !== null ? $required : !$this->isTemplate()),
             'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'class'        => 'autosubmit'
