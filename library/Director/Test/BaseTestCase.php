@@ -2,7 +2,8 @@
 
 namespace Icinga\Module\Director\Test;
 
-use Icinga\Application\Cli;
+use Icinga\Application\Icinga;
+use Icinga\Application\Cli; // <- remove
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
@@ -72,10 +73,14 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
     protected function app()
     {
         if (self::$app === null) {
+            // TODO: Replace this..
             $testModuleDir = $_SERVER['PWD'];
             $libDir = dirname(dirname($testModuleDir)) . '/library';
             require_once $libDir . '/Icinga/Application/Cli.php';
             self::$app = Cli::start();
+
+            // With this:
+            // self::$app = Icinga::app();
         }
 
         return self::$app;
