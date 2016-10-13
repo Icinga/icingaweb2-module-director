@@ -29,6 +29,8 @@ class IcingaNotification extends IcingaObject
 
     protected $supportsCustomVars = true;
 
+    protected $supportsFields = true;
+
     protected $supportsImports = true;
 
     protected $supportsApplyRules = true;
