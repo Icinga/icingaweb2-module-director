@@ -943,6 +943,13 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->getSentValue($name) === $this->getElement($name)->getLabel();
     }
 
+    protected function abortDeletion()
+    {
+        if ($this->hasDeleteButton()) {
+            $this->setSentValue($this->deleteButtonName, 'ABORTED');
+        }
+    }
+
     public function getSentOrResolvedObjectValue($name, $default = null)
     {
         return $this->getSentOrObjectValue($name, $default, true);

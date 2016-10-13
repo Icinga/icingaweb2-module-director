@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -19,6 +20,41 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     private $position = 0;
 
     protected $idx = array();
+
+    protected static $allTables = array(
+        'icinga_command_var',
+        'icinga_host_var',
+        'icinga_notification_var',
+        'icinga_service_var',
+        'icinga_user_var',
+    );
+
+    public static function countAll($varname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $parts = array();
+        $where = $db->quoteInto('varname = ?', $varname);
+        foreach (static::$allTables as $table) {
+            $parts[] = sprintf(
+                'SELECT COUNT(*) as cnt FROM icinga_host_var WHERE %s',
+                $where
+            );
+        }
+
+        $query = 'SELECT SUM(cnt) AS cnt FROM ('
+            . implode(' UNION ALL ', $parts)
+            . ') sub';
+        return (int) $db->fetchOne($query);
+    }
+
+    public static function deleteAll($varname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $where = $db->quoteInto('varname = ?', $varname);
+        foreach (static::$allTables as $table) {
+            $db->delete($table, $where);
+        }
+    }
 
     public function count()
     {

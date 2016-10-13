@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\ConfigurationError;
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Application\Hook;
 use Exception;
@@ -10,6 +11,65 @@ use Exception;
 class DirectorDatafieldForm extends DirectorObjectForm
 {
     protected $objectName = 'Data field';
+
+    protected function onRequest()
+    {
+        if ($this->hasBeenSent()) {
+
+            if ($this->shouldBeDeleted()) {
+                $varname = $this->getSentValue('varname');
+                if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
+                    $this->askForVariableDeletion($varname, $cnt);
+                }
+
+            }
+        }
+
+        return parent::onRequest();
+    }
+
+    protected function askForVariableDeletion($varname, $cnt)
+    {
+        $msg = $this->translate(
+            'Leaving custom variables in place while removing the related field is'
+            . ' perfectly legal and might be a desired operation. This way you can'
+            . ' no longer modify related custom variables in the Director GUI, but'
+            . ' the variables themselves will stay there and continue to be deployed.'
+            . ' When you re-add a field for the same variable later on, everything'
+            . ' will continue to work as before'
+        );
+
+        $this->addBoolean('wipe_vars', array(
+            'label'       => $this->translate('Wipe related vars'),
+            'description' => sprintf($msg, $this->getSentValue('varname')),
+            'required'    => true,
+        ));
+
+        if ($wipe = $this->getSentValue('wipe_vars')) {
+            if ($wipe === 'y') {
+                CustomVariables::deleteAll($varname, $this->getDb());
+            }
+        } else {
+            $this->abortDeletion();
+            $this->addError(
+                sprintf(
+                    $this->translate('Also wipe all "%s" custom variables from %d objects?'),
+                    $varname,
+                    $cnt
+                )
+            );
+            $this->getElement('wipe_vars')->addError(
+                sprintf(
+                    $this->translate(
+                        'There are %d objects with a related property. Should I also'
+                        . ' remove the "%s" property from them?'
+                    ),
+                    $cnt,
+                    $varname
+                )
+            );
+        }
+    }
 
     public function setup()
     {
