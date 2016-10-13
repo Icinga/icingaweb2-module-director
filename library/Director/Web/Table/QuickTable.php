@@ -67,6 +67,41 @@ abstract class QuickTable implements Paginatable
         }
     }
 
+    protected function getMultiselectProperties()
+    {
+        /* array(
+         *     'url'       => 'director/hosts/edit',
+         *     'sourceUrl' => 'director/hosts',
+         *     'keys'      => 'name'
+         * ) */
+
+        return array();
+    }
+
+    protected function renderMultiselectAttributes()
+    {
+        $props = $this->getMultiselectProperties();
+
+        if (empty($props)) {
+            return '';
+        }
+
+        $prefix = 'data-icinga-multiselect-';
+        $view = $this->view();
+        $parts = array();
+        $multi = array(
+            'url'         => $view->href($props['url']),
+            'controllers' => $view->href($props['sourceUrl']),
+            'data'        => implode(',', $props['keys']),
+        );
+
+        foreach ($multi as $k => $v) {
+            $parts[] = $prefix . $k . '="' . $v . '"';
+        }
+
+        return ' ' . implode(' ', $parts);
+    }
+
     protected function renderRow($row)
     {
         $htm = "  <tr" . $this->getRowClassesString($row) . ">\n";
@@ -245,14 +280,22 @@ abstract class QuickTable implements Paginatable
 
     protected function listTableClasses()
     {
-        return array('simple', 'common-table', 'table-row-selectable');
+        $classes = array('simple', 'common-table', 'table-row-selectable');
+        if (! empty($this->getMultiselectProperties())) {
+            $classes[] = 'multiselect';
+        }
+
+        return $classes;
     }
 
     public function render()
     {
         $data = $this->fetchData();
 
-        $htm = '<table' . $this->createClassAttribute($this->listTableClasses()) . '>' . "\n"
+        $htm = '<table'
+             . $this->createClassAttribute($this->listTableClasses())
+             . $this->renderMultiselectAttributes()
+             . '>' . "\n"
              . $this->renderTitles($this->getTitles())
              . "<tbody>\n";
         foreach ($data as $row) {
