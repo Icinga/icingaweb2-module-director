@@ -397,6 +397,15 @@ abstract class ObjectController extends ActionController
                         );
                     }
                 } else {
+                    if (property_exists($this, 'apiHost') && $this->apiHost && $this->apiHost->isTemplate()) {
+                        $data['imports'] = $this->apiHost->object_name;
+                        $data['object_type'] = 'object';
+                        $data['api_key'] = sha1(
+                            (string) (microtime(true) * 1000000)
+                            . $data['object_name']
+                            . rand(1, 1000000)
+                        );
+                    }
                     $object = IcingaObject::createByType($type, $data, $db);
                 }
 
