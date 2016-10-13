@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -24,14 +25,18 @@ class HostController extends ObjectController
                 'urlParams' => array('name' => $this->object->object_name),
                 'label'     => 'Services'
             ));
-            if ($this->object->object_type === 'object'
-                && $this->object->getResolvedProperty('has_agent') === 'y'
-            ) {
-                $tabs->add('agent', array(
-                    'url'       => 'director/host/agent',
-                    'urlParams' => array('name' => $this->object->object_name),
-                    'label'     => 'Agent'
-                ));
+            try {
+                if ($this->object->object_type === 'object'
+                    && $this->object->getResolvedProperty('has_agent') === 'y'
+                ) {
+                    $tabs->add('agent', array(
+                        'url'       => 'director/host/agent',
+                        'urlParams' => array('name' => $this->object->object_name),
+                        'label'     => 'Agent'
+                    ));
+                }
+            } catch (NestingError $e) {
+                // Ignore nesting errors
             }
         }
     }
