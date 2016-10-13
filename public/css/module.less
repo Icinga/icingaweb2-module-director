@@ -101,23 +101,30 @@ pre.logfile {
 
 pre.generated-config {
 
-  .highlight {
-    padding-left: 0.5em;
-
     a {
       color: inherit;
+      font-weight: bold;
     }
 
-    &.critical {
-      border-left: 0.5em solid @color-critical;
+
+  .highlight {
+    &::before {
+      // icon: right-big
+      font-family: 'ifont';
+      content: '\e826';
+      margin-left: -1em;
+      padding-top: 0em;
+      float: left;
     }
 
-    &.warning {
-      border-left: 0.5em solid @color-warning;
+    &.critical::before {
+      color: @color-critical;
     }
-
-    &.information {
-      border-left: 0.5em solid @color-ok;
+    &.warning::before {
+      color: @color-warning;
+    }
+    &.ok::before {
+      color: @color-ok;
     }
   }
 }
