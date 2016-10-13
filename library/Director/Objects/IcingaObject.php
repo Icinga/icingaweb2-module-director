@@ -1482,6 +1482,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if (
             $this->getResolvedProperty('zone_id')
             && array_key_exists('enable_active_checks', $this->defaultProperties)
+            && $config->getConfigFormat() !== 'v1-masterless'
         ) {
             $passive = clone($this);
             $passive->enable_active_checks = false;

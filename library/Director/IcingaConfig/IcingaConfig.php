@@ -90,7 +90,7 @@ class IcingaConfig
 
     public function isLegacy()
     {
-        return $this->configFormat === 'v1';
+        return strpos($this->configFormat, 'v1') === 0;
     }
 
     public function getObjectCount()
