@@ -1399,12 +1399,24 @@ abstract class DirectorObjectForm extends QuickForm
             ),
         ));
 
+        if ($this->isTemplate() && $this->object()->getShortTableName() === 'host') {
+            $this->addElement('text', 'api_key', array(
+                'label'   => $this->translate('API key'),
+                'description' => $this->translate(
+                    'This key (16-32 characters long) allows one to deploy new'
+                    . ' hosts for this template through the REST API without'
+                    . ' authentication.'
+                ),
+            ));
+        }
+
         $elements = array(
             'notes',
             'notes_url',
             'action_url',
             'icon_image',
             'icon_image_alt',
+            'api_key',
         );
 
         $this->addDisplayGroup($elements, 'extrainfo', array(

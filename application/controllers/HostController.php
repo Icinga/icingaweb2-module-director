@@ -15,6 +15,27 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 
 class HostController extends ObjectController
 {
+    protected $apiHost;
+
+    protected $requiresAuthentication = false;
+
+    protected function requiresLogin()
+    {
+        if ($key = $this->getRequest()->getUrl()->shift('apiHostKey')) {
+            $this->apiHost = IcingaHost::loadWithApiKey($key, $this->db());
+            return false;
+        }
+
+        return !$this->Auth()->isAuthenticated();
+    }
+
+    protected function forbiddenWithApiKey()
+    {
+        if ($this->apiHost !== null) {
+            throw new NotFoundError('Not found');
+        }
+    }
+
     public function init()
     {
         parent::init();
@@ -43,6 +64,7 @@ class HostController extends ObjectController
 
     public function editAction()
     {
+        $this->forbiddenWithApiKey();
         parent::editAction();
         $host = $this->object;
         $mon = $this->monitoring();
@@ -61,6 +83,7 @@ class HostController extends ObjectController
 
     public function servicesAction()
     {
+        $this->forbiddenWithApiKey();
         $db = $this->db();
         $host = $this->object;
 
@@ -125,6 +148,7 @@ class HostController extends ObjectController
 
     public function appliedserviceAction()
     {
+        $this->forbiddenWithApiKey();
         $db = $this->db();
         $host = $this->object;
         $serviceName = $this->params->get('service');
@@ -184,6 +208,7 @@ class HostController extends ObjectController
 
     public function inheritedserviceAction()
     {
+        $this->forbiddenWithApiKey();
         $db = $this->db();
         $host = $this->object;
         $serviceName = $this->params->get('service');
@@ -286,5 +311,18 @@ class HostController extends ObjectController
                 $this->api()->getTicketSalt()
             )
         );
+    }
+
+    protected function loadObject()
+    {
+        if ($this->apiHost) {
+            if ($this->apiHost->isObject() && $name = $this->params->get('name')) {
+                if ($this->apiHost->object_name !== $name) {
+                    throw new NotFoundError('Got invalid API key');
+                }
+            }
+        }
+
+        return parent::loadObject();
     }
 }
