@@ -189,8 +189,6 @@ class IcingaNotificationTest extends BaseTestCase
 
     public function testLazyUsersCanBeSet()
     {
-        $this->markTestSkipped('Setting lazy properties not yet completed');
-
         $n = $this->notification();
         $n->users = 'bla';
     }
