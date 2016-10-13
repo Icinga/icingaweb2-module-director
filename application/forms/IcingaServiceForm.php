@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -42,8 +43,12 @@ class IcingaServiceForm extends DirectorObjectForm
             return $this->setupInherited();
         }
 
-        if (!$this->isNew() && $this->host === null) {
-            $this->host = $this->object->getResolvedRelated('host');
+        try {
+            if (!$this->isNew() && $this->host === null) {
+                $this->host = $this->object->getResolvedRelated('host');
+            }
+        } catch(NestingError $nestingError) {
+            // ignore for the form to load
         }
 
         if ($this->host === null) {

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -102,17 +103,20 @@ class ServiceController extends ObjectController
             );
         }
 
-        if ($object->isTemplate()
-            && $object->getResolvedProperty('check_command_id')
-        ) {
+        try {
+            if ($object->isTemplate()
+                && $object->getResolvedProperty('check_command_id')
+            ) {
 
-            $this->view->actionLinks .= ' ' . $this->view->qlink(
-                'Create apply-rule',
-                'director/service/add',
-                array('apply' => $object->object_name),
-                array('class'    => 'icon-plus')
-            );
-
+                $this->view->actionLinks .= ' ' . $this->view->qlink(
+                    'Create apply-rule',
+                    'director/service/add',
+                    array('apply' => $object->object_name),
+                    array('class'    => 'icon-plus')
+                );
+            }
+        } catch (NestingError $nestingError) {
+            // ignore the error for the form
         }
     }
 
