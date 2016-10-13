@@ -47,8 +47,14 @@ class IcingaEndpointForm extends DirectorObjectForm
             'multiOptions' => $this->optionalEnum($this->db->enumApiUsers())
         ));
 
-        $this->addZoneElement()
-            ->addImportsElement();
+        $this->addZoneElement();
+
+        if ($this->object->hasBeenLoadedFromDb()) {
+            $imports = $this->object->get('imports');
+            if ($imports !== null && count($imports) > 0) {
+                $this->addImportsElement(false);
+            }
+        }
 
         $this->setButtons();
     }
