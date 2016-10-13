@@ -30,14 +30,26 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $listUrl;
 
+    protected $preferredObjectType;
+
     private $allowsExperimental;
 
     private $api;
+
+    public function setPreferredObjectType($type)
+    {
+        $this->preferredObjectType = $type;
+        return $this;
+    }
 
     protected function object($values = array())
     {
         if ($this->object === null) {
             $class = $this->getObjectClassname();
+            if ($this->preferredObjectType && ! array_key_exists('object_type', $values)) {
+                $values['object_type'] = $this->preferredObjectType;
+            }
+
             $this->object = $class::create($values, $this->db);
             foreach ($this->getValues() as $key => $value) {
                 if ($this->object->hasProperty($key)) {
@@ -1054,6 +1066,11 @@ abstract class DirectorObjectForm extends QuickForm
     {
         if (!$this->isNew()) {
             return;
+        }
+
+        if ($this->preferredObjectType) {
+            $this->addHidden('object_type', $this->preferredObjectType);
+            return $this;
         }
 
         $object = $this->object();

@@ -104,12 +104,10 @@ abstract class ObjectsController extends ActionController
             $addParams = array('type' => 'template');
             $this->getTabs()->activate('templates');
             $title = $this->translate('Icinga ' . ucfirst($ltype) . ' Templates');
-            $addTitle = $this->translate('Add %s template');
             $table->enforceFilter(Filter::expression('object_type', '=', 'template'));
         } else {
             $addParams = array('type' => 'object');
             $title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
-            $addTitle = $this->translate('Add %s');
             if ($dummy->supportsImports()
                 && array_key_exists('object_type', $table->getColumns())
                 && ! in_array(ucfirst($type), $this->globalTypes)
@@ -121,7 +119,7 @@ abstract class ObjectsController extends ActionController
         $this->view->title = $title;
 
         $this->view->addLink = $this->view->qlink(
-            sprintf($addTitle, $this->translate(ucfirst($ltype))),
+            $this->translate('Add'),
             'director/' . $ltype .'/add',
             $addParams,
             array('class' => 'icon-plus')

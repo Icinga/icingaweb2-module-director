@@ -184,10 +184,21 @@ abstract class ObjectController extends ActionController
             ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
-        $this->view->title = sprintf(
-            $this->translate('Add new Icinga %s'),
-            ucfirst($ltype)
-        );
+        if ($type = $this->params->shift('type')) {
+            $form->setPreferredObjectType($type);
+        }
+
+        if ($type === 'template') {
+            $this->view->title = sprintf(
+                $this->translate('Add new Icinga %s template'),
+                ucfirst($ltype)
+            );
+        } else {
+            $this->view->title = sprintf(
+                $this->translate('Add new Icinga %s'),
+                ucfirst($ltype)
+            );
+        }
 
         $this->beforeHandlingAddRequest($form);
 
