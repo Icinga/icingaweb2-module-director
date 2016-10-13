@@ -22,6 +22,8 @@ class IcingaTimePeriod extends IcingaObject
 
     protected $supportsRanges = true;
 
+    protected $supportedInLegacy = true;
+
     protected $relations = array(
         'zone' => 'IcingaZone',
     );

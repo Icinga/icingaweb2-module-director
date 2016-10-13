@@ -28,6 +28,8 @@ class IcingaServiceSet extends IcingaObject
 
     protected $supportsApplyRules = true;
 
+    protected $supportedInLegacy = true;
+
     protected $relations = array(
         'host' => 'IcingaHost',
     );

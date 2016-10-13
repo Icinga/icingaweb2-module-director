@@ -82,6 +82,8 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
+    protected $supportedInLegacy = true;
+
     public static function enumProperties(
         DbConnection $connection = null,
         $prefix = '',
