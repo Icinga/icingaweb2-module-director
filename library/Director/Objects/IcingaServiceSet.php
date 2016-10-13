@@ -146,26 +146,6 @@ class IcingaServiceSet extends IcingaObject
         }
     }
 
-    protected function resolve($what)
-    {
-        return array();
-    }
-
-    protected function getResolved($what)
-    {
-        return array();
-    }
-
-    protected function getInherited($what)
-    {
-        return array();
-    }
-
-    protected function getOrigins($what)
-    {
-        return array();
-    }
-
     public function getRenderingZone(IcingaConfig $config = null)
     {
         return $this->connection->getDefaultGlobalZoneName();
