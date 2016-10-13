@@ -1415,38 +1415,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $filename = $this->getRenderingFilename();
 
-        if ($config->isLegacy()) {
+        if (
+            $this->getResolvedProperty('zone_id')
+            && array_key_exists('enable_active_checks', $this->defaultProperties)
+        ) {
+            $passive = clone($this);
+            $passive->enable_active_checks = false;
 
-            if ($this->getResolvedProperty('zone_id')) {
-
-                $a = clone($this);
-                $a->enable_active_checks = true;
-
-                $b = clone($this);
-                $a->enable_active_checks = false;
-
-                $config->configFile(
-                    'director/master/' . $filename,
-                    '.cfg'
-                )->addLegacyObject($a);
-
-                $config->configFile(
-                    'director/' . $this->getRenderingZone($config) . '/' . $filename,
-                    '.cfg'
-                )->addLegacyObject($b);
-
-            } else {
-                $config->configFile(
-                    'director/' . $this->getRenderingZone($config) . '/' . $filename,
-                    '.cfg'
-                )->addLegacyObject($this);
-            }
-
-        } else {
             $config->configFile(
-                'director/' . $this->getRenderingZone($config) . '/' . $filename
-            )->addObject($this);
+                'director/master/' . $filename,
+                '.cfg'
+            )->addLegacyObject($passive);
         }
+
+        $config->configFile(
+            'director/' . $this->getRenderingZone($config) . '/' . $filename,
+            '.cfg'
+        )->addLegacyObject($this);
     }
 
     public function renderToConfig(IcingaConfig $config)
