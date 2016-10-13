@@ -75,35 +75,14 @@ class ShowController extends ActionController
         return $tabs;
     }
 
-    protected function getObjectConfig($object)
-    {
-        $config = new IcingaConfig($this->db());
-        if ($object->isExternal()) {
-            $object->object_type = 'object';
-        }
-
-        try {
-            $object->renderToConfig($config);
-        } catch (Exception $e) {
-            $config->configFile(
-                'failed-to-render'
-            )->prepend(
-                "/** Failed to render this object **/\n"
-                . '/*  ' . $e->getMessage() . ' */'
-            );
-        }
-
-        return $config;
-    }
-
     protected function newConfig($entry)
     {
-        return $this->getObjectConfig($this->newObject($entry));
+        return $this->newObject($entry)->toSingleIcingaConfig();
     }
 
     protected function oldConfig($entry)
     {
-        return $this->getObjectConfig($this->oldObject($entry));
+        return $this->oldObject($entry)->toSingleIcingaConfig();
     }
 
     protected function showDiff($entry)
