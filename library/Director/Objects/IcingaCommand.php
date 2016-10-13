@@ -29,6 +29,8 @@ class IcingaCommand extends IcingaObject
 
     protected $supportsArguments = true;
 
+    protected $supportedInLegacy = true;
+
     protected $intervalProperties = array(
         'timeout' => 'timeout',
     );

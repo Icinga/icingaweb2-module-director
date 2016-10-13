@@ -49,6 +49,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether Sets of object can be defined */
     protected $supportsSets = false;
 
+    /** @var bool If the object is rendered in legacy config */
+    protected $supportedInLegacy = false;
+
     protected $rangeClass;
 
     protected $type;
@@ -1406,10 +1409,27 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $config;
     }
 
+    public function isSupportedInLegacy()
+    {
+        return $this->supportedInLegacy;
+    }
 
     public function renderToLegacyConfig(IcingaConfig $config)
     {
         if ($this->isExternal()) {
+            return;
+        }
+
+        if (! $this->isSupportedInLegacy()) {
+            $config->configFile(
+                'director/ignored-objects', '.cfg'
+            )->prepend(
+                sprintf(
+                    "# Not supported for legacy config: %s object_name=%s\n",
+                    get_class($this),
+                    $this->getObjectName()
+                )
+            );
             return;
         }
 
