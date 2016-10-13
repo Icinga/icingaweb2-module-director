@@ -1412,13 +1412,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this->zone;
         }
 
-        try {
-            if ($zoneId = $this->getResolvedProperty('zone_id')) {
-                // Config has a lookup cache, is faster:
-                return $config->getZoneName($zoneId);
+        if ($this->hasProperty('zone_id')) {
+            if (! $this->supportsImports()) {
+                if ($zoneId = $this->zone_id) {
+                    // Config has a lookup cache, is faster:
+                    return $config->getZoneName($zoneId);
+                }
             }
-        } catch (Exception $e) {
-            return self::RESOLVE_ERROR;
+
+            try {
+                if ($zoneId = $this->getResolvedProperty('zone_id')) {
+                    // Config has a lookup cache, is faster:
+                    return $config->getZoneName($zoneId);
+                }
+            } catch (Exception $e) {
+                return self::RESOLVE_ERROR;
+            }
         }
 
         if ($this->prefersGlobalZone()) {
