@@ -1910,7 +1910,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
-    protected function getLegacyObjectType()
+    public function getLegacyObjectType()
     {
         return strtolower($this->getType());
     }

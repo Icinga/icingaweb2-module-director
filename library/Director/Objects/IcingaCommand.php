@@ -177,7 +177,7 @@ class IcingaCommand extends IcingaObject
         self::$pluginDir = $pluginDir;
     }
 
-    protected function getLegacyObjectType()
+    public function getLegacyObjectType()
     {
         // there is only one type of command in Icinga 1.x
         return 'command';
