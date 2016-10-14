@@ -8,6 +8,7 @@ use Countable;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -339,6 +340,18 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
 
         return c::renderKeyValue('groups', c::renderArray($groups));
+    }
+
+    public function toLegacyConfigString()
+    {
+        $groups = array_keys($this->groups);
+
+        if (empty($groups)) {
+            return '';
+        }
+
+        $type = $this->object->getLegacyObjectType();
+        return c1::renderKeyValue($type.'groups', c1::renderArray($groups));
     }
 
     public function __toString()
