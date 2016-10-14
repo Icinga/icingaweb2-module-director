@@ -1974,8 +1974,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $str = $this->alignLegacyProperties($str);
 
         if ($this->isDisabled()) {
-            return "/* --- This object has been disabled ---\n"
-                . $str . "*/\n";
+            return
+                "# --- This object has been disabled ---\n"
+                . preg_replace('~^~m', '# ', trim($str))
+                . "\n";
         } else {
             return $str;
         }
