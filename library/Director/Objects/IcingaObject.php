@@ -1809,6 +1809,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @return string
      */
+    protected function renderLegacyCustomVars()
+    {
+        if ($this->supportsCustomVars()) {
+            return $this->vars()->toLegacyConfigString();
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * @return string
+     */
     protected function renderGroups()
     {
         if ($this->supportsGroups()) {
@@ -1979,7 +1991,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderLegacyGroups(),
             //$this->renderMultiRelations(),
             //$this->renderCustomExtensions(),
-            //$this->renderCustomVars(),
+            $this->renderLegacyCustomVars(),
             $this->renderLegacySuffix()
         ));
 
