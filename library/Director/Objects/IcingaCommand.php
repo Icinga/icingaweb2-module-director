@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaCommand extends IcingaObject
 {
@@ -174,5 +175,26 @@ class IcingaCommand extends IcingaObject
     public static function setPluginDir($pluginDir)
     {
         self::$pluginDir = $pluginDir;
+    }
+
+    protected function getLegacyObjectType()
+    {
+        // there is only one type of command in Icinga 1.x
+        return 'command';
+    }
+
+    protected function renderLegacyCommand()
+    {
+        $command = $this->command;
+        if (preg_match('~^(\$USER\d+\$/?)(.+)$~', $command)) {
+            // should be fine, since the user decided to use a macro
+        } elseif (! $this->isAbsolutePath($command)) {
+            $command = '$USER1$/'.$command;
+        }
+
+        return c1::renderKeyValue(
+            $this->getLegacyObjectType().'_line',
+            c1::renderString($command)
+        );
     }
 }
