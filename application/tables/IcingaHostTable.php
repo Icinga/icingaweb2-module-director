@@ -34,6 +34,15 @@ class IcingaHostTable extends IcingaObjectTable
         return $this->url('director/host', array('name' => $row->host));
     }
 
+    protected function getMultiselectProperties()
+    {
+        return array(
+            'url'       => 'director/hosts/edit',
+            'sourceUrl' => 'director/hosts',
+            'keys'      => array('name'),
+        );
+    }
+
     public function getTitles()
     {
         $view = $this->view();

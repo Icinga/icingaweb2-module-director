@@ -257,7 +257,11 @@ abstract class DirectorObjectForm extends QuickForm
     protected function handleCustomVars($object, & $values)
     {
         if ($this->assertResolvedImports()) {
-            IcingaObjectFieldLoader::addFieldsToForm($this, $object, $values);
+            $loader = new IcingaObjectFieldLoader($object);
+            $loader->addFieldsToForm($this);
+            if ($values) {
+                $loader->setValues($values, 'var_');
+            }
         }
     }
 
@@ -453,7 +457,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->object = $object;
         if ($this->db === null) {
-            $this->setDb($db);
+            $this->setDb($object->getConnection());
         }
 
         return $this;

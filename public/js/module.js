@@ -99,15 +99,16 @@
         extensibleSetAction: function(ev)
         {
             var el = ev.currentTarget;
-
             if (el.name.match(/__MOVE_UP$/)) {
                 var $li = $(el).closest('li');
-                var $prev = $li.prev()
+                var $prev = $li.prev();
+                // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
                     if (iid = $prev.find('input[type=text]').attr('id')) {
                         $li.closest('.container').data('activeExtensibleEntry', iid);
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
                 if ($prev.length) {
                     $prev.before($li.detach());
@@ -118,12 +119,14 @@
                 return false;
             } else if (el.name.match(/__MOVE_DOWN$/)) {
                 var $li = $(el).closest('li');
-                var $next = $li.next()
+                var $next = $li.next();
+                // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
                     if (iid = $next.find('input[type=text]').attr('id')) {
                         $li.closest('.container').data('activeExtensibleEntry', iid);
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
                 if ($next.length && ! $next.find('.extend-set').length) {
                     $next.after($li.detach());
