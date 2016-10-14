@@ -117,8 +117,17 @@ class IcingaTemplateResolver
         $this->requireTemplates();
 
         if ($name === null) {
-            $name = $this->object->object_name;
-            if ($this->object->imports()->hasBeenModified()) {
+
+            $object = $this->object;
+
+            if ($object->hasBeenLoadedFromDb()) {
+
+                if ($object->gotImports() && $object->imports()->hasBeenModified()) {
+                    return $this->listUnstoredParentNames();
+                }
+
+                $name = $object->object_name;
+            } else {
                 return $this->listUnstoredParentNames();
             }
         }
@@ -140,7 +149,7 @@ class IcingaTemplateResolver
     public function listResolvedParentIds()
     {
         $this->requireTemplates();
-        return $this->resolveParentIds($this->object->id);
+        return $this->resolveParentIds();
     }
 
     public function listResolvedParentNames()
@@ -166,9 +175,9 @@ class IcingaTemplateResolver
     protected function resolveParentNames($name, &$list = array())
     {
         foreach ($this->listParentNames($name) as $parent) {
-            $this->assertNotInList($parent, $list, $id);
+            $this->assertNotInList($parent, $list, $name);
             $list[$parent] = true;
-            $this->resolveParentIds($parent, $list);
+            $this->resolveParentNames($parent, $list);
             unset($list[$parent]);
             $list[$parent] = true;
         }
@@ -176,10 +185,12 @@ class IcingaTemplateResolver
         return array_keys($list);
     }
 
-    protected function resolveParentIds($id, &$list = array())
+    protected function resolveParentIds($id = null, &$list = array())
     {
         foreach ($this->listParentIds($id) as $parent) {
-            $this->assertNotInList($parent, $list, $id);
+            if ($id !== null) {
+                $this->assertNotInList($parent, $list, $id);
+            }
             $list[$parent] = true;
             $this->resolveParentIds($parent, $list);
             unset($list[$parent]);

@@ -273,7 +273,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function handleCustomVars($object, & $values)
     {
-        IcingaObjectFieldLoader::addFieldsToForm($this, $values);
+        IcingaObjectFieldLoader::addFieldsToForm($this, $object, $values);
     }
 
     protected function isNew()

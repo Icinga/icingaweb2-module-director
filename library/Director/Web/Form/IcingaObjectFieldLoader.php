@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use stdClass;
@@ -13,19 +14,19 @@ class IcingaObjectFieldLoader
 
     protected $object;
 
-    protected function __construct(DirectorObjectForm $form)
+    protected function __construct(DirectorObjectForm $form, IcingaObject $object)
     {
-        $this->form = $form;        
-        $this->object = $form->getObject();
+        $this->form = $form;
+        $this->object = $object;
     }
 
-    public static function addFieldsToForm(DirectorObjectForm $form, & $values)
+    public static function addFieldsToForm(DirectorObjectForm $form, IcingaObject $object, & $values)
     {
-        if (! $form->getObject()->supportsCustomVars()) {
+        if (! $object->supportsCustomVars()) {
             return $form;
         }
 
-        $loader = new static($form);
+        $loader = new static($form, $object);
         $loader->addFields();
         if ($values !== null) {
             $loader->setValues($loader->stripKeyPrefix($values, 'var_'));
