@@ -1562,6 +1562,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->renderLegacyRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    /**
+     * Display Name only exists for host/service in Icinga 1
+     *
+     * Render it as alias for everything by default.
+     *
+     * Alias does not exist in Icinga 2 currently!
+     *
+     * @return string
+     */
+    protected function renderLegacyDisplay_Name()
+    {
+        return c1::renderKeyValue('alias', $this->display_name);
+    }
+
     protected function renderLegacyTimeout()
     {
         return '';
