@@ -65,4 +65,9 @@ class CustomVariableNumber extends CustomVariable
             return sprintf(self::PRECISION, $this->value);
         }
     }
+
+    public function toLegacyConfigString()
+    {
+        return $this->toConfigString();
+    }
 }

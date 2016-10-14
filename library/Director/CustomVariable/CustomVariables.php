@@ -4,7 +4,9 @@ namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
+use Icinga\Module\Director\Objects\IcingaHostVar;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Countable;
 use Exception;
@@ -279,6 +281,35 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         foreach ($this->vars as $key => $var) {
             // TODO: ctype_alnum + underscore?
             $out .= $this->renderSingleVar($key, $var, $renderExpressions);
+        }
+
+        return $out;
+    }
+
+    public function toLegacyConfigString()
+    {
+        $out = '';
+
+        ksort($this->vars);
+        foreach ($this->vars as $key => $var) {
+            /** @var CustomVariable $var */
+            // TODO: ctype_alnum + underscore?
+            $value = null;
+            switch ($type = $var->getType()) {
+                case 'String':
+                    # TODO: Make Prefetchable
+                    $value = $var->toLegacyConfigString();
+                    break;
+                default:
+                    $out .= sprintf("# Unsupported var: %s (%s)\n", $key, $type);
+            }
+
+            if ($value !== null) {
+                $out .= c1::renderKeyValue('_' . $key, $value);
+            }
+        }
+        if ($out !== '') {
+            $out = "\n".$out;
         }
 
         return $out;

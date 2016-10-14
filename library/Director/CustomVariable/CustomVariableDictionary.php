@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Countable;
 
 class CustomVariableDictionary extends CustomVariable implements Countable
@@ -111,5 +112,10 @@ class CustomVariableDictionary extends CustomVariable implements Countable
     public function toConfigString()
     {
         return c::renderDictionary($this->value);
+    }
+
+    public function toLegacyConfigString()
+    {
+        return c1::renderDictionary($this->value);
     }
 }
