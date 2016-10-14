@@ -1866,6 +1866,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @return string
      */
+    protected function renderLegacyGroups()
+    {
+        if ($this->supportsGroups()) {
+            return $this->groups()->toLegacyConfigString();
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * @return string
+     */
     protected function renderMultiRelations()
     {
         $out = '';
@@ -2009,7 +2021,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             //$this->renderRanges(),
             //$this->renderArguments(),
             //$this->renderRelatedSets(),
-            //$this->renderGroups(),
+            $this->renderLegacyGroups(),
             //$this->renderMultiRelations(),
             //$this->renderCustomExtensions(),
             //$this->renderCustomVars(),
