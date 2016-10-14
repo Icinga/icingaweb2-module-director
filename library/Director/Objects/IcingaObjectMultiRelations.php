@@ -8,6 +8,7 @@ use Iterator;
 use Countable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -413,5 +414,16 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
                 die($e->getMessage());
             }
         }
+    }
+
+    public function toLegacyConfigString()
+    {
+        $relations = array_keys($this->relations);
+
+        if (empty($relations)) {
+            return '';
+        }
+
+        return c1::renderKeyValue($this->propertyName, c1::renderArray($relations));
     }
 }
