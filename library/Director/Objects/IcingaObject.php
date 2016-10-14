@@ -1912,6 +1912,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    /**
+     * @return string
+     */
+    protected function renderLegacyRanges()
+    {
+        if ($this->supportsRanges()) {
+            return $this->ranges()->toLegacyConfigString();
+        } else {
+            return '';
+        }
+    }
 
     /**
      * @return string
@@ -2030,7 +2041,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderLegacyObjectHeader(),
             $this->renderLegacyImports(),
             $this->renderLegacyProperties(),
-            //$this->renderRanges(),
+            $this->renderLegacyRanges(),
             //$this->renderArguments(),
             //$this->renderRelatedSets(),
             $this->renderLegacyGroups(),

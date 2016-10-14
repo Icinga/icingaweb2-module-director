@@ -7,6 +7,7 @@ use Iterator;
 use Countable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -285,5 +286,26 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
                 die($e->getMessage());
             }
         }
+    }
+
+    public function toLegacyConfigString()
+    {
+        if (empty($this->ranges) && $this->object->object_type === 'template') {
+            return '';
+        }
+
+        $out = '';
+
+        foreach ($this->ranges as $range) {
+            $out .= c1::renderKeyValue(
+                $range->range_key,
+                $range->range_value
+            );
+        }
+        if ($out !== '') {
+            $out = "\n".$out;
+        }
+
+        return $out;
     }
 }
