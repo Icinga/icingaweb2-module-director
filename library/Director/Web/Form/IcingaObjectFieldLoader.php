@@ -146,16 +146,17 @@ class IcingaObjectFieldLoader
 
     protected function loadDataFieldsForObjects($objectList)
     {
-        if (empty($objectList)) {
-            // Or should we fail?
-            return array();
-        }
-
         $ids = array();
         $objects = array();
         foreach ($objectList as $object) {
-            $ids[] = $object->id;
-            $objects[$object->id] = $object;
+            if ($object->hasBeenLoadedFromDb()) {
+                $ids[] = $object->id;
+                $objects[$object->id] = $object;
+            }
+        }
+
+        if (empty($ids)) {
+            return array();
         }
 
         $connection = $object->getConnection();
