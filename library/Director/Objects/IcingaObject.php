@@ -749,6 +749,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->imports;
     }
 
+    public function gotImports()
+    {
+        return $this->imports !== null;
+    }
+
     public function setImports($imports)
     {
         if (! is_array($imports) && $imports !== null) {

@@ -79,8 +79,16 @@ class IcingaTemplateResolver
         $this->requireTemplates();
 
         if ($id === null) {
-            $id = $this->object->id;
-            if (! $id && $this->object->imports()->hasBeenModified()) {
+            $object = $this->object;
+
+            if ($object->hasBeenLoadedFromDb()) {
+
+                if ($object->gotImports() && $object->imports()->hasBeenModified()) {
+                    return $this->listUnstoredParentIds();
+                }
+
+                $id = $object->id;
+            } else {
                 return $this->listUnstoredParentIds();
             }
         }
@@ -210,7 +218,7 @@ class IcingaTemplateResolver
 
     protected function getIdsForNames($names)
     {
-        $id = array();
+        $ids = array();
         foreach ($names as $name) {
             $ids[] = $this->getIdForName($name);
         }
