@@ -7,7 +7,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 
 /**
  * Related Object
- * 
+ *
  * This class comes in handy when working with simple foreign key references. In
  * contrast to an ORM it helps to deal with lazy-loaded objects in a way allowing
  * us to render objects with references which to no longer (or not yet) exist
@@ -102,6 +102,8 @@ class IcingaRelatedObject
      */
     public function getObject()
     {
+        // TODO: This is unfinished
+
         if ($this->object === null) {
             $class = $this->getClassName();
 
@@ -109,7 +111,7 @@ class IcingaRelatedObject
                 if ($id = $this->getId()) {
                 }
             } else {
-                $this->object = $class::load($this->name, $this->
+                $this->object = $class::load($this->name, $this->owner->getConnection());
             }
         }
         return $this->object;
@@ -152,7 +154,7 @@ class IcingaRelatedObject
     /**
      * Set a related property
      *
-     * This might be a string or an object 
+     * This might be a string or an object
      * @param $related string|IcingaObject
      * @throws ProgrammingError
      *
@@ -163,7 +165,8 @@ class IcingaRelatedObject
         if (is_string($related)) {
             $this->name = $related;
         } elseif (is_object($related)) {
-            if ($related instanceof $this->getClassName()) {
+            $className = $this->getClassName();
+            if ($related instanceof $className) {
                 $this->object = $related;
                 $this->name = $object->object_name;
                 $this->id = $object->id;
@@ -201,7 +204,7 @@ class IcingaRelatedObject
     /**
      * Conservative constructor to avoid issued with PHP GC
      */
-    public function __construct()
+    public function __destruct()
     {
         unset($this->owner);
     }
