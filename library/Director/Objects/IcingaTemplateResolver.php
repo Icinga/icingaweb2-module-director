@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\NestingError;
 
@@ -247,6 +248,10 @@ class IcingaTemplateResolver
 
     protected function getIdForName($name)
     {
+        if (! array_key_exists($name, self::$nameToId[$this->type])) {
+            throw new NotFoundError('There is no such import: "%s"', $name);
+        }
+
         return self::$nameToId[$this->type][$name];
     }
 

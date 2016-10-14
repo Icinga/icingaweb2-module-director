@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\DirectorDatafield;

@@ -316,7 +316,7 @@ abstract class QuickForm extends QuickBaseForm
                     try {
                         $this->onSuccess();
                     } catch (Exception $e) {
-                        $this->addError($e->getMessage());
+                        $this->addException($e);
                         $this->onFailure();
                     }
                 } else {
@@ -330,6 +330,24 @@ abstract class QuickForm extends QuickBaseForm
         }
 
         return $this;
+    }
+
+    public function addException(Exception $e, $elementName = null, $withDetails = true)
+    {
+        $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
+        $file = array_pop($file);
+        $msg = sprintf(
+            '%s (%s:%d)',
+            $e->getMessage(),
+            $file,
+            $e->getLine()
+        );
+
+        if ($el = $this->getElement($elementName)) {
+            $el->addError($msg);
+        } else {
+            $this->addError($msg);
+        }
     }
 
     public function onSuccess()

@@ -76,11 +76,12 @@ abstract class DirectorObjectForm extends QuickForm
         $object = $this->object;
 
         if (! $object instanceof IcingaObject) {
-            return $this;
+            return $this->resolvedImports = false;
         }
         if (! $object->supportsImports()) {
-            return $this;
+            return $this->resolvedImports = false;
         }
+
         if ($this->hasBeenSent()) {
             if ($el = $this->getElement('imports')) {
                 $this->populate($this->getRequest()->getPost());
@@ -92,6 +93,9 @@ abstract class DirectorObjectForm extends QuickForm
             $object->templateResolver()->listResolvedParentIds();
         } catch (NestingError $e) {
             $this->addUniqueErrorMessage($e->getMessage());
+            return $this->resolvedImports = false;
+        } catch (Exception $e) {
+            $this->addException($e, 'imports');
             return $this->resolvedImports = false;
         }
 
@@ -194,8 +198,13 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function handleProperties($object, & $values)
     {
+        $resolve = $this->assertResolvedImports();
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
+                if ($key === 'imports') {
+                    continue;
+                }
+
                 try {
                     $object->set($key, $value);
                     if ($object instanceof IcingaObject) {
@@ -203,39 +212,18 @@ abstract class DirectorObjectForm extends QuickForm
                     }
 
                 } catch (Exception $e) {
-
-                    $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
-                    $file = array_pop($file);
-                    $msg = sprintf(
-                        '%s (%s:%d)',
-                        $e->getMessage(),
-                        $file,
-                        $e->getLine()
-                    );
-
-                    if ($el = $this->getElement($key)) {
-                        // TODO: to be preferred $el->addError($e->getMessage());
-                        $this->addError($msg);
-                    } else {
-                        $this->addError($msg);
-                    }
+                    $this->addException($e, $key);
                 }
             }
         }
 
         if ($object instanceof IcingaObject) {
-            try {
-                $props = (array) $object->toPlainObject(
-                    false,
-                    false,
-                    null,
-                    false // Do not resolve IDs
-                );
-            } catch (NestingError $e) {
-                $this->addUniqueErrorMessage($e->getMessage());
-                $props = $object->getProperties();
-            }
-
+            $props = (array) $object->toPlainObject(
+                false,
+                false,
+                null,
+                false // Do not resolve IDs
+            );
         } else {
             $props = $object->getProperties();
             unset($props['vars']);
@@ -253,23 +241,19 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
-        $inherited = (object) array();
-        $origins   = (object) array();
-
-        if ($object->supportsImports()) {
-            try {
-                $inherited = $object->getInheritedProperties();
-                $origins   = $object->getOriginsProperties();
-            } catch (NestingError $e) {
-                $this->addUniqueErrorMessage($e->getMessage());
-            }
+        if ($resolve) {
+            $inherited = $object->getInheritedProperties();
+            $origins   = $object->getOriginsProperties();
+        } else {
+            $inherited = (object) array();
+            $origins   = (object) array();
         }
 
         foreach ($props as $k => $v) {
             $this->setElementValue($k, $v);
             if ($k !== 'object_name' && property_exists($inherited, $k)) {
                 $el = $this->getElement($k);
-                if ($el) {
+                if ($el && $resolve) {
                     $this->setInheritedValue($el, $inherited->$k, $origins->$k);
                 }
             }

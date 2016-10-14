@@ -31,6 +31,17 @@ class ExtensibleSet extends FormElement
     }
 
     /**
+     * We do not want one message per entry
+     *
+     * @codingStandardsIgnoreStart
+     */
+    protected function _getErrorMessages()
+    {
+        return $this->_errorMessages;
+        // @codingStandardsIgnoreEnd
+    }
+
+    /**
      * @codingStandardsIgnoreStart
      */
     protected function _filterValue(&$value, &$key)
