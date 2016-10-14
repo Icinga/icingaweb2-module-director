@@ -2,10 +2,11 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use stdClass;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\DirectorDatafield;
-use stdClass;
+use Zend_Form_Element as ZfElement;
 
 class IcingaObjectFieldLoader
 {
@@ -13,95 +14,172 @@ class IcingaObjectFieldLoader
 
     protected $object;
 
-    protected function __construct(DirectorObjectForm $form, IcingaObject $object)
+    protected $fields;
+
+    protected $elements;
+
+    public function __construct(IcingaObject $object)
     {
-        $this->form = $form;
         $this->object = $object;
     }
 
-    public static function addFieldsToForm(DirectorObjectForm $form, IcingaObject $object, & $values)
+    public function addFieldsToForm(QuickForm $form)
     {
-        if (! $object->supportsCustomVars()) {
-            return $form;
+        if ($this->object->supportsCustomVars()) {
+            $this->attachFieldsToForm($form);
         }
 
-        $loader = new static($form, $object);
-        $loader->addFields();
-        if ($values !== null) {
-            $loader->setValues($loader->stripKeyPrefix($values, 'var_'));
-        }
-
-        return $form;
+        return $this;
     }
 
-    protected function stripKeyPrefix($array, $prefix)
+    /**
+     * Set a list of values
+     *
+     * Works in a failsafe way, when a field does not exist the value will be
+     * silently ignored
+     *
+     * @param Array  $values key/value pairs with variable names and their value
+     * @param String $prefix An optional prefix that would be stripped from keys
+     *
+     * @return self
+     */
+    public function setValues($values, $prefix = null)
     {
-        $new = array();
-        $len = strlen($prefix);
-        foreach ($array as $key => $value) {
-            if (substr($key, 0, $len) === $prefix) {
-                $new[substr($key, $len)] = $value;
-            }
+        if ($prefix !== null) {
+            $len = strlen($prefix);
         }
-
-        return $new;
-    }
-
-    protected function setValues($values)
-    {
         $vars = $this->object->vars();
-        $form = $this->form;
 
         foreach ($values as $key => $value) {
-            if ($el = $form->getElement('var_' . $key)) {
-                if ($value === '' || $value === null) {
+            if ($prefix) {
+                if (substr($key, 0, $len) === $prefix) {
+                    $key = substr($key, $len);
+                } else {
                     continue;
                 }
+            }
+
+            if ($el = $this->getElement($key)) {
                 $el->setValue($value);
-                $vars->set($key, $el->getValue());
+                $value = $el->getValue();
+
+                if ($value === '') {
+                    $value = null;
+                }
+
+                $vars->set($key, $value);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the fields for our object
+     *
+     * @return DirectorDatafield[]
+     */
+    public function getFields()
+    {
+        if ($this->fields === null) {
+            $this->fields = $this->prepareObjectFields($this->object);
+        }
+
+        return $this->fields;
+    }
+
+    /**
+     * Get the form elements for our fields
+     *
+     * @param QuickForm $form Optional
+     *
+     * @return ZfElement[]
+     */
+    public function getElements(QuickForm $form = null)
+    {
+        if ($this->elements === null) {
+            $this->elements = $this->createElements($form);
+            $this->setValuesFromObject($this->object);
+        }
+
+        return $this->elements;
+    }
+
+    /**
+     * Attach our form fields to the given form
+     *
+     * This will also create a 'Custom properties' display group
+     */
+    protected function attachFieldsToForm(QuickForm $form)
+    {
+        $elements = $this->getElements($form);
+
+        if (! empty($elements)) {
+            $form->addElementsToGroup(
+                $elements,
+                'custom_fields',
+                50,
+                $form->translate('Custom properties')
+            );
+        }
+    }
+
+    /**
+     * Get the form element for a specific field by it's variable name
+     *
+     * @return ZfElement|null
+     */
+    protected function getElement($name)
+    {
+        $elements = $this->getElements();
+        if (array_key_exists($name, $elements)) {
+            return $this->elements[$name];
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the form elements based on the given form
+     *
+     * @return ZfElement[]
+     */
+    protected function createElements(QuickForm $form)
+    {
+        $elements = array();
+
+        foreach ($this->getFields() as $name => $field) {
+            $elements[$name] = $field->getFormElement($form);
+        }
+
+        return $elements;
+    }
+
+    protected function setValuesFromObject(IcingaObject $object)
+    {
+        foreach ($object->getVars() as $k => $v) {
+            if ($v !== null && $el = $this->getElement($k)) {
+                $el->setValue($v);
             }
         }
     }
 
-    protected function addFields()
+    protected function mergeFields($listOfFields)
     {
-        $object = $this->object;
-        if ($object instanceof IcingaServiceSet) {
-        } else {
-            $this->attachFields(
-                $this->prepareObjectFields($object)
-            );
-        }
-
-        $this->setValues($object->getVars());
+        // TODO: Merge field for different object, mostly sets
     }
 
-    protected function attachFields($fields)
-    {
-        $form = $this->form;
-        $elements = array();
-        foreach ($fields as $field) {
-            $elements[] = $field->getFormElement($form);
-        }
-
-        if (empty($elements)) {
-            return $this;
-        }
-
-        return $form->addElementsToGroup(
-            $elements,
-            'custom_fields',
-            50,
-            $form->translate('Custom properties')
-        );
-    }
-
+    /**
+     * Create the fields for our object
+     *
+     *
+     * @return DirectorDatafield[]
+     */
     protected function prepareObjectFields($object)
     {
         $fields = $this->loadResolvedFieldsForObject($object);
-
-        if ($object->hasProperty('command_id')) {
-            $command = $object->getResolvedRelated('command');
+        if ($object->hasRelation('check_command')) {
+            $command = $object->getResolvedRelated('check_command');
             if ($command) {
                 $cmdFields = $this->loadResolvedFieldsForObject($command);
                 foreach ($cmdFields as $varname => $field) {
@@ -115,11 +193,14 @@ class IcingaObjectFieldLoader
         return $fields;
     }
 
-    protected function mergeFields($listOfFields)
-    {
-        // TODO: Merge field for different object, mostly sets
-    }
-
+    /**
+     * Create the fields for our object
+     *
+     * Follows the inheritance logic, resolves all fields and keeps the most
+     * specific ones. Returns a list of fields indexed by variable name
+     *
+     * @return DirectorDatafield[]
+     */
     protected function loadResolvedFieldsForObject($object)
     {
         $result = $this->loadDataFieldsForObjects(
@@ -139,11 +220,16 @@ class IcingaObjectFieldLoader
         return $fields;
     }
 
-    protected function getDb()
-    {
-        return $this->form->getDb();
-    }
-
+    /**
+     * Fetches fields for a given List of objects from the database
+     *
+     * Gives a list indexed by object id, with each entry being a list of that
+     * objects DirectorDatafield instances indexed by variable name
+     *
+     * @param IcingaObject[] $objectList List of objects
+     *
+     * @return Array
+     */
     protected function loadDataFieldsForObjects($objectList)
     {
         $ids = array();
@@ -163,7 +249,7 @@ class IcingaObjectFieldLoader
         $db = $connection->getDbAdapter();
 
         $idColumn = 'f.' . $object->getShortTableName() . '_id';
-    
+
         $query = $db->select()->from(
             array('df' => 'director_datafield'),
             array(
@@ -193,7 +279,7 @@ class IcingaObjectFieldLoader
             if (! array_key_exists($id, $result)) {
                 $result[$id] = new stdClass;
             }
-            
+
             $result[$id]->{$r->varname} = DirectorDatafield::fromDbRow(
                 $r,
                 $connection

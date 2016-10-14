@@ -2,41 +2,59 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Zend_Form_Element as ZfElement;
 
-class IcingaMultiEditForm extends QuickForm
+class IcingaMultiEditForm extends DirectorObjectForm
 {
     private $objects;
 
-    private $object;
-
-    private $db;
+    private $elementGroupMap;
 
     public function setObjects($objects)
     {
         $this->objects = $objects;
+        $this->object = current($this->objects);
+        $this->db = $this->object()->getConnection();
         return $this;
     }
 
     public function setup()
     {
-        $this->addImportsElements();//->setButtons();
+        $object = $this->object;
+        $this->addImportsElement();
+        // $this->addDisabledElement();
+
+        $loader = new IcingaObjectFieldLoader($object);
+        $loader->addFieldsToForm($this);
+
+        $this->makeVariants($this->getElement('imports'));
+        // $this->makeVariants($this->getElement('disabled'));
+        foreach ($this->getElements() as $el) {
+            $name =$el->getName();
+            if (substr($name, 0, 4) === 'var_') {
+                $this->makeVariants($el);
+            }
+        }
+
+        $this->setButtons();
+    }
+
+    /**
+     * No default objects behaviour
+     */
+    protected function onRequest()
+    {
     }
 
     public function onSuccess()
     {
-/*
-echo '<pre>';
-print_r($this->getVariants('imports'));
-print_r($this->getValues());
-echo '</pre>';
-*/
         foreach ($this->getValues() as $key => $value) {
             $parts = preg_split('/_/', $key);
             $objectsSum = array_pop($parts);
             $valueSum = array_pop($parts);
             $property = implode('_', $parts);
-//printf("Got %s: %s -> %s<br>", $property, $valueSum, $objectsSum);
 
             $found = false;
             foreach ($this->getVariants($property) as $json => $objects) {
@@ -49,6 +67,9 @@ echo '</pre>';
                 }
 
                 $found = true;
+                if (substr($property, 0, 4) === 'var_') {
+                    $property = 'vars.' . substr($property, 4);
+                }
 
                 foreach ($this->getObjects($objects) as $object) {
                     $object->$property = $value;
@@ -65,24 +86,80 @@ echo '</pre>';
         }
 
         if ($modified === 0) {
-            $this->setSuccessMessage($this->translate('No object has been modified'));
+            $msg = $this->translate('No object has been modified');
         } elseif ($modified === 1) {
-            $this->setSuccessMessage($this->translate('One object has been modified'));
+            $msg = $this->translate('One object has been modified');
         } else {
-            $this->setSuccessMessage(
-                sprintf(
-                    $this->translate('%d objects have been modified'),
-                    $modified
-                )
+            $msg = sprintf(
+                $this->translate('%d objects have been modified'),
+                $modified
             );
         }
 
-        parent::onSuccess();
+        $this->redirectOnSuccess($msg);
+    }
+
+    protected function getDisplayGroupForElement(ZfElement $element)
+    {
+        if ($this->elementGroupMap === null) {
+            $this->resolveDisplayGroups();
+        }
+
+        $name = $element->getName();
+        if (array_key_exists($name, $this->elementGroupMap)) {
+            return $this->getDisplayGroup($this->elementGroupMap[$name]);
+        } else {
+            return null;
+        }
+    }
+
+    protected function resolveDisplayGroups()
+    {
+        $this->elementGroupMap = array();
+
+        foreach ($this->getDisplayGroups() as $group) {
+            $groupName = $group->getName();
+            foreach ($group->getElements() as $name => $e) {
+                $this->elementGroupMap[$name] = $groupName;
+            }
+        }
+    }
+
+    protected function makeVariants(ZfElement $element)
+    {
+        if (! $element) {
+            return $this;
+        }
+
+        $key = $element->getName();
+        $this->removeElement($key);
+        $label = $element->getLabel();
+        $group = $this->getDisplayGroupForElement($element);
+        $description = $element->getDescription();
+
+        foreach ($this->getVariants($key) as $json => $objects) {
+            $value = json_decode($json);
+            $checksum = sha1($json) . '_' . sha1(json_encode($objects));
+
+            $v = clone($element);
+            $v->setName($key . '_' . $checksum);
+            $v->setDescription($description . '. ' . $this->descriptionForObjects($objects));
+            $v->setLabel($label . $this->labelCount($objects));
+            $v->setValue($value);
+            if ($group) {
+                $group->addElement($v);
+            }
+            $this->addElement($v);
+        }
     }
 
     protected function getVariants($key)
     {
         $variants = array();
+        if (substr($key, 0, 4) === 'var_') {
+            $key = 'vars.' . substr($key, 4);
+        }
+
         foreach ($this->objects as $name => $object) {
             $value = json_encode($object->$key);
             if (! array_key_exists($value, $variants)) {
@@ -111,41 +188,6 @@ echo '</pre>';
     protected function labelCount($list)
     {
         return ' (' . count($list) . ')';
-    }
-
-    protected function addImportsElements()
-    {
-        $enum = $this->enumTemplates();
-        if (empty($enum)) {
-            return $this;
-        }
-
-        foreach ($this->getVariants('imports') as $json => $objects) {
-            $value = json_decode($json);
-            $checksum = sha1($json) . '_' . sha1(json_encode($objects));
-            $this->addElement('extensibleSet', 'imports_' . $checksum, array(
-                'label'        => $this->translate('Imports') . $this->labelCount($objects),
-                'description'  => $this->translate(
-                    'Importable templates, add as many as you want. Please note that order'
-                    . ' matters when importing properties from multiple templates: last one'
-                    . ' wins'
-                ) . '. ' . $this->descriptionForObjects($objects),
-                'required'     => !$this->object()->isTemplate(),
-                'multiOptions' => $this->optionallyAddFromEnum($enum),
-                'value'        => $value,
-                'sorted'       => true,
-                'class'        => 'autosubmit'
-            ));
-        }
-
-        return $this;
-    }
-
-    public function optionallyAddFromEnum($enum)
-    {
-        return array(
-            null => $this->translate('- click to add more -')
-        ) + $enum;
     }
 
     protected function enumTemplates()
@@ -181,14 +223,5 @@ echo '</pre>';
         }
 
         return $res;
-    }
-
-    protected function object()
-    {
-        if ($this->object === null) {
-            $this->object = current($this->objects);
-        }
-
-        return $this->object;
     }
 }
