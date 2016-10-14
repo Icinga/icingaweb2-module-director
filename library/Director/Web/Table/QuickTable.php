@@ -281,7 +281,8 @@ abstract class QuickTable implements Paginatable
     protected function listTableClasses()
     {
         $classes = array('simple', 'common-table', 'table-row-selectable');
-        if (! empty($this->getMultiselectProperties())) {
+        $multi = $this->getMultiselectProperties();
+        if (! empty($multi)) {
             $classes[] = 'multiselect';
         }
 
