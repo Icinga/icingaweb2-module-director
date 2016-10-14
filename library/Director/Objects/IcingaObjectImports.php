@@ -2,24 +2,27 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Countable;
+use Exception;
 use Icinga\Exception\ProgrammingError;
 use Iterator;
-use Countable;
-use Icinga\Module\Director\Db\Cache\PrefetchCache;
-use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 {
-    protected $storedImports = array();
+    protected $storedNames = array();
 
+    /** @var Array A list of our imports, key and value are the import name */
     protected $imports = array();
 
+    /** @var IcingaObject[] A list of all objects we have seen, referred by name */
     protected $objects = array();
 
     protected $modified = false;
 
+    /** @var IcingaObject The parent object */
     protected $object;
 
     private $position = 0;
@@ -251,7 +254,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public function listOriginalImportNames()
     {
-        return array_keys($this->storedImports);
+        return $this->storedNames;
     }
 
     public function getType()
@@ -259,31 +262,18 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return $this->object->getShortTableName();
     }
 
-    // TODO: prefetch
     protected function loadFromDb()
     {
         $resolver = $this->object->templateResolver();
-        // Force nesting error
-        $resolver->listResolvedParentIds();
-
         $this->objects = $resolver->fetchParents();
-        $this->imports = array();
-        foreach ($this->objects as $k => $obj) {
-            $this->imports[$k] = $k;
+        if (empty($this->objects)) {
+            $this->imports = array();
+        } else {
+            $keys = array_keys($this->objects);
+            $this->imports = array_combine($keys, $keys);
         }
 
         $this->cloneStored();
-        return $this;
-    }
-
-    protected function loadFromPrefetchCache()
-    {
-        $this->storedImports = $this->objects = PrefetchCache::instance()->imports($this->object);
-        $this->imports = array();
-        foreach ($this->objects as $o) {
-            $this->imports[$o->object_name] = $o->object_name;
-        }
-
         return $this;
     }
 
@@ -298,19 +288,19 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         $objectCol = $type . '_id';
         $importCol = 'parent_' . $type . '_id';
+        $table = $this->getImportTableName();
 
         if ($this->object->hasBeenLoadedFromDb()) {
             $this->object->db->delete(
-                $this->getImportTableName(),
+                $table,
                 $objectCol . ' = ' . $objectId
             );
         }
 
         $weight = 1;
-        foreach ($this->imports as $importName) {
-            $import = $this->getObject($importName);
+        foreach ($this->getObjects() as $import) {
             $this->object->db->insert(
-                $this->getImportTableName(),
+                $table,
                 array(
                     $objectCol => $objectId,
                     $importCol => $import->id,
@@ -326,10 +316,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     protected function cloneStored()
     {
-        $this->storedImports = array();
-        foreach ($this->objects as $k => $v) {
-            $this->storedImports[$k] = clone($v);
-        }
+        $this->storedNames = $this->listImportNames();
         $this->modified = false;
     }
 
@@ -340,12 +327,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public static function loadForStoredObject(IcingaObject $object)
     {
-        $imports = new static($object);
-        if (PrefetchCache::shouldBeUsed()) {
-            return $imports->loadFromPrefetchCache();
-        } else {
-            return $imports->loadFromDb();
-        }
+        return (new static($object))->loadFromDb();
     }
 
     public function toConfigString()
@@ -398,9 +380,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public function __destruct()
     {
-        unset($this->storedImport);
-        unset($this->imports);
-        unset($this->objects);
         unset($this->object);
+        unset($this->objects);
     }
 }
