@@ -172,12 +172,13 @@ class IcingaTemplateResolver
         return $this->resolveParentNames($name);
     }
 
-    protected function resolveParentNames($name, &$list = array())
+    protected function resolveParentNames($name, &$list = array(), $path = array())
     {
+        $this->assertNotInList($name, $path);
+        $path[$name] = true;
         foreach ($this->listParentNames($name) as $parent) {
-            $this->assertNotInList($parent, $list, $name);
             $list[$parent] = true;
-            $this->resolveParentNames($parent, $list);
+            $this->resolveParentNames($parent, $list, $path);
             unset($list[$parent]);
             $list[$parent] = true;
         }
@@ -185,14 +186,21 @@ class IcingaTemplateResolver
         return array_keys($list);
     }
 
-    protected function resolveParentIds($id = null, &$list = array())
+    protected function resolveParentIds($id = null, &$list = array(), $path = array())
     {
-        foreach ($this->listParentIds($id) as $parent) {
-            if ($id !== null) {
-                $this->assertNotInList($parent, $list, $id);
+        if ($id === null) {
+            if ($check = $this->object->id) {
+                $this->assertNotInList($check, $path);
+                $path[$check] = true;
             }
+        } else {
+            $this->assertNotInList($id, $path);
+            $path[$id] = true;
+        }
+
+        foreach ($this->listParentIds($id) as $parent) {
             $list[$parent] = true;
-            $this->resolveParentIds($parent, $list);
+            $this->resolveParentIds($parent, $list, $path);
             unset($list[$parent]);
             $list[$parent] = true;
         }
@@ -200,11 +208,11 @@ class IcingaTemplateResolver
         return array_keys($list);
     }
 
-    protected function assertNotInList($id, & $list, $root)
+    protected function assertNotInList($id, & $list)
     {
         if (array_key_exists($id, $list)) {
             $list = array_keys($list);
-            array_unshift($list, $root);
+            $list[] = $id;
             throw new NestingError(
                 'Loop detected: %s',
                 implode(' -> ', $this->getNamesForIds($list))

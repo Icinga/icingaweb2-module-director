@@ -27,7 +27,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $displayGroups = array();
 
-    protected $resolvedImports = false;
+    protected $resolvedImports;
 
     protected $listUrl;
 
@@ -69,11 +69,10 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function assertResolvedImports()
     {
-        if ($this->resolvedImports) {
-            return $this;
+        if ($this->resolvedImports !== null) {
+            return $this->resolvedImports;
         }
 
-        $this->resolvedImports = true;
         $object = $this->object;
 
         if (! $object instanceof IcingaObject) {
@@ -88,9 +87,15 @@ abstract class DirectorObjectForm extends QuickForm
                 $object->imports = $el->getValue();
             }
         }
-        $object->resolveUnresolvedRelatedProperties();
 
-        return $this;
+        try {
+            $object->templateResolver()->listResolvedParentIds();
+        } catch (NestingError $e) {
+            $this->addUniqueErrorMessage($e->getMessage());
+            return $this->resolvedImports = false;
+        }
+
+        return $this->resolvedImports = true;
     }
 
     public function isObject()
@@ -273,7 +278,9 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function handleCustomVars($object, & $values)
     {
-        IcingaObjectFieldLoader::addFieldsToForm($this, $object, $values);
+        if ($this->assertResolvedImports()) {
+            IcingaObjectFieldLoader::addFieldsToForm($this, $object, $values);
+        }
     }
 
     protected function isNew()
@@ -729,11 +736,9 @@ abstract class DirectorObjectForm extends QuickForm
 
         if ($object->hasProperty($name)) {
             if ($resolved && $object->supportsImports()) {
-                $this->assertResolvedImports();
-                try {
+                if ($this->assertResolvedImports()) {
                     $objectProperty = $object->getResolvedProperty($name);
-                } catch (NestingError $e) {
-                    $this->addUniqueErrorMessage($e->getMessage());
+                } else {
                     $objectProperty = $object->$name;
                 }
             } else {
