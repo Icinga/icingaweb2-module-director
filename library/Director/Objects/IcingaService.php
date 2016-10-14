@@ -6,6 +6,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaService extends IcingaObject
 {
@@ -282,8 +283,13 @@ class IcingaService extends IcingaObject
 
     public function renderUse_var_overrides()
     {
-        // @codingStandardsIgnoreEnd
         return '';
+    }
+
+    protected function renderLegacyDisplay_Name()
+    {
+        // @codingStandardsIgnoreEnd
+        return c1::renderKeyValue('display_name', $this->display_name);
     }
 
     public function hasCheckCommand()
