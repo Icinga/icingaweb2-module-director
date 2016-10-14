@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\NestingError;
 
+// TODO: move the 'type' layer to another class
 class IcingaTemplateResolver
 {
     protected $object;
@@ -22,6 +23,8 @@ class IcingaTemplateResolver
     protected static $nameIdx = array();
 
     protected static $idToName = array();
+
+    protected static $nameToId = array();
 
     public function __construct(IcingaObject $object)
     {
@@ -77,6 +80,9 @@ class IcingaTemplateResolver
 
         if ($id === null) {
             $id = $this->object->id;
+            if (! $id && $this->object->imports()->hasBeenModified()) {
+                return $this->listUnstoredParentIds();
+            }
         }
 
         $type = $this->type;
@@ -88,12 +94,25 @@ class IcingaTemplateResolver
         return array();
     }
 
+    protected function listUnstoredParentIds()
+    {
+        return $this->getIdsForNames($this->listUnstoredParentNames());
+    }
+
+    protected function listUnstoredParentNames()
+    {
+        return $this->object->imports()->listImportNames();
+    }
+
     public function listParentNames($name = null)
     {
         $this->requireTemplates();
 
         if ($name === null) {
             $name = $this->object->object_name;
+            if ($this->object->imports()->hasBeenModified()) {
+                return $this->listUnstoredParentNames();
+            }
         }
 
         $type = $this->type;
@@ -189,6 +208,21 @@ class IcingaTemplateResolver
         return self::$idToName[$this->type][$id];
     }
 
+    protected function getIdsForNames($names)
+    {
+        $id = array();
+        foreach ($names as $name) {
+            $ids[] = $this->getIdForName($name);
+        }
+
+        return $ids;
+    }
+
+    protected function getIdForName($name)
+    {
+        return self::$nameToId[$this->type][$name];
+    }
+
     protected function fetchObjectsById($ids)
     {
         $class = $this->object;
@@ -220,9 +254,11 @@ class IcingaTemplateResolver
         $ids = array();
         $names = array();
         $idToName = array();
+        $nameToId = array();
 
         foreach ($templates as $row) {
             $idToName[$row->id] = $row->name;
+            $nameToId[$row->name] = $row->id;
 
             if ($row->parent_id === null) {
                 continue;
@@ -245,6 +281,7 @@ class IcingaTemplateResolver
         self::$nameIdx[$type]   = $names;
         self::$templates[$type] = $templates;
         self::$idToName[$type]  = $idToName;
+        self::$nameToId[$type]  = $nameToId;
     }
 
     protected function fetchTemplates()
