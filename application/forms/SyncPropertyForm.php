@@ -124,14 +124,12 @@ class SyncPropertyForm extends DirectorObjectForm
         }
         */
 
-
         // TODO: we need modifier
-        $this->addElement('select', 'use_filter', array(
+        $this->addElement('YesNo', 'use_filter', array(
             'label'        => $this->translate('Set based on filter'),
             'ignore'       => true,
             'class'        => 'autosubmit',
             'required'     => true,
-            'multiOptions' => $this->enumBoolean()
         ));
 
         if ($this->hasBeenSent()) {

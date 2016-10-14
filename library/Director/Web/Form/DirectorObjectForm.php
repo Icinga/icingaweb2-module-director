@@ -229,12 +229,6 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
-        foreach ($props as $k => $v) {
-            if (is_bool($v)) {
-                $props[$k] = $v ? 'y' : 'n';
-            }
-        }
-
         $this->setDefaults($props);
 
         if (! $object instanceof IcingaObject) {
@@ -424,25 +418,12 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addBoolean($key, $options, $default = null)
     {
-        $map = array(
-            false => 'n',
-            true  => 'y',
-            'n'   => 'n',
-            'y'   => 'y',
-        );
-        if ($default !== null) {
-            $options['multiOptions'] = $this->enumBoolean();
+        if ($default === null) {
+            return $this->addElement('OptionalYesNo', $key, $options);
         } else {
-            $options['multiOptions'] = $this->optionalEnum($this->enumBoolean());
+            $this->addElement('YesNo', $key, $options);
+            return $this->getElement($key)->setValue($default);
         }
-
-        $res = $this->addElement('select', $key, $options);
-
-        if ($default !== null) {
-            $this->getElement($key)->setValue($map[$default]);
-        }
-
-        return $res;
     }
 
     protected function optionalBoolean($key, $label, $description)
@@ -451,14 +432,6 @@ abstract class DirectorObjectForm extends QuickForm
             'label'       => $label,
             'description' => $description
         ));
-    }
-
-    protected function enumBoolean()
-    {
-        return array(
-            'y'  => $this->translate('Yes'),
-            'n'  => $this->translate('No'),
-        );
     }
 
     public function hasElement($name)
