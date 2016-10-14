@@ -99,6 +99,10 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $valueSum = array_pop($parts);
         $property = implode('_', $parts);
 
+        if ($value === '') {
+            $value = null;
+        }
+
         $found = false;
         foreach ($this->getVariants($property) as $json => $objects) {
             if ($valueSum !== sha1($json)) {
