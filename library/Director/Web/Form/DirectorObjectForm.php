@@ -457,7 +457,7 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->object = $object;
         if ($this->db === null) {
-            $this->setDb($db);
+            $this->setDb($object->getConnection());
         }
 
         return $this;

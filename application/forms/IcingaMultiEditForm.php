@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
 use Zend_Form_Element as ZfElement;
 
 class IcingaMultiEditForm extends DirectorObjectForm
@@ -11,6 +13,10 @@ class IcingaMultiEditForm extends DirectorObjectForm
     private $objects;
 
     private $elementGroupMap;
+
+    private $relatedForm;
+
+    private $propertiesToPick;
 
     public function setObjects($objects)
     {
@@ -20,19 +26,36 @@ class IcingaMultiEditForm extends DirectorObjectForm
         return $this;
     }
 
+    public function pickElementsFrom(QuickForm $form, $properties)
+    {
+        $this->relatedForm = $form;
+        $this->propertiesToPick = $properties;
+        return $this;
+    }
+
     public function setup()
     {
         $object = $this->object;
-        $this->addImportsElement();
-        // $this->addDisabledElement();
 
         $loader = new IcingaObjectFieldLoader($object);
         $loader->addFieldsToForm($this);
 
-        $this->makeVariants($this->getElement('imports'));
-        // $this->makeVariants($this->getElement('disabled'));
+        if ($form = $this->relatedForm) {
+            $form->setDb($object->getConnection())
+                ->setObject($object)
+                ->prepareElements();
+        } else {
+            $this->propertiesToPick = array();
+        }
+
+        foreach ($this->propertiesToPick as $property) {
+            if ($el = $form->getElement($property)) {
+                $this->makeVariants($el);
+            }
+        }
+
         foreach ($this->getElements() as $el) {
-            $name =$el->getName();
+            $name = $el->getName();
             if (substr($name, 0, 4) === 'var_') {
                 $this->makeVariants($el);
             }
@@ -41,50 +64,13 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $this->setButtons();
     }
 
-    /**
-     * No default objects behaviour
-     */
-    protected function onRequest()
-    {
-    }
-
     public function onSuccess()
     {
         foreach ($this->getValues() as $key => $value) {
-            $parts = preg_split('/_/', $key);
-            $objectsSum = array_pop($parts);
-            $valueSum = array_pop($parts);
-            $property = implode('_', $parts);
-
-            $found = false;
-            foreach ($this->getVariants($property) as $json => $objects) {
-                if ($valueSum !== sha1($json)) {
-                    continue;
-                }
-
-                if ($objectsSum !== sha1(json_encode($objects))) {
-                    continue;
-                }
-
-                $found = true;
-                if (substr($property, 0, 4) === 'var_') {
-                    $property = 'vars.' . substr($property, 4);
-                }
-
-                foreach ($this->getObjects($objects) as $object) {
-                    $object->$property = $value;
-                }
-            }
+            $this->setSubmittedMultiValue($key, $value);
         }
 
-        $modified = 0;
-        foreach ($this->objects as $object) {
-            if ($object->hasBeenModified()) {
-                $modified++;
-                $object->store();
-            }
-        }
-
+        $modified = $this->storeModifiedObjects();
         if ($modified === 0) {
             $msg = $this->translate('No object has been modified');
         } elseif ($modified === 1) {
@@ -99,6 +85,54 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $this->redirectOnSuccess($msg);
     }
 
+    /**
+     * No default objects behaviour
+     */
+    protected function onRequest()
+    {
+    }
+
+    protected function setSubmittedMultiValue($key, $value)
+    {
+        $parts = preg_split('/_/', $key);
+        $objectsSum = array_pop($parts);
+        $valueSum = array_pop($parts);
+        $property = implode('_', $parts);
+
+        $found = false;
+        foreach ($this->getVariants($property) as $json => $objects) {
+            if ($valueSum !== sha1($json)) {
+                continue;
+            }
+
+            if ($objectsSum !== sha1(json_encode($objects))) {
+                continue;
+            }
+
+            $found = true;
+            if (substr($property, 0, 4) === 'var_') {
+                $property = 'vars.' . substr($property, 4);
+            }
+
+            foreach ($this->getObjects($objects) as $object) {
+                $object->$property = $value;
+            }
+        }
+    }
+
+    protected function storeModifiedObjects()
+    {
+        $modified = 0;
+        foreach ($this->objects as $object) {
+            if ($object->hasBeenModified()) {
+                $modified++;
+                $object->store();
+            }
+        }
+
+        return $modified;
+    }
+
     protected function getDisplayGroupForElement(ZfElement $element)
     {
         if ($this->elementGroupMap === null) {
@@ -107,17 +141,46 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
         $name = $element->getName();
         if (array_key_exists($name, $this->elementGroupMap)) {
-            return $this->getDisplayGroup($this->elementGroupMap[$name]);
+            $groupName = $this->elementGroupMap[$name];
+
+            if ($group = $this->getDisplayGroup($groupName)) {
+                return $group;
+            } elseif ($this->relatedForm) {
+                return $this->stealDisplayGroup($groupName, $this->relatedForm);
+            }
         } else {
             return null;
         }
     }
 
+    protected function stealDisplayGroup($name, $form)
+    {
+        if ($group = $this->relatedForm->getDisplayGroup($name)) {
+            $group = clone($group);
+            $group->setElements(array());
+            $this->_displayGroups[$name] = $group;
+            $this->_order[$name] = $this->_displayGroups[$name]->getOrder();
+            $this->_orderUpdated = true;
+
+            return $group;
+        }
+
+        return null;
+    }
+
     protected function resolveDisplayGroups()
     {
         $this->elementGroupMap = array();
+        if ($form = $this->relatedForm) {
+            $this->extractFormDisplayGroups($form, true);
+        }
 
-        foreach ($this->getDisplayGroups() as $group) {
+        $this->extractFormDisplayGroups($this);
+    }
+
+    protected function extractFormDisplayGroups($form, $clone = false)
+    {
+        foreach ($form->getDisplayGroups() as $group) {
             $groupName = $group->getName();
             foreach ($group->getElements() as $name => $e) {
                 $this->elementGroupMap[$name] = $groupName;
@@ -127,10 +190,6 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
     protected function makeVariants(ZfElement $element)
     {
-        if (! $element) {
-            return $this;
-        }
-
         $key = $element->getName();
         $this->removeElement($key);
         $label = $element->getLabel();
@@ -188,22 +247,6 @@ class IcingaMultiEditForm extends DirectorObjectForm
     protected function labelCount($list)
     {
         return ' (' . count($list) . ')';
-    }
-
-    protected function enumTemplates()
-    {
-        $object = $this->object();
-        $tpl = $this->db()->enumIcingaTemplates($object->getShortTableName());
-        if (empty($tpl)) {
-            return array();
-        }
-
-        if (empty($tpl)) {
-            return array();
-        }
-
-        $tpl = array_combine($tpl, $tpl);
-        return $tpl;
     }
 
     protected function db()

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Table\IcingaObjectTable;
@@ -11,6 +12,8 @@ abstract class ObjectsController extends ActionController
     protected $dummy;
 
     protected $isApified = true;
+
+    protected $multiEdit = array();
 
     protected $globalTypes = array(
         'ApiUser',
@@ -196,6 +199,13 @@ abstract class ObjectsController extends ActionController
 
     public function editAction()
     {
+        $type = ucfirst($this->getType());
+
+        if (empty($this->multiEdit)) {
+            throw new NotFoundError('Cannot edit multiple "%s" instances', $type);
+        }
+        $formName = 'icinga' . $type;
+
         $this->singleTab($this->translate('Multiple objects'));
         $filter = Filter::fromQueryString($this->params->toString());
         $dummy = $this->dummyObject();
@@ -209,9 +219,14 @@ abstract class ObjectsController extends ActionController
                 }
             }
         }
-        $this->view->title = sprintf($this->translate('Modify %d objects'), count($objects));
+        $this->view->title = sprintf(
+            $this->translate('Modify %d objects'),
+            count($objects)
+        );
+
         $this->view->form = $this->loadForm('IcingaMultiEdit')
             ->setObjects($objects)
+            ->pickElementsFrom($this->loadForm($formName), $this->multiEdit)
             ->handleRequest();
 
         $this->setViewScript('objects/form');
