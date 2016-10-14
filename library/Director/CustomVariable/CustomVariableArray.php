@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class CustomVariableArray extends CustomVariable
 {
@@ -75,5 +76,10 @@ class CustomVariableArray extends CustomVariable
         foreach ($this->value as $key => $value) {
             $this->value[$key] = clone($value);
         }
+    }
+
+    public function toLegacyConfigString()
+    {
+        return c1::renderArray($this->value);
     }
 }

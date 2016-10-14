@@ -45,4 +45,9 @@ class CustomVariableBoolean extends CustomVariable
     {
         return $this->value ? 'true' : 'false';
     }
+
+    public function toLegacyConfigString()
+    {
+        return $this->toConfigString();
+    }
 }

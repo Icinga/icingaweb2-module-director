@@ -45,4 +45,9 @@ class CustomVariableNull extends CustomVariable
     {
         return 'null';
     }
+
+    public function toLegacyConfigString()
+    {
+        return $this->toConfigString();
+    }
 }
