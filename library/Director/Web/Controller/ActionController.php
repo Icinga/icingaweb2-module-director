@@ -128,16 +128,16 @@ abstract class ActionController extends Controller
     protected function setDataTabs()
     {
         $this->view->tabs = Widget::create('tabs')->add(
-            'datalist',
-            array(
-                'label' => $this->translate('Data lists'),
-                'url'   => 'director/data/lists'
-            )
-        )->add(
             'datafield',
             array(
                 'label' => $this->translate('Data fields'),
                 'url'   => 'director/data/fields'
+            )
+        )->add(
+            'datalist',
+            array(
+                'label' => $this->translate('Data lists'),
+                'url'   => 'director/data/lists'
             )
         );
         return $this->view->tabs;
