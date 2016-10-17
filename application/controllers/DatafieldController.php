@@ -24,30 +24,23 @@ class DatafieldController extends ActionController
             $edit = true;
         }
 
-        if ($edit) {
-            $this->view->title = $this->translate('Edit field');
-            $this->getTabs()->add('editfield', array(
-                'url'       => 'director/datafield/edit' . '?id=' . $id,
-                'label'     => $this->view->title,
-            ))->activate('editfield');
-        } else {
-            $this->view->title = $this->translate('Add field');
-            $this->getTabs()->add('addfield', array(
-                'url'       => 'director/datafield/add',
-                'label'     => $this->view->title,
-            ))->activate('addfield');
-        }
-
         $form = $this->view->form = $this->loadForm('directorDatafield')
             ->setSuccessUrl('director/data/fields')
             ->setDb($this->db());
 
         if ($edit) {
             $form->loadObject($id);
+            $this->view->title = sprintf(
+                $this->translate('Modify %s'),
+                $form->getObject()->varname
+            );
+            $this->singleTab($this->translate('Edit a field'));
+        } else {
+            $this->view->title = $this->translate('Add a new Data Field');
+            $this->singleTab($this->translate('New field'));
         }
 
         $form->handleRequest();
-
         $this->render('object/form', null, true);
     }
 }

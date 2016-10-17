@@ -74,24 +74,38 @@ class DirectorDatafieldForm extends DirectorObjectForm
     public function setup()
     {
         $this->addHtmlHint(
-            $this->translate('Data fields allow you to customize input controls your custom variables.')
+            $this->translate(
+                'Data fields allow you to customize input controls for Icinga custom'
+                . ' variables. Once you defined them here, you can provide them through'
+                . ' your defined templates. This gives you a granular control over what'
+                . ' properties your users should be allowed to configure in which way.'
+            )
         );
 
         $this->addElement('text', 'varname', array(
             'label'       => $this->translate('Field name'),
-            'description' => $this->translate('The unique name of the field'),
+            'description' => $this->translate(
+                'The unique name of the field. This will be the name of the custom'
+                . ' variable in the rendered Icinga configuration.'
+            ),
             'required'    => true,
         ));
 
         $this->addElement('text', 'caption', array(
             'label'       => $this->translate('Caption'),
             'required'    => true,
-            'description' => $this->translate('The caption which should be displayed')
+            'description' => $this->translate(
+                'The caption which should be displayed to your users when this field'
+                . ' is shown'
+            )
         ));
 
         $this->addElement('textarea', 'description', array(
             'label'       => $this->translate('Description'),
-            'description' => $this->translate('A description about the field'),
+            'description' => $this->translate(
+                'An extended description for this field. Will be shown as soon as a'
+                . ' user puts the focus on this field'
+            ),
             'rows'        => '3',
         ));
 
