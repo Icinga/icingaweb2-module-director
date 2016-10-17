@@ -44,7 +44,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             $this->addElement('textarea', 'argument_value', array(
                 'label'       => $this->translate('Value'),
                 'description' => $this->translate(
-                    'And Icinga DSL expression, e.g.: var cmd = macro("$cmd$");'
+                    'An Icinga DSL expression, e.g.: var cmd = macro("$cmd$");'
                     . ' return typeof(command) == String ...'
                 ),
                 'rows'        => 3
