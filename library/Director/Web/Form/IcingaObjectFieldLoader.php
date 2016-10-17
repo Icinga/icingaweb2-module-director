@@ -45,6 +45,10 @@ class IcingaObjectFieldLoader
      */
     public function setValues($values, $prefix = null)
     {
+        if (! $this->object->supportsCustomVars()) {
+            return $this;
+        }
+
         if ($prefix !== null) {
             $len = strlen($prefix);
         }
