@@ -13,6 +13,7 @@ class ImportsourceController extends ActionController
 {
     public function indexAction()
     {
+        $this->setAutoRefreshInterval(10);
         $id = $this->params->get('id');
         $this->prepareTabs($id)->activate('show');
         $source = $this->view->source = ImportSource::load($id, $this->db());
