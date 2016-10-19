@@ -40,10 +40,15 @@ class IndexController extends DashboardController
 
     protected function hasDeploymentEndpoint()
     {
-        try {
-            $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
-        } catch (Exception $e) {
-            return false;
+        if ($this->IcingaConfig()->isLegacy()) {
+            $this->view->hasDeploymentEndpoint = true;
+        }
+        else {
+            try {
+                $this->view->hasDeploymentEndpoint = $this->db()->hasDeploymentEndpoint();
+            } catch (Exception $e) {
+                $this->view->hasDeploymentEndpoint = false;
+            }
         }
 
         return $this->view->hasDeploymentEndpoint;
