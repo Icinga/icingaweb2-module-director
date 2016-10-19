@@ -8,6 +8,7 @@ use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Form\FormLoader;
@@ -24,6 +25,8 @@ abstract class ActionController extends Controller
     private $api;
 
     private $monitoring;
+
+    protected $icingaConfig;
 
     public function init()
     {
@@ -282,5 +285,13 @@ abstract class ActionController extends Controller
         }
 
         return $this->monitoring;
+    }
+
+    protected function IcingaConfig() {
+        if ($this->icingaConfig === null) {
+            $this->icingaConfig = new IcingaConfig($this->db);
+        }
+
+        return $this->icingaConfig;
     }
 }
