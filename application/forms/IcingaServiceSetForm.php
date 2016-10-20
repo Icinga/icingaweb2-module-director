@@ -16,7 +16,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Service set name'),
             'description' => $this->translate(
-                'A short name identifying this set of ser'
+                'A short name identifying this set of services'
             ),
             'required'    => true,
         ));
