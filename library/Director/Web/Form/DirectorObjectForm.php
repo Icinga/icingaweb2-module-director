@@ -236,7 +236,7 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
-        $this->setDefaults($props);
+        $this->setDefaults($this->removeNullProperties($props));
 
         if ($resolve) {
             $this->showInheritedProperties($object);
@@ -256,6 +256,18 @@ abstract class DirectorObjectForm extends QuickForm
                 }
             }
         }
+    }
+
+    protected function removeNullProperties($props)
+    {
+        $result = array();
+        foreach ($props as $k => $v) {
+            if ($v !== null && $v !== '') {
+                $result[$k] = $v;
+            }
+        }
+
+        return $result;
     }
 
     protected function handleCustomVars($object, & $values)
