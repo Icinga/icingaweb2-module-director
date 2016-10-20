@@ -50,29 +50,21 @@ class IcingaServiceSet extends IcingaObject
      */
     public function getServiceObjects()
     {
-        if (! $this->hasBeenLoadedFromDb()) {
-            return array();
+        if ($this->host_id) {
+            $imports = $this->imports;
+            if (empty($imports)) {
+                return array();
+            }
+
+            $base = IcingaServiceSet::load(array(
+                'object_name' => array_shift($imports),
+                'object_type' => 'template'
+            ), $this->getConnection());
+        } else {
+            $base = $this;
         }
 
-        $conn = $this->getConnection();
-        $db = $conn->getDbAdapter();
-
-        $query = $db->select()->from(
-            array('s' => 'icinga_service'),
-            '*'
-        )->join(
-            array('sset' => 'icinga_service_set_service'),
-            'sset.service_id = s.id',
-            array()
-        )->where(
-            $db->quoteInto(
-                'sset.service_set_id = ?',
-                (int) $this->id
-            )
-        )->order('s.object_name');
-
-        // TODO: This cannot be prefetched
-        return IcingaService::loadAll($conn, $query, 'object_name');
+        return $base->getMultiRelation('service')->getObjects();
     }
 
     public function renderToConfig(IcingaConfig $config)
