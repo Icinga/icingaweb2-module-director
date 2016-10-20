@@ -236,23 +236,20 @@ abstract class DirectorObjectForm extends QuickForm
 
         $this->setDefaults($props);
 
-        if (! $object instanceof IcingaObject) {
-            return $this;
-        }
-
         if ($resolve) {
-            $inherited = $object->getInheritedProperties();
-            $origins   = $object->getOriginsProperties();
-        } else {
-            $inherited = (object) array();
-            $origins   = (object) array();
+            $this->showInheritedProperties($object);
         }
+    }
 
-        foreach ($props as $k => $v) {
-            $this->setElementValue($k, $v);
-            if ($k !== 'object_name' && property_exists($inherited, $k)) {
+    protected function showInheritedProperties($object)
+    {
+        $inherited = $object->getInheritedProperties();
+        $origins   = $object->getOriginsProperties();
+
+        foreach ($inherited as $k => $v) {
+            if ($v !== null && $k !== 'object_name') {
                 $el = $this->getElement($k);
-                if ($el && $resolve) {
+                if ($el) {
                     $this->setInheritedValue($el, $inherited->$k, $origins->$k);
                 }
             }
