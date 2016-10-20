@@ -33,6 +33,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $preferredObjectType;
 
+    protected $fieldLoader;
+
     private $allowsExperimental;
 
     private $api;
@@ -259,12 +261,23 @@ abstract class DirectorObjectForm extends QuickForm
     protected function handleCustomVars($object, & $values)
     {
         if ($this->assertResolvedImports()) {
-            $loader = new IcingaObjectFieldLoader($object);
+            $loader = $this->fieldLoader($object);
             $loader->addFieldsToForm($this);
             if ($values) {
                 $loader->setValues($values, 'var_');
             }
         }
+
+        return $this;
+    }
+
+    protected function fieldLoader($object)
+    {
+        if ($this->fieldLoader === null) {
+            $this->fieldLoader = new IcingaObjectFieldLoader($object);
+        }
+
+        return $this->fieldLoader;
     }
 
     protected function isNew()
