@@ -144,7 +144,16 @@ class IcingaTemplateResolver
 
     public function fetchResolvedParents()
     {
-        return $this->fetchObjectsById($this->listResolvedParentIds());
+        if ($this->object->hasBeenLoadedFromDb()) {
+            return $this->fetchObjectsById($this->listResolvedParentIds());
+        }
+
+        $objects = array();
+        foreach ($this->object->imports()->getObjects() as $parent) {
+            $objects += $parent->templateResolver()->fetchResolvedParents();
+        }
+
+        return $objects;
     }
 
     public function listResolvedParentIds()
@@ -214,10 +223,17 @@ class IcingaTemplateResolver
         if (array_key_exists($id, $list)) {
             $list = array_keys($list);
             $list[] = $id;
-            throw new NestingError(
-                'Loop detected: %s',
-                implode(' -> ', $this->getNamesForIds($list))
-            );
+            if (is_numeric($id)) {
+                throw new NestingError(
+                    'Loop detected: %s',
+                    implode(' -> ', $this->getNamesForIds($list))
+                );
+            } else {
+                throw new NestingError(
+                    'Loop detected: %s',
+                    implode(' -> ', $list)
+                );
+            }
         }
     }
 
