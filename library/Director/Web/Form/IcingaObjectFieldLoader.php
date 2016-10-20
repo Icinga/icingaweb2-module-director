@@ -25,7 +25,7 @@ class IcingaObjectFieldLoader
 
     public function addFieldsToForm(QuickForm $form)
     {
-        if ($this->object->supportsCustomVars()) {
+        if ($this->object->supportsFields()) {
             $this->attachFieldsToForm($form);
         }
 
