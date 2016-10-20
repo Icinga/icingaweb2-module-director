@@ -12,8 +12,36 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addImportsElement();
+        if ($this->host === null) {
+            $this->setupTemplate();
+        } else {
+            $this->setupHost();
+        }
 
+        $this->setupFields()
+             ->setButtons();
+    }
+
+    protected function setupFields()
+    {
+        $object = $this->object();
+
+        $this->assertResolvedImports();
+
+        if ($this->hasBeenSent() && $services = $this->getSentValue('service')) {
+            $object->service = $services;
+        }
+
+        if ($this->assertResolvedImports()) {
+            $this->fieldLoader($object)
+                ->loadFieldsForMultipleObjects($object->getServiceObjects());
+        }
+
+        return $this;
+    }
+
+    protected function setupTemplate()
+    {
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Service set name'),
             'description' => $this->translate(
@@ -21,7 +49,69 @@ class IcingaServiceSetForm extends DirectorObjectForm
             ),
             'required'    => true,
         ));
-        
+
+        $this->addHidden('object_type', 'template');
+        $this->addDescriptionElement();
+
+        $this->addElement('multiselect', 'service', array(
+            'label'        => $this->translate('Services'),
+            'description'  => $this->translate(
+                'Services in this set'
+            ),
+            'rows'         => '5',
+            'multiOptions' => $this->enumServices(),
+            'required'     => true,
+            'class'        => 'autosubmit',
+        ));
+    }
+
+    protected function setupHost()
+    {
+       $object = $this->object();
+        if ($this->hasBeenSent()) {
+            $object->object_name = $object->imports = $this->getSentValue('imports');
+        }
+
+        if (! $object->hasBeenLoadedFromDb()) {
+            $this->addSingleImportsElement();
+        }
+
+        if (count($object->imports)) {
+            $this->addHtmlHint(
+                $this->getView()->escape(
+                    $object->getResolvedProperty('description')
+                )
+            );
+        }
+
+        $this->addHidden('object_type', 'object');
+        $this->addHidden('host_id', $this->host->id);
+    }
+
+    public function setHost(IcingaHost $host)
+    {
+        $this->host = $host;
+        return $this;
+    }
+    protected function addSingleImportsElement()
+    {
+        $enum = $this->enumAllowedTemplates();
+
+        $this->addElement('select', 'imports', array(
+            'label'        => $this->translate('Service set'),
+            'description'  => $this->translate(
+                'The service set that should be assigned to this host'
+            ),
+            'required'     => true,
+            'multiOptions' => $this->optionallyAddFromEnum($enum),
+            'class'        => 'autosubmit'
+        ));
+
+        return $this;
+    }
+
+    protected function addDescriptionElement()
+    {
         $this->addElement('textarea', 'description', array(
             'label'       => $this->translate('Description'),
             'description' => $this->translate(
@@ -32,44 +122,6 @@ class IcingaServiceSetForm extends DirectorObjectForm
             'required'    => ! $this->isTemplate(),
         ));
 
-
-        if ($this->host === null) {
-            $this->addHidden('object_type', 'object');
-
-            $this->addElement('multiselect', 'service', array(
-                'label'        => $this->translate('Services'),
-                'description'  => $this->translate(
-                    'Services in this set'
-                ),
-                'rows'         => '5',
-                'multiOptions' => $this->enumServices(),
-                'required'     => true,
-                'class'        => 'autosubmit',
-            ));
-        } else {
-            $this->addHidden('object_type', 'object');
-            $this->addHidden('host_id', $this->host->id);
-        }
-
-        $services = array();
-        foreach ($this->getSentOrObjectValue('service') as $name) {
-            $services[] = IcingaService::load(array(
-                'object_name' => $name,
-                'object_type' => 'template'
-            ), $this->db);
-        }
-
-        if ($this->assertResolvedImports()) {
-            $loader = $this->fieldLoader($this->object);
-            $loader->loadFieldsForMultipleObjects($services);
-        }
-
-        $this->setButtons();
-    }
-
-    public function setHost(IcingaHost $host)
-    {
-        $this->host = $host;
         return $this;
     }
 
