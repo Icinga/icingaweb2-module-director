@@ -19,6 +19,16 @@ class ServicesetController extends ObjectController
         parent::init();
     }
 
+    public function loadForm($name)
+    {
+        $form = parent::loadForm($name);
+        if ($name === 'icingaServiceSet' && $this->host) {
+            $form->setHost($this->host);
+        }
+
+        return $form;
+    }
+
     protected function loadObject()
     {
         if ($this->object === null) {

@@ -50,7 +50,7 @@ class IcingaServiceSetTable extends IcingaObjectTable
             array('h' => 'icinga_host'),
             'h.id = sset.host_id',
             array()
-        )->order('sset.object_name');
+        )->where('sset.object_type = ?', 'template')->order('sset.object_name');
 
         return $query;
     }
