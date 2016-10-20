@@ -218,9 +218,9 @@ class HostController extends ObjectController
             ->setDb($db)
             ->setHost($host)
             ->setInheritedFrom($from->object_name)
-            ->setObject($service)
-            ->handleRequest()
-            ;
+            ->setObject($service);
+        $this->view->form->setResolvedImports();
+        $this->view->form->handleRequest();
 
         $this->setViewScript('object/form');
     }
