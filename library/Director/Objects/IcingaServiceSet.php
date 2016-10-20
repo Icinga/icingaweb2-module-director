@@ -101,6 +101,7 @@ class IcingaServiceSet extends IcingaObject
                 $service->setAssignments($this->getAssignments());
             }
 
+            $service->vars = $this->vars;
             $service->host_id = $this->host_id;
             $file->addObject($service);
         }
@@ -142,6 +143,7 @@ class IcingaServiceSet extends IcingaObject
         foreach ($this->getServiceObjects() as $service) {
             $service->object_type = 'object';
             $service->host_id = $this->host_id;
+            $service->vars = $this->vars;
             $file->addLegacyObject($service);
         }
     }
