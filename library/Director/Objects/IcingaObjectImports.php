@@ -327,7 +327,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     public static function loadForStoredObject(IcingaObject $object)
     {
-        return (new static($object))->loadFromDb();
+        $obj = new static($object);
+        return $obj->loadFromDb();
     }
 
     public function toConfigString()
