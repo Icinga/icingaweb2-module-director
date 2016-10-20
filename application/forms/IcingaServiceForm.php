@@ -136,7 +136,18 @@ class IcingaServiceForm extends DirectorObjectForm
             array('data-base-target' => '_next')
         );
 
-        $this->addHtmlHint(sprintf($msg, $link));
+        $this->addHtmlHint(
+            sprintf($msg, $link),
+            array('name' => 'inheritance_hint')
+        );
+
+        $this->addElementsToGroup(
+            array('inheritance_hint'),
+            'custom_fields',
+            50,
+            $this->translate('Custom properties')
+        );
+
         $this->setSubmitLabel(
             $this->translate('Override vars')
         );
