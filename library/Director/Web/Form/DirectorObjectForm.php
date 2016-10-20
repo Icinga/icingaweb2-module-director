@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
@@ -1209,5 +1210,15 @@ abstract class DirectorObjectForm extends QuickForm
         $this->translate('Command');
         $this->translate('User');
         // ... TBC
+    }
+
+    protected static function username()
+    {
+        $auth = Auth::getInstance();
+        if ($auth->isAuthenticated()) {
+            return $auth->getUser()->getUsername();
+        } else {
+            return '<unknown>';
+        }
     }
 }

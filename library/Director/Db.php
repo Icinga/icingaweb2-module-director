@@ -552,6 +552,11 @@ class Db extends DbConnection
         return $this->enum('director_datalist', array('id', 'list_name'));
     }
 
+    public function enumDictionary()
+    {
+        return $this->enum('director_dictionary', array('id', 'dictionary_name'));
+    }
+
     public function enumDatafields()
     {
         return $this->enum('director_datafield', array(
