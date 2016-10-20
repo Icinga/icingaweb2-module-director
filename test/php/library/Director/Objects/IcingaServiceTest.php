@@ -12,6 +12,7 @@ class IcingaServiceTest extends BaseTestCase
     protected $testHostName = '___TEST___host';
 
     protected $testServiceName = '___TEST___service';
+    protected $createdServices = [];
 
     public function testUnstoredHostCanBeLazySet()
     {
@@ -233,6 +234,51 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
+    public function testVariablesInPropertiesAndCustomVariables()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service('___TEST___service_$not_replaced$');
+        $service->object_type = 'apply';
+        $service->display_name = 'Service: $host.vars.replaced$';
+        $service->assignments = array(
+            'host.address="127.*"',
+        );
+        $service->{'vars.custom_var'} = '$host.vars.replaced$';
+        $service->store($db);
+
+        $service = IcingaService::loadWithAutoIncId($service->id, $db);
+        $this->assertEquals(
+            $this->loadRendered('service3'),
+            (string) $service
+        );
+    }
+
+    public function testVariablesAreNotReplacedForNonApplyObjects()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service('___TEST___service_$not_replaced$');
+        $service->object_type = 'object';
+        $service->display_name = 'Service: $host.vars.not_replaced$';
+        $service->{'vars.custom_var'} = '$host.vars.not_replaced$';
+        $service->store($db);
+
+        $service = IcingaService::loadWithAutoIncId($service->id, $db);
+        $this->assertEquals(
+            $this->loadRendered('service4'),
+            (string) $service
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(
@@ -242,10 +288,14 @@ class IcingaServiceTest extends BaseTestCase
         ));
     }
 
-    protected function service()
+    protected function service($objectName = null)
     {
+        if ($objectName === null) {
+            $objectName = $this->testServiceName;
+        }
+        $this->createdServices[] = $objectName;
         return IcingaService::create(array(
-            'object_name'  => $this->testServiceName,
+            'object_name'  => $objectName,
             'object_type'  => 'object',
             'display_name' => 'Whatever service',
             'vars'         => array(
@@ -279,7 +329,7 @@ class IcingaServiceTest extends BaseTestCase
                 }
             }
 
-            $kill = array($this->testServiceName);
+            $kill = $this->createdServices;
             foreach ($kill as $name) {
                 if (IcingaService::exists(array($name), $db)) {
                     IcingaService::load($name, $db)->delete();

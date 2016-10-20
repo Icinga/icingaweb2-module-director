@@ -69,4 +69,35 @@ class IcingaConfigHelperTest extends BaseTestCase
     {
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
+
+    public function testRenderStringIsCorrectlyRendered()
+    {
+        $this->assertEquals(c::renderString('val1\\\val2'), '"val1\\\\\\\\val2"');
+        $this->assertEquals(c::renderString('"val1"'), '"\"val1\""');
+        $this->assertEquals(c::renderString('\$val\$'), '"\\\\$val\\\\$"');
+        $this->assertEquals(c::renderString('\t'), '"\\\\t"');
+        $this->assertEquals(c::renderString('\r'), '"\\\\r"');
+        $this->assertEquals(c::renderString('\n'), '"\\\\n"');
+        $this->assertEquals(c::renderString('\f'), '"\\\\f"');
+    }
+
+    public function testRenderStringWithVariables()
+    {
+        $this->assertEquals(c::renderString('Before $var$', true), '"Before " + var');
+        $this->assertEquals(c::renderString('$var$ After', true), 'var + " After"');
+        $this->assertEquals(c::renderString('$var$', true), 'var');
+        $this->assertEquals(c::renderString('$$var$$', true), '"$$var$$"');
+        $this->assertEquals(c::renderString('Before $$var$$ After', true), '"Before $$var$$ After"');
+        $this->assertEquals(
+            c::renderString('Before $name$ $name$ After', true),
+            '"Before " + name + " " + name + " After"');
+        $this->assertEquals(
+            c::renderString('Before $var1$ $var2$ After', true),
+            '"Before " + var1 + " " + var2 + " After"');
+        $this->assertEquals(c::renderString('$host.vars.custom$', true), 'host.vars.custom');
+        $this->assertEquals(c::renderString('$var"$', true), '"$var\"$"');
+        $this->assertEquals(
+            c::renderString('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$', true),
+            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"');
+    }
 }

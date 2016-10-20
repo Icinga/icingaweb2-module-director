@@ -74,7 +74,7 @@ class IcingaConfigHelper
 
     // TODO: Find out how to allow multiline {{{...}}} strings.
     //       Parameter? Dedicated method? Always if \n is found?
-    public static function renderString($string)
+    public static function renderString($string, $renderExpressions = false)
     {
         $special = array(
             '/\\\/',
@@ -100,7 +100,11 @@ class IcingaConfigHelper
 
         $string = preg_replace($special, $replace, $string);
 
-        return '"' . $string . '"';
+        if ($renderExpressions) {
+            return self::renderStringWithVariables($string);
+        } else {
+            return '"' . $string . '"';
+        }
     }
 
     public static function renderDictionaryKey($key)
@@ -256,5 +260,17 @@ class IcingaConfigHelper
         }
 
         return $seconds . 's';
+    }
+
+    private static function renderStringWithVariables($string) {
+        $string = preg_replace('/(?<!\$)\$([\w\.]+)\$(?!\$)/', '" + ${1} + "', $string);
+        $string = '"' . $string . '"';
+        if (substr($string, 0, 5) === '"" + ') {
+            $string = substr($string, 5);
+        }
+        if (substr($string, -5) === ' + ""') {
+            $string = substr($string, 0, -5);
+        }
+        return $string;
     }
 }
