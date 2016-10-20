@@ -2,7 +2,8 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Object\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaServiceSetForm extends DirectorObjectForm
@@ -43,10 +44,24 @@ class IcingaServiceSetForm extends DirectorObjectForm
                 'rows'         => '5',
                 'multiOptions' => $this->enumServices(),
                 'required'     => true,
+                'class'        => 'autosubmit',
             ));
         } else {
             $this->addHidden('object_type', 'object');
             $this->addHidden('host_id', $this->host->id);
+        }
+
+        $services = array();
+        foreach ($this->getSentOrObjectValue('service') as $name) {
+            $services[] = IcingaService::load(array(
+                'object_name' => $name,
+                'object_type' => 'template'
+            ), $this->db);
+        }
+
+        if ($this->assertResolvedImports()) {
+            $loader = $this->fieldLoader($this->object);
+            $loader->loadFieldsForMultipleObjects($services);
         }
 
         $this->setButtons();
@@ -63,7 +78,8 @@ class IcingaServiceSetForm extends DirectorObjectForm
         $db = $this->db->getDbAdapter();
         $query = $db->select()
             ->from('icinga_service', 'object_name')
-            ->where('object_type = ?', 'template');
+            ->where('object_type = ?', 'template')
+            ->order('object_name');
         $names = $db->fetchCol($query);
 
         return array_combine($names, $names);
