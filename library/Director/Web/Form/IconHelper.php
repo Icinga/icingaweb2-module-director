@@ -22,11 +22,12 @@ use Icinga\Exception\ProgrammingError;
 class IconHelper
 {
     private $icons = array(
-        'minus'  => 'e806',
-        'trash'  => 'e846',
-        'plus'   => 'e805',
-        'cancel' => 'e804',
-        'help'   => 'e85b',
+        'minus'              => 'e806',
+        'trash'              => 'e846',
+        'plus'               => 'e805',
+        'cancel'             => 'e804',
+        'help'               => 'e85b',
+        'angle-double-right' => 'e87b',
     );
 
     private $mappedUtf8Icons;

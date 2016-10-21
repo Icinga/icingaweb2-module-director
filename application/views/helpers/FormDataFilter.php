@@ -171,7 +171,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
              . $this->selectSign($filter)
              . $this->element($filter)
              . $this->removeLink($filter)
-             . $this->addLink($filter);
+             . $this->expandLink($filter);
     }
 
     protected function renderFilterExpression(FilterExpression $filter, $level)
@@ -438,6 +438,15 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $filter,
             'plus',
             t('Add another filter')
+        );
+    }
+
+    protected function expandLink(Filter $filter)
+    {
+        return $this->filterActionButton(
+            $filter,
+            'angle-double-right',
+            t('Wrap this expression into an operator')
         );
     }
 
