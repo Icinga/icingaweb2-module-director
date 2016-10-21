@@ -48,7 +48,7 @@ class IcingaServiceForm extends DirectorObjectForm
             if (!$this->isNew() && $this->host === null) {
                 $this->host = $this->object->getResolvedRelated('host');
             }
-        } catch(NestingError $nestingError) {
+        } catch (NestingError $nestingError) {
             // ignore for the form to load
         }
 
@@ -279,8 +279,12 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
-            $hostProperties = IcingaHost::enumProperties($this->object->getConnection(), 'host.',
-                new ArrayCustomVariablesFilter());
+            $hostProperties = IcingaHost::enumProperties(
+                $this->object->getConnection(),
+                'host.',
+                new ArrayCustomVariablesFilter()
+            );
+
             $this->addElement('select', 'apply_for', array(
                 'label' => $this->translate('Apply For'),
                 'class' => 'assign-property autosubmit',

@@ -82,8 +82,11 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
-    public static function enumProperties(DbConnection $connection = null, $prefix = '', $filter= null)
-    {
+    public static function enumProperties(
+        DbConnection $connection = null,
+        $prefix = '',
+        $filter = null
+    ) {
         $hostProperties = array();
         if ($filter === null) {
             $filter = new PropertiesFilter();
