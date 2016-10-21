@@ -160,13 +160,28 @@ class IcingaServiceForm extends DirectorObjectForm
         if (!$this->object || !$this->object->isApplyRule()) {
             return $this;
         }
+        $this->addElement('dataFilter', 'assign_filter', array(
+            'columns' => IcingaHost::enumProperties($this->db),
+            'required' => true,
+        ));
+        $el = $this->getElement('assign_filter');
+        $el->setDecorators(array(
+            'ViewHelper',
+            array('HtmlTag', array(
+                'tag' => 'ul',
+                'class' => 'assign-rule required'
+            )),
+        ));
 
-        $sub = $this->loadForm('assignListSub');
-        $sub->setObject($this->getObject());
-        $sub->setup();
-        $sub->setOrder(30);
-
-        $this->addSubForm($sub, 'assignments');
+        $this->addDisplayGroup(array($el), 'assign', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order'  => 30,
+            'legend' => $this->translate('Assign where')
+        ));
 
         return $this;
     }
