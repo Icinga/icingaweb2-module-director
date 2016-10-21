@@ -284,7 +284,7 @@ class IcingaServiceForm extends DirectorObjectForm
             $this->addElement('select', 'apply_for', array(
                 'label' => $this->translate('Apply For'),
                 'class' => 'assign-property autosubmit',
-                'multiOptions' => $this->optionalEnum($hostProperties, 'None'),
+                'multiOptions' => $this->optionalEnum($hostProperties, $this->translate('None')),
                 'description' => $this->translate(
                     'Evaluates the apply for rule for ' .
                     'all objects with the custom attribute specified. ' .
