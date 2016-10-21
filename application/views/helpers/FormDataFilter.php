@@ -111,8 +111,8 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
              . '"><span class="handle"> </span>'
              . $this->selectOperator($filter)
              . $this->removeLink($filter)
-             . ($filter->count() === 1 ? $this->stripLink($filter) : '')
              . $this->addLink($filter)
+             . ($filter->count() === 1 ? $this->stripLink($filter) : '')
              . $list;
     }
 
