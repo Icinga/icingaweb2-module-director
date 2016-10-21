@@ -596,6 +596,7 @@ CREATE TABLE icinga_service (
   icon_image VARCHAR(255) DEFAULT NULL,
   icon_image_alt VARCHAR(255) DEFAULT NULL,
   use_agent ENUM('y', 'n') DEFAULT NULL,
+  apply_for VARCHAR(255) DEFAULT NULL,
   use_var_overrides ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY object_key (object_name, host_id),
