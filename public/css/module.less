@@ -647,6 +647,23 @@ ul.assign-rule {
     input.assign-expression {
         width: 12em;
     }
+
+    ul {
+        list-style-type: none;
+        padding-left: 2em;
+
+        li::before {
+            // icon: down-dir
+            font-family: 'ifont';
+            content: '\e81d';
+            // icon: right-small
+            content: '\e877';
+            margin-left: -1em;
+            padding-top: 0em;
+            float: left;
+            color: inherit;
+        }
+    }
 }
 
 form fieldset {
@@ -1109,13 +1126,18 @@ table.config-diff {
 
 ul.filter-root {
     margin-top: 0;
-
+    width: 100%;
     padding-left: 1.5em;
     list-style-type: none;
 
     ul {
         padding-left: 1.5em;
         list-style-type: none;
+        width: 100%;
+    }
+
+    li {
+        width: 100%;
     }
 
     li::before {
@@ -1124,9 +1146,8 @@ ul.filter-root {
         // icon-right-small:
         content: '\e877';
         float: left;
-        font-size: 0.75em;
         margin-left: -1.5em;
-        margin-top: 0.75em;
+        margin-top: 0.5em;
     }
 
     ul.extensible-set {
@@ -1177,7 +1198,7 @@ ul.assign-rule {
     vertical-align: top;
   }
 
-  div.filter-expression, ul.filter-expression, div.filter-chain {
+  div.filter-expression {
     display: inline-block;
   }
 }
