@@ -237,45 +237,6 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function groupMainProperties()
-    {
-        $elements = array(
-            'imports',
-            'object_name',
-            'display_name',
-            'host_id',
-            'address',
-            'address6',
-            'groups',
-            'users',
-            'user_groups',
-            'apply_to',
-            'command_id', // Notification
-            'notification_interval',
-            'period_id',
-            'times_begin',
-            'times_end',
-            'email',
-            'pager',
-            'enable_notifications',
-            'create_live',
-            'disabled',
-            'apply_for'
-        );
-
-        $this->addDisplayGroup($elements, 'object_definition', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order' => 20,
-            'legend' => $this->translate('Main properties')
-        ));
-
-        return $this;
-    }
-
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
