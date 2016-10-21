@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -41,6 +42,7 @@ class IcingaService extends IcingaObject
         'use_agent'             => null,
         'apply_for'             => null,
         'use_var_overrides'     => null,
+        'assign_filter'         => null,
     );
 
     protected $relations = array(
@@ -114,6 +116,19 @@ class IcingaService extends IcingaObject
     public function usesVarOverrides()
     {
         return $this->use_var_overrides === 'y';
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    public function setAssign_filter($filter)
+    {
+        // @codingStandardsIgnoreEnd
+        if ($filter instanceof Filter) {
+            $filter = $filter->toQueryString();
+        }
+
+        return $this->reallySet('assign_filter', $filter);
     }
 
     protected function setKey($key)
