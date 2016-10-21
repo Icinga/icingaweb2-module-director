@@ -17,11 +17,13 @@ class DataFilter extends FormElement
      */
     public $helper = 'formDataFilter';
 
-    protected $addTo;
+    private $addTo;
 
-    protected $removeFilter;
+    private $removeFilter;
 
-    protected $stripFilter;
+    private $stripFilter;
+
+    private $filter;
 
     /**
      * @codingStandardsIgnoreStart
@@ -58,68 +60,111 @@ class DataFilter extends FormElement
             return Filter::matchAll();
         }
 
-        $filter = null;
+        $this->filter = null;
         foreach ($array as $id => $entry) {
             $filterId = $this->idToFilterId($id);
             $sub = $this->entryToFilter($entry);
             $this->checkEntryForActions($filterId, $entry);
             $parentId = $this->parentIdFor($filterId);
 
-            if ($filter === null) {
-                $filter = $sub;
+            if ($this->filter === null) {
+                $this->filter = $sub;
             } else {
-                $filter->getById($parentId)->addFilter($sub);
+                $this->filter->getById($parentId)->addFilter($sub);
             }
         }
 
+        $this->removeFilterIfRequested()
+             ->stripFilterIfRequested()
+             ->addNewFilterIfRequested()
+             ->fixNotsWithMultipleChildren();
+
+        return $this->filter;
+    }
+
+    protected function removeFilterIfRequested()
+    {
         if ($this->removeFilter !== null) {
-            if ($filter->getById($this->removeFilter)->isRootNode()) {
-                $filter = $this->emptyExpression();
+            if ($this->filter->getById($this->removeFilter)->isRootNode()) {
+                $this->filter = $this->emptyExpression();
             } else {
-                $filter->removeId($this->removeFilter);
+                $this->filter->removeId($this->removeFilter);
             }
         }
 
+        return $this;
+    }
+
+
+    protected function stripFilterIfRequested()
+    {
         if ($this->stripFilter !== null) {
             $strip = $this->stripFilter;
             $subId = $strip . '-1';
-            if ($filter->getId() === $strip) {
-                $filter = $filter->getById($strip . '-1');
+            if ($this->filter->getId() === $strip) {
+                $this->filter = $this->filter->getById($strip . '-1');
             } else {
-                $filter->replaceById($strip, $filter->getById($strip . '-1'));
+                $this->filter->replaceById($strip, $this->filter->getById($strip . '-1'));
             }
         }
 
+        return $this;
+    }
+
+    protected function addNewFilterIfRequested()
+    {
         if ($this->addTo !== null) {
-            $parent = $filter->getById($this->addTo);
+            $parent = $this->filter->getById($this->addTo);
 
             if ($parent->isChain()) {
                 if ($parent->isEmpty()) {
                     $parent->addFilter($this->emptyExpression());
-                } elseif ($parent->getOperatorName() === 'NOT') {
-                    $andNot = Filter::matchAll();
-                    foreach ($parent->filters() as $sub) {
-                        $andNot->addFilter(clone($sub));
-                    }
-                    $clone->addFilter($this->emptyExpression());
-                    $filter->replaceById(
-                        $parent->getId(),
-                        Filter::not($andNot)
-                    );
                 } else {
                     $parent->addFilter($this->emptyExpression());
                 }
             } else {
                 $replacement = Filter::matchAll(clone($parent));
                 if ($parent->isRootNode()) {
-                    $filter = $replacement;
+                    $this->filter = $replacement;
                 } else {
-                    $filter->replaceById($parent->getId(), $replacement);
+                    $this->filter->replaceById($parent->getId(), $replacement);
                 }
             }
         }
 
+        return $this;
+    }
+
+    protected function fixNotsWithMultipleChildren(Filter $filter = null)
+    {
+        $this->filter = $this->fixNotsWithMultipleChildrenForFilter($this->filter);
+        return $this;
+    }
+
+    protected function fixNotsWithMultipleChildrenForFilter(Filter $filter)
+    {
+        if ($filter->isChain()) {
+            if ($filter->getOperatorName() === 'NOT') {
+                if ($filter->count() > 1) {
+                    $filter = $this->notToNotAnd($filter);
+                }
+            }
+            foreach ($filter->filters() as $sub) {
+                $filter->replaceById($sub->getId(), $this->fixNotsWithMultipleChildrenForFilter($sub));
+            }
+        }
+
         return $filter;
+    }
+
+    protected function notToNotAnd(Filter $not)
+    {
+        $and = Filter::matchAll();
+        foreach ($not->filters() as $sub) {
+            $and->addFilter(clone($sub));
+        }
+
+        return Filter::not($and);
     }
 
     protected function emptyExpression()
