@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
@@ -1931,6 +1932,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $str;
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    public function renderAssign_Filter()
+    {
+        // @codingStandardsIgnoreEnd
+        return '    ' . AssignRenderer::forFilter(
+            Filter::fromQueryString($this->assign_filter)
+        )->renderAssign();
     }
 
     public function toLegacyConfigString()
