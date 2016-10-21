@@ -20,8 +20,6 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
     private $fieldName;
 
-    private $addTo;
-
     private $cachedColumnSelect;
 
     private $query;
@@ -50,19 +48,13 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             unset($attribs['columns']);
         }
 
-        if (array_key_exists('addTo', $attribs)) {
-            $this->addTo = $attribs['addTo'];
-            unset($attribs['addTo']);
-        }
-
         // TODO: check for columns in attribs, preserve & remove them from the
         // array use attribs? class etc? disabled?
         // override _getInfo?
-
         $this->fieldName = $name;
-        // $this->fieldName = $id;
+
         if ($value === null) {
-            $value = Filter::matchAll();
+            $value = $this->emptyExpression();
         } elseif (is_string($value)) {
             $value = Filter::fromQueryString($value);
         }
@@ -72,16 +64,19 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
     protected function renderFilter(Filter $filter, $level = 0)
     {
-        if ($level === 0 && $filter->isChain() && $filter->isEmpty()) {
-            return '<ul class="filter-expression filter-root"><li class="active">'
-            . $this->renderNewFilter()
-            . '</li></ul>';
+        if ($level === 0 && (
+            ($filter->isChain() && $filter->isEmpty())
+            || $filter->isExpression())) {
+            $pre = '<ul class="filter-expression filter-root"><li class="active">';
+            $post = '</li></ul>';
+        } else {
+            $pre = $post = '';
         }
 
         if ($filter instanceof FilterChain) {
-            return $this->renderFilterChain($filter, $level);
+            return $pre . $this->renderFilterChain($filter, $level) . $post;
         } elseif ($filter instanceof FilterExpression) {
-            return $this->renderFilterExpression($filter, $level);
+            return $pre . $this->renderFilterExpression($filter, $level) . $post;
         } else {
             throw new ProgrammingError('Got a Filter being neither expression nor chain');
         }
@@ -101,14 +96,9 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 . '</li>';
         }
 
-        if ($this->addTo && $this->addTo == $filter->getId()) {
-            $parts[] = '<li style="background: #ffb">'
-                . $this->renderNewFilter()
-                // . $this->cancelLink()
-                . '</li>';
-        }
-
-        return $this->beginChain($filter) . implode('', $parts) . $this->endChain($filter);
+        return $this->beginChain($filter)
+            . implode('', $parts)
+            . $this->endChain($filter);
     }
 
     protected function beginChain(FilterChain $filter)
@@ -117,7 +107,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
         $list = $filter->isEmpty() ? '' : '<ul' . $root . '>' . "\n";
 
-        return '<div class="filter-chain'
+        return '<li><div class="filter-chain'
              . '"><span class="handle"> </span>'
              . $this->selectOperator($filter)
              . $this->removeLink($filter)
@@ -129,7 +119,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function endChain(FilterChain $filter)
     {
         $list = $filter->isEmpty() ? '' : "</ul>\n";
-        return $list . "</div>\n";
+        return $list . "</div></li>\n";
     }
 
     protected function beginExpression(FilterExpression $filter)
@@ -141,28 +131,6 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function endExpression(FilterExpression $filter)
     {
         return "</div>\n";
-    }
-
-    protected function eventuallyAddTo($html, Filter $filter, $level)
-    {
-        if ($this->addTo && $this->addTo === $filter->getId()) {
-            // $filter->replaceWith(Filter::matchAll(clone($filter)));
-            // $and = $filt = Filter::matchAll(clone($filter));
-            // return $this->renderFilterChain($filter, $level);
-
-            $html .= preg_replace(
-                //'/ class="autosubmit"/',
-                '/ class="/',
-                ' class="autofocus',
-                $this->selectOperator()
-            ) . '<ul><li>'
-            . $html
-            . '</li><li class="active">'
-            . $this->renderNewFilter() /*.$this->cancelLink()*/
-            . '</li></ul>';
-        }
-
-        return $html;
     }
 
     protected function filterExpressionHtml(FilterExpression $filter, $level)
@@ -177,11 +145,8 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function renderFilterExpression(FilterExpression $filter, $level)
     {
         return $this->beginExpression($filter)
-             . $this->eventuallyAddTo(
-                 $this->filterExpressionHtml($filter, $level),
-                 $filter,
-                 $level
-             ) . $this->endExpression($filter);
+             . $this->filterExpressionHtml($filter, $level)
+             . $this->endExpression($filter);
     }
 
     protected function element(Filter $filter = null)
@@ -252,9 +217,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
     protected function renderNewFilter()
     {
-        return $this->selectColumn()
-              . $this->selectSign()
-              . $this->element();
+        return $this->renderFilterExpression($this->emptyExpression(), 0);
     }
 
     protected function arrayForSelect($array, $flip = false)
@@ -278,11 +241,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         $prefix = $this->fieldName . '[id_';
         $suffix = '][' . $field . ']';
 
-        if ($filter === null) {
-            return $prefix . 'new_' . ($this->addTo ?: '0') . $suffix;
-        } else {
-            return $prefix . $filter->getId() . $suffix;
-        }
+        return $prefix . $filter->getId() . $suffix;
     }
 
     protected function selectOperator(Filter $filter = null)

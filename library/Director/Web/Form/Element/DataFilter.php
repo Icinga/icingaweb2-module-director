@@ -32,10 +32,6 @@ class DataFilter extends FormElement
                 $value = $this->arrayToFilter($value);
             }
 
-            if ($value->isEmpty()) {
-                $value = Filter::matchAll(Filter::expression('', '=', ''));
-            }
-
         } catch (Exception $e) {
             $value = null;
             // TODO: getFile, getLine
@@ -45,77 +41,40 @@ class DataFilter extends FormElement
         }
     }
 
+    /**
+     * This method transforms filter form data into a filter
+     * and reacts on pressed buttons
+     */
     protected function arrayToFilter($array)
     {
         if ($array === null) {
+            return null;
             return Filter::matchAll();
         }
 
-        $firstKey = key($array);
-        if (! in_array($firstKey, array('id_1', 'id_new_0'))) {
-            die('FCK: ' . key($array));
-        }
-
-        $entry = array_shift($array);
-        $filter = $this->entryToFilter($entry);
-        if ($firstKey === 'id_new_0') {
-            $this->setAttrib('addTo', '0');
-        }
-   
-        $remove = $strip = null;
-
-        // TODO: This is for the first entry, duplicates code and has debug info
-        $filterId = $this->idToFilterId($firstKey);
-        switch ($this->entryAction($entry)) {
-            case 'cancel':
-                $remove = $filterId;
-                echo "cancel";
-                break;
-
-            case 'minus':
-                $strip = $filterId;
-                echo "minus";
-                break;
-
-            case 'plus':
-                $this->setAttrib('addTo', $filterId);
-                echo "plus";
-                break;
-        }
-
+        $filter = null;
         foreach ($array as $id => $entry) {
-            // TODO: addTo from FilterEditor
-
-            $sub = $this->entryToFilter($entry);
             $filterId = $this->idToFilterId($id);
-
-            switch ($this->entryAction($entry)) {
-                case 'cancel':
-                    $remove = $filterId;
-                    break;
-
-                case 'minus':
-                    $strip = $filterId;
-                    break;
-
-                case 'plus':
-                    $this->setAttrib('addTo', $filterId);
-                    break;
-            }
-
+            $sub = $this->entryToFilter($entry);
+            $this->checkEntryForActions($filterId, $entry);
             $parentId = $this->parentIdFor($filterId);
-            $filter->getById($parentId)->addFilter($sub);
+
+            if ($filter === null) {
+                $filter = $sub;
+            } else {
+                $filter->getById($parentId)->addFilter($sub);
+            }
         }
 
-        if ($remove) {
+        if ($remove = $this->getAttrib('removeFilter')) {
             if ($filter->getById($remove)->isRootNode()) {
-                $filter = Filter::matchAll();
+                $filter = $this->emptyExpression();
             } else {
                 $filter->removeId($remove);
             }
         }
 
-        if ($strip) {
+        if ($strip = $this->getAttrib('stripFilter')) {
             $subId = $strip . '-1';
             if ($filter->getId() === $strip) {
                 $filter = $filter->getById($strip . '-1');
@@ -124,7 +83,43 @@ class DataFilter extends FormElement
             }
         }
 
+        if ($addTo = $this->getAttrib('addTo')) {
+            $parent = $filter->getById($addTo);
+
+            if ($parent->isChain()) {
+                if ($parent->isEmpty()) {
+                    $parent->addFilter($this->emptyExpression());
+                } elseif ($parent->getOperatorName() === 'NOT') {
+                    $andNot = Filter::matchAll();
+                    foreach ($parent->filters() as $sub) {
+                        $andNot->addFilter(clone($sub));
+                    }
+                    $clone->addFilter($this->emptyExpression());
+                    $filter->replaceById(
+                        $parent->getId(),
+                        Filter::not($andNot)
+                    );
+                } else {
+                    $parent->addFilter($this->emptyExpression());
+                }
+            } else {
+                $replacement = Filter::matchAll(clone($parent));
+                if ($parent->isRootNode()) {
+                    $filter = $replacement;
+                } else {
+                    $filter->replaceById($parent->getId(), $replacement);
+                }
+            }
+
+            $this->setAttrib('addTo', null);
+        }
+
         return $filter;
+    }
+
+    protected function emptyExpression()
+    {
+        return Filter::expression('', '=', '');
     }
 
     protected function parentIdFor($id)
@@ -145,41 +140,72 @@ class DataFilter extends FormElement
         return $m[2];
     }
 
+    protected function checkEntryForActions($filterId, $entry)
+    {
+        switch ($this->entryAction($entry)) {
+            case 'cancel':
+                $this->setAttrib('removeFilter', $filterId);
+                break;
+
+            case 'minus':
+                $this->setAttrib('stripFilter', $filterId);
+                break;
+
+            case 'plus':
+            case 'angle-double-right':
+                $this->setAttrib('addTo', $filterId);
+                break;
+        }
+    }
+
+    /**
+     * Transforms a single submitted form component from an array
+     * into a Filter object
+     *
+     * @param Array $entry The array as submitted through the form
+     *
+     * @return Filter
+     */
     protected function entryToFilter($entry)
     {
         if (array_key_exists('operator', $entry)) {
             return Filter::chain($entry['operator']);
         } else {
-            if ($entry['sign'] === 'true') {
-                return Filter::expression(
-                    $entry['column'],
-                    '=',
-                    true
-                );
-            } elseif ($entry['sign'] === 'in') {
-                if (array_key_exists('value', $entry)) {
-                    if (is_array($entry['value'])) {
-                        $value = array_filter($entry['value'], 'strlen');
-                    } elseif (empty($entry['value'])) {
-                        $value = array();
-                    } else {
-                        $value = array($entry['value']);
-                    }
-                } else {
+            return $this->entryToFilterExpression($entry);
+        }
+    }
+
+    protected function entryToFilterExpression($entry)
+    {
+        if ($entry['sign'] === 'true') {
+            return Filter::expression(
+                $entry['column'],
+                '=',
+                true
+            );
+        } elseif ($entry['sign'] === 'in') {
+            if (array_key_exists('value', $entry)) {
+                if (is_array($entry['value'])) {
+                    $value = array_filter($entry['value'], 'strlen');
+                } elseif (empty($entry['value'])) {
                     $value = array();
+                } else {
+                    $value = array($entry['value']);
                 }
-                return Filter::expression(
-                    $entry['column'],
-                    '=',
-                    $value
-                );
             } else {
-                return Filter::expression(
-                    $entry['column'],
-                    $entry['sign'],
-                    array_key_exists('value', $entry) ? $entry['value'] : null
-                );
+                $value = array();
             }
+            return Filter::expression(
+                $entry['column'],
+                '=',
+                $value
+            );
+        } else {
+            return Filter::expression(
+                $entry['column'],
+                $entry['sign'],
+                array_key_exists('value', $entry) ? $entry['value'] : null
+            );
         }
     }
 
