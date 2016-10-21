@@ -3,4 +3,4 @@ ALTER TABLE icinga_service
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (110, NOW());
+  VALUES (119, NOW());
