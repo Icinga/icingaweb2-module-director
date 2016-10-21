@@ -2,17 +2,16 @@
 
 namespace Icinga\Module\Director\Web\Navigation\Renderer;
 
-use Exception;
 use Icinga\Application\Config;
-use Icinga\Module\Director\ConfigHealthChecker;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Web\Navigation\Renderer\BadgeNavigationItemRenderer;
 
 class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 {
-    private $db;
+    protected $db;
 
     private $directorState = self::STATE_OK;
 
@@ -78,15 +77,17 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
             return;
         }
 
-        $kickstart = new KickstartHelper($db);
-        if ($kickstart->isRequired()) {
-            $this->directorState = self::STATE_PENDING;
-            $this->count = 1;
-            $this->message = $this->translate(
-                'No API user configured, you might run the kickstart helper'
-            );
+        if (! $this->config()->isLegacy()) {
+            $kickstart = new KickstartHelper($db);
+            if ($kickstart->isRequired()) {
+                $this->directorState = self::STATE_PENDING;
+                $this->count = 1;
+                $this->message = $this->translate(
+                    'No API user configured, you might run the kickstart helper'
+                );
 
-            return;
+                return;
+            }
         }
 
         $pendingChanges = $db->countActivitiesSinceLastDeployedConfig();
@@ -96,7 +97,7 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
             $this->count = $pendingChanges;
             $this->message = sprintf(
                 $this->translate(
-                    '%s config changes happend since the last deployed configuration'
+                    '%s config changes happened since the last deployed configuration'
                 ),
                 $pendingChanges
             );
@@ -112,11 +113,20 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 
     protected function db()
     {
+        if ($this->db !== null) {
+            return $this->db;
+        }
+
         $resourceName = Config::module('director')->get('db', 'resource');
         if ($resourceName) {
-            return Db::fromResourceName($resourceName);
+            return $this->db = Db::fromResourceName($resourceName);
         } else {
             return false;
         }
+    }
+
+    protected function config()
+    {
+        return new IcingaConfig($this->db());
     }
 }
