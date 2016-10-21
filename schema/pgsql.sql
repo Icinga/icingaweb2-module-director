@@ -700,6 +700,7 @@ CREATE TABLE icinga_service (
   icon_image character varying(255) DEFAULT NULL,
   icon_image_alt character varying(255) DEFAULT NULL,
   use_agent enum_boolean DEFAULT NULL,
+  apply_for character varying(255) DEFAULT NULL,
   use_var_overrides enum_boolean DEFAULT NULL,
   PRIMARY KEY (id),
 -- UNIQUE INDEX object_name (object_name, zone_id),
@@ -1646,4 +1647,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (117, NOW());
+  VALUES (119, NOW());

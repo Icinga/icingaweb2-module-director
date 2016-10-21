@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -81,31 +82,27 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
-    public static function enumProperties(DbConnection $connection = null, $prefix = '')
+    public static function enumProperties(DbConnection $connection = null, $prefix = '', $filter= null)
     {
-        $hostProperties = array($prefix . 'name' => 'name');
+        $hostProperties = array();
+        if ($filter === null) {
+            $filter = new PropertiesFilter();
+        }
         $realProperties = static::create()->listProperties();
         sort($realProperties);
 
-        $blacklist = array(
-            'id',
-            'object_name',
-            'object_type',
-            'disabled',
-            'has_agent',
-            'master_should_connect',
-            'accept_config',
-        );
-
+        if ($filter->match(PropertiesFilter::$HOST_PROPERTY, 'name')) {
+            $hostProperties[$prefix . 'name'] = 'name';
+        }
         foreach ($realProperties as $prop) {
-            if (in_array($prop, $blacklist)) {
+            if (!$filter->match(PropertiesFilter::$HOST_PROPERTY, $prop)) {
                 continue;
             }
 
             if (substr($prop, -3) === '_id') {
                 $prop = substr($prop, 0, -3);
             }
-
+            
             $hostProperties[$prefix . $prop] = $prop;
         }
 
@@ -113,14 +110,16 @@ class IcingaHost extends IcingaObject
 
         if ($connection !== null) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
-                if ($var->datatype) {
-                    $hostVars[$prefix . 'vars.' . $var->varname] = sprintf(
-                        '%s (%s)',
-                        $var->varname,
-                        $var->caption
-                    );
-                } else {
-                    $hostVars[$prefix . 'vars.' . $var->varname] = $var->varname;
+                if ($filter->match(PropertiesFilter::$CUSTOM_PROPERTY, $var->varname, $var)) {
+                    if ($var->datatype) {
+                        $hostVars[$prefix . 'vars.' . $var->varname] = sprintf(
+                            '%s (%s)',
+                            $var->varname,
+                            $var->caption
+                        );
+                    } else {
+                        $hostVars[$prefix . 'vars.' . $var->varname] = $var->varname;
+                    }
                 }
             }
         }
@@ -131,9 +130,11 @@ class IcingaHost extends IcingaObject
 
         $props = mt('director', 'Host properties');
         $vars  = mt('director', 'Custom variables');
-        $properties = array(
-            $props => $hostProperties,
-        );
+
+        $properties = array();
+        if (!empty($hostProperties)) {
+            $properties[$props] = $hostProperties;
+        }
 
         if (!empty($hostVars)) {
             $properties[$vars] = $hostVars;
