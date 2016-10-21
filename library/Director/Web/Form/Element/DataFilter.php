@@ -17,6 +17,12 @@ class DataFilter extends FormElement
      */
     public $helper = 'formDataFilter';
 
+    protected $addTo;
+
+    protected $removeFilter;
+
+    protected $stripFilter;
+
     /**
      * @codingStandardsIgnoreStart
      */
@@ -66,15 +72,16 @@ class DataFilter extends FormElement
             }
         }
 
-        if ($remove = $this->getAttrib('removeFilter')) {
-            if ($filter->getById($remove)->isRootNode()) {
+        if ($this->removeFilter !== null) {
+            if ($filter->getById($this->removeFilter)->isRootNode()) {
                 $filter = $this->emptyExpression();
             } else {
-                $filter->removeId($remove);
+                $filter->removeId($this->removeFilter);
             }
         }
 
-        if ($strip = $this->getAttrib('stripFilter')) {
+        if ($this->stripFilter !== null) {
+            $strip = $this->stripFilter;
             $subId = $strip . '-1';
             if ($filter->getId() === $strip) {
                 $filter = $filter->getById($strip . '-1');
@@ -83,8 +90,8 @@ class DataFilter extends FormElement
             }
         }
 
-        if ($addTo = $this->getAttrib('addTo')) {
-            $parent = $filter->getById($addTo);
+        if ($this->addTo !== null) {
+            $parent = $filter->getById($this->addTo);
 
             if ($parent->isChain()) {
                 if ($parent->isEmpty()) {
@@ -110,8 +117,6 @@ class DataFilter extends FormElement
                     $filter->replaceById($parent->getId(), $replacement);
                 }
             }
-
-            $this->setAttrib('addTo', null);
         }
 
         return $filter;
@@ -144,16 +149,16 @@ class DataFilter extends FormElement
     {
         switch ($this->entryAction($entry)) {
             case 'cancel':
-                $this->setAttrib('removeFilter', $filterId);
+                $this->removeFilter = $filterId;
                 break;
 
             case 'minus':
-                $this->setAttrib('stripFilter', $filterId);
+                $this->stripFilter = $filterId;
                 break;
 
             case 'plus':
             case 'angle-double-right':
-                $this->setAttrib('addTo', $filterId);
+                $this->addTo = $filterId;
                 break;
         }
     }
