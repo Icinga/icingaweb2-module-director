@@ -258,6 +258,11 @@ class IcingaConfigHelper
         return $seconds . 's';
     }
 
+    public static function stringHasMacro($string)
+    {
+        return preg_match('/(?<!\$)\$[\w\.]+\$(?!\$)/', $string);
+    }
+
     public static function renderStringWithVariables($string)
     {
         $string = preg_replace(

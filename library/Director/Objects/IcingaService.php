@@ -173,7 +173,12 @@ class IcingaService extends IcingaObject
             && $this->get('apply_for') !== null) {
 
             $name = $this->getObjectName();
-            if ($name !== '') {
+            $extraName = '';
+
+            if (c::stringHasMacro($name)) {
+                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $name = '';
+            } elseif ($name !== '') {
                 $name = ' ' . c::renderString($name);
             }
 
@@ -183,7 +188,7 @@ class IcingaService extends IcingaObject
                 $this->getType(),
                 $name,
                 $this->get('apply_for')
-            );
+            ) . $extraName;
         }
         return parent::renderObjectHeader();
     }

@@ -279,7 +279,7 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
-    public function testApplyFor()
+    public function testApplyForRendersInVariousModes()
     {
         if ($this->skipForMissingDb()) {
             return;
@@ -295,6 +295,18 @@ class IcingaServiceTest extends BaseTestCase
         );
         $this->assertEquals(
             $this->loadRendered('service5'),
+            (string) $service
+        );
+
+        $service->object_name = '___TEST$config$___service $host.var.bla$';
+        $this->assertEquals(
+            $this->loadRendered('service6'),
+            (string) $service
+        );
+
+        $service->object_name = '';
+        $this->assertEquals(
+            $this->loadRendered('service7'),
             (string) $service
         );
     }
