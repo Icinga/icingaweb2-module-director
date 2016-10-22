@@ -44,4 +44,4 @@ DROP TABLE icigna_service_assignment;
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (118, NOW());
+  VALUES (120, NOW());
