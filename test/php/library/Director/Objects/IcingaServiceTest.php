@@ -244,15 +244,13 @@ class IcingaServiceTest extends BaseTestCase
         $db = $this->getDb();
 
         $service = $this->service('___TEST___service_$not_replaced$');
+        $service->setConnection($db);
         $service->object_type = 'apply';
         $service->display_name = 'Service: $host.vars.replaced$';
         $service->assignments = array(
             'host.address="127.*"',
         );
         $service->{'vars.custom_var'} = '$host.vars.replaced$';
-        $service->store($db);
-
-        $service = IcingaService::loadWithAutoIncId($service->id, $db);
 
         $this->assertEquals(
             $this->loadRendered('service3'),
@@ -289,15 +287,12 @@ class IcingaServiceTest extends BaseTestCase
 
         $db = $this->getDb();
 
-        $service = $this->service();
+        $service = $this->service()->setConnection($db);
         $service->object_type = 'apply';
         $service->apply_for = 'host.vars.test1';
         $service->assignments = array(
             'host.vars.env="test"'
         );
-        $service->store($db);
-
-        $service = IcingaService::loadWithAutoIncId($service->id, $db);
         $this->assertEquals(
             $this->loadRendered('service5'),
             (string) $service
