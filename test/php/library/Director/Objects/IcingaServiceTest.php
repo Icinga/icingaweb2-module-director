@@ -253,8 +253,9 @@ class IcingaServiceTest extends BaseTestCase
         $service->store($db);
 
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
+
         $this->assertEquals(
-            $this->loadRendered('service5'),
+            $this->loadRendered('service3'),
             (string) $service
         );
     }
@@ -276,6 +277,29 @@ class IcingaServiceTest extends BaseTestCase
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
         $this->assertEquals(
             $this->loadRendered('service4'),
+            (string) $service
+        );
+    }
+
+    public function testApplyFor()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service();
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.test1';
+        $service->assignments = array(
+            'host.vars.env="test"'
+        );
+        $service->store($db);
+
+        $service = IcingaService::loadWithAutoIncId($service->id, $db);
+        $this->assertEquals(
+            $this->loadRendered('service5'),
             (string) $service
         );
     }
