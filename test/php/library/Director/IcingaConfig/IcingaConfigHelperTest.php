@@ -69,4 +69,38 @@ class IcingaConfigHelperTest extends BaseTestCase
     {
         return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
+
+    public function testRenderStringIsCorrectlyRendered()
+    {
+        $this->assertEquals(c::renderString('val1\\\val2'), '"val1\\\\\\\\val2"');
+        $this->assertEquals(c::renderString('"val1"'), '"\"val1\""');
+        $this->assertEquals(c::renderString('\$val\$'), '"\\\\$val\\\\$"');
+        $this->assertEquals(c::renderString('\t'), '"\\\\t"');
+        $this->assertEquals(c::renderString('\r'), '"\\\\r"');
+        $this->assertEquals(c::renderString('\n'), '"\\\\n"');
+        $this->assertEquals(c::renderString('\f'), '"\\\\f"');
+    }
+
+    public function testRenderStringWithVariables()
+    {
+        $this->assertEquals(c::renderStringWithVariables('Before $var$'), '"Before " + var');
+        $this->assertEquals(c::renderStringWithVariables('$var$ After'), 'var + " After"');
+        $this->assertEquals(c::renderStringWithVariables('$var$'), 'var');
+        $this->assertEquals(c::renderStringWithVariables('$$var$$'), '"$$var$$"');
+        $this->assertEquals(c::renderStringWithVariables('Before $$var$$ After'), '"Before $$var$$ After"');
+        $this->assertEquals(
+            c::renderStringWithVariables('Before $name$ $name$ After'),
+            '"Before " + name + " " + name + " After"'
+        );
+        $this->assertEquals(
+            c::renderStringWithVariables('Before $var1$ $var2$ After'),
+            '"Before " + var1 + " " + var2 + " After"'
+        );
+        $this->assertEquals(c::renderStringWithVariables('$host.vars.custom$'), 'host.vars.custom');
+        $this->assertEquals(c::renderStringWithVariables('$var"$'), '"$var\"$"');
+        $this->assertEquals(
+            c::renderStringWithVariables('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$'),
+            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"'
+        );
+    }
 }

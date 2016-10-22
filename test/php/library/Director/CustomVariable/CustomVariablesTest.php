@@ -44,6 +44,21 @@ class CustomVariablesTest extends BaseTestCase
         );
     }
 
+    public function testVariablesToExpression()
+    {
+        $vars = $this->newVars();
+        $vars->bla = 'da';
+        $vars->abc = '$val$';
+        $expected = $this->indentVarsList(array(
+            'vars.abc = val',
+            'vars.bla = "da"'
+        ));
+        $this->assertEquals(
+            $vars->toConfigString(true),
+            $expected
+        );
+    }
+
     protected function indentVarsList($vars)
     {
         return $this->indent . implode(

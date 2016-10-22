@@ -1,0 +1,12 @@
+object Service "___TEST___service_$not_replaced$" {
+    display_name = "Service: $host.vars.not_replaced$"
+    vars.custom_var = "$host.vars.not_replaced$"
+    vars.test1 = "string"
+    vars.test2 = 17
+    vars.test3 = false
+    vars.test4 = {
+        a = [ "dict", "ionary" ]
+        @this = "is"
+    }
+}
+

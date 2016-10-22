@@ -1,0 +1,16 @@
+apply Service "___TEST___service_$not_replaced$" {
+    display_name = "Service: " + host.vars.replaced
+    vars.custom_var = host.vars.replaced
+    vars.test1 = "string"
+    vars.test2 = 17
+    vars.test3 = false
+    vars.test4 = {
+        a = [ "dict", "ionary" ]
+        @this = "is"
+    }
+
+    assign where match("127.*", host.address)
+
+    import DirectorOverrideTemplate
+}
+

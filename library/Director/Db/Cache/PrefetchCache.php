@@ -84,14 +84,14 @@ class PrefetchCache
     }
     */
 
-    public function renderVar(CustomVariable $var)
+    public function renderVar(CustomVariable $var, $renderExpressions = false)
     {
         $checksum = $var->getChecksum();
         if (null === $checksum) {
-            return $var->toConfigString();
+            return $var->toConfigString($renderExpressions);
         } else {
             if (! array_key_exists($checksum, $this->renderedVars)) {
-                $this->renderedVars[$checksum] = $var->toConfigString();
+                $this->renderedVars[$checksum] = $var->toConfigString($renderExpressions);
             }
 
             return $this->renderedVars[$checksum];
