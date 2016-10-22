@@ -134,6 +134,20 @@ class IcingaService extends IcingaObject
     }
 
     /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function setObject_Name($name)
+    {
+        // @codingStandardsIgnoreEnd
+
+        if ($name === null && $this->isApplyRule()) {
+            $name = '';
+        }
+
+        return $this->reallySet('object_name', $name);
+    }
+
+    /**
      * Render host_id as host_name
      *
      * Avoid complaints for method names with underscore:
@@ -158,11 +172,16 @@ class IcingaService extends IcingaObject
             && !$this->hasBeenAssignedToHostTemplate()
             && $this->get('apply_for') !== null) {
 
+            $name = $this->getObjectName();
+            if ($name !== '') {
+                $name = ' ' . c::renderString($name);
+            }
+
             return sprintf(
-                "%s %s %s for (config in %s) {\n",
+                "%s %s%s for (config in %s) {\n",
                 $this->getObjectTypeName(),
                 $this->getType(),
-                c::renderString($this->getObjectName()),
+                $name,
                 $this->get('apply_for')
             );
         }

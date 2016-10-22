@@ -29,6 +29,20 @@ class DirectorActivityLog extends DbObject
         'parent_checksum' => null,
     );
 
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function setObject_Name($name)
+    {
+        // @codingStandardsIgnoreEnd
+
+        if ($name === null) {
+            $name = '';
+        }
+
+        return $this->reallySet('object_name', $name);
+    }
+
     protected static function username()
     {
         if (Icinga::app()->isCli()) {

@@ -105,7 +105,7 @@ class IcingaHost extends IcingaObject
             if (substr($prop, -3) === '_id') {
                 $prop = substr($prop, 0, -3);
             }
-            
+
             $hostProperties[$prefix . $prop] = $prop;
         }
 

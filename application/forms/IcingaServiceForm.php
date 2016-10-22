@@ -212,7 +212,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Name'),
-            'required'    => true,
+            'required'    => !$this->object()->isApplyRule(),
             'description' => $this->translate(
                 'Name for the Icinga service you are going to create'
             )
