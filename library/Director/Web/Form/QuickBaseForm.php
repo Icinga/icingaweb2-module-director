@@ -72,11 +72,13 @@ abstract class QuickBaseForm extends Zend_Form
         return $this;
     }
 
-    public function optionalEnum($enum)
+    public function optionalEnum($enum, $nullLabel = null)
     {
-        return array(
-            null => $this->translate('- please choose -')
-        ) + $enum;
+        if ($nullLabel === null) {
+            $nullLabel = $this->translate('- please choose -');
+        }
+
+        return array(null => $nullLabel) + $enum;
     }
 
     protected function handleOptions($options = null)

@@ -244,15 +244,14 @@ class IcingaServiceTest extends BaseTestCase
         $db = $this->getDb();
 
         $service = $this->service('___TEST___service_$not_replaced$');
+        $service->setConnection($db);
         $service->object_type = 'apply';
         $service->display_name = 'Service: $host.vars.replaced$';
         $service->assignments = array(
             'host.address="127.*"',
         );
         $service->{'vars.custom_var'} = '$host.vars.replaced$';
-        $service->store($db);
 
-        $service = IcingaService::loadWithAutoIncId($service->id, $db);
         $this->assertEquals(
             $this->loadRendered('service3'),
             (string) $service
@@ -276,6 +275,38 @@ class IcingaServiceTest extends BaseTestCase
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
         $this->assertEquals(
             $this->loadRendered('service4'),
+            (string) $service
+        );
+    }
+
+    public function testApplyForRendersInVariousModes()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.test1';
+        $service->assignments = array(
+            'host.vars.env="test"'
+        );
+        $this->assertEquals(
+            $this->loadRendered('service5'),
+            (string) $service
+        );
+
+        $service->object_name = '___TEST$config$___service $host.var.bla$';
+        $this->assertEquals(
+            $this->loadRendered('service6'),
+            (string) $service
+        );
+
+        $service->object_name = '';
+        $this->assertEquals(
+            $this->loadRendered('service7'),
             (string) $service
         );
     }

@@ -39,6 +39,7 @@ class IcingaService extends IcingaObject
         'icon_image'            => null,
         'icon_image_alt'        => null,
         'use_agent'             => null,
+        'apply_for'             => null,
         'use_var_overrides'     => null,
     );
 
@@ -84,6 +85,13 @@ class IcingaService extends IcingaObject
 
     protected $prioritizedProperties = array('host_id');
 
+    protected $propertiesNotForRendering = array(
+        'id',
+        'object_name',
+        'object_type',
+        'apply_for'
+    );
+
     public function getCheckCommand()
     {
         $id = $this->getResolvedProperty('check_command_id');
@@ -126,6 +134,20 @@ class IcingaService extends IcingaObject
     }
 
     /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function setObject_Name($name)
+    {
+        // @codingStandardsIgnoreEnd
+
+        if ($name === null && $this->isApplyRule()) {
+            $name = '';
+        }
+
+        return $this->reallySet('object_name', $name);
+    }
+
+    /**
      * Render host_id as host_name
      *
      * Avoid complaints for method names with underscore:
@@ -142,6 +164,33 @@ class IcingaService extends IcingaObject
         }
 
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
+    }
+
+    protected function renderObjectHeader()
+    {
+        if ($this->isApplyRule()
+            && !$this->hasBeenAssignedToHostTemplate()
+            && $this->get('apply_for') !== null) {
+
+            $name = $this->getObjectName();
+            $extraName = '';
+
+            if (c::stringHasMacro($name)) {
+                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $name = '';
+            } elseif ($name !== '') {
+                $name = ' ' . c::renderString($name);
+            }
+
+            return sprintf(
+                "%s %s%s for (config in %s) {\n",
+                $this->getObjectTypeName(),
+                $this->getType(),
+                $name,
+                $this->get('apply_for')
+            ) . $extraName;
+        }
+        return parent::renderObjectHeader();
     }
 
     protected function renderAssignments()

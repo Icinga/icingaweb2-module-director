@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -47,7 +48,7 @@ class IcingaServiceForm extends DirectorObjectForm
             if (!$this->isNew() && $this->host === null) {
                 $this->host = $this->object->getResolvedRelated('host');
             }
-        } catch(NestingError $nestingError) {
+        } catch (NestingError $nestingError) {
             // ignore for the form to load
         }
 
@@ -81,6 +82,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addImportsElement()
              ->addGroupsElement()
              ->addDisabledElement()
+             ->addApplyForElement()
              ->groupMainProperties()
              ->addAssignmentElements()
              ->addCheckCommandElements()
@@ -210,7 +212,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Name'),
-            'required'    => true,
+            'required'    => !$this->object()->isApplyRule(),
             'description' => $this->translate(
                 'Name for the Icinga service you are going to create'
             )
@@ -232,6 +234,32 @@ class IcingaServiceForm extends DirectorObjectForm
             ));
         }
 
+        return $this;
+    }
+
+    protected function addApplyForElement()
+    {
+        if ($this->object->isApplyRule()) {
+            $hostProperties = IcingaHost::enumProperties(
+                $this->object->getConnection(),
+                'host.',
+                new ArrayCustomVariablesFilter()
+            );
+
+            $this->addElement('select', 'apply_for', array(
+                'label' => $this->translate('Apply For'),
+                'class' => 'assign-property autosubmit',
+                'multiOptions' => $this->optionalEnum($hostProperties, $this->translate('None')),
+                'description' => $this->translate(
+                    'Evaluates the apply for rule for ' .
+                    'all objects with the custom attribute specified. ' .
+                    'E.g selecting "host.vars.custom_attr" will generate "for (config in ' .
+                    'host.vars.array_var)" where "config" will be accessible through "$config$". ' .
+                    'NOTE: only custom variables of type "Array" are eligible.'
+                )
+            ));
+
+        }
         return $this;
     }
 

@@ -311,6 +311,7 @@ abstract class DirectorObjectForm extends QuickForm
             'email',
             'pager',
             'enable_notifications',
+            'apply_for',
             'create_live',
             'disabled',
         );
