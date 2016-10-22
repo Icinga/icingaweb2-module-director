@@ -12,7 +12,8 @@ class IcingaServiceTest extends BaseTestCase
     protected $testHostName = '___TEST___host';
 
     protected $testServiceName = '___TEST___service';
-    protected $createdServices = [];
+
+    protected $createdServices = array();
 
     public function testUnstoredHostCanBeLazySet()
     {

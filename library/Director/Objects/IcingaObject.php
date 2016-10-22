@@ -1703,7 +1703,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this->renderRelationProperty($relKey, $value);
         }
 
-        return c::renderKeyValue($key, c::renderString($value, $this->isApplyRule()));
+        return c::renderKeyValue(
+            $key,
+            $this->isApplyRule() ?
+                c::renderStringWithVariables($value) :
+                c::renderString($value)
+        );
     }
 
     protected function renderLegacyObjectProperty($key, $value)
