@@ -154,7 +154,9 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         if ($filter) {
             // TODO: Make this configurable
             $type = 'host';
+            $filter = clone($filter);
 
+            $filter->setExpression(json_decode($filter->getExpression()));
             $dummy = IcingaObject::createByType($type);
             $col = $filter->getColumn();
             if ($dummy->hasProperty($col)) {

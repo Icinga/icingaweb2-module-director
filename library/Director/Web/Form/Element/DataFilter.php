@@ -231,7 +231,7 @@ class DataFilter extends FormElement
             return Filter::expression(
                 $entry['column'],
                 '=',
-                true
+                json_encode(true)
             );
         } elseif ($entry['sign'] === 'in') {
             if (array_key_exists('value', $entry)) {
@@ -248,13 +248,15 @@ class DataFilter extends FormElement
             return Filter::expression(
                 $entry['column'],
                 '=',
-                $value
+                json_encode($value)
             );
         } else {
+            $value = array_key_exists('value', $entry) ? $entry['value'] : null;
+
             return Filter::expression(
                 $entry['column'],
                 $entry['sign'],
-                array_key_exists('value', $entry) ? $entry['value'] : null
+                json_encode($value)
             );
         }
     }
