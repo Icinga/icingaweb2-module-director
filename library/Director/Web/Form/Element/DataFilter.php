@@ -25,6 +25,28 @@ class DataFilter extends FormElement
 
     private $filter;
 
+    public function getValue()
+    {
+        $value = parent::getValue();
+        if ($value !== null && $this->isEmpty($value)) {
+            $value = null;
+        }
+
+        return $value;
+    }
+
+    protected function isEmpty(Filter $filter)
+    {
+        return $filter->isEmpty() || $this->isEmptyExpression($filter);
+    }
+
+    protected function isEmptyExpression($filter)
+    {
+        return $filter->isExpression() &&
+            $filter->getColumn() === '' &&
+            $filter->getExpression() === '""'; // -> json_encode('')
+    }
+
     /**
      * @codingStandardsIgnoreStart
      */
@@ -150,7 +172,10 @@ class DataFilter extends FormElement
                 }
             }
             foreach ($filter->filters() as $sub) {
-                $filter->replaceById($sub->getId(), $this->fixNotsWithMultipleChildrenForFilter($sub));
+                $filter->replaceById(
+                    $sub->getId(),
+                    $this->fixNotsWithMultipleChildrenForFilter($sub)
+                );
             }
         }
 
@@ -270,15 +295,36 @@ class DataFilter extends FormElement
         return null;
     }
 
+    protected function hasIncompleteExpressions(Filter $filter)
+    {
+        if ($filter->isChain()) {
+            foreach ($filter->filters() as $sub) {
+                if ($this->hasIncompleteExpressions($sub)) {
+                    return true;
+                }
+            }
+        } else {
+            if ($filter->isRootNode() && $this->isEmptyExpression($filter)) {
+                return false;
+            }
+
+            return $filter->getColumn() === '';
+        }
+    }
+
     public function isValid($value, $context = null)
     {
         if (! $value instanceof Filter) {
             // TODO: try, return false on E
             $filter = $this->arrayToFilter($value);
+            $this->setValue($filter);
         }
 
-        $this->setValue($filter);
+        if ($this->hasIncompleteExpressions($filter)) {
+            $this->addError('The configured filter is incomplete');
+            return false;
+        }
 
-        return true;
+        return parent::isValid($value);
     }
 }

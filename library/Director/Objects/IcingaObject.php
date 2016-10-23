@@ -1942,7 +1942,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // @codingStandardsIgnoreEnd
         return '    ' . AssignRenderer::forFilter(
             Filter::fromQueryString($this->assign_filter)
-        )->renderAssign();
+        )->renderAssign() . "\n";
     }
 
     public function toLegacyConfigString()

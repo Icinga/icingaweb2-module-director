@@ -59,41 +59,37 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $value = Filter::fromQueryString($value);
         }
 
-        return $this->renderFilter($value);
+        return $this->beginRoot()
+            . $this->renderFilter($value)
+            . $this->endRoot();
     }
 
-    protected function renderFilter(Filter $filter, $level = 0)
+    protected function renderFilter(Filter $filter)
     {
-        if ($level === 0 && (
-            ($filter->isChain() && $filter->isEmpty())
-            || $filter->isExpression())) {
-            $pre = '<ul class="filter-expression filter-root"><li class="active">';
-            $post = '</li></ul>';
-        } else {
-            $pre = $post = '';
-        }
-
         if ($filter instanceof FilterChain) {
-            return $pre . $this->renderFilterChain($filter, $level) . $post;
+            return $this->renderFilterChain($filter);
         } elseif ($filter instanceof FilterExpression) {
-            return $pre . $this->renderFilterExpression($filter, $level) . $post;
+            return $this->renderFilterExpression($filter);
         } else {
             throw new ProgrammingError('Got a Filter being neither expression nor chain');
         }
     }
 
-    protected function emptyExpression()
+    protected function beginRoot()
     {
-        return Filter::expression('', '=', '');
+        return '<ul class="filter-root">';
     }
 
-    protected function renderFilterChain(FilterChain $filter, $level)
+    protected function endRoot()
+    {
+        return '</ul>';
+    }
+
+    protected function renderFilterChain(FilterChain $filter)
     {
         $parts = array();
         foreach ($filter->filters() as $f) {
-            $parts[] = '<li>'
-                . $this->renderFilter($f, $level + 1)
-                . '</li>';
+            $parts[] = $this->renderFilter($f);
         }
 
         return $this->beginChain($filter)
@@ -103,12 +99,9 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
     protected function beginChain(FilterChain $filter)
     {
-        $root = $filter->isRootNode() === 0 ? ' class="filter-root"' : '';
+        $list = $filter->isEmpty() ? '' : '<ul>' . "\n";
 
-        $list = $filter->isEmpty() ? '' : '<ul' . $root . '>' . "\n";
-
-        return '<li><div class="filter-chain'
-             . '"><span class="handle"> </span>'
+        return '<li class="filter-chain"><span class="handle"> </span>'
              . $this->selectOperator($filter)
              . $this->removeLink($filter)
              . $this->addLink($filter)
@@ -119,13 +112,12 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function endChain(FilterChain $filter)
     {
         $list = $filter->isEmpty() ? '' : "</ul>\n";
-        return $list . "</div></li>\n";
+        return $list . "</li>\n";
     }
 
     protected function beginExpression(FilterExpression $filter)
     {
-        $root = $filter->isRootNode() === 0 ? ' filter-root' : '';
-        return '<div class="filter-expression' . $root . '">' . "\n";
+        return '<div class="filter-expression">' . "\n";
     }
 
     protected function endExpression(FilterExpression $filter)
@@ -133,23 +125,35 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return "</div>\n";
     }
 
-    protected function filterExpressionHtml(FilterExpression $filter, $level)
+    protected function beginElement(FilterExpression $filter)
+    {
+        return '<div class="expression-wrapper">' . "\n";
+    }
+
+    protected function endElement(FilterExpression $filter)
+    {
+        return "</div>\n";
+    }
+
+    protected function filterExpressionHtml(FilterExpression $filter)
     {
         return $this->selectColumn($filter)
              . $this->selectSign($filter)
+             . $this->beginElement($filter)
              . $this->element($filter)
+             . $this->endElement($filter)
              . $this->removeLink($filter)
              . $this->expandLink($filter);
     }
 
-    protected function renderFilterExpression(FilterExpression $filter, $level)
+    protected function renderFilterExpression(FilterExpression $filter)
     {
         return $this->beginExpression($filter)
-             . $this->filterExpressionHtml($filter, $level)
+             . $this->filterExpressionHtml($filter)
              . $this->endExpression($filter);
     }
 
-    protected function element(Filter $filter = null)
+    protected function element(FilterExpression $filter = null)
     {
         if ($filter) {
             // TODO: Make this configurable
@@ -217,9 +221,9 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         );
     }
 
-    protected function renderNewFilter()
+    protected function emptyExpression()
     {
-        return $this->renderFilterExpression($this->emptyExpression(), 0);
+        return Filter::expression('', '=', '');
     }
 
     protected function arrayForSelect($array, $flip = false)
@@ -340,7 +344,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $this->elementId('column', $filter),
             $cols,
             $active,
-            array('class' => 'autosubmit')
+            array('class' => 'column autosubmit')
         );
     }
 
