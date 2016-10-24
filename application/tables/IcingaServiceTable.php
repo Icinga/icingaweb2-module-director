@@ -23,11 +23,6 @@ class IcingaServiceTable extends QuickTable
         );
     }
 
-    protected function listTableClasses()
-    {
-        return array_merge(array('assignment-table'), parent::listTableClasses());
-    }
-
     protected function getActionUrl($row)
     {
         // TODO: Remove once we got a separate apply table
@@ -38,55 +33,7 @@ class IcingaServiceTable extends QuickTable
 
         }
 
-        return $this->url('director/service', $params);
-    }
-
-    protected function renderRow($row)
-    {
-        $v = $this->view();
-        $extra = $this->appliedOnes($row->id);
-        $htm = "  <tr" . $this->getRowClassesString($row) . ">\n";
-        $htm .= '<td>' . $v->qlink($row->service, $this->getActionUrl($row));
-        if (empty($extra)) {
-            if ($row->check_command_id) {
-                $htm .= ' ' . $v->qlink(
-                        'Create apply-rule',
-                        'director/service/add',
-                        array('apply' => $row->service),
-                        array('class' => 'icon-plus')
-                    );
-            }
-
-        } else {
-            $htm .= '. Related apply rules: <table class="apply-rules">';
-            foreach ($extra as $service) {
-                $href = $v->url('director/service', array('id' => $service->id));
-                $htm .= "<tr href=\"$href\">";
-
-                try {
-                    $prettyFilter = AssignRenderer::forFilter(
-                        Filter::fromQueryString($service->assign_filter)
-                    )->renderAssign();
-                }
-                catch (IcingaException $e) {
-                    // ignore errors in filter rendering
-                    $prettyFilter = 'Error in Filter rendering: ' . $e->getMessage();
-                }
-
-                $htm .= "<td><a href=\"$href\">" . $service->object_name . '</a></td>';
-                $htm .= '<td>' . $prettyFilter . '</td>';
-                $htm .= '<tr>';
-            }
-            $htm .= '</table>';
-            $htm .= $v->qlink(
-                'Add more',
-                'director/service/add',
-                array('apply' => $row->service),
-                array('class' => 'icon-plus')
-            );
-        }
-        $htm .= '</td>';
-        return $htm . "  </tr>\n";
+        return $this->url('director/service/edit', $params);
     }
 
     public function getTitles()
