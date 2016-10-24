@@ -77,10 +77,10 @@ abstract class DirectorObjectForm extends QuickForm
         $object = $this->object;
 
         if (! $object instanceof IcingaObject) {
-            return $this->resolvedImports = false;
+            return $this->setResolvedImports(false);
         }
         if (! $object->supportsImports()) {
-            return $this->resolvedImports = false;
+            return $this->setResolvedImports(false);
         }
 
         if ($this->hasBeenSent()) {
@@ -100,7 +100,12 @@ abstract class DirectorObjectForm extends QuickForm
             return $this->resolvedImports = false;
         }
 
-        return $this->resolvedImports = true;
+        return $this->setResolvedImports();
+    }
+
+    public function setResolvedImports($resolved = true)
+    {
+        return $this->resolvedImports = $resolved;
     }
 
     public function isObject()
@@ -289,8 +294,8 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $elements = array(
             'object_type',
-            'imports',
             'object_name',
+            'imports',
             'display_name',
             'host_id',
             'address',

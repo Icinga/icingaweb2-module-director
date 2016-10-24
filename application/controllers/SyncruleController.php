@@ -14,6 +14,7 @@ class SyncruleController extends ActionController
 {
     public function indexAction()
     {
+        $this->setAutoRefreshInterval(10);
         $id = $this->params->get('id');
         $this->prepareRuleTabs($id)->activate('show');
         $rule = $this->view->rule = SyncRule::load($id, $this->db());

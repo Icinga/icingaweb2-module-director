@@ -206,7 +206,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
             $v = clone($element);
             $v->setName($key . '_' . $checksum);
-            $v->setDescription($description . '. ' . $this->descriptionForObjects($objects));
+            $v->setDescription($description . ' ' . $this->descriptionForObjects($objects));
             $v->setLabel($label . $this->labelCount($objects));
             $v->setValue($value);
             if ($group) {

@@ -832,6 +832,21 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    public function getResolvedVar($varname)
+    {
+        try {
+            $vars = $this->getResolvedVars();
+        } catch (NestingError $e) {
+            return null;
+        }
+
+        if (property_exists($vars, $varname)) {
+            return $vars->$varname;
+        } else {
+            return null;
+        }
+    }
+
     public function getOriginForVar($varname)
     {
         try {
