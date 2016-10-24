@@ -47,6 +47,7 @@ CREATE TABLE director_generated_file (
   content MEDIUMTEXT NOT NULL,
   cnt_object INT(10) UNSIGNED NOT NULL DEFAULT 0,
   cnt_template INT(10) UNSIGNED NOT NULL DEFAULT 0,
+  cnt_apply INT(10) UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1354,4 +1355,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (121, NOW());
+  VALUES (122, NOW());
