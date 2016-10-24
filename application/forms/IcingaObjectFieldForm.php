@@ -73,11 +73,23 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             }
         }
 
+        $objectVars = null;
+        if ($this->icingaObject->supportsCustomVars()) {
+            $objectVars = (array) $this->icingaObject->vars;
+        }
+
         // Prepare combined fields array
         $fields = array();
         if (! empty($suggestedFields)) {
             asort($existingFields);
             $fields[$this->translate('Suggested fields')] = $suggestedFields;
+        }
+
+        if ($objectVars) {
+            $vars = array_keys($objectVars);
+            $vars = array_combine($vars, $vars);
+            ksort($objectVars);
+            $fields[$this->translate('Defined vars')] = $vars;
         }
 
         if (! empty($argumentVars)) {
