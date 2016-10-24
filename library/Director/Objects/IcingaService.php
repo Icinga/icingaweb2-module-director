@@ -118,19 +118,6 @@ class IcingaService extends IcingaObject
         return $this->use_var_overrides === 'y';
     }
 
-    /**
-     * @codingStandardsIgnoreStart
-     */
-    public function setAssign_filter($filter)
-    {
-        // @codingStandardsIgnoreEnd
-        if ($filter instanceof Filter) {
-            $filter = $filter->toQueryString();
-        }
-
-        return $this->reallySet('assign_filter', $filter);
-    }
-
     protected function setKey($key)
     {
         if (is_int($key)) {
@@ -208,21 +195,6 @@ class IcingaService extends IcingaObject
         return parent::renderObjectHeader();
     }
 
-    protected function renderAssignments()
-    {
-        if (! $this->hasBeenAssignedToHostTemplate()) {
-            return parent::renderAssignments();
-        }
-
-        // TODO: use assignment renderer?
-        $filter = sprintf(
-            'assign where %s in host.templates',
-            c::renderString($this->host)
-        );
-
-        return "\n    " . $filter . "\n";
-    }
-
     protected function hasBeenAssignedToHostTemplate()
     {
         return $this->host_id && $this->getRelatedObject(
@@ -253,18 +225,30 @@ class IcingaService extends IcingaObject
 
     protected function renderCustomExtensions()
     {
-        // A hand-crafted command endpoint overrides use_agent
+        $output = '';
+
+         if ($this->hasBeenAssignedToHostTemplate()) {
+            // TODO: use assignment renderer?
+            $filter = sprintf(
+                'assign where %s in host.templates',
+                c::renderString($this->host)
+            );
+
+            $output .= "\n    " . $filter . "\n";
+        }
+
+       // A hand-crafted command endpoint overrides use_agent
         if ($this->command_endpoint_id !== null) {
-            return '';
+            return $output;
         }
 
         // In case use_agent isn't defined, do nothing
         // TODO: what if we inherit use_agent and override it with 'n'?
         if ($this->use_agent !== 'y') {
-            return '';
+            return $output;
         }
 
-        return c::renderKeyValue('command_endpoint', 'host_name');
+        return $output . c::renderKeyValue('command_endpoint', 'host_name');
     }
 
     /**

@@ -157,36 +157,13 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        if (!$this->object || !$this->object->isApplyRule()) {
-            return $this;
-        }
-        $this->addElement('dataFilter', 'assign_filter', array(
-            'columns' => IcingaHost::enumProperties($this->db),
+        $this->addAssignFilter(array(
+            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
             'required' => true,
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want'
             )
-        ));
-        $el = $this->getElement('assign_filter');
-
-        $el->clearDecorators()
-            ->addDecorator('ViewHelper')
-            ->addDecorator('Errors')
-            ->addDecorator('Description', array('tag' => 'p', 'class' => 'description'))
-            ->addDecorator('HtmlTag', array(
-                'tag'   => 'dd',
-                'class' => 'full-width required',
-            ));
-
-        $this->addDisplayGroup(array($el), 'assign', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order'  => 30,
-            'legend' => $this->translate('Assign where')
         ));
 
         return $this;

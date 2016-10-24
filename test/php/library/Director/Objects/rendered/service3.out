@@ -1,5 +1,6 @@
 apply Service "___TEST___service_$not_replaced$" {
     display_name = "Service: " + host.vars.replaced
+    assign where match("127.*", host.address)
     vars.custom_var = host.vars.replaced
     vars.test1 = "string"
     vars.test2 = 17
@@ -8,8 +9,6 @@ apply Service "___TEST___service_$not_replaced$" {
         a = [ "dict", "ionary" ]
         @this = "is"
     }
-
-    assign where match("127.*", host.address)
 
     import DirectorOverrideTemplate
 }
