@@ -18,6 +18,7 @@ $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeNumber');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDirectorObject');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeSqlQuery');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeString');
+$this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeMetaArray');
 
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierLowercase');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierRegexReplace');
