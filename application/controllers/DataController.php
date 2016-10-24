@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Objects\DirectorDatalist;
+use Icinga\Module\Director\Objects\DirectorDictionary;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class DataController extends ActionController
@@ -171,6 +172,107 @@ class DataController extends ActionController
         $this->setViewScript('objects/table');
     }
 
+    public function dictionariesAction() {
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add Dictionary'),
+            'director/data/dictionary',
+            null,
+            array('class' => 'icon-plus')
+        );
+
+        $this->setDataTabs()->activate('dictionary');
+        $this->view->title = $this->translate('Dictionaries');
+        $this->prepareAndRenderTable('dictionary');
+    }
+
+    public function dictionaryAction() {
+        $this->view->stayHere = true;
+
+        $form = $this->view->form = $this->loadForm('directorDictionary')
+            ->setSuccessUrl('director/data/dictionaries')
+            ->setDb($this->db());
+
+        if ($id = $this->getRequest()->getUrl()->shift('id')) {
+            $form->loadObject($id);
+            $this->view->title = sprintf(
+                $this->translate('Dictionary: %s'),
+                $form->getObject()->dictionary_name
+            );
+
+            //TODO: check why
+            $this->view->addLink = $this->view->qlink(
+                $this->translate('back'),
+                'director/data/dictionary',
+                null,
+                array('class' => 'icon-left-big')
+            );
+
+            $this->view->addLink .= $this->view->qlink(
+                $this->translate('Dictionary Fields'),
+                'director/data/dictionary_field',
+                array('dictionary_id' => $id),
+                array(
+                    'class'            => 'icon-doc-text',
+                    'data-base-target' => '_next'
+                )
+            );
+            //END TODO
+
+            $this->addDictionaryTabs($id)
+                ->activate('editdictionary');
+
+        } else {
+            $this->view->title = $this->translate('Add dictionary');
+
+            $this->getTabs()->add('adddictionary', array(
+                'url'       => 'director/data/dictionary',
+                'label'     => $this->view->title,
+            ))->activate('adddictionary');
+        }
+
+        $form->handleRequest();
+        $this->setViewScript('object/form');
+    }
+
+    public function dictionaryfieldAction() {
+        $this->view->stayHere = true;
+
+        $url = $this->getRequest()->getUrl();
+        $fieldId = $url->shift('id');
+        $dictionary = DirectorDictionary::load($url->shift('dictionary_id'), $this->db());
+        $dictionaryId = $dictionary->id;
+
+        $form = $this->view->form = $this->loadForm('directorDictionaryField')
+            ->setSuccessUrl('director/data/dictionaryfield?dictionary_id=' . $dictionaryId)
+            ->setDictionary($dictionary)
+            ->setDb($this->db());
+
+        if ($fieldId) {
+            $form->loadObject(array(
+                'id' => $fieldId
+            ));
+            $this->view->addLink = $this->view->qlink(
+                $this->translate('back'),
+                'director/data/dictionaryfield' . '?dictionary_id=' . $dictionaryId,
+                null,
+                array('class' => 'icon-left-big')
+            );
+        }
+
+        $form->handleRequest();
+
+        $this->view->title = $this->translate('Dictionary fields')
+            . ': ' . $dictionary->dictionary_name;
+
+        $this->addDictionaryTabs($dictionaryId, $this->view->title)
+            ->activate('dictionary_field');
+
+        $this->prepareTable('dictionaryField')->setDictionary($dictionary);
+        $this->setViewScript('objects/table');
+    }
+
+
+
     protected function prepareTable($name)
     {
         $table = $this->loadTable($name)->setConnection($this->db());
@@ -183,5 +285,18 @@ class DataController extends ActionController
     {
         $this->prepareTable($name);
         $this->setViewScript('objects/table');
+    }
+
+    protected function addDictionaryTabs($id, $dictionaryFieldTitle=null) {
+        if ($dictionaryFieldTitle === null) {
+            $dictionaryFieldTitle = $this->translate('Dictionary Fields');
+        }
+        return $this->getTabs()->add('editdictionary', array(
+            'url'       => 'director/data/dictionary' . '?id=' . $id,
+            'label'     => $this->translate('Edit dictionary'),
+        ))->add('dictionary_field', array(
+            'url'       => 'director/data/dictionary_field' . '?dictionary_id=' . $id,
+            'label'     => $dictionaryFieldTitle,
+        ));
     }
 }

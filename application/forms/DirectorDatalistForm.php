@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Authentication\Auth;
 
 class DirectorDatalistForm extends DirectorObjectForm
 {
@@ -31,15 +30,5 @@ class DirectorDatalistForm extends DirectorObjectForm
     {
         $this->object()->owner = self::username();
         parent::onSuccess();
-    }
-
-    protected static function username()
-    {
-        $auth = Auth::getInstance();
-        if ($auth->isAuthenticated()) {
-            return $auth->getUser()->getUsername();
-        } else {
-            return '<unknown>';
-        }
     }
 }
