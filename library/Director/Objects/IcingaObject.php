@@ -1076,6 +1076,52 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $vals;
     }
 
+    public static function fetchAllFullyResolved(Db $db)
+    {
+        PrefetchCache::initialize($db);
+        $all = static::prefetchAll($db);
+        IcingaZone::prefetchAll($db);
+        IcingaCommand::prefetchAll($db);
+        // $filter = Filter::fromQueryString('object_name=WELO*&vars.location=*');
+        $filter = Filter::fromQueryString('object_name=WELO*&vars.psc_dashboard');
+        echo $filter . "\n";
+        $matches = array();
+        $dba = $db->getDbAdapter();
+
+        $dba->beginTransaction();
+
+        foreach ($all as $host) {
+            $db->insert('icinga_host_resolved', (array) $host->getResolvedProperties());
+            continue;
+            $clone = IcingaHost::fromPlainObject($host->toPlainObject(true));
+            $clone->table = 'icinga_host_resolved';
+            $clone->vars = null;
+            $clone->groups = null;
+            $clone->id = $host->id;
+            $clone->setConnection($db)->insertIntoDb();
+            continue;
+            if ($host->matches($filter)) {
+                $matches[] = $host;
+            }
+
+            // $host->toPlainObject(true);
+            if (isset($host->vars()->location)) {
+            // printf("%s: %s\n", $host->object_name, $host->vars()->location->getValue());
+            } else {
+            // printf("%s HAS NO LOCATION\n", $host->object_name);
+            }
+        }
+
+        $dba->commit();
+
+
+        foreach ($matches as $host) {
+            printf("%s: %s (match)\n", $host->object_name, $host->vars()->location->getValue());
+        }
+
+        printf("%d hosts loaded\n", count($all));
+    }
+
     public function matches(Filter $filter)
     {
         // TODO: speed up by passing only desired properties (filter columns) to
