@@ -25,6 +25,17 @@ class DirectorJobForm extends DirectorObjectForm
             return;
         }
 
+        $oldJobClass = $this->getSentValue('former_job_class');
+        $this->addHidden('former_job_class', $jobClass);
+        $this->setSentValue('former_job_class', $jobClass);
+
+        if ($oldJobClass !== $jobClass) {
+            //var_dump('CHANGED');
+            $jobClassChanged = true;
+        } else {
+            $jobClassChanged = false;
+        }
+
         if ($desc = $jobClass::getDescription($this)) {
             $this->addHtmlHint($desc);
         }
@@ -74,6 +85,16 @@ class DirectorJobForm extends DirectorObjectForm
             ),
             'required'    => true,
         ));
+
+        $jobName = $this->getSentValue('job_name');
+        $hasNoJobName = ! strlen($jobName) || in_array($jobName, $jobTypes);
+
+        if ($jobClassChanged && $hasNoJobName) {
+            $this->setSentValue(
+                'job_name',
+                $jobTypes[$jobClass]
+            );
+        }
 
         $this->addSettings();
         $this->setButtons();
