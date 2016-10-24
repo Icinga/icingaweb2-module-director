@@ -28,6 +28,9 @@ class Zend_View_Helper_FormDictionary extends Zend_View_Helper_FormTextarea
         $info = $this->_getInfo($name, $value, $attribs);
         extract($info); // name, value, attribs, options, listsep, disable
 
+        $defaultValue = $attribs['structure'];
+        unset($attribs['structure']);
+
         // is it disabled?
         $disabled = '';
         if ($disable) {
@@ -49,7 +52,7 @@ class Zend_View_Helper_FormDictionary extends Zend_View_Helper_FormTextarea
             . ' id="' . $this->view->escape($id) . '"'
             . $disabled
             . $this->_htmlAttribs($attribs) . '>'
-            . json_encode($value, JSON_PRETTY_PRINT) . '</textarea>';
+            . json_encode($value ? $value : $defaultValue, JSON_PRETTY_PRINT) . '</textarea>';
 
         return $xhtml;
     }

@@ -154,4 +154,22 @@ class DictionaryTest extends BaseTestCase
 
         $this->assertFalse($this->dictionaryInstance->hasErrors());
     }
+
+    public function testValueIsNullIfNotChanged() {
+        $this->dictionaryInstance->setDefaultValue([
+            'key_one' => [
+                'sub_key_one' => ''
+            ]
+        ]);
+
+        $this->assertEquals(null, $this->dictionaryInstance->getValue());
+
+        $this->dictionaryInstance->setValue([
+            'key_one' => [
+                'sub_key_one' => 'some value'
+            ]
+        ]);
+
+        $this->assertEquals('some value', $this->dictionaryInstance->getValue()['key_one']['sub_key_one']);
+    }
 }

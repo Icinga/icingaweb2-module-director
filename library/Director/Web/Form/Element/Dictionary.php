@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Web\Form\Element;
 class Dictionary extends FormElement
 {
     public $helper = 'formDictionary';
-    private $structure = null;
+    public $structure = null;
     private $fieldSettingsMap = [];
 
     public function isValid($value, $context = null)
@@ -94,6 +94,11 @@ class Dictionary extends FormElement
     public function getValue()
     {
         $value = parent::getValue();
+
+        if ($value === $this->structure) {
+            return null;
+        }
+
         return $value;
     }
 }
