@@ -76,6 +76,21 @@ class SettingsForm extends QuickForm
             ),
         ));
 
+        $this->addElement('select', 'experimental_features', array(
+            'label'        => $this->translate('Enable experimental features'),
+            'multiOptions' => $this->eventuallyConfiguredEnum(
+                'experimental_features',
+                array(
+                    'n' => $this->translate('No'),
+                    'y' => $this->translate('Yes'),
+                )
+            ),
+            'description'  => $this->translate(
+                'Allow experimental features. NO, it is NOT a good idea to use'
+                . ' this. You\'ll break your monitoring and nobody will help you'
+            ),
+        ));
+
         $this->getElement('config_format')->setValue(
             $settings->getStoredValue('config_format')
         );

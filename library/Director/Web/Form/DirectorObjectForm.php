@@ -1178,7 +1178,7 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->allowsExperimental === null) {
             $this->allowsExperimental = $this->db->settings()->get(
                 'experimental_features'
-            ) === 'allow';
+            ) === 'y';
         }
 
         return $this->allowsExperimental;
