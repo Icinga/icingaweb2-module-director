@@ -110,17 +110,6 @@ class IcingaServiceTable extends QuickTable
 
     protected function appliedOnes($id)
     {
-        if ($this->connection()->isPgsql()) {
-            $nameCol = "s.object_name || COALESCE(': ' || ARRAY_TO_STRING(ARRAY_AGG("
-                . "a.assign_type || ' where ' || a.filter_string"
-                . " ORDER BY a.assign_type, a.filter_string), ', '), '')";
-        } else {
-            $nameCol = "s.object_name || COALESCE(': ' || GROUP_CONCAT("
-                . "a.assign_type || ' where ' || a.filter_string"
-                . " ORDER BY a.assign_type, a.filter_string SEPARATOR ', '"
-                . "), '')";
-        }
-
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('s' => 'icinga_service'),
