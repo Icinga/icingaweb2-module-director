@@ -69,6 +69,11 @@ class HostController extends ObjectController
             'director/service/add',
             array('host' => $host->object_name),
             array('class' => 'icon-plus')
+        ) . ' ' .  $this->view->qlink(
+            $this->translate('Add service set'),
+            'director/serviceset/add',
+            array('host' => $host->object_name),
+            array('class' => 'icon-plus')
         );
 
         $this->getTabs()->activate('services');
@@ -119,6 +124,14 @@ class HostController extends ObjectController
 
             $tables[$title] = $table->setTitle($title);
         }
+
+        $title = $this->translate('Service sets');
+        $table = $this->loadTable('IcingaHostServiceSet')
+            ->setHost($host)
+            ->setTitle($title)
+           ->setConnection($db);
+
+        $tables[$title] = $table;
 
         $this->view->tables = $tables;
     }

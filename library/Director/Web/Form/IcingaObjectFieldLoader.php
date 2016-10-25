@@ -25,9 +25,32 @@ class IcingaObjectFieldLoader
 
     public function addFieldsToForm(QuickForm $form)
     {
-        if ($this->object->supportsCustomVars()) {
+        if ($this->fields || $this->object->supportsFields()) {
             $this->attachFieldsToForm($form);
         }
+
+        return $this;
+    }
+
+    public function loadFieldsForMultipleObjects($objects)
+    {
+        $fields = array();
+        foreach ($objects as $object) {
+            foreach ($this->prepareObjectFields($object) as $varname => $field) {
+                $varname = $field->varname;
+                if (array_key_exists($varname, $fields)) {
+                    if ($field->datatype !== $fields[$varname]->datatype) {
+                        unset($fields[$varname]);
+                    }
+
+                    continue;
+                }
+
+                $fields[$field->varname] = $field;
+            }
+        }
+
+        $this->fields = $fields;
 
         return $this;
     }

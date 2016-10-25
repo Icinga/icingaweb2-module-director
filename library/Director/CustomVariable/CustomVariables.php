@@ -25,6 +25,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         'icinga_command_var',
         'icinga_host_var',
         'icinga_notification_var',
+        'icinga_service_set_var',
         'icinga_service_var',
         'icinga_user_var',
     );

@@ -40,6 +40,11 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         $this->relatedObjectClass = $relatedObjectClass;
     }
 
+    public function getObjects()
+    {
+        return $this->relations;
+    }
+
     public function count()
     {
         return count($this->relations);

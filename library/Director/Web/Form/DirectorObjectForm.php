@@ -33,6 +33,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $preferredObjectType;
 
+    protected $fieldLoader;
+
     private $allowsExperimental;
 
     private $api;
@@ -234,40 +236,60 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
-        $this->setDefaults($props);
-
-        if (! $object instanceof IcingaObject) {
-            return $this;
-        }
+        $this->setDefaults($this->removeNullProperties($props));
 
         if ($resolve) {
-            $inherited = $object->getInheritedProperties();
-            $origins   = $object->getOriginsProperties();
-        } else {
-            $inherited = (object) array();
-            $origins   = (object) array();
+            $this->showInheritedProperties($object);
         }
+    }
 
-        foreach ($props as $k => $v) {
-            $this->setElementValue($k, $v);
-            if ($k !== 'object_name' && property_exists($inherited, $k)) {
+    protected function showInheritedProperties($object)
+    {
+        $inherited = $object->getInheritedProperties();
+        $origins   = $object->getOriginsProperties();
+
+        foreach ($inherited as $k => $v) {
+            if ($v !== null && $k !== 'object_name') {
                 $el = $this->getElement($k);
-                if ($el && $resolve) {
+                if ($el) {
                     $this->setInheritedValue($el, $inherited->$k, $origins->$k);
                 }
             }
         }
     }
 
+    protected function removeNullProperties($props)
+    {
+        $result = array();
+        foreach ($props as $k => $v) {
+            if ($v !== null && $v !== '') {
+                $result[$k] = $v;
+            }
+        }
+
+        return $result;
+    }
+
     protected function handleCustomVars($object, & $values)
     {
         if ($this->assertResolvedImports()) {
-            $loader = new IcingaObjectFieldLoader($object);
+            $loader = $this->fieldLoader($object);
             $loader->addFieldsToForm($this);
             if ($values) {
                 $loader->setValues($values, 'var_');
             }
         }
+
+        return $this;
+    }
+
+    protected function fieldLoader($object)
+    {
+        if ($this->fieldLoader === null) {
+            $this->fieldLoader = new IcingaObjectFieldLoader($object);
+        }
+
+        return $this->fieldLoader;
     }
 
     protected function isNew()
@@ -907,9 +929,9 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckCommandElements()
+    protected function addCheckCommandElements($force = false)
     {
-        if (! $this->isTemplate()) {
+        if (! $force && ! $this->isTemplate()) {
             return $this;
         }
 
@@ -936,9 +958,9 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckExecutionElements()
+    protected function addCheckExecutionElements($force = false)
     {
-        if (! $this->isTemplate()) {
+        if (! $force && ! $this->isTemplate()) {
             return $this;
         }
 

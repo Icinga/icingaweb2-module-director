@@ -677,6 +677,7 @@ CREATE TABLE icinga_service (
   disabled enum_boolean DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   host_id INTEGER DEFAULT NULL,
+  service_set_id integer DEFAULT NULL,
   check_command_id integer DEFAULT NULL,
   max_check_attempts integer DEFAULT NULL,
   check_period_id integer DEFAULT NULL,
@@ -836,23 +837,6 @@ CREATE TABLE icinga_service_set (
 );
 
 CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id);
-
-
-CREATE TABLE icinga_service_set_service (
-  service_set_id serial,
-  service_id serial,
-  PRIMARY KEY (service_set_id, service_id),
-  CONSTRAINT icinga_service_set_set
-    FOREIGN KEY (service_set_id)
-    REFERENCES icinga_service_set (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  CONSTRAINT icinga_service_set_service
-    FOREIGN KEY (service_id)
-    REFERENCES icinga_service (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
-);
 
 
 CREATE TABLE icinga_service_set_inheritance (
@@ -1597,4 +1581,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (120, NOW());
+  VALUES (121, NOW());

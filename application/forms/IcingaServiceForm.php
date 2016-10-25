@@ -7,10 +7,13 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
     private $host;
+
+    private $set;
 
     private $apply;
 
@@ -52,7 +55,9 @@ class IcingaServiceForm extends DirectorObjectForm
             // ignore for the form to load
         }
 
-        if ($this->host === null) {
+        if ($this->set !== null) {
+            $this->setupSetRelatedElements();
+        } elseif ($this->host === null) {
             $this->setupServiceElements();
         } else {
             $this->setupHostRelatedElements();
@@ -203,6 +208,44 @@ class IcingaServiceForm extends DirectorObjectForm
     public function setHost(IcingaHost $host)
     {
         $this->host = $host;
+        return $this;
+    }
+
+    protected function setupSetRelatedElements()
+    {
+        $this->addHidden('service_set_id', $this->set->id);
+        $this->addHidden('object_type', 'apply');
+        $this->addImportsElement();
+        $imports = $this->getSentOrObjectValue('imports');
+
+        if ($this->hasBeenSent()) {
+            $imports = $this->getElement('imports')->setValue($imports)->getValue();
+        }
+
+        if ($this->isNew() && empty($imports)) {
+            return $this->groupMainProperties();
+        }
+
+        $this->addNameElement()
+             ->addDisabledElement()
+             ->groupMainProperties()
+             ->addCheckCommandElements(true)
+             ->addCheckExecutionElements(true)
+             ->addExtraInfoElements()
+             ->setButtons();
+
+        if ($this->hasBeenSent()) {
+            $name = $this->getSentOrObjectValue('object_name');
+            if (!strlen($name)) {
+                $this->setElementValue('object_name', end($imports));
+                $this->object->object_name = end($imports);
+            }
+        }
+    }
+
+    public function setServiceSet(IcingaServiceSet $set)
+    {
+        $this->set = $set;
         return $this;
     }
 

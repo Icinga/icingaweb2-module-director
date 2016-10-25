@@ -18,6 +18,7 @@ class IcingaService extends IcingaObject
         'disabled'              => 'n',
         'display_name'          => null,
         'host_id'               => null,
+        'service_set_id'        => null,
         'check_command_id'      => null,
         'max_check_attempts'    => null,
         'check_period_id'       => null,
@@ -47,6 +48,7 @@ class IcingaService extends IcingaObject
 
     protected $relations = array(
         'host'             => 'IcingaHost',
+        'service_set'      => 'IcingaServiceSet',
         'check_command'    => 'IcingaCommand',
         'event_command'    => 'IcingaCommand',
         'check_period'     => 'IcingaTimePeriod',
@@ -83,7 +85,7 @@ class IcingaService extends IcingaObject
 
     protected $supportsSets = true;
 
-    protected $keyName = array('host_id', 'object_name');
+    protected $keyName = array('host_id', 'service_set_id', 'object_name');
 
     protected $prioritizedProperties = array('host_id');
 
@@ -123,7 +125,7 @@ class IcingaService extends IcingaObject
         if (is_int($key)) {
             $this->id = $key;
         } elseif (is_array($key)) {
-            foreach (array('id', 'host_id', 'object_name') as $k) {
+            foreach (array('id', 'host_id', 'service_set_id', 'object_name') as $k) {
                 if (array_key_exists($k, $key)) {
                     $this->set($k, $key[$k]);
                 }
