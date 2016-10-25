@@ -284,7 +284,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             '>=' => '>=',
             '<=' => '<=',
             'in' => 'in',
-            'true' => 'is true (or set)',
+            // 'true' => 'is true (or set)',
         );
 
         if ($filter === null) {
