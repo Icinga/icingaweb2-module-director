@@ -49,7 +49,7 @@ class IcingaCommandForm extends DirectorObjectForm
             'description' => $this->translate('Identifier for the Icinga command you are going to create')
         ));
 
-        $this->addImportsElement();
+        $this->addImportsElement(false);
 
         $this->addElement('text', 'command', array(
             'label'       => $this->translate('Command'),
