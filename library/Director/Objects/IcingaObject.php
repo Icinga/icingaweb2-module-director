@@ -1378,8 +1378,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $config = new IcingaConfig($this->connection);
         $object = $this;
         if ($object->isExternal()) {
-            $object = clone($object);
             $object->object_type = 'object';
+            $wasExternal = true;
+        } else {
+            $wasExternal = false;
         }
 
         try {
@@ -1391,6 +1393,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 "/** Failed to render this object **/\n"
                 . '/*  ' . $e->getMessage() . ' */'
             );
+        }
+        if ($wasExternal) {
+            $object->object_type = 'external_object';
         }
 
         return $config;
