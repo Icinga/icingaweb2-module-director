@@ -1,18 +1,18 @@
-ALTER TABLE icinga_service ADD COLUMN assign_filter TEXT DEFAULT NULL;
+ALTER TABLE icinga_service ADD COLUMN assign_filter text DEFAULT NULL;
 
-UPDATE icinga_service s JOIN (
+WITH flat_assign AS (
 
     SELECT 
         service_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa.filter_string
-               ELSE GROUP_CONCAT(sa.filter_string SEPARATOR '&') END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa.filter_string)
+               ELSE ARRAY_TO_STRING(ARRAY_AGG(sa.filter_string), '&') END AS filter_string
     FROM (
         SELECT
           sa_not.service_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_not.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_not.filter_string SEPARATOR '&') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_not.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_not.filter_string), '&') || ')' END AS filter_string
           FROM ( SELECT
             sa.service_id,
             '!' || sa.filter_string AS filter_string
@@ -26,8 +26,8 @@ UPDATE icinga_service s JOIN (
         SELECT
           sa_yes.service_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_yes.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_yes.filter_string SEPARATOR '|') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_yes.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_yes.filter_string), '|') || ')' END AS filter_string
           FROM ( SELECT
             sa.service_id,
             sa.filter_string AS filter_string
@@ -38,25 +38,28 @@ UPDATE icinga_service s JOIN (
 
     ) sa GROUP BY service_id
 
-) flat_assign ON s.id = flat_assign.service_id SET s.assign_filter = flat_assign.filter_string;
+) UPDATE icinga_service s
+  SET assign_filter = flat_assign.filter_string
+  FROM flat_assign
+  WHERE s.id = flat_assign.service_id;
 
 DROP TABLE icinga_service_assignment;
 
-ALTER TABLE icinga_service_set ADD COLUMN assign_filter TEXT DEFAULT NULL;
+ALTER TABLE icinga_service_set ADD COLUMN assign_filter text DEFAULT NULL;
 
-UPDATE icinga_service_set s JOIN (
+WITH flat_assign AS (
 
     SELECT
         service_set_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa.filter_string
-               ELSE GROUP_CONCAT(sa.filter_string SEPARATOR '&') END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa.filter_string)
+               ELSE ARRAY_TO_STRING(ARRAY_AGG(sa.filter_string), '&') END AS filter_string
     FROM (
         SELECT
           sa_not.service_set_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_not.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_not.filter_string SEPARATOR '&') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_not.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_not.filter_string), '&') || ')' END AS filter_string
           FROM ( SELECT
             sa.service_set_id,
             '!' || sa.filter_string AS filter_string
@@ -70,8 +73,8 @@ UPDATE icinga_service_set s JOIN (
         SELECT
           sa_yes.service_set_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_yes.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_yes.filter_string SEPARATOR '|') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_yes.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_yes.filter_string), '|') || ')' END AS filter_string
           FROM ( SELECT
             sa.service_set_id,
             sa.filter_string AS filter_string
@@ -82,26 +85,29 @@ UPDATE icinga_service_set s JOIN (
 
     ) sa GROUP BY service_set_id
 
-) flat_assign ON s.id = flat_assign.service_set_id SET s.assign_filter = flat_assign.filter_string;
+) UPDATE icinga_service_set s
+  SET assign_filter = flat_assign.filter_string
+  FROM flat_assign
+  WHERE s.id = flat_assign.service_set_id;
 
 DROP TABLE icinga_service_set_assignment;
 
 
-ALTER TABLE icinga_notification ADD COLUMN assign_filter TEXT DEFAULT NULL;
+ALTER TABLE icinga_notification ADD COLUMN assign_filter text DEFAULT NULL;
 
-UPDATE icinga_notification s JOIN (
+WITH flat_assign AS (
 
     SELECT
         notification_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa.filter_string
-               ELSE GROUP_CONCAT(sa.filter_string SEPARATOR '&') END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa.filter_string)
+               ELSE ARRAY_TO_STRING(ARRAY_AGG(sa.filter_string), '&') END AS filter_string
     FROM (
         SELECT
           sa_not.notification_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_not.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_not.filter_string SEPARATOR '&') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_not.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_not.filter_string), '&') || ')' END AS filter_string
           FROM ( SELECT
             sa.notification_id,
             '!' || sa.filter_string AS filter_string
@@ -115,8 +121,8 @@ UPDATE icinga_notification s JOIN (
         SELECT
           sa_yes.notification_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_yes.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_yes.filter_string SEPARATOR '|') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_yes.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_yes.filter_string), '|') || ')' END AS filter_string
           FROM ( SELECT
             sa.notification_id,
             sa.filter_string AS filter_string
@@ -127,25 +133,29 @@ UPDATE icinga_notification s JOIN (
 
     ) sa GROUP BY notification_id
 
-) flat_assign ON s.id = flat_assign.notification_id SET s.assign_filter = flat_assign.filter_string;
+) UPDATE icinga_notification s
+  SET assign_filter = flat_assign.filter_string
+  FROM flat_assign
+  WHERE s.id = flat_assign.notification_id;
+
 
 DROP TABLE icinga_notification_assignment;
 
-ALTER TABLE icinga_hostgroup ADD COLUMN assign_filter TEXT DEFAULT NULL;
+ALTER TABLE icinga_hostgroup ADD COLUMN assign_filter text DEFAULT NULL;
 
-UPDATE icinga_hostgroup s JOIN (
+WITH flat_assign AS (
 
     SELECT
         hostgroup_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa.filter_string
-               ELSE GROUP_CONCAT(sa.filter_string SEPARATOR '&') END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa.filter_string)
+               ELSE ARRAY_TO_STRING(ARRAY_AGG(sa.filter_string), '&') END AS filter_string
     FROM (
         SELECT
           sa_not.hostgroup_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_not.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_not.filter_string SEPARATOR '&') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_not.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_not.filter_string), '&') || ')' END AS filter_string
           FROM ( SELECT
             sa.hostgroup_id,
             '!' || sa.filter_string AS filter_string
@@ -159,8 +169,8 @@ UPDATE icinga_hostgroup s JOIN (
         SELECT
           sa_yes.hostgroup_id,
           CASE WHEN COUNT(*) = 0 THEN NULL
-               WHEN COUNT(*) = 1 THEN sa_yes.filter_string
-               ELSE '(' || GROUP_CONCAT(sa_yes.filter_string SEPARATOR '|') || ')' END AS filter_string
+               WHEN COUNT(*) = 1 THEN MAX(sa_yes.filter_string)
+               ELSE '(' || ARRAY_TO_STRING(ARRAY_AGG(sa_yes.filter_string), '|') || ')' END AS filter_string
           FROM ( SELECT
             sa.hostgroup_id,
             sa.filter_string AS filter_string
@@ -171,12 +181,19 @@ UPDATE icinga_hostgroup s JOIN (
 
     ) sa GROUP BY hostgroup_id
 
-) flat_assign ON s.id = flat_assign.hostgroup_id SET s.assign_filter = flat_assign.filter_string;
+) UPDATE icinga_hostgroup s
+  SET assign_filter = flat_assign.filter_string
+  FROM flat_assign
+  WHERE s.id = flat_assign.hostgroup_id;
+
 
 DROP TABLE icinga_hostgroup_assignment;
 
 
-ALTER TABLE icinga_servicegroup ADD COLUMN assign_filter TEXT DEFAULT NULL;
+ALTER TABLE icinga_servicegroup ADD COLUMN assign_filter text DEFAULT NULL;
+
+
+DROP TYPE enum_assign_type;
 
 
 INSERT INTO director_schema_migration
