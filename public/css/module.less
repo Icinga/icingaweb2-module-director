@@ -186,6 +186,7 @@ input, select, select option, textarea {
 
 form ul.form-errors {
     margin-bottom: 0.5em;
+
     ul.errors li {
         background: @color-critical;
         font-weight: bold;
@@ -226,6 +227,10 @@ input[type=text], input[type=password], textarea, select {
 select option {
     height: 2em;
     padding-top: 0.3em;
+}
+
+select[multiple=multiple] {
+  height: auto;
 }
 
 label {
@@ -620,31 +625,6 @@ form dt label {
     }
 }
 
-ul.assign-rule {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    select, input[type=text] {
-        min-width: auto;
-    }
-
-    select.assign-type {
-        width: 8em;
-    }
-
-    select.assign-operator {
-        width: 3em;
-    }
-
-    select.assign-property {
-        width: 12em;
-    }
-
-    input.assign-expression {
-        width: 12em;
-    }
-}
-
 form fieldset {
     min-width: 36em;
 }
@@ -689,6 +669,10 @@ form dt {
     }
 }
 
+form .errors label {
+    color: @color-critical;
+}
+
 form dd {
     display: inline-block;
     width: 63%;
@@ -699,6 +683,11 @@ form dd {
         input[type=text], select {
             border-color: @color-critical;
         }
+    }
+
+    &.full-width {
+        padding: 0.5em;
+        width: 100%;
     }
 }
 
@@ -898,25 +887,25 @@ table.icinga-objects {
 }
 
 table.assignment-table {
-    ul.apply-rules {
+    table.apply-rules {
         margin: 1em 0 1em 0;
         padding: 0;
-        border: 1px solid @gray-lighter;
+        width: 100%;
 
-        li {
-            display: block;
+        tr {
+            border-bottom: 1px solid @gray-lighter;
+            border-left: 5px solid transparent;
 
-            a {
-                display: block;
-                float: none;
-                font-weight: normal;
-                background-color: white;
-                padding: 0.3em 1.5em;
-                &:hover {
-                    background-color: @icinga-blue;
-                    color: white;
-                    text-decoration: none;
-                }
+            td {
+                padding: 0.5em 1em;
+            }
+
+            &:hover, &:active, &.active {
+                border-left: 5px solid @icinga-blue;
+            }
+
+            &:hover {
+                background: white;
             }
         }
     }
@@ -1100,6 +1089,147 @@ table.config-diff {
         content: '\e85d';
     }
 }
+
+
+ul.assign-rule {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    select, input[type=text] {
+        min-width: auto;
+    }
+
+    select.assign-type {
+        width: 8em;
+    }
+
+
+    ul {
+        list-style-type: none;
+        padding-left: 2em;
+
+        li::before {
+            // icon: down-dir
+            font-family: 'ifont';
+            content: '\e81d';
+            // icon: right-small
+            content: '\e877';
+            margin-left: -1em;
+            padding-top: 0em;
+            float: left;
+            color: inherit;
+        }
+    }
+}
+
+ul.filter-root {
+    margin-top: 0;
+    width: 100%;
+    padding-left: 0.5em;
+    list-style-type: none;
+
+    ul {
+        padding-left: 1.5em;
+        list-style-type: none;
+        width: 100%;
+    }
+
+    li.filter-chain, div.filter-expression {
+        width: 100%;
+        padding: 0.3em 0.5em;
+        min-width: 30em;
+    }
+
+    ul li.filter-chain::before, ul .filter-expression::before {
+       font-family: 'ifont';
+        // Formerly: icon-down-open: e821
+        // icon-right-small:
+        content: '\e877';
+        float: left;
+        margin-left: -1.5em;
+        margin-top: 0.5em;
+    }
+
+    ul.extensible-set {
+        padding-left: 0;
+        border: none;
+        display: inline-block;
+        vertical-align: top;
+        li::before {
+            content: none;
+        }
+    }
+
+    input[type=submit].icon-button {
+        display: none;
+        font-family: 'ifont';
+        font-weight: normal;
+        background: none;
+        border: none;
+        padding: 0.2em 0.4em 0.2em 0.4em;
+        margin: 0 0 0 0.2em;
+    }
+
+    .active input[type=submit].icon-button,
+    li:hover input[type=submit].icon-button,
+    div:hover input[type=submit].icon-button
+    {
+        display: inline;
+    }
+}
+
+.errors > ul.filter-root {
+    input[type=text], select {
+        border-color: transparent;
+        border-bottom-color: @gray-lighter;
+    }
+
+    select.column, select.operator {
+        border-left-color: @color-critical;
+    }
+}
+
+
+li.filter-chain > select.operator {
+    min-width: 5em;
+    max-width: 5em;
+    width: 5em;
+}
+
+div.filter-expression {
+    .column {
+        min-width: 7em;
+        max-width: 10em;
+        width: 10em;
+    }
+
+    .sign {
+        min-width: 4em;
+        max-width: 4em;
+        width: 4em;
+        margin: 0 0.3em;
+        &.wide {
+            min-width: 6em;
+            max-width: 6em;
+            width: 6em;
+        }
+    }
+
+    div.expression-wrapper {
+        display: inline-block;
+    }
+
+    div.expression-wrapper > input[type=text], 
+    div.expression-wrapper > select {
+        min-width: 7em;
+        width: 10em;
+        max-width: 10em;
+    }
+}
+
+
+
+
 
 .tree li a {
   display: inline-block;

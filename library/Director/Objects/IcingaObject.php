@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
@@ -385,6 +386,38 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsSets;
     }
 
+    public function setAssignments($value)
+    {
+        return IcingaObjectLegacyAssignments::applyToObject($this, $value);
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    public function setAssign_filter($filter)
+    {
+        if (! $this->supportsAssignments()) {
+            if ($this->hasProperty('object_type')) {
+                $type = $this->object_type;
+            } else {
+                $type = get_class($this);
+            }
+
+            throw new ProgrammingError(
+                'I can only assign for applied objects or objects with native'
+                . ' support for assigments, got %s',
+                $type
+            );
+        }
+
+        // @codingStandardsIgnoreEnd
+        if ($filter instanceof Filter) {
+            $filter = $filter->toQueryString();
+        }
+
+        return $this->reallySet('assign_filter', $filter);
+    }
+
     /**
      * It sometimes makes sense to defer lookups for related properties. This
      * kind of lazy-loading allows us to for example set host = 'localhost' and
@@ -437,10 +470,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->supportsArguments() && $this->arguments !== null && $this->arguments()->hasBeenModified()) {
-            return true;
-        }
-
-        if ($this->supportsAssignments() && $this->assignments !== null && $this->assignments()->hasBeenModified()) {
             return true;
         }
 
@@ -624,21 +653,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function getArguments()
     {
         return $this->arguments()->toPlainObject();
-    }
-
-    protected function setAssignments($value)
-    {
-        $this->assignments()->setValues($value);
-        return $this;
-    }
-
-    public function assignments()
-    {
-        if ($this->assignments === null) {
-            $this->assignments = new IcingaObjectAssignments($this);
-        }
-
-        return $this->assignments;
     }
 
     protected function getRanges()
@@ -1213,11 +1227,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $fields;
     }
 
-    protected function getAssignments()
-    {
-        return $this->assignments()->getValues();
-    }
-
     public function hasProperty($key)
     {
         if ($this->propertyIsRelatedSet($key)) {
@@ -1264,8 +1273,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeImports()
             ->storeRanges()
             ->storeRelatedSets()
-            ->storeArguments()
-            ->storeAssignments();
+            ->storeArguments();
     }
 
     protected function beforeStore()
@@ -1325,15 +1333,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         if ($this->supportsArguments()) {
             $this->arguments !== null && $this->arguments()->store();
-        }
-
-        return $this;
-    }
-
-    protected function storeAssignments()
-    {
-        if ($this->supportsAssignments()) {
-            $this->assignments !== null && $this->assignments()->store();
         }
 
         return $this;
@@ -1895,15 +1894,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
-    protected function renderAssignments()
-    {
-        if ($this->supportsAssignments()) {
-            return $this->assignments()->toConfigString();
-        } else {
-            return '';
-        }
-    }
-
     protected function renderLegacyObjectHeader()
     {
         $type = strtolower($this->getType());
@@ -1933,6 +1923,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $str;
     }
 
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    public function renderAssign_Filter()
+    {
+        // @codingStandardsIgnoreEnd
+        return '    ' . AssignRenderer::forFilter(
+            Filter::fromQueryString($this->assign_filter)
+        )->renderAssign() . "\n";
+    }
+
     public function toLegacyConfigString()
     {
         $str = implode(array(
@@ -1946,7 +1947,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             //$this->renderMultiRelations(),
             //$this->renderCustomExtensions(),
             //$this->renderCustomVars(),
-            //$this->renderAssignments(),
             $this->renderLegacySuffix()
         ));
 
@@ -1993,7 +1993,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderMultiRelations(),
             $this->renderCustomExtensions(),
             $this->renderCustomVars(),
-            $this->renderAssignments(),
             $this->renderSuffix()
         ));
 
@@ -2235,10 +2234,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             );
         }
 
-        if ($this->supportsAssignments()) {
-            $props['assignments'] = $this->assignments()->getPlain();
-        }
-
         if ($this->supportsCustomVars()) {
             if ($resolved) {
                 $props['vars'] = $this->getResolvedVars();
@@ -2414,10 +2409,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsAssignments()) {
-            $props['assignments'] = $this->assignments()->getUnmodifiedPlain();
-        }
-
         foreach ($this->relatedSets() as $property => $set) {
             if ($set->isEmpty()) {
                 continue;
@@ -2464,7 +2455,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         unset($this->imports);
         unset($this->ranges);
         unset($this->arguments);
-
 
         parent::__destruct();
     }

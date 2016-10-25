@@ -157,16 +157,14 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        if (!$this->object || !$this->object->isApplyRule()) {
-            return $this;
-        }
-
-        $sub = new AssignListSubForm();
-        $sub->setObject($this->getObject());
-        $sub->setup();
-        $sub->setOrder(30);
-
-        $this->addSubForm($sub, 'assignlist');
+        $this->addAssignFilter(array(
+            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+            'required' => true,
+            'description' => $this->translate(
+                'This allows you to configure an assignment filter. Please feel'
+                . ' free to combine as many nested operators as you want'
+            )
+        ));
 
         return $this;
     }

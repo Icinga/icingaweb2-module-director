@@ -1,6 +1,7 @@
 apply Service for (config in host.vars.test1) {
     name = "___TEST" + config + "___service " + host.var.bla
     display_name = "Whatever service"
+    assign where host.vars.env == "test"
     vars.test1 = "string"
     vars.test2 = 17
     vars.test3 = false
@@ -8,8 +9,6 @@ apply Service for (config in host.vars.test1) {
         a = [ "dict", "ionary" ]
         @this = "is"
     }
-
-    assign where host.vars.env == "test"
 
     import DirectorOverrideTemplate
 }
