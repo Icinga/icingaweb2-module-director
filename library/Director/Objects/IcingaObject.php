@@ -386,6 +386,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsSets;
     }
 
+    public function setAssignments($value)
+    {
+        return IcingaObjectLegacyAssignments::applyToObject($this, $value);
+    }
+
     /**
      * @codingStandardsIgnoreStart
      */
