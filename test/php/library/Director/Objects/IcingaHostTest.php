@@ -668,7 +668,8 @@ class IcingaHostTest extends BaseTestCase
             "${prefix}notes_url" => "notes_url",
             "${prefix}retry_interval" => "retry_interval",
             "${prefix}volatile" => "volatile",
-            "${prefix}zone" => "zone"
+            "${prefix}zone" => "zone",
+            "${prefix}groups" => "Groups"
         );
     }
     protected function loadRendered($name)

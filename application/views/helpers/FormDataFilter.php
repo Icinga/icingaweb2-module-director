@@ -169,7 +169,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 }
             }
 
-            if ($col === 'groups' && $dummy->supportsGroups()) {
+            if (substr($col, -7) === '.groups' && $dummy->supportsGroups()) {
                 return $this->selectGroup($type, $filter);
             }
         }
