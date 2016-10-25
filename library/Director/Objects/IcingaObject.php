@@ -274,6 +274,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->relations[$property];
     }
 
+    public function getRelated($property)
+    {
+        return $this->getRelatedObject($property, $this->{$property . '_id'});
+    }
+
     protected function getRelatedObjectName($property, $id)
     {
         return $this->getRelatedObject($property, $id)->object_name;
@@ -2336,6 +2341,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
             if ($this->hasProperty('service_id') && $this->service_id) {
                 $params['service'] = $this->service;
+            }
+
+            if ($this->hasProperty('service_set_id') && $this->service_set_id) {
+                $params['set'] = $this->service_set;
             }
         }
 

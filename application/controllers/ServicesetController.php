@@ -17,6 +17,14 @@ class ServicesetController extends ObjectController
         }
 
         parent::init();
+        if ($this->object) {
+            $tabs = $this->getTabs();
+            $tabs->add('services', array(
+                'url'       => 'director/serviceset/services',
+                'urlParams' => array('name' => $this->object->object_name),
+                'label'     => 'Services'
+            ));
+        }
     }
 
     public function loadForm($name)
@@ -27,6 +35,43 @@ class ServicesetController extends ObjectController
         }
 
         return $form;
+    }
+
+    public function addAction()
+    {
+        parent::addAction();
+        if ($this->host) {
+            $this->view->title = sprintf(
+                $this->translate('Add a service set to "%s"'),
+                $this->host->object_name
+            );
+        }
+    }
+
+    public function servicesAction()
+    {
+        $db = $this->db();
+        $set = $this->object;
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add service'),
+            'director/service/add',
+            array('set' => $set->object_name),
+            array('class' => 'icon-plus')
+        );
+        $this->view->stayHere = true;
+
+        $this->getTabs()->activate('services');
+        $this->view->title = sprintf(
+            $this->translate('Services in this set: %s'),
+            $set->object_name
+        );
+
+        $this->view->table = $this->loadTable('IcingaServiceSetService')
+            ->setServiceSet($set)
+            ->setConnection($db);
+
+        $this->setViewScript('objects/table');
     }
 
     protected function loadObject()

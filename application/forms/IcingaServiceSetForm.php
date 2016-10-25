@@ -51,18 +51,8 @@ class IcingaServiceSetForm extends DirectorObjectForm
         ));
 
         $this->addHidden('object_type', 'template');
-        $this->addDescriptionElement();
-
-        $this->addElement('multiselect', 'service', array(
-            'label'        => $this->translate('Services'),
-            'description'  => $this->translate(
-                'Services in this set'
-            ),
-            'rows'         => '5',
-            'multiOptions' => $this->enumServices(),
-            'required'     => true,
-            'class'        => 'autosubmit',
-        ));
+        $this->addDescriptionElement()
+            ->addAssignmentElements();
     }
 
     protected function setupHost()
@@ -125,15 +115,18 @@ class IcingaServiceSetForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function enumServices()
+    protected function addAssignmentElements()
     {
-        $db = $this->db->getDbAdapter();
-        $query = $db->select()
-            ->from('icinga_service', 'object_name')
-            ->where('object_type = ?', 'template')
-            ->order('object_name');
-        $names = $db->fetchCol($query);
+        $this->addAssignFilter(array(
+            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+            'description' => $this->translate(
+                'This allows you to configure an assignment filter. Please feel'
+                . ' free to combine as many nested operators as you want. You'
+                . ' might also want to skip this, define it later and/or just'
+                . ' add this set of services to single hosts'
+            )
+        ));
 
-        return array_combine($names, $names);
+        return $this;
     }
 }

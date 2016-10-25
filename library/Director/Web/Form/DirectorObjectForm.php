@@ -929,9 +929,9 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckCommandElements()
+    protected function addCheckCommandElements($force = false)
     {
-        if (! $this->isTemplate()) {
+        if (! $force && ! $this->isTemplate()) {
             return $this;
         }
 
@@ -958,9 +958,9 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addCheckExecutionElements()
+    protected function addCheckExecutionElements($force = false)
     {
-        if (! $this->isTemplate()) {
+        if (! $force && ! $this->isTemplate()) {
             return $this;
         }
 
