@@ -41,7 +41,7 @@ class DataTypeDictionaryTest extends BaseTestCase
 
         $element = $this->getTestedElement();
 
-        $this->assertEquals('{}', json_encode($element->getValue(), JSON_FORCE_OBJECT));
+        $this->assertEquals('{}', json_encode($element->structure, JSON_FORCE_OBJECT));
     }
 
     public function testGetDictionaryFormElementWithFields() {
@@ -49,7 +49,7 @@ class DataTypeDictionaryTest extends BaseTestCase
 
         $element = $this->getTestedElement();
 
-        $this->assertEquals('{"foobar-arr":[],"foobar-dict":null,"foobar-number":0,"foobar-str":""}', json_encode($element->getValue()));
+        $this->assertEquals('{"foobar-arr":[],"foobar-dict":null,"foobar-number":0,"foobar-str":""}', json_encode($element->structure));
     }
 
     public function testGetDictionaryFormElementWithRecursion() {
@@ -57,7 +57,7 @@ class DataTypeDictionaryTest extends BaseTestCase
 
         $element = $this->getTestedElement();
 
-        $this->assertEquals('{"foobar-sub-dict":{"foobar-sub-string":""}}', json_encode($element->getValue()));
+        $this->assertEquals('{"foobar-sub-dict":{"foobar-sub-string":""}}', json_encode($element->structure));
     }
 
     public function testGetDictionaryFieldSettingsMap() {
