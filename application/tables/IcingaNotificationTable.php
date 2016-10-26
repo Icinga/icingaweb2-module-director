@@ -47,7 +47,7 @@ class IcingaNotificationTable extends IcingaObjectTable
             $htm .= ' ' . $v->qlink(
                 'Create apply-rule',
                 'director/notification/add',
-                array('apply' => $row->notification),
+                array('apply' => $row->notification, 'type' => 'apply'),
                 array('class'    => 'icon-plus')
             );
 
@@ -72,23 +72,12 @@ class IcingaNotificationTable extends IcingaObjectTable
 
     protected function appliedOnes($id)
     {
-        if ($this->connection()->isPgsql()) {
-            $nameCol = "s.object_name || COALESCE(': ' || ARRAY_TO_STRING(ARRAY_AGG("
-                . "a.assign_type || ' where ' || a.filter_string"
-                . " ORDER BY a.assign_type, a.filter_string), ', '), '')";
-        } else {
-            $nameCol = "s.object_name || COALESCE(': ' || GROUP_CONCAT("
-                . "a.assign_type || ' where ' || a.filter_string"
-                . " ORDER BY a.assign_type, a.filter_string SEPARATOR ', '"
-                . "), '')";
-        }
-
         $db = $this->connection()->getConnection();
         $query = $db->select()->from(
             array('s' => 'icinga_notification'),
             array(
                 'id'         => 's.id',
-                'objectname' => $nameCol,
+                'objectname' => 's.object_name',
             )
         )->join(
             array('i' => 'icinga_notification_inheritance'),
@@ -97,11 +86,6 @@ class IcingaNotificationTable extends IcingaObjectTable
         )->where('i.parent_notification_id = ?', $id)
          ->where('s.object_type = ?', 'apply');
 
-        $query->joinLeft(
-            array('a' => 'icinga_notification_assignment'),
-            'a.notification_id = s.id',
-            array()
-        )->group('s.id');
 
         return $db->fetchPairs($query);
     }

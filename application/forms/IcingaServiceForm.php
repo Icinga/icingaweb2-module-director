@@ -48,7 +48,7 @@ class IcingaServiceForm extends DirectorObjectForm
             if (!$this->isNew() && $this->host === null) {
                 $this->host = $this->object->getResolvedRelated('host');
             }
-        } catch(NestingError $nestingError) {
+        } catch (NestingError $nestingError) {
             // ignore for the form to load
         }
 
@@ -157,16 +157,14 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        if (!$this->object || !$this->object->isApplyRule()) {
-            return $this;
-        }
-
-        $sub = new AssignListSubForm();
-        $sub->setObject($this->getObject());
-        $sub->setup();
-        $sub->setOrder(30);
-
-        $this->addSubForm($sub, 'assignlist');
+        $this->addAssignFilter(array(
+            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+            'required' => true,
+            'description' => $this->translate(
+                'This allows you to configure an assignment filter. Please feel'
+                . ' free to combine as many nested operators as you want'
+            )
+        ));
 
         return $this;
     }
@@ -212,7 +210,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Name'),
-            'required'    => true,
+            'required'    => !$this->object()->isApplyRule(),
             'description' => $this->translate(
                 'Name for the Icinga service you are going to create'
             )
@@ -237,54 +235,19 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function groupMainProperties()
-    {
-        $elements = array(
-            'imports',
-            'object_name',
-            'display_name',
-            'host_id',
-            'address',
-            'address6',
-            'groups',
-            'users',
-            'user_groups',
-            'apply_to',
-            'command_id', // Notification
-            'notification_interval',
-            'period_id',
-            'times_begin',
-            'times_end',
-            'email',
-            'pager',
-            'enable_notifications',
-            'create_live',
-            'disabled',
-            'apply_for'
-        );
-
-        $this->addDisplayGroup($elements, 'object_definition', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order' => 20,
-            'legend' => $this->translate('Main properties')
-        ));
-
-        return $this;
-    }
-
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
-            $hostProperties = IcingaHost::enumProperties($this->object->getConnection(), 'host.',
-                new ArrayCustomVariablesFilter());
+            $hostProperties = IcingaHost::enumProperties(
+                $this->object->getConnection(),
+                'host.',
+                new ArrayCustomVariablesFilter()
+            );
+
             $this->addElement('select', 'apply_for', array(
                 'label' => $this->translate('Apply For'),
                 'class' => 'assign-property autosubmit',
-                'multiOptions' => $this->optionalEnum($hostProperties, 'None'),
+                'multiOptions' => $this->optionalEnum($hostProperties, $this->translate('None')),
                 'description' => $this->translate(
                     'Evaluates the apply for rule for ' .
                     'all objects with the custom attribute specified. ' .

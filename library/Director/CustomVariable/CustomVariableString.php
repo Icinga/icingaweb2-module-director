@@ -38,6 +38,10 @@ class CustomVariableString extends CustomVariable
 
     public function toConfigString($renderExpressions = false)
     {
-        return c::renderString($this->getValue(), $renderExpressions);
+        if ($renderExpressions) {
+            return c::renderStringWithVariables($this->getValue());
+        } else {
+            return c::renderString($this->getValue());
+        }
     }
 }

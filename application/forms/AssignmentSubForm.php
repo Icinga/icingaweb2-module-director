@@ -24,44 +24,13 @@ class AssignmentSubForm extends QuickSubForm
             'class' => 'assign-type',
             'value' => 'assign'
         ));
-        $this->addElement('select', 'property', array(
-            'label' => $this->translate('Property'),
-            'class' => 'assign-property autosubmit',
-            'multiOptions' => $this->optionalEnum(IcingaHost::enumProperties($this->object->getConnection(), 'host.'))
-        ));
-        $this->addElement('select', 'operator', array(
-            'label' => $this->translate('Operator'),
-            'multiOptions' => array(
-                '='  => '=',
-                '!=' => '!=',
-                '>'  => '>',
-                '>=' => '>=',
-                '<=' => '<=',
-                '<'  => '<',
-            ),
-            'required' => $this->valueIsEmpty($this->getValue('property')),
-            'value' => '=',
-            'class' => 'assign-operator',
+
+        $this->addElement('dataFilter', 'filter_string', array(
+            'columns' => IcingaHost::enumProperties($this->db)
         ));
 
-        $this->addElement('text', 'expression', array(
-            'label'       => $this->translate('Expression'),
-            'placeholder' => $this->translate('Expression'),
-            'class'       => 'assign-expression',
-            'required'    => !$this->valueIsEmpty($this->getValue('property'))
-        ));
-/*
-        $this->addElement('submit', 'remove', array(
-            'label'  => '-',
-            'ignore' => true
-        ));
-        $this->addElement('submit', 'add', array(
-            'label'  => '+',
-            'ignore' => true
-        ));
-*/
         foreach ($this->getElements() as $el) {
-            $el->setDecorators(array('ViewHelper'));
+            $el->setDecorators(array('ViewHelper', 'Errors'));
         }
     }
 

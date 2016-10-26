@@ -7,7 +7,6 @@ use Icinga\Module\Director\Web\Form\QuickSubForm;
 
 class AssignListSubForm extends QuickSubForm
 {
-
     protected $object;
 
     public function setObject($object)
@@ -16,20 +15,15 @@ class AssignListSubForm extends QuickSubForm
         return $this;
     }
 
-    public function setValue($value)
-    {
-        var_dump($value);
-    }
-
     public function setup()
     {
         $idx = -1;
 
         if ($this->object && $this->object->supportsAssignments()) {
-//            $this->setElementValue('assignlist', $object->assignments()->getFormValues());
-            foreach ($this->object->assignments()->getFormValues() as $values) {
+
+            foreach ($this->object->assignments()->getValues() as $values) {
                 $idx++;
-                $sub = new AssignmentSubForm();
+                $sub = $this->loadForm('assignmentSub');
                 $sub->setObject($this->object);
                 $sub->setup();
                 $sub->populate($values);
@@ -38,7 +32,7 @@ class AssignListSubForm extends QuickSubForm
         }
 
         $idx++;
-        $sub = new AssignmentSubForm();
+        $sub = $this->loadForm('assignmentSub');
         $sub->setObject($this->object);
         $sub->setup();
         $this->addSubForm($sub, $idx);
@@ -48,6 +42,7 @@ class AssignListSubForm extends QuickSubForm
             'ignore' => true,
         ));
         $this->getElement('addmore')->setDecorators(array('ViewHelper'));
+
     }
 
     public function loadDefaultDecorators()
@@ -56,7 +51,7 @@ class AssignListSubForm extends QuickSubForm
             'FormElements',
             array('HtmlTag', array(
                 'tag' => 'ul',
-                'class' => 'assign-rule'
+                'class' => 'assign-rule required'
             )),
             array('Fieldset', array(
                 'legend' => 'Assignment rules',

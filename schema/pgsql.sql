@@ -19,7 +19,6 @@ CREATE TYPE enum_command_object_type AS ENUM('object', 'template', 'external_obj
 CREATE TYPE enum_apply_object_type AS ENUM('object', 'template', 'apply', 'external_object');
 CREATE TYPE enum_state_name AS ENUM('OK', 'Warning', 'Critical', 'Unknown', 'Up', 'Down');
 CREATE TYPE enum_type_name AS ENUM('DowntimeStart', 'DowntimeEnd', 'DowntimeRemoved', 'Custom', 'Acknowledgement', 'Problem', 'Recovery', 'FlappingStart', 'FlappingEnd');
-CREATE TYPE enum_assign_type AS ENUM('assign', 'ignore');
 CREATE TYPE enum_sync_rule_object_type AS ENUM(
   'host',
   'service',
@@ -740,6 +739,7 @@ CREATE TABLE icinga_service (
   use_agent enum_boolean DEFAULT NULL,
   apply_for character varying(255) DEFAULT NULL,
   use_var_overrides enum_boolean DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
   PRIMARY KEY (id),
 -- UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_service_host
@@ -843,20 +843,6 @@ CREATE INDEX service_field_datafield ON icinga_service_field (datafield_id);
 COMMENT ON COLUMN icinga_service_field.service_id IS 'Makes only sense for templates';
 
 
-CREATE TABLE icinga_service_assignment (
-  id bigserial,
-  service_id integer NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type enum_assign_type NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_service_assignment
-    FOREIGN KEY (service_id)
-    REFERENCES icinga_service (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
-
-
 CREATE TABLE icinga_host_service (
   host_id integer NOT NULL,
   service_id integer NOT NULL,
@@ -883,6 +869,7 @@ CREATE TABLE icinga_service_set (
   object_name character varying(128) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   description text DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -928,20 +915,6 @@ CREATE INDEX service_set_inheritance_set ON icinga_service_set_inheritance (serv
 CREATE INDEX service_set_inheritance_parent ON icinga_service_set_inheritance (parent_service_set_id);
 
 
-CREATE TABLE icinga_service_set_assignment (
-  id serial,
-  service_set_id integer NOT NULL,
-  filter_string text NOT NULL,
-  assign_type enum_assign_type NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_service_set_assignment
-    FOREIGN KEY (service_set_id)
-    REFERENCES icinga_service_set (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
-
-
 CREATE TABLE icinga_service_set_var (
   service_set_id integer NOT NULL,
   varname character varying(255) NOT NULL,
@@ -965,6 +938,7 @@ CREATE TABLE icinga_hostgroup (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -994,18 +968,6 @@ CREATE UNIQUE INDEX hostgroup_inheritance_unique_order ON icinga_hostgroup_inher
 CREATE INDEX hostgroup_inheritance_hostgroup ON icinga_hostgroup_inheritance (hostgroup_id);
 CREATE INDEX hostgroup_inheritance_hostgroup_parent ON icinga_hostgroup_inheritance (parent_hostgroup_id);
 
-CREATE TABLE icinga_hostgroup_assignment (
-  id bigserial,
-  hostgroup_id integer NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type enum_assign_type NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_hostgroup_assignment
-  FOREIGN KEY (hostgroup_id)
-  REFERENCES icinga_hostgroup (id)
-  ON DELETE CASCADE
-  ON UPDATE CASCADE
-);
 
 CREATE TABLE icinga_servicegroup (
   id serial,
@@ -1013,6 +975,7 @@ CREATE TABLE icinga_servicegroup (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1308,6 +1271,7 @@ CREATE TABLE icinga_notification (
   command_id integer DEFAULT NULL,
   period_id integer DEFAULT NULL,
   zone_id integer DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_host
     FOREIGN KEY (host_id)
@@ -1333,20 +1297,6 @@ CREATE TABLE icinga_notification (
     FOREIGN KEY (zone_id)
     REFERENCES icinga_zone (id)
     ON DELETE RESTRICT
-    ON UPDATE CASCADE
-);
-
-
-CREATE TABLE icinga_notification_assignment (
-  id bigserial,
-  notification_id integer NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type enum_assign_type NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_notification_assignment
-    FOREIGN KEY (notification_id)
-    REFERENCES icinga_notification (id)
-    ON DELETE CASCADE
     ON UPDATE CASCADE
 );
 
@@ -1685,4 +1635,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (119, NOW());
+  VALUES (120, NOW());

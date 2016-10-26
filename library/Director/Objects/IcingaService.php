@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -41,6 +42,7 @@ class IcingaService extends IcingaObject
         'use_agent'             => null,
         'apply_for'             => null,
         'use_var_overrides'     => null,
+        'assign_filter'         => null,
     );
 
     protected $relations = array(
@@ -134,6 +136,20 @@ class IcingaService extends IcingaObject
     }
 
     /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function setObject_Name($name)
+    {
+        // @codingStandardsIgnoreEnd
+
+        if ($name === null && $this->isApplyRule()) {
+            $name = '';
+        }
+
+        return $this->reallySet('object_name', $name);
+    }
+
+    /**
      * Render host_id as host_name
      *
      * Avoid complaints for method names with underscore:
@@ -158,30 +174,25 @@ class IcingaService extends IcingaObject
             && !$this->hasBeenAssignedToHostTemplate()
             && $this->get('apply_for') !== null) {
 
+            $name = $this->getObjectName();
+            $extraName = '';
+
+            if (c::stringHasMacro($name)) {
+                $extraName = c::renderKeyValue('name', c::renderStringWithVariables($name));
+                $name = '';
+            } elseif ($name !== '') {
+                $name = ' ' . c::renderString($name);
+            }
+
             return sprintf(
-                "%s %s %s for (config in %s) {\n",
+                "%s %s%s for (config in %s) {\n",
                 $this->getObjectTypeName(),
                 $this->getType(),
-                c::renderString($this->getObjectName()),
+                $name,
                 $this->get('apply_for')
-            );
+            ) . $extraName;
         }
         return parent::renderObjectHeader();
-    }
-
-    protected function renderAssignments()
-    {
-        if (! $this->hasBeenAssignedToHostTemplate()) {
-            return parent::renderAssignments();
-        }
-
-        // TODO: use assignment renderer?
-        $filter = sprintf(
-            'assign where %s in host.templates',
-            c::renderString($this->host)
-        );
-
-        return "\n    " . $filter . "\n";
     }
 
     protected function hasBeenAssignedToHostTemplate()
@@ -214,18 +225,30 @@ class IcingaService extends IcingaObject
 
     protected function renderCustomExtensions()
     {
-        // A hand-crafted command endpoint overrides use_agent
+        $output = '';
+
+         if ($this->hasBeenAssignedToHostTemplate()) {
+            // TODO: use assignment renderer?
+            $filter = sprintf(
+                'assign where %s in host.templates',
+                c::renderString($this->host)
+            );
+
+            $output .= "\n    " . $filter . "\n";
+        }
+
+       // A hand-crafted command endpoint overrides use_agent
         if ($this->command_endpoint_id !== null) {
-            return '';
+            return $output;
         }
 
         // In case use_agent isn't defined, do nothing
         // TODO: what if we inherit use_agent and override it with 'n'?
         if ($this->use_agent !== 'y') {
-            return '';
+            return $output;
         }
 
-        return c::renderKeyValue('command_endpoint', 'host_name');
+        return $output . c::renderKeyValue('command_endpoint', 'host_name');
     }
 
     /**

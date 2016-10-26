@@ -25,6 +25,7 @@ class IcingaNotification extends IcingaObject
         'notification_interval' => null,
         'period_id'             => null,
         'zone_id'               => null,
+        'assign_filter'         => null,
     );
 
     protected $supportsCustomVars = true;

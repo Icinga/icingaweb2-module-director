@@ -1,4 +1,5 @@
-apply Service "___TEST___service" for (config in host.vars.test1) {
+apply Service for (config in host.vars.test1) {
+    name = "___TEST" + config + "___service " + host.var.bla
     display_name = "Whatever service"
     assign where host.vars.env == "test"
     vars.test1 = "string"

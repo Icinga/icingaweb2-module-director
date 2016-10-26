@@ -312,6 +312,7 @@ abstract class DirectorObjectForm extends QuickForm
             'email',
             'pager',
             'enable_notifications',
+            'apply_for',
             'create_live',
             'disabled',
         );
@@ -551,9 +552,6 @@ abstract class DirectorObjectForm extends QuickForm
 
             $post = $this->getRequest()->getPost();
             // ?? $this->populate($post);
-            if (array_key_exists('assignlist', $post)) {
-                $object->assignments()->setFormValues($post['assignlist']);
-            }
 
             foreach ($post as $key => $value) {
                 $el = $this->getElement($key);
@@ -564,10 +562,6 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         if ($object instanceof IcingaObject) {
-            if ($object->supportsAssignments()) {
-                $this->setElementValue('assignlist', $object->assignments()->getFormValues());
-            }
-
             $this->handleProperties($object, $values);
             $this->handleCustomVars($object, $post);
             $this->handleRanges($object, $values);
@@ -1132,6 +1126,71 @@ abstract class DirectorObjectForm extends QuickForm
             'order'  => 75,
             'legend' => $this->translate('Additional properties')
         ));
+
+        return $this;
+    }
+
+    /**
+     * Add an assign_filter form element
+     *
+     * Forms should use this helper method for objects using the typical
+     * assign_filter column
+     *
+     * @param array  $properties Form element properties
+     *
+     * @return self
+     */
+    protected function addAssignFilter($properties)
+    {
+        if (!$this->object || !$this->object->supportsAssignments()) {
+            return $this;
+        }
+
+        $this->addFilterElement('assign_filter', $properties);
+        $el = $this->getElement('assign_filter');
+
+        $this->addDisplayGroup(array($el), 'assign', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order'  => 30,
+            'legend' => $this->translate('Assign where')
+        ));
+
+        return $this;
+    }
+
+    /**
+     * Add a dataFilter element with fitting decorators
+     *
+     * TODO: Evaluate whether parts or all of this could be moved to the element
+     * class.
+     *
+     * @param string $name       Element name
+     * @param array  $properties Form element properties
+     *
+     * @return self
+     */
+    protected function addFilterElement($name, $properties)
+    {
+        $this->addElement('dataFilter', $name, $properties);
+        $el = $this->getElement($name);
+
+        $ddClass = 'full-width';
+        if (array_key_exists('required', $properties) && $properties['required']) {
+            $ddClass .= ' required';
+        }
+
+        $el->clearDecorators()
+            ->addDecorator('ViewHelper')
+            ->addDecorator('Errors')
+            ->addDecorator('Description', array('tag' => 'p', 'class' => 'description'))
+            ->addDecorator('HtmlTag', array(
+                'tag'   => 'dd',
+                'class' => $ddClass,
+            ));
 
         return $this;
     }

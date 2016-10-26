@@ -188,7 +188,7 @@
             }
             var $li = $input.closest('li');
             var $dt = $dd.prev();
-            var $form = $dt.closest('form');
+            var $form = $dd.closest('form');
 
             $form.find('dt, dd, li').removeClass('active');
             $li.addClass('active');

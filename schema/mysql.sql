@@ -598,6 +598,7 @@ CREATE TABLE icinga_service (
   use_agent ENUM('y', 'n') DEFAULT NULL,
   apply_for VARCHAR(255) DEFAULT NULL,
   use_var_overrides ENUM('y', 'n') DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_host
@@ -681,19 +682,6 @@ CREATE TABLE icinga_service_field (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE icinga_service_assignment (
-  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  service_id INT(10) UNSIGNED NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_service_assignment
-    FOREIGN KEY service (service_id)
-    REFERENCES icinga_service (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
 CREATE TABLE icinga_host_service (
   host_id INT(10) UNSIGNED NOT NULL,
   service_id INT(10) UNSIGNED NOT NULL,
@@ -716,6 +704,7 @@ CREATE TABLE icinga_service_set (
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
   description TEXT DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY object_key (object_name, host_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -754,19 +743,6 @@ CREATE TABLE icinga_service_set_inheritance (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE icinga_service_set_assignment (
-  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  service_set_id INT(10) UNSIGNED NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_service_set_assignment
-    FOREIGN KEY service_set (service_set_id)
-    REFERENCES icinga_service_set (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
 CREATE TABLE icinga_service_set_var (
   service_set_id INT(10) UNSIGNED NOT NULL,
   varname VARCHAR(255) NOT NULL COLLATE utf8_bin,
@@ -786,6 +762,7 @@ CREATE TABLE icinga_hostgroup (
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
@@ -810,25 +787,13 @@ CREATE TABLE icinga_hostgroup_inheritance (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE icinga_hostgroup_assignment (
-  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  hostgroup_id INT(10) UNSIGNED NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_hostgroup_assignment
-  FOREIGN KEY hostgroup (hostgroup_id)
-  REFERENCES icinga_hostgroup (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
 CREATE TABLE icinga_servicegroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
@@ -1087,6 +1052,7 @@ CREATE TABLE icinga_notification (
   command_id INT(10) UNSIGNED DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_host
     FOREIGN KEY host (host_id)
@@ -1202,19 +1168,6 @@ CREATE TABLE icinga_notification_types_set (
   PRIMARY KEY (notification_id, property, merge_behaviour),
   CONSTRAINT icinga_notification_types_set_notification
     FOREIGN KEY icinga_notification (notification_id)
-    REFERENCES icinga_notification (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE icinga_notification_assignment (
-  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  notification_id INT(10) UNSIGNED NOT NULL,
-  filter_string TEXT NOT NULL,  
-  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_notification_assignment
-    FOREIGN KEY notification (notification_id)
     REFERENCES icinga_notification (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
@@ -1454,5 +1407,5 @@ CREATE TABLE sync_run (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO director_schema_migration
-  SET migration_time = NOW(),
-      schema_version = 119;
+  (schema_version, migration_time)
+  VALUES (120, NOW());

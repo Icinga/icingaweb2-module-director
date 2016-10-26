@@ -82,8 +82,11 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
-    public static function enumProperties(DbConnection $connection = null, $prefix = '', $filter= null)
-    {
+    public static function enumProperties(
+        DbConnection $connection = null,
+        $prefix = '',
+        $filter = null
+    ) {
         $hostProperties = array();
         if ($filter === null) {
             $filter = new PropertiesFilter();
@@ -102,7 +105,7 @@ class IcingaHost extends IcingaObject
             if (substr($prop, -3) === '_id') {
                 $prop = substr($prop, 0, -3);
             }
-            
+
             $hostProperties[$prefix . $prop] = $prop;
         }
 
@@ -134,6 +137,7 @@ class IcingaHost extends IcingaObject
         $properties = array();
         if (!empty($hostProperties)) {
             $properties[$props] = $hostProperties;
+            $properties[$props][$prefix . 'groups'] = 'Groups';
         }
 
         if (!empty($hostVars)) {

@@ -54,6 +54,23 @@ class AssignRenderer
         }
     }
 
+    protected function renderEquals($column, $expression)
+    {
+        if (substr($column, -7) === '.groups') {
+            return sprintf(
+                '%s in %s',
+                $expression,
+                $column
+            );
+        } else {
+            return sprintf(
+                '%s == %s',
+                $column,
+                $expression
+            );
+        }
+    }
+
     protected function renderFilterExpression($filter)
     {
         $column = $filter->getColumn();
@@ -67,11 +84,7 @@ class AssignRenderer
 
         } elseif ($filter instanceof FilterMatch) {
             if (strpos($expression, '*') === false) {
-                return sprintf(
-                    '%s == %s',
-                    $column,
-                    $expression
-                );
+                return $this->renderEquals($column, $expression);
             } else {
                 return sprintf(
                     'match(%s, %s)',

@@ -83,21 +83,24 @@ class IcingaConfigHelperTest extends BaseTestCase
 
     public function testRenderStringWithVariables()
     {
-        $this->assertEquals(c::renderString('Before $var$', true), '"Before " + var');
-        $this->assertEquals(c::renderString('$var$ After', true), 'var + " After"');
-        $this->assertEquals(c::renderString('$var$', true), 'var');
-        $this->assertEquals(c::renderString('$$var$$', true), '"$$var$$"');
-        $this->assertEquals(c::renderString('Before $$var$$ After', true), '"Before $$var$$ After"');
+        $this->assertEquals(c::renderStringWithVariables('Before $var$'), '"Before " + var');
+        $this->assertEquals(c::renderStringWithVariables('$var$ After'), 'var + " After"');
+        $this->assertEquals(c::renderStringWithVariables('$var$'), 'var');
+        $this->assertEquals(c::renderStringWithVariables('$$var$$'), '"$$var$$"');
+        $this->assertEquals(c::renderStringWithVariables('Before $$var$$ After'), '"Before $$var$$ After"');
         $this->assertEquals(
-            c::renderString('Before $name$ $name$ After', true),
-            '"Before " + name + " " + name + " After"');
+            c::renderStringWithVariables('Before $name$ $name$ After'),
+            '"Before " + name + " " + name + " After"'
+        );
         $this->assertEquals(
-            c::renderString('Before $var1$ $var2$ After', true),
-            '"Before " + var1 + " " + var2 + " After"');
-        $this->assertEquals(c::renderString('$host.vars.custom$', true), 'host.vars.custom');
-        $this->assertEquals(c::renderString('$var"$', true), '"$var\"$"');
+            c::renderStringWithVariables('Before $var1$ $var2$ After'),
+            '"Before " + var1 + " " + var2 + " After"'
+        );
+        $this->assertEquals(c::renderStringWithVariables('$host.vars.custom$'), 'host.vars.custom');
+        $this->assertEquals(c::renderStringWithVariables('$var"$'), '"$var\"$"');
         $this->assertEquals(
-            c::renderString('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$', true),
-            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"');
+            c::renderStringWithVariables('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$'),
+            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"'
+        );
     }
 }

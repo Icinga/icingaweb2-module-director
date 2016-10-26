@@ -17,7 +17,8 @@ class PropertiesFilter
         'accept_config',
     );
 
-    public function match($type, $name, $object=null) {
+    public function match($type, $name, $object = null)
+    {
         return ($type != self::$HOST_PROPERTY || !in_array($name, $this->blacklist));
     }
 }
