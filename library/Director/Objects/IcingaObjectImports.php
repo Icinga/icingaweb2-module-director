@@ -167,6 +167,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     protected function refreshIndex()
     {
         $this->idx = array_keys($this->imports);
+        $this->object->templateResolver()->refreshObject($this->object);
         return $this;
     }
 

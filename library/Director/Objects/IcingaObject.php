@@ -1005,10 +1005,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function invalidateResolveCache()
     {
         $this->resolveCache = array();
-        if ($this->templateResolver) {
-            $this->templateResolver()->clearCache();
-        }
-
         return $this;
     }
 

@@ -9,10 +9,13 @@ use Icinga\Module\Director\Exception\NestingError;
 // TODO: move the 'type' layer to another class
 class IcingaTemplateResolver
 {
+    /** @var IcingaObject */
     protected $object;
 
+    /** @var Db */
     protected $connection;
 
+    /** @var  \Zend_Db_Adapter_Abstract */
     protected $db;
 
     protected $type;
@@ -162,6 +165,11 @@ class IcingaTemplateResolver
         return $this->resolveParentIds();
     }
 
+    /**
+     * TODO: unfinished and not used currently
+     *
+     * @return array
+     */
     public function listResolvedParentNames()
     {
         $this->requireTemplates();
@@ -364,5 +372,15 @@ class IcingaTemplateResolver
         unset($this->connection);
         unset($this->db);
         unset($this->object);
+    }
+
+    public function refreshObject(IcingaObject $object)
+    {
+        $parentNames = $object->imports;
+        self::$nameIdx[$object->object_name] = $parentNames;
+        if ($object->hasBeenLoadedFromDb()) {
+            self::$idIdx[$object->getId()] = $this->getIdsForNames($parentNames);
+        }
+        return $this;
     }
 }
