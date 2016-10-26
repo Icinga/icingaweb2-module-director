@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Tables\IcingaHostTable;
 
-require_once __DIR__ . '/IcingaHostTable.php';
 class IcingaHostTemplateTable extends IcingaHostTable
 {
     protected $searchColumns = array(
