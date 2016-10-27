@@ -1,0 +1,20 @@
+<div class="controls">
+<?= $this->tabs ?>
+</div>
+
+<div class="content">
+<?php if ($this->errorMessage): ?>
+<p class="error"><?= $this->errorMessage ?></p>
+<?php endif ?>
+<?= $this->form ?>
+<?php foreach ($this->dashboards as $dashboard): ?>
+<h1><?= $this->escape($dashboard->getTitle()) ?></h1>
+<ul class="main-actions" data-base-target="_next">
+<?php foreach ($dashboard->dashlets() as $dashlet): ?>
+<li>
+<?= $dashlet->render() ?>
+</li>
+<?php endforeach ?>
+</ul>
+<?php endforeach ?>
+</div>
