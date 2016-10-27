@@ -2,11 +2,13 @@
 
 namespace Tests\Icinga\Module\Director\DataType;
 
+use Icinga\Application\Icinga;
 use Icinga\Module\Director\DataType\DataTypeDictionary;
 use Icinga\Module\Director\Objects\DirectorDictionary;
 use Icinga\Module\Director\Objects\DirectorDictionaryField;
 use Icinga\Module\Director\Test\BaseTestCase;
-use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Test\Web\TestDirectorObjectForm;
+use Icinga\Module\Director\Test\Web\TestQuickForm;
 
 
 class DataTypeDictionaryTest extends BaseTestCase
@@ -73,7 +75,9 @@ class DataTypeDictionaryTest extends BaseTestCase
     }
 
     private function getTestedElement() {
-        $quickForm = new TestQuickForm($this);
+        $quickForm =  new TestDirectorObjectForm(array(
+            'icingaModule' => Icinga::app()->getModuleManager()->loadModule('director')->getModule('director')
+        ));
         $quickForm->setDb($this->getDb());
 
         $this->dataType->setSettings([
@@ -184,19 +188,5 @@ class DataTypeDictionaryTest extends BaseTestCase
         ]);
         $tempDictionary->store($this->getDb());
         array_push($this->dictionaries, $tempDictionary);
-    }
-}
-
-class TestQuickForm extends DirectorObjectForm {
-    public function __construct($options)
-    {
-        parent::__construct($options);
-        $this->addPrefixPaths(array(
-            array(
-                'prefix'    => 'Icinga\\Module\\Director\\Web\\Form\\Element\\',
-                'path'      => '/usr/share/icingaweb2/modules/director/library/Director/Web/Form/Element',
-                'type'      => static::ELEMENT
-            )
-        ));
     }
 }
