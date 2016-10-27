@@ -239,6 +239,7 @@
             this.backupAllExtensibleSetDefaultValues($container);
             this.putFocusOnFirstObjectTypeElement($container);
             this.highlightFormErrors($container);
+            this.scrollHighlightIntoView($container);
             this.hideInactiveFormDescriptions($container);
             if (iid = $container.data('activeExtensibleEntry')) {
                 $('#' + iid).focus();
@@ -260,6 +261,17 @@
                 if ($objectType[0].value === '') {
                     $objectType.focus();
                 }
+            }
+        },
+
+        scrollHighlightIntoView: function ($container) {
+            $hl = $container.find('.highlight');
+            $content = $container.find('> div.content');
+
+            if ($hl.length) {
+              $container.animate({
+                scrollTop: $hl.offset().top - $content.offset().top
+              }, 700);
             }
         },
 
