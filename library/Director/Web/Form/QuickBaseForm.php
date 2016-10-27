@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Application\Modules\Module;
 use Zend_Form;
 
 abstract class QuickBaseForm extends Zend_Form
