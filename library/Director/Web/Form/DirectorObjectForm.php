@@ -576,8 +576,12 @@ abstract class DirectorObjectForm extends QuickForm
 
             foreach ($post as $key => $value) {
                 $el = $this->getElement($key);
-                if ($el && ! $el->getIgnore()) {
-                    $values[$key] = $el->setValue($value)->getValue();
+                if ($el) {
+                    if (! $el->getIgnore()) {
+                        $values[$key] = $el->setValue($value)->getValue();
+                    }
+                } elseif ($sub = $this->getSubForm($key)) {
+                    $values[$key] = $sub->populate($value)->getValues();
                 }
             }
         }
