@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
 use Zend_Form;
 
@@ -29,21 +30,39 @@ abstract class QuickBaseForm extends Zend_Form
 
     protected function initializePrefixPaths()
     {
-        if ($this->icingaModule) {
-            $basedir = sprintf(
-                '%s/%s/Web/Form',
-                $this->icingaModule->getLibDir(),
-                ucfirst($this->icingaModuleName)
-            );
-
-            $this->addPrefixPaths(array(
-                array(
-                    'prefix'    => __NAMESPACE__ . '\\Element\\',
-                    'path'      => $basedir . '/Element',
-                    'type'      => static::ELEMENT
-                )
-            ));
+        $this->addPrefixPathsForDirector();
+        if ($this->icingaModule && $this->icingaModuleName !== 'director') {
+            $this->addPrefixPathsForModule($this->icingaModule);
         }
+    }
+
+    protected function addPrefixPathsForDirector()
+    {
+        $module = Icinga::app()
+            ->getModuleManager()
+            ->loadModule('director')
+            ->getModule('director');
+
+        $this->addPrefixPathsForModule($module);
+    }
+
+    public function addPrefixPathsForModule(Module $module)
+    {
+        $basedir = sprintf(
+            '%s/%s/Web/Form',
+            $module->getLibDir(),
+            ucfirst($module->getName())
+        );
+
+        $this->addPrefixPaths(array(
+            array(
+                'prefix'    => __NAMESPACE__ . '\\Element\\',
+                'path'      => $basedir . '/Element',
+                'type'      => static::ELEMENT
+            )
+        ));
+
+        return $this;
     }
 
     public function addHidden($name, $value = null)
