@@ -114,6 +114,7 @@ class ImportSource extends DbObjectWithSettings
 
                             $row->$target = $mod->transform($val);
                         }
+                    }
 
                     continue;
                 }
