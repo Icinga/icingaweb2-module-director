@@ -943,7 +943,10 @@ abstract class DbObject
     {
         $class = get_called_class();
         if (static::hasPrefetched($key)) {
-            if (is_string($key) && array_key_exists($key, self::$prefetchedNames[$class])) {
+            if (is_string($key)
+                && array_key_exists($class, self::$prefetchedNames)
+                && array_key_exists($key, self::$prefetchedNames[$class])
+            ) {
                 return self::$prefetched[$class][
                     self::$prefetchedNames[$class][$key]
                 ];
@@ -973,7 +976,10 @@ abstract class DbObject
         }
 
         if (array_key_exists($class, self::$prefetched)) {
-            if (is_string($key) && array_key_exists($key, self::$prefetchedNames[$class])) {
+            if (is_string($key)
+                && array_key_exists($class, self::$prefetchedNames)
+                && array_key_exists($key, self::$prefetchedNames[$class])
+            ) {
                 self::$prefetchStats[$class]->hitNames++;
                 return true;
             } elseif (array_key_exists($key, self::$prefetched[$class])) {
