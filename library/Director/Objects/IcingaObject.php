@@ -396,7 +396,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function setAssign_filter($filter)
     {
-        if (! $this->supportsAssignments()) {
+        if (! $this->supportsAssignments() && $filter !== null) {
             if ($this->hasProperty('object_type')) {
                 $type = $this->object_type;
             } else {
