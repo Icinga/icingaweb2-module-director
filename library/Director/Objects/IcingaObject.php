@@ -2040,11 +2040,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($lines as &$line) {
             if (preg_match('/^\s{4}([^\t]+)\t+(.+)$/', $line, $m)) {
                 if ($len - strlen($m[1]) < 0) {
-                    var_dump($m);
-                    exit;
+                    $fill = ' ';
+                }
+                else {
+                    $fill = str_repeat(' ', $len - strlen($m[1]));
                 }
 
-                $line = '    ' . $m[1] . str_repeat(' ', $len - strlen($m[1])) . $m[2];
+                $line = '    ' . $m[1] . $fill . $m[2];
             }
         }
 
