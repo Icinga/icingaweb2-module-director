@@ -65,12 +65,23 @@ abstract class QuickForm extends QuickBaseForm
 
     public function __construct($options = null)
     {
-        parent::__construct($this->handleOptions($options));
+        parent::__construct($options);
 
         $this->setMethod('post');
+        $this->getActionFromRequest()
+            ->createIdElement()
+            ->regenerateCsrfToken()
+            ->setPreferredDecorators();
+    }
+
+    protected function getActionFromRequest()
+    {
         $this->setAction(Url::fromRequest());
-        $this->createIdElement();
-        $this->regenerateCsrfToken();
+        return $this;
+    }
+
+    protected function setPreferredDecorators()
+    {
         $this->setDecorators(
             array(
                 'Description',
@@ -79,6 +90,8 @@ abstract class QuickForm extends QuickBaseForm
                 'Form'
             )
         );
+
+        return $this;
     }
 
     protected function addSubmitButtonIfSet()
@@ -140,6 +153,7 @@ abstract class QuickForm extends QuickBaseForm
         $this->detectName();
         $this->addHidden(self::ID, $this->getName());
         $this->getElement(self::ID)->setIgnore(true);
+        return $this;
     }
 
     public function getSentValue($name, $default = null)
