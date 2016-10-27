@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Import\SyncUtils;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -19,6 +19,11 @@ class Sync
      * @var SyncRule
      */
     protected $rule;
+
+    /**
+     * @var Db
+     */
+    protected $db;
 
     /**
      * Related ImportSource objects
@@ -63,6 +68,9 @@ class Sync
 
     protected $syncProperties;
 
+    /**
+     * @var SyncRun
+     */
     protected $run;
 
     protected $runStartTime;
@@ -72,6 +80,8 @@ class Sync
     /**
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
+     *
+     * @param SyncRule $rule
      */
     public function __construct(SyncRule $rule)
     {
@@ -240,6 +250,7 @@ class Sync
         $combinedKey = $this->rule->hasCombinedKey();
 
         foreach ($this->sources as $source) {
+            /** @var ImportSource $source */
             $sourceId = $source->id;
 
             // Provide an alias column for our key. TODO: double-check this!
@@ -544,6 +555,8 @@ class Sync
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
 
+        $object = null;
+
         try {
             $formerActivityChecksum = Util::hex2binary(
                 $db->getLastActivityChecksum()
@@ -604,7 +617,15 @@ class Sync
 
         } catch (Exception $e) {
             $dba->rollBack();
-            throw $e;
+            if ($object !== null && $object instanceof IcingaObject) {
+                throw new IcingaException(
+                    'Exception while syncing %s %s: %s',
+                    get_class($object), $object->get('object_name'), $e->getMessage(), $e
+                );
+            }
+            else {
+                throw $e;
+            }
         }
 
         return $this->run->id;

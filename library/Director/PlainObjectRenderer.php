@@ -98,14 +98,28 @@ class PlainObjectRenderer
             return self::renderInteger($object);
         } elseif (is_float($object)) {
             return self::renderFloat($object);
+        } elseif (is_object($object) || static::isAssocArray($object)) {
+            return self::renderHash($object, $prefix);
         } elseif (is_array($object)) {
             return self::renderArray($object, $prefix);
-        } elseif (is_object($object)) {
-            return self::renderHash($object, $prefix);
         } elseif (is_string($object)) {
             return self::renderString($object);
         } else {
             return '(UNKNOWN TYPE) ' . var_export($object, 1);
         }
+    }
+
+    /**
+     * Check if an array contains assoc keys
+     *
+     * @from https://stackoverflow.com/questions/173400/how-to-check-if-php-array-is-associative-or-sequential
+     * @param $arr
+     * @return bool
+     */
+    protected static function isAssocArray($arr)
+    {
+        if (! is_array($arr)) return false;
+        if (array() === $arr) return false;
+        return array_keys($arr) !== range(0, count($arr) - 1);
     }
 }
