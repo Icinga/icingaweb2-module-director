@@ -67,6 +67,15 @@ abstract class ObjectsController extends ActionController
             ));
         }
 
+        if ($object->supportsSets() || $object->isGroup() /** Bullshit, need base object, wrong on users */) {
+            /** forced to master, disabled for now
+            $tabs->add('sets', array(
+                'url'       => sprintf('director/%ss/sets', $type),
+                'label'     => $this->translate('Sets')
+            ));
+            */
+        }
+
         $tabs->add('tree', array(
             'url'   => sprintf('director/%ss/templatetree', $type),
             'label' => $this->translate('Tree'),
@@ -244,6 +253,27 @@ abstract class ObjectsController extends ActionController
         $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
         $this->view->objectTypeName = $this->getType();
         $this->setViewScript('objects/tree');
+    }
+
+    public function setsAction()
+    {
+        $this->view->title = $this->translate('Service sets');
+        $this->view->table = $this
+            ->loadTable('IcingaServiceSet')
+            ->setConnection($this->db());
+
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('Add'),
+            'director/serviceset/add',
+            null,
+            array(
+                'class'            => 'icon-plus',
+                'data-base-target' => '_next'
+            )
+        );
+
+        $this->getTabs()->activate('sets');
+        $this->setViewScript('objects/table');
     }
 
     protected function dummyObject()

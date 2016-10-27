@@ -224,6 +224,10 @@ input[type=text], input[type=password], textarea, select {
     }
 }
 
+select[multiple] {
+    height: auto;
+}
+
 select option {
     height: 2em;
     padding-top: 0.3em;
@@ -1219,7 +1223,7 @@ div.filter-expression {
         display: inline-block;
     }
 
-    div.expression-wrapper > input[type=text], 
+    div.expression-wrapper > input[type=text],
     div.expression-wrapper > select {
         min-width: 7em;
         width: 10em;

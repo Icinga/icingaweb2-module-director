@@ -16,8 +16,18 @@ abstract class QuickBaseForm extends Zend_Form
 
     public function __construct($options = null)
     {
-        parent::__construct($this->handleOptions($options));
+        $this->callZfConstructor($this->handleOptions($options))
+            ->initializePrefixPaths();
+    }
 
+    protected function callZfConstructor($options = null)
+    {
+        parent::__construct($options);
+        return $this;
+    }
+
+    protected function initializePrefixPaths()
+    {
         if ($this->icingaModule) {
             $basedir = sprintf(
                 '%s/%s/Web/Form',

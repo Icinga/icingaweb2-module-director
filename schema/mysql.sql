@@ -574,6 +574,7 @@ CREATE TABLE icinga_service (
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
+  service_set_id INT(10) UNSIGNED DEFAULT NULL,
   check_command_id INT(10) UNSIGNED DEFAULT NULL,
   max_check_attempts MEDIUMINT UNSIGNED DEFAULT NULL,
   check_period_id INT(10) UNSIGNED DEFAULT NULL,
@@ -707,22 +708,6 @@ CREATE TABLE icinga_service_set (
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY object_key (object_name, host_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE icinga_service_set_service (
-  service_set_id INT(10) UNSIGNED NOT NULL,
-  service_id INT(10) UNSIGNED NOT NULL,
-  PRIMARY KEY (service_set_id, service_id),
-  CONSTRAINT service_set_set
-    FOREIGN KEY service_set (service_set_id)
-    REFERENCES icinga_service_set (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  CONSTRAINT service_set_service
-    FOREIGN KEY service (service_id)
-    REFERENCES icinga_service (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_service_set_inheritance (
@@ -1408,4 +1393,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (120, NOW());
+  VALUES (121, NOW());

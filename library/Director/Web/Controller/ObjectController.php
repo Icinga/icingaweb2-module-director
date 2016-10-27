@@ -26,7 +26,7 @@ abstract class ObjectController extends ActionController
     {
         parent::init();
 
-        $type = $this->getType();
+        $type = strtolower($this->getType());
 
         if ($object = $this->loadObject()) {
             $this->beforeTabs();
@@ -61,7 +61,6 @@ abstract class ObjectController extends ActionController
                     'label'     => $this->translate('Fields')
                 ));
             }
-
         } else {
             $this->beforeTabs();
             $this->getTabs()->add('add', array(
@@ -301,8 +300,8 @@ abstract class ObjectController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/set$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'Set'),
             $this->getRequest()->getControllerName()
         );
     }

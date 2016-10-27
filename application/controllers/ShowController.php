@@ -17,7 +17,7 @@ class ShowController extends ActionController
 
     protected function objectKey($entry)
     {
-        if ($entry->object_type === 'icinga_service') {
+        if ($entry->object_type === 'icinga_service' || $entry->object_type === 'icinga_service_set') {
             // TODO: this is not correct. Activity needs to get (multi) key support
             return array('name' => $entry->object_name);
         }

@@ -4,12 +4,15 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Controller\ObjectController;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
 
 class ServiceController extends ObjectController
 {
     protected $host;
+
+    protected $set;
 
     protected $apply;
 
@@ -28,9 +31,9 @@ class ServiceController extends ObjectController
     {
         if ($host = $this->params->get('host')) {
             $this->host = IcingaHost::load($host, $this->db());
-        }
-
-        if ($apply = $this->params->get('apply')) {
+        } elseif ($set = $this->params->get('set')) {
+            $this->set = IcingaServiceSet::load(array('object_name' => $set), $this->db());
+        } elseif ($apply = $this->params->get('apply')) {
             $this->apply = IcingaService::load(
                 array('object_name' => $apply, 'object_type' => 'template'),
                 $this->db()
@@ -45,12 +48,22 @@ class ServiceController extends ObjectController
                     $tab->getUrl()->setParam('host', $this->host->object_name);
                 }
             }
+
+            if (! $this->set && $this->object->service_set_id) {
+                $this->set = $this->object->getRelated('service_set');
+            }
         }
 
         if ($this->host) {
             $this->getTabs()->add('services', array(
                 'url'       => 'director/host/services',
                 'urlParams' => array('name' => $this->host->object_name),
+                'label'     => $this->translate('Services'),
+            ));
+        } elseif ($this->host) {
+            $this->getTabs()->add('services', array(
+                'url'       => 'director/serviceset/services',
+                'urlParams' => array('name' => $this->set->object_name),
                 'label'     => $this->translate('Services'),
             ));
         }
@@ -61,9 +74,12 @@ class ServiceController extends ObjectController
         parent::addAction();
         if ($this->host) {
             $this->view->title = $this->host->object_name . ': ' . $this->view->title;
-        }
-
-        if ($this->apply) {
+        } elseif ($this->set) {
+            $this->view->title = sprintf(
+                $this->translate('Add a service to "%s"'),
+                $this->set->object_name
+            );
+        } elseif ($this->apply) {
             $this->view->title = sprintf(
                 $this->translate('Apply "%s"'),
                 $this->apply->object_name
@@ -147,8 +163,15 @@ class ServiceController extends ObjectController
     public function loadForm($name)
     {
         $form = parent::loadForm($name);
-        if ($name === 'icingaService' && $this->host) {
-            $form->setHost($this->host);
+        if ($name === 'icingaService') {
+            if ($this->host) {
+                $form->setHost($this->host);
+            } elseif ($this->set) {
+                $form->setServiceSet($this->set)->setSuccessUrl(
+                    'director/serviceset/services',
+                    array('name' => $this->set->object_name)
+                );
+            }
         }
 
         return $form;
@@ -166,6 +189,10 @@ class ServiceController extends ObjectController
                     $params['host_id'] = $this->host->id;
                 }
 
+                if ($this->set) {
+                    $this->view->set = $this->set;
+                    $params['service_set_id'] = $this->set->id;
+                }
                 $this->object = IcingaService::load($params, $db);
             } else {
                 parent::loadObject();

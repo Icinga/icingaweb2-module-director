@@ -17,6 +17,7 @@ class IcingaServiceSet extends IcingaObject
         'object_name'           => null,
         'object_type'           => null,
         'description'           => null,
+        'assign_filter'         => null,
     );
 
     protected $keyName = array('host_id', 'object_name');
@@ -29,10 +30,6 @@ class IcingaServiceSet extends IcingaObject
 
     protected $relations = array(
         'host' => 'IcingaHost',
-    );
-
-    protected $multiRelations = array(
-        'service' => 'IcingaService',
     );
 
     public function isDisabled()
@@ -50,34 +47,46 @@ class IcingaServiceSet extends IcingaObject
      */
     public function getServiceObjects()
     {
-        if (! $this->hasBeenLoadedFromDb()) {
+        if ($this->host_id) {
+            $imports = $this->imports()->getObjects();
+            if (empty($imports)) {
+                return array();
+            }
+            return $this->getServiceObjectsForSet(array_shift($imports));
+        } else {
+            return $this->getServiceObjectsForSet($this);
+        }
+    }
+
+    protected function getServiceObjectsForSet(IcingaServiceSet $set)
+    {
+        if ($set->id === null) {
             return array();
         }
 
-        $conn = $this->getConnection();
-        $db = $conn->getDbAdapter();
+        $connection = $this->getConnection();
+        $db = $this->getDb();
+        $ids = $db->fetchCol(
+            $db->select()->from('icinga_service', 'id')
+                ->where('service_set_id = ?', $set->id)
+        );
 
-        $query = $db->select()->from(
-            array('s' => 'icinga_service'),
-            '*'
-        )->join(
-            array('sset' => 'icinga_service_set_service'),
-            'sset.service_id = s.id',
-            array()
-        )->where(
-            $db->quoteInto(
-                'sset.service_set_id = ?',
-                (int) $this->id
-            )
-        )->order('s.object_name');
+        $services = array();
+        foreach ($ids as $id) {
+            $service = IcingaService::load(array(
+                'id' => $id,
+                'object_type' => 'template'
+            ), $connection);
 
-        // TODO: This cannot be prefetched
-        return IcingaService::loadAll($conn, $query, 'object_name');
+            $services[$service->object_name] = $service;
+        }
+
+        return $services;
     }
 
     public function renderToConfig(IcingaConfig $config)
     {
-        if ($this->isTemplate()) {
+        if ($this->assign_filter === null && $this->isTemplate()) {
             return;
         }
 
@@ -85,25 +94,38 @@ class IcingaServiceSet extends IcingaObject
             return $this->renderToLegacyConfig($config);
         }
 
+        $file = $this->getConfigFileWithHeader($config);
+
         // Loop over all services belonging to this set
         // add our assign rules and then add the service to the config
         // eventually clone them beforehand to not get into trouble with caches
         // figure out whether we might need a zone property
+        foreach ($this->getServiceObjects() as $service) {
+            // TODO: make them REAL applies
+            if ($this->assign_filter) {
+                $service->object_type = 'apply';
+                $service->assign_filter = $this->assign_filter;
+            } else {
+                $service->object_type = $this->object_type;
+                if ($this->isApplyRule()) {
+                    $service->assign_filter = $this->assign_filter;
+                }
+            }
+
+            $service->vars = $this->vars;
+            $service->host_id = $this->host_id;
+            $file->addObject($service);
+        }
+    }
+
+    protected function getConfigFileWithHeader(IcingaConfig $config)
+    {
         $file = $config->configFile(
             'zones.d/' . $this->getRenderingZone($config) . '/servicesets'
         );
 
         $file->prepend($this->getConfigHeaderComment($config));
-
-        foreach ($this->getServiceObjects() as $service) {
-            $service->object_type = $this->object_type;
-            if ($this->isApplyRule()) {
-                $service->setAssignments($this->getAssignments());
-            }
-
-            $service->host_id = $this->host_id;
-            $file->addObject($service);
-        }
+        return $file;
     }
 
     protected function getConfigHeaderComment(IcingaConfig $config)
@@ -142,32 +164,19 @@ class IcingaServiceSet extends IcingaObject
         foreach ($this->getServiceObjects() as $service) {
             $service->object_type = 'object';
             $service->host_id = $this->host_id;
+            $service->vars = $this->vars;
             $file->addLegacyObject($service);
         }
     }
 
-    protected function resolve($what)
-    {
-        return array();
-    }
-
-    protected function getResolved($what)
-    {
-        return array();
-    }
-
-    protected function getInherited($what)
-    {
-        return array();
-    }
-
-    protected function getOrigins($what)
-    {
-        return array();
-    }
-
     public function getRenderingZone(IcingaConfig $config = null)
     {
-        return $this->connection->getDefaultGlobalZoneName();
+        if ($this->host_id === null) {
+            return $this->connection->getDefaultGlobalZoneName();
+        } else {
+            $host = $this->getRelatedObject('host', $this->host_id);
+            return $host->getRenderingZone($config);
+        }
+        return $zone;
     }
 }
