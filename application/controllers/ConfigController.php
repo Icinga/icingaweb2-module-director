@@ -213,7 +213,14 @@ class ConfigController extends ActionController
         $rightSum = $this->view->rightSum = $this->params->get('right');
         $left  = IcingaConfig::load(Util::hex2binary($leftSum), $db);
 
-        $this->view->configs = $db->enumDeployedConfigs();
+        $configs = $db->enumDeployedConfigs();
+        foreach (array($leftSum, $rightSum) as $sum) {
+            if (! array_key_exists($sum, $configs)) {
+                $configs[$sum] = substr($sum, 0, 7);
+            }
+        }
+
+        $this->view->configs = $configs;
         if ($rightSum === null) {
             return;
         }

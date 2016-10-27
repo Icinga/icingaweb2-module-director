@@ -8,14 +8,23 @@
 <?= $this->formSelect(
     'left',
     $this->leftSum,
-    array('class' => 'autosubmit'),
+    array('class' => 'autosubmit', 'style' => 'width: 37%'),
     array(null => $this->translate('- please choose -')) + $this->configs
 )
 ?>
+<?= $this->qlink(
+    '',
+    $this->url(),
+    array(
+        'left'  => $this->rightSum,
+        'right' => $this->leftSum
+    ),
+    array('class' => 'icon-flapping')
+) ?>
 <?= $this->formSelect(
     'right',
     $this->rightSum,
-    array('class' => 'autosubmit'),
+    array('class' => 'autosubmit', 'style' => 'width: 37%'),
     array(null => $this->translate('- please choose -')) + $this->configs
 )
 ?>
