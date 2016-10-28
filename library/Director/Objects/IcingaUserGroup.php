@@ -8,6 +8,14 @@ class IcingaUserGroup extends IcingaObjectGroup
 {
     protected $table = 'icinga_usergroup';
 
+    protected $defaultProperties = array(
+        'id'            => null,
+        'object_name'   => null,
+        'object_type'   => null,
+        'disabled'      => 'n',
+        'display_name'  => null,
+    );
+
     public function getRenderingZone(IcingaConfig $config = null)
     {
         return $this->connection->getMasterZoneName();
