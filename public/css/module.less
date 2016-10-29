@@ -47,6 +47,10 @@ pre.disabled {
   color: @gray;
 }
 
+form i.link-color::before {
+  color: @icinga-blue;
+}
+
 /* TODO: remove this, but autosubmit looks ugly otherwise */
 input[disabled] {
   background: inherit;
@@ -136,6 +140,10 @@ table.avp th {
 
 .content form {
   margin-bottom: 2em;
+}
+
+.content form.inline {
+  margin: 0;
 }
 
 .invisible {
