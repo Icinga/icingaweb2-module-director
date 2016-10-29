@@ -170,6 +170,18 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    public function toConfigString()
+    {
+        $str = parent::toConfigString();
+
+        if ($this->host_id && $this->getRelated('host')->isDisabled()) {
+            return "/* --- This services host has been disabled ---\n"
+                . $str . "*/\n";
+        } else {
+            return $str;
+        }
+    }
+
     protected function renderObjectHeader()
     {
         if ($this->isApplyRule()
