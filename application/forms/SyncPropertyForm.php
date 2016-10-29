@@ -71,60 +71,8 @@ class SyncPropertyForm extends DirectorObjectForm
             }
         }
 
-        if ($destination === 'import') {
-            $funcTemplates = 'enum' . ucfirst($this->rule->object_type) . 'Templates';
-            $templates = $this->db->$funcTemplates();
-            if (! empty($templates)) {
-                $templates = array_combine($templates, $templates);
-            }
+        $this->addSourceColumnElement($destination);
 
-            $this->addElement('select', 'source_expression', array(
-                'label'        => $this->translate('Template'), // Objecttype?
-                'multiOptions' => $this->optionalEnum($templates),
-                'required'     => true,
-                'class'        => 'autosubmit',
-            ));
-        } else {
-            $this->addSourceColumnElement();
-        }
-
-        if ($this->hasObject()) {
-            if (($col = $this->getObject()->getSourceColumn()) === null) {
-                $this->setElementValue('source_column', self::EXPRESSION);
-                $this->addElement('text', 'source_expression', array(
-                    'label'    => $this->translate('Source Expression'),
-                    'required' => true,
-                ));
-                if ($this->getSentValue('source_column') === '${' . self::EXPRESSION . '}') {
-                    unset($this->source_column);
-                }
-            } else {
-                $this->setElementValue('source_column', $col);
-            }
-        }
-
-        if ($this->getSentValue('source_column') === self::EXPRESSION) {
-            $this->addElement('text', 'source_expression', array(
-                'label'    => $this->translate('Source Expression'),
-                'required' => true,
-            ));
-            if ($this->getSentValue('source_column') === '${' . self::EXPRESSION . '}') {
-                unset($this->source_column);
-            }
-        }
-
-        /*
-        if ($this->hasObject()) {
-            // TODO: Add up/down links to table
-            $this->addElement('text', 'priority', array(
-                'label'       => $this->translate('Priority'),
-                'description' => $this->translate('Priority for the specified source expression'),
-                'required'    => true,
-            ));
-        }
-        */
-
-        // TODO: we need modifier
         $this->addElement('YesNo', 'use_filter', array(
             'label'        => $this->translate('Set based on filter'),
             'ignore'       => true,
@@ -160,7 +108,8 @@ class SyncPropertyForm extends DirectorObjectForm
             $this->addElement('select', 'merge_policy', array(
                 'label'        => $this->translate('Merge Policy'),
                 'description'  => $this->translate(
-                    'Whether you want to merge or replace the destination field. Makes no difference for strings'
+                    'Whether you want to merge or replace the destination field.'
+                    . ' Makes no difference for strings'
                 ),
                 'required'     => true,
                 'multiOptions' => $this->optionalEnum(array(
@@ -176,31 +125,94 @@ class SyncPropertyForm extends DirectorObjectForm
 
     }
 
-    protected function addSourceColumnElement()
+    protected function hasSubOption($options, $key)
+    {
+        foreach ($options as $mainKey => $sub) {
+            if (! is_array($sub)) {
+                // null -> please choose - or similar
+                continue;
+            }
+
+            if (array_key_exists($key, $sub)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function addSourceColumnElement($destination)
     {
         $error = false;
+
+        $srcTitle = $this->translate('Source columns');
         try {
-            $data = $this->listSourceColumns();
-            natsort($data);
+            $columns[$srcTitle] = $this->listSourceColumns();
+            natsort($columns[$srcTitle]);
         } catch (Exception $e) {
-            $data = array();
+            $srcTitle .= sprintf(' (%s)', $this->translate('failed to fetch'));
+            $columns[$srcTitle] = array();
             $error = sprintf(
                 $this->translate('Unable to fetch data: %s'),
                 $e->getMessage()
             );
         }
 
+        if ($destination === 'import') {
+            $funcTemplates = 'enum' . ucfirst($this->rule->object_type) . 'Templates';
+            $templates = $this->db->$funcTemplates();
+            if (! empty($templates)) {
+                $templates = array_combine($templates, $templates);
+            }
+
+            $importTitle = $this->translate('Existing templates');
+            $columns[$importTitle] = $templates;
+            natsort($columns[$importTitle]);
+        }
+
+        $xpTitle = $this->translate('Expert mode');
+        $columns[$xpTitle][self::EXPRESSION] = $this->translate('Custom expression');
+
         $this->addElement('select', 'source_column', array(
             'label'        => $this->translate('Source Column'),
-            // TODO: List them as ${} ?
-            'multiOptions' => $this->optionalEnum($data),
+            'multiOptions' => $this->optionalEnum($columns),
             'required'     => true,
+            'ignore'       => true,
             'class'        => 'autosubmit',
         ));
 
         if ($error) {
             $this->getElement('source_column')->addError($error);
         }
+
+        $showExpression = false;
+
+        if ($this->hasBeenSent()) {
+            $sentValue = $this->getSentValue('source_column');
+            if ($sentValue === self::EXPRESSION) {
+                $showExpression = true;
+            }
+        } elseif ($this->hasObject()) {
+            $objectValue = $this->getObject()->source_expression;
+            if ($this->hasSubOption($columns, $objectValue)) {
+                $this->setElementValue('source_column', $objectValue);
+            } else {
+                $this->setElementValue('source_column', self::EXPRESSION);
+                $showExpression = true;
+            }
+        }
+
+        if ($showExpression) {
+            $this->addElement('text', 'source_expression', array(
+                'label'       => $this->translate('Source Expression'),
+                'description' => $this->translate(
+                    'A custom string. Might contain source columns, please use placeholders'
+                    . ' of the form ${columnName} in such case'
+                ),
+                'required'    => true,
+            ));
+        }
+
 
         return $this;
     }
@@ -232,9 +244,11 @@ class SyncPropertyForm extends DirectorObjectForm
 
     protected function listSourceColumns()
     {
-        $columns = $this->getImportSource()->listColumns();
-        $columns = array_combine($columns, $columns);
-        $columns[self::EXPRESSION] = $this->translate('Custom expression');
+        $columns = array();
+        foreach ($this->getImportSource()->listColumns() as $col) {
+            $columns['${' . $col . '}'] = $col;
+        }
+
         return $columns;
     }
 
@@ -308,21 +322,19 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        $sourceColumn = $this->getValue('source_column');
-        if ($sourceColumn === self::EXPRESSION) {
-            unset($this->source_column);
-            $this->removeElement('source_column');
-        } else {
-            if (! $this->getElement('source_expression')) {
-                $this->addHidden('source_expression', '${' . $sourceColumn . '}');
-            }
-        }
-
         $object = $this->getObject();
         $object->rule_id = $this->rule->id; // ?!
 
         if ($this->getValue('use_filter') === 'n') {
             $object->filter_expression = null;
+        }
+
+        $sourceColumn = $this->getValue('source_column');
+        unset($this->source_column);
+        $this->removeElement('source_column');
+
+        if ($sourceColumn !== self::EXPRESSION) {
+           $object->source_expression = $sourceColumn;
         }
 
         $destination = $this->getValue('destination_field');
