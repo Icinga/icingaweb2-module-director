@@ -49,7 +49,7 @@ function colorize($log, $logLink) {
 
     $log = preg_replace_callback(
         '~\>(critical|warning)(\<[^\n]+?\n?[^\n]+?in )'
-        . '(/.+?/api/packages/director/[^/]+/)([^:]+\.conf): (\d+)~s',
+        . '(/.+?/api/packages/director/[^/]+/)([^:]+\.conf): (\d+)~m',
         $logLink,
         $log
     );

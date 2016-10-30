@@ -100,6 +100,10 @@ abstract class QuickForm extends QuickBaseForm
             return;
         }
 
+        if ($this->submitButtonName && $el = $this->getElement($this->submitButtonName)) {
+            return;
+        }
+
         $el = $this->createElement('submit', $label)
             ->setLabel($label)
             ->setDecorators(array('ViewHelper'));

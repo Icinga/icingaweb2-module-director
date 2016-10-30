@@ -19,9 +19,7 @@ class ConfigController extends ActionController
     {
         $this->setAutorefreshInterval(5);
         try {
-            if ($this->getRequest()->getUrl()->shift('checkforchanges')
-                || $this->db()->hasUncollectedDeployments()
-            ) {
+            if ($this->db()->hasUncollectedDeployments()) {
                 $this->api()->collectLogFiles($this->db());
             }
         } catch (Exception $e) {
@@ -67,7 +65,7 @@ class ConfigController extends ActionController
             if ($isApiRequest) {
                 return $this->sendJson((object) array('checksum' => $checksum));
             } else {
-                $url = Url::fromPath('director/config/deployments?checkforchanges');
+                $url = Url::fromPath('director/config/deployments');
                 Notification::success(
                     $this->translate('Config has been submitted, validation is going on')
                 );
@@ -94,7 +92,13 @@ class ConfigController extends ActionController
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
         $this->prepareTable('activityLog');
         $this->view->table->setLastDeployedId($lastDeployedId);
-        $this->render('list/table', null, true);
+        $this->view->form = $this
+            ->loadForm('DeployConfig')
+            ->setDb($this->db())
+            ->setApi($this->api())
+            ->handleRequest();
+
+        $this->setViewScript('list/table');
     }
 
     public function settingsAction()
@@ -112,10 +116,11 @@ class ConfigController extends ActionController
     // Show all files for a given config
     public function filesAction()
     {
+        $this->setAutorefreshInterval(10);
         $this->view->title = $this->translate('Generated config');
         $tabs = $this->getTabs();
 
-        if ($deploymentId = $this->params->get('deployment_id')) {
+        if ($deploymentId = $this->view->deploymentId = $this->params->get('deployment_id')) {
             $tabs->add('deployment', array(
                 'label'     => $this->translate('Deployment'),
                 'url'       => 'director/deployment',
@@ -131,6 +136,14 @@ class ConfigController extends ActionController
         ))->activate('config');
 
         $checksum = $this->params->get('checksum');
+
+        $this->view->deployForm = $this->loadForm('DeployConfig')
+            ->setAttrib('class', 'inline')
+            ->setDb($this->db())
+            ->setApi($this->api())
+            ->setChecksum($checksum)
+            ->setDeploymentId($deploymentId)
+            ->handleRequest();
 
         $this->view->table = $this
             ->loadTable('GeneratedConfigFile')
@@ -193,7 +206,7 @@ class ConfigController extends ActionController
         $config = IcingaConfig::generate($this->db());
         $this->redirectNow(
             Url::fromPath(
-                'director/config/show',
+                'director/config/files',
                 array('checksum' => $config->getHexChecksum())
             )
         );

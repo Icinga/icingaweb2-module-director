@@ -14,12 +14,7 @@
 <table class="name-value-table">
  <tr>
   <th><?= $this->translate('Actions') ?></th>
-  <td data-base-target="_main"><?= $this->qlink(
-    $this->translate('Re-deploy now'),
-    'director/config/deploy',
-    array('checksum' => $this->config->getHexChecksum()),
-    array('class' => 'icon-reply-all')
-  ) ?><br /><?= $this->qlink(
+  <td data-base-target="_self"><?=  $this->deployForm ?><br /><?= $this->qlink(
     $this->translate('Last related activity'),
     'director/show/activitylog',
     array('checksum' => $this->config->getLastActivityHexChecksum()),
