@@ -440,8 +440,24 @@ constants
         }
 
         return $objects;
+    }
 
-        return $this->getObjects('CheckCommand', 'CheckCommands');
+    public function getNotificationCommandObjects()
+    {
+        IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
+
+        $objects = $this->getDirectorObjects('Command', 'NotificationCommand', 'NotificationCommands', array(
+            'arguments' => 'arguments',
+            // 'env'      => 'env',
+            'timeout'   => 'timeout',
+            'command'   => 'command',
+            'vars'      => 'vars'
+        ));
+        foreach ($objects as $obj) {
+            $obj->methods_execute = 'PluginNotification';
+        }
+
+        return $objects;
     }
 
     public function listModuleStages($name, $active = null)

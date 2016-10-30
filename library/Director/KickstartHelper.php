@@ -300,6 +300,16 @@ class KickstartHelper
             $new->store();
         }
 
+        foreach ($this->api()->setDb($db)->getNotificationCommandObjects() as $object) {
+            if ($object::exists($object->object_name, $db)) {
+                $new = $object::load($object->object_name, $db)->replaceWith($object);
+            } else {
+                $new = $object;
+            }
+
+            $new->store();
+        }
+
         return $this;
     }
 
