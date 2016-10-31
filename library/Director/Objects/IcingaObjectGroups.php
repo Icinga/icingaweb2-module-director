@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Countable;
@@ -26,6 +27,12 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     public function __construct(IcingaObject $object)
     {
         $this->object = $object;
+
+        if (! $object->hasBeenLoadedFromDb() && PrefetchCache::shouldBeUsed()) {
+            /** @var IcingaObjectGroup $class */
+            $class = $this->getGroupClass();
+            $class::prefetchAll($this->object->getConnection());
+        }
     }
 
     public function count()
@@ -161,6 +168,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
+        /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 
         if ($group instanceof $class) {
@@ -169,28 +177,24 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         } elseif (is_string($group)) {
 
             $connection = $this->object->getConnection();
-
-            // TODO: fix this, prefetch or whatever - this is expensive
-            $query = $this->object->getDb()->select()->from(
-                $this->getGroupTableName()
-            )->where('object_name = ?', $group);
-            $groups = $class::loadAll($connection, $query, 'object_name');
-
-            if (! array_key_exists($group, $groups)) {
+            try {
+                $this->groups[$group] = $class::load($group, $connection);
+            } catch (NotFoundError $e) {
                 switch ($onError) {
                     case 'autocreate':
-                        $groups[$group] = $class::create(array(
+                        $newGroup = $class::create(array(
                             'object_type' => 'object',
                             'object_name' => $group
                         ));
-                        $groups[$group]->store($connection);
-                        // TODO
+                        $newGroup->store($connection);
+                        $this->groups[$group] = $newGroup;
+                        break;
                     case 'fail':
-                        throw new ProgrammingError(
+                        throw new NotFoundError(
                             'The group "%s" doesn\'t exists.',
                             $group
                         );
-                    break;
+                        break;
                     case 'ignore':
                         return $this;
                 }
@@ -202,7 +206,6 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        $this->groups[$group] = $groups[$group];
         $this->modified = true;
         $this->refreshIndex();
 
