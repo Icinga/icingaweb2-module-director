@@ -174,7 +174,7 @@ class IcingaService extends IcingaObject
     {
         $str = parent::toConfigString();
 
-        if ($this->host_id && $this->getRelated('host')->isDisabled()) {
+        if (! $this->isDisabled() && $this->host_id && $this->getRelated('host')->isDisabled()) {
             return "/* --- This services host has been disabled ---\n"
                 . $str . "*/\n";
         } else {
