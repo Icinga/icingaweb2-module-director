@@ -17,13 +17,13 @@ class IcingaUserForm extends DirectorObjectForm
             $this->addElement('text', 'object_name', array(
                 'label'       => $this->translate('User template name'),
                 'required'    => true,
-                'description' => $this->translate('User for the Icinga host template you are going to create')
+                'description' => $this->translate('Name for the Icinga user template you are going to create')
             ));
         } else {
             $this->addElement('text', 'object_name', array(
                 'label'       => $this->translate('Username'),
                 'required'    => true,
-                'description' => $this->translate('Username for the Icinga host you are going to create')
+                'description' => $this->translate('Name for the Icinga user object you are going to create')
             ));
         }
 
