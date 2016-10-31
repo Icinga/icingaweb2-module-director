@@ -2961,8 +2961,8 @@ msgid "User"
 msgstr "Benutzer"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:20
-msgid "User for the Icinga host template you are going to create"
-msgstr "Benutzer der Icinga-Host-Vorlage, die erstellt werden soll"
+msgid "Name for the Icinga user template you are going to create"
+msgstr "Name für die Icinga-Benutzervorlage, die Sie erstellen möchten"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:105
 msgid "User groups"
@@ -3003,8 +3003,8 @@ msgid "Username"
 msgstr "Benutzername"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:26
-msgid "Username for the Icinga host you are going to create"
-msgstr "Benutzername für den Icinga-Host, der erstellt werden soll"
+msgid "Name for the Icinga user object you are going to create"
+msgstr "Name für das Icinga-Benutzerobjekt, das Sie erstellen möchten"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:39
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:83
