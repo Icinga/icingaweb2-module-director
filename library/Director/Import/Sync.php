@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Import;
 use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -480,6 +481,8 @@ class Sync
         if ($this->isPrepared) {
             return $this->objects;
         }
+
+        PrefetchCache::initialize($this->db);
 
         $this->raiseLimits()
              ->startMeasurements()
