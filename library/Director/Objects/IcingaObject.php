@@ -2101,12 +2101,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public static function loadAllByType($type, Db $db, $query = null, $keyColumn = 'object_name')
     {
+        /** @var DbObject $class */
         $class = self::classByType($type);
 
         if (is_array($class::create()->getKeyName())) {
             return $class::loadAll($db, $query);
         } else {
-            return $class::loadAll($db, $query, $keyColumn);
+            if (PrefetchCache::shouldBeUsed() && $query === null && $keyColumn === 'object_name') {
+                $result = array();
+                foreach ($class::prefetchAll($db) as $row) {
+                    $result[$row->object_name] = $row;
+                }
+                return $result;
+            }
+            else {
+                return $class::loadAll($db, $query, $keyColumn);
+            }
         }
     }
 
