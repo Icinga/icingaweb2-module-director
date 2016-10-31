@@ -7,18 +7,22 @@ use Icinga\Application\Config;
 use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class KickstartForm extends QuickForm
 {
-    protected $config;
+    private $config;
 
-    protected $storeConfigLabel;
+    private $storeConfigLabel;
 
-    protected $createDbLabel;
+    private $createDbLabel;
 
-    protected $migrateDbLabel;
+    private $migrateDbLabel;
+
+    /** @var IcingaEndpoint */
+    private $endpoint;
 
     public function setup()
     {
@@ -56,7 +60,7 @@ class KickstartForm extends QuickForm
             return;
         }
 
-        if ($this->getDb()->hasDeploymentEndpoint()) {
+        if (! $this->endpoint && $this->getDb()->hasDeploymentEndpoint()) {
             $hint = sprintf($this->translate(
                 'Your database looks good, you are ready to %s'
             ), $this->getView()->qlink(
@@ -135,6 +139,24 @@ class KickstartForm extends QuickForm
             ),
             'required'    => true,
         ));
+
+        if ($ep = $this->endpoint) {
+            $user = $ep->getApiUser();
+            $this->setDefaults(array(
+                'endpoint' => $ep->object_name,
+                'host'     => $ep->host,
+                'port'     => $ep->port,
+                'username' => $user->object_name,
+                'password' => $user->password,
+            ));
+
+            if (! empty($user->password)) {
+                $this->getElement('password')->setAttrib(
+                    'placeholder',
+                    '(use stored password)'
+                )->setRequired(false);
+            }
+        }
 
         $this->addKickstartDisplayGroup();
         $this->setSubmitLabel($this->translate('Run import'));
@@ -288,6 +310,12 @@ class KickstartForm extends QuickForm
         }
     }
 
+    public function setEndpoint(IcingaEndpoint $endpoint)
+    {
+        $this->endpoint = $endpoint;
+        return $this;
+    }
+
     public function onSuccess()
     {
         try {
@@ -306,6 +334,10 @@ class KickstartForm extends QuickForm
             }
 
             $values = $this->getValues();
+            if ($this->endpoint && empty($values['password'])) {
+                $values['password'] = $this->endpoint->getApiUser()->password;
+            }
+
             $kickstart = new KickstartHelper($this->getDb());
             unset($values['resource']);
             $kickstart->setConfig($values)->run();
