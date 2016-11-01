@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class SettingsForm extends QuickForm
 {
+    /** @var Settings */
     protected $settings;
 
     public function setup()
@@ -101,11 +102,7 @@ class SettingsForm extends QuickForm
 
     public function onSuccess()
     {
-        $settings = $this->settings;
-
         try {
-            $cnt = 0;
-
             foreach ($this->getValues() as $key => $value) {
                 if ($value === '') {
                     $value = null;

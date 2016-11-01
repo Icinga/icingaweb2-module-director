@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class SyncCheckForm extends QuickForm
 {
+    /** @var SyncRule */
     protected $rule;
 
     public function setSyncRule(SyncRule $rule)
@@ -31,7 +32,6 @@ class SyncCheckForm extends QuickForm
             $this->notifySuccess(
                 $this->translate(('This Sync Rule would apply new changes'))
             );
-            $html = '';
             $sum = array('create' => 0, 'modify' => 0, 'delete' => 0);
 
             // TODO: Preview them? Like "hosta, hostb and 4 more would be...
@@ -54,7 +54,7 @@ class SyncCheckForm extends QuickForm
             $html = '<pre>' . print_r($sum, 1) . '</pre>';
 
             $this->addHtml($html);
-        } elseif ($this->rule->sync_state === 'in-sync') {
+        } elseif ($this->rule->get('sync_state') === 'in-sync') {
             $this->setSuccessMessage(
                 $this->translate('Nothing would change, this rule is still in sync')
             );

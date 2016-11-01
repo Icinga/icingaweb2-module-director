@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Job;
 
 use Exception;
-use Icinga\Application\Benchmark;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Hook\JobHook;
@@ -129,9 +128,14 @@ class ConfigJob extends JobHook
     public function getRemainingGraceTime()
     {
         if ($this->isWithinGracePeriod()) {
-            return $deployment->getDeploymentTimestamp()
+            if ($deployment = $this->lastDeployment()) {
+
+                return $deployment->getDeploymentTimestamp()
                 + $this->getSetting('grace_period')
                 - time();
+            } else {
+                return null;
+            }
         }
 
         return 0;

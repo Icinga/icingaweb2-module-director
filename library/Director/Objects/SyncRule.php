@@ -33,12 +33,14 @@ class SyncRule extends DbObject
 
     private $purgeStrategy;
 
+    /** @var  int */
     private $currentSyncRunId;
 
     private $filter;
 
     private $hasCombinedKey;
 
+    /** @var SyncProperty[] */
     private $syncProperties;
 
     private $sourceKeyPattern;
@@ -57,7 +59,7 @@ class SyncRule extends DbObject
                 $db->select()
                    ->from(array('p' => 'sync_property'), 'p.source_id')
                    ->join(array('s' => 'import_source'), 's.id = p.source_id', array())
-                   ->where('rule_id = ?', $this->id)
+                   ->where('rule_id = ?', $this->get('id'))
                    ->order('s.source_name')
             )
         ));
@@ -84,7 +86,7 @@ class SyncRule extends DbObject
         $query = $db->select()->from(
             array('sr' => 'sync_run'),
             'sr.start_time'
-        )->where('sr.rule_id = ?', $this->id)
+        )->where('sr.rule_id = ?', $this->get('id'))
         ->order('sr.start_time DESC')
         ->limit(1);
 
@@ -101,7 +103,7 @@ class SyncRule extends DbObject
         $query = $db->select()->from(
             array('sr' => 'sync_run'),
             'sr.id'
-        )->where('sr.rule_id = ?', $this->id)
+        )->where('sr.rule_id = ?', $this->get('id'))
         ->order('sr.start_time DESC')
         ->limit(1);
 
@@ -120,13 +122,13 @@ class SyncRule extends DbObject
                 ->from(
                     array('p' => 'sync_property'),
                     array('priority' => '(CASE WHEN MAX(p.priority) IS NULL THEN 1 ELSE MAX(p.priority) + 1 END)')
-                )->where('p.rule_id = ?', $this->id)
+                )->where('p.rule_id = ?', $this->get('id'))
         );
     }
 
     public function matches($row)
     {
-        if ($this->filter_expression === null) {
+        if ($this->get('filter_expression') === null) {
             return true;
         }
 
@@ -137,31 +139,31 @@ class SyncRule extends DbObject
     {
         $hadChanges = false;
 
-        Benchmark::measure('Checking sync rule ' . $this->rule_name);
+        Benchmark::measure('Checking sync rule ' . $this->get('rule_name'));
         try {
-            $this->last_attempt = date('Y-m-d H:i:s');
-            $this->sync_state = 'unknown';
+            $this->set('last_attempt', date('Y-m-d H:i:s'));
+            $this->set('sync_state', 'unknown');
             $sync = $this->sync();
             if ($sync->hasModifications()) {
-                Benchmark::measure('Got modifications for sync rule ' . $this->rule_name);
-                $this->sync_state = 'pending-changes';
+                Benchmark::measure('Got modifications for sync rule ' . $this->get('rule_name'));
+                $this->set('sync_state', 'pending-changes');
                 if ($apply && $runId = $sync->apply()) {
-                    Benchmark::measure('Successfully synced rule ' . $this->rule_name);
-                    $this->sync_state = 'in-sync';
+                    Benchmark::measure('Successfully synced rule ' . $this->get('rule_name'));
+                    $this->set('sync_state', 'in-sync');
                     $this->currentSyncRunId = $runId;
                 }
 
                 $hadChanges = true;
 
             } else {
-                Benchmark::measure('No modifications for sync rule ' . $this->rule_name);
-                $this->sync_state = 'in-sync';
+                Benchmark::measure('No modifications for sync rule ' . $this->get('rule_name'));
+                $this->set('sync_state', 'in-sync');
             }
 
-            $this->last_error_message = null;
+            $this->set('last_error_message', null);
         } catch (Exception $e) {
-            $this->sync_state = 'failing';
-            $this->last_error_message = $e->getMessage();
+            $this->set('sync_state', 'failing');
+            $this->set('last_error_message', $e->getMessage());
             // TODO: Store last error details / trace?
         }
 
@@ -172,6 +174,9 @@ class SyncRule extends DbObject
         return $hadChanges;
     }
 
+    /**
+     * @return IcingaObject[]
+     */
     public function getExpectedModifications()
     {
         return $this->sync()->getExpectedModifications();
@@ -217,7 +222,7 @@ class SyncRule extends DbObject
     protected function filter()
     {
         if ($this->filter === null) {
-            $this->filter = Filter::fromQueryString($this->filter_expression);
+            $this->filter = Filter::fromQueryString($this->get('filter_expression'));
         }
 
         return $this->filter;
@@ -235,7 +240,7 @@ class SyncRule extends DbObject
     // TODO: Allow for more
     protected function loadConfiguredPurgeStrategy()
     {
-        if ($this->purge_existing === 'y') {
+        if ($this->get('purge_existing') === 'y') {
             return PurgeStrategy::load('ImportRunBased', $this);
         } else {
             return PurgeStrategy::load('PurgeNothing', $this);
@@ -254,7 +259,7 @@ class SyncRule extends DbObject
             $this->hasCombinedKey = false;
 
             // TODO: Move to Objects
-            if ($this->object_type === 'service') {
+            if ($this->get('object_type') === 'service') {
                 $hasHost = false;
                 $hasObjectName = false;
 
@@ -277,7 +282,7 @@ class SyncRule extends DbObject
 
                     $this->destinationKeyPattern = '${host}!${object_name}';
                 }
-            } elseif ($this->object_type === 'datalistEntry') {
+            } elseif ($this->get('object_type') === 'datalistEntry') {
                 $hasList = false;
                 $hasName = false;
 
@@ -323,14 +328,13 @@ class SyncRule extends DbObject
     public function fetchSyncProperties()
     {
         $db = $this->getDb();
+
         return SyncProperty::loadAll(
             $this->getConnection(),
             $db->select()
                ->from('sync_property')
-               ->where('rule_id = ?', $this->id)
+               ->where('rule_id = ?', $this->get('id'))
                ->order('priority DESC')
         );
-
-        return $this->syncProperties;
     }
 }

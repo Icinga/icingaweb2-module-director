@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\DataType;
 
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class DataTypeDatalist extends DataTypeHook
 {
@@ -17,8 +18,9 @@ class DataTypeDatalist extends DataTypeHook
         return $element;
     }
 
-    protected function getEntries($form)
+    protected function getEntries(QuickForm $form)
     {
+        /** @var DirectorObjectForm $form */
         $db = $form->getDb()->getDbAdapter();
 
         $select = $db->select()
@@ -31,6 +33,7 @@ class DataTypeDatalist extends DataTypeHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
+        /** @var DirectorObjectForm $form */
         $db = $form->getDb();
 
         $form->addElement('select', 'datalist_id', array(

@@ -219,6 +219,11 @@ class RestApiClient
         return $this->request('delete', $url, $body);
     }
 
+    /**
+     * @throws Exception
+     *
+     * @return resource
+     */
     protected function curl()
     {
         if ($this->curl === null) {
@@ -227,16 +232,8 @@ class RestApiClient
                 throw new Exception('CURL INIT ERROR: ' . curl_error($this->curl));
             }
         }
-        return $this->curl;
-    }
 
-    protected function readPart($curl, $data)
-    {
-        $length = strlen($data);
-        $this->readBuffer .= $data;
-        // echo "Got $length bytes\n";
-        $this->processEvents();
-        return $length;
+        return $this->curl;
     }
 
     protected function processEvents()

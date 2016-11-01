@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\IcingaConfig;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterAnd;
+use Icinga\Data\Filter\FilterChain;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Data\Filter\FilterOr;
 use Icinga\Data\Filter\FilterNot;
 use Icinga\Data\Filter\FilterEqualOrGreaterThan;
@@ -48,8 +50,10 @@ class AssignRenderer
     protected function renderFilter(Filter $filter)
     {
         if ($filter->isChain()) {
+            /** @var FilterChain $filter */
             return $this->renderFilterChain($filter);
         } else {
+            /** @var FilterExpression $filter */
             return $this->renderFilterExpression($filter);
         }
     }
@@ -71,7 +75,7 @@ class AssignRenderer
         }
     }
 
-    protected function renderFilterExpression($filter)
+    protected function renderFilterExpression(FilterExpression $filter)
     {
         $column = $filter->getColumn();
         $expression = $filter->getExpression();
@@ -151,7 +155,7 @@ class AssignRenderer
         }
     }
 
-    protected function renderFilterChain(Filter $filter)
+    protected function renderFilterChain(FilterChain $filter)
     {
         // TODO: brackets if deeper level?
         if ($filter instanceof FilterAnd) {
@@ -166,6 +170,7 @@ class AssignRenderer
 
         $parts = array();
         if (! $filter->isEmpty()) {
+            /** @var Filter $f */
             foreach ($filter->filters() as $f) {
                 if ($f->isChain()) {
                     if ($f instanceof FilterNot) {

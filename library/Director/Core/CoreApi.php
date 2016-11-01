@@ -9,6 +9,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
+use Icinga\Module\Director\Objects\IcingaZone;
 
 class CoreApi
 {
@@ -104,8 +105,8 @@ class CoreApi
     public function getHostOutput($host)
     {
         try {
-            $object = $this->getObject($host);
-        } catch (\Exception $e) {
+            $object = $this->getObject($host, 'hosts');
+        } catch (Exception $e) {
             return 'Unable to fetch the requested object';
         }
         if (isset($object->attrs->last_check_result)) {
@@ -120,7 +121,6 @@ class CoreApi
         $this->checkHostNow($host);
         $now = time();
 
-        $waiting = true;
         while (true) {
             try {
                 $object = $this->getObject($host, 'hosts');
@@ -193,7 +193,7 @@ class CoreApi
             . "\n  if (existing) { return false }"
             . "\n%s\n}\n__run_with_activation_context(f)\n",
             $key,
-            $object->object_name,
+            $object->get('object_name'),
             (string) $object
         );
 
@@ -280,7 +280,7 @@ constants
 
     public function getActiveChecksum(Db $conn)
     {
-        $db = $conn->getConnection();
+        $db = $conn->getDbAdapter();
         $stage = $this->getActiveStageName();
         if (! $stage) {
             return null;
@@ -323,6 +323,9 @@ constants
         return $objects;
     }
 
+    /**
+     * @return IcingaZone[]
+     */
     public function getZoneObjects()
     {
         return $this->getDirectorObjects('Zone', 'Zone', 'zones', array(
@@ -486,12 +489,11 @@ constants
         return $found;
     }
 
-    public function collectLogFiles($db)
+    public function collectLogFiles(Db $db)
     {
-
         $existing = $this->listModuleStages('director');
         foreach ($db->getUncollectedDeployments() as $deployment) {
-            $stage = $deployment->stage_name;
+            $stage = $deployment->get('stage_name');
             if (! in_array($stage, $existing)) {
                 continue;
             }
@@ -499,8 +501,8 @@ constants
             try {
                 $availableFiles = $this->listStageFiles($stage);
             } catch (Exception $e) {
-                // This is not correct. We might miss logs as af an ongoing reload
-                $deployment->stage_collected = 'y';
+                // TODO: This is not correct. We might miss logs as af an ongoing reload
+                $deployment->set('stage_collected', 'y');
                 $deployment->store();
                 continue;
             }
@@ -509,21 +511,21 @@ constants
                 && in_array('status', $availableFiles)
             ) {
                 if ($this->getStagedFile($stage, 'status') === '0') {
-                    $deployment->startup_succeeded = 'y';
+                    $deployment->set('startup_succeeded', 'y');
                 } else {
-                    $deployment->startup_succeeded = 'n';
+                    $deployment->set('startup_succeeded', 'n');
                 }
-                $deployment->startup_log = $this->shortenStartupLog(
+                $deployment->set('startup_log', $this->shortenStartupLog(
                     $this->getStagedFile($stage, 'startup.log')
-                );
+                ));
             }
-            $collected = true;
+            $deployment->set('stage_collected', 'y');
 
             $deployment->store();
         }
     }
 
-    public function wipeInactiveStages($db)
+    public function wipeInactiveStages(Db $db)
     {
         $uncollected = $db->getUncollectedDeployments();
         $moduleName = 'director';
@@ -614,7 +616,6 @@ constants
     public function dumpConfig(IcingaConfig $config, $db, $moduleName = 'director')
     {
         $start = microtime(true);
-        $data = $config->getFileContents();
         $deployment = DirectorDeploymentLog::create(array(
             // 'config_id'      => $config->id,
             // 'peer_identity'  => $endpoint->object_name,
@@ -638,21 +639,21 @@ constants
 
         $duration = (int) ((microtime(true) - $start) * 1000);
         // $deployment->duration_ms = $duration;
-        $deployment->duration_dump = $duration;
+        $deployment->set('duration_dump', $duration);
 
         if ($response->succeeded()) {
             if ($stage = $response->getResult('stage', array('package' => $moduleName))) { // Status?
-                $deployment->stage_name = key($stage);
-                $deployment->dump_succeeded = 'y';
+                $deployment->set('stage_name', key($stage));
+                $deployment->set('dump_succeeded', 'y');
             } else {
-                $deployment->dump_succeeded = 'n';
+                $deployment->set('dump_succeeded', 'n');
             }
         } else {
-            $deployment->dump_succeeded = 'n';
+            $deployment->set('dump_succeeded', 'n');
         }
 
         $deployment->store($db);
-        return $deployment->dump_succeeded === 'y';
+        return $deployment->set('dump_succeeded', 'y');
     }
 
     protected function shortenStartupLog($log)

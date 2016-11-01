@@ -8,35 +8,34 @@
  */
 namespace Icinga\Module\Director\Data\Db;
 
-use Icinga\Data\Db\DbConnection;
-use Icinga\Module\Director\Util;
 use Icinga\Exception\IcingaException as IE;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Util;
 use Exception;
+use Zend_Db_Adapter_Abstract;
 
 /**
  * Base class for ...
  */
 abstract class DbObject
 {
-    /**
-     * DbConnection
-     */
+    /** @var DbConnection $connection */
     protected $connection;
 
-    /**
-     * Zend_Db_Adapter_Abstract: DB Handle
-     */
+    /** @var string Table name. MUST be set when extending this class */
+    protected $table;
+
+    /** @var Zend_Db_Adapter_Abstract */
     protected $db;
 
-    /**
-     * Table name. MUST be set when extending this class
-     */
-    protected $table;
+    /** @var  Zend_Db_Adapter_Abstract */
+    protected $r;
 
     /**
      * Default columns. MUST be set when extending this class. Each table
      * column MUST be defined with a default value. Default value may be null.
+     *
+     * @var array
      */
     protected $defaultProperties;
 
@@ -234,6 +233,8 @@ abstract class DbObject
      *
      * @param string $property Property
      *
+     * @throws IE
+     *
      * @return mixed
      */
     public function get($property)
@@ -271,10 +272,12 @@ abstract class DbObject
     /**
      * Generic setter
      *
-     * @param string $property
+     * @param string $key
      * @param mixed  $value
      *
-     * @return array
+     * @throws IE
+     *
+     * @return self
      */
     public function set($key, $value)
     {
@@ -333,6 +336,8 @@ abstract class DbObject
     /**
      * Magic getter
      *
+     * @param mixed $key
+     *
      * @return mixed
      */
     public function __get($key)
@@ -356,6 +361,7 @@ abstract class DbObject
     /**
      * Magic isset check
      *
+     * @param  string $key
      * @return boolean
      */
     public function __isset($key)
@@ -366,6 +372,8 @@ abstract class DbObject
     /**
      * Magic unsetter
      *
+     * @param string $key
+     * @throws IE
      * @return void
      */
     public function __unset($key)
@@ -377,10 +385,10 @@ abstract class DbObject
     }
 
     /**
-     * Führt die Operation set() für jedes Element (key/value Paare) der über-
-     * gebenen Arrays aus
+     * Runs set() for every key/value pair of the given Array
      *
-     * @param  array  $data  Array mit den zu setzenden Daten
+     * @param  array $props  Array of properties
+     * @throws IE
      * @return self
      */
     public function setProperties($props)
@@ -567,6 +575,7 @@ abstract class DbObject
      * Lädt einen Datensatz aus der Datenbank und setzt die entsprechenden
      * Eigenschaften dieses Objekts
      *
+     * @throws NotFoundError
      * @return self
      */
     protected function loadFromDb()
@@ -679,7 +688,9 @@ abstract class DbObject
     /**
      * Store object to database
      *
-     * @return boolean  Whether storing succeeded
+     * @param  DbConnection $db
+     * @return bool Whether storing succeeded
+     * @throws IE
      */
     public function store(DbConnection $db = null)
     {
@@ -722,7 +733,6 @@ abstract class DbObject
                 }
 
                 if ($this->insertIntoDb()) {
-                    $id = $this->getId();
                     if ($this->autoincKeyName) {
                         if ($this->connection->isPgsql()) {
                             $this->properties[$this->autoincKeyName] = $this->db->lastInsertId(
@@ -731,9 +741,6 @@ abstract class DbObject
                             );
                         } else {
                             $this->properties[$this->autoincKeyName] = $this->db->lastInsertId();
-                        }
-                        if (! $id) {
-                            $id = '[' . $this->properties[$this->autoincKeyName] . ']';
                         }
                     }
                     // $this->log(sprintf('New %s "%s" has been stored', $table, $id));
@@ -783,6 +790,11 @@ abstract class DbObject
         );
     }
 
+    /**
+     * @param string $key
+     * @return self
+     * @throws IE
+     */
     protected function setKey($key)
     {
         $keyname = $this->getKeyName();
@@ -922,10 +934,15 @@ abstract class DbObject
     {
     }
 
+    /**
+     * @param array $properties
+     * @param DbConnection|null $connection
+     *
+     * @return static
+     */
     public static function create($properties = array(), DbConnection $connection = null)
     {
-        $class = get_called_class();
-        $obj = new $class();
+        $obj = new static();
         if ($connection !== null) {
             $obj->setConnection($connection);
         }
@@ -989,7 +1006,7 @@ abstract class DbObject
                 self::$prefetchStats[$class]->miss++;
                 return false;
             }
-            return array_key_exists($key, self::$prefetched[$class]);
+
         } else {
             self::$prefetchStats[$class]->miss++;
             return false;
@@ -1007,8 +1024,8 @@ abstract class DbObject
             return $prefetched;
         }
 
-        $class = get_called_class();
-        $obj = new $class();
+        /** @var DbObject $obj */
+        $obj = new static;
         $obj->setConnection($connection)
             ->set($obj->autoincKeyName, $id)
             ->loadFromDb();
@@ -1021,20 +1038,26 @@ abstract class DbObject
             return $prefetched;
         }
 
-        $class = get_called_class();
-        $obj = new $class();
+        /** @var DbObject $obj */
+        $obj = new static;
         $obj->setConnection($connection)->setKey($id)->loadFromDb();
         return $obj;
     }
 
+    /**
+     * @param DbConnection $connection
+     * @param \Zend_Db_Select $query
+     * @param string|null $keyColumn
+     *
+     * @return self[]
+     */
     public static function loadAll(DbConnection $connection, $query = null, $keyColumn = null)
     {
         $objects = array();
-        $class = get_called_class();
         $db = $connection->getDbAdapter();
 
         if ($query === null) {
-            $dummy = new $class();
+            $dummy = new static;
             $select = $db->select()->from($dummy->table);
         } else {
             $select = $query;
@@ -1043,7 +1066,8 @@ abstract class DbObject
         $rows = $db->fetchAll($select);
 
         foreach ($rows as $row) {
-            $obj = new $class();
+            /** @var DbObject $obj */
+            $obj = new static;
             $obj->setConnection($connection)->setDbProperties($row);
             if ($keyColumn === null) {
                 $objects[] = $obj;
@@ -1057,10 +1081,9 @@ abstract class DbObject
 
     public static function prefetchAll(DbConnection $connection, $force = false)
     {
-        $class = get_called_class();
-
-        $dummy = $class::create();
-        $autoInc = $dummy->getAutoIncKeyName();
+        $dummy = static::create();
+        $class = get_class($dummy);
+        $autoInc = $dummy->getAutoincKeyName();
         $keyName = $dummy->getKeyName();
 
         if ($force || ! array_key_exists($class, self::$prefetched)) {
@@ -1079,7 +1102,7 @@ abstract class DbObject
     {
         $class = get_called_class();
         if (! array_key_exists($class, self::$prefetched)) {
-            return false;
+            return;
         }
 
         unset(self::$prefetched[$class]);
@@ -1094,6 +1117,11 @@ abstract class DbObject
         self::$prefetchStats = array();
     }
 
+    /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return bool
+     */
     public static function exists($id, DbConnection $connection)
     {
         if (static::getPrefetched($id)) {
@@ -1102,8 +1130,8 @@ abstract class DbObject
             return false;
         }
 
-        $class = get_called_class();
-        $obj = new $class();
+        /** @var DbObject $obj */
+        $obj = new static;
         $obj->setConnection($connection)->setKey($id);
         return $obj->existsInDb();
     }

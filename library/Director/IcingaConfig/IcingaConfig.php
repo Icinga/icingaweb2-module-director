@@ -7,14 +7,15 @@ use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Hook\ShipConfigFilesHook;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
-use Icinga\Module\Director\Objects\IcingaEndpoint;
-use Exception;
 
 class IcingaConfig
 {
@@ -60,7 +61,7 @@ class IcingaConfig
 
     public function getDuration()
     {
-        return $this->duration;
+        return $this->generationTime;
     }
 
     public function getFileCount()
@@ -120,6 +121,9 @@ class IcingaConfig
         return Util::binary2hex($this->checksum);
     }
 
+    /**
+     * @return IcingaConfigFile[]
+     */
     public function getFiles()
     {
         return $this->files;
@@ -135,25 +139,30 @@ class IcingaConfig
         return $result;
     }
 
+    /**
+     * @return string
+     */
     public function getFileNames()
     {
         return array_keys($this->files);
     }
 
+    /**
+     * @param string $name
+     *
+     * @return IcingaConfigFile
+     */
     public function getFile($name)
     {
         return $this->files[$name];
     }
 
-    public function getMissingFiles($missing)
-    {
-        $files = array();
-        foreach ($this->files as $name => $file) {
-            $files[] = $name . '=' . $file->getChecksum();
-        }
-        return $files;
-    }
-
+    /**
+     * @param string $checksum
+     * @param Db $connection
+     *
+     * @return static
+     */
     public static function load($checksum, Db $connection)
     {
         $config = new static($connection);
@@ -161,6 +170,12 @@ class IcingaConfig
         return $config;
     }
 
+    /**
+     * @param string $checksum
+     * @param Db $connection
+     *
+     * @return bool
+     */
     public static function exists($checksum, Db $connection)
     {
         $db = $connection->getDbAdapter();
@@ -211,6 +226,11 @@ class IcingaConfig
         return $db->fetchOne($query) === $checksum;
     }
 
+    /**
+     * @param Db $connection
+     *
+     * @return mixed
+     */
     public static function generate(Db $connection)
     {
         $config = new static($connection);
@@ -317,15 +337,17 @@ class IcingaConfig
     {
         if (! array_key_exists($id, $this->zoneMap)) {
             $zone = IcingaZone::loadWithAutoIncId($id, $this->connection);
-            $this->zoneMap[$id] = $zone->object_name;
+            $this->zoneMap[$id] = $zone->get('object_name');
         }
 
         return $this->zoneMap[$id];
     }
 
+    /**
+     * @return self
+     */
     public function store()
     {
-
         $fileTable = IcingaConfigFile::$table;
         $fileKey = IcingaConfigFile::$keyName;
 
@@ -393,6 +415,11 @@ class IcingaConfig
         return $this;
     }
 
+    /**
+     * @throws IcingaException
+     *
+     * @return self
+     */
     protected function generateFromDb()
     {
         PrefetchCache::initialize($this->connection);
@@ -445,6 +472,9 @@ class IcingaConfig
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function prepareGlobalBasics()
     {
         if ($this->isLegacy()) {
@@ -553,6 +583,13 @@ apply Service for (title => params in host.vars["%s"]) {
         return $db->fetchOne($query);
     }
 
+    /**
+     * @param string $checksum
+     *
+     * @throws NotFoundError
+     *
+     * @return self
+     */
     protected function loadFromDb($checksum)
     {
         $query = $this->db->select()->from(
@@ -562,11 +599,11 @@ apply Service for (title => params in host.vars["%s"]) {
         $result = $this->db->fetchRow($query);
 
         if (empty($result)) {
-            throw new Exception(sprintf('Got no config for %s', Util::binary2hex($checksum)));
+            throw new NotFoundError('Got no config for %s', Util::binary2hex($checksum));
         }
 
         $this->checksum = $this->binFromDb($result->checksum);
-        $this->duration = $result->duration;
+        $this->generationTime = $result->duration;
         $this->lastActivityChecksum = $this->binFromDb($result->last_activity_checksum);
 
         $query = $this->db->select()->from(
@@ -597,12 +634,19 @@ apply Service for (title => params in host.vars["%s"]) {
 
     protected function createFileFromDb($type)
     {
+        /** @var IcingaObject $class */
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         Benchmark::measure(sprintf('Prefetching %s', $type));
         $objects = $class::prefetchAll($this->connection);
         return $this->createFileForObjects($type, $objects);
     }
 
+    /**
+     * @param string         $type    Short object type, like 'service' or 'zone'
+     * @param IcingaObject[] $objects
+     *
+     * @return self
+     */
     protected function createFileForObjects($type, $objects)
     {
         if (empty($objects)) {
@@ -613,7 +657,7 @@ apply Service for (title => params in host.vars["%s"]) {
         foreach ($objects as $object) {
             if ($object->isExternal()) {
                 if ($type === 'zone') {
-                    $this->zoneMap[$object->id] = $object->object_name;
+                    $this->zoneMap[$object->get('id')] = $object->getObjectName();
                 }
             }
 
@@ -650,6 +694,12 @@ apply Service for (title => params in host.vars["%s"]) {
         return in_array($type, $types);
     }
 
+    /**
+     * @param string $name   Relative config file name
+     * @param string $suffix Config file suffix, defaults to '.conf'
+     *
+     * @return IcingaConfigFile
+     */
     public function configFile($name, $suffix = '.conf')
     {
         $filename = $name . $suffix;
@@ -662,6 +712,7 @@ apply Service for (title => params in host.vars["%s"]) {
 
     protected function collectExtraFiles()
     {
+        /** @var ShipConfigFilesHook $hook */
         foreach (Hook::all('Director\\ShipConfigFiles') as $hook) {
             foreach ($hook->fetchFiles() as $filename => $file) {
                 if (array_key_exists($filename, $this->files)) {

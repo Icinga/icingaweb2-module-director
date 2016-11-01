@@ -2,9 +2,6 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
-use DirectoryIterator;
-use Icinga\Exception\ProgrammingError;
-
 class NotificationObjectDashlet extends Dashlet
 {
     protected $icon = 'megaphone';

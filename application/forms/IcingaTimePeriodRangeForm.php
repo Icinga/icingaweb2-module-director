@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -14,7 +15,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addHidden('timeperiod_id', $this->period->id);
+        $this->addHidden('timeperiod_id', $this->period->get('id'));
         $this->addElement('text', 'range_key', array(
             'label'       => $this->translate('Day(s)'),
             'description' => $this->translate(
@@ -58,7 +59,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
                 $object->hasBeenLoadedFromDb()
                 ? $this->translate('The %s has successfully been stored')
                 : $this->translate('A new %s has successfully been created'),
-                $this->translate($this->getObjectName())
+                $this->translate($this->getObjectShortClassName())
             );
 
             $this->period->store($this->db);
@@ -71,7 +72,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
         }
         if ($object instanceof IcingaObject) {
             $this->setSuccessUrl(
-                'director/' . strtolower($this->getObjectName()),
+                'director/' . strtolower($this->getObjectShortClassName()),
                 $object->getUrlParams()
             );
         }

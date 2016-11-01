@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Cli;
 
 use Icinga\Exception\MissingParameterException;
-use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\IcingaObject;
 
 class ObjectCommand extends Command
@@ -85,11 +84,9 @@ class ObjectCommand extends Command
      */
     public function createAction()
     {
-        $db = $this->db();
         $type = $this->getType();
         $name = $this->params->shift();
 
-        $db = $this->db();
         $props = $this->remainingParams();
         if (! array_key_exists('object_type', $props)) {
             $props['object_type'] = 'object';
@@ -176,7 +173,6 @@ class ObjectCommand extends Command
      */
     public function setAction()
     {
-        $db = $this->db();
         $name = $this->getName();
 
         if ($this->params->shift('auto-create') && ! $this->exists($name)) {
@@ -371,6 +367,9 @@ class ObjectCommand extends Command
         );
     }
 
+    /**
+     * @return IcingaObject
+     */
     protected function getObject()
     {
         if ($this->object === null) {

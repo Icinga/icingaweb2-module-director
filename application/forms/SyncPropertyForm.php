@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Exception;
-use Icinga\Exception\InvalidPropertyException;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -17,6 +16,7 @@ class SyncPropertyForm extends DirectorObjectForm
      */
     private $rule;
 
+    /** @var ImportSource */
     private $importSource;
 
     private $dummyObject;
@@ -25,7 +25,7 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addHidden('rule_id', $this->rule_id);
+        $this->addHidden('rule_id', $this->rule->get('id'));
 
         $this->addElement('select', 'source_id', array(
             'label'        => $this->translate('Source Name'),
@@ -159,7 +159,7 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         if ($destination === 'import') {
-            $funcTemplates = 'enum' . ucfirst($this->rule->object_type) . 'Templates';
+            $funcTemplates = 'enum' . ucfirst($this->rule->get('object_type')) . 'Templates';
             $templates = $this->db->$funcTemplates();
             if (! empty($templates)) {
                 $templates = array_combine($templates, $templates);
@@ -259,7 +259,7 @@ class SyncPropertyForm extends DirectorObjectForm
         $dummy = $this->dummyObject();
 
         if ($dummy instanceof IcingaObject) {
-            if ($dummy->supportsCustomvars()) {
+            if ($dummy->supportsCustomVars()) {
                 $special['vars.*'] = $this->translate('Custom variable (vars.)');
                 $special['vars']   = $this->translate('All custom variables (vars)');
             }
@@ -310,11 +310,11 @@ class SyncPropertyForm extends DirectorObjectForm
     {
         if ($this->importSource === null) {
             if ($this->hasObject()) {
-                $src = ImportSource::load($this->object->source_id, $this->db);
+                $src = ImportSource::load($this->object->get('source_id'), $this->db);
             } else {
                 $src = ImportSource::load($this->getSentValue('source_id'), $this->db);
             }
-            $this->importSource = ImportSourceHook::loadByName($src->source_name, $this->db);
+            $this->importSource = ImportSourceHook::loadByName($src->get('source_name'), $this->db);
         }
 
         return $this->importSource;
@@ -323,10 +323,10 @@ class SyncPropertyForm extends DirectorObjectForm
     public function onSuccess()
     {
         $object = $this->getObject();
-        $object->rule_id = $this->rule->id; // ?!
+        $object->set('rule_id', $this->rule->get('id')); // ?!
 
         if ($this->getValue('use_filter') === 'n') {
-            $object->filter_expression = null;
+            $object->set('filter_expression', null);
         }
 
         $sourceColumn = $this->getValue('source_column');
@@ -357,7 +357,7 @@ class SyncPropertyForm extends DirectorObjectForm
     {
         if ($this->dummyObject === null) {
             $this->dummyObject = IcingaObject::createByType(
-                $this->rule->object_type,
+                $this->rule->get('object_type'),
                 array(),
                 $this->db
             );

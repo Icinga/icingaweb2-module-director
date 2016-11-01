@@ -30,6 +30,9 @@ abstract class Dashlet
         $this->db = $dashboard->getDb();
     }
 
+    /**
+     * @return string[]
+     */
     public function listRequiredStats()
     {
         return $this->requiredStats;

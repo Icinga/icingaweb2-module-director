@@ -7,6 +7,9 @@ use Countable;
 
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
+    /** @var  CustomVariable[] */
+    protected $value;
+
     public function equals(CustomVariable $var)
     {
         if (! $var instanceof CustomVariableDictionary) {

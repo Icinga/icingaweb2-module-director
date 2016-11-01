@@ -143,11 +143,11 @@ class KickstartForm extends QuickForm
         if ($ep = $this->endpoint) {
             $user = $ep->getApiUser();
             $this->setDefaults(array(
-                'endpoint' => $ep->object_name,
-                'host'     => $ep->host,
-                'port'     => $ep->port,
-                'username' => $user->object_name,
-                'password' => $user->password,
+                'endpoint' => $ep->get('object_name'),
+                'host'     => $ep->get('host'),
+                'port'     => $ep->get('port'),
+                'username' => $user->get('object_name'),
+                'password' => $user->get('password'),
             ));
 
             if (! empty($user->password)) {
@@ -321,7 +321,7 @@ class KickstartForm extends QuickForm
         try {
             if ($this->getSubmitLabel() === $this->storeConfigLabel) {
                 if ($this->storeResourceConfig()) {
-                    return parent::onSuccess();
+                    parent::onSuccess();
                 } else {
                     return;
                 }
@@ -330,7 +330,7 @@ class KickstartForm extends QuickForm
             if ($this->getSubmitLabel() === $this->createDbLabel
                 || $this->getSubmitLabel() === $this->migrateDbLabel) {
                 $this->migrations()->applyPendingMigrations();
-                return parent::onSuccess();
+                parent::onSuccess();
             }
 
             $values = $this->getValues();
@@ -354,6 +354,8 @@ class KickstartForm extends QuickForm
             $resources = $this->enumResources();
             if (in_array($resource, $resources)) {
                 return $resource;
+            } else {
+                return null;
             }
         } else {
             return $this->config()->get('db', 'resource');
@@ -396,7 +398,7 @@ class KickstartForm extends QuickForm
         $allowed = array('mysql', 'pgsql');
 
         foreach (ResourceFactory::getResourceConfigs() as $name => $resource) {
-            if ($resource->type === 'db' && in_array($resource->db, $allowed)) {
+            if ($resource->get('type') === 'db' && in_array($resource->get('db'), $allowed)) {
                 $resources[$name] = $name;
             }
         }

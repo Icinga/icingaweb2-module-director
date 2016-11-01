@@ -38,7 +38,7 @@ class DeployConfigForm extends QuickForm
             $label = $this->translate('There are no pending changes. Deploy anyways');
         } else {
             $label = sprintf(
-                $this->translate('Deploy %d pending changes', $activities),
+                $this->translate('Deploy %d pending changes'),
                 $activities
             );
         }
@@ -82,7 +82,6 @@ class DeployConfigForm extends QuickForm
             $config = IcingaConfig::load(Util::hex2binary($this->checksum), $db);
         } else {
             $config = IcingaConfig::generate($db);
-            $checksum = $config->getHexChecksum();
         }
 
         $this->api->wipeInactiveStages($db);
@@ -90,7 +89,7 @@ class DeployConfigForm extends QuickForm
         if ($this->api->dumpConfig($config, $db)) {
             if ($isApiRequest) {
                 die('Api not ready');
-                return $this->sendJson((object) array('checksum' => $checksum));
+               //  return $this->sendJson((object) array('checksum' => $checksum));
             } else {
                 $this->setSuccessUrl('director/config/deployments');
                 $this->setSuccessMessage(

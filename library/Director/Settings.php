@@ -59,7 +59,7 @@ class Settings
         $db = $this->db;
 
         if ($value === null) {
-            $updated = $db->delete(
+            $db->delete(
                 'director_setting',
                 $db->quoteInto('setting_name = ?', $name)
             );

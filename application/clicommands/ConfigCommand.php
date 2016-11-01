@@ -55,6 +55,7 @@ class ConfigCommand extends Command
         $longestTime  = 0;
         $longestQuery = null;
 
+        /** @var \Zend_Db_Profiler_Query  $query */
         foreach ($profiler->getQueryProfiles() as $query) {
             echo $query->getQuery() . "\n";
             if ($query->getElapsedSecs() > $longestTime) {

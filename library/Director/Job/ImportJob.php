@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Job;
 
-use Exception;
 use Icinga\Module\Director\Hook\JobHook;
 use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ImportJob extends JobHook
@@ -72,6 +72,7 @@ class ImportJob extends JobHook
 
     protected static function enumImportSources(QuickForm $form)
     {
+        /** @var DirectorObjectForm $form */
         $db = $form->getDb();
         $query = $db->select()->from(
             'import_source',

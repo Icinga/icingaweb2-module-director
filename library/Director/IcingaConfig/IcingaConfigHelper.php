@@ -187,7 +187,6 @@ class IcingaConfigHelper
         }
 
         $parts = preg_split('/\s+/', $interval, -1, PREG_SPLIT_NO_EMPTY);
-        $value = 0;
         foreach ($parts as $part) {
             if (! preg_match('/^(\d+)([dhms]?)$/', $part)) {
                 return false;
@@ -242,7 +241,6 @@ class IcingaConfigHelper
             return '0s';
         }
 
-        $parts = array();
         $steps = array(
             'd' => 86400,
             'h' => 3600,

@@ -133,6 +133,10 @@ class KickstartHelper
         return $this->apiUser;
     }
 
+    /**
+     * @throws ConfigurationError
+     * @return self
+     */
     protected function loadZones()
     {
         $db = $this->db;

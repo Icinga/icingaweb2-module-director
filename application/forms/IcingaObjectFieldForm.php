@@ -8,10 +8,7 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaObjectFieldForm extends DirectorObjectForm
 {
-    /**
-     *
-     * Please note that $object would conflict with logic in parent class
-     */
+    /** @var IcingaObject Please note that $object would conflict with logic in parent class */
     protected $icingaObject;
 
     public function setIcingaObject($object)
@@ -24,7 +21,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
     public function setup()
     {
         $type = $this->icingaObject->getShortTableName();
-        $this->addHidden($type . '_id', $this->icingaObject->id);
+        $this->addHidden($type . '_id', $this->icingaObject->get('id'));
 
         $this->addHtmlHint(
             'Custom data fields allow you to easily fill custom variables with'
@@ -160,8 +157,8 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                 'datatype'    => 'Icinga\Module\Director\DataType\DataTypeString'
             ));
             $field->store($this->getDb());
-            $this->setElementValue('datafield_id', $field->id);
-            $this->object()->datafield_id = $field->id;
+            $this->setElementValue('datafield_id', $field->get('id'));
+            $this->object()->set('datafield_id', $field->get('id'));
         }
 
         return parent::onSuccess();

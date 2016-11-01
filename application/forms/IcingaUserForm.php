@@ -10,7 +10,8 @@ class IcingaUserForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
-            return $this->groupMainProperties();
+            $this->groupMainProperties();
+            return;
         }
 
         if ($this->isTemplate()) {

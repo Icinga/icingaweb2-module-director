@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
-
 class DeploymentDashboard extends Dashboard
 {
     protected $name;

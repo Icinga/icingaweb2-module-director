@@ -2,9 +2,6 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
-use DirectoryIterator;
-use Icinga\Exception\ProgrammingError;
-
 class HostObjectDashlet extends Dashlet
 {
     protected $icon = 'host';

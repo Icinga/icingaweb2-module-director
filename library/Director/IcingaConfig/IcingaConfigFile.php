@@ -21,6 +21,11 @@ class IcingaConfigFile
 
     protected $cntApply = 0;
 
+    /**
+     * @param $content
+     *
+     * @return self
+     */
     public function prepend($content)
     {
         $this->content = $content . $this->content;

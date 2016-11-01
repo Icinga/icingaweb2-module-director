@@ -3,14 +3,17 @@
 namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Command as CliCommand;
+use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Application\Config;
 
 class Command extends CliCommand
 {
+    /** @var  Db */
     protected $db;
 
+    /** @var  CoreApi */
     private $api;
 
     protected function renderJson($object, $pretty = true)
@@ -53,8 +56,6 @@ class Command extends CliCommand
             default:
                 return 'An error occured when parsing a JSON string';
         }
-
-        return $this;
     }
 
     protected function api($endpointName = null)
@@ -72,6 +73,9 @@ class Command extends CliCommand
         return $this->api;
     }
 
+    /**
+     * @return Db
+     */
     protected function db()
     {
         if ($this->db === null) {

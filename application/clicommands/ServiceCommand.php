@@ -29,7 +29,7 @@ class ServiceCommand extends ObjectCommand
         if ($host = $this->params->get('host')) {
             return array(
                 'object_name' => $name,
-                'host_id'     => IcingaHost::load($host, $this->db())->id,
+                'host_id'     => IcingaHost::load($host, $this->db())->get('id'),
             );
         } else {
             return array(

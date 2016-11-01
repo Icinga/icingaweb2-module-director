@@ -2,27 +2,33 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Application\Icinga;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Form\FormLoader;
+use Icinga\Module\Director\Web\Form\QuickBaseForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Web\Controller;
 use Icinga\Web\Widget;
 
 abstract class ActionController extends Controller
 {
+    /** @var Db */
     protected $db;
 
     protected $isApified = false;
 
+    /** @var CoreApi */
     private $api;
 
+    /** @var Monitoring */
     private $monitoring;
 
     public function init()
@@ -53,6 +59,11 @@ abstract class ActionController extends Controller
         return $paginatable;
     }
 
+    /**
+     * @param string $name
+     *
+     * @return QuickBaseForm
+     */
     public function loadForm($name)
     {
         $form = FormLoader::load($name, $this->Module());
@@ -64,6 +75,11 @@ abstract class ActionController extends Controller
         return $form;
     }
 
+    /**
+     * @param string $name
+     *
+     * @return QuickTable
+     */
     public function loadTable($name)
     {
         return TableLoader::load($name, $this->Module());
@@ -226,8 +242,6 @@ abstract class ActionController extends Controller
             default:
                 return 'An error occured when parsing a JSON string';
         }
-
-        return $this;
     }
 
     protected function getApiIfAvailable()
@@ -257,6 +271,11 @@ abstract class ActionController extends Controller
         return $this->api;
     }
 
+    /**
+     * @throws ConfigurationError
+     *
+     * @return Db
+     */
     protected function db()
     {
         if ($this->db === null) {
@@ -265,7 +284,7 @@ abstract class ActionController extends Controller
                 $this->db = Db::fromResourceName($resourceName);
             } else {
                 if ($this->getRequest()->isApiRequest()) {
-                    throw new ConfigError('Icinga Director is not correctly configured');
+                    throw new ConfigurationError('Icinga Director is not correctly configured');
                 } else {
                     $this->redirectNow('director');
                 }
@@ -275,6 +294,9 @@ abstract class ActionController extends Controller
         return $this->db;
     }
 
+    /**
+     * @return Monitoring
+     */
     protected function monitoring()
     {
         if ($this->monitoring === null) {

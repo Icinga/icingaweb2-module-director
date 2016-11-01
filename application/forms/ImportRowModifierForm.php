@@ -2,8 +2,11 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Exception;
 use Icinga\Application\Hook;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Hook\ImportSourceHook;
+use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -61,7 +64,7 @@ class ImportRowModifierForm extends DirectorObjectForm
                 if ($class && array_key_exists($class, $mods)) {
                     $this->addSettings($class);
                 }
-            } elseif ($class = $this->object()->provider_class) {
+            } elseif ($class = $this->object()->get('provider_class')) {
                 $this->addSettings($class);
             }
 
@@ -99,6 +102,7 @@ class ImportRowModifierForm extends DirectorObjectForm
 
     protected function enumModifiers()
     {
+        /** @var PropertyModifierHook[] $hooks */
         $hooks = Hook::all('Director\\PropertyModifier');
         $enum = array();
         foreach ($hooks as $hook) {

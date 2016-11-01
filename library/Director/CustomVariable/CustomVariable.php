@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\CustomVariable;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
+use Exception;
 
 abstract class CustomVariable implements IcingaConfigRenderer
 {
@@ -39,7 +40,6 @@ abstract class CustomVariable implements IcingaConfigRenderer
     {
         if ($this->type === null) {
             $parts = explode('\\', get_class($this));
-            $class = end($parts);
             // strlen('CustomVariable') === 9
             $this->type = substr(end($parts), 9);
         }
@@ -77,6 +77,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
     }
 
     abstract public function setValue($value);
+
+    abstract public function getValue();
 
     public function isNew()
     {

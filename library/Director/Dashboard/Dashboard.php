@@ -13,18 +13,28 @@ abstract class Dashboard implements Countable
 {
     protected $name;
 
+    /** @var  Dashlet[] */
     protected $dashlets;
 
     protected $dashletNames;
 
+    /** @var  Db */
     protected $db;
 
+    /** @var View */
     protected $view;
 
     final private function __construct()
     {
     }
 
+    /**
+     * @param $name
+     * @param Db $db
+     * @param View $view
+     *
+     * @return self
+     */
     public static function loadByName($name, Db $db, View $view)
     {
         $class = __NAMESPACE__ . '\\' . ucfirst($name) . 'Dashboard';

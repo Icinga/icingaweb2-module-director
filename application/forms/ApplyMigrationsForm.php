@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ApplyMigrationsForm extends QuickForm
 {
+    /** @var  Migrations */
     protected $migrations;
 
     public function setup()

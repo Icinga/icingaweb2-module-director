@@ -3,13 +3,12 @@
 // TODO: Check whether this can be removed
 namespace Icinga\Module\Director\Forms;
 
-use Exception;
-use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ImportCheckForm extends QuickForm
 {
+    /** @var  ImportSource */
     protected $source;
 
     public function setImportSource(ImportSource $source)
@@ -44,7 +43,7 @@ class ImportCheckForm extends QuickForm
             );
         }
 
-        if ($source->import_state === 'failing') {
+        if ($source->get('import_state') === 'failing') {
             $this->addError($this->translate('Checking this Import Source failed'));
         } else {
             parent::onSuccess();

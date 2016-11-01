@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Objects;
 
 use Countable;
 use Exception;
-use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
@@ -14,7 +13,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 {
     protected $storedNames = array();
 
-    /** @var Array A list of our imports, key and value are the import name */
+    /** @var array A list of our imports, key and value are the import name */
     protected $imports = array();
 
     /** @var IcingaObject[] A list of all objects we have seen, referred by name */
@@ -134,6 +133,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     /**
      * Magic isset check
      *
+     * @param string $import
+     *
      * @return boolean
      */
     public function __isset($import)
@@ -209,6 +210,9 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * @return IcingaObject[]
+     */
     public function getObjects()
     {
         $list = array();
@@ -226,6 +230,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $connection = $this->object->getConnection();
+        /** @var IcingaObject $class */
         $class = $this->getImportClass();
         if (is_array($this->object->getKeyName())) {
             // Services only
@@ -240,7 +245,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             $import = $class::load($name, $connection);
         }
 
-        return $this->objects[$import->object_name] = $import;
+        return $this->objects[$import->getObjectName()] = $import;
     }
 
     protected function getImportTableName()
@@ -284,15 +289,16 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             return true;
         }
 
-        $objectId = (int) $this->object->id;
+        $objectId = (int) $this->object->get('id');
         $type = $this->getType();
 
         $objectCol = $type . '_id';
         $importCol = 'parent_' . $type . '_id';
         $table = $this->getImportTableName();
+        $db = $this->object->getDb();
 
         if ($this->object->hasBeenLoadedFromDb()) {
-            $this->object->db->delete(
+            $db->delete(
                 $table,
                 $objectCol . ' = ' . $objectId
             );
@@ -300,11 +306,11 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
         $weight = 1;
         foreach ($this->getObjects() as $import) {
-            $this->object->db->insert(
+            $db->insert(
                 $table,
                 array(
                     $objectCol => $objectId,
-                    $importCol => $import->id,
+                    $importCol => $import->get('id'),
                     'weight'   => $weight++
                 )
             );

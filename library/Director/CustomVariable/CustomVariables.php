@@ -6,11 +6,13 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Iterator;
 use Countable;
+use Exception;
+use Iterator;
 
 class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 {
+    /** @var CustomVariable[] */
     protected $storedVars = array();
 
     protected $vars = array();
@@ -37,7 +39,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $where = $db->quoteInto('varname = ?', $varname);
         foreach (static::$allTables as $table) {
             $parts[] = sprintf(
-                'SELECT COUNT(*) as cnt FROM icinga_host_var WHERE %s',
+                'SELECT COUNT(*) as cnt FROM ' . $table . ' WHERE %s',
                 $where
             );
         }
@@ -102,10 +104,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /**
      * Generic setter
      *
-     * @param string $property
+     * @param string $key
      * @param mixed  $value
      *
-     * @return array
+     * @return self
      */
     public function set($key, $value)
     {
@@ -163,7 +165,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 'v.varvalue',
                 'v.format',
             )
-        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->id);
+        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->get('id'));
 
         $vars = new CustomVariables;
         foreach ($db->fetchAll($query) as $row) {
@@ -191,7 +193,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $db            = $object->getDb();
         $table         = $object->getVarsTableName();
         $foreignColumn = $object->getVarsIdColumn();
-        $foreignId     = $object->id;
+        $foreignId     = $object->get('id');
 
 
         foreach ($this->vars as $var) {
@@ -282,6 +284,13 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $out;
     }
 
+    /**
+     * @param string $key
+     * @param CustomVariable $var
+     * @param bool $renderExpressions
+     *
+     * @return string
+     */
     protected function renderSingleVar($key, $var, $renderExpressions = false)
     {
         return c::renderKeyValue(
@@ -320,6 +329,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /**
      * Magic isset check
      *
+     * @param string $key
+     *
      * @return boolean
      */
     public function __isset($key)
@@ -329,6 +340,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     /**
      * Magic unsetter
+     *
+     * @param string $key
      *
      * @return void
      */

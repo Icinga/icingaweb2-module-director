@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Application\Hook;
 use Exception;
@@ -133,7 +134,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
                 if ($class && array_key_exists($class, $types)) {
                     $this->addSettings($class);
                 }
-            } elseif ($class = $this->object()->datatype) {
+            } elseif ($class = $this->object()->get('datatype')) {
                 $this->addSettings($class);
             }
 
@@ -176,6 +177,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
         $object = $this->object();
         $global = array('varname', 'description', 'caption', 'datatype');
 
+        /** @var \Zend_Form_Element $el */
         foreach ($this->getElements() as $el) {
             if ($el->getIgnore()) {
                 continue;
@@ -214,6 +216,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
     {
         $hooks = Hook::all('Director\\DataType');
         $enum = array(null => '- please choose -');
+        /** @var DataTypeHook $hook */
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
         }

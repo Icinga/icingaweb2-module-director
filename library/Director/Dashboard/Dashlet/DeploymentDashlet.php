@@ -2,10 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
-use DirectoryIterator;
 use Exception;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use Icinga\Exception\ProgrammingError;
 
 class DeploymentDashlet extends Dashlet
 {

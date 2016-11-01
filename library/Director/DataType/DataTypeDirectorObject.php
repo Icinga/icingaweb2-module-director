@@ -4,12 +4,14 @@ namespace Icinga\Module\Director\DataType;
 
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class DataTypeDirectorObject extends DataTypeHook
 {
     public function getFormElement($name, QuickForm $form)
     {
+        /** @var DirectorObjectForm $form */
         $db = $form->getDb()->getDbAdapter();
 
         $dummy = IcingaObject::createByType(

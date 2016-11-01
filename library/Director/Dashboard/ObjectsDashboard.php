@@ -2,10 +2,6 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use Countable;
-
-use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
-
 class ObjectsDashboard extends Dashboard
 {
     protected $name;

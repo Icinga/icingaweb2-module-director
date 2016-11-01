@@ -40,6 +40,8 @@ class EndpointObjectDashlet extends Dashlet
         if (! $this->hasDeploymentEndpoint()) {
             return 'state-critical';
         }
+
+        return null;
     }
 
     public function getSummary()

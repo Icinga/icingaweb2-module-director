@@ -54,7 +54,7 @@ abstract class DbObjectWithSettings extends DbObject
     public function __unset($key)
     {
         if ($this->hasProperty($key)) {
-            return parent::__set($key, $value);
+            return parent::__unset($key);
         }
 
         if (array_key_exists($key, $this->settings)) {
@@ -73,6 +73,7 @@ abstract class DbObjectWithSettings extends DbObject
         $add = array();
         $mod = array();
         $del = array();
+        $id = $this->get('id');
 
         foreach ($this->settings as $key => $val) {
             if (array_key_exists($key, $old)) {
@@ -88,7 +89,7 @@ abstract class DbObjectWithSettings extends DbObject
             $del[] = $key;
         }
 
-        $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name = ?', $this->id);
+        $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name = ?', $id);
         $db = $this->getDb();
         foreach ($mod as $key => $val) {
             $db->update(
@@ -102,7 +103,7 @@ abstract class DbObjectWithSettings extends DbObject
             $db->insert(
                 $this->settingsTable,
                 array(
-                    $this->settingsRemoteId => $this->id,
+                    $this->settingsRemoteId => $id,
                     'setting_name'          => $key,
                     'setting_value'         => $val
                 )
@@ -110,7 +111,7 @@ abstract class DbObjectWithSettings extends DbObject
         }
 
         if (! empty($del)) {
-            $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name IN (?)', $this->id);
+            $where = sprintf($this->settingsRemoteId . ' = %d AND setting_name IN (?)', $id);
             $db->delete($this->settingsTable, $db->quoteInto($where, $del));
         }
     }
@@ -121,7 +122,7 @@ abstract class DbObjectWithSettings extends DbObject
         return $db->fetchPairs(
             $db->select()
                ->from($this->settingsTable, array('setting_name', 'setting_value'))
-               ->where($this->settingsRemoteId . ' = ?', $this->id)
+               ->where($this->settingsRemoteId . ' = ?', $this->get('id'))
         );
 
     }

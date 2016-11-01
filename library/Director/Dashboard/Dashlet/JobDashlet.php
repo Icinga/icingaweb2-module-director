@@ -33,6 +33,7 @@ class JobDashlet extends Dashlet
 
     protected function fetchStateClass()
     {
+        /** @var DirectorJob[] $jobs */
         $jobs = DirectorJob::loadAll($this->db);
         if (count($jobs) > 0) {
             $state = 'state-ok';

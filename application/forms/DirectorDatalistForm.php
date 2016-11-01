@@ -29,7 +29,7 @@ class DirectorDatalistForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        $this->object()->owner = self::username();
+        $this->object()->set('owner', self::username());
         parent::onSuccess();
     }
 

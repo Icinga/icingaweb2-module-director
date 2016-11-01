@@ -37,6 +37,9 @@ class IcingaNotificationForm extends DirectorObjectForm
              ->setButtons();
     }
 
+    /**
+     * @return self
+     */
     protected function addAssignmentElements()
     {
         if (!$this->object || !$this->object->isApplyRule()) {
@@ -80,6 +83,9 @@ class IcingaNotificationForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addUsersElement()
     {
         $users = $this->enumUsers();
@@ -102,6 +108,9 @@ class IcingaNotificationForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addUsergroupsElement()
     {
         $groups = $this->enumUsergroups();
@@ -124,6 +133,9 @@ class IcingaNotificationForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addIntervalElement()
     {
         $this->addElement(
@@ -142,6 +154,9 @@ class IcingaNotificationForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addTimesElements()
     {
         $this->addElement(
@@ -169,6 +184,9 @@ class IcingaNotificationForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addPeriodElement()
     {
         $periods = $this->db->enumTimeperiods();
@@ -192,6 +210,9 @@ class IcingaNotificationForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addCommandElements()
     {
         if (! $this->isTemplate()) {

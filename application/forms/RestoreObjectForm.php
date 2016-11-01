@@ -9,8 +9,10 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class RestoreObjectForm extends QuickForm
 {
+    /** @var Db */
     protected $db;
 
+    /** @var IcingaObject */
     protected $object;
 
     public function setup()
@@ -28,7 +30,7 @@ class RestoreObjectForm extends QuickForm
     public function onSuccess()
     {
         $object = $this->object;
-        $name = $object->object_name;
+        $name = $object->getObjectName();
         $db = $this->db;
         $msg = $this->translate('Object has been restored');
 

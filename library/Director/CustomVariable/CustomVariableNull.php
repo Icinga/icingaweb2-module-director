@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
 
 class CustomVariableNull extends CustomVariable

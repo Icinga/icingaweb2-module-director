@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Job;
 
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\JobHook;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Objects\SyncRule;
 
@@ -42,6 +42,7 @@ class SyncJob extends JobHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
+        /** @var DirectorObjectForm $form */
         $rules = self::enumSyncRules($form);
 
         $form->addElement('select', 'rule_id', array(
@@ -84,6 +85,7 @@ class SyncJob extends JobHook
 
     protected static function enumSyncRules(QuickForm $form)
     {
+        /** @var DirectorObjectForm $form */
         $db = $form->getDb();
         $query = $db->select()->from('sync_rule', array('id', 'rule_name'))->order('rule_name');
         $res = $db->fetchPairs($query);

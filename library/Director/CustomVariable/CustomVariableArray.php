@@ -6,6 +6,9 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class CustomVariableArray extends CustomVariable
 {
+    /** @var  CustomVariable[] */
+    protected $value;
+
     public function equals(CustomVariable $var)
     {
         if (! $var instanceof CustomVariableArray) {

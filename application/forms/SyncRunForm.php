@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class SyncRunForm extends QuickForm
 {
+    /** @var SyncRule */
     protected $rule;
 
     public function setSyncRule(SyncRule $rule)
@@ -31,11 +32,10 @@ class SyncRunForm extends QuickForm
         $changed = $rule->applyChanges();
 
         if ($changed) {
-            $runId = $rule->getCurrentSyncRunId();
             $this->setSuccessMessage(
                 $this->translate(('Source has successfully been synchronized'))
             );
-        } elseif ($rule->sync_state === 'in-sync') {
+        } elseif ($rule->get('sync_state') === 'in-sync') {
             $this->setSuccessMessage(
                 $this->translate('Nothing changed, rule is in sync')
             );

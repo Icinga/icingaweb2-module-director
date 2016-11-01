@@ -39,6 +39,11 @@ class PrefetchCache
         $this->db = $db;
     }
 
+    /**
+     * @throws ProgrammingError
+     *
+     * @return self
+     */
     public static function instance()
     {
         if (static::$instance === null) {

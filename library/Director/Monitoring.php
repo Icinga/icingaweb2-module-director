@@ -18,7 +18,7 @@ class Monitoring
         }
 
         if ($modules->hasLoaded('monitoring')) {
-            $this->backend = MonitoringBackend::createBackend();
+            $this->backend = MonitoringBackend::instance();
         }
     }
 

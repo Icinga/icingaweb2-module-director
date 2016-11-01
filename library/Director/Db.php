@@ -2,7 +2,8 @@
 
 namespace Icinga\Module\Director;
 
-use Icinga\Data\Db\DbConnection;
+use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -156,6 +157,9 @@ class Db extends DbConnection
         return $name;
     }
 
+    /**
+     * @return IcingaEndpoint
+     */
     public function getDeploymentEndpoint()
     {
         return IcingaEndpoint::load($this->getDeploymentEndpointName(), $this);
@@ -628,22 +632,6 @@ class Db extends DbConnection
         return $this->db()->fetchAll($select);
     }
 
-    public function isPgsql()
-    {
-        return $this->getDbType() === 'pgsql';
-    }
-
-    public function hasPgExtension($name)
-    {
-        $db = $this->db();
-        $query = $db->select()->from(
-            array('e' => 'pg_extension'),
-            array('cnt' => 'COUNT(*)')
-        )->where('extname = ?', $name);
-
-        return (int) $db->fetchOne($query) === 1;
-    }
-
     public function dbHexFunc($column)
     {
         if ($this->isPgsql()) {
@@ -688,6 +676,9 @@ class Db extends DbConnection
         return $db->fetchPairs($query);
     }
 
+    /**
+     * @return DirectorDeploymentLog[]
+     */
     public function getUncollectedDeployments()
     {
         $db = $this->db();

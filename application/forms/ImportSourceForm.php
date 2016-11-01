@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Hook\ImportSourceHook;
+use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Web\Hook;
 
@@ -40,6 +42,7 @@ class ImportSourceForm extends DirectorObjectForm
         if ($this->hasObject()) {
             $value = $this->getSentValue($name);
             if ($value === null) {
+                /** @var ImportSource $object */
                 $object = $this->getObject();
 
                 return $object->getSetting($name, $default);
@@ -51,7 +54,7 @@ class ImportSourceForm extends DirectorObjectForm
         }
     }
 
-    protected function addSettings($class = null)
+    protected function addSettings()
     {
         if (! ($class = $this->getProviderClass())) {
             return;
@@ -100,8 +103,8 @@ class ImportSourceForm extends DirectorObjectForm
         if ($this->hasBeenSent()) {
             $class = $this->getRequest()->getPost('provider_class');
         } else {
-            if (! ($class = $this->object()->provider_class)) {
-                return;
+            if (! ($class = $this->object()->get('provider_class'))) {
+                return null;
             }
         }
 
@@ -113,7 +116,7 @@ class ImportSourceForm extends DirectorObjectForm
         if (! $this->getValue('key_column')) {
             if ($default = $this->getDefaultKeyColumnName()) {
                 $this->setElementValue('key_column', $default);
-                $this->object()->key_column = $default;
+                $this->object()->set('key_column', $default);
             }
         }
 
@@ -122,6 +125,7 @@ class ImportSourceForm extends DirectorObjectForm
 
     protected function enumSourceTypes()
     {
+        /** @var ImportSourceHook[] $hooks */
         $hooks = Hook::all('Director\\ImportSource');
 
         $enum = array();

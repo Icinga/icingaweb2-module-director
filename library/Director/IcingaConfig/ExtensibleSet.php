@@ -185,7 +185,7 @@ class ExtensibleSet
                 'property',
                 'merge_behaviour'
             )
-        )->where($this->foreignKey() . ' = ?', $this->object->id);
+        )->where($this->foreignKey() . ' = ?', $this->object->get('id'));
 
         $byBehaviour = array(
             'override'  => array(),
@@ -269,14 +269,14 @@ class ExtensibleSet
 
         $table = $this->tableName();
         $props = array(
-            $this->foreignKey() => $this->object->id
+            $this->foreignKey() => $this->object->get('id')
         );
 
         $db->delete(
             $this->tableName(),
             $db->quoteInto(
                 $this->foreignKey() . ' = ?',
-                $this->object->id
+                $this->object->get('id')
             )
         );
 

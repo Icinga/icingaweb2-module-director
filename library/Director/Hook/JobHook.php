@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Hook;
 
-use Icinga\Application\Icinga;
 use Icinga\Application\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorJob;
@@ -10,8 +9,10 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 abstract class JobHook
 {
+    /** @var Db */
     private $db;
 
+    /** @var  DirectorJob */
     private $jobDefinition;
 
     public static function getDescription(QuickForm $form)

@@ -3,11 +3,11 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaCommand;
-use Icinga\Module\Director\Objects\IcingaCommandArgument;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaCommandArgumentForm extends DirectorObjectForm
 {
+    /** @var  IcingaCommand */
     protected $commandObject;
 
     public function setCommandObject(IcingaCommand $object)
@@ -19,7 +19,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addHidden('command_id', $this->commandObject->id);
+        $this->addHidden('command_id', $this->commandObject->get('id'));
 
         $this->addElement('text', 'argument_name', array(
             'label'       => $this->translate('Argument name'),
@@ -121,7 +121,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
 
         $msg = sprintf(
             '%s argument "%s" has been removed',
-            $this->translate($this->getObjectName()),
+            $this->translate($this->getObjectShortClassName()),
             $object->argument_name
         );
 
@@ -140,20 +140,20 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         $object = $this->object();
         $cmd = $this->commandObject;
         if (! $object->hasBeenLoadedFromDb()) {
-            if ($object->argument_name === null) {
-                $object->skip_key = true;
-                $object->argument_name = $cmd->getNextSkippableKeyName();
+            if ($object->get('argument_name') === null) {
+                $object->set('skip_key', true);
+                $object->set('argument_name', $cmd->getNextSkippableKeyName());
             }
         }
 
         if ($object->hasBeenModified()) {
             $cmd->arguments()->set(
-                $object->argument_name,
+                $object->get('argument_name'),
                 $object
             );
             $msg = sprintf(
                 $this->translate('The argument %s has successfully been stored'),
-                $object->argument_name
+                $object->get('argument_name')
             );
             $cmd->store($this->db);
         } else {
@@ -162,7 +162,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         }
         $this->setSuccessUrl(
             'director/command/arguments',
-            array('name' => $cmd->object_name)
+            array('name' => $cmd->getObjectName())
         );
 
         $this->redirectOnSuccess($msg);

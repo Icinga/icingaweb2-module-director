@@ -8,13 +8,14 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class IcingaDeleteObjectForm extends QuickForm
 {
+    /** @var  IcingaObject */
     protected $object;
 
     public function setup()
     {
         $this->submitLabel = sprintf(
             $this->translate('YES, please delete "%s"'),
-            $this->object->object_name
+            $this->object->getObjectName()
         );
 
     }
@@ -25,13 +26,11 @@ class IcingaDeleteObjectForm extends QuickForm
         $msg = sprintf(
             'The %s "%s" has been deleted',
             $object->getShortTableName(),
-            $object->object_name
+            $object->getObjectName()
         );
 
         if ($object->delete()) {
             $this->redirectOnSuccess($msg);
-        } else {
-            $this->redirectOnFailure($msg);
         }
     }
 

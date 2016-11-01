@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostForm extends DirectorObjectForm
@@ -11,7 +10,8 @@ class IcingaHostForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
-            return $this->groupMainProperties();
+            $this->groupMainProperties();
+            return;
         }
 
         $this->addElement('text', 'object_name', array(
@@ -45,6 +45,9 @@ class IcingaHostForm extends DirectorObjectForm
              ->setButtons();
     }
 
+    /**
+     * @return self
+     */
     protected function addClusteringElements()
     {
         if (!$this->isTemplate() && !$this->hasClusterProperties()) {
@@ -121,7 +124,7 @@ class IcingaHostForm extends DirectorObjectForm
             return false;
         }
 
-        return $object->zone_id || $object->has_agent;
+        return $object->get('zone_id') || $object->get('has_agent') === 'y';
     }
 
     protected function beforeSuccessfulRedirect()
@@ -134,6 +137,9 @@ class IcingaHostForm extends DirectorObjectForm
         }
     }
 
+    /**
+     * @return self
+     */
     protected function addGroupsElement()
     {
         $groups = $this->enumHostgroups();
@@ -157,6 +163,9 @@ class IcingaHostForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addAddressElements()
     {
         if ($this->isTemplate()) {
@@ -179,6 +188,9 @@ class IcingaHostForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function addDisplayNameElement()
     {
         if ($this->isTemplate()) {

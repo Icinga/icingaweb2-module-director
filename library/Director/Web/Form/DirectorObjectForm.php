@@ -3,15 +3,20 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\DirectorDatafield;
-use Zend_Form_Element_Select as Zf_Select;
+use Zend_Form_Element as ZfElement;
+use Zend_Form_Element_Select as ZfSelect;
 
 abstract class DirectorObjectForm extends QuickForm
 {
+    /** @var  Db */
     protected $db;
 
     /** @var IcingaObject */
@@ -37,6 +42,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     private $allowsExperimental;
 
+    /** @var  CoreApi */
     private $api;
 
     public function setPreferredObjectType($type)
@@ -45,9 +51,15 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    /**
+     * @param array $values
+     *
+     * @return DbObject|DbObjectWithSettings|IcingaObject
+     */
     protected function object($values = array())
     {
         if ($this->object === null) {
+            /** @var DbObject|IcingaObject $class */
             $class = $this->getObjectClassname();
             if ($this->preferredObjectType && ! array_key_exists('object_type', $values)) {
                 $values['object_type'] = $this->preferredObjectType;
@@ -87,7 +99,7 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->hasBeenSent()) {
             if ($el = $this->getElement('imports')) {
                 $this->populate($this->getRequest()->getPost());
-                $object->imports = $el->getValue();
+                $object->set('imports', $el->getValue());
             }
         }
 
@@ -120,7 +132,7 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     // TODO: move to a subform
-    protected function handleRanges($object, & $values)
+    protected function handleRanges(IcingaObject $object, & $values)
     {
         if (! $object->supportsRanges()) {
             return;
@@ -203,7 +215,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->displayGroups[$group];
     }
 
-    protected function handleProperties($object, & $values)
+    protected function handleProperties(DbObject $object, & $values)
     {
         $resolve = $this->assertResolvedImports();
         if ($this->hasBeenSent()) {
@@ -243,7 +255,7 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
-    protected function showInheritedProperties($object)
+    protected function showInheritedProperties(IcingaObject $object)
     {
         $inherited = $object->getInheritedProperties();
         $origins   = $object->getOriginsProperties();
@@ -311,6 +323,9 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
+    /**
+     * @return self
+     */
     protected function groupMainProperties()
     {
         $elements = array(
@@ -378,14 +393,14 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
-    public function setInheritedValue($el, $inherited, $inheritedFrom)
+    public function setInheritedValue(ZfElement $el, $inherited, $inheritedFrom)
     {
         if ($inherited === null) {
             return;
         }
 
         $txtInherited = ' ' . $this->translate(' (inherited from "%s")');
-        if ($el instanceof Zf_Select) {
+        if ($el instanceof ZfSelect) {
             $multi = $el->getMultiOptions();
             if (is_bool($inherited)) {
                 $inherited = $inherited ? 'y' : 'n';
@@ -425,7 +440,7 @@ abstract class DirectorObjectForm extends QuickForm
                 $object->hasBeenLoadedFromDb()
                 ? $this->translate('The %s has successfully been stored')
                 : $this->translate('A new %s has successfully been created'),
-                $this->translate($this->getObjectName())
+                $this->translate($this->getObjectShortClassName())
             );
             $object->store($this->db);
         } else {
@@ -436,7 +451,7 @@ abstract class DirectorObjectForm extends QuickForm
         }
         if ($object instanceof IcingaObject) {
             $this->setSuccessUrl(
-                'director/' . strtolower($this->getObjectName()),
+                'director/' . strtolower($this->getObjectShortClassName()),
                 $object->getUrlParams()
             );
         }
@@ -501,7 +516,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->className;
     }
 
-    protected function getObjectname()
+    protected function getObjectShortClassName()
     {
         if ($this->objectName === null) {
             $className = substr(strrchr(get_class($this), '\\'), 1);
@@ -603,17 +618,16 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function deleteObject($object)
     {
-        $key = $object->getKeyName();
         if ($object instanceof IcingaObject && $object->hasProperty('object_name')) {
             $msg = sprintf(
                 '%s "%s" has been removed',
-                $this->translate($this->getObjectName()),
-                $object->object_name
+                $this->translate($this->getObjectShortClassName()),
+                $object->getObjectName()
             );
         } else {
             $msg = sprintf(
                 '%s has been removed',
-                $this->translate($this->getObjectName())
+                $this->translate($this->getObjectShortClassName())
             );
         }
 
@@ -756,6 +770,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     public function loadObject($id)
     {
+        /** @var DbObject $class */
         $class = $this->getObjectClassname();
         $this->object = $class::load($id, $this->db);
 
@@ -775,12 +790,15 @@ abstract class DirectorObjectForm extends QuickForm
         ));
     }
 
+    /**
+     * @return Db
+     */
     public function getDb()
     {
         return $this->db;
     }
 
-    public function setDb($db)
+    public function setDb(Db $db)
     {
         $this->db = $db;
         if ($this->object !== null) {
@@ -800,7 +818,7 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addObjectTypeElement()
     {
         if (!$this->isNew()) {
-            return;
+            return $this;
         }
 
         if ($this->preferredObjectType) {
@@ -813,8 +831,7 @@ abstract class DirectorObjectForm extends QuickForm
         if ($object->supportsImports()) {
             $templates = $this->enumAllowedTemplates();
 
-            // TODO: getObjectname is a confusing method name
-            if (empty($templates) && $this->getObjectname() !== 'Command') {
+            if (empty($templates) && $this->getObjectShortClassName() !== 'Command') {
                 $types = array('template' => $this->translate('Template'));
             } else {
                 $types = array(
@@ -933,6 +950,11 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    /**
+     * @param bool $force
+     *
+     * @return self
+     */
     protected function addCheckCommandElements($force = false)
     {
         if (! $force && ! $this->isTemplate()) {
@@ -942,12 +964,12 @@ abstract class DirectorObjectForm extends QuickForm
         $this->addElement('select', 'check_command_id', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
-            'multiOptions' => $this->optionalEnum($this->db->enumCheckCommands()),
+            'multiOptions' => $this->optionalEnum($this->db->enumCheckcommands()),
             'class'        => 'autosubmit', // This influences fields
         ));
         $this->addToCheckExecutionDisplayGroup('check_command_id');
 
-        $eventCommands = $this->db->enumEventCommands();
+        $eventCommands = $this->db->enumEventcommands();
 
         if (! empty($eventCommands)) {
             $this->addElement('select', 'event_command_id', array(
@@ -1077,7 +1099,7 @@ abstract class DirectorObjectForm extends QuickForm
             return array();
         }
 
-        $id = $object->id;
+        $id = $object->get('id');
 
         if (array_key_exists($id, $tpl)) {
             unset($tpl[$id]);

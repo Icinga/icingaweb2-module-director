@@ -5,12 +5,6 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Job\JobRunner;
 use Icinga\Module\Director\Objects\DirectorJob;
-use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Objects\SyncRule;
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-use Icinga\Module\Director\Import\Import;
-use Icinga\Module\Director\Import\Sync;
-use Icinga\Application\Benchmark;
 use Icinga\Application\Logger;
 use Exception;
 

@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\FormLoader;
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -10,10 +10,12 @@ use Zend_Form_Element as ZfElement;
 
 class IcingaMultiEditForm extends DirectorObjectForm
 {
+    /** @var  DbObject[] */
     private $objects;
 
     private $elementGroupMap;
 
+    /** @var  QuickForm */
     private $relatedForm;
 
     private $propertiesToPick;
@@ -41,9 +43,12 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $loader->addFieldsToForm($this);
 
         if ($form = $this->relatedForm) {
-            $form->setDb($object->getConnection())
-                ->setObject($object)
-                ->prepareElements();
+            if ($form instanceof DirectorObjectForm) {
+                $form->setDb($object->getConnection())
+                    ->setObject($object);
+            }
+
+            $form->prepareElements();
         } else {
             $this->propertiesToPick = array();
         }
@@ -54,6 +59,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
             }
         }
 
+        /** @var \Zend_Form_Element $el */
         foreach ($this->getElements() as $el) {
             $name = $el->getName();
             if (substr($name, 0, 4) === 'var_') {
@@ -103,7 +109,6 @@ class IcingaMultiEditForm extends DirectorObjectForm
             $value = null;
         }
 
-        $found = false;
         foreach ($this->getVariants($property) as $json => $objects) {
             if ($valueSum !== sha1($json)) {
                 continue;
@@ -113,7 +118,6 @@ class IcingaMultiEditForm extends DirectorObjectForm
                 continue;
             }
 
-            $found = true;
             if (substr($property, 0, 4) === 'var_') {
                 $property = 'vars.' . substr($property, 4);
             }
@@ -152,18 +156,18 @@ class IcingaMultiEditForm extends DirectorObjectForm
             } elseif ($this->relatedForm) {
                 return $this->stealDisplayGroup($groupName, $this->relatedForm);
             }
-        } else {
-            return null;
         }
+
+        return null;
     }
 
-    protected function stealDisplayGroup($name, $form)
+    protected function stealDisplayGroup($name, QuickForm $form)
     {
-        if ($group = $this->relatedForm->getDisplayGroup($name)) {
+        if ($group = $form->getDisplayGroup($name)) {
             $group = clone($group);
             $group->setElements(array());
             $this->_displayGroups[$name] = $group;
-            $this->_order[$name] = $this->_displayGroups[$name]->getOrder();
+            $this->_order[$name] = $group->getOrder();
             $this->_orderUpdated = true;
 
             return $group;
@@ -176,14 +180,15 @@ class IcingaMultiEditForm extends DirectorObjectForm
     {
         $this->elementGroupMap = array();
         if ($form = $this->relatedForm) {
-            $this->extractFormDisplayGroups($form, true);
+            $this->extractFormDisplayGroups($form);
         }
 
         $this->extractFormDisplayGroups($this);
     }
 
-    protected function extractFormDisplayGroups($form, $clone = false)
+    protected function extractFormDisplayGroups(QuickForm $form)
     {
+        /** @var \Zend_Form_DisplayGroup $group */
         foreach ($form->getDisplayGroups() as $group) {
             $groupName = $group->getName();
             foreach ($group->getElements() as $name => $e) {

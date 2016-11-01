@@ -4,8 +4,9 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Web\Form\QuickBaseForm;
+use Icinga\Module\Director\Hook\DataTypeHook;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Zend_Form_Element as ZfElement;
 
 class DirectorDatafield extends DbObjectWithSettings
 {
@@ -60,12 +61,12 @@ class DirectorDatafield extends DbObjectWithSettings
         $this->required = (bool) $value;
     }
 
-    public function getFormElement(QuickBaseForm $form, $name = null)
+    public function getFormElement(DirectorObjectForm $form, $name = null)
     {
-        $className = $this->datatype;
+        $className = $this->get('datatype');
 
         if ($name === null) {
-            $name = 'var_' . $this->varname;
+            $name = 'var_' . $this->get('varname');
         }
 
         if (! class_exists($className)) {
@@ -76,16 +77,17 @@ class DirectorDatafield extends DbObjectWithSettings
             return $el;
         }
 
+        /** @var DataTypeHook $datatype */
         $datatype = new $className;
         $datatype->setSettings($this->getSettings());
         $el = $datatype->getFormElement($name, $form);
 
-        if ($this->caption) {
-            $el->setLabel($this->caption);
+        if ($caption = $this->get('caption')) {
+            $el->setLabel($caption);
         }
 
-        if ($this->description) {
-            $el->setDescription($this->description);
+        if ($description = $this->get('description')) {
+            $el->setDescription($description);
         }
 
         $this->applyObjectData($el, $form);
@@ -93,7 +95,7 @@ class DirectorDatafield extends DbObjectWithSettings
         return $el;
     }
 
-    protected function applyObjectData($el, $form)
+    protected function applyObjectData(ZfElement $el, DirectorObjectForm $form)
     {
         $object = $form->getObject();
         if ($object instanceof IcingaObject) {
@@ -101,7 +103,7 @@ class DirectorDatafield extends DbObjectWithSettings
                 $el->setRequired(false);
             }
 
-            $varname = $this->varname;
+            $varname = $this->get('varname');
 
             $form->setInheritedValue(
                 $el,

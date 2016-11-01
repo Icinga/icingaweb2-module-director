@@ -3,13 +3,12 @@
 // TODO: Check whether this can be removed
 namespace Icinga\Module\Director\Forms;
 
-use Exception;
-use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ImportRunForm extends QuickForm
 {
+    /** @var  ImportSource */
     protected $source;
 
     public function setImportSource(ImportSource $source)
