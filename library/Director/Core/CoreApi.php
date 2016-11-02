@@ -501,9 +501,7 @@ constants
             try {
                 $availableFiles = $this->listStageFiles($stage);
             } catch (Exception $e) {
-                // TODO: This is not correct. We might miss logs as af an ongoing reload
-                $deployment->set('stage_collected', 'y');
-                $deployment->store();
+                // Could not collect stage files. Doesn't matter, let's try next time
                 continue;
             }
 
@@ -518,6 +516,9 @@ constants
                 $deployment->set('startup_log', $this->shortenStartupLog(
                     $this->getStagedFile($stage, 'startup.log')
                 ));
+            } else {
+                // Stage seems to be incomplete, let's try again next time
+                continue;
             }
             $deployment->set('stage_collected', 'y');
 
