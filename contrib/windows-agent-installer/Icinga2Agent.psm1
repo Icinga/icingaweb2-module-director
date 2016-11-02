@@ -281,7 +281,7 @@ function Icinga2AgentModule {
         $this.info('Downloading Icinga 2 Agent Binary from ' + $url + '  ...');
         $execptionMsg = '';
         Try {
-            $WebStatusCode = Invoke-WebRequest -Method Head -Uri "$url"
+            $WebStatusCode = Invoke-WebRequest -UseBasicParsing -Method Head -Uri "$url"
 
             if ($WebStatusCode.StatusCode -eq 200) {
                 Invoke-WebRequest "$url" -OutFile $this.getInstallerPath();
@@ -495,6 +495,7 @@ function Icinga2AgentModule {
             $this.info('Flushing content of ' + $this.getApiDirectory());
             $folder = New-Object -ComObject Scripting.FileSystemObject;
             $folder.DeleteFolder($this.getApiDirectory());
+            $this.setProperty('require_restart', 'true');
         }
     }
 
@@ -862,10 +863,11 @@ object ApiListener "api" {
             $this.generateIcingaConfiguration();
             $this.applyPossibleConfigChanges();
 
+            if ($this.shouldFlushIcingaApiDirectory()) {
+                $this.flushIcingaApiDirectory();
+            }
+
             if ($this.madeChanges()) {
-                if ($this.shouldFlushIcingaApiDirectory()) {
-                    $this.flushIcingaApiDirectory();
-                }
                 $this.restartAgent();
             } else {
                 $this.info('No changes detected.');
