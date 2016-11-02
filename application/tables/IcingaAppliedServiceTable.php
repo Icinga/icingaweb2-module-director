@@ -48,8 +48,7 @@ class IcingaAppliedServiceTable extends QuickTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'icinga_service'),
             array()
         )->joinLeft(
@@ -57,8 +56,6 @@ class IcingaAppliedServiceTable extends QuickTable
             's.id = si.service_id',
             array()
         );
-
-        return $query;
     }
 
     public function getBaseQuery()

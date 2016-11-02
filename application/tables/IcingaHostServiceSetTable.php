@@ -59,8 +59,7 @@ class IcingaHostServiceSetTable extends IcingaObjectTable
 
     protected function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('sset' => 'icinga_service_set'),
             array()
         )->joinLeft(
@@ -68,8 +67,6 @@ class IcingaHostServiceSetTable extends IcingaObjectTable
             'h.id = sset.host_id',
             array()
         )->where('sset.host_id = ?', $this->host->id)->order('sset.object_name');
-
-        return $query;
     }
 
     public function getBaseQuery()

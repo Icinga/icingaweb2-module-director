@@ -155,9 +155,7 @@ class ActivityLogTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        $query = $this->db()->select()->from(
             array('l' => 'director_activity_log'),
             array()
         )->order('change_time DESC')->order('id DESC');

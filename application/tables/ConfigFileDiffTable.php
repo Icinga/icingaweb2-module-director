@@ -96,7 +96,7 @@ class ConfigFileDiffTable extends QuickTable
     public function getBaseQuery()
     {
         $conn = $this->connection();
-        $db = $conn->getConnection();
+        $db = $this->db();
 
         $left = $db->select()
             ->from(

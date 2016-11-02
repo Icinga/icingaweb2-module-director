@@ -67,13 +67,9 @@ class JobTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('j' => 'director_job'),
             array()
         )->order('job_name');
-
-        return $query;
     }
 }

@@ -53,16 +53,12 @@ class DatalistEntryTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('l' => 'director_datalist_entry'),
             array()
         )->where(
             'l.list_id = ?',
             $this->getList()->id
         )->order('l.entry_name ASC');
-
-        return $query;
     }
 }

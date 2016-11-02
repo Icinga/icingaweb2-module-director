@@ -41,9 +41,7 @@ class PropertymodifierTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'import_source'),
             array()
         )->join(
@@ -52,7 +50,5 @@ class PropertymodifierTable extends QuickTable
             array()
         )->order('property')
         ->order('priority');
-
-        return $query;
     }
 }

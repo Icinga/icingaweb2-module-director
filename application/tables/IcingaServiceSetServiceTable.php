@@ -50,8 +50,7 @@ class IcingaServiceSetServiceTable extends QuickTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'icinga_service'),
             array()
         )->joinLeft(
@@ -59,8 +58,6 @@ class IcingaServiceSetServiceTable extends QuickTable
             'ss.id = s.service_set_id',
             array()
         )->order('s.object_name');
-
-        return $query;
     }
 
     public function getBaseQuery()

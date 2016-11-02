@@ -37,8 +37,7 @@ class IcingaServiceVarTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('sv' => 'icinga_service_var'),
             array()
         )->join(
@@ -46,7 +45,5 @@ class IcingaServiceVarTable extends QuickTable
             'sv.service_id = h.id',
             array()
         );
-
-        return $query;
     }
 }

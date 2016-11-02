@@ -54,8 +54,7 @@ class IcingaHostTable extends IcingaObjectTable
 
     protected function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('h' => 'icinga_host'),
             array()
         )->joinLeft(
@@ -73,13 +72,11 @@ class IcingaHostTable extends IcingaObjectTable
         )->group('h.id')
          ->group('z.id')
          ->order('h.object_name');
-
-        return $query;
     }
 
     public function count()
     {
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         $sub = clone($this->getBaseQuery());
         $sub->columns($this->getColumns());
         $this->applyFiltersToQuery($sub);

@@ -66,9 +66,7 @@ class GeneratedConfigFileTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('cf' => 'director_generated_config_file'),
             array()
         )->join(
@@ -76,7 +74,5 @@ class GeneratedConfigFileTable extends QuickTable
             'cf.file_checksum = f.checksum',
             array()
         )->order('cf.file_path ASC');
-
-        return $query;
     }
 }

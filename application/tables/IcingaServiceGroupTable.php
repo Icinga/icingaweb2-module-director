@@ -36,12 +36,9 @@ class IcingaServiceGroupTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('sg' => 'icinga_servicegroup'),
             array()
         );
-
-        return $query;
     }
 }

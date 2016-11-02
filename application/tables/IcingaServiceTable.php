@@ -99,8 +99,7 @@ class IcingaServiceTable extends QuickTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        $query = $this->db()->select()->from(
             array('s' => 'icinga_service'),
             array()
         );
@@ -110,7 +109,7 @@ class IcingaServiceTable extends QuickTable
 
     protected function appliedOnes($id)
     {
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         $query = $db->select()->from(
             array('s' => 'icinga_service'),
             array(

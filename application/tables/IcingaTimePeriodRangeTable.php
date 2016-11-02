@@ -53,12 +53,9 @@ class IcingaTimePeriodRangeTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('r' => 'icinga_timeperiod_range'),
             array()
         )->where('r.timeperiod_id = ?', $this->period->id);
-
-        return $query;
     }
 }

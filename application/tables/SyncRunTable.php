@@ -66,13 +66,9 @@ class SyncRunTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('sr' => 'sync_run'),
             array()
         )->order('start_time DESC');
-
-        return $query;
     }
 }

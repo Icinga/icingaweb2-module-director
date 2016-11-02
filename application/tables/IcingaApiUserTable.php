@@ -34,12 +34,9 @@ class IcingaApiUserTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('o' => 'icinga_apiuser'),
             array()
         );
-
-        return $query;
     }
 }

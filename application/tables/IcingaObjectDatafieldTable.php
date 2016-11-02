@@ -50,11 +50,10 @@ class IcingaObjectDatafieldTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
         $otable = $this->object->getTableName() . '_field';
         $oname  = $this->object->getShortTableName();
 
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('of' => $otable),
             array()
         )->join(
@@ -63,7 +62,5 @@ class IcingaObjectDatafieldTable extends QuickTable
             array()
         )->where('of.' . $oname . '_id = ?', $this->object->id)
          ->order('caption ASC');
-
-        return $query;
     }
 }

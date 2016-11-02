@@ -56,8 +56,7 @@ class IcingaCommandArgumentTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('ca' => 'icinga_command_argument'),
             array()
         )->joinLeft(
@@ -65,7 +64,5 @@ class IcingaCommandArgumentTable extends QuickTable
             'ca.command_id = c.id',
             array()
         )->order('ca.sort_order')->order('ca.argument_name');
-
-        return $query;
     }
 }

@@ -45,7 +45,7 @@ class ImportrunTable extends QuickTable
 
     public function count()
     {
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         return $db->fetchOne(
             $db->select()->from(
                 array('sub' => $this->getBaseQuery()->columns($this->getColumns())),
@@ -57,9 +57,7 @@ class ImportrunTable extends QuickTable
     public function getBaseQuery()
     {
         // TODO: Store row count to rowset
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'import_source'),
             array()
         )->join(
@@ -76,7 +74,5 @@ class ImportrunTable extends QuickTable
             array()
         )->group('r.id')->group('s.id')->group('rs.checksum')
          ->order('r.start_time DESC');
-
-        return $query;
     }
 }

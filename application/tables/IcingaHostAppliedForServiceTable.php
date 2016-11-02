@@ -90,6 +90,6 @@ class IcingaHostAppliedForServiceTable extends QuickTable
 
     public function getBaseQuery()
     {
-        return $this->connection->select();
+        return $this->db()->select();
     }
 }

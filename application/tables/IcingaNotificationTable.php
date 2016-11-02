@@ -72,7 +72,7 @@ class IcingaNotificationTable extends IcingaObjectTable
 
     protected function appliedOnes($id)
     {
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         $query = $db->select()->from(
             array('s' => 'icinga_notification'),
             array(
@@ -92,13 +92,10 @@ class IcingaNotificationTable extends IcingaObjectTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('n' => 'icinga_notification'),
             array()
         );
-
-        return $query;
     }
 
     public function getBaseQuery()

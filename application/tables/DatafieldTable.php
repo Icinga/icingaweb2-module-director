@@ -37,13 +37,9 @@ class DatafieldTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('f' => 'director_datafield'),
             array()
         )->order('caption ASC');
-
-        return $query;
     }
 }

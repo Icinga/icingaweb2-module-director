@@ -80,8 +80,7 @@ class IcingaHostServiceTable extends QuickTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'icinga_service'),
             array()
         )->joinLeft(
@@ -89,8 +88,6 @@ class IcingaHostServiceTable extends QuickTable
             'h.id = s.host_id',
             array()
         )->order('s.object_name');
-
-        return $query;
     }
 
     public function getBaseQuery()

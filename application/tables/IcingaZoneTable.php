@@ -42,8 +42,7 @@ class IcingaZoneTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('z' => 'icinga_zone'),
             array()
         )->joinLeft(
@@ -51,7 +50,5 @@ class IcingaZoneTable extends IcingaObjectTable
             'z.id = e.zone_id',
             array()
         )->group('z.id');
-
-        return $query;
     }
 }
