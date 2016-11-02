@@ -17,6 +17,7 @@ class Settings
         'override_services_varname'      => '_override_servicevars',
         'override_services_templatename' => 'host var overrides (Director)',
         'disable_all_jobs'               => 'n', // 'y'
+        'enable_audit_log'               => 'n',
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     );

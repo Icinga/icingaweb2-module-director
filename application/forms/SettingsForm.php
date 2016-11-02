@@ -60,6 +60,27 @@ class SettingsForm extends QuickForm
             $settings->getStoredValue('disable_all_jobs')
         );
 
+        $this->addElement('select', 'enable_audit_log', array(
+            'label'        => $this->translate('Enable audit log'),
+            'multiOptions' => $this->eventuallyConfiguredEnum(
+                'enable_audit_log',
+                array(
+                    'n' => $this->translate('No'),
+                    'y' => $this->translate('Yes'),
+                )
+            ),
+            'description'  => $this->translate(
+                'All changes are tracked in the Director database. In addition'
+                . ' you might also want to send an audit log through the Icinga'
+                . " Web 2 logging mechanism. That way all changes would be"
+                . ' written to either Syslog or the configured log file'
+            ),
+        ));
+
+        $this->getElement('disable_all_jobs')->setValue(
+            $settings->getStoredValue('disable_all_jobs')
+        );
+
         $this->addElement('select', 'config_format', array(
             'label'        => $this->translate('Configuration format'),
             'multiOptions' => $this->eventuallyConfiguredEnum(
