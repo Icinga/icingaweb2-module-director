@@ -4,5 +4,3 @@
 # forget to install the Icinga 2 package and your desired monitoring
 # plugins first:
 
-ICINGA_PKI_DIR=/etc/icinga2/pki
-ICINGA_ETC_DIR=/etc/icinga2/

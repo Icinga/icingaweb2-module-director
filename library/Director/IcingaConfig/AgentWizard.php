@@ -199,11 +199,11 @@ class AgentWizard
         return $this->loadBashModuleHead()
             . $this->renderBashParameters(
                 array(
-                    'ICINGA_AGENT_NAME'       => $this->getCertName(),
-                    'ICINGA_TICKET'           => $this->getTicket(),
-                    'ICINGA_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
-                    'ICINGA_PARENT_ENDPOINTS' => array_keys($this->getParentEndpoints()),
-                    'ICINGA_CAServer'         => $this->getCaServer(),
+                    'ICINGA2_NODENAME'        => $this->getCertName(),
+                    'ICINGA2_CA_TICKET'           => $this->getTicket(),
+                    'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
+                    'ICINGA2_PARENT_ENDPOINTS' => array_keys($this->getParentEndpoints()),
+                    'ICINGA2_CA_NODE'         => $this->getCaServer(),
                 )
             )
             . "\n"
@@ -215,7 +215,7 @@ class AgentWizard
     {
         return file_get_contents(
             dirname(dirname(dirname(__DIR__)))
-            . '/contrib/linux-agent-installer/Icinga2Agent.shm1'
+            . '/contrib/linux-agent-installer/Icinga2Agent.bash'
         );
     }
 
@@ -223,7 +223,7 @@ class AgentWizard
     {
         return file_get_contents(
             dirname(dirname(dirname(__DIR__)))
-            . '/contrib/linux-agent-installer/Icinga2AgentHead.shm1'
+            . '/contrib/linux-agent-installer/Icinga2AgentHead.bash'
         );
     }
     protected function renderBashParameters($parameters)

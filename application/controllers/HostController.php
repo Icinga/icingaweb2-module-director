@@ -251,7 +251,7 @@ class HostController extends ObjectController
                 exit;
             case 'linux':
                 header('Content-type: application/octet-stream');
-                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.sh');
+                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.bash');
 
                 $wizard = $this->view->wizard = new AgentWizard($this->object);
                 $wizard->setTicketSalt($this->api()->getTicketSalt());
