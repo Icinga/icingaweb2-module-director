@@ -7,7 +7,17 @@ environment. Director is not allowed to modify existing configuration in
 example automagically at kickstart time), it is a pretty advanced task you
 should not tackle at the early beginning.
 
+Define a new global zone
+------------------------
 
+This zone must exist on every node directly or indirectly managed by the
+Icinga Director:
+
+```icinga2
+object Zone "director-global" {
+  global = true
+}
+```
 
 Create an API user
 ------------------
