@@ -46,9 +46,30 @@ class IcingaUserForm extends DirectorObjectForm
              ->addDisplayNameElement()
              ->addEnableNotificationsElement()
              ->addDisabledElement()
+             ->addZoneElements()
              ->addEventFilterElements()
              ->groupMainProperties()
              ->setButtons();
+    }
+
+    protected function addZoneElements()
+    {
+        if (! $this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addZoneElement();
+        $this->addDisplayGroup(array('zone_id'), 'clustering', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 80,
+            'legend' => $this->translate('Zone settings')
+        ));
+
+        return $this;
     }
 
     protected function addEnableNotificationsElement()
