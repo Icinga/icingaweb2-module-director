@@ -1,0 +1,77 @@
+# Make sure icinga2 is installed and running
+
+echo -n "check: icinga2 installed - "; if icinga2 --version &>/dev/null ; then echo "OK" ; else echo "FAIL, install nagios-plugins-all icinga2 !"; exit 2; fi
+echo -n "check: icinga2 running   - "; if systemctl status icinga2 &>/dev/null ; then echo "OK" ; else echo "FAIL, start icinga2!"; exit 3; fi
+ICINGA_USER=`icinga2 variable get RunAsUser`
+
+if ! [ -d $ICINGA_PKI_DIR ]; then mkdir $ICINGA_PKI_DIR; fi
+chown $ICINGA_USER $ICINGA_PKI_DIR
+
+icinga2 pki new-cert --cn ${ICINGA_AGENT_NAME} \
+--key $ICINGA_PKI_DIR/${ICINGA_AGENT_NAME}.key \
+--cert $ICINGA_PKI_DIR/${ICINGA_AGENT_NAME}.crt
+
+icinga2 pki save-cert --key $ICINGA_PKI_DIR/${ICINGA_AGENT_NAME}.key \
+--trustedcert $ICINGA_PKI_DIR/trusted-master.crt \
+--host ${ICINGA_CAServer}
+icinga2 pki request --host ${ICINGA_CAServer} \
+--port 5665 \
+--ticket ${ICINGA_TICKET} \
+--key $ICINGA_PKI_DIR/${ICINGA_AGENT_NAME}.key \
+--cert $ICINGA_PKI_DIR/${ICINGA_AGENT_NAME}.crt \
+--trustedcert $ICINGA_PKI_DIR/trusted-master.crt \
+--ca $ICINGA_PKI_DIR/ca.crt
+
+CONF_ICINGA2=`cat << EOF
+/** Icinga 2 Config - proposed by Icinga Director */
+
+include "constants.conf"
+include "zones.conf"
+include "features-enabled/*.conf"
+
+include <itl>
+include <plugins>
+// include <plugins-contrib>
+EOF
+`
+ZONES_ICINGA2=`cat << EOF
+/** Icinga 2 Config - proposed by Icinga Director */
+
+// TODO: improve establish connection handling
+object Endpoint "${ICINGA_AGENT_NAME}" {}
+object Endpoint "${ICINGA_CAServer}" {}
+object Zone "${ICINGA_PARENT_ZONE}" {
+  endpoints = [ "$ICINGA_PARENT_ENDPOINTS" ]
+  // TODO: all endpoints in master zone
+}
+
+object Zone "director-global" { global = true }
+
+object Zone "${ICINGA_AGENT_NAME}" {
+  parent = "${ICINGA_PARENT_ZONE}"
+  endpoints = [ "$ICINGA_AGENT_NAME" ]
+}
+EOF
+`
+
+API_ICINGA2=`cat << EOF
+/** Icinga 2 Config - proposed by Icinga Director */
+
+object ApiListener "api" {
+  cert_path = SysconfDir + "/icinga2/pki/${ICINGA_AGENT_NAME}.crt"
+  key_path = SysconfDir + "/icinga2/pki/${ICINGA_AGENT_NAME}.key"
+  ca_path = SysconfDir + "/icinga2/pki/ca.crt"
+  accept_commands = true
+  accept_config = true
+}
+EOF
+`
+
+/usr/bin/printf "%b" "$CONF_ICINGA2" > $ICINGA_ETC_DIR/icinga2.conf 
+/usr/bin/printf "%b" "$ZONES_ICINGA2" > $ICINGA_ETC_DIR/zones.conf
+/usr/bin/printf "%b" "$API_ICINGA2" > $ICINGA_ETC_DIR/features-available/api.conf
+
+icinga2 feature enable api
+
+echo "restart icinga2"
+echo "restart icinga2"
