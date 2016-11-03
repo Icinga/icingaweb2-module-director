@@ -54,11 +54,8 @@ class SettingsForm extends QuickForm
             'description'  => $this->translate(
                 'Whether all configured Jobs should be disabled'
             ),
+            'value' => $settings->getStoredValue('disable_all_jobs')
         ));
-
-        $this->getElement('disable_all_jobs')->setValue(
-            $settings->getStoredValue('disable_all_jobs')
-        );
 
         $this->addElement('select', 'enable_audit_log', array(
             'label'        => $this->translate('Enable audit log'),
@@ -77,11 +74,8 @@ class SettingsForm extends QuickForm
                 . ' enabling this please make sure that you configured Icinga'
                 . ' Web 2 to log at least at "informational" level.'
             ),
+            'value' => $settings->getStoredValue('enable_audit_log')
         ));
-
-        $this->getElement('disable_all_jobs')->setValue(
-            $settings->getStoredValue('disable_all_jobs')
-        );
 
         $this->addElement('select', 'config_format', array(
             'label'        => $this->translate('Configuration format'),
@@ -99,11 +93,8 @@ class SettingsForm extends QuickForm
                 . ' unsupported. There are no plans to make Director a first-'
                 . 'class configuration backends for Icinga 1.x'
             ),
+            'value' => $settings->getStoredValue('config_format')
         ));
-
-        $this->getElement('config_format')->setValue(
-            $settings->getStoredValue('config_format')
-        );
 
         $this->setSubmitLabel($this->translate('Store'));
     }
