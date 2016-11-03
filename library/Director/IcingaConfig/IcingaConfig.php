@@ -111,6 +111,15 @@ class IcingaConfig
         return $cnt;
     }
 
+    public function getApplyCount()
+    {
+        $cnt = 0;
+        foreach ($this->getFiles() as $file) {
+            $cnt += $file->getApplyCount();
+        }
+        return $cnt;
+    }
+
     public function getChecksum()
     {
         return $this->checksum;
@@ -614,6 +623,7 @@ apply Service for (title => params in host.vars["%s"]) {
                 'content'      => 'f.content',
                 'cnt_object'   => 'f.cnt_object',
                 'cnt_template' => 'f.cnt_template',
+                'cnt_apply'    => 'f.cnt_apply',
             )
         )->join(
             array('f' => 'director_generated_file'),
@@ -626,7 +636,8 @@ apply Service for (title => params in host.vars["%s"]) {
             $this->files[$row->file_path] = $file
                 ->setContent($row->content)
                 ->setObjectCount($row->cnt_object)
-                ->setTemplateCount($row->cnt_template);
+                ->setTemplateCount($row->cnt_template)
+                ->setApplyCount($row->cnt_apply);
         }
 
         return $this;

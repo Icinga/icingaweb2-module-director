@@ -85,9 +85,10 @@ function colorize($log, $logLink) {
         'deployment_id' => $deployment->id
     )
 ) ?>, <?= sprintf(
-    $this->translate('%d objects, %d templates'),
+    $this->translate('%d objects, %d templates, %d apply rules'),
     $config->getObjectCount(),
-    $config->getTemplateCount()
+    $config->getTemplateCount(),
+    $config->getApplyCount()
   )?>, <?= Format::bytes($config->getSize()) ?></td>
  </tr>
  <tr>
