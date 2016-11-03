@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\NestingError;
 
@@ -44,6 +46,9 @@ class IcingaTemplateResolver
         $this->type       = $object->getShortTableName();
         $this->table      = $object->getTableName();
         $this->connection = $object->getConnection();
+        if ($this->connection === null) {
+            throw new ProgrammingError('Connection is null for object %s "%s"!', $this->type, $this->object->getId());
+        }
         $this->db         = $this->connection->getDbAdapter();
 
         return $this;
@@ -376,11 +381,55 @@ class IcingaTemplateResolver
 
     public function refreshObject(IcingaObject $object)
     {
-        $parentNames = $object->imports;
-        self::$nameIdx[$object->object_name] = $parentNames;
-        if ($object->hasBeenLoadedFromDb()) {
-            self::$idIdx[$object->getId()] = $this->getIdsForNames($parentNames);
+        $this->clearCache();
+        $this->requireTemplates();
+
+        if (substr($object->getObjectName(), 0, 6) !== 'import')
+            return;
+
+        //return;
+
+        $name = $object->object_name;
+        $id = $object->id;
+
+        echo "before\n";
+        var_dump(self::$nameIdx[$this->type]);
+        var_dump(self::$idIdx[$this->type]);
+
+        if ($id === null) {
+            throw new IcingaException('Can not update index for unstored object: %s', $name);
         }
+
+        self::$nameToId[$this->type][$name] = $id;
+        self::$idToName[$this->type][$id] = $name;
+
+        var_dump($id);
+
+        #unset(self::$nameIdx[$this->type][$name]);
+        #unset(self::$idIdx[$this->type][$id]);
+
+        var_dump($object->imports);
+        foreach ($object->imports as $import) {
+            if (array_key_exists($import, self::$nameToId[$this->type])) {
+                $importId = self::$nameToId[$this->type][$import];
+                self::$nameIdx[$this->type][$name][$import] = $importId;
+                self::$idIdx[$this->type][$id][$importId] = $import;
+            }
+            else {
+                throw new IcingaException(
+                    'Import "%s" is unknown for object %s "%s"',
+                    $import, $this->type, $name
+                );
+            }
+        }
+
+        echo "after\n";
+        var_dump(self::$nameIdx[$this->type]);
+        var_dump(self::$idIdx[$this->type]);
+
+        #self::$nameIdx[$this->type][$name] = $parentNames;
+        #self::$idIdx[$this->type][$id] = $this->getIdsForNames($parentNames);
+
         return $this;
     }
 }

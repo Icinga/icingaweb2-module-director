@@ -8,6 +8,7 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -1026,6 +1027,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function storeResolvedCache($what, $vals)
     {
         $this->resolveCache[$what] = $vals;
+    }
+
+    protected function onStore()
+    {
+        parent::onStore();
+        if ($this->supportsImports()) {
+            $this->templateResolver()->refreshObject($this);
+        }
     }
 
     public function invalidateResolveCache()
@@ -2159,6 +2168,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         /** @var IcingaObject $class */
         $class = self::classByType($type);
         return $class::load($id, $db);
+    }
+
+    protected function onLoadFromDb()
+    {
+        parent::onLoadFromDb();
+        $this->templateResolver()->refreshObject($this);
     }
 
     /**

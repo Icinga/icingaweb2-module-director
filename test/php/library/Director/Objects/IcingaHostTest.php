@@ -4,6 +4,7 @@ namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -607,6 +608,49 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testLoopingImports()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $host1 = IcingaHost::create(array(
+            'object_name' => 'import_loop1',
+            'object_type' => 'template',
+            'vars.import1' => 'yes',
+        ));
+        $host1->store($db);
+
+        $host2 = IcingaHost::create(array(
+            'object_name' => 'import_loop2',
+            'object_type' => 'template',
+            'vars.import2' => '123',
+        ));
+
+        $host2->setImports('import_loop1');
+        $host2->store($db);
+
+        $host1->setImports('import_loop2');
+        $host1->store($db);
+        unset($host1);
+
+        try {
+            $host1 = IcingaHost::load('import_loop1', $db);
+            $host2 = IcingaHost::load('import_loop2', $db);
+
+            var_dump($host1->templateResolver()->listResolvedParentIds());
+            var_dump($host1->imports);
+            var_dump($host2->imports);
+
+            throw new IcingaException('This should have triggered a NestingError exception!');
+        } catch (NestingError $e) {
+            throw new IcingaException('Nesting Error catched');
+        }
+
+        # TODO
+    }
 
     protected function getDummyRelatedProperties()
     {
