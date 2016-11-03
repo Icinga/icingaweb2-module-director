@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Util;
 use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
 use Icinga\Module\Monitoring\Object\Service;
 use Icinga\Web\Url;
@@ -23,6 +24,10 @@ class ServiceActions extends ServiceActionsHook
 
     protected function getThem(Service $service)
     {
+        if (! Util::hasPermission('director/inspect')) {
+            return array();
+        }
+
         $db = $this->db();
         if (! $db) {
             return array();
