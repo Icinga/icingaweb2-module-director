@@ -2,8 +2,14 @@
 
 use Icinga\Application\Cli;
 
-// TODO: fix paths
-require_once '/usr/local/icingaweb2/library/Icinga/Application/Cli.php';
-require_once dirname(__DIR__) . '/library/Director/Test/BaseTestCase.php';
-Cli::start('/usr/local/icingaweb2')->getModuleManager()->loadModule('director');
-
+call_user_func(function() {
+    error_reporting(E_ALL | E_STRICT);
+    $testbase = __DIR__;
+    $base = dirname($testbase);
+    require_once 'Icinga/Application/Cli.php';
+    require_once $base . '/library/Director/Test/BaseTestCase.php';
+    symlink($base, $testbase . '/modules/director');
+    Cli::start($testbase, $testbase . '/config')
+        ->getModuleManager()
+        ->loadModule('director');
+});
