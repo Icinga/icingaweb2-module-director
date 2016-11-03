@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Util;
 use Icinga\Module\Monitoring\Hook\HostActionsHook;
 use Icinga\Module\Monitoring\Object\Host;
 use Icinga\Web\Url;
@@ -29,16 +30,21 @@ class HostActions extends HostActionsHook
         }
 
         if (IcingaHost::exists($host->host_name, $db)) {
-            return array(
+            $actions = array(
                 'Modify' => Url::fromPath(
                     'director/host/edit',
                     array('name' => $host->host_name)
-                ),
-                'Inspect' => Url::fromPath(
-                    'director/inspect/object',
-                    array('type' => 'host', 'plural' => 'hosts', 'name' => $host->host_name)
                 )
             );
+
+            if (Util::hasPermission('director/inspect')) {
+                $actions['Inspect'] = Url::fromPath(
+                    'director/inspect/object',
+                    array('type' => 'host', 'plural' => 'hosts', 'name' => $host->host_name)
+                );
+            }
+
+            return $actions;
         } else {
             return array();
         }
