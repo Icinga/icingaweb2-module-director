@@ -2,8 +2,9 @@
 
 namespace Icinga\Module\Director\Test;
 
-use Icinga\Application\Cli;
+use Icinga\Application\Icinga;
 use Icinga\Application\Config;
+use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
@@ -39,7 +40,11 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
 
     protected function getDbResourceName()
     {
-        return Config::module('director')->get('testing', 'db_resource');
+        if (array_key_exists('DIRECTOR_TESTDB_RES', $_SERVER)) {
+            return $_SERVER['DIRECTOR_TESTDB_RES'];
+        } else {
+            return Config::module('director')->get('testing', 'db_resource');
+        }
     }
 
     protected function getDb()
@@ -51,7 +56,14 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
                     'Could not run DB-based tests, please configure a testing db resource'
                 );
             }
-            $this->db = Db::fromResourceName($resourceName);
+            $dbConfig = ResourceFactory::getResourceConfig($resourceName);
+            if (array_key_exists('DIRECTOR_TESTDB', $_SERVER)) {
+                $dbConfig->dbname = $_SERVER['DIRECTOR_TESTDB'];
+            }
+            if (array_key_exists('DIRECTOR_TESTDB_USER', $_SERVER)) {
+                $dbConfig->username = $_SERVER['DIRECTOR_TESTDB_USER'];
+            }
+            $this->db = new Db($dbConfig);
             $migrations = new Migrations($this->db);
             $migrations->applyPendingMigrations();
         }
@@ -72,10 +84,7 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
     protected function app()
     {
         if (self::$app === null) {
-            $testModuleDir = $_SERVER['PWD'];
-            $libDir = dirname(dirname($testModuleDir)) . '/library';
-            require_once $libDir . '/Icinga/Application/Cli.php';
-            self::$app = Cli::start();
+            self::$app = Icinga::app();
         }
 
         return self::$app;

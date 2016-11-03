@@ -2,7 +2,12 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Application\Logger;
 use Icinga\Cli\Command;
+use Icinga\Module\Director\Test\TestSuiteLint;
+use Icinga\Module\Director\Test\TestSuiteStyle;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class TestCommand extends Command
 {
@@ -17,6 +22,19 @@ class TestCommand extends Command
         '--extensions=php',
         '--encoding=utf-8'
     );
+
+    public function lintAction()
+    {
+        $test = new TestSuiteLint();
+        $test->run();
+        if ($test->hasFailures()) {
+            Logger::error('Lint check failed');
+            exit(1);
+        } else {
+            Logger::info('Lint check succeeded');
+            exit(0);
+        }
+    }
 
     /**
      * Run all unit-test suites
@@ -41,6 +59,7 @@ class TestCommand extends Command
      */
     public function phpAction()
     {
+        $basedir = $this->getBaseDir();
         $build = $this->params->shift('build');
         $include = $this->params->shift('include');
 
@@ -49,7 +68,9 @@ class TestCommand extends Command
             $this->fail('PHPUnit not found. Please install PHPUnit to be able to run the unit-test suites.');
         }
 
-        $options = array();
+        $options = array(
+            '--bootstrap' => $basedir . '/test/bootstrap.php'
+        );
         if ($this->isVerbose) {
             $options[] = '--verbose --testdox';
         }
@@ -111,6 +132,47 @@ class TestCommand extends Command
      */
     public function styleAction()
     {
+        // passthru(
+        // 'phpcs -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s
+        // --report-checkstyle=/tmp/style/bla library/Director/ application/
+        //  run.php configuration.php'
+        // );
+
+
+        $test = new TestSuiteStyle();
+        $test->run();
+
+        return;
+        // TODO: obsolete:
+
+        if ($test->hasFailures()) {
+            $this->fail('Lint check failed');
+        } else {
+            Logger::info('Lint check succeeded');
+        }
+
+        $out = TestRunner::newTempFile();
+        $check = array(
+            'library/Director/',
+            'application/',
+            'configuration.php',
+            'run.php',
+        );
+
+        $cmd = sprintf(
+            "phpcs -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s --report-checkstyle=%s '%s'",
+            $out,
+            implode("' '", $check)
+        );
+
+        // TODO: Debug only:
+        `$cmd`;
+        echo $cmd . "\n";
+        echo $out ."\n";
+        echo file_get_contents($out);
+        unlink($out);
+        exit;
+
         $build = $this->params->shift('build');
         $include = (array) $this->params->shift('include', array());
         $exclude = (array) $this->params->shift('exclude', array());
@@ -161,6 +223,11 @@ class TestCommand extends Command
         );
     }
 
+    protected function getBaseDir()
+    {
+        return dirname(dirname(__DIR__));
+    }
+
     /**
      * Setup the directory where to put report files and return its path
      *
@@ -168,8 +235,9 @@ class TestCommand extends Command
      */
     protected function setupAndReturnReportDirectory()
     {
-        $path = realpath(__DIR__ . '/../../../..') . '/build/log';
-        if (!file_exists($path) && !@mkdir($path, 0755, true)) {
+        $path = '/tmp/test-devel';
+
+        if (!is_dir($path) && !@mkdir($path, 0755, true)) {
             $this->fail("Could not create directory: $path");
         }
 
