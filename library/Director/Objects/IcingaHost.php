@@ -7,6 +7,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHost extends IcingaObject
@@ -81,6 +82,8 @@ class IcingaHost extends IcingaObject
     protected $supportsImports = true;
 
     protected $supportsFields = true;
+
+    protected $supportedInLegacy = true;
 
     public static function enumProperties(
         DbConnection $connection = null,
@@ -332,6 +335,22 @@ class IcingaHost extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
         return '';
+    }
+
+    protected function renderLegacyDisplay_Name()
+    {
+        return c1::renderKeyValue('display_name', $this->display_name);
+    }
+
+    protected function renderLegacyCustomExtensions()
+    {
+        $str = parent::renderLegacyCustomExtensions();
+
+        if (($alias = $this->vars()->get('alias')) !== null) {
+            $str .= c1::renderKeyValue('alias', $alias->getValue());
+        }
+
+        return $str;
     }
 
     public static function loadWithApiKey($key, Db $db)

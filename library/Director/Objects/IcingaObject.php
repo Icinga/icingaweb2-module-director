@@ -51,6 +51,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether Sets of object can be defined */
     protected $supportsSets = false;
 
+    /** @var bool If the object is rendered in legacy config */
+    protected $supportedInLegacy = false;
+
     protected $rangeClass;
 
     protected $type;
@@ -1450,6 +1453,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $config;
     }
 
+    public function isSupportedInLegacy()
+    {
+        return $this->supportedInLegacy;
+    }
 
     public function renderToLegacyConfig(IcingaConfig $config)
     {
@@ -1457,40 +1464,39 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return;
         }
 
+        if (! $this->isSupportedInLegacy()) {
+            $config->configFile(
+                'director/ignored-objects', '.cfg'
+            )->prepend(
+                sprintf(
+                    "# Not supported for legacy config: %s object_name=%s\n",
+                    get_class($this),
+                    $this->getObjectName()
+                )
+            );
+            return;
+        }
+
         $filename = $this->getRenderingFilename();
 
-        if ($config->isLegacy()) {
+        if (
+            $this->getResolvedProperty('zone_id')
+            && array_key_exists('enable_active_checks', $this->defaultProperties)
+            && $config->getConfigFormat() !== 'v1-masterless'
+        ) {
+            $passive = clone($this);
+            $passive->enable_active_checks = false;
 
-            if ($this->getResolvedProperty('zone_id')) {
-
-                $a = clone($this);
-                $a->set('enable_active_checks', true);
-
-                $b = clone($this);
-                $a->set('enable_active_checks', false);
-
-                $config->configFile(
-                    'director/master/' . $filename,
-                    '.cfg'
-                )->addLegacyObject($a);
-
-                $config->configFile(
-                    'director/' . $this->getRenderingZone($config) . '/' . $filename,
-                    '.cfg'
-                )->addLegacyObject($b);
-
-            } else {
-                $config->configFile(
-                    'director/' . $this->getRenderingZone($config) . '/' . $filename,
-                    '.cfg'
-                )->addLegacyObject($this);
-            }
-
-        } else {
             $config->configFile(
-                'director/' . $this->getRenderingZone($config) . '/' . $filename
-            )->addObject($this);
+                'director/master/' . $filename,
+                '.cfg'
+            )->addLegacyObject($passive);
         }
+
+        $config->configFile(
+            'director/' . $this->getRenderingZone($config) . '/' . $filename,
+            '.cfg'
+        )->addLegacyObject($this);
     }
 
     public function renderToConfig(IcingaConfig $config)
@@ -1603,6 +1609,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->get('host_id'),
             'host_name'
         );
+    }
+
+    /**
+     * Display Name only exists for host/service in Icinga 1
+     *
+     * Render it as alias for everything by default.
+     *
+     * Alias does not exist in Icinga 2 currently!
+     *
+     * @return string
+     */
+    protected function renderLegacyDisplay_Name()
+    {
+        return c1::renderKeyValue('alias', $this->display_name);
     }
 
     protected function renderLegacyTimeout()
@@ -1848,10 +1868,34 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @return string
      */
+    protected function renderLegacyCustomVars()
+    {
+        if ($this->supportsCustomVars()) {
+            return $this->vars()->toLegacyConfigString();
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * @return string
+     */
     protected function renderGroups()
     {
         if ($this->supportsGroups()) {
             return $this->groups()->toConfigString();
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * @return string
+     */
+    protected function renderLegacyGroups()
+    {
+        if ($this->supportsGroups()) {
+            return $this->groups()->toLegacyConfigString();
         } else {
             return '';
         }
@@ -1882,6 +1926,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    /**
+     * @return string
+     */
+    protected function renderLegacyRanges()
+    {
+        if ($this->supportsRanges()) {
+            return $this->ranges()->toLegacyConfigString();
+        } else {
+            return '';
+        }
+    }
 
     /**
      * @return string
@@ -1920,6 +1975,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
+    protected function renderLegacyCheck_command($value)
+    {
+        $args = array();
+        foreach($this->vars() as $k => $v) {
+            if (substr($k, 0, 3) == 'ARG') {
+                $args[] = $v->getValue();
+            }
+        }
+
+        array_unshift($args, $value);
+        return c1::renderKeyValue('check_command', join('!', $args));
+    }
+
     /**
      * We do not render zone properties, objects are stored to zone dirs
      *
@@ -1939,6 +2007,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return '';
     }
 
+    protected function renderLegacyCustomExtensions()
+    {
+        $str = '';
+
+        // force rendering of check_command when ARG1 is set
+        if ($this->supportsCustomVars() && array_key_exists('check_command_id', $this->defaultProperties)) {
+            if (
+                $this->vars()->get('ARG1') !== null
+                && $this->get('check_command') === null
+            ) {
+                $command = $this->getResolvedRelated('check_command');
+                $str .= $this->renderLegacyCheck_command($command->getObjectName());
+            }
+        }
+
+        return $str;
+    }
+
     protected function renderObjectHeader()
     {
         return sprintf(
@@ -1949,9 +2035,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
+    public function getLegacyObjectType()
+    {
+        return strtolower($this->getType());
+    }
+
     protected function renderLegacyObjectHeader()
     {
-        $type = strtolower($this->getType());
+        $type = $this->getLegacyObjectType();
 
         if ($this->isTemplate()) {
             $name = c1::renderKeyValue(
@@ -1995,21 +2086,23 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderLegacyObjectHeader(),
             $this->renderLegacyImports(),
             $this->renderLegacyProperties(),
-            //$this->renderRanges(),
+            $this->renderLegacyRanges(),
             //$this->renderArguments(),
             //$this->renderRelatedSets(),
-            //$this->renderGroups(),
+            $this->renderLegacyGroups(),
             //$this->renderMultiRelations(),
-            //$this->renderCustomExtensions(),
-            //$this->renderCustomVars(),
+            $this->renderLegacyCustomExtensions(),
+            $this->renderLegacyCustomVars(),
             $this->renderLegacySuffix()
         ));
 
         $str = $this->alignLegacyProperties($str);
 
         if ($this->isDisabled()) {
-            return "/* --- This object has been disabled ---\n"
-                . $str . "*/\n";
+            return
+                "# --- This object has been disabled ---\n"
+                . preg_replace('~^~m', '# ', trim($str))
+                . "\n";
         } else {
             return $str;
         }
@@ -2023,11 +2116,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($lines as &$line) {
             if (preg_match('/^\s{4}([^\t]+)\t+(.+)$/', $line, $m)) {
                 if ($len - strlen($m[1]) < 0) {
-                    var_dump($m);
-                    exit;
+                    $fill = ' ';
+                }
+                else {
+                    $fill = str_repeat(' ', $len - strlen($m[1]));
                 }
 
-                $line = '    ' . $m[1] . str_repeat(' ', $len - strlen($m[1])) . $m[2];
+                $line = '    ' . $m[1] . $fill . $m[2];
             }
         }
 

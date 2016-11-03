@@ -40,8 +40,9 @@ abstract class CustomVariable implements IcingaConfigRenderer
     {
         if ($this->type === null) {
             $parts = explode('\\', get_class($this));
-            // strlen('CustomVariable') === 9
-            $this->type = substr(end($parts), 9);
+            $class = end($parts);
+            // strlen('CustomVariable') === 14
+            $this->type = substr($class, 14);
         }
 
         return $this->type;

@@ -43,7 +43,6 @@ class IcingaLegacyConfigHelper
     {
         $special = array(
             '/\\\/',
-            '/"/',
             '/\$/',
             '/\t/',
             '/\r/',
@@ -54,7 +53,6 @@ class IcingaLegacyConfigHelper
 
         $replace = array(
             '\\\\\\',
-            '\\"',
             '\\$',
             '\\t',
             '\\r',

@@ -393,4 +393,9 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             }
         }
     }
+
+    public function toLegacyConfigString()
+    {
+        return 'UNSUPPORTED';
+    }
 }

@@ -88,6 +88,7 @@ class SettingsForm extends QuickForm
                 array(
                     'v2' => $this->translate('Icinga v2.x'),
                     'v1' => $this->translate('Icinga v1.x'),
+                    // Hiding for now 'v1-masterless' => $this->translate('Icinga v1.x (no master)'),
                 )
             ),
             'description'  => $this->translate(
