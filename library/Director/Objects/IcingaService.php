@@ -389,7 +389,7 @@ class IcingaService extends IcingaObject
         $hostProps = mt('director', 'Host properties');
         $hostVars  = mt('director', 'Host Custom variables');
 
-        $hostProperties = IcingaHost::enumProperties($connection);
+        $hostProperties = IcingaHost::enumProperties($connection, 'host.');
 
         if (array_key_exists($hostProps, $hostProperties)) {
             $p = $hostProperties[$hostProps];
