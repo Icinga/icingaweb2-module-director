@@ -1984,7 +1984,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        array_unshift($args, $this->get('check_command'));
+        array_unshift($args, $value);
         return c1::renderKeyValue('check_command', join('!', $args));
     }
 
@@ -2009,7 +2009,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderLegacyCustomExtensions()
     {
-        return '';
+        $str = '';
+
+        // force rendering of check_command when ARG1 is set
+        if ($this->supportsCustomVars() && array_key_exists('check_command_id', $this->defaultProperties)) {
+            if (
+                $this->vars()->get('ARG1') !== null
+                && $this->get('check_command') === null
+            ) {
+                $command = $this->getResolvedRelated('check_command');
+                $str .= $this->renderLegacyCheck_command($command->getObjectName());
+            }
+        }
+
+        return $str;
     }
 
     protected function renderObjectHeader()
