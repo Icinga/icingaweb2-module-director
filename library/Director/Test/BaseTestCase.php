@@ -6,6 +6,7 @@ use Icinga\Application\Icinga;
 use Icinga\Application\Config;
 use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -47,6 +48,10 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
         }
     }
 
+    /**
+     * @return DbConnection
+     * @throws ConfigurationError
+     */
     protected function getDb()
     {
         if ($this->db === null) {

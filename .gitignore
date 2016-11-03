@@ -1,1 +1,7 @@
-.*
+## Editors
+/.idea/
+.*.sw[op]
+
+## PHP / composer
+/vendor/
+composer.lock
