@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Cli;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\IcingaObject;
 
-class ObjectCommand extends Command
+class ObjectsCommand extends Command
 {
     protected $type;
 
@@ -29,7 +29,20 @@ class ObjectCommand extends Command
     public function listAction()
     {
         $db = $this->db();
-        exit;
+        $result = array();
+        foreach ($this->getObjects() as $o) {
+            $result[] = $o->getObjectName();
+        }
+
+        sort($result);
+
+        if ($this->params->shift('json')) {
+            echo $this->renderJson($result, !$this->params->shift('no-pretty'));
+        } else {
+            foreach ($result as $name) {
+                echo $name . "\n";
+            }
+        }
     }
 
     /**
@@ -48,19 +61,30 @@ class ObjectCommand extends Command
      *   --json        Use JSON format
      *   --no-pretty   JSON is pretty-printed per default (for PHP >= 5.4)
      *                 Use this flag to enforce unformatted JSON
-     *   --no-defaults Per default JSON output skips null or default values
-     *                 With this flag you will get all properties
+     *   --no-defaults Per default JSON output ships null or default values
+     *                 With this flag you will skip those properties
      */
     public function fetchAction()
     {
+        $resolved = $this->params->shift('resolved');
+
         if ($this->params->shift('json')) {
-            $res = array();
-            foreach ($this->getObjects() as $object) {
-            }
+            $noDefaults = $this->params->shift('no-defaults', false);
         } else {
-            foreach ($this->getObjects() as $object) {
-            }
+            $this->fail('Currently only json is supported when fetching objects');
         }
+
+        $db = $this->db();
+        $res = array();
+        foreach ($this->getObjects() as $object) {
+            if ($resolved) {
+                $object = $object::fromPlainObject($object->toPlainObject(true), $db);
+            }
+
+            $res[$object->getObjectName()] = $object->toPlainObject(false, $noDefaults);
+        }
+
+        echo $this->renderJson($res, !$this->params->shift('no-pretty'));
     }
 
     protected function getObjects()
