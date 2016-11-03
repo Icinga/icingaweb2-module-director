@@ -2,8 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
@@ -321,5 +322,89 @@ class IcingaService extends IcingaObject
             return $host->getRenderingZone($config);
         }
         return $zone;
+    }
+
+    // TODO: Duplicate code, clean this up, split it into multiple methods
+    public static function enumProperties(
+        Db $connection = null,
+        $prefix = '',
+        $filter = null
+    ) {
+        $serviceProperties = array();
+        if ($filter === null) {
+            $filter = new PropertiesFilter();
+        }
+        $realProperties = static::create()->listProperties();
+        sort($realProperties);
+
+        if ($filter->match(PropertiesFilter::$SERVICE_PROPERTY, 'name')) {
+            $serviceProperties[$prefix . 'name'] = 'name';
+        }
+        foreach ($realProperties as $prop) {
+            if (!$filter->match(PropertiesFilter::$SERVICE_PROPERTY, $prop)) {
+                continue;
+            }
+
+            if (substr($prop, -3) === '_id') {
+                $prop = substr($prop, 0, -3);
+            }
+
+            $serviceProperties[$prefix . $prop] = $prop;
+        }
+
+        $serviceVars = array();
+
+        if ($connection !== null) {
+            foreach ($connection->fetchDistinctHostVars() as $var) {
+                if ($filter->match(PropertiesFilter::$CUSTOM_PROPERTY, $var->varname, $var)) {
+                    if ($var->datatype) {
+                        $serviceVars[$prefix . 'vars.' . $var->varname] = sprintf(
+                            '%s (%s)',
+                            $var->varname,
+                            $var->caption
+                        );
+                    } else {
+                        $serviceVars[$prefix . 'vars.' . $var->varname] = $var->varname;
+                    }
+                }
+            }
+        }
+
+        //$properties['vars.*'] = 'Other custom variable';
+        ksort($serviceVars);
+
+        $props = mt('director', 'Service properties');
+        $vars  = mt('director', 'Custom variables');
+
+        $properties = array();
+        if (!empty($serviceProperties)) {
+            $properties[$props] = $serviceProperties;
+            $properties[$props][$prefix . 'groups'] = 'Groups';
+        }
+
+        if (!empty($serviceVars)) {
+            $properties[$vars] = $serviceVars;
+        }
+
+        $hostProps = mt('director', 'Host properties');
+        $hostVars  = mt('director', 'Host Custom variables');
+
+        $hostProperties = IcingaHost::enumProperties($connection);
+
+        if (array_key_exists($hostProps, $hostProperties)) {
+            $p = $hostProperties[$hostProps];
+            if (!empty($p)) {
+                $properties[$hostProps] = $p;
+            }
+        }
+
+        if (array_key_exists($vars, $hostProperties)) {
+            $p = $hostProperties[$vars];
+            if (!empty($p)) {
+                $properties[$hostVars] = $p;
+            }
+        }
+
+        return $properties;
     }
 }

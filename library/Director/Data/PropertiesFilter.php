@@ -6,6 +6,7 @@ class PropertiesFilter
 {
     public static $CUSTOM_PROPERTY = 'CUSTOM_PROPERTY';
     public static $HOST_PROPERTY = 'HOST_PROPERTY';
+    public static $SERVICE_PROPERTY = 'SERVICE_PROPERTY';
 
     protected $blacklist = array(
         'id',
