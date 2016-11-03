@@ -155,6 +155,20 @@ class DictionaryTest extends BaseTestCase
         $this->assertFalse($this->dictionaryInstance->hasErrors());
     }
 
+    public function testConfigCanBeSettedForExpressions() {
+        $this->dictionaryInstance->setDefaultValue([
+            'key_one' => ''
+        ]);
+
+        $this->dictionaryInstance->isValid('$config$');
+
+        $this->assertFalse($this->dictionaryInstance->hasErrors());
+
+        $this->dictionaryInstance->setValue('$config$');
+
+        $this->assertEquals('$config$', $this->dictionaryInstance->getValue());
+    }
+
     public function testValueIsNullIfNotChanged() {
         $this->dictionaryInstance->setDefaultValue([
             'key_one' => [

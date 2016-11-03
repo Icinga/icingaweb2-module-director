@@ -8,6 +8,6 @@ class ArrayCustomVariablesFilter extends CustomVariablesFilter
     {
         return parent::match($type, $name, $object)
         && $object !== null
-        && preg_match('/DataTypeArray[\w]*$/', $object->datatype);
+        && preg_match('/DataType(Meta|)Array[\w]*$/', $object->datatype);
     }
 }

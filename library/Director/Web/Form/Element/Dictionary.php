@@ -10,6 +10,9 @@ class Dictionary extends FormElement
 
     public function isValid($value, $context = null)
     {
+        if ($value == '$config$') {
+            return true;
+        }
         if (is_string($value)) {
             $value = json_decode($value, true);
         }
@@ -67,6 +70,9 @@ class Dictionary extends FormElement
 
     public function setValue($value)
     {
+        if ($value === '$config$') {
+            return parent::setValue($value);
+        }
         if (is_string($value)) {
             $value = json_decode($value, true);
         }

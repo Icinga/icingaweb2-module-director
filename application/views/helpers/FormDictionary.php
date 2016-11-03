@@ -47,12 +47,16 @@ class Zend_View_Helper_FormDictionary extends Zend_View_Helper_FormTextarea
             $attribs['cols'] = (int) $this->cols;
         }
 
+        if ($value !== '$config$') {
+            $value = json_encode($value ? $value : $defaultValue, JSON_PRETTY_PRINT);
+        }
+
         // build the element
         $xhtml = '<textarea name="' . $this->view->escape($name) . '"'
             . ' id="' . $this->view->escape($id) . '"'
             . $disabled
             . $this->_htmlAttribs($attribs) . '>'
-            . json_encode($value ? $value : $defaultValue, JSON_PRETTY_PRINT) . '</textarea>';
+            . $value . '</textarea>';
 
         return $xhtml;
     }
