@@ -1975,6 +1975,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
+    protected function renderLegacyCheck_command($value)
+    {
+        $args = array();
+        foreach($this->vars() as $k => $v) {
+            if (substr($k, 0, 3) == 'ARG') {
+                $args[] = $v->getValue();
+            }
+        }
+
+        array_unshift($args, $this->get('check_command'));
+        return c1::renderKeyValue('check_command', join('!', $args));
+    }
+
     /**
      * We do not render zone properties, objects are stored to zone dirs
      *
