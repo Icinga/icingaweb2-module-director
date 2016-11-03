@@ -15,6 +15,8 @@ class GeneratedConfigFileTable extends QuickTable
             'size'            => 'LENGTH(f.content)',
             'cnt_object'      => 'f.cnt_object',
             'cnt_template'    => 'f.cnt_template',
+            'cnt_apply'       => 'f.cnt_apply',
+            'cnt_all'         => "f.cnt_object || ' / ' || f.cnt_template || ' / ' || f.cnt_apply",
             'checksum'        => 'LOWER(HEX(f.checksum))',
             'config_checksum' => 'LOWER(HEX(cf.config_checksum))',
         );
@@ -52,8 +54,12 @@ class GeneratedConfigFileTable extends QuickTable
         $view = $this->view();
         return array(
             'file_path'    => $view->translate('File'),
+            'cnt_all'      => $view->translate('Object/Tpl/Apply'),
+            /*
             'cnt_object'   => $view->translate('Objects'),
             'cnt_template' => $view->translate('Templates'),
+            'cnt_apply'    => $view->translate('Apply rules'),
+            */
             'size'         => $view->translate('Size'),
         );
     }

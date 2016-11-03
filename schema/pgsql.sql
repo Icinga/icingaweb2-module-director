@@ -95,6 +95,7 @@ CREATE TABLE director_generated_file (
   content text DEFAULT NULL,
   cnt_object SMALLINT NOT NULL DEFAULT 0,
   cnt_template SMALLINT NOT NULL DEFAULT 0,
+  cnt_apply SMALLINT NOT NULL DEFAULT 0,
   PRIMARY KEY (checksum)
 );
 
@@ -1581,4 +1582,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (121, NOW());
+  VALUES (122, NOW());

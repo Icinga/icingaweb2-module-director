@@ -55,6 +55,11 @@ class IcingaConfigFile
         return $this->cntTemplate;
     }
 
+    public function getApplyCount()
+    {
+        return $this->cntApply;
+    }
+
     public function getSize()
     {
         return strlen($this->content);
@@ -69,6 +74,12 @@ class IcingaConfigFile
     public function setTemplateCount($cnt)
     {
         $this->cntTemplate = $cnt;
+        return $this;
+    }
+
+    public function setApplyCount($cnt)
+    {
+        $this->cntApply = $cnt;
         return $this;
     }
 
