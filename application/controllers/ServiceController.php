@@ -60,7 +60,7 @@ class ServiceController extends ObjectController
                 'urlParams' => array('name' => $this->host->object_name),
                 'label'     => $this->translate('Services'),
             ));
-        } elseif ($this->host) {
+        } elseif ($this->set) {
             $this->getTabs()->add('services', array(
                 'url'       => 'director/serviceset/services',
                 'urlParams' => array('name' => $this->set->object_name),

@@ -68,12 +68,10 @@ abstract class ObjectsController extends ActionController
         }
 
         if ($object->supportsSets() || $object->isGroup() /** Bullshit, need base object, wrong on users */) {
-            /** forced to master, disabled for now
             $tabs->add('sets', array(
                 'url'       => sprintf('director/%ss/sets', $type),
                 'label'     => $this->translate('Sets')
             ));
-            */
         }
 
         $tabs->add('tree', array(
