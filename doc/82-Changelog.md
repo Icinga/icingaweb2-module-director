@@ -36,9 +36,11 @@
   can cast to Integer or Boolean, JSON decoding and more is offered
 * Datalist entries can now be imported and synchronized, this was broken in 1.1
 
-### Configiuration possibilities
+### Configuration possibilities
 * You can now define assign rules nested as deep as you want, based on all host
   and/or service properties
+* It is now possible to define "assign for" constructs, looping over hashes or
+  dictionaries
 * Improved Icinga 2 DSL support in commands, implicit support for skip\_key
 * More and more developers are contributing code. We therefore simplified the
   way to launch our unit tests and provided related documentation
