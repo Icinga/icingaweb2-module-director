@@ -41,6 +41,11 @@ class HostController extends ObjectController
         }
     }
 
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/hosts');
+    }
+
     public function editAction()
     {
         parent::editAction();

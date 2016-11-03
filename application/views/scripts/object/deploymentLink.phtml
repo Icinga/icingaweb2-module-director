@@ -4,6 +4,10 @@ if (! $this->undeployedChanges && ! $this->totalUndeployedChanges) {
     return; 
 }
 
+if (! $this->hasPermission('director/deploy')) {
+    return;
+}
+
 if ($this->undeployedChanges === 0) {
     if ($this->totalUndeployedChanges) {
         $msg = $this->translate('The is a single pending change');

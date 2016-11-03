@@ -15,6 +15,6 @@ class CommandObjectDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/commands';
+        return 'director/admin';
     }
 }

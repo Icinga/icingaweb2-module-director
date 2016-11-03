@@ -15,6 +15,6 @@ class ApiUserObjectDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/apiusers';
+        return 'director/admin';
     }
 }

@@ -57,4 +57,9 @@ class JobDashlet extends Dashlet
     {
         return 'director/jobs';
     }
+
+    public function listRequiredPermissions()
+    {
+        return array('director/admin');
+    }
 }

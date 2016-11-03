@@ -44,17 +44,24 @@ abstract class ObjectController extends ActionController
                 ));
             }
 
-            $tabs->add('render', array(
-                'url'       => sprintf('director/%s/render', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('Preview'),
-            ))->add('history', array(
-                'url'       => sprintf('director/%s/history', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('History')
-            ));
+            if ($this->hasPermission('director/showconfig')) {
+                $tabs->add('render', array(
+                    'url'       => sprintf('director/%s/render', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate('Preview'),
+                ));
+            }
 
-            if ($this->hasFields()) {
+            if ($this->hasPermission('director/audit')) {
+                $tabs->add('history', array(
+                    'url'       => sprintf('director/%s/history', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate('History')
+                ));
+            }
+
+
+            if ($this->hasPermission('director/admin') && $this->hasFields()) {
                 $tabs->add('fields', array(
                     'url'       => sprintf('director/%s/fields', $type),
                     'urlParams' => $params,
@@ -99,6 +106,7 @@ abstract class ObjectController extends ActionController
 
     public function renderAction()
     {
+        $this->assertPermission('director/showconfig');
         $type = $this->getType();
         $this->getTabs()->activate('render');
         $object = $this->object;
@@ -237,6 +245,7 @@ abstract class ObjectController extends ActionController
 
     public function fieldsAction()
     {
+        $this->hasPermission('director/admin');
         $object = $this->object;
         $type = $this->getType();
 
@@ -278,6 +287,7 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
+        $this->hasPermission('director/audit');
         $this->setAutorefreshInterval(10);
         $db = $this->db();
         $type = $this->getType();

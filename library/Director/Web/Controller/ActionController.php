@@ -13,9 +13,9 @@ use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Form\QuickBaseForm;
-use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Module\Director\Web\Table\TableLoader;
+use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\Widget;
 
@@ -45,6 +45,35 @@ abstract class ActionController extends Controller
                 throw new NotFoundError('No such API endpoint found');
             }
         }
+
+        $this->checkDirectorPermissions();
+    }
+
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/admin');
+    }
+
+    /**
+     * Assert that the current user has one of the given permission
+     *
+     * @param   array $permissions      Permission name list
+     *
+     * @throws  SecurityException       If the current user lacks the given permission
+     */
+    protected function assertOneOfPermissions($permissions)
+    {
+        $auth = $this->Auth();
+
+        foreach ($permissions as $permission)
+        if ($auth->hasPermission($permission)) {
+            return;
+        }
+
+        throw new SecurityException(
+            'Got none of the following permissions: %s',
+            implode(', ', $permissions)
+        );
     }
 
     protected function isApified()

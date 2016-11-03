@@ -9,6 +9,11 @@ use Icinga\Module\Director\Objects\IcingaService;
 
 class NotificationController extends ObjectController
 {
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/notifications');
+    }
+
     public function init()
     {
         parent::init();

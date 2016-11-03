@@ -10,4 +10,9 @@ class HostsController extends ObjectsController
         'imports',
         'groups'
     );
+
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/hosts');
+    }
 }

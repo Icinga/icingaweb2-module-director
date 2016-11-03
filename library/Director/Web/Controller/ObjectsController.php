@@ -54,32 +54,36 @@ abstract class ObjectsController extends ActionController
             'url'   => sprintf('director/%ss', strtolower($type)),
             'label' => $this->translate(ucfirst($type) . 's'),
         ));
-        if ($object->supportsImports()) {
-            $tabs->add('templates', array(
-                'url'   => sprintf('director/%ss/templates', strtolower($type)),
-                'label' => $this->translate('Templates'),
-            ));
-        }
-        if ($object->supportsGroups() || $object->isGroup()) {
-            $tabs->add('objectgroups', array(
-                'url'   => sprintf('director/%sgroups', $type),
-                'label' => $this->translate('Groups')
-            ));
-        }
 
-        if ($object->supportsSets() || $object->isGroup() /** Bullshit, need base object, wrong on users */) {
-            /** forced to master, disabled for now
-            $tabs->add('sets', array(
-                'url'       => sprintf('director/%ss/sets', $type),
-                'label'     => $this->translate('Sets')
-            ));
-            */
-        }
+        if ($this->hasPermission('director/admin')) {
+            if ($object->supportsImports()) {
+                $tabs->add('templates', array(
+                    'url'   => sprintf('director/%ss/templates', strtolower($type)),
+                    'label' => $this->translate('Templates'),
+                ));
+            }
 
-        $tabs->add('tree', array(
-            'url'   => sprintf('director/%ss/templatetree', $type),
-            'label' => $this->translate('Tree'),
-        ));
+            if ($object->supportsGroups() || $object->isGroup()) {
+                $tabs->add('objectgroups', array(
+                    'url'   => sprintf('director/%sgroups', $type),
+                    'label' => $this->translate('Groups')
+                ));
+            }
+
+            if ($object->supportsSets() || $object->isGroup() /** Bullshit, need base object, wrong on users */) {
+                /** forced to master, disabled for now
+                 $tabs->add('sets', array(
+                      'url'    => sprintf('director/%ss/sets', $type),
+                      'label' => $this->translate('Sets')
+                 ));
+                 */
+            }
+
+            $tabs->add('tree', array(
+                'url'   => sprintf('director/%ss/templatetree', $type),
+                'label' => $this->translate('Tree'),
+            ));
+        }
     }
 
     public function indexAction()
@@ -90,7 +94,6 @@ abstract class ObjectsController extends ActionController
 
         $type = $this->getType();
         $ltype = strtolower($type);
-        $this->assertPermission('director/' . $type . 's/read');
         /** @var IcingaObject $dummy */
         $dummy = $this->dummyObject();
 
@@ -243,11 +246,13 @@ abstract class ObjectsController extends ActionController
 
     public function templatesAction()
     {
+        $this->assertPermission('director/admin');
         $this->indexAction();
     }
 
     public function templatetreeAction()
     {
+        $this->assertPermission('director/admin');
         $this->setAutorefreshInterval(10);
         $this->getTabs()->activate('tree');
         $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
@@ -257,6 +262,7 @@ abstract class ObjectsController extends ActionController
 
     public function setsAction()
     {
+        $this->assertPermission('director/admin');
         $this->view->title = $this->translate('Service sets');
         $this->view->table = $this
             ->loadTable('IcingaServiceSet')

@@ -25,6 +25,6 @@ class DatafieldDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/data');
+        return array('director/admin');
     }
 }

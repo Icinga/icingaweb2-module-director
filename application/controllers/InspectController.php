@@ -6,10 +6,9 @@ use Icinga\Module\Director\Web\Controller\ActionController;
 
 class InspectController extends ActionController
 {
-    public function init()
+    protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/inspect');
-        parent::init();
     }
 
     public function typesAction()

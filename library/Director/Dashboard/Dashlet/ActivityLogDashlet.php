@@ -30,6 +30,6 @@ class ActivityLogDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/activitylog');
+        return array('director/audit');
     }
 }

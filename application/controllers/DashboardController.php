@@ -9,6 +9,10 @@ use Icinga\Module\Director\Web\Controller\ActionController;
 
 class DashboardController extends ActionController
 {
+    protected function checkDirectorPermissions()
+    {
+    }
+
     public function indexAction()
     {
         if ($this->getRequest()->isGet()) {

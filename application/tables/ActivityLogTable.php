@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Tables;
 
+use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ActivityLogTable extends QuickTable
@@ -41,7 +42,11 @@ class ActivityLogTable extends QuickTable
 
     protected function listTableClasses()
     {
-        return array_merge(array('activity-log'), parent::listTableClasses());
+        if (Util::hasPermission('director/showconfig')) {
+            return array_merge(array('activity-log'), parent::listTableClasses());
+        } else {
+            return array('simple', 'common-table', 'activity-log');
+        }
     }
 
     public function render()
@@ -75,10 +80,15 @@ class ActivityLogTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url(
-            'director/show/activitylog',
-            array_merge(array('id' => $row->id), $this->extraParams)
-        );
+        if (Util::hasPermission('director/showconfig')) {
+            return $this->url(
+                'director/show/activitylog',
+                array_merge(array('id' => $row->id), $this->extraParams)
+            );
+
+        } else {
+            return false;
+        }
     }
 
     public function getTitles()

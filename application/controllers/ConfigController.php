@@ -15,8 +15,13 @@ class ConfigController extends ActionController
 {
     protected $isApified = true;
 
+    protected function checkDirectorPermissions()
+    {
+    }
+
     public function deploymentsAction()
     {
+        $this->assertPermission('director/deploy');
         $this->setAutorefreshInterval(5);
         try {
             if ($this->db()->hasUncollectedDeployments()) {
@@ -49,6 +54,8 @@ class ConfigController extends ActionController
 
     public function deployAction()
     {
+        $this->assertPermission('director/deploy');
+
         // TODO: require POST
         $isApiRequest = $this->getRequest()->isApiRequest();
         $checksum = $this->params->get('checksum');
@@ -86,23 +93,29 @@ class ConfigController extends ActionController
 
     public function activitiesAction()
     {
+        $this->assertPermission('director/audit');
+
         $this->setAutorefreshInterval(10);
         $this->overviewTabs()->activate('activitylog');
         $this->view->title = $this->translate('Activity Log');
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
         $this->prepareTable('activityLog');
         $this->view->table->setLastDeployedId($lastDeployedId);
-        $this->view->form = $this
-            ->loadForm('DeployConfig')
-            ->setDb($this->db())
-            ->setApi($this->api())
-            ->handleRequest();
+        if ($this->hasPermission('director/deploy')) {
+            $this->view->form = $this
+                ->loadForm('DeployConfig')
+                ->setDb($this->db())
+                ->setApi($this->api())
+                ->handleRequest();
+        }
 
         $this->setViewScript('list/table');
     }
 
     public function settingsAction()
     {
+        $this->assertPermission('director/admin');
+
         $this->overviewTabs()->activate('settings');
         $this->view->title = $this->translate('Settings');
         $this->view->form = $this
@@ -116,6 +129,8 @@ class ConfigController extends ActionController
     // Show all files for a given config
     public function filesAction()
     {
+        $this->assertPermission('director/showconfig');
+
         $this->setAutorefreshInterval(10);
         $this->view->title = $this->translate('Generated config');
         $tabs = $this->getTabs();
@@ -163,6 +178,8 @@ class ConfigController extends ActionController
     // Show a single file
     public function fileAction()
     {
+        $this->assertPermission('director/showconfig');
+
         $fileOnly = $this->params->get('fileOnly');
         $this->view->highlight = $this->params->get('highlight');
         $this->view->highlightSeverity = $this->params->get('highlightSeverity');
@@ -196,6 +213,8 @@ class ConfigController extends ActionController
 
     public function showAction()
     {
+        $this->assertPermission('director/showconfig');
+
         $this->configTabs()->activate('config');
         $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('checksum')), $this->db());
     }
@@ -214,6 +233,8 @@ class ConfigController extends ActionController
 
     public function diffAction()
     {
+        $this->assertPermission('director/showconfig');
+
         $db = $this->db();
         $this->view->title = $this->translate('Config diff');
 
@@ -248,6 +269,8 @@ class ConfigController extends ActionController
 
     public function filediffAction()
     {
+        $this->assertPermission('director/showconfig');
+
         $db = $this->db();
         $leftSum  = $this->params->get('left');
         $rightSum = $this->params->get('right');
@@ -271,25 +294,36 @@ class ConfigController extends ActionController
 
     protected function overviewTabs()
     {
-        $this->view->tabs = $this->getTabs()->add(
-            'activitylog',
-            array(
-                'label' => $this->translate('Activity Log'),
-                'url'   => 'director/config/activities'
-            )
-        )->add(
-            'deploymentlog',
-            array(
-                'label' => $this->translate('Deployments'),
-                'url'   => 'director/config/deployments'
-            )
-        )->add(
-            'settings',
-            array(
-                'label' => $this->translate('Settings'),
-                'url'   => 'director/config/settings'
-            )
-        );
+        $this->view->tabs = $tabs = $this->getTabs();
+
+        if ($this->hasPermission('director/audit')) {
+            $tabs->add(
+                'activitylog',
+                array(
+                    'label' => $this->translate('Activity Log'),
+                    'url'   => 'director/config/activities'
+                )
+            );
+        }
+
+        if ($this->hasPermission('director/deploy')) {
+            $tabs->add(
+                'deploymentlog',
+                array(
+                    'label' => $this->translate('Deployments'),
+                    'url' => 'director/config/deployments'
+                )
+            );
+        }
+        if ($this->hasPermission('director/admin')) {
+            $tabs->add(
+                'settings',
+                array(
+                    'label' => $this->translate('Settings'),
+                    'url' => 'director/config/settings'
+                )
+            );
+        }
         return $this->view->tabs;
     }
 
@@ -297,7 +331,7 @@ class ConfigController extends ActionController
     {
         $tabs = $this->getTabs();
 
-        if ($deploymentId = $this->params->get('deployment_id')) {
+        if ($this->hasPermission('director/deploy') && $deploymentId = $this->params->get('deployment_id')) {
             $tabs->add('deployment', array(
                 'label'     => $this->translate('Deployment'),
                 'url'       => 'director/deployment/show',
@@ -307,11 +341,13 @@ class ConfigController extends ActionController
             ));
         }
 
-        $tabs->add('config', array(
-            'label'     => $this->translate('Config'),
-            'url'       => 'director/config/files',
-            'urlParams' => $this->getConfigTabParams()
-        ));
+        if ($this->hasPermission('director/showconfig')) {
+            $tabs->add('config', array(
+                'label'     => $this->translate('Config'),
+                'url'       => 'director/config/files',
+                'urlParams' => $this->getConfigTabParams()
+            ));
+        }
 
         return $tabs;
     }

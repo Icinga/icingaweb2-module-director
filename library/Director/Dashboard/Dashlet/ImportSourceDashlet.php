@@ -60,6 +60,6 @@ class ImportSourceDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/sync');
+        return array('director/admin');
     }
 }

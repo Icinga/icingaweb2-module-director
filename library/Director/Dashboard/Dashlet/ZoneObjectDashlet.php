@@ -17,4 +17,9 @@ class ZoneObjectDashlet extends Dashlet
     {
         return 'director/zones';
     }
+
+    public function listRequiredPermissions()
+    {
+        return array('director/admin');
+    }
 }

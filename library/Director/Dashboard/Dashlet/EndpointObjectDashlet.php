@@ -22,6 +22,11 @@ class EndpointObjectDashlet extends Dashlet
         return 'director/endpoints';
     }
 
+    public function listRequiredPermissions()
+    {
+        return array('director/admin');
+    }
+
     protected function hasDeploymentEndpoint()
     {
         if ($this->hasDeploymentEndpoint === null) {

@@ -9,6 +9,11 @@ use Icinga\Module\Director\Util;
 
 class DeploymentController extends ActionController
 {
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/deploy');
+    }
+
     public function indexAction()
     {
         $this->view->title = $this->translate('Deployment details');

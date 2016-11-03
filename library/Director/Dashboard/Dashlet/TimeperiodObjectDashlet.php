@@ -20,4 +20,9 @@ class TimeperiodObjectDashlet extends Dashlet
     {
         return 'director/timeperiods';
     }
+
+    public function listRequiredPermissions()
+    {
+        return array('director/admin');
+    }
 }

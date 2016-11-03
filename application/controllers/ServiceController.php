@@ -27,6 +27,11 @@ class ServiceController extends ObjectController
         }
     }
 
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/hosts');
+    }
+
     public function init()
     {
         if ($host = $this->params->get('host')) {

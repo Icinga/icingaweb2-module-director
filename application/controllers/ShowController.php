@@ -15,6 +15,11 @@ class ShowController extends ActionController
 
     protected $oldObject;
 
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/showconfig');
+    }
+
     protected function objectKey($entry)
     {
         if ($entry->object_type === 'icinga_service' || $entry->object_type === 'icinga_service_set') {
