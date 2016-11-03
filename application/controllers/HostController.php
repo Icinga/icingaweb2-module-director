@@ -69,12 +69,14 @@ class HostController extends ObjectController
             'director/service/add',
             array('host' => $host->object_name),
             array('class' => 'icon-plus')
-        ) . ' ' .  $this->view->qlink(
+        );
+        // Temporarily disabled
+        /* . ' ' .  $this->view->qlink(
             $this->translate('Add service set'),
             'director/serviceset/add',
             array('host' => $host->object_name),
             array('class' => 'icon-plus')
-        );
+        )*/
 
         $this->getTabs()->activate('services');
         $this->view->title = sprintf(
