@@ -295,6 +295,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             /** @var CustomVariable $var */
             // TODO: ctype_alnum + underscore?
             $value = null;
+
+            // vars with ARGn will be handled by IcingaObject::renderLegacyCheck_command
+            if (substr($key, 0, 3) == 'ARG') {
+                continue;
+            }
+
             switch ($type = $var->getType()) {
                 case 'String':
                     # TODO: Make Prefetchable
