@@ -2007,6 +2007,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return '';
     }
 
+    protected function renderLegacyCustomExtensions()
+    {
+        return '';
+    }
+
     protected function renderObjectHeader()
     {
         return sprintf(
@@ -2073,7 +2078,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             //$this->renderRelatedSets(),
             $this->renderLegacyGroups(),
             //$this->renderMultiRelations(),
-            //$this->renderCustomExtensions(),
+            $this->renderLegacyCustomExtensions(),
             $this->renderLegacyCustomVars(),
             $this->renderLegacySuffix()
         ));

@@ -342,6 +342,17 @@ class IcingaHost extends IcingaObject
         return c1::renderKeyValue('display_name', $this->display_name);
     }
 
+    protected function renderLegacyCustomExtensions()
+    {
+        $str = parent::renderLegacyCustomExtensions();
+
+        if (($alias = $this->vars()->get('alias')) !== null) {
+            $str .= c1::renderKeyValue('alias', $alias->getValue());
+        }
+
+        return $str;
+    }
+
     public static function loadWithApiKey($key, Db $db)
     {
         $query = $db->getDbAdapter()
