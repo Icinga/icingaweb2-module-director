@@ -25,10 +25,6 @@ class DashboardController extends ActionController
             }
         }
 
-        if (empty($dashboards)) {
-            throw new NotFoundError('Got no "%s" dashboard for you', $name);
-        }
-
         $this->view->dashboards = $dashboards;
     }
 }
