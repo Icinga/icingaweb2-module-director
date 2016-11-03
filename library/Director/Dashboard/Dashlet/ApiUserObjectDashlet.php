@@ -15,6 +15,11 @@ class ApiUserObjectDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/admin';
+        return 'director/apiusers';
+    }
+
+    public function listRequiredPermissions()
+    {
+        return array('director/admin');
     }
 }

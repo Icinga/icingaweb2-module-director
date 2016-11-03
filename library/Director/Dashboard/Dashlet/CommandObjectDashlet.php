@@ -15,6 +15,11 @@ class CommandObjectDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/admin';
+        return 'director/commands';
+    }
+
+    public function listRequiredPermissions()
+    {
+        return array('director/admin');
     }
 }
