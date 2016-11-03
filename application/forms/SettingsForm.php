@@ -73,7 +73,9 @@ class SettingsForm extends QuickForm
                 'All changes are tracked in the Director database. In addition'
                 . ' you might also want to send an audit log through the Icinga'
                 . " Web 2 logging mechanism. That way all changes would be"
-                . ' written to either Syslog or the configured log file'
+                . ' written to either Syslog or the configured log file. When'
+                . ' enabling this please make sure that you configured Icinga'
+                . ' Web 2 to log at least at "informational" level.'
             ),
         ));
 
