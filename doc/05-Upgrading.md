@@ -10,6 +10,7 @@ Should there any other actions be required, you will be told so in your frontend
 Read more about:
 
 * [How to work with the latest GIT master](#git-master)
+* [Upgrading to 1.2.0](#upgrade-to-1.2.0)
 * [Upgrading to 1.1.0](#upgrade-to-1.1.0)
 * [Database schema upgrades](#schema-migrations)
 * [Job Runner restart](#restart-jobrunner)
@@ -41,6 +42,14 @@ policy says that the master should never break, this might of course happen.
 
 In that case, please [let us know](https://dev.icinga.org/projects/icingaweb2-module-director/issues)
 We'll try to fix your issue as soon as possible. 
+
+<a name="upgrade-to-1.2.0"></a>Upgrading to 1.2.0
+-------------------------------------------------
+
+There is nothing special to take care of. In case you are running 1.1.0 or any
+GIT master since then, all you need is to replace the Director module folder with
+the new one. Or to run `git checkout v1.2.0` in case you installed Director from
+GIT.
 
 <a name="upgrade-to-1.1.0"></a>Upgrading to 1.1.0
 -------------------------------------------------
