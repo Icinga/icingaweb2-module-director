@@ -65,8 +65,14 @@ class BaseTestCase extends PHPUnit_Framework_TestCase
             if (array_key_exists('DIRECTOR_TESTDB', $_SERVER)) {
                 $dbConfig->dbname = $_SERVER['DIRECTOR_TESTDB'];
             }
+            if (array_key_exists('DIRECTOR_TESTDB_HOST', $_SERVER)) {
+                $dbConfig->host = $_SERVER['DIRECTOR_TESTDB_HOST'];
+            }
             if (array_key_exists('DIRECTOR_TESTDB_USER', $_SERVER)) {
                 $dbConfig->username = $_SERVER['DIRECTOR_TESTDB_USER'];
+            }
+            if (array_key_exists('DIRECTOR_TESTDB_PASSWORD', $_SERVER)) {
+                $dbConfig->password = $_SERVER['DIRECTOR_TESTDB_PASSWORD'];
             }
             $this->db = new Db($dbConfig);
             $migrations = new Migrations($this->db);
