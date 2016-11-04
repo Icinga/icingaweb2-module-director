@@ -11,25 +11,31 @@ class IndexController extends DashboardController
     {
         $this->view->dashboards = array();
 
+        $this->setViewScript('dashboard/index');
+
         if ($this->Config()->get('db', 'resource')) {
             $migrations = new Migrations($this->db());
 
-            if (! $migrations->hasSchema() || !$this->hasDeploymentEndpoint()) {
+            if ($migrations->hasSchema()) {
+                if (!$this->hasDeploymentEndpoint()) {
+                    $this->showKickstartForm();
+                }
+            } else {
                 $this->showKickstartForm();
-            } elseif ($migrations->hasPendingMigrations()) {
+                return;
+            }
+
+            if ($migrations->hasPendingMigrations()) {
                 $this->view->form = $this
                     ->loadForm('applyMigrations')
                     ->setMigrations($migrations)
                     ->handleRequest();
-                parent::indexAction();
-            } else {
-                parent::indexAction();
             }
+
+            parent::indexAction();
         } else {
             $this->showKickstartForm();
         }
-
-        $this->setViewScript('dashboard/index');
     }
 
     protected function showKickstartForm()
