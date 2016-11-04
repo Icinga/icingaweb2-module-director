@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Core\LegacyDeploymentApi;
 use Icinga\Module\Director\Core\RestApiClient;
 
 class IcingaEndpoint extends IcingaObject
@@ -42,23 +44,36 @@ class IcingaEndpoint extends IcingaObject
     }
 
     /**
-     * @return CoreApi
+     * Return a core API, depending on the configuration format
+     *
+     * @return CoreApi|LegacyDeploymentApi
+     *
+     * @throws ProgrammingError  When configured config_format is unknown
      */
     public function api()
     {
-        $client = new RestApiClient(
-            $this->getResolvedProperty('host', $this->getObjectName()),
-            $this->getResolvedProperty('port')
-        );
+        $format = $this->connection->settings()->config_format;
+        if ($format === 'v2') {
+            $client = new RestApiClient(
+                $this->getResolvedProperty('host', $this->getObjectName()),
+                $this->getResolvedProperty('port')
+            );
 
-        $user = $this->getApiUser();
-        $client->setCredentials(
+            $user = $this->getApiUser();
+            $client->setCredentials(
             // TODO: $user->client_dn,
-            $user->object_name,
-            $user->password
-        );
+                $user->object_name,
+                $user->password
+            );
 
-        return new CoreApi($client);
+            return new CoreApi($client);
+        }
+        elseif ($format === 'v1') {
+            return new LegacyDeploymentApi($this->connection);
+        }
+        else {
+            throw new ProgrammingError('Unsupported config format: %s', $format);
+        }
     }
 
     /**
