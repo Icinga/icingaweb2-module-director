@@ -130,6 +130,16 @@ class SettingsForm extends QuickForm
             ),
             'value' => $settings->getStoredValue('deployment_path_v1')
         ));
+
+        $this->addElement('text', 'activation_script_v1', array(
+            'label'        => $this->translate('Activation Tool'),
+            'description'  => $this->translate(
+                'Script or tool to call when activating a new configuration stage.'
+                . ' (e.g. sudo /usr/local/bin/icinga-director-activate)'
+                . ' (name of the stage will be the argument for the script)'
+            ),
+            'value' => $settings->getStoredValue('activation_script_v1')
+        ));
     }
 
     protected function eventuallyConfiguredEnum($name, $enum)

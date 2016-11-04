@@ -20,6 +20,7 @@ class Settings
         'enable_audit_log'               => 'n',
         'deployment_mode_v1'             => 'active-passive',
         'deployment_path_v1'             => null,
+        'activation_script_v1'           => null,
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     );
