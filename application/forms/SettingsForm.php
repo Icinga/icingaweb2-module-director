@@ -92,28 +92,35 @@ class SettingsForm extends QuickForm
                 . ' unsupported. There are no plans to make Director a first-'
                 . 'class configuration backends for Icinga 1.x'
             ),
+            'class' => 'autosubmit',
             'value' => $settings->getStoredValue('config_format')
         ));
 
-        if ($settings->getStoredValue('config_format') === 'v1') {
-            $this->addElement('select', 'deployment_mode_v1', array(
-                'label'        => $this->translate('Deployment mode'),
-                'multiOptions' => $this->eventuallyConfiguredEnum(
-                    'deployment_mode_v1',
-                    array(
-                        'active-passive' => $this->translate('Active-Passive'),
-                        'masterless'     => $this->translate('Master-less'),
-                    )
-                ),
-                'description'  => $this->translate(
-                    'Deployment mode for Icinga 1 configuration'
-                ),
-                'value' => $settings->getStoredValue('deployment_mode_v1')
-            ));
+        $this->setSubmitLabel($this->translate('Store'));
 
+        if ($this->hasBeenSent()) {
+            if ($this->getSentValue('config_format') !== 'v1') {
+                return;
+            }
+        } elseif ($settings->getStoredValue('config_format') !== 'v1') {
+            return;
         }
 
-        $this->setSubmitLabel($this->translate('Store'));
+        $this->addElement('select', 'deployment_mode_v1', array(
+            'label'        => $this->translate('Deployment mode'),
+            'multiOptions' => $this->eventuallyConfiguredEnum(
+                'deployment_mode_v1',
+                array(
+                    'active-passive' => $this->translate('Active-Passive'),
+                    'masterless'     => $this->translate('Master-less'),
+                )
+            ),
+            'description'  => $this->translate(
+                'Deployment mode for Icinga 1 configuration'
+            ),
+            'value' => $settings->getStoredValue('deployment_mode_v1')
+        ));
+
     }
 
     protected function eventuallyConfiguredEnum($name, $enum)
