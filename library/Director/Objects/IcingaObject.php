@@ -783,6 +783,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->arguments;
     }
 
+    /**
+     * @return IcingaObjectImports
+     */
     public function imports()
     {
         $this->assertImportsSupport();
@@ -1188,6 +1191,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * @return CustomVariables
+     */
     public function vars()
     {
         $this->assertCustomVarsSupport();
@@ -2110,7 +2116,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return
                 "# --- This object has been disabled ---\n"
                 . preg_replace('~^~m', '# ', trim($str))
-                . "\n";
+                . "\n\n";
         } else {
             return $str;
         }

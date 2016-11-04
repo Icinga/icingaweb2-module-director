@@ -1079,6 +1079,12 @@ abstract class DbObject
         return $objects;
     }
 
+    /**
+     * @param DbConnection $connection
+     * @param bool $force
+     *
+     * @return static[]
+     */
     public static function prefetchAll(DbConnection $connection, $force = false)
     {
         $dummy = static::create();
