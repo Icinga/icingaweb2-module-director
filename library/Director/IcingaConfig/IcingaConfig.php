@@ -38,6 +38,8 @@ class IcingaConfig
 
     protected $configFormat;
 
+    protected $deploymentModeV1;
+
     public static $table = 'director_generated_config';
 
     public function __construct(Db $connection)
@@ -48,6 +50,7 @@ class IcingaConfig
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
         $this->configFormat = $this->connection->settings()->config_format;
+        $this->deploymentModeV1 = $this->connection->settings()->deployment_mode_v1;
     }
 
     public function getSize()
@@ -74,6 +77,16 @@ class IcingaConfig
         return $this->configFormat;
     }
 
+    public function getDeploymentMode()
+    {
+        if ($this->isLegacy()) {
+            return $this->deploymentModeV1;
+        }
+        else {
+            throw new ProgrammingError('There is no deployment mode for Icinga 2 config format!');
+        }
+    }
+
     public function setConfigFormat($format)
     {
         if (! in_array($format, array('v1', 'v2'))) {
@@ -90,7 +103,7 @@ class IcingaConfig
 
     public function isLegacy()
     {
-        return strpos($this->configFormat, 'v1') === 0;
+        return $this->configFormat === 'v1';
     }
 
     public function getObjectCount()

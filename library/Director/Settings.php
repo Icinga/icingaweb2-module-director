@@ -18,6 +18,7 @@ class Settings
         'override_services_templatename' => 'host var overrides (Director)',
         'disable_all_jobs'               => 'n', // 'y'
         'enable_audit_log'               => 'n',
+        'deployment_mode_v1'             => 'active-passive',
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     );

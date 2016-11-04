@@ -1479,18 +1479,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $filename = $this->getRenderingFilename();
 
-        if (
-            $this->getResolvedProperty('zone_id')
-            && array_key_exists('enable_active_checks', $this->defaultProperties)
-            && $config->getConfigFormat() !== 'v1-masterless'
-        ) {
-            $passive = clone($this);
-            $passive->enable_active_checks = false;
+        $deploymentMode = $config->getDeploymentMode();
+        if ($deploymentMode === 'active-passive') {
+            if (
+                $this->getResolvedProperty('zone_id')
+                && array_key_exists('enable_active_checks', $this->defaultProperties)
+            ) {
+                $passive = clone($this);
+                $passive->enable_active_checks = false;
 
-            $config->configFile(
-                'director/master/' . $filename,
-                '.cfg'
-            )->addLegacyObject($passive);
+                $config->configFile(
+                    'director/master/' . $filename,
+                    '.cfg'
+                )->addLegacyObject($passive);
+            }
+        }
+        elseif ($deploymentMode === 'masterless') {
+            // no additional config
+        }
+        else {
+            throw new ProgrammingError('Unsupported deployment mode: %s' .$deploymentMode);
         }
 
         $config->configFile(

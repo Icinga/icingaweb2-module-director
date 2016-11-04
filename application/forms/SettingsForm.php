@@ -84,7 +84,6 @@ class SettingsForm extends QuickForm
                 array(
                     'v2' => $this->translate('Icinga v2.x'),
                     'v1' => $this->translate('Icinga v1.x'),
-                    // Hiding for now 'v1-masterless' => $this->translate('Icinga v1.x (no master)'),
                 )
             ),
             'description'  => $this->translate(
@@ -95,6 +94,24 @@ class SettingsForm extends QuickForm
             ),
             'value' => $settings->getStoredValue('config_format')
         ));
+
+        if ($settings->getStoredValue('config_format') === 'v1') {
+            $this->addElement('select', 'deployment_mode_v1', array(
+                'label'        => $this->translate('Deployment mode'),
+                'multiOptions' => $this->eventuallyConfiguredEnum(
+                    'deployment_mode_v1',
+                    array(
+                        'active-passive' => $this->translate('Active-Passive'),
+                        'masterless'     => $this->translate('Master-less'),
+                    )
+                ),
+                'description'  => $this->translate(
+                    'Deployment mode for Icinga 1 configuration'
+                ),
+                'value' => $settings->getStoredValue('deployment_mode_v1')
+            ));
+
+        }
 
         $this->setSubmitLabel($this->translate('Store'));
     }
