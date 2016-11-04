@@ -81,8 +81,29 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         $moduleName = 'director';
         $currentStage = $this->getActiveStageName();
 
+        // try to expire old deployments
+        foreach ($uncollected as $name => $deployment) {
+            /** @var DirectorDeploymentLog $deployment */
+            if (
+                $deployment->get('dump_succeeded') === 'n'
+                || $deployment->get('startup_succeeded') === null
+            ) {
+                $start_time = strtotime($deployment->start_time);
+
+                // older than an hour and no startup
+                if ($start_time + 3600 < time()) {
+                    $deployment->set('startup_succeeded', 'n');
+                    $deployment->set('startup_log', 'Activation timed out...');
+                    $deployment->store();
+                }
+            }
+        }
+
         foreach ($this->listModuleStages($moduleName) as $stage) {
-            if (array_key_exists($stage, $uncollected)) {
+            if (
+                array_key_exists($stage, $uncollected)
+                && $uncollected[$stage]->get('startup_succeeded') === null
+            ) {
                 continue;
             }
             elseif ($stage === $currentStage) {
