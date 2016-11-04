@@ -6,7 +6,6 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
-use Icinga\Module\Director\Objects\IcingaHostVar;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Countable;
 use Exception;
@@ -17,6 +16,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /** @var CustomVariable[] */
     protected $storedVars = array();
 
+    /** @var CustomVariable[]  */
     protected $vars = array();
 
     protected $modified = false;
@@ -292,10 +292,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
         ksort($this->vars);
         foreach ($this->vars as $key => $var) {
-            /** @var CustomVariable $var */
             // TODO: ctype_alnum + underscore?
-            $value = null;
-
             // vars with ARGn will be handled by IcingaObject::renderLegacyCheck_command
             if (substr($key, 0, 3) == 'ARG') {
                 continue;
@@ -303,17 +300,21 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
             switch ($type = $var->getType()) {
                 case 'String':
+                case 'Number':
                     # TODO: Make Prefetchable
-                    $value = $var->toLegacyConfigString();
+                    $out .= c1::renderKeyValue(
+                        '_' . $key,
+                        $var->toLegacyConfigString()
+                    );
                     break;
                 default:
-                    $out .= sprintf("# Unsupported var: %s (%s)\n", $key, $type);
-            }
-
-            if ($value !== null) {
-                $out .= c1::renderKeyValue('_' . $key, $value);
+                    $out .= c1::renderKeyValue(
+                        '# _' . $key,
+                        sprintf('(unsupported: %s)', $type)
+                    );
             }
         }
+
         if ($out !== '') {
             $out = "\n".$out;
         }
