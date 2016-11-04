@@ -177,6 +177,10 @@ class IcingaService extends IcingaObject
 
     public function toLegacyConfigString()
     {
+        if ($this->get('service_set_id')) {
+            return '';
+        }
+
         if ($this->get('assign_filter')) {
             return $this->renderLegacyResolvedAssignFilter();
         }
@@ -318,11 +322,6 @@ class IcingaService extends IcingaObject
      * @return string
      */
     public function renderUse_agent()
-    {
-        return '';
-    }
-
-    public function renderService_set()
     {
         return '';
     }

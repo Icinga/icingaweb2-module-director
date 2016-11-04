@@ -3,10 +3,8 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
-use Icinga\Module\Director\Objects\IcingaService;
+
 
 class IcingaServiceSet extends IcingaObject
 {
@@ -80,6 +78,7 @@ class IcingaServiceSet extends IcingaObject
                 'id' => $id,
                 'object_type' => 'template'
             ), $connection);
+            $service->set('service_set', null);
 
             $services[$service->getObjectName()] = $service;
         }
@@ -110,7 +109,7 @@ class IcingaServiceSet extends IcingaObject
                 $service->set('assign_filter', $filter);
             } elseif ($hostId = $this->get('host_id')) {
                 $service->set('object_type', 'object');
-                $service->host_id = $this->host_id;
+                $service->set('host_id', $this->get('host_id'));
             } else {
                 // Service set template without assign filter or host
                 continue;
@@ -139,7 +138,7 @@ class IcingaServiceSet extends IcingaObject
             $comment = "/** Service Set '%s' **/\n\n";
         }
 
-        return sprintf($comment, $this->object_name);
+        return sprintf($comment, $this->getObjectName());
     }
 
     protected function copyVarsToService(IcingaService $service)
@@ -155,7 +154,7 @@ class IcingaServiceSet extends IcingaObject
 
     public function renderToLegacyConfig(IcingaConfig $config)
     {
-        if ($this->assign_filter === null && $this->isTemplate()) {
+        if ($this->get('assign_filter') === null && $this->isTemplate()) {
             return;
         }
 
@@ -180,7 +179,7 @@ class IcingaServiceSet extends IcingaObject
                 $this->copyVarsToService($service);
 
                 foreach ($hosts as $hostname) {
-                    $service->host = $hostname;
+                    $service->set('host', $hostname);
                     $file->addLegacyObject($service);
                 }
             }
@@ -204,6 +203,5 @@ class IcingaServiceSet extends IcingaObject
             $host = $this->getRelatedObject('host', $this->get('host_id'));
             return $host->getRenderingZone($config);
         }
-        return $zone;
     }
 }
