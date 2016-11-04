@@ -11,7 +11,7 @@ use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaZone;
 
-class CoreApi
+class CoreApi implements DeploymentApiInterface
 {
     protected $client;
 
@@ -614,7 +614,7 @@ constants
         $this->client->request('post', $url, null, false, true);
     }
 
-    public function dumpConfig(IcingaConfig $config, $db, $moduleName = 'director')
+    public function dumpConfig(IcingaConfig $config, Db $db, $moduleName = 'director')
     {
         $start = microtime(true);
         $deployment = DirectorDeploymentLog::create(array(

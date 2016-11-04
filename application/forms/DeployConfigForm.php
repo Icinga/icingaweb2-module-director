@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\IcingaException;
-use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Core\DeploymentApiInterface;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 // use Icinga\Module\Director\Objects\DirectorDeploymentLog;
@@ -12,7 +12,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class DeployConfigForm extends QuickForm
 {
-    /** @var CoreApi */
+    /** @var DeploymentApiInterface */
     private $api;
 
     /** @var Db */
@@ -114,7 +114,7 @@ class DeployConfigForm extends QuickForm
         return $this;
     }
 
-    public function setApi(CoreApi $api)
+    public function setApi(DeploymentApiInterface $api)
     {
         $this->api = $api;
         return $this;
