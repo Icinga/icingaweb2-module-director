@@ -291,7 +291,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
      */
     protected function activateStage($stage)
     {
-        if ($this->activationScript === null || trim($this->activationScript === null) === '') {
+        if ($this->activationScript === null || trim($this->activationScript) === '') {
             // skip activation, could be done by external cron worker
             return true;
         }
