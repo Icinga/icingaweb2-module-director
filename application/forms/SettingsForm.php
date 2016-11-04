@@ -121,6 +121,15 @@ class SettingsForm extends QuickForm
             'value' => $settings->getStoredValue('deployment_mode_v1')
         ));
 
+        $this->addElement('text', 'deployment_path_v1', array(
+            'label'        => $this->translate('Deployment Path'),
+            'description'  => $this->translate(
+                'Local directory to deploy Icinga 1.x configuration.'
+                . ' Must be writable by icingaweb2.'
+                . ' (e.g. /etc/icinga/director)'
+            ),
+            'value' => $settings->getStoredValue('deployment_path_v1')
+        ));
     }
 
     protected function eventuallyConfiguredEnum($name, $enum)
