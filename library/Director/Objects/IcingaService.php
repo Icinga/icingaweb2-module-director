@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\PropertiesFilter;
@@ -174,8 +175,47 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    public function toLegacyConfigString()
+    {
+        if ($this->get('assign_filter')) {
+            return $this->renderLegacyResolvedAssignFilter();
+        }
+
+        $str = parent::toLegacyConfigString();
+
+        if (! $this->isDisabled() && $this->host_id && $this->getRelated('host')->isDisabled()) {
+            return
+                "# --- This services host has been disabled ---\n"
+                . preg_replace('~^~m', '# ', trim($str))
+                . "\n\n";
+        } else {
+            return $str;
+        }
+    }
+
+    protected function renderLegacyResolvedAssignFilter()
+    {
+        $str = '';
+        $hosts = HostApplyMatches::forFilter(
+            Filter::fromQueryString($this->get('assign_filter')),
+            $this->getConnection()
+        );
+        $this->object_type = 'object';
+        $this->assign_filter = null;
+
+        foreach ($hosts as $hostname) {
+            $this->host = $hostname;
+            $str .= $this->toLegacyConfigString();
+        }
+
+        return $str;
+    }
+
     public function toConfigString()
     {
+        if ($this->get('service_set_id')) {
+            return '';
+        }
         $str = parent::toConfigString();
 
         if (! $this->isDisabled() && $this->host_id && $this->getRelated('host')->isDisabled()) {
@@ -278,6 +318,11 @@ class IcingaService extends IcingaObject
      * @return string
      */
     public function renderUse_agent()
+    {
+        return '';
+    }
+
+    public function renderService_set()
     {
         return '';
     }

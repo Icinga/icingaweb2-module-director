@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -45,11 +46,11 @@ class IcingaServiceSet extends IcingaObject
     }
 
     /**
-     * @return IcingaService
+     * @return IcingaService[]
      */
     public function getServiceObjects()
     {
-        if ($this->host_id) {
+        if ($this->get('host_id')) {
             $imports = $this->imports()->getObjects();
             if (empty($imports)) {
                 return array();
@@ -62,7 +63,7 @@ class IcingaServiceSet extends IcingaObject
 
     protected function getServiceObjectsForSet(IcingaServiceSet $set)
     {
-        if ($set->id === null) {
+        if ($set->get('id') === null) {
             return array();
         }
 
@@ -70,7 +71,7 @@ class IcingaServiceSet extends IcingaObject
         $db = $this->getDb();
         $ids = $db->fetchCol(
             $db->select()->from('icinga_service', 'id')
-                ->where('service_set_id = ?', $set->id)
+                ->where('service_set_id = ?', $set->get('id'))
         );
 
         $services = array();
@@ -80,7 +81,7 @@ class IcingaServiceSet extends IcingaObject
                 'object_type' => 'template'
             ), $connection);
 
-            $services[$service->object_name] = $service;
+            $services[$service->getObjectName()] = $service;
         }
 
         return $services;
@@ -88,12 +89,13 @@ class IcingaServiceSet extends IcingaObject
 
     public function renderToConfig(IcingaConfig $config)
     {
-        if ($this->assign_filter === null && $this->isTemplate()) {
+        if ($this->get('assign_filter') === null && $this->isTemplate()) {
             return;
         }
 
         if ($config->isLegacy()) {
-            return $this->renderToLegacyConfig($config);
+            $this->renderToLegacyConfig($config);
+            return;
         }
 
         $file = $this->getConfigFileWithHeader($config);
@@ -103,19 +105,18 @@ class IcingaServiceSet extends IcingaObject
         // eventually clone them beforehand to not get into trouble with caches
         // figure out whether we might need a zone property
         foreach ($this->getServiceObjects() as $service) {
-            // TODO: make them REAL applies
-            if ($this->assign_filter) {
-                $service->object_type = 'apply';
-                $service->assign_filter = $this->assign_filter;
+            if ($filter = $this->get('assign_filter')) {
+                $service->set('object_type', 'apply');
+                $service->set('assign_filter', $filter);
+            } elseif ($hostId = $this->get('host_id')) {
+                $service->set('object_type', 'object');
+                $service->host_id = $this->host_id;
             } else {
-                $service->object_type = $this->object_type;
-                if ($this->isApplyRule()) {
-                    $service->assign_filter = $this->assign_filter;
-                }
+                // Service set template without assign filter or host
+                continue;
             }
 
-            $service->vars = $this->vars;
-            $service->host_id = $this->host_id;
+            $this->copyVarsToService($service);
             $file->addObject($service);
         }
     }
@@ -141,20 +142,26 @@ class IcingaServiceSet extends IcingaObject
         return sprintf($comment, $this->object_name);
     }
 
-    public function renderToLegacyConfig(IcingaConfig $config)
+    protected function copyVarsToService(IcingaService $service)
     {
-        if ($this->isTemplate()) {
-            return;
+        $serviceVars = $service->vars();
+
+        foreach ($this->vars() as $k => $var) {
+            $serviceVars->$k = $var;
         }
 
-        if ($this->isApplyRule()) {
-            // Not yet
+        return $this;
+    }
+
+    public function renderToLegacyConfig(IcingaConfig $config)
+    {
+        if ($this->assign_filter === null && $this->isTemplate()) {
             return;
         }
 
         // evaluate my assign rules once, get related hosts
         // Loop over all services belonging to this set
-        // generate every service with host_name host1,host2...
+        // generate every service with host_name host1,host2... -> not yet. And Zones?
 
         $file = $config->configFile(
             // TODO: zones.d?
@@ -162,21 +169,39 @@ class IcingaServiceSet extends IcingaObject
         );
 
         $file->prepend($this->getConfigHeaderComment($config));
+        $conn = $this->getConnection();
 
-        foreach ($this->getServiceObjects() as $service) {
-            $service->object_type = 'object';
-            $service->host_id = $this->host_id;
-            $service->vars = $this->vars;
-            $file->addLegacyObject($service);
+        // Delegating this to the service would look, but this way it's faster
+        if ($filter = $this->get('assign_filter')) {
+            $filter = Filter::fromQueryString($filter);
+            $hosts = HostApplyMatches::forFilter($filter, $conn);
+            foreach ($this->getServiceObjects() as $service) {
+                $service->set('object_type', 'object');
+                $this->copyVarsToService($service);
+
+                foreach ($hosts as $hostname) {
+                    $service->host = $hostname;
+                    $file->addLegacyObject($service);
+                }
+            }
+        } else {
+            foreach ($this->getServiceObjects() as $service) {
+                $service->set('object_type', 'object');
+                $service->set('host_id', $this->get('host_id'));
+                foreach ($this->vars() as $k => $var) {
+                    $service->$k = $var;
+                }
+                $file->addLegacyObject($service);
+            }
         }
     }
 
     public function getRenderingZone(IcingaConfig $config = null)
     {
-        if ($this->host_id === null) {
+        if ($this->get('host_id') === null) {
             return $this->connection->getDefaultGlobalZoneName();
         } else {
-            $host = $this->getRelatedObject('host', $this->host_id);
+            $host = $this->getRelatedObject('host', $this->get('host_id'));
             return $host->getRenderingZone($config);
         }
         return $zone;
