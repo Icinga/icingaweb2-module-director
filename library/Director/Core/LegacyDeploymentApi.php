@@ -17,11 +17,14 @@ class LegacyDeploymentApi implements DeploymentApiInterface
 {
     protected $db;
     protected $deploymentPath;
+    protected $activationScript;
 
     public function __construct(Db $db)
     {
         $this->db = $db;
-        $this->deploymentPath = $this->db->settings()->deployment_path_v1;
+        $settings = $this->db->settings();
+        $this->deploymentPath = $settings->deployment_path_v1;
+        $this->activationScript = $settings->activation_script_v1;
     }
 
     /**
@@ -207,9 +210,13 @@ class LegacyDeploymentApi implements DeploymentApiInterface
 
         try {
             $succeeded = $this->deployStage($stage_name, $config->getFileContents());
-            # TODO: call deployment tool
+            if ($succeeded === true) {
+                $succeeded = $this->activateStage($stage_name);
+            }
         } catch (Exception $e) {
             $deployment->set('dump_succeeded', 'n');
+            $deployment->set('startup_log', $e->getMessage());
+            $deployment->set('startup_succeeded', 'n');
             $deployment->store($db);
             throw $e;
         }
@@ -267,6 +274,36 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                 fclose($fh);
             }
 
+            return true;
+        }
+    }
+
+    /**
+     * Starts activation of
+     *
+     * Note: script should probably fork to background?
+     *
+     * @param  string  $stage  Stage to activate
+     *
+     * @return bool
+     *
+     * @throws IcingaException  For an execution error
+     */
+    protected function activateStage($stage)
+    {
+        if ($this->activationScript === null || trim($this->activationScript === null) === '') {
+            // skip activation, could be done by external cron worker
+            return true;
+        }
+        else {
+            $command = sprintf('%s %s 2>&1', escapeshellcmd($this->activationScript), escapeshellarg($stage));
+            $output = null;
+            $rc = null;
+            exec($command, $output, $rc);
+            $output = join("\n", $output);
+            if ($rc !== 0) {
+                throw new IcingaException("Activation script did exit with return code %d:\n\n%s", $rc, $output);
+            }
             return true;
         }
     }
