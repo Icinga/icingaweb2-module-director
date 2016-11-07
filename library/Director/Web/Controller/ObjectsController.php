@@ -51,6 +51,12 @@ abstract class ObjectsController extends ActionController
         $object = $this->dummyObject();
         if ($object->isGroup()) {
             $type = substr($type, 0, -5);
+            /** @var IcingaObject $baseType */
+            $baseType = $this->getObjectClassname($type);
+            $baseObject = $baseType::create(array());
+        }
+        else {
+            $baseObject = $object;
         }
 
         $tabs->add('objects', array(
@@ -66,14 +72,14 @@ abstract class ObjectsController extends ActionController
                 ));
             }
 
-            if ($object->supportsGroups() || $object->isGroup()) {
+            if ($baseObject->supportsGroups()) {
                 $tabs->add('objectgroups', array(
                     'url'   => sprintf('director/%sgroups', $type),
                     'label' => $this->translate('Groups')
                 ));
             }
 
-            if ($object->supportsSets() || $object->isGroup() /** Bullshit, need base object, wrong on users */) {
+            if ($baseObject->supportsSets()) {
                  $tabs->add('sets', array(
                       'url'    => sprintf('director/%ss/sets', $type),
                       'label' => $this->translate('Sets')
@@ -202,14 +208,23 @@ abstract class ObjectsController extends ActionController
     public function setsAction()
     {
         $this->assertPermission('director/admin');
-        $this->view->title = $this->translate('Service sets');
+
+        $dummy = $this->dummyObject();
+        $type = $this->getType();
+        $Type = ucfirst($type);
+
+        if ($dummy->supportsSets() !== true) {
+            throw new NotFoundError('Sets are not available for %s', $type);
+        }
+
+        $this->view->title = $this->translate('Icinga ' . $Type . ' Sets');
         $this->view->table = $this
-            ->loadTable('IcingaServiceSet')
+            ->loadTable('Icinga' . $Type . 'Set')
             ->setConnection($this->db());
 
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add'),
-            'director/serviceset/add',
+            'director/' . $type . 'set/add',
             null,
             array(
                 'class'            => 'icon-plus',
@@ -227,6 +242,7 @@ abstract class ObjectsController extends ActionController
     protected function dummyObject()
     {
         if ($this->dummy === null) {
+            /** @var IcingaObject $class */
             $class = $this->getObjectClassname();
             $this->dummy = $class::create(array());
             if ($this->dummy->hasProperty('object_type')) {
@@ -257,9 +273,12 @@ abstract class ObjectsController extends ActionController
         );
     }
 
-    protected function getObjectClassname()
+    protected function getObjectClassname($type = null)
     {
+        if ($type === null) {
+            $type = $this->getType();
+        }
         return 'Icinga\\Module\\Director\\Objects\\Icinga'
-            . ucfirst($this->getType());
+            . ucfirst($type);
     }
 }
