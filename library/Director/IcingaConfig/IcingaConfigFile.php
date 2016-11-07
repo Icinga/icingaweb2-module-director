@@ -45,6 +45,17 @@ class IcingaConfigFile
         return $this;
     }
 
+    public function addContent($content)
+    {
+        if ($this->content === null) {
+            $this->content = $content;
+        } else {
+            $this->content .= $content;
+        }
+        $this->checksum = null;
+        return $this;
+    }
+
     public function getObjectCount()
     {
         return $this->cntObject;

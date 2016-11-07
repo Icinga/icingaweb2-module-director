@@ -133,7 +133,11 @@ class IcingaServiceSet extends IcingaObject
     protected function getConfigHeaderComment(IcingaConfig $config)
     {
         if ($config->isLegacy()) {
-            $comment = "## Service Set '%s'\n\n";
+            if ($this->get('assign_filter')) {
+                $comment = "## applied Service Set '%s'\n\n";
+            } else {
+                $comment = "## Service Set '%s' on this host\n\n";
+            }
         } else {
             $comment = "/** Service Set '%s' **/\n\n";
         }
@@ -162,12 +166,6 @@ class IcingaServiceSet extends IcingaObject
         // Loop over all services belonging to this set
         // generate every service with host_name host1,host2... -> not yet. And Zones?
 
-        $file = $config->configFile(
-            // TODO: zones.d?
-            'zones.d/' . $this->getRenderingZone($config) . '/servicesets'
-        );
-
-        $file->prepend($this->getConfigHeaderComment($config));
         $conn = $this->getConnection();
 
         // Delegating this to the service would look, but this way it's faster
@@ -179,20 +177,39 @@ class IcingaServiceSet extends IcingaObject
                 $this->copyVarsToService($service);
 
                 foreach ($hosts as $hostname) {
+                    $file = $this->legacyHostnameServicesFile($hostname, $config);
+                    $file->addContent($this->getConfigHeaderComment($config));
                     $service->set('host', $hostname);
                     $file->addLegacyObject($service);
                 }
             }
         } else {
+
             foreach ($this->getServiceObjects() as $service) {
                 $service->set('object_type', 'object');
                 $service->set('host_id', $this->get('host_id'));
                 foreach ($this->vars() as $k => $var) {
                     $service->$k = $var;
                 }
+                $file = $this->legacyRelatedHostFile($service, $config);
+                $file->addContent($this->getConfigHeaderComment($config));
                 $file->addLegacyObject($service);
             }
         }
+    }
+
+    protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
+    {
+        return $config->configFile(
+            'director/' . IcingaHost::load($hostname, $this->getConnection())->getRenderingZone($config) . '/servicesets'
+        );
+    }
+
+    protected function legacyRelatedHostFile(IcingaService $service, IcingaConfig $config)
+    {
+        return $config->configFile(
+            'director/' . $service->getRelated('host')->getRenderingZone($config) . '/servicesets'
+        );
     }
 
     public function getRenderingZone(IcingaConfig $config = null)
