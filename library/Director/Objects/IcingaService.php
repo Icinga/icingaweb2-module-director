@@ -175,6 +175,43 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    public function renderToLegacyConfig(IcingaConfig $config)
+    {
+        if ($this->isApplyRule()) {
+            $this->renderLegacyApplyToConfig($config);
+        } else {
+            parent::renderToLegacyConfig($config);
+        }
+    }
+
+    /**
+     * @param IcingaConfig $config
+     */
+    protected function renderLegacyApplyToConfig(IcingaConfig $config)
+    {
+        $conn = $this->getConnection();
+
+        $filter = Filter::fromQueryString($this->get('assign_filter'));
+        $hosts = HostApplyMatches::forFilter($filter, $conn);
+        $this->set('object_type', 'object');
+
+        foreach ($hosts as $hostname) {
+            $file = $this->legacyHostnameServicesFile($hostname, $config);
+            $this->set('host', $hostname);
+            $file->addLegacyObject($this);
+        }
+
+        $this->set('host', null);
+        $this->set('object_type', 'apply');
+    }
+
+    protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
+    {
+        return $config->configFile(
+            'director/' . IcingaHost::load($hostname, $this->getConnection())->getRenderingZone($config) . '/service_apply'
+        );
+    }
+
     public function toLegacyConfigString()
     {
         if ($this->get('service_set_id')) {
