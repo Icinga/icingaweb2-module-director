@@ -218,7 +218,7 @@ class IcingaService extends IcingaObject
             return '';
         }
 
-        if ($this->get('assign_filter')) {
+        if ($this->get('assign_filter') !== null) {
             return $this->renderLegacyResolvedAssignFilter();
         }
 
