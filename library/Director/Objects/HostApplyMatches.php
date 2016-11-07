@@ -53,6 +53,7 @@ class HostApplyMatches
         Benchmark::measure('HostApplyMatches: prefetching');
         PrefetchCache::initialize($db);
         $all = IcingaHost::prefetchAll($db);
+        IcingaHostGroup::prefetchAll($db);
         IcingaZone::prefetchAll($db);
         IcingaCommand::prefetchAll($db);
         Benchmark::measure('HostApplyMatches: preparing flat objects');
