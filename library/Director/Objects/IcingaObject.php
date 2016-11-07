@@ -2060,12 +2060,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->isTemplate()) {
             $name = c1::renderKeyValue(
-                'name',
+                $this->getLegacyObjectKeyName(),
                 c1::renderString($this->getObjectName())
             );
         } else {
             $name = c1::renderKeyValue(
-                $type . '_name',
+                $this->getLegacyObjectKeyName(),
                 c1::renderString($this->getObjectName())
             );
         }
@@ -2081,6 +2081,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $str;
+    }
+
+    protected function getLegacyObjectKeyName()
+    {
+        if ($this->isTemplate()) {
+            return 'name';
+        } else {
+            return $this->getLegacyObjectType() . '_name';
+        }
     }
 
     /**

@@ -257,6 +257,15 @@ class IcingaService extends IcingaObject
         return parent::renderObjectHeader();
     }
 
+    protected function getLegacyObjectKeyName()
+    {
+        if ($this->isTemplate()) {
+            return 'name';
+        } else {
+            return 'service_description';
+        }
+    }
+
     protected function hasBeenAssignedToHostTemplate()
     {
         return $this->host_id && $this->getRelatedObject(
