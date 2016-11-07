@@ -15,7 +15,7 @@
 
 <div class="content<?php if ($this->compact): ?> compact<?php endif ?>"<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
 <?= $this->form ?>
-<?php if (count($table)): ?>
+<?php if ($table->count()): ?>
 <?= $this->table->render() ?>
 <?php endif ?>
 </div>

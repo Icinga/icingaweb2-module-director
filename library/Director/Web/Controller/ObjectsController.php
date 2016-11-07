@@ -138,72 +138,7 @@ abstract class ObjectsController extends ActionController
             array('class' => 'icon-plus')
         );
 
-        $filterEditor = $table->getFilterEditor($this->getRequest());
-        $filter = $filterEditor->getFilter();
-
-        if ($filter->isEmpty()) {
-
-            if ($this->params->get('modifyFilter')) {
-                $this->view->addLink .= ' ' . $this->view->qlink(
-                    $this->translate('Show unfiltered'),
-                    $this->getRequest()->getUrl()->setParams(array()),
-                    null,
-                    array(
-                        'class' => 'icon-cancel',
-                        'data-base-target' => '_self',
-                    )
-                );
-            } else {
-                $this->view->addLink .= ' ' . $this->view->qlink(
-                    $this->translate('Filter'),
-                    $this->getRequest()->getUrl()->with('modifyFilter', true),
-                    null,
-                    array(
-                        'class' => 'icon-search',
-                        'data-base-target' => '_self',
-                    )
-                );
-            }
-
-        } else {
-
-            $this->view->addLink .= ' ' . $this->view->qlink(
-                $this->shorten($filter, 32),
-                $this->getRequest()->getUrl()->with('modifyFilter', true),
-                null,
-                array(
-                    'class' => 'icon-search',
-                    'data-base-target' => '_self',
-                )
-            );
-
-            $this->view->addLink .= ' ' . $this->view->qlink(
-                $this->translate('Show unfiltered'),
-                $this->getRequest()->getUrl()->setParams(array()),
-                null,
-                array(
-                    'class' => 'icon-cancel',
-                    'data-base-target' => '_self',
-                )
-            );
-        }
-
-        if ($this->params->get('modifyFilter')) {
-            $this->view->filterEditor = $filterEditor;
-        }
-
-        if ($this->getRequest()->isApiRequest()) {
-            $objects = array();
-            foreach ($dummy::loadAll($this->db) as $object) {
-                $objects[] = $object->toPlainObject(false, true);
-            }
-            return $this->sendJson((object) array('objects' => $objects));
-        }
-
-        $this->view->table = $this->applyPaginationLimits($table);
-
-        $this->provideQuickSearch();
-
+        $this->provideFilterEditorForTable($table);
         $this->setViewScript('objects/table');
     }
 

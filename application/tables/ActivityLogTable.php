@@ -19,18 +19,27 @@ class ActivityLogTable extends QuickTable
 
     protected $isUsEnglish;
 
+    protected $searchColumns = array(
+        //'log_message'
+        'author',
+        'object_name',
+        'object_type',
+        'action',
+    );
+
     public function getColumns()
     {
         return array(
+            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
+                . " || REPLACE(l.object_type, 'icinga_', '')"
+                . " || ' \"' || l.object_name || '\"'",
+            'author'          => 'l.author',
+            'action'          => 'l.action_name',
+            'object_name'     => 'l.object_name',
+            'object_type'     => 'l.object_type',
             'id'              => 'l.id',
             'change_time'     => 'l.change_time',
             'ts_change_time'  => 'UNIX_TIMESTAMP(l.change_time)',
-            'author'          => 'l.author',
-            'action'          => 'l.action_name',
-            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
-                               . " || REPLACE(l.object_type, 'icinga_', '')"
-                               . " || ' \"' || l.object_name || '\"'",
-            'action_name'     => 'l.action_name',
         );
     }
 
@@ -69,7 +78,7 @@ class ActivityLogTable extends QuickTable
 
     protected function getRowClasses($row)
     {
-        $action = 'action-' . $row->action_name . ' ';
+        $action = 'action-' . $row->action. ' ';
 
         if ($row->id > $this->lastDeployedId) {
             return $action . 'undeployed';
@@ -115,6 +124,10 @@ class ActivityLogTable extends QuickTable
         return $this->isUsEnglish;
     }
 
+    /**
+     * @param object $row
+     * @return string
+     */
     protected function renderDayIfNew($row)
     {
         $view = $this->view();
@@ -126,7 +139,7 @@ class ActivityLogTable extends QuickTable
         }
 
         if ($this->lastDay === $day) {
-            return;
+            return '';
         }
 
         if ($this->lastDay === null) {
@@ -139,7 +152,7 @@ class ActivityLogTable extends QuickTable
             $this->columnCount = count($this->getTitles());
         }
 
-        $htm .= '<th colspan="' . $this->columnCount . '">' . $this->view()->escape($day) . '</th>' . "\n";
+        $htm .= '<th colspan="' . $this->columnCount . '">' . $view->escape($day) . '</th>' . "\n";
         if ($this->lastDay === null) {
             $htm .= "  </tr>\n";
         } else {

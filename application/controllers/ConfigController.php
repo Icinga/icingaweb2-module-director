@@ -102,12 +102,13 @@ class ConfigController extends ActionController
         $this->prepareTable('activityLog');
         $this->view->table->setLastDeployedId($lastDeployedId);
         if ($this->hasPermission('director/deploy')) {
-            $this->view->form = $this
+            $this->view->addLink = $this
                 ->loadForm('DeployConfig')
                 ->setDb($this->db())
                 ->setApi($this->api())
                 ->handleRequest();
         }
+        $this->provideFilterEditorForTable($this->view->table);
 
         $this->setViewScript('list/table');
     }
