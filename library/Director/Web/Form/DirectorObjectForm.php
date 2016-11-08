@@ -220,7 +220,7 @@ abstract class DirectorObjectForm extends QuickForm
         $resolve = $this->assertResolvedImports();
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
-                if ($key === 'imports') {
+                if ($key === 'imports' || substr($key, 0, 4) === 'var_') {
                     continue;
                 }
 
@@ -282,14 +282,21 @@ abstract class DirectorObjectForm extends QuickForm
         return $result;
     }
 
-    protected function handleCustomVars($object, & $values)
+    protected function loadFields($object)
     {
         if ($this->assertResolvedImports()) {
             $loader = $this->fieldLoader($object);
             $loader->addFieldsToForm($this);
-            if ($values) {
-                $loader->setValues($values, 'var_');
-            }
+        }
+
+        return $this;
+    }
+
+    protected function setCustomVarValues($object, & $values)
+    {
+        if ($this->assertResolvedImports()) {
+            $loader = $this->fieldLoader($object);
+            $loader->setValues($values, 'var_');
         }
 
         return $this;
@@ -580,6 +587,7 @@ abstract class DirectorObjectForm extends QuickForm
         $values = array();
 
         $object = $this->object();
+        $this->loadFields($object);
         if ($this->hasBeenSent()) {
 
             if ($this->shouldBeDeleted()) {
@@ -587,27 +595,19 @@ abstract class DirectorObjectForm extends QuickForm
             }
 
             $post = $this->getRequest()->getPost();
-            // ?? $this->populate($post);
+            $this->populate($post);
+            $values = $this->getValues();
 
-            foreach ($post as $key => $value) {
-                $el = $this->getElement($key);
-                if ($el) {
-                    if (! $el->getIgnore()) {
-                        $values[$key] = $el->setValue($value)->getValue();
-                    }
-                } elseif ($sub = $this->getSubForm($key)) {
-                    $values[$key] = $sub->populate($value)->getValues();
-                }
+            if ($object instanceof IcingaObject) {
+                $this->setCustomVarValues($object, $values);
             }
         }
 
         if ($object instanceof IcingaObject) {
-            $this->handleProperties($object, $values);
-            $this->handleCustomVars($object, $post);
             $this->handleRanges($object, $values);
-        } else {
-            $this->handleProperties($object, $values);
         }
+        $this->handleProperties($object, $values);
+
         /*
         // TODO: something like this could be used to remember unstored changes
         if ($object->hasBeenModified()) {

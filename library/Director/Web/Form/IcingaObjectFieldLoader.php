@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Exception\IcingaException;
 use stdClass;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Zend_Form_Element as ZfElement;
 
@@ -17,6 +17,9 @@ class IcingaObjectFieldLoader
     protected $fields;
 
     protected $elements;
+
+    /** @var array Map element names to variable names 'elName' => 'varName' */
+    protected $nameMap = array();
 
     public function __construct(IcingaObject $object)
     {
@@ -86,16 +89,24 @@ class IcingaObjectFieldLoader
                 }
             }
 
-            if ($el = $this->getElement($key)) {
-                $el->setValue($value);
-                $value = $el->getValue();
-
-                if ($value === '') {
-                    $value = null;
-                }
-
-                $vars->set($key, $value);
+            $varName = $this->getElementVarName($prefix . $key);
+            if ($varName === null) {
+                throw new IcingaException(
+                    'Cannot set variable value for "%s", got no such element',
+                    $key
+                );
             }
+
+            $el = $this->getElement($varName);
+            if ($el === null) {
+                throw new IcingaException('No such element %s', $key);
+            }
+
+            $value = $el->getValue();
+            if ($value === '') {
+                $value = null;
+            }
+            $vars->set($varName, $value);
         }
 
         return $this;
@@ -151,6 +162,15 @@ class IcingaObjectFieldLoader
         }
     }
 
+    protected function getElementVarName($name)
+    {
+        if (array_key_exists($name, $this->nameMap)) {
+            return $this->nameMap[$name];
+        }
+
+        return null;
+    }
+
     /**
      * Get the form element for a specific field by it's variable name
      *
@@ -176,7 +196,18 @@ class IcingaObjectFieldLoader
         $elements = array();
 
         foreach ($this->getFields() as $name => $field) {
-            $elements[$name] = $field->getFormElement($form);
+            $el = $field->getFormElement($form);
+            $elName = $el->getName();
+            if (array_key_exists($elName, $this->nameMap)) {
+                $form->addErrorMessage(sprintf(
+                    'Form element name collision, "%s" resolves to "%s", but this is also used for "%s"',
+                    $name,
+                    $elName,
+                    $this->nameMap[$elName]
+                ));
+            }
+            $this->nameMap[$elName] = $name;
+            $elements[$name] = $el;
         }
 
         return $elements;

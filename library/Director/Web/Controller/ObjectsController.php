@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Data\Filter\FilterChain;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -9,6 +11,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
 abstract class ObjectsController extends ActionController
 {
+    /** @var IcingaObject */
     protected $dummy;
 
     protected $isApified = true;
@@ -156,8 +159,11 @@ abstract class ObjectsController extends ActionController
         $dummy = $this->dummyObject();
         $objects = array();
         $db = $this->db();
+        /** @var $filter FilterChain */
         foreach ($filter->filters() as $sub) {
+            /** @var $sub FilterChain */
             foreach ($sub->filters() as $ex) {
+                /** @var $ex FilterChain|FilterExpression */
                 if ($ex->isExpression() && $ex->getColumn() === 'name') {
                     $name = $ex->getExpression();
                     $objects[$name] = $dummy::load($name, $db);
@@ -215,6 +221,9 @@ abstract class ObjectsController extends ActionController
         $this->setViewScript('objects/table');
     }
 
+    /**
+     * @return IcingaObject
+     */
     protected function dummyObject()
     {
         if ($this->dummy === null) {
