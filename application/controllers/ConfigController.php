@@ -189,16 +189,19 @@ class ConfigController extends ActionController
             'url'       => $this->getRequest()->getUrl(),
         ))->activate('file');
 
-        if ($fileOnly) {
-            $tabs->remove('config');
-            if ($tabs->has('deployment')) {
-                $tabs->remove('deployment');
-            }
+        $params = $this->getConfigTabParams();
+        if ('deployment' === $this->params->get('backTo')) {
+            $this->view->addLink = $this->view->qlink(
+                $this->translate('back'),
+                'director/deployment',
+                array('id' => $params['deployment_id']),
+                array('class' => 'icon-left-big')
+            );
         } else {
             $this->view->addLink = $this->view->qlink(
                 $this->translate('back'),
                 'director/config/files',
-                $this->getConfigTabParams(),
+                $params,
                 array('class' => 'icon-left-big')
             );
         }

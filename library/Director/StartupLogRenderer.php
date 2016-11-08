@@ -78,7 +78,7 @@ class StartupLogRenderer
             'config_checksum' => $deploymentLog->getConfigHexChecksum(),
             'deployment_id'   => $deploymentLog->get('id'),
             'file_path'       => $filename,
-            'fileOnly'        => true,
+            'backTo'          => 'deployment'
         );
         if ($lineNumber !== null) {
             $params['highlight'] = $lineNumber;
@@ -90,7 +90,6 @@ class StartupLogRenderer
             'director/config/file',
             $params,
             array(
-                'data-base-target' => '_next',
                 'title' => $stageDir . $filename
             )
         ) . $suffix;
