@@ -97,7 +97,11 @@ class ShowController extends ActionController
 
         $oldConfig = $this->oldConfig($entry);
         $newConfig = $this->newConfig($entry);
+        $this->showConfigDiff($oldConfig, $newConfig);
+    }
 
+    protected function showConfigDiff(IcingaConfig $oldConfig, IcingaConfig $newConfig)
+    {
         $oldFilenames = $oldConfig->getFileNames();
         $newFilenames = $newConfig->getFileNames();
 
@@ -130,14 +134,14 @@ class ShowController extends ActionController
     {
         $this->view->title = sprintf('%s former config', $entry->object_name);
         $this->getTabs()->activate('old');
-        $this->showConfig($this->oldConfig($entry));
+        $this->showConfigDiff($this->oldConfig($entry), new IcingaConfig($this->db()));
     }
 
     protected function showNew($entry)
     {
         $this->view->title = sprintf('%s new config', $entry->object_name);
         $this->getTabs()->activate('new');
-        $this->showConfig($this->newConfig($entry));
+        $this->showConfigDiff(new IcingaConfig($this->db()), $this->newConfig($entry));
     }
 
     protected function oldObject($entry)
@@ -158,18 +162,6 @@ class ShowController extends ActionController
             $entry->object_type,
             $entry->new_properties
         );
-    }
-
-    protected function showConfig(IcingaConfig $config)
-    {
-        $this->view->diffs = array();
-        foreach ($config->getFileNames() as $filename) {
-            $this->view->diffs[$filename] = sprintf(
-                '<pre>%s</pre>',
-                $this->view->escape($config->getFile($filename)->getContent())
-            );
-        }
-        return $this;
     }
 
     protected function showInfo($entry)
