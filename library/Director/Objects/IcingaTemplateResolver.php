@@ -379,7 +379,10 @@ class IcingaTemplateResolver
         $parentNames = $object->imports;
         self::$nameIdx[$object->object_name] = $parentNames;
         if ($object->hasBeenLoadedFromDb()) {
-            self::$idIdx[$object->getId()] = $this->getIdsForNames($parentNames);
+            $id = $object->getId();
+            if (! is_array($id)) {
+                self::$idIdx[$id] = $this->getIdsForNames($parentNames);
+            }
         }
         return $this;
     }
