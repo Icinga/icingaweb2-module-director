@@ -10,6 +10,8 @@ class IcingaServiceSetForm extends DirectorObjectForm
 {
     protected $host;
 
+    protected $listUrl = 'director/services/sets';
+
     public function setup()
     {
         if ($this->host === null) {
