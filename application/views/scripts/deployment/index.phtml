@@ -3,58 +3,91 @@
 use Icinga\Util\Format;
 
 $view = $this;
-$logLink = function ($match) use ($view) {
+$logLink = function ($match, $severity) use ($view) {
+    $stageDir = $match[1];
+    $filename = $match[2];
+    $suffix = $match[3];
+    if (preg_match('/(\d+).*/', $suffix, $m)) {
+        $lineNumber = $m[1];
+    } else {
+        $lineNumber = null;
+    }
 
     $params = array(
         'config_checksum'   => $view->config_checksum,
-        'file_path'         => $match[4],
+        'file_path'         => $filename,
         'deployment_id'     => $view->deployment->id,
         'fileOnly'          => true,
     );
-    if (isset($match[5])) {
-        $params['highlight']           = $match[5];
-		$params['highlightSeverity']   = $match[1];
-        $suffix = ': ' . $match[5];
-    } else {
-        $suffix = '';
+    if ($lineNumber !== null) {
+        $params['highlight']         = $lineNumber;
+        $params['highlightSeverity'] = $severity;
     }
 
-    return sprintf(
-        '>%s%s',
-        $match[1] . $match[2],
-        $view->qlink(
-            $match[3] . $match[4],
-            'director/config/file',
-            $params,
-            array('data-base-target' => '_next')
+    return $view->qlink(
+        '[stage]/' . $filename,
+        'director/config/file',
+        $params,
+        array(
+            'data-base-target' => '_next',
+            'title'            => $stageDir . $filename
         )
     ) . $suffix;
 };
 
 function colorize($log, $logLink) {
-    $log = preg_replace(
-        '/^(debug|notice|information|warning|critical)\/(\w+)/m',
-        '<span class="loglevel \1">\1</span>/<span class="application">\2</span>',
-        $log
-    );
 
-    $log = preg_replace('/([\^]{2,})/', '<span class="error-hint">\1</span>', $log);
+    $lines = array();
+    $severity = 'information';
+    $sevPattern = '/^(debug|notice|information|warning|critical)\/(\w+)/';
+    $filePatternHint = '~(/[\w/]+/api/packages/director/[^/]+/)([^:]+\.conf)(: (\d+))~';
+    $filePatternDetail = '~(/[\w/]+/api/packages/director/[^/]+/)([^:]+\.conf)(\((\d+)\))~';
+    $markPattern = null;
+    // len [stage] + 1
+    $markReplace = '        ^';
+    foreach (preg_split('/\n/', $log) as $line) {
+        if (preg_match($sevPattern, $line, $m)) {
+            $severity = $m[1];
+            $line = preg_replace(
+                $sevPattern,
+                '<span class="loglevel \1">\1</span>/<span class="application">\2</span>',
+                $line
+            );
+        }
 
-    $log = preg_replace_callback(
-        '~\>(information)(\<.+ )'
-        . '(/.+?/api/packages/director/[^/]+/)([^:]+\.conf)$~m',
-        $logLink,
-        $log
-    );
+        if ($markPattern !== null) {
+            $line = preg_replace($markPattern, $markReplace, $line);
+        }
+        $line = preg_replace('/([\^]{2,})/', '<span class="error-hint">\1</span>', $line);
+        $markPattern = null;
 
-    $log = preg_replace_callback(
-        '~\>(critical|warning)(\<[^\n]+?\n?[^\n]+?in )'
-        . '(/.+?/api/packages/director/[^/]+/)([^:]+\.conf): (\d+)~m',
-        $logLink,
-        $log
-    );
+        if (preg_match($filePatternHint, $line, $m)) {
+            $line = preg_replace_callback(
+                $filePatternHint,
+                function ($matches) use ($logLink, $severity) {
+                    return $logLink($matches, $severity);
+                },
+                $line
+            );
+            $line = preg_replace('/\(in/', "\n  (in", $line);
+            $line = preg_replace('/\), new declaration/', "),\n  new declaration", $line);
+        } elseif (preg_match($filePatternDetail, $line, $m)) {
+            $markIndent = strlen($m[1]);
+            $markPattern = '/\s{' . $markIndent . '}\^/';
 
-    return $log;
+            $line = preg_replace_callback(
+                $filePatternDetail,
+                function ($matches) use ($logLink, $severity) {
+                    return $logLink($matches, $severity);
+                },
+                $line
+            );
+        }
+
+
+        $lines[] .= $line;
+    }
+    return implode("\n", $lines);
 }
 
 ?><div class="controls">
