@@ -97,13 +97,17 @@ class IcingaServiceSet extends IcingaObject
             return;
         }
 
+        $services = $this->getServiceObjects();
+        if (empty($services)) {
+            return;
+        }
         $file = $this->getConfigFileWithHeader($config);
 
         // Loop over all services belonging to this set
         // add our assign rules and then add the service to the config
         // eventually clone them beforehand to not get into trouble with caches
         // figure out whether we might need a zone property
-        foreach ($this->getServiceObjects() as $service) {
+        foreach ($services as $service) {
             if ($filter = $this->get('assign_filter')) {
                 $service->set('object_type', 'apply');
                 $service->set('assign_filter', $filter);
