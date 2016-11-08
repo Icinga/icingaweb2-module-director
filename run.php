@@ -1,6 +1,8 @@
 <?php
 
-use Icinga\Application\Icinga;
+use Icinga\Module\Director\ClassLoader;
+
+/** @var \Icinga\Application\Modules\Module $this */
 
 $prefix = '\\Icinga\\Module\\Director\\';
 
@@ -44,3 +46,6 @@ $this->provideHook('director/Job', $prefix . 'Job\\ImportJob');
 $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
 
 $this->provideHook('cube/ActionLinks', 'CubeLinks');
+
+$loader = new ClassLoader(__DIR__);
+$loader->register();

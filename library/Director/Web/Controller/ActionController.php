@@ -11,10 +11,9 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
-use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Form\QuickBaseForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Web\Table\QuickTable;
-use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\Widget;
@@ -98,9 +97,16 @@ abstract class ActionController extends Controller
      */
     public function loadForm($name)
     {
-        $form = FormLoader::load($name, $this->Module());
+        $class = '\\Icinga\\Module\\Director\\Forms\\' . ucfirst($name) . 'Form';
+
+        $options = array();
+        $options['icingaModule'] = $this->Module();
+
+        /** @var QuickBaseForm $form */
+        $form = new $class($options);
         if ($this->getRequest()->isApiRequest()) {
             // TODO: Ask form for API support?
+            /** @var QuickForm $form */
             $form->setApiRequest();
         }
 
@@ -114,7 +120,8 @@ abstract class ActionController extends Controller
      */
     public function loadTable($name)
     {
-        return TableLoader::load($name, $this->Module());
+        $class = '\\Icinga\\Module\\Director\\Tables\\' . ucfirst($name) . 'Table';
+        return new $class();
     }
 
     protected function sendJson($object)
