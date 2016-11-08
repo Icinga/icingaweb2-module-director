@@ -56,6 +56,7 @@ class InspectController extends ActionController
     public function typeAction()
     {
         $typeName = $this->params->get('name');
+        $this->singleTab($this->translate('Inspect - object list'));
         $this->view->title = sprintf(
             $this->translate('Object type "%s"'),
             $typeName
@@ -75,6 +76,7 @@ class InspectController extends ActionController
 
     public function objectAction()
     {
+        $this->singleTab($this->translate('Object Inspection'));
         $this->view->object = $this->api()->getObject(
             $this->params->get('name'),
             $this->params->get('plural')

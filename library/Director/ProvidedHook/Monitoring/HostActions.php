@@ -24,30 +24,27 @@ class HostActions extends HostActionsHook
 
     protected function getThem(Host $host)
     {
+        $actions = array();
         $db = $this->db();
         if (! $db) {
-            return array();
-        }
-
-        if (IcingaHost::exists($host->host_name, $db)) {
-            $actions = array(
-                'Modify' => Url::fromPath(
-                    'director/host/edit',
-                    array('name' => $host->host_name)
-                )
-            );
-
-            if (Util::hasPermission('director/inspect')) {
-                $actions['Inspect'] = Url::fromPath(
-                    'director/inspect/object',
-                    array('type' => 'host', 'plural' => 'hosts', 'name' => $host->host_name)
-                );
-            }
-
             return $actions;
-        } else {
-            return array();
         }
+        $hostname = $host->host_name;
+        if (Util::hasPermission('director/inspect')) {
+            $actions['Inspect'] = Url::fromPath(
+                'director/inspect/object',
+                array('type' => 'host', 'plural' => 'hosts', 'name' => $hostname)
+            );
+        }
+
+        if (IcingaHost::exists($hostname, $db)) {
+            $actions['Modify'] = Url::fromPath(
+                'director/host/edit',
+                array('name' => $hostname)
+            );
+        }
+
+        return $actions;
     }
 
     protected function db()
