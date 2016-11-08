@@ -23,21 +23,21 @@
             $links[] = $this->qlink(
                 sprintf('%d created', $run->objects_created),
                 $activityUrl,
-                array('action_name' => 'create')
+                array('action' => 'create')
             );
         }
         if ($run->objects_modified > 0) {
             $links[] = $this->qlink(
                 sprintf('%d modified', $run->objects_modified),
                 $activityUrl,
-                array('action_name' => 'modify')
+                array('action' => 'modify')
             );
         }
         if ($run->objects_deleted > 0) {
             $links[] = $this->qlink(
                 sprintf('%d deleted', $run->objects_deleted),
                 $activityUrl,
-                array('action_name' => 'delete')
+                array('action' => 'delete')
             );
         }
 
