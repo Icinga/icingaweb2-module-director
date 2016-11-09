@@ -282,6 +282,29 @@ class SyncRule extends DbObject
 
                     $this->destinationKeyPattern = '${host}!${object_name}';
                 }
+            } elseif ($this->get('object_type') === 'serviceSet') {
+                $hasHost = false;
+                $hasObjectName = false;
+
+                foreach ($this->getSyncProperties() as $key => $property) {
+                    if ($property->destination_field === 'host') {
+                        $hasHost = $property->source_expression;
+                    }
+                    if ($property->destination_field === 'object_name') {
+                        $hasObjectName = $property->source_expression;
+                    }
+                }
+
+                if ($hasHost !== false && $hasObjectName !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasHost,
+                        $hasObjectName
+                    );
+
+                    $this->destinationKeyPattern = '${host}!${object_name}';
+                }
             } elseif ($this->get('object_type') === 'datalistEntry') {
                 $hasList = false;
                 $hasName = false;
