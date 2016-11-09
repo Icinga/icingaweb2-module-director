@@ -122,7 +122,8 @@ class IcingaServiceTable extends QuickTable
             'i.service_id = s.id',
             array()
         )->where('i.parent_service_id = ?', $id)
-        ->where('s.object_type = ?', 'apply');
+        ->where('s.object_type = ?', 'apply')
+        ->where('s.service_set_id IS NULL');
 
         return $db->fetchAll($query);
     }
