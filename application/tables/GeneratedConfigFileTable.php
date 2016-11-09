@@ -8,6 +8,8 @@ class GeneratedConfigFileTable extends QuickTable
 {
     protected $deploymentId;
 
+    protected $activeFile;
+
     public function getColumns()
     {
         $columns = array(
@@ -27,6 +29,21 @@ class GeneratedConfigFileTable extends QuickTable
         }
 
         return $columns;
+    }
+
+    public function setActiveFilename($filename)
+    {
+        $this->activeFile = $filename;
+        return $this;
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->file_path === $this->activeFile) {
+            return 'active';
+        }
+
+        return parent::getRowClasses($row);
     }
 
     protected function getActionUrl($row)

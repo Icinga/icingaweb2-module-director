@@ -22,10 +22,12 @@ class ConfigController extends ActionController
     public function deploymentsAction()
     {
         $this->assertPermission('director/deploy');
-        $this->setAutorefreshInterval(5);
         try {
             if ($this->db()->hasUncollectedDeployments()) {
+                $this->setAutorefreshInterval(5);
                 $this->api()->collectLogFiles($this->db());
+            } else {
+                $this->setAutorefreshInterval(10);
             }
         } catch (Exception $e) {
             // No problem, Icinga might be reloading
@@ -132,7 +134,6 @@ class ConfigController extends ActionController
     {
         $this->assertPermission('director/showconfig');
 
-        $this->setAutorefreshInterval(10);
         $this->view->title = $this->translate('Generated config');
         $tabs = $this->getTabs();
 
@@ -163,6 +164,7 @@ class ConfigController extends ActionController
 
         $this->view->table = $this
             ->loadTable('GeneratedConfigFile')
+            ->setActiveFilename($this->params->get('active_file'))
             ->setConnection($this->db())
             ->setConfigChecksum($checksum);
 
@@ -180,7 +182,7 @@ class ConfigController extends ActionController
     public function fileAction()
     {
         $this->assertPermission('director/showconfig');
-
+        $filename = $this->view->filename = $this->params->get('file_path');
         $fileOnly = $this->params->get('fileOnly');
         $this->view->highlight = $this->params->get('highlight');
         $this->view->highlightSeverity = $this->params->get('highlightSeverity');
@@ -198,6 +200,7 @@ class ConfigController extends ActionController
                 array('class' => 'icon-left-big')
             );
         } else {
+            $params['active_file'] = $filename;
             $this->view->addLink = $this->view->qlink(
                 $this->translate('back'),
                 'director/config/files',
@@ -207,7 +210,6 @@ class ConfigController extends ActionController
         }
 
         $this->view->config = IcingaConfig::load(Util::hex2binary($this->params->get('config_checksum')), $this->db());
-        $filename = $this->view->filename = $this->params->get('file_path');
         $this->view->title = sprintf(
             $this->translate('Config file "%s"'),
             $filename
@@ -338,7 +340,7 @@ class ConfigController extends ActionController
         if ($this->hasPermission('director/deploy') && $deploymentId = $this->params->get('deployment_id')) {
             $tabs->add('deployment', array(
                 'label'     => $this->translate('Deployment'),
-                'url'       => 'director/deployment/show',
+                'url'       => 'director/deployment',
                 'urlParams' => array(
                     'id' => $deploymentId
                 )

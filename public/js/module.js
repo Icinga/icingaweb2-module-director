@@ -240,6 +240,7 @@
             this.putFocusOnFirstObjectTypeElement($container);
             this.highlightFormErrors($container);
             this.scrollHighlightIntoView($container);
+            this.scrollActiveRowIntoView($container);
             this.hideInactiveFormDescriptions($container);
             if (iid = $container.data('activeExtensibleEntry')) {
                 $('#' + iid).focus();
@@ -272,6 +273,16 @@
               $container.animate({
                 scrollTop: $hl.offset().top - $content.offset().top
               }, 700);
+            }
+        },
+
+        scrollActiveRowIntoView: function ($container) {
+            $tr = $container.find('table.table-row-selectable > tbody > tr.active');
+            $content = $container.find('> div.content');
+            if ($tr.length) {
+                $container.animate({
+                    scrollTop: $tr.offset().top - $content.offset().top
+                }, 500);
             }
         },
 
