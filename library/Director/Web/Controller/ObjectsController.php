@@ -8,6 +8,8 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Table\IcingaObjectTable;
+use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Web\Widget\FilterEditor;
 
 abstract class ObjectsController extends ActionController
 {
@@ -218,9 +220,7 @@ abstract class ObjectsController extends ActionController
         }
 
         $this->view->title = $this->translate('Icinga ' . $Type . ' Sets');
-        $this->view->table = $this
-            ->loadTable('Icinga' . $Type . 'Set')
-            ->setConnection($this->db());
+        $table = $this->loadTable('Icinga' . $Type . 'Set')->setConnection($this->db());
 
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add'),
@@ -232,6 +232,7 @@ abstract class ObjectsController extends ActionController
             )
         );
 
+        $this->provideFilterEditorForTable($table);
         $this->getTabs()->activate('sets');
         $this->setViewScript('objects/table');
     }
