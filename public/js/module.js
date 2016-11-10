@@ -20,7 +20,8 @@
              */
             this.module.on('rendered', this.rendered);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
-            this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
+            // Disabled
+            // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
             this.module.on('focus', 'form input', this.formElementFocus);
             this.module.on('focus', 'form textarea', this.formElementFocus);
@@ -28,11 +29,13 @@
             this.module.icinga.logger.debug('Director module initialized');
         },
 
+        /**
+         * Caused problems with differing tabs, should not be used
+         *
+         * @deprecated
+         */
         detailTabClick: function(ev)
         {
-            // Temporarily disabled
-            return;
-
             var $a = $(ev.currentTarget);
             if ($a.closest('#col2').length === 0) {
                 return;
@@ -41,18 +44,20 @@
             this.alignDetailLinks();
         },
 
+        /**
+         * Caused problems with differing tabs, should not be used
+         *
+         * @deprecated
+         */
         alignDetailLinks: function()
         {
-            // Temporarily disabled
-            return;
-
             var self = this;
-            var $a = $('#col2 div.controls ul.tabs li.active a');
+            var $a = $('#col2').find('div.controls ul.tabs li.active a');
             if ($a.length !== 1) {
                 return;
             }
 
-            var $leftTable = $('#col1 div.content').find('table.icinga-objects');
+            var $leftTable = $('#col1').find('> div.content').find('table.icinga-objects');
             if ($leftTable.length !== 1) {
                 return;
             }
@@ -98,10 +103,11 @@
 
         extensibleSetAction: function(ev)
         {
+            var iid, $li, $prev, $next;
             var el = ev.currentTarget;
             if (el.name.match(/__MOVE_UP$/)) {
-                var $li = $(el).closest('li');
-                var $prev = $li.prev();
+                $li = $(el).closest('li');
+                $prev = $li.prev();
                 // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
                     if (iid = $prev.find('input[type=text]').attr('id')) {
@@ -118,8 +124,8 @@
                 ev.stopPropagation();
                 return false;
             } else if (el.name.match(/__MOVE_DOWN$/)) {
-                var $li = $(el).closest('li');
-                var $next = $li.next();
+                $li = $(el).closest('li');
+                $next = $li.next();
                 // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
                     if (iid = $next.find('input[type=text]').attr('id')) {
@@ -138,13 +144,13 @@
             } else if (el.name.match(/__MOVE_REMOVE$/)) {
                 // TODO: skipping for now, wasn't able to prevent web2 form
                 //       submission once removed
-                return;
-
+                /*
                 var $li = $(el).closest('li').remove();
                 this.fixRelatedActions($li.closest('ul'));
                 ev.preventDefault();
                 ev.stopPropagation();
                 return false;
+                */
             }
         },
 
@@ -234,6 +240,7 @@
         },
 
         rendered: function(ev) {
+            var iid;
             var $container = $(ev.currentTarget);
             this.restoreContainerFieldsets($container);
             this.backupAllExtensibleSetDefaultValues($container);
@@ -246,7 +253,8 @@
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
-            this.alignDetailLinks();
+            // Disabled for now
+            // this.alignDetailLinks();
         },
 
         restoreContainerFieldsets: function($container)
@@ -266,8 +274,8 @@
         },
 
         scrollHighlightIntoView: function ($container) {
-            $hl = $container.find('.highlight');
-            $content = $container.find('> div.content');
+            var $hl = $container.find('.highlight');
+            var $content = $container.find('> div.content');
 
             if ($hl.length) {
               $container.animate({
@@ -277,8 +285,8 @@
         },
 
         scrollActiveRowIntoView: function ($container) {
-            $tr = $container.find('table.table-row-selectable > tbody > tr.active');
-            $content = $container.find('> div.content');
+            var $tr = $container.find('table.table-row-selectable > tbody > tr.active');
+            var $content = $container.find('> div.content');
             if ($tr.length) {
                 $container.animate({
                     scrollTop: $tr.offset().top - $content.offset().top
@@ -300,7 +308,6 @@
 
         restoreFieldsets: function(idx, form) {
             var $form = $(form);
-            var formId = $form.attr('id');
             var self = this;
 
             $('fieldset', $form).each(function(idx, fieldset) {
