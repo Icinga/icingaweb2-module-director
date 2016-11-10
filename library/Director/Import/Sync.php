@@ -349,7 +349,10 @@ class Sync
             ) as $object) {
 
                 if ($object instanceof IcingaService) {
-                    if (! $object->host_id) {
+                    if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
+                        continue;
+                    }
+                    elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
                         continue;
                     }
                 }
