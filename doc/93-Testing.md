@@ -183,7 +183,6 @@ echo "VACUUM FREEZE" | su - postgres -c psql template1
 su - postgres -c 'createuser -a -d gitlab-runner'
 
 # Register the runner with your Gitlab installation
-```sh
 gitlab-ci-multi-runner register -n \
   -r "$REGISTRATION_TOKEN" \
   --executor shell \
@@ -210,7 +209,6 @@ DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -q -y \
 su - postgres -c 'createuser -a -d gitlab-runner'
 
 # Register the runner with your Gitlab installation
-```sh
 gitlab-ci-multi-runner register -n \
   -r "$REGISTRATION_TOKEN" \
   --executor shell \
@@ -243,7 +241,6 @@ mysql -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE User='roo
 su - postgres -c 'createuser -a -d gitlab-runner'
 
 # Register the runner with your Gitlab installation
-```sh
 gitlab-ci-multi-runner register -n \
   -r "$REGISTRATION_TOKEN" \
   --executor shell \
