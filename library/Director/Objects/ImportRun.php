@@ -12,6 +12,9 @@ class ImportRun extends DbObject
 
     protected $autoincKeyName = 'id';
 
+    /** @var ImportSource */
+    protected $importSource = null;
+
     protected $defaultProperties = array(
         'id'              => null,
         'source_id'       => null,
@@ -124,5 +127,13 @@ class ImportRun extends DbObject
         }
 
         return $result;
+    }
+
+    public function importSource()
+    {
+        if ($this->importSource === null) {
+            $this->importSource = ImportSource::load($this->get('source_id'), $this->connection);
+        }
+        return $this->importSource;
     }
 }
