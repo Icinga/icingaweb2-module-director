@@ -13,13 +13,13 @@ class IcingaServiceSetTable extends IcingaObjectTable
     public function getColumns()
     {
         return array(
-            'id'          => 'sset.id',
-            'name'        => 'sset.object_name',
-            'object_type' => 'sset.object_type',
-            'assign_filter' => 'sset.assign_filter',
-            'description' => 'sset.description',
-            'count_hosts' => 'count(ssetobj.id)',
-            'count_services' => 'count(s.id)',
+            'id'             => 'sset.id',
+            'name'           => 'sset.object_name',
+            'object_type'    => 'sset.object_type',
+            'assign_filter'  => 'sset.assign_filter',
+            'description'    => 'sset.description',
+            'count_hosts'    => 'count(distinct ssetobj.id)',
+            'count_services' => 'count(distinct s.id)',
         );
     }
 

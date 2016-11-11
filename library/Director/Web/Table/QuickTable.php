@@ -16,6 +16,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
+use Icinga\Web\View;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
 use stdClass;
@@ -314,6 +315,9 @@ abstract class QuickTable implements Paginatable
         return $htm . "</tbody>\n</table>\n";
     }
 
+    /**
+     * @return View
+     */
     protected function view()
     {
         if ($this->view === null) {
