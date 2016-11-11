@@ -177,7 +177,10 @@ class IcingaService extends IcingaObject
 
     public function renderToLegacyConfig(IcingaConfig $config)
     {
-        if ($this->isApplyRule()) {
+        if ($this->get('service_set_id') !== null) {
+            return;
+        }
+        else if ($this->isApplyRule()) {
             $this->renderLegacyApplyToConfig($config);
         } else {
             parent::renderToLegacyConfig($config);
@@ -214,7 +217,7 @@ class IcingaService extends IcingaObject
 
     public function toLegacyConfigString()
     {
-        if ($this->get('service_set_id')) {
+        if ($this->get('service_set_id') !== null) {
             return '';
         }
 
