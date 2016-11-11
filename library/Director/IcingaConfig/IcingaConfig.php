@@ -684,11 +684,10 @@ apply Service for (title => params in host.vars["%s"]) {
                     $this->zoneMap[$object->get('id')] = $object->getObjectName();
                 }
             }
-
             $object->renderToConfig($this);
         }
 
-        Benchmark::measure(sprintf('%ss done', $type, count($objects)));
+        Benchmark::measure(sprintf('%ss done', $type));
         return $this;
     }
 
