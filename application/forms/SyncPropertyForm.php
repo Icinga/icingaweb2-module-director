@@ -160,14 +160,16 @@ class SyncPropertyForm extends DirectorObjectForm
 
         if ($destination === 'import') {
             $funcTemplates = 'enum' . ucfirst($this->rule->get('object_type')) . 'Templates';
-            $templates = $this->db->$funcTemplates();
-            if (! empty($templates)) {
-                $templates = array_combine($templates, $templates);
-            }
+            if (method_exists($this->db, $funcTemplates)) {
+                $templates = $this->db->$funcTemplates();
+                if (! empty($templates)) {
+                    $templates = array_combine($templates, $templates);
+                }
 
-            $importTitle = $this->translate('Existing templates');
-            $columns[$importTitle] = $templates;
-            natsort($columns[$importTitle]);
+                $importTitle = $this->translate('Existing templates');
+                $columns[$importTitle] = $templates;
+                natsort($columns[$importTitle]);
+            }
         }
 
         $xpTitle = $this->translate('Expert mode');

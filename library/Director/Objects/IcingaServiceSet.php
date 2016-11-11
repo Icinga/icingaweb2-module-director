@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 
@@ -41,6 +42,26 @@ class IcingaServiceSet extends IcingaObject
     public function supportsAssignments()
     {
         return true;
+    }
+
+    protected function setKey($key)
+    {
+        if (is_int($key)) {
+            $this->id = $key;
+        } elseif (is_string($key)) {
+            $keyComponents = preg_split('~!~', $key);
+            if (count($keyComponents) === 1) {
+                $this->set('object_name', $keyComponents[0]);
+                $this->set('object_type', 'template');
+            }
+            else {
+                throw new IcingaException('Can not parse key: %s', $key);
+            }
+        } else {
+            return parent::setKey($key);
+        }
+
+        return $this;
     }
 
     /**
