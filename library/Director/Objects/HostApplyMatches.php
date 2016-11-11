@@ -48,8 +48,19 @@ class HostApplyMatches
         return self::$flatObjects;
     }
 
+    protected static function raiseLimits()
+    {
+        // Raise limits. TODO: do this in a failsafe way, and only if necessary
+        // Note: IcingaConfig also raises the limit for generation, **but** we need the higher limit for preview.
+        if ((string) ini_get('memory_limit') !== '-1') {
+            ini_set('memory_limit', '1024M');
+        }
+    }
+
     protected static function fetchFlatObjects(Db $db)
     {
+        self::raiseLimits();
+
         Benchmark::measure('HostApplyMatches: prefetching');
         PrefetchCache::initialize($db);
         $all = IcingaHost::prefetchAll($db);
