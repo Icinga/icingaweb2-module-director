@@ -24,6 +24,11 @@ class ServicesetController extends ObjectController
                 'urlParams' => array('name' => $this->object->object_name),
                 'label'     => 'Services'
             ));
+            $tabs->add('hosts', array(
+                'url'       => 'director/serviceset/hosts',
+                'urlParams' => array('name' => $this->object->object_name),
+                'label'     => 'Hosts'
+            ));
         }
     }
 
@@ -68,6 +73,26 @@ class ServicesetController extends ObjectController
         );
 
         $this->view->table = $this->loadTable('IcingaServiceSetService')
+            ->setServiceSet($set)
+            ->setConnection($db);
+
+        $this->setViewScript('objects/table');
+    }
+
+    public function hostsAction()
+    {
+        $db = $this->db();
+        $set = $this->object;
+
+        $this->view->stayHere = true;
+
+        $this->getTabs()->activate('hosts');
+        $this->view->title = sprintf(
+            $this->translate('Hosts using this set: %s'),
+            $set->object_name
+        );
+
+        $this->view->table = $table = $this->loadTable('IcingaServiceSetHost')
             ->setServiceSet($set)
             ->setConnection($db);
 
