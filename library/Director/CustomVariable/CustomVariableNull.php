@@ -40,7 +40,7 @@ class CustomVariableNull extends CustomVariable
         return $this;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
         return 'null';
     }

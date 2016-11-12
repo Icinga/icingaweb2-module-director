@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Exception;
 
@@ -80,6 +81,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
     abstract public function setValue($value);
 
     abstract public function getValue();
+
+    abstract public function toConfigString($renderExpressions = false);
 
     public function isNew()
     {

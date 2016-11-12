@@ -69,9 +69,14 @@ class CustomVariableArray extends CustomVariable
         return $this;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
-        return c::renderArray($this->value);
+        $parts = array();
+        foreach ($this->value as $k => $v) {
+            $parts[] = $v->toConfigString($renderExpressions);
+        }
+
+        return c::renderEscapedArray($parts);
     }
 
     public function __clone()

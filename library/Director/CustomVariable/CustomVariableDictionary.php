@@ -109,8 +109,9 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         return $this->value[$key];
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
+        // TODO
         return c::renderDictionary($this->value);
     }
 

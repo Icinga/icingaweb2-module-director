@@ -41,7 +41,7 @@ class CustomVariableBoolean extends CustomVariable
         return $this;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
         return $this->value ? 'true' : 'false';
     }

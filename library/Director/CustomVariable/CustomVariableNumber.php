@@ -57,7 +57,7 @@ class CustomVariableNumber extends CustomVariable
         return $this;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
         if (is_int($this->value)) {
             return (string) $this->value;

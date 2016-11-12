@@ -123,15 +123,20 @@ class IcingaConfigHelper
                 $data[] = self::renderString($entry);
             }
         }
-        $str = '[ ' . implode(', ', $data) . ' ]';
+
+        return static::renderEscapedArray($data);
+    }
+
+    public static function renderEscapedArray($array)
+    {
+        $str = '[ ' . implode(', ', $array) . ' ]';
 
         if (strlen($str) < 60) {
             return $str;
         }
 
         // Prefix for toConfigString?
-        return "[\n    " . implode(",\n    ", $data) . "\n]";
-
+        return "[\n    " . implode(",\n    ", $array) . "\n]";
     }
 
     public static function renderDictionary($dictionary)
