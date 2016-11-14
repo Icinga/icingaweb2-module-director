@@ -103,7 +103,7 @@ class IcingaService extends IcingaObject
 
     public function getCheckCommand()
     {
-        $id = $this->getResolvedProperty('check_command_id');
+        $id = $this->getSingleResolvedProperty('check_command_id');
         return IcingaCommand::loadWithAutoIncId(
             $id,
             $this->getConnection()
@@ -388,7 +388,7 @@ class IcingaService extends IcingaObject
 
     public function hasCheckCommand()
     {
-        return $this->getResolvedProperty('check_command_id') !== null;
+        return $this->getSingleResolvedProperty('check_command_id') !== null;
     }
 
     public function getOnDeleteUrl()

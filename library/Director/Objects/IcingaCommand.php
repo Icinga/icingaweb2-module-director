@@ -83,7 +83,7 @@ class IcingaCommand extends IcingaObject
             $itlImport = '';
         }
 
-        $execute = $this->getResolvedProperty('methods_execute');
+        $execute = $this->getSingleResolvedProperty('methods_execute');
         if ($execute === 'PluginNotification') {
             return $this->renderObjectHeaderWithType('NotificationCommand') . $itlImport;
         } elseif ($execute === 'PluginEvent') {

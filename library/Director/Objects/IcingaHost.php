@@ -152,7 +152,7 @@ class IcingaHost extends IcingaObject
 
     public function getCheckCommand()
     {
-        $id = $this->getResolvedProperty('check_command_id');
+        $id = $this->getSingleResolvedProperty('check_command_id');
         return IcingaCommand::loadWithAutoIncId(
             $id,
             $this->getConnection()
@@ -161,7 +161,7 @@ class IcingaHost extends IcingaObject
 
     public function hasCheckCommand()
     {
-        return $this->getResolvedProperty('check_command_id') !== null;
+        return $this->getSingleResolvedProperty('check_command_id') !== null;
     }
 
     public function renderToConfig(IcingaConfig $config)
@@ -185,7 +185,7 @@ class IcingaHost extends IcingaObject
             return;
         }
 
-        if ($this->getResolvedProperty('has_agent') !== 'y') {
+        if ($this->getSingleResolvedProperty('has_agent') !== 'y') {
             return;
         }
 
@@ -200,11 +200,11 @@ class IcingaHost extends IcingaObject
             'log_duration' => 0
         );
 
-        if ($this->getResolvedProperty('master_should_connect') === 'y') {
-            $props['host'] = $this->getResolvedProperty('address');
+        if ($this->getSingleResolvedProperty('master_should_connect') === 'y') {
+            $props['host'] = $this->getSingleResolvedProperty('address');
         }
 
-        $props['zone_id'] = $this->getResolvedProperty('zone_id');
+        $props['zone_id'] = $this->getSingleResolvedProperty('zone_id');
 
         $endpoint = IcingaEndpoint::create($props);
 

@@ -309,7 +309,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getResolvedRelated($property)
     {
-        $id = $this->getResolvedProperty($property . '_id');
+        $id = $this->getSingleResolvedProperty($property . '_id');
 
         if ($id) {
             return $this->getRelatedObject($property, $id);
@@ -1059,6 +1059,30 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $this->templateResolver()->listResolvedParentIds();
     }
 
+    public function getSingleResolvedProperty($key, $default = null)
+    {
+        if (array_key_exists($key, $this->unresolvedRelatedProperties)) {
+            $this->resolveUnresolvedRelatedProperty($key);
+            $this->invalidateResolveCache();
+        }
+
+        if ($my = $this->get($key)) {
+            if ($my !== null) {
+                return $my;
+            }
+        }
+
+        /** @var IcingaObject $object */
+        foreach (array_reverse($this->imports()->getObjects()) as $object) {
+            $v = $object->getSingleResolvedProperty($key);
+            if (null !== $v) {
+                return $v;
+            }
+        }
+
+        return $default;
+    }
+
     protected function resolve($what)
     {
         if ($this->hasResolveCached($what)) {
@@ -1488,7 +1512,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $deploymentMode = $config->getDeploymentMode();
         if ($deploymentMode === 'active-passive') {
             if (
-                $this->getResolvedProperty('zone_id')
+                $this->getSingleResolvedProperty('zone_id')
                 && array_key_exists('enable_active_checks', $this->defaultProperties)
             ) {
                 $passive = clone($this);
@@ -1559,7 +1583,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             try {
-                if ($zoneId = $this->getResolvedProperty('zone_id')) {
+                if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
                     // Config has a lookup cache, is faster:
                     return $config->getZoneName($zoneId);
                 }
@@ -2592,7 +2616,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $props[$k] = $v;
             }
         }
-        
+
         if ($this->supportsCustomVars()) {
             $props['vars'] = (object) array();
             foreach ($this->vars()->getOriginalVars() as $name => $var) {
