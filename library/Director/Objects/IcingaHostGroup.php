@@ -53,7 +53,7 @@ class IcingaHostGroup extends IcingaObjectGroup
         if (empty($zoneMap)) {
             // no hosts matched
             $file = $this->legacyZoneHostgroupFile($config);
-            $this->properties['hostgroup_members'] = array();
+            $this->properties['members'] = array();
             $file->addLegacyObject($this);
 
         } else {
@@ -61,7 +61,7 @@ class IcingaHostGroup extends IcingaObjectGroup
 
             foreach ($zoneMap as $zoneId => $members) {
                 $file = $this->legacyZoneHostgroupFile($config, $zoneId);
-                $this->properties['hostgroup_members'] = $members;
+                $this->properties['members'] = $members;
                 $file->addLegacyObject($this);
 
                 $allMembers = array_merge($allMembers, $members);
@@ -69,7 +69,7 @@ class IcingaHostGroup extends IcingaObjectGroup
 
             $deploymentMode = $config->getDeploymentMode();
             if ($deploymentMode === 'active-passive') {
-                $this->properties['hostgroup_members'] = $allMembers;
+                $this->properties['members'] = $allMembers;
                 $this->legacyZoneHostgroupFile($config, 0)
                     ->addLegacyObject($this);
             } else if ($deploymentMode == 'masterless') {
@@ -92,16 +92,16 @@ class IcingaHostGroup extends IcingaObjectGroup
         );
     }
 
-    protected function renderLegacyHostgroup_members()
+    protected function renderLegacyMembers()
     {
-        if (empty($this->properties['hostgroup_members'])) {
+        if (empty($this->properties['members'])) {
             return '';
         }
-        return c1::renderKeyValue('hostgroup_members', join(',', $this->properties['hostgroup_members']));
+        return c1::renderKeyValue('members', join(',', $this->properties['members']));
     }
 
     /**
-     * Note: rendered with renderLegacyHostgroup_members()
+     * Note: rendered with renderLegacyMembers()
      *
      * @return string
      */
