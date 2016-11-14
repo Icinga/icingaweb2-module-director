@@ -2026,6 +2026,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return c1::renderKeyValue('check_command', join('!', $args));
     }
 
+    protected function renderLegacyEvent_command($value)
+    {
+        return c1::renderKeyValue('event_handler', $value);
+    }
+
     /**
      * We do not render zone properties, objects are stored to zone dirs
      *
