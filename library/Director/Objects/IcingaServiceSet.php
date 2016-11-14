@@ -225,15 +225,18 @@ class IcingaServiceSet extends IcingaObject
 
     protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
     {
+        $host = IcingaHost::load($hostname, $this->getConnection());
         return $config->configFile(
-            'director/' . IcingaHost::load($hostname, $this->getConnection())->getRenderingZone($config) . '/servicesets'
+            'director/' . $host->getRenderingZone($config) . '/servicesets',
+            '.cfg'
         );
     }
 
     protected function legacyRelatedHostFile(IcingaService $service, IcingaConfig $config)
     {
         return $config->configFile(
-            'director/' . $service->getRelated('host')->getRenderingZone($config) . '/servicesets'
+            'director/' . $service->getRelated('host')->getRenderingZone($config) . '/servicesets',
+            '.cfg'
         );
     }
 

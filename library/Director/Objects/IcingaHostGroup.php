@@ -88,7 +88,7 @@ class IcingaHostGroup extends IcingaObjectGroup
             $zone = $this->connection->getDefaultGlobalZoneName();
         }
         return $config->configFile(
-            'director/' . $zone . '/hostgroups'
+            'director/' . $zone . '/hostgroups', '.cfg'
         );
     }
 

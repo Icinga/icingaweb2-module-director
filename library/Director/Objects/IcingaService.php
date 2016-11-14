@@ -210,8 +210,10 @@ class IcingaService extends IcingaObject
 
     protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
     {
+        $host = IcingaHost::load($hostname, $this->getConnection());
         return $config->configFile(
-            'director/' . IcingaHost::load($hostname, $this->getConnection())->getRenderingZone($config) . '/service_apply'
+            'director/' . $host->getRenderingZone($config) . '/service_apply',
+            '.cfg'
         );
     }
 
