@@ -381,7 +381,11 @@ class IcingaHostTest extends BaseTestCase
         $config = new IcingaConfig($db);
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/___TEST___zone/hosts.conf'), 
+            array(
+                'zones.d/___TEST___zone/hosts.conf',
+                'zones.d/___TEST___zone/agent_endpoints.conf',
+                'zones.d/___TEST___zone/agent_zones.conf'
+            ),
             $config->getFileNames()
         );
 
