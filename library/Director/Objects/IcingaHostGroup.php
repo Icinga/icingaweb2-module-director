@@ -59,6 +59,15 @@ class IcingaHostGroup extends IcingaObjectGroup
         } else {
             $allMembers = array();
 
+            // make sure we write to all zones
+            // so host -> group relations are still possible
+            foreach (IcingaZone::loadAll($conn) as $zone) {
+                $zoneId = $zone->getAutoincId();
+                if (! array_key_exists($zoneId, $zoneMap)) {
+                    $zoneMap[$zoneId] = array();
+                }
+            }
+
             foreach ($zoneMap as $zoneId => $members) {
                 $file = $this->legacyZoneHostgroupFile($config, $zoneId);
                 $this->properties['members'] = $members;
