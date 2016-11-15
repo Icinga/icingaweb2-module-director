@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 
@@ -33,6 +34,8 @@ class IcingaServiceSet extends IcingaObject
     protected $relations = array(
         'host' => 'IcingaHost',
     );
+
+    protected static $fetchedServices = array();
 
     public function isDisabled()
     {
@@ -80,12 +83,35 @@ class IcingaServiceSet extends IcingaObject
         }
     }
 
-    protected function getServiceObjectsForSet(IcingaServiceSet $set)
+    protected function fetchServices(IcingaServiceSet $set)
     {
         if ($set->get('id') === null) {
             return array();
         }
 
+        /* TODO: Fix prefetched loading for multi column keys - see IcingaObject::loadAllByType
+        if (PrefetchCache::shouldBeUsed()) {
+            if (! array_key_exists($set->id, static::$fetchedServices)) {
+                $services = IcingaObject::loadAllByType('service', $this->getConnection());
+
+                foreach ($services as $service) {
+                    if ($service->service_set_id === $set->id) {
+                        if (! array_key_exists($set->id, static::$fetchedServices)) {
+                            static::$fetchedServices[$set->id] = array();
+                        }
+                        static::$fetchedServices[$set->id][] = $service;
+                    }
+                }
+            }
+
+            if (array_key_exists($set->id, static::$fetchedServices)) {
+                return static::$fetchedServices[$set->id];
+            }
+            else {
+                return array();
+            }
+        }
+        */
         $connection = $this->getConnection();
         $db = $this->getDb();
         $ids = $db->fetchCol(
@@ -99,12 +125,27 @@ class IcingaServiceSet extends IcingaObject
                 'id' => $id,
                 'object_type' => 'template'
             ), $connection);
-            $service->set('service_set', null);
-
             $services[$service->getObjectName()] = $service;
         }
 
         return $services;
+    }
+
+    protected function getServiceObjectsForSet(IcingaServiceSet $set)
+    {
+        if ($set->get('id') === null) {
+            return array();
+        }
+
+        $services = $this->fetchServices($set);
+
+        $result = array();
+        foreach ($services as $service) {
+            $service->set('service_set', null);
+            $result[$service->getObjectName()] = $service;
+        }
+
+        return $result;
     }
 
     public function renderToConfig(IcingaConfig $config)
