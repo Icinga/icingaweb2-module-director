@@ -61,10 +61,9 @@ class IcingaHostGroup extends IcingaObjectGroup
 
             // make sure we write to all zones
             // so host -> group relations are still possible
-            foreach (IcingaZone::loadAll($conn) as $zone) {
-                $zoneId = $zone->getAutoincId();
-                if (! array_key_exists($zoneId, $zoneMap)) {
-                    $zoneMap[$zoneId] = array();
+            foreach (IcingaObject::loadAllByType('zone', $conn) as $zone) {
+                if (! array_key_exists($zone->id, $zoneMap)) {
+                    $zoneMap[$zone->id] = array();
                 }
             }
 
