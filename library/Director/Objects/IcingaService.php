@@ -194,9 +194,11 @@ class IcingaService extends IcingaObject
     {
         $conn = $this->getConnection();
 
-        $filter = Filter::fromQueryString($this->get('assign_filter'));
+        $assign_filter = $this->get('assign_filter');
+        $filter = Filter::fromQueryString($assign_filter);
         $hosts = HostApplyMatches::forFilter($filter, $conn);
         $this->set('object_type', 'object');
+        $this->set('assign_filter', null);
 
         foreach ($hosts as $hostname) {
             $file = $this->legacyHostnameServicesFile($hostname, $config);
@@ -206,6 +208,7 @@ class IcingaService extends IcingaObject
 
         $this->set('host', null);
         $this->set('object_type', 'apply');
+        $this->set('assign_filter', $assign_filter);
     }
 
     protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
@@ -223,8 +226,8 @@ class IcingaService extends IcingaObject
             return '';
         }
 
-        if ($this->get('assign_filter') !== null) {
-            return $this->renderLegacyResolvedAssignFilter();
+        if ($this->isApplyRule()) {
+            throw new ProgrammingError('Apply Services can not be rendered directly.');
         }
 
         $str = parent::toLegacyConfigString();
@@ -237,24 +240,6 @@ class IcingaService extends IcingaObject
         } else {
             return $str;
         }
-    }
-
-    protected function renderLegacyResolvedAssignFilter()
-    {
-        $str = '';
-        $hosts = HostApplyMatches::forFilter(
-            Filter::fromQueryString($this->get('assign_filter')),
-            $this->getConnection()
-        );
-        $this->object_type = 'object';
-        $this->assign_filter = null;
-
-        foreach ($hosts as $hostname) {
-            $this->host = $hostname;
-            $str .= $this->toLegacyConfigString();
-        }
-
-        return $str;
     }
 
     public function toConfigString()
