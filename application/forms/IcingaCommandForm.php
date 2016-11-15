@@ -73,4 +73,26 @@ class IcingaCommandForm extends DirectorObjectForm
 
         $this->setButtons();
     }
+
+    protected function enumAllowedTemplates()
+    {
+        $object = $this->object();
+        $tpl = $this->db->enum($object->getTableName());
+        if (empty($tpl)) {
+            return array();
+        }
+
+        $id = $object->get('id');
+
+        if (array_key_exists($id, $tpl)) {
+            unset($tpl[$id]);
+        }
+
+        if (empty($tpl)) {
+            return array();
+        }
+
+        $tpl = array_combine($tpl, $tpl);
+        return $tpl;
+    }
 }
