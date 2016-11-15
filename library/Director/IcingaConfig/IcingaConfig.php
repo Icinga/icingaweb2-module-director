@@ -500,6 +500,15 @@ class IcingaConfig
     protected function prepareGlobalBasics()
     {
         if ($this->isLegacy()) {
+            $this->configFile(
+                sprintf(
+                    'director/%s/001-director-basics',
+                    $this->connection->getDefaultGlobalZoneName()
+                ), '.cfg'
+            )->prepend(
+                $this->renderLegacyDefaultNotification()
+            );
+
             return $this;
         }
 
@@ -780,5 +789,40 @@ apply Service for (title => params in host.vars["%s"]) {
         }
 
         return $this->lastActivityChecksum;
+    }
+
+    protected function renderLegacyDefaultNotification()
+    {
+        return preg_replace('~^ {12}~m', '', '
+            #
+            # Default objects to avoid warnings
+            #
+
+            define contact {
+                contact_name                   icingaadmin
+                alias                          Icinga Admin
+                host_notifications_enabled     0
+                host_notification_commands     notify-never-default
+                host_notification_period       notification_none
+                service_notifications_enabled  0
+                service_notification_commands  notify-never-default
+                service_notification_period    notification_none
+            }
+
+            define contactgroup {
+                contactgroup_name  icingaadmins
+                members            icingaadmin
+            }
+
+            define timeperiod {
+                timeperiod_name  notification_none
+                alias            No Notifications
+            }
+
+            define command {
+                command_name notify-never-default
+                command_line /bin/echo "NOOP"
+            }
+        ');
     }
 }
