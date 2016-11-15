@@ -371,7 +371,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
             $args[$arg->argument_name] = $arg->toConfigString();
         }
-        return c::renderKeyValue('arguments', c::renderDictionary($args));
+        return c::renderKeyOperatorValue('arguments', '+=', c::renderDictionary($args));
     }
 
     public function __toString()

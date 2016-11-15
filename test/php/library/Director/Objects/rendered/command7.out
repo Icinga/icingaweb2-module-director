@@ -1,6 +1,6 @@
 object CheckCommand "___TEST___command" {
     command = [ PluginDir + "/bla" ]
-    arguments = {
+    arguments += {
         "-a" = {
             set_if = "$a$"
         }
