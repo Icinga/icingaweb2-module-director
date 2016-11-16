@@ -45,9 +45,24 @@ abstract class DirectorObjectForm extends QuickForm
     /** @var  CoreApi */
     private $api;
 
+    private $presetImports;
+
     public function setPreferredObjectType($type)
     {
         $this->preferredObjectType = $type;
+        return $this;
+    }
+
+    public function presetImports($imports)
+    {
+        if (! empty($imports)) {
+            if (is_array($imports)) {
+                $this->presetImports = $imports;
+            } else {
+                $this->presetImports = array($imports);
+            }
+        }
+
         return $this;
     }
 
@@ -248,7 +263,7 @@ abstract class DirectorObjectForm extends QuickForm
             unset($props['vars']);
         }
 
-        $this->setDefaults($this->removeNullProperties($props));
+        $this->setDefaults($this->removeEmptyProperties($props));
 
         if ($resolve) {
             $this->showInheritedProperties($object);
@@ -270,11 +285,11 @@ abstract class DirectorObjectForm extends QuickForm
         }
     }
 
-    protected function removeNullProperties($props)
+    protected function removeEmptyProperties($props)
     {
         $result = array();
         foreach ($props as $k => $v) {
-            if ($v !== null && $v !== '') {
+            if ($v !== null && $v !== '' && $v !== array()) {
                 $result[$k] = $v;
             }
         }
@@ -913,6 +928,7 @@ abstract class DirectorObjectForm extends QuickForm
             'required'     => ($required !== null ? $required : !$this->isTemplate()),
             'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
+            'value'        => $this->presetImports,
             'class'        => 'autosubmit'
         ));
 

@@ -112,7 +112,10 @@ abstract class ObjectsController extends ActionController
                 $table = 'icinga' . ucfirst($type);
             } elseif ($dummy->isTemplate()) {
                 $this->getTabs()->activate('templates');
+                // Trick the autoloader
                 $table = 'icinga' . ucfirst($type);
+                $this->loadTable($table);
+                $table .= 'Template';
             } else {
                 $this->getTabs()->activate('objects');
                 $table = 'icinga' . ucfirst($type);

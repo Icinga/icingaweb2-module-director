@@ -99,6 +99,13 @@ class ServiceController extends ObjectController
         }
     }
 
+    public function futureoverviewIndexAction()
+    {
+        $object = $this->loadObject();
+        $title = $this->view->title = $object->object_name;
+        $this->singleTab($this->translate('Icinga Service Template'));
+    }
+
     public function editAction()
     {
         $object = $this->object;

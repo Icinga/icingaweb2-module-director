@@ -67,7 +67,7 @@ class IcingaHostServiceTable extends QuickTable
             }
         }
 
-        return $this->url('director/service', $params);
+        return $this->url('director/service/edit', $params);
     }
 
     public function getTitles()

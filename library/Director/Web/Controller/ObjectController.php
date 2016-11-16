@@ -9,6 +9,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Web\Url;
 
 abstract class ObjectController extends ActionController
@@ -186,8 +187,10 @@ abstract class ObjectController extends ActionController
         $ltype = strtolower($type);
 
         $url = sprintf('director/%ss', $ltype);
+        /** @var DirectorObjectForm $form */
         $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
+            ->presetImports($this->params->shift('imports'))
             ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
