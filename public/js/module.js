@@ -19,13 +19,12 @@
              * Tell Icinga about our event handlers
              */
             this.module.on('rendered', this.rendered);
+            this.module.on('beforerender', this.beforeRender);
             this.module.on('click', 'fieldset > legend', this.toggleFieldset);
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
-            this.module.on('focus', 'form input', this.formElementFocus);
-            this.module.on('focus', 'form textarea', this.formElementFocus);
-            this.module.on('focus', 'form select', this.formElementFocus);
+            this.module.on('focus', 'form input, form textarea, form select', this.formElementFocus);
             this.module.icinga.logger.debug('Director module initialized');
         },
 
@@ -239,12 +238,28 @@
             $container.find('dd').not('.active').find('p.description').hide();
         },
 
+        beforeRender: function(ev) {
+            var $container = $(ev.currentTarget);
+
+            var id = $container.attr('id');
+            var requests = this.module.icinga.loader.requests;
+            if (typeof requests[id] !== 'undefined' && requests[id].autorefresh) {
+                $container.data('director-autorefreshed', 'yes');
+            } else {
+                $container.removeData('director-autorefreshed');
+            }
+        },
+
+        containerIsAutorefreshed: function($container)
+        {
+            return $container.data('director-autorefreshed') === 'yes';
+        },
+
         rendered: function(ev) {
             var iid;
             var $container = $(ev.currentTarget);
             this.restoreContainerFieldsets($container);
             this.backupAllExtensibleSetDefaultValues($container);
-            this.putFocusOnFirstObjectTypeElement($container);
             this.highlightFormErrors($container);
             this.scrollHighlightIntoView($container);
             this.scrollActiveRowIntoView($container);
@@ -253,8 +268,12 @@
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
+
             // Disabled for now
             // this.alignDetailLinks();
+            if (! this.containerIsAutorefreshed($container)) {
+                this.putFocusOnFirstFormElement($container);
+            }
         },
 
         restoreContainerFieldsets: function($container)
@@ -263,14 +282,9 @@
             $container.find('form').each(self.restoreFieldsets.bind(self));
         },
 
-        putFocusOnFirstObjectTypeElement: function($container)
+        putFocusOnFirstFormElement: function($container)
         {
-            var $objectType = $container.find('form').find('select[name=object_type]');
-            if ($objectType.length) {
-                if ($objectType[0].value === '') {
-                    $objectType.focus();
-                }
-            }
+            $container.find('form.autofocus').find('label').first().focus();
         },
 
         scrollHighlightIntoView: function ($container) {
