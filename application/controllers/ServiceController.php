@@ -99,7 +99,7 @@ class ServiceController extends ObjectController
         }
     }
 
-    public function indexAction()
+    public function futureoverviewIndexAction()
     {
         $object = $this->loadObject();
         $title = $this->view->title = $object->object_name;
