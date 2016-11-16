@@ -36,6 +36,9 @@ class IcingaHostTemplateTable extends IcingaHostTable
                     )
                 )
             );
+
+            /*
+            // TODO: Not yet
             if ($cnt = $row->cnt_child_templates) {
                 if ((int) $cnt === 1) {
                     $title = $view->translate('Show one host template using this template');
@@ -79,7 +82,7 @@ class IcingaHostTemplateTable extends IcingaHostTable
                 );
 
             }
-
+            */
         }
 
         return $htm;
