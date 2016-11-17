@@ -254,6 +254,14 @@ class HostController extends ObjectController
                 $wizard->setTicketSalt($this->api()->getTicketSalt());
                 echo preg_replace('/\n/', "\r\n", $wizard->renderWindowsInstaller());
                 exit;
+            case 'linux':
+                header('Content-type: application/octet-stream');
+                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.bash');
+
+                $wizard = $this->view->wizard = new AgentWizard($this->object);
+                $wizard->setTicketSalt($this->api()->getTicketSalt());
+                echo $wizard->renderLinuxInstaller();
+                exit;
         }
 
         $this->gracefullyActivateTab('agent');
@@ -270,6 +278,7 @@ class HostController extends ObjectController
             $wizard = $this->view->wizard = new AgentWizard($this->object);
             $wizard->setTicketSalt($this->api()->getTicketSalt());
             $this->view->windows = $wizard->renderWindowsInstaller();
+            $this->view->linux = $wizard->renderLinuxInstaller();
 
         } catch (Exception $e) {
             $this->view->ticket = 'ERROR';
