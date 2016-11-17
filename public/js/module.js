@@ -26,6 +26,340 @@
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
             this.module.on('focus', 'form input, form textarea, form select', this.formElementFocus);
             this.module.icinga.logger.debug('Director module initialized');
+            this.module.on('keyup', '.director-suggest', this.autoSuggest);
+            this.module.on('keydown', '.director-suggest', this.suggestionKeyDown);
+            this.module.on('dblclick', '.director-suggest', this.suggestionDoubleClick);
+            this.module.on('focus', '.director-suggest', this.enterSuggestionField);
+            this.module.on('focusout', '.director-suggest', this.leaveSuggestionField);
+            this.module.on('click', '.director-suggestions li', this.clickSuggestion);
+            this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
+        },
+
+        /**
+         * Autocomplete/suggestion eventhandler
+         *
+         * Triggered when pressing a key in a form element with suggestions
+         *
+         * @param ev
+         */
+        suggestionKeyDown: function(ev) {
+            var $suggestions, $active;
+            var $el = $(ev.currentTarget);
+
+            if (ev.keyCode === 13) {
+                /**
+                 * RETURN key pressed. In case there are any suggestions:
+                 * - let's choose the active one (if set)
+                 * - stop the event
+                 *
+                 * This let's return bubble up in case there is no suggestion list shown
+                 */
+                if (this.hasSuggestions($el)) {
+                    this.chooseActiveSuggestion($el);
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                } else {
+                    this.removeSuggestionList($el);
+                    $el.trigger('change');
+                }
+            } else if (ev.keyCode == 27) {
+                // ESC key pressed. Remove suggestions if any
+                this.removeSuggestionList($el);
+            } else if (ev.keyCode == 39) {
+                /**
+                 * RIGHT ARROW key pressed. In case there are any suggestions:
+                 * - let's choose the active one (if set)
+                 * - stop the event only if an element has been chosen
+                 *
+                 * This allows to use the right arrow key normally in all other situations
+                 */
+                if (this.hasSuggestions($el)) {
+                    if (this.chooseActiveSuggestion($el)) {
+                        ev.stopPropagation();
+                        ev.preventDefault();
+                    }
+                }
+            } else if (ev.keyCode == 38 ) {
+                /**
+                 * UP ARROW key pressed. In any case:
+                 * - stop the event
+                 * - activate the previous suggestion if any
+                 */
+                ev.stopPropagation();
+                ev.preventDefault();
+                this.activatePrevSuggestion($el);
+            } else if (ev.keyCode == 40 ) { // down
+                /**
+                 * DOWN ARROW key pressed. In any case:
+                 * - stop the event
+                 * - activate the next suggestion if any
+                 */
+                ev.stopPropagation();
+                ev.preventDefault();
+                this.activateNextSuggestion($el);
+            }
+        },
+
+        suggestionDoubleClick: function (ev)
+        {
+            var $el = $(ev.currentTarget);
+            this.getSuggestionList($el)
+        },
+
+        /**
+         * Autocomplete/suggestion eventhandler
+         *
+         * Triggered when releasing a key in a form element with suggestions
+         *
+         * @param ev
+         */
+        autoSuggest: function(ev)
+        {
+            // Ignore special keys, most of them have already been handled on 'keydown'
+            if (ev.keyCode == 9 || // TAB
+                ev.keyCode == 13 || // RETURN
+                ev.keyCode == 27 || // ESC
+                ev.keyCode == 37 || // LEFT ARROW
+                ev.keyCode == 38 || // UP ARROW
+                ev.keyCode == 39 ) { // RIGHT ARROW
+                return;
+            }
+
+            var $el = $(ev.currentTarget);
+            if (ev.keyCode == 40) { // DOWN ARROW
+                this.getSuggestionList($el);
+            } else {
+                this.getSuggestionList($el, true);
+            }
+        },
+
+        /**
+         * Activate the next related suggestion if any
+         *
+         * This walks down the suggestion list, takes care about scrolling and restarts from
+         * top once reached the bottom
+         *
+         * @param $el
+         */
+        activateNextSuggestion: function($el)
+        {
+            var $list = this.getSuggestionList($el);
+            var $next;
+            var $active = $list.find('li.active');
+            if ($active.length) {
+                $next = $active.next('li');
+                if ($next.length === 0) {
+                    $next = $list.find('li').first();
+                }
+            } else {
+                $next = $list.find('li').first();
+            }
+            if ($next.length) {
+                // Will not happen when list is empty or last element is active
+                $list.find('li.active').removeClass('active');
+                $next.addClass('active');
+                $list.scrollTop($next.offset().top - $list.offset().top - 64 + $list.scrollTop());
+            }
+        },
+
+        /**
+         * Activate the previous related suggestion if any
+         *
+         * This walks up through the suggestion list and takes care about scrolling.
+         * Puts the focus back on the input field once reached the top and restarts
+         * from bottom when moving up from there
+         *
+         * @param $el
+         */
+        activatePrevSuggestion: function($el)
+        {
+            var $list = this.getSuggestionList($el);
+            var $prev;
+            var $active = $list.find('li.active');
+            if ($active.length) {
+                $prev = $active.prev('li');
+            } else {
+                $prev = $list.find('li').last();
+            }
+            $list.find('li.active').removeClass('active');
+
+            if ($prev.length) {
+                $prev.addClass('active');
+                $list.scrollTop($prev.offset().top - $list.offset().top - 64 + $list.scrollTop());
+            } else {
+                $el.focus();
+            }
+        },
+
+        /**
+         * Whether a related suggestion list element exists
+         *
+         * @param $input
+         * @returns {boolean}
+         */
+        hasSuggestionList: function($input) {
+            var $ul = $input.siblings('ul.director-suggestions');
+            return $ul.length > 0;
+        },
+
+        /**
+         * Whether any related suggestions are currently being shown
+         *
+         * @param $input
+         * @returns {boolean}
+         */
+        hasSuggestions: function($input) {
+            var $ul = $input.siblings('ul.director-suggestions');
+            return $ul.length > 0 && $ul.is(':visible');
+        },
+
+        /**
+         * Get a suggestion list. Optionally force refresh
+         *
+         * @param $input
+         * @param $forceRefresh
+         *
+         * @returns {jQuery}
+         */
+        getSuggestionList: function($input, $forceRefresh)
+        {
+            var $ul = $input.siblings('ul.director-suggestions');
+            if ($ul.length) {
+                if ($forceRefresh) {
+                    return this.refreshSuggestionList($ul, $input);
+                } else {
+                    return $ul;
+                }
+            } else {
+                $ul = $('<ul class="director-suggestions"></ul>');
+                $ul.insertAfter($input);
+                return this.refreshSuggestionList($ul, $input);
+            }
+        },
+
+        /**
+         * Refresh a given suggestion list
+         *
+         * @param $suggestions
+         *
+         * @param $el
+         * @returns {jQuery}
+         */
+        refreshSuggestionList: function($suggestions, $el)
+        {
+            $suggestions.load(icinga.config.baseUrl + '/director/suggest', {
+                value: $el.val(),
+                context: $el.data('suggestion-context')
+            }, function (responseText, textStatus, jqXHR) {
+                var $li = $suggestions.find('li');
+                if ($li.length) {
+                    $suggestions.show();
+                } else {
+                    $suggestions.hide();
+                }
+            });
+
+            return $suggestions;
+        },
+
+        /**
+         * Click handler for proposed suggestions
+         *
+         * @param ev
+         */
+        clickSuggestion: function(ev) {
+            this.chooseSuggestion($(ev.currentTarget));
+        },
+
+        /**
+         * Choose a specific suggestion
+
+         * @param $suggestion
+         */
+        chooseSuggestion: function($suggestion)
+        {
+            var $el = $suggestion.closest('ul').siblings('.director-suggest');
+            var val = $suggestion.text();
+            var $list =
+            $el.val(val);
+
+            if (val.match(/\.$/)) {
+                this.getSuggestionList($el, true);
+            } else {
+                $el.focus();
+                $el.trigger('change');
+                this.getSuggestionList($el).remove();
+            }
+        },
+
+        /**
+         * Choose the current active suggestion related to a given element
+         *
+         * Returns true in case there was any, false otherwise
+         *
+         * @param $el
+         * @returns {boolean}
+         */
+        chooseActiveSuggestion: function($el)
+        {
+            var $list = this.getSuggestionList($el);
+            var $active = $list.find('li.active');
+            if ($active.length) {
+                this.chooseSuggestion($active);
+                return true;
+            } else {
+                $list.remove();
+                return false;
+            }
+        },
+
+        /**
+         * Remove related suggestion list if any
+         *
+         * @param $el
+         */
+        removeSuggestionList: function($el)
+        {
+            if (this.hasSuggestionList($el)) {
+                this.getSuggestionList($el).remove();
+            }
+        },
+
+        /**
+         * Show suggestions when arriving to an empte autocompletion field
+         *
+         * @param ev
+         */
+        enterSuggestionField: function(ev) {
+            var $el = $(ev.currentTarget);
+            if ($el.val() === '' || $el.val().match(/\.$/)) {
+                this.getSuggestionList($el)
+            }
+        },
+
+        /**
+         * Close suggestions when leaving the related form element
+         *
+         * @param ev
+         */
+        leaveSuggestionField: function(ev) {
+            return;
+            var _this = this;
+            setTimeout(function() {
+                _this.removeSuggestionList($(ev.currentTarget));
+            }, 100);
+        },
+
+        /**
+         * Sets an autosubmit flag on the container related to an event
+         *
+         * This will be used in beforeRender to determine whether the request has been triggered by an
+         * auto-submission
+         *
+         * @param ev
+         */
+        setAutoSubmitted: function(ev) {
+            $(ev.currentTarget).closest('.container').data('directorAutosubmit', 'yes');
         },
 
         /**
@@ -240,7 +574,6 @@
 
         beforeRender: function(ev) {
             var $container = $(ev.currentTarget);
-
             var id = $container.attr('id');
             var requests = this.module.icinga.loader.requests;
             if (typeof requests[id] !== 'undefined' && requests[id].autorefresh) {
@@ -248,8 +581,34 @@
             } else {
                 $container.removeData('director-autorefreshed');
             }
+
+            // Remove the temporary directorAutosubmit flag and set or remove
+            // the directorAutosubmitted property accordingly
+            if ($container.data('directorAutosubmit') === 'yes') {
+                $container.removeData('directorAutosubmit');
+                $container.data('directorAutosubmitted', 'yes');
+            } else {
+                $container.removeData('directorAutosubmitted');
+            }
         },
 
+        /**
+         * Whether the given container has been autosubmitted
+         *
+         * @param $container
+         * @returns {boolean}
+         */
+        containerIsAutoSubmitted: function($container)
+        {
+            return $container.data('directorAutosubmitted') === 'yes';
+        },
+
+        /**
+         * Whether the given container has been autorefreshed
+         *
+         * @param $container
+         * @returns {boolean}
+         */
         containerIsAutorefreshed: function($container)
         {
             return $container.data('director-autorefreshed') === 'yes';
@@ -271,7 +630,7 @@
 
             // Disabled for now
             // this.alignDetailLinks();
-            if (! this.containerIsAutorefreshed($container)) {
+            if (! this.containerIsAutorefreshed($container) && ! this.containerIsAutoSubmitted($container)) {
                 this.putFocusOnFirstFormElement($container);
             }
         },
@@ -326,6 +685,9 @@
 
             $('fieldset', $form).each(function(idx, fieldset) {
                 var $fieldset = $(fieldset);
+                if ($fieldset.attr('id') === 'fieldset-assign') {
+                    return;
+                }
                 if ($fieldset.find('.required').length == 0 && (! self.fieldsetWasOpened($fieldset))) {
                     $fieldset.addClass('collapsed');
                     self.fixFieldsetInfo($fieldset);
