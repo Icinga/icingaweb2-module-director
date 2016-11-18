@@ -1367,7 +1367,8 @@ CREATE TABLE icinga_dependency (
   disable_notifications ENUM('y', 'n'),
   ignore_soft_states ENUM('y', 'n'),
   period_id INT(10) UNSIGNED DEFAULT NULL,
-    zone_id INT(10) UNSIGNED DEFAULT NULL,
+  zone_id INT(10) UNSIGNED DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY parent_host (parent_host_id)
@@ -1438,19 +1439,6 @@ CREATE TABLE icinga_dependency_states_set (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 )  ENGINE=InnoDB;
-
-CREATE TABLE icinga_dependency_assignment (
-  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  dependency_id INT(10) UNSIGNED NOT NULL,
-  filter_string TEXT NOT NULL,
-  assign_type ENUM('assign', 'ignore') NOT NULL DEFAULT 'assign',
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_dependency_assignment
-    FOREIGN KEY dependency (dependency_id)
-    REFERENCES icinga_dependency (id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-) ENGINE=InnoDB;
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)

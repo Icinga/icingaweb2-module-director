@@ -51,31 +51,40 @@ class IcingaDependencyForm extends DirectorObjectForm
             return $this;
         }
 
-        $this->addElement(
-            'select',
-            'apply_to',
-            array(
-                'label' => $this->translate('Apply to'),
-                'description' => $this->translate(
-                    'Whether this dependency should affect hosts or services'
-                ),
-                'required'    => true,
-                'multiOptions' => $this->optionalEnum(
-                    array(
-                        'host'    => $this->translate('Hosts'),
-                        'service' => $this->translate('Services'),
-                    )
+        $this->addElement('select', 'apply_to', array(
+            'label'        => $this->translate('Apply to'),
+            'description'  => $this->translate(
+                'Whether this dependency should affect hosts or services'
+            ),
+            'required'     => true,
+            'class'        => 'autosubmit',
+            'multiOptions' => $this->optionalEnum(
+                array(
+                    'host'    => $this->translate('Hosts'),
+                    'service' => $this->translate('Services'),
                 )
             )
-        );
+        ));
 
-        $sub = new AssignListSubForm();
-        $sub->setObject($this->getObject());
-        $sub->setup();
-        $sub->setOrder(30);
+        $applyTo = $this->getSentOrObjectValue('apply_to');
 
-        $this->addSubForm($sub, 'assignlist');
+        if ($applyTo === 'host') {
+            $columns = IcingaHost::enumProperties($this->db, 'host.');
+        } elseif ($applyTo === 'service') {
+            // TODO: Also add host properties
+            $columns = IcingaService::enumProperties($this->db, 'service.');
+        } else {
+            return $this;
+        }
 
+        $this->addAssignFilter(array(
+            'columns' => $columns,
+            'required' => true,
+            'description' => $this->translate(
+                'This allows you to configure an assignment filter. Please feel'
+                . ' free to combine as many nested operators as you want'
+            )
+        ));
         return $this;
     }
 

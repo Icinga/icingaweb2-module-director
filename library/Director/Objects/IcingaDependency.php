@@ -24,6 +24,7 @@ class IcingaDependency extends IcingaObject
         'ignore_soft_states'          => null,
         'period_id'             => null,
         'zone_id'               => null,
+        'assign_filter'         => null,
     );
 
     protected $supportsCustomVars = false;
