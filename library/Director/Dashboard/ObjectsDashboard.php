@@ -13,6 +13,7 @@ class ObjectsDashboard extends Dashboard
         'UserObject',
         'NotificationObject',
         'TimeperiodObject',
+        'DependencyObject',
     );
 
     public function getTitle()

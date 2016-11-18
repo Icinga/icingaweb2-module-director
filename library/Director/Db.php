@@ -392,6 +392,7 @@ class Db extends DbConnection
             'apiuser',
             'endpoint',
             'zone',
+            'dependency',
         );
 
         $queries = array();
