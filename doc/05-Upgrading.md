@@ -43,6 +43,20 @@ policy says that the master should never break, this might of course happen.
 In that case, please [let us know](https://dev.icinga.org/projects/icingaweb2-module-director/issues)
 We'll try to fix your issue as soon as possible. 
 
+<a name="upgrade-to-1.3.0"></a>Upgrading to 1.3.0
+-------------------------------------------------
+
+In case you are running 1.2.0 or any GIT master since then, all you need is to
+replace the Director module folder with the new one. Or to run `git checkout v1.3.0`
+in case you installed Director from GIT.
+
+When running Director since 1.1.0 or earlier on PostgreSQL, you might not yet
+have the PostgreSQL crypto extension installed (Package: `postgresql-contrib`) and
+enabled:
+
+     psql -q -c "CREATE EXTENSION pgcrypto;"
+
+
 <a name="upgrade-to-1.2.0"></a>Upgrading to 1.2.0
 -------------------------------------------------
 
