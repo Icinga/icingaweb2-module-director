@@ -19,6 +19,7 @@ class DataController extends ActionController
         $this->setDataTabs()->activate('datalist');
         $this->view->title = $this->translate('Data lists');
         $this->prepareAndRenderTable('datalist');
+        $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listAction()
@@ -125,6 +126,7 @@ class DataController extends ActionController
         $this->setDataTabs()->activate('datafield');
         $this->view->title = $this->translate('Data fields');
         $this->prepareAndRenderTable('datafield');
+        $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listentryAction()

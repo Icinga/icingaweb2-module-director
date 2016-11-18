@@ -10,6 +10,7 @@ class DatafieldTable extends QuickTable
 {
     protected $searchColumns = array(
         'varname',
+        'caption',
     );
 
     public function getColumns()
