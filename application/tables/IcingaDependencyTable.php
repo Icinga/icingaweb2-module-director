@@ -6,7 +6,7 @@ use Icinga\Module\Director\Web\Table\IcingaObjectTable;
 
 class IcingaDependencyTable extends IcingaObjectTable
 {
-    protected $searchColumns = array( 
+    protected $searchColumns = array(
         'dependency',
     );
 
@@ -47,7 +47,7 @@ class IcingaDependencyTable extends IcingaObjectTable
             $htm .= ' ' . $v->qlink(
                 'Create apply-rule',
                 'director/dependency/add',
-                array('apply' => $row->dependency),
+                array('apply' => $row->dependency, 'type' => 'apply'),
                 array('class'    => 'icon-plus')
             );
 
@@ -72,49 +72,30 @@ class IcingaDependencyTable extends IcingaObjectTable
 
     protected function appliedOnes($id)
     {
-        if ($this->connection()->isPgsql()) {
-            $nameCol = "d.object_name || COALESCE(': ' || ARRAY_TO_STRING(ARRAY_AGG("
-                . "a.assign_type || ' where ' || a.filter_string"
-                . " ORDER BY a.assign_type, a.filter_string), ', '), '')";
-        } else {
-            $nameCol = "d.object_name || COALESCE(': ' || GROUP_CONCAT("
-                . "a.assign_type || ' where ' || a.filter_string"
-                . " ORDER BY a.assign_type, a.filter_string SEPARATOR ', '"
-                . "), '')";
-        }
-
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         $query = $db->select()->from(
-            array('d' => 'icinga_dependency'),
+            array('s' => 'icinga_dependency'),
             array(
-                'id'         => 'd.id',
-                'objectname' => $nameCol,
+                'id'         => 's.id',
+                'objectname' => 's.object_name',
             )
         )->join(
             array('i' => 'icinga_dependency_inheritance'),
-            'i.dependency_id = d.id',
+            'i.dependency_id = s.id',
             array()
         )->where('i.parent_dependency_id = ?', $id)
-         ->where('d.object_type = ?', 'apply');
+         ->where('s.object_type = ?', 'apply');
 
-        $query->joinLeft(
-            array('a' => 'icinga_dependency_assignment'),
-            'a.dependency_id = d.id',
-            array()
-        )->group('d.id');
 
         return $db->fetchPairs($query);
     }
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('d' => 'icinga_dependency'),
             array()
         );
-
-        return $query;
     }
 
     public function getBaseQuery()
