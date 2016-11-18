@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\Exception\NestingError;
+use Exception;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -143,8 +143,8 @@ class ServiceController extends ObjectController
                     array('class'    => 'icon-plus')
                 );
             }
-        } catch (NestingError $nestingError) {
-            // ignore the error for the form
+        } catch (Exception $e) {
+            // ignore the error, show no apply link
         }
     }
 
