@@ -159,7 +159,7 @@ abstract class ObjectsController extends ActionController
             array('class' => 'icon-plus')
         );
 
-        $this->provideFilterEditorForTable($table);
+        $this->provideFilterEditorForTable($table,$dummy);
         $this->setViewScript('objects/table');
     }
 
@@ -242,7 +242,7 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        $this->provideFilterEditorForTable($table);
+        $this->provideFilterEditorForTable($table, $dummy);
         $this->getTabs()->activate('sets');
         $this->setViewScript('objects/table');
     }

@@ -257,7 +257,7 @@ abstract class ActionController extends Controller
         $this->prepareTable($name)->setViewScript('list/table');
     }
 
-    protected function provideFilterEditorForTable(QuickTable $table)
+    protected function provideFilterEditorForTable(QuickTable $table, $dummy = null)
     {
         $filterEditor = $table->getFilterEditor($this->getRequest());
         $filter = $filterEditor->getFilter();
