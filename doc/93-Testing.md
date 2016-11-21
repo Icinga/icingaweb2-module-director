@@ -190,6 +190,31 @@ gitlab-ci-multi-runner register -n \
   --tag-list centos7,director
 ```
 
+#### CentOS 6
+
+```
+yum makecache
+curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-ci-multi-runner/script.rpm.sh | bash
+
+# Package installation
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+yum install -y https://packages.icinga.org/epel/6/release/noarch/icinga-rpm-release-6-1.el6.noarch.rpm
+yum install -y php-Icinga icingaweb2-common phpunit mysql-server gitlab-ci-multi-runner
+
+# Start and enable MySQL
+/etc/init.d/mysqld start
+chkconfig mysqld on
+
+# No PostgeSQL, 8.4 on CentOS 6 is too old
+
+# Register the runner with your Gitlab installation
+gitlab-ci-multi-runner register -n \
+  -r "$REGISTRATION_TOKEN" \
+  --executor shell \
+  -u "$GITLAB_URL" \
+  --tag-list centos6,director
+```
+
 #### Debian Stable (Jessie)
 
 ```sh
