@@ -82,7 +82,14 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     abstract public function getValue();
 
-    abstract public function toConfigString($renderExpressions = false);
+    public function toConfigString($renderExpressions = false)
+    {
+        // TODO: this should be an abstract method once we deprecate PHP < 5.3.9
+        throw new ProgrammingError(
+            '%s has no toConfigString() implementation',
+            get_class($this)
+        );
+    }
 
     public function isNew()
     {
