@@ -210,6 +210,9 @@ class ServiceController extends ObjectController
                 parent::loadObject();
             }
         }
+        $this->view->undeployedChanges = $this->countUndeployedChanges();
+        $this->view->totalUndeployedChanges = $this->db()
+            ->countActivitiesSinceLastDeployedConfig();
 
         return $this->object;
     }
