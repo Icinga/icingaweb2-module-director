@@ -190,7 +190,8 @@ abstract class ObjectsController extends ActionController
             ->setObjects($objects)
             ->pickElementsFrom($this->loadForm($formName), $this->multiEdit)
             ->handleRequest();
-
+        $this->view->totalUndeployedChanges = $this->db()
+            ->countActivitiesSinceLastDeployedConfig();
         $this->setViewScript('objects/form');
     }
 
