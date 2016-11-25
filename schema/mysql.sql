@@ -529,6 +529,22 @@ CREATE TABLE icinga_host_var (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_service_set (
+  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  object_name VARCHAR(128) NOT NULL,
+  object_type ENUM('object', 'template', 'external_object') NOT NULL,
+  host_id INT(10) UNSIGNED DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY object_key (object_name, host_id),
+  CONSTRAINT icinga_service_set_host
+  FOREIGN KEY host (host_id)
+  REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_service (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
@@ -592,6 +608,11 @@ CREATE TABLE icinga_service (
   CONSTRAINT icinga_service_command_endpoint
     FOREIGN KEY command_endpoint (command_endpoint_id)
     REFERENCES icinga_endpoint (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_service_set
+    FOREIGN KEY service_set (service_set_id)
+    REFERENCES icinga_service_set (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -660,17 +681,6 @@ CREATE TABLE icinga_host_service (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
-
-CREATE TABLE icinga_service_set (
-  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  object_name VARCHAR(128) NOT NULL,
-  object_type ENUM('object', 'template', 'external_object') NOT NULL,
-  host_id INT(10) UNSIGNED DEFAULT NULL,
-  description TEXT DEFAULT NULL,
-  assign_filter TEXT DEFAULT NULL,
-  PRIMARY KEY (id),
-  UNIQUE KEY object_key (object_name, host_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_service_set_inheritance (
   service_set_id INT(10) UNSIGNED NOT NULL,
@@ -1355,4 +1365,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (122, NOW());
+  VALUES (123, NOW());
