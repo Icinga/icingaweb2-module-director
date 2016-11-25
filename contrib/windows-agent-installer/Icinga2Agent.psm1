@@ -276,18 +276,20 @@ function Icinga2AgentModule {
         if (-Not $this.config('agent_version')) {
             return;
         }
+        $WebStatusCode = 0;
         $url = $this.config('download_url') + $this.getProperty('install_msi_package');
         $this.info('Downloading Icinga 2 Agent Binary from ' + $url + '  ...');
-
+        $execptionMsg = '';
         Try {
-            $client = new-object System.Net.WebClient;
-            $client.DownloadFile($url, $this.getInstallerPath());
+            $WebStatusCode = Invoke-WebRequest -UseBasicParsing -Method Head -Uri "$url"
 
-            if (-Not $this.installerExists()) {
-                throw 'Unable to locate downloaded Icinga 2 Agent installer file from ' + $url + '. Download destination: ' + $this.getInstallerPath();
+            if ($WebStatusCode.StatusCode -eq 200) {
+                Invoke-WebRequest "$url" -OutFile $this.getInstallerPath();
+            } else {
+                throw 'Failed to download Icinga 2 Agent Installer from URL';
             }
         } catch {
-            throw 'Unable to download Icinga 2 Agent from ' + $url + '. Please ensure the link does exist and access is possible. Error: ' + $_.Exception.Message;
+             throw 'Unable to download Icinga 2 Agent from ' + $url + '. Error: ' + $_.Exception.Message;
         }
     }
 
