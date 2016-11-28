@@ -26,6 +26,7 @@ class Migration
 
     public function apply(Db $connection)
     {
+        /** @var \Zend_Db_Adapter_Pdo_Abstract $db */
         $db = $connection->getDbAdapter();
 
         // TODO: this is fagile and depends on accordingly written schema files:
@@ -39,6 +40,8 @@ class Migration
         }
 
         try {
+            $query = null;
+            $db->beginTransaction();
             foreach ($queries as $query) {
                 if (preg_match('/^OPTIMIZE /i', $query)) {
                     $db->query($query);
@@ -46,7 +49,7 @@ class Migration
                     $db->exec($query);
                 }
             }
-
+            $db->commit();
         } catch (Exception $e) {
 
             throw new IcingaException(
