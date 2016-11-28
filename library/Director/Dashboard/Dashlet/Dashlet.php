@@ -16,6 +16,7 @@ abstract class Dashlet
 
     protected $supportsLegacyConfig;
 
+    /** @var View */
     protected $view;
 
     protected $db;
@@ -173,6 +174,14 @@ abstract class Dashlet
         return $this->view->translate($msg);
     }
 
+    /**
+     * Hook to add more details by a lower class
+     *
+     * @param $type
+     * @param $extra
+     */
+    protected function onStatSummary($type, &$extra) {}
+
     protected function statSummary($type)
     {
         $view = $this->view;
@@ -232,6 +241,9 @@ abstract class Dashlet
                 );
             }
         }
+
+        // call hook for more details
+        $this->onStatSummary($type, $extra);
 
         if (empty($extra)) {
             return $msg;
