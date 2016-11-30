@@ -282,7 +282,7 @@ abstract class DirectorObjectForm extends QuickForm
                 false,
                 false,
                 null,
-                false // Do not resolve IDs
+                true // is default//false // Do not resolve IDs
             );
         } else {
             $props = $object->getProperties();
