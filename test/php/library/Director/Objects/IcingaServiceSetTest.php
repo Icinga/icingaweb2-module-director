@@ -148,30 +148,36 @@ class IcingaServiceSetTestIcinga extends IcingaObjectTestCase
 
     public function checkForDanglingServices()
     {
-        $db = $this->getDb();
-        /** @var DbQuery $query */
+        $db = $this->getDb()->getDbAdapter();
         $query = $db->select()
-            ->from('icinga_service as s', array('id'))
-            ->joinLeft('icinga_service_set as ss', 'ss.id = s.service_set_id', array())
+            ->from(array('s' => 'icinga_service'), array('id'))
+            ->joinLeft(
+                array('ss' => 'icinga_service_set'),
+                'ss.id = s.service_set_id',
+                array()
+            )
             ->where('s.service_set_id IS NOT NULL')
             ->where('ss.id IS NULL');
 
-        $ids = $query->fetchColumn();
+        $ids = $db->fetchCol($query);
 
         $this->assertEmpty($ids, sprintf('Found dangling service_set services in database: %s', join(', ', $ids)));
     }
 
     public function checkForDanglingHostSets()
     {
-        $db = $this->getDb();
-        /** @var DbQuery $query */
+        $db = $this->getDb()->getDbAdapter();
         $query = $db->select()
-            ->from('icinga_service_set as s', array('id'))
-            ->joinLeft('icinga_host as h', 'h.id = s.host_id', array())
-            ->where('s.host_id IS NOT NULL')
+            ->from(array('ss' => 'icinga_service_set'), array('id'))
+            ->joinLeft(
+                array('h' => 'icinga_host'),
+                'h.id = ss.host_id',
+                array()
+            )
+            ->where('ss.host_id IS NOT NULL')
             ->where('h.id IS NULL');
 
-        $ids = $query->fetchColumn();
+        $ids = $db->fetchCol($query);
 
         $this->assertEmpty($ids,
             sprintf('Found dangling service_set\'s for a host, without the host in database: %s', join(', ', $ids)));
