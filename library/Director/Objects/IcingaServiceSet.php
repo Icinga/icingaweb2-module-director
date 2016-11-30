@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 
@@ -247,6 +248,19 @@ class IcingaServiceSet extends IcingaObject
         } else {
             $host = $this->getRelatedObject('host', $this->get('host_id'));
             return $host->getRenderingZone($config);
+        }
+    }
+
+    protected function beforeStore()
+    {
+        parent::beforeStore();
+
+        $name = $this->getObjectName();
+
+        // checking if template object_name is unique
+        // TODO: Move to IcingaObject
+        if (! $this->hasBeenLoadedFromDb() && $this->isTemplate() && static::exists($name, $this->connection)) {
+            throw new DuplicateKeyException('%s template "%s" already existing in database!', $this->getType(), $name);
         }
     }
 }

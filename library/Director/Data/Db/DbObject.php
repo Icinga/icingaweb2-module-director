@@ -10,6 +10,7 @@ namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Exception\IcingaException as IE;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Util;
 use Exception;
 use Zend_Db_Adapter_Abstract;
@@ -725,7 +726,7 @@ abstract class DbObject
                 }
             } else {
                 if ($id && $this->existsInDb()) {
-                    throw new IE(
+                    throw new DuplicateKeyException(
                         'Trying to recreate %s (%s)',
                         $table,
                         $this->getLogId()

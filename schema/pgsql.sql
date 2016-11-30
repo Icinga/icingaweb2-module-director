@@ -671,6 +671,25 @@ CREATE INDEX host_var_search_idx ON icinga_host_var (varname);
 CREATE INDEX host_var_host ON icinga_host_var (host_id);
 
 
+CREATE TABLE icinga_service_set (
+  id serial,
+  host_id integer DEFAULT NULL,
+  object_name character varying(128) NOT NULL,
+  object_type enum_object_type_all NOT NULL,
+  description text DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_service_set_host
+  FOREIGN KEY (host_id)
+  REFERENCES icinga_host (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id);
+CREATE INDEX service_set_host ON icinga_service_set (host_id);
+
+
 CREATE TABLE icinga_service (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -734,6 +753,11 @@ CREATE TABLE icinga_service (
   CONSTRAINT icinga_service_command_endpoint
   FOREIGN KEY (command_endpoint_id)
     REFERENCES icinga_endpoint (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_service_set
+    FOREIGN KEY (service_set_id)
+    REFERENCES icinga_service_set (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
@@ -825,19 +849,6 @@ CREATE TABLE icinga_host_service (
 
 CREATE INDEX host_service_host ON icinga_host_service (host_id);
 CREATE INDEX host_service_service ON icinga_host_service (service_id);
-
-
-CREATE TABLE icinga_service_set (
-  id serial,
-  host_id integer DEFAULT NULL,
-  object_name character varying(128) NOT NULL,
-  object_type enum_object_type_all NOT NULL,
-  description text DEFAULT NULL,
-  assign_filter text DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-
-CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id);
 
 
 CREATE TABLE icinga_service_set_inheritance (
@@ -1582,4 +1593,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (122, NOW());
+  VALUES (123, NOW());
