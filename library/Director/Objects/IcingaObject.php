@@ -2054,6 +2054,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $str = '';
 
+        // Set notification settings for the object to suppress warnings
+        if (
+            array_key_exists('enable_notifications', $this->defaultProperties)
+            && $this->isTemplate()
+        ) {
+            $str .= c1::renderKeyValue('notification_period', 'notification_none');
+            $str .= c1::renderKeyValue('notification_interval', '0');
+            $str .= c1::renderKeyValue('contact_groups', 'icingaadmins');
+        }
+
         // force rendering of check_command when ARG1 is set
         if ($this->supportsCustomVars() && array_key_exists('check_command_id', $this->defaultProperties)) {
             if (
