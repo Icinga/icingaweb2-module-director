@@ -632,6 +632,25 @@ class Db extends DbConnection
         return $this->db()->fetchAll($select);
     }
 
+    public function fetchDistinctServiceVars()
+    {
+        $select = $this->db()->select()->distinct()->from(
+            array('sv' => 'icinga_service_var'),
+            array(
+                'varname'  => 'sv.varname',
+                'format'   => 'sv.format',
+                'caption'  => 'df.caption',
+                'datatype' => 'df.datatype'
+            )
+        )->joinLeft(
+            array('df' => 'director_datafield'),
+            'df.varname = sv.varname',
+            array()
+        )->order('varname');
+
+        return $this->db()->fetchAll($select);
+    }
+
     public function dbHexFunc($column)
     {
         if ($this->isPgsql()) {

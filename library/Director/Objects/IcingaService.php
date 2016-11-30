@@ -435,7 +435,7 @@ class IcingaService extends IcingaObject
         $serviceVars = array();
 
         if ($connection !== null) {
-            foreach ($connection->fetchDistinctHostVars() as $var) {
+            foreach ($connection->fetchDistinctServiceVars() as $var) {
                 if ($filter->match(PropertiesFilter::$CUSTOM_PROPERTY, $var->varname, $var)) {
                     if ($var->datatype) {
                         $serviceVars[$prefix . 'vars.' . $var->varname] = sprintf(
