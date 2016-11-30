@@ -12,7 +12,7 @@ use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
 use PHPUnit_Framework_TestCase;
 
-class BaseTestCase extends PHPUnit_Framework_TestCase
+abstract class BaseTestCase extends PHPUnit_Framework_TestCase
 {
     private static $app;
 

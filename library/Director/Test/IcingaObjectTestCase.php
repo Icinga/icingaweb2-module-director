@@ -7,7 +7,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 /**
  * Icinga Object test helper class
  */
-class IcingaObjectTestCase extends BaseTestCase
+abstract class IcingaObjectTestCase extends BaseTestCase
 {
     protected $table;
     protected $testObjectName = '___TEST___';
