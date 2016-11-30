@@ -11,6 +11,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Util;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 
@@ -38,6 +39,7 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $preferredObjectType;
 
+    /** @var IcingaObjectFieldLoader */
     protected $fieldLoader;
 
     private $allowsExperimental;
@@ -46,6 +48,16 @@ abstract class DirectorObjectForm extends QuickForm
     private $api;
 
     private $presetImports;
+
+    private $earlyProperties = array(
+        'imports',
+        'check_command',
+        'check_command_id',
+        'command',
+        'command_id',
+        'event_command',
+        'event_command_id',
+    );
 
     public function setPreferredObjectType($type)
     {
@@ -112,9 +124,23 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         if ($this->hasBeenSent()) {
-            if ($el = $this->getElement('imports')) {
-                $this->populate($this->getRequest()->getPost());
-                $object->set('imports', $el->getValue());
+            // prefill special properties, required to resolve fields and similar
+            $post = $this->getRequest()->getPost();
+            foreach ($this->earlyProperties as $key) {
+                if ($el = $this->getElement($key)) {
+                    if (array_key_exists($key, $post)) {
+                        $this->populate(array($key => $post[$key]));
+
+                        try {
+                            $old = $object->get($key);
+                            $object->set($key, $el->getValue());
+                            $object->resolveUnresolvedRelatedProperties();
+                        } catch (Exception $e) {
+                            $object->set($key, $old);
+                            $this->addException($e, $key);
+                        }
+                    }
+                }
             }
         }
 
@@ -235,7 +261,7 @@ abstract class DirectorObjectForm extends QuickForm
         $resolve = $this->assertResolvedImports();
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
-                if ($key === 'imports' || substr($key, 0, 4) === 'var_') {
+                if (in_array($key, $this->earlyProperties) || substr($key, 0, 4) === 'var_') {
                     continue;
                 }
 
@@ -266,7 +292,11 @@ abstract class DirectorObjectForm extends QuickForm
         $this->setDefaults($this->removeEmptyProperties($props));
 
         if ($resolve) {
-            $this->showInheritedProperties($object);
+            try {
+                $this->showInheritedProperties($object);
+            } catch (Exception $e) {
+                $this->addException($e);
+            }
         }
     }
 
@@ -297,11 +327,11 @@ abstract class DirectorObjectForm extends QuickForm
         return $result;
     }
 
-    protected function loadFields($object)
+    protected function prepareFields($object)
     {
         if ($this->assertResolvedImports()) {
-            $loader = $this->fieldLoader($object);
-            $loader->addFieldsToForm($this);
+            $this->fieldLoader = new IcingaObjectFieldLoader($object);
+            $this->fieldLoader->prepareElements($this);
         }
 
         return $this;
@@ -309,14 +339,21 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function setCustomVarValues($object, & $values)
     {
-        if ($this->assertResolvedImports()) {
-            $loader = $this->fieldLoader($object);
-            $loader->setValues($values, 'var_');
+        if ($this->fieldLoader) {
+            $this->fieldLoader->setValues($values, 'var_');
         }
 
         return $this;
     }
 
+    protected function addFields()
+    {
+        if ($this->fieldLoader) {
+            $this->fieldLoader->addFieldsToForm($this);
+        }
+    }
+
+    // TODO: remove, used in sets I guess
     protected function fieldLoader($object)
     {
         if ($this->fieldLoader === null) {
@@ -602,7 +639,7 @@ abstract class DirectorObjectForm extends QuickForm
         $values = array();
 
         $object = $this->object();
-        $this->loadFields($object);
+        $this->prepareFields($object);
         if ($this->hasBeenSent()) {
 
             if ($this->shouldBeDeleted()) {
@@ -614,9 +651,10 @@ abstract class DirectorObjectForm extends QuickForm
             $values = $this->getValues();
 
             if ($object instanceof IcingaObject) {
-                $this->setCustomVarValues($object, $values);
+                $this->setCustomVarValues($object, $post);
             }
         }
+        $this->addFields();
 
         if ($object instanceof IcingaObject) {
             $this->handleRanges($object, $values);
@@ -913,8 +951,21 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addImportsElement($required = null)
     {
+        $required = $required !== null ? $required : !$this->isTemplate();
         $enum = $this->enumAllowedTemplates();
         if (empty($enum)) {
+            if ($required) {
+                if ($this->hasBeenSent()) {
+                    $this->addError($this->translate('No template has been chosen'));
+                } else {
+                    if ($this->hasPermission('director/admin')) {
+                        $html = $this->translate('Please define a related template first');
+                    } else {
+                        $html = $this->translate('No related template has been provided yet');
+                    }
+                    $this->addHtml('<p class="warning">' . $html . '</p>');
+                }
+            }
             return $this;
         }
 
@@ -925,7 +976,7 @@ abstract class DirectorObjectForm extends QuickForm
                 . ' matters when importing properties from multiple templates: last one'
                 . ' wins'
             ),
-            'required'     => ($required !== null ? $required : !$this->isTemplate()),
+            'required'     => $required,
             'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,
@@ -1291,6 +1342,15 @@ abstract class DirectorObjectForm extends QuickForm
         ));
 
         return $this;
+    }
+
+    /**
+     * @param  string $permission
+     * @return bool
+     */
+    public function hasPermission($permission)
+    {
+        return Util::hasPermission($permission);
     }
 
     protected function allowsExperimental()

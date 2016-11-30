@@ -2,10 +2,11 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Exception;
 use Icinga\Exception\IcingaException;
-use stdClass;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use stdClass;
 use Zend_Form_Element as ZfElement;
 
 class IcingaObjectFieldLoader
@@ -102,10 +103,12 @@ class IcingaObjectFieldLoader
                 throw new IcingaException('No such element %s', $key);
             }
 
+            $el->setValue($value);
             $value = $el->getValue();
-            if ($value === '') {
+            if ($value === '' || $value === array()) {
                 $value = null;
             }
+
             $vars->set($varName, $value);
         }
 
@@ -141,6 +144,22 @@ class IcingaObjectFieldLoader
         }
 
         return $this->elements;
+    }
+
+    /**
+     * Prepare the form elements for our fields
+     *
+     * @param QuickForm $form Optional
+     *
+     * @return self
+     */
+    public function prepareElements(QuickForm $form = null)
+    {
+        if ($this->object->supportsFields()) {
+            $this->getElements($form);
+        }
+
+        return $this;
     }
 
     /**
@@ -233,14 +252,20 @@ class IcingaObjectFieldLoader
     /**
      * Create the fields for our object
      *
-     *
+     * @param IcingaObject $object
      * @return DirectorDatafield[]
      */
     protected function prepareObjectFields($object)
     {
         $fields = $this->loadResolvedFieldsForObject($object);
         if ($object->hasRelation('check_command')) {
-            $command = $object->getResolvedRelated('check_command');
+            try {
+                $command = $object->getResolvedRelated('check_command');
+            } catch (Exception $e) {
+                // Ignore failures
+                $command = null;
+            }
+
             if ($command) {
                 $cmdFields = $this->loadResolvedFieldsForObject($command);
                 foreach ($cmdFields as $varname => $field) {
@@ -336,6 +361,7 @@ class IcingaObjectFieldLoader
         foreach ($res as $r) {
             $id = $r->object_id;
             unset($r->object_id);
+
             $r->object = $objects[$id];
             if (! array_key_exists($id, $result)) {
                 $result[$id] = new stdClass;
