@@ -194,4 +194,68 @@ class AgentWizard
 
         return $this->db;
     }
+    public function renderLinuxInstaller()
+    {
+        return $this->loadBashModuleHead()
+            . $this->renderBashParameters(
+                array(
+                    'ICINGA2_NODENAME'        => $this->getCertName(),
+                    'ICINGA2_CA_TICKET'           => $this->getTicket(),
+                    'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
+                    'ICINGA2_PARENT_ENDPOINTS' => array_keys($this->getParentEndpoints()),
+                    'ICINGA2_CA_NODE'         => $this->getCaServer(),
+                )
+            )
+            . "\n"
+            . $this->loadBashModule()
+            . "\n\n";
+    }
+
+    protected function loadBashModule()
+    {
+        return file_get_contents(
+            dirname(dirname(dirname(__DIR__)))
+            . '/contrib/linux-agent-installer/Icinga2Agent.bash'
+        );
+    }
+
+    protected function loadBashModuleHead()
+    {
+        return file_get_contents(
+            dirname(dirname(dirname(__DIR__)))
+            . '/contrib/linux-agent-installer/Icinga2AgentHead.bash'
+        );
+    }
+    protected function renderBashParameters($parameters)
+    {
+        $maxKeyLength = max(array_map('strlen', array_keys($parameters)));
+        $parts = array();
+
+        foreach ($parameters as $key => $value) {
+            $parts[] = $this->renderBashParameter($key, $value, $maxKeyLength);
+        }
+
+        return implode("\n    ", $parts);
+    }
+
+    protected function renderBashParameter($key, $value, $maxKeyLength = null)
+    {
+        $ret = $key . '=';
+
+        //if ($maxKeyLength !== null) {
+        //    $ret .= str_repeat(' ', $maxKeyLength - strlen($key));
+        //}
+
+        if (is_array($value)) {
+            $vals = array();
+            foreach ($value as $val) {
+                $vals[] = $this->renderPowershellString($val);
+            }
+            $ret .= implode(', ', $vals);
+        } else {
+            $ret .= $this->renderPowershellString($value);
+        }
+
+        return $ret;
+    }
 }

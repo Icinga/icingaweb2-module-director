@@ -37,72 +37,10 @@ $master = $this->escape($this->master);
     'Download',
     $this->url()->with('download', 'linux'),
     null,
-    array('class' => 'icon-download')
+    array('class' => 'icon-download', 'target' => '_blank')
 ) ?>
-<p>Just copy &amp; paste this script (and please scroll down for a corresponding icinga2.conf):</p>
-<pre>
-#!/bin/bash
-
-# This generates and signs your required certificates. Please do not
-# forget to install the Icinga 2 package and your desired monitoring
-# plugins first:
-
-ICINGA_PKI_DIR=/etc/icinga2/pki
-ICINGA_USER=nagios
-chown $ICINGA_USER $ICINGA_PKI_DIR
-
-icinga2 pki new-cert --cn <?= $cert ?> \
---key $ICINGA_PKI_DIR/<?= $cert ?>.key \
---cert $ICINGA_PKI_DIR/<?= $cert ?>.crt
-
-icinga2 pki save-cert --key $ICINGA_PKI_DIR/<?= $cert ?>.key \
---trustedcert $ICINGA_PKI_DIR/trusted-master.crt \
---host <?= $master ?>
-
-icinga2 pki request --host <?= $master ?> \
---port 5665 \
---ticket <?= $this->escape($ticket) ?> \
---key $ICINGA_PKI_DIR/<?= $cert ?>.key \
---cert $ICINGA_PKI_DIR/<?= $cert ?>.crt \
---trustedcert $ICINGA_PKI_DIR/trusted-master.crt \
---ca $ICINGA_PKI_DIR/ca.crt
-</pre>
-
-<h2>/etc/icinga2/icinga2.conf</h2>
-<pre>
-/** Icinga 2 Config - proposed by Icinga Director */
-
-include "constants.conf"
-include &lt;itl&gt;
-include &lt;plugins&gt;
-// include &lt;plugins-contrib&gt;
-
-object FileLogger "main-log" {
-  severity = "information"
-  path = LocalStateDir + "/log/icinga2/icinga2.log"
-}
-
-// TODO: improve establish connection handling
-object Endpoint "<?= $cert ?>" {}
-object Endpoint "<?= $master ?>" {}
-object Zone "<?= $masterzone ?>" {
-  endpoints = [ "<?= $master ?>" ]
-  // TODO: all endpoints in master zone
-}
-
-object Zone "<?= $globalzone ?>" { global = true }
-
-object Zone "<?= $cert ?>" {
-  parent = "<?= $master ?>"
-  endpoints = [ "<?= $cert ?>" ]
-}
-
-object ApiListener "api" {
-  cert_path = SysconfDir + "/icinga2/pki/<?= $cert ?>.crt"
-  key_path = SysconfDir + "/icinga2/pki/<?= $cert ?>.key"
-  ca_path = SysconfDir + "/icinga2/pki/ca.crt"
-  accept_commands = true
-  accept_config = true
-}
+<p>Just download and run this script on your Linux Client Machine:</p>
+<pre style="background: black; color: white; height: 14em; overflow: scroll;">
+<?= $this->escape($this->linux) ?>
 </pre>
 </div>
