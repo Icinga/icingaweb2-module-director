@@ -2,13 +2,13 @@
 
 namespace Icinga\Module\Director\ProvidedHook;
 
-use Icinga\Module\Cube\Hook\ActionLinksHook;
+use Icinga\Module\Cube\Hook\ActionsHook;
 use Icinga\Module\Cube\Cube;
 use Icinga\Module\Cube\Ido\IdoHostStatusCube;
 use Icinga\Data\Filter\Filter;
 use Icinga\Web\View;
 
-class CubeLinks extends ActionLinksHook
+class CubeLinks extends ActionsHook
 {
     public function prepareActionLinks(Cube $cube, View $view)
     {

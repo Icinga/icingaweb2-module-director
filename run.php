@@ -43,4 +43,4 @@ $this->provideHook('director/Job', $prefix . 'Job\\ConfigJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ImportJob');
 $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
 
-$this->provideHook('cube/ActionLinks', 'CubeLinks');
+$this->provideHook('cube/Actions', 'CubeLinks');
