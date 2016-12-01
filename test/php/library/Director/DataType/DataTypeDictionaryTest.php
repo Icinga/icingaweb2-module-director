@@ -51,7 +51,7 @@ class DataTypeDictionaryTest extends BaseTestCase
 
         $element = $this->getTestedElement();
 
-        $this->assertEquals('{"foobar-arr":[],"foobar-dict":null,"foobar-number":0,"foobar-str":""}', json_encode($element->structure));
+        $this->assertEquals('{"foobar-arr":[],"foobar-bool":false,"foobar-dict":null,"foobar-number":0,"foobar-str":""}', json_encode($element->structure));
     }
 
     public function testGetDictionaryFormElementWithRecursion() {
@@ -111,6 +111,17 @@ class DataTypeDictionaryTest extends BaseTestCase
             'varname' => 'foobar-number',
             'caption' => 'FOOBAR NUMBER',
             'datatype' => 'Icinga\\Module\\Director\\DataType\\DataTypeNumber',
+            'is_required' => 'n',
+            'allow_multiple' => 'n'
+        ]);
+        $tempDictionaryField->store($this->getDb());
+        array_push($this->dictionaryFields, $tempDictionaryField);
+
+        $tempDictionaryField = DirectorDictionaryField::create([
+            'dictionary_id' => $tempDictionary->getId(),
+            'varname' => 'foobar-bool',
+            'caption' => 'FOOBAR BOOL',
+            'datatype' => 'Icinga\\Module\\Director\\DataType\\DataTypeBoolean',
             'is_required' => 'n',
             'allow_multiple' => 'n'
         ]);

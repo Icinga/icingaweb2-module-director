@@ -75,6 +75,8 @@ class DataTypeDictionary extends DataTypeHook
                 return "";
             case 'Icinga\Module\Director\DataType\DataTypeNumber':
                 return 0;
+            case 'Icinga\Module\Director\DataType\DataTypeBoolean':
+                return false;
             case 'Icinga\Module\Director\DataType\DataTypeDictionary':
                 if ($field->setting_name === 'reference_id' && $field->setting_value) {
                     return $this->initDefaultValueAndSettingsMapRec($field->setting_value, $fullKey . '.');
