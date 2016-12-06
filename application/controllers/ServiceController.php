@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -92,6 +93,9 @@ class ServiceController extends ObjectController
         }
     }
 
+    /**
+     * @param IcingaServiceForm $form
+     */
     protected function beforeHandlingAddRequest($form)
     {
         if ($this->apply) {
