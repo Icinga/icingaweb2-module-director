@@ -8,9 +8,12 @@ $this->providePermission('director/hosts', $this->translate('Allow to configure 
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
 $this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
 $this->providePermission('director/inspect', $this->translate('Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'));
+$this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
 $this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
 
+/*
+// Disabled unless available
 $this->provideRestriction(
     'director/hosttemplates/filter',
     $this->translate('Allow to use only host templates matching this filter')
@@ -20,6 +23,7 @@ $this->provideRestriction(
     'director/dbresources/use',
     $this->translate('Allow to use only these db resources (comma separated list)')
 );
+*/
 
 $this->provideConfigTab('config', array(
     'title' => 'Configuration',
