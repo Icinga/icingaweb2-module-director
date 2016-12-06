@@ -188,6 +188,7 @@
                 $list.scrollTop($prev.offset().top - $list.offset().top - 64 + $list.scrollTop());
             } else {
                 $el.focus();
+                $el.val($el.val());
             }
         },
 
