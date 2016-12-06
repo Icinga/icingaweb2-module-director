@@ -67,6 +67,15 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->getValue();
     }
 
+    public function toJson()
+    {
+        if ($this->getDbFormat() === 'string') {
+            return json_encode($this->getDbValue());
+        } else {
+            return $this->getDbValue();
+        }
+    }
+
     // TODO: abstract
     public function getDbFormat()
     {
@@ -89,6 +98,34 @@ abstract class CustomVariable implements IcingaConfigRenderer
             '%s has no toConfigString() implementation',
             get_class($this)
         );
+    }
+
+    public function flatten(array & $flat, $prefix)
+    {
+        $flat[$prefix] = $this->getDbValue();
+    }
+
+    public function render($renderExpressions = false)
+    {
+        return c::renderKeyValue(
+            $this->renderKeyName($this->getKey()),
+            $this->toConfigStringPrefetchable($renderExpressions)
+        );
+    }
+
+    protected function renderKeyName($key)
+    {
+        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+            return 'vars.' . c::escapeIfReserved($key);
+        } else {
+            return 'vars[' . c::renderString($key) . ']';
+        }
+    }
+
+    public function checksum()
+    {
+        // TODO: remember checksum, invalidate on change
+        return sha1($this->getKey() . '=' . $this->toJson(), true);
     }
 
     public function isNew()

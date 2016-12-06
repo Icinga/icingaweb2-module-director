@@ -75,6 +75,13 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         return $ret;
     }
 
+    public function flatten(array & $flat, $prefix)
+    {
+        foreach ($this->value as $k => $v) {
+            $v->flatten($flat, sprintf('%s["%s"]', $prefix, $k));
+        }
+    }
+
     public function listKeys()
     {
         $keys = array_keys($this->value);

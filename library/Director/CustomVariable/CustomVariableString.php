@@ -37,6 +37,12 @@ class CustomVariableString extends CustomVariable
         return $this;
     }
 
+    public function flatten(array & $flat, $prefix)
+    {
+        // TODO: we should get rid of type=string and always use JSON
+        $flat[$prefix] = json_encode($this->getValue());
+    }
+
     public function toConfigString($renderExpressions = false)
     {
         if ($renderExpressions) {

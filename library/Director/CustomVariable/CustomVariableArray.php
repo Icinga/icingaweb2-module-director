@@ -69,6 +69,13 @@ class CustomVariableArray extends CustomVariable
         return $this;
     }
 
+    public function flatten(array & $flat, $prefix)
+    {
+        foreach ($this->value as $k => $v) {
+            $v->flatten($flat, sprintf('%s[%d]', $prefix, $k));
+        }
+    }
+
     public function toConfigString($renderExpressions = false)
     {
         $parts = array();

@@ -273,6 +273,26 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this->storedVars;
     }
 
+    public function flatten()
+    {
+        $flat = array();
+        foreach ($this->vars as $key => $var) {
+            $var->flatten($flat, $key);
+        }
+
+        return $flat;
+    }
+
+    public function checksum()
+    {
+        $sums = array();
+        foreach ($this->vars as $key => $var) {
+            $sums[] = $key . '=' . $var->checksum();
+        }
+
+        return sha1(implode('|', $sums), true);
+    }
+
     public function toConfigString($renderExpressions = false)
     {
         $out = '';
