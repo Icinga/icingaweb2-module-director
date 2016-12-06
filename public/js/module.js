@@ -248,7 +248,7 @@
          */
         refreshSuggestionList: function($suggestions, $el)
         {
-            $suggestions.load(icinga.config.baseUrl + '/director/suggest', {
+            $suggestions.load(this.module.icinga.config.baseUrl + '/director/suggest', {
                 value: $el.val(),
                 context: $el.data('suggestion-context')
             }, function (responseText, textStatus, jqXHR) {
@@ -281,13 +281,13 @@
         {
             var $el = $suggestion.closest('ul').siblings('.director-suggest');
             var val = $suggestion.text();
-            var $list =
-            $el.val(val);
 
             if (val.match(/\.$/)) {
+                $el.val(val);
                 this.getSuggestionList($el, true);
             } else {
                 $el.focus();
+                $el.val(val);
                 $el.trigger('change');
                 this.getSuggestionList($el).remove();
             }
@@ -305,6 +305,9 @@
         {
             var $list = this.getSuggestionList($el);
             var $active = $list.find('li.active');
+            if ($active.length === 0) {
+                $active = $list.find('li:hover');
+            }
             if ($active.length) {
                 this.chooseSuggestion($active);
                 return true;
