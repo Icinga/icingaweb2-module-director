@@ -33,4 +33,39 @@ class Monitoring
             'hostname' => 'host_name',
         ))->where('host_name', $hostname)->fetchOne() === $hostname;
     }
+
+    public function getHostState($hostname)
+    {
+        $hostStates = array(
+            '0'  => 'up',
+            '1'  => 'down',
+            '2'  => 'unreachable',
+            '99' => 'pending',
+        );
+
+        $query = $this->backend->select()->from('hostStatus', array(
+            'hostname'     => 'host_name',
+            'state'        => 'host_state',
+            'problem'      => 'host_problem',
+            'acknowledged' => 'host_acknowledged',
+            'in_downtime'  => 'host_in_downtime',
+            'output'       => 'host_output',
+        ))->where('host_name', $hostname);
+
+        $res = $query->fetchRow();
+        if ($res === false) {
+            $res = (object) array(
+                'hostname'     => $hostname,
+                'state'        => '99',
+                'problem'      => '0',
+                'acknowledged' => '0',
+                'in_downtime'  => '0',
+                'output'       => null,
+            );
+        }
+
+        $res->state = $hostStates[$res->state];
+
+        return $res;
+    }
 }
