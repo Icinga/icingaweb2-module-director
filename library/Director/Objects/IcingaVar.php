@@ -32,7 +32,7 @@ class IcingaVar extends DbObject
      */
     public static function forCustomVar(CustomVariable $customVar, Db $db)
     {
-        $rendered = static::renderVar($customVar);
+        $rendered = $customVar->render();
 
         $var = static::create(array(
             'checksum'          => $customVar->checksum(),
@@ -45,24 +45,6 @@ class IcingaVar extends DbObject
         $var->var = $customVar;
 
         return $var;
-    }
-
-    protected static function renderVar(CustomVariable $var)
-    {
-        $renderExpressions = false; // TODO!
-        return c::renderKeyValue(
-            static::renderKeyName($var->getKey()),
-            $var->toConfigStringPrefetchable($renderExpressions)
-        );
-    }
-
-    protected static function renderKeyName($key)
-    {
-        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
-            return 'vars.' . c::escapeIfReserved($key);
-        } else {
-            return 'vars[' . c::renderString($key) . ']';
-        }
     }
 
     /**
