@@ -2,9 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Data\Db\DbObject;
-
-class IcingaNotificationField extends DbObject
+class IcingaNotificationField extends IcingaObjectField
 {
     protected $keyName = array('notification_id', 'datafield_id');
 
@@ -13,6 +11,7 @@ class IcingaNotificationField extends DbObject
     protected $defaultProperties = array(
         'notification_id' => null,
         'datafield_id'    => null,
-        'is_required'     => null
+        'is_required'     => null,
+        'var_filter'      => null,
     );
 }
