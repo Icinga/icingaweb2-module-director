@@ -29,8 +29,6 @@ class DirectorDatafield extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'datafield_id';
 
-    private $required = false;
-
     private $object;
 
     public static function fromDbRow($row, Db $connection)
@@ -56,10 +54,6 @@ class DirectorDatafield extends DbObjectWithSettings
         return $this->object;
     }
 
-    protected function setRequired($value)
-    {
-        $this->required = (bool) $value;
-    }
 
     public function getFormElement(DirectorObjectForm $form, $name = null)
     {
@@ -82,6 +76,9 @@ class DirectorDatafield extends DbObjectWithSettings
         $datatype->setSettings($this->getSettings());
         $el = $datatype->getFormElement($name, $form);
 
+        if ($this->getSetting('is_required') === 'y') {
+            $el->setRequired(true);
+        }
         if ($caption = $this->get('caption')) {
             $el->setLabel($caption);
         }
