@@ -61,6 +61,24 @@ class SuggestController extends ActionController
         $this->view->suggestions = $suggestions;
     }
 
+    /**
+     * One more dummy helper for tests
+     *
+     * TODO: Should not remain here
+     *
+     * @return array
+     */
+    protected function suggestLocations()
+    {
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->distinct()
+            ->from('icinga_host_var', 'varvalue')
+            ->where('varname = ?', 'location')
+            ->order('varvalue');
+        return $db->fetchCol($query);
+    }
+
     protected function suggestHostnames()
     {
         $db = $this->db()->getDbAdapter();
