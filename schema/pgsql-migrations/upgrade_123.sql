@@ -13,7 +13,7 @@ DELETE FROM icinga_service AS s
     SELECT 1 FROM icinga_service_set AS ss
     WHERE ss.id = s.service_set_id
   )
-  AND object_type = 'object'
+  AND object_type IN ('object', 'apply')
   AND service_set_id IS NOT NULL;
 
 

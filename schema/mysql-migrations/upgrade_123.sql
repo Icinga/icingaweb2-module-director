@@ -8,7 +8,7 @@ DELETE ss FROM icinga_service_set AS ss
 -- cleanup dangling services to service_set
 DELETE s FROM icinga_service AS s
   LEFT JOIN icinga_service_set AS ss ON ss.id = s.service_set_id
-  WHERE s.object_type = 'object'
+  WHERE s.object_type IN ('object', 'apply')
         AND s.service_set_id IS NOT NULL
         AND ss.id IS NULL;
 
