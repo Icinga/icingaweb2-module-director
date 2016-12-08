@@ -250,7 +250,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $obj;
     }
 
-    protected function enumAllowedServices($host_id, &$host_templates_done = null)
+    protected function enumAllowedServices($host_id)
     {
         // returns service enumeration.  Services are limited to services on the host, or those inherited via a host template 
 
@@ -259,23 +259,19 @@ class IcingaDependencyForm extends DirectorObjectForm
         $host_template_services=array();
         $host_services=array();
  
-        if ($host_id != null) { 
+        if ($host_id != null) {
+            $tmp_host=IcingaHost::loadWithAutoIncId($host_id, $this->db);
+
             $host_services = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $host_id));
             asort($host_services);
 
             //services for applicable templates 
-            $host_templates_done=array();
-            $tmp_host=IcingaHost::loadWithAutoIncId($host_id, $this->db);
-            $host_templates = $tmp_host->imports()->getObjects();
-
-            foreach ($host_templates as $host_template => $template_obj) {
-                if (in_array($template_obj->id, $host_templates_done)) continue;
-               
-                $host_templates_done[]=$template_obj->id;
-                $get_template_services = $this->enumAllowedServices($template_obj->id, $host_templates_done); //recursively get services for this host's template tree
+            $resolver = $tmp_host->templateResolver();
+            foreach ($resolver->fetchResolvedParents() as $template_obj) {
+                $get_template_services = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $template_obj->id));
                 // indicate host template name in 'inherited' services
                 foreach ($get_template_services as $id => &$label) {
-                    if (!preg_match("/\(from: /", $label)) $get_template_services[$id]= $label.' (from:  '.$host_template.")";
+                    if (!preg_match("/\(from: /", $label)) $get_template_services[$id]= $label.' (from:  '.$template_obj->object_name.")";
                 }
                 $host_template_services+=$get_template_services;   
             }
