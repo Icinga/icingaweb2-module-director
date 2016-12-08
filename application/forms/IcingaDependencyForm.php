@@ -250,29 +250,15 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $obj;
     }
 
-    protected function enumAllowedServices($host_id = null, &$host_templates_done = null)
+    protected function enumAllowedServices($host_id, &$host_templates_done = null)
     {
-        /** returns service enumeration.  If host_id is given, services are limited to services on that host, or those inherited via host template, 
-            plus all service apply rules
-            (no attempt is made to further limit apply rules)
-            If host_id is null, only service apply rules are returned
-        **/
+        // returns service enumeration.  Services are limited to services on the host, or those inherited via a host template 
 
         $r_services=array();
         $apply_services=array();
         $host_template_services=array();
         $host_services=array();
-
-        if ( $host_templates_done === null) { //don't redo applied service enumeration on recursive calls
-            $apply_services = $this->db->enum('icinga_service', null, array ('object_type IN (?)' => "apply"));
-            // indicate filter string in apply rule services
-            foreach ($apply_services as $id=>&$label) {
-                $assigns = $this->db->enum('icinga_service_assignment',array('service_id','filter_string'),array('service_id = (?)' => $id));
-                $apply_services[$id]=$label.": via assign '".$assigns[$id]."'";
-            } 
-            asort($apply_services);
-        }
-
+ 
         if ($host_id != null) { 
             $host_services = $this->db->enumIcingaObjects('service', array('host_id = (?)' => $host_id));
             asort($host_services);
@@ -289,7 +275,7 @@ class IcingaDependencyForm extends DirectorObjectForm
                 $get_template_services = $this->enumAllowedServices($template_obj->id, $host_templates_done); //recursively get services for this host's template tree
                 // indicate host template name in 'inherited' services
                 foreach ($get_template_services as $id => &$label) {
-                    if (!preg_match("/via host template/", $label)) $get_template_services[$id]= $label.': via host template '.$host_template;
+                    if (!preg_match("/\(from: /", $label)) $get_template_services[$id]= $label.' (from:  '.$host_template.")";
                 }
                 $host_template_services+=$get_template_services;   
             }
