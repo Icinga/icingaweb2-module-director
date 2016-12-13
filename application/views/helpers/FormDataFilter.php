@@ -291,9 +291,10 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         if ($filter === null) {
             $sign = null;
         } else {
-            if ($filter->getExpression() === true) {
+            $expression = json_decode($filter->getExpression());
+            if ($expression === true) {
                 $sign = 'true';
-            } elseif (is_array($filter->getExpression())) {
+            } elseif (is_array($expression)) {
                 $sign = 'in';
             } else {
                 $sign = $filter->getSign();
