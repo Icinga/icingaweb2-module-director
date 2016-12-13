@@ -11,11 +11,15 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
+    /** @var IcingaHost */
     private $host;
 
     private $set;
 
     private $apply;
+
+    /** @var IcingaService */
+    protected $object;
 
     private $hostGenerated = false;
 
@@ -36,15 +40,18 @@ class IcingaServiceForm extends DirectorObjectForm
     public function setup()
     {
         if ($this->object && $this->object->usesVarOverrides()) {
-            return $this->setupForVarOverrides();
+            $this->setupForVarOverrides();
+            return;
         }
 
         if ($this->hostGenerated) {
-            return $this->setupHostGenerated();
+            $this->setupHostGenerated();
+            return;
         }
 
         if ($this->inheritedFrom) {
-            return $this->setupInherited();
+            $this->setupInherited();
+            return;
         }
 
         try {
@@ -186,7 +193,8 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         if ($this->isNew() && empty($imports)) {
-            return $this->groupMainProperties();
+            $this->groupMainProperties();
+            return;
         }
 
         $this->addNameElement()
@@ -223,7 +231,8 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         if ($this->isNew() && empty($imports)) {
-            return $this->groupMainProperties();
+            $this->groupMainProperties();
+            return;
         }
 
         $this->addNameElement()
@@ -384,7 +393,6 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function succeedForOverrides()
     {
-
         $vars = array();
         foreach ($this->object->vars() as $key => $var) {
             $vars[$key] = $var->getValue();

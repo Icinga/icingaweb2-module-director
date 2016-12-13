@@ -65,7 +65,7 @@ class IcingaObjectFieldLoader
      * Works in a failsafe way, when a field does not exist the value will be
      * silently ignored
      *
-     * @param Array  $values key/value pairs with variable names and their value
+     * @param array  $values key/value pairs with variable names and their value
      * @param String $prefix An optional prefix that would be stripped from keys
      *
      * @return self
@@ -76,13 +76,15 @@ class IcingaObjectFieldLoader
             return $this;
         }
 
-        if ($prefix !== null) {
+        if ($prefix === null) {
+            $len = null;
+        } else {
             $len = strlen($prefix);
         }
         $vars = $this->object->vars();
 
         foreach ($values as $key => $value) {
-            if ($prefix) {
+            if ($len !== null) {
                 if (substr($key, 0, $len) === $prefix) {
                     $key = substr($key, $len);
                 } else {
@@ -172,8 +174,10 @@ class IcingaObjectFieldLoader
      * Attach our form fields to the given form
      *
      * This will also create a 'Custom properties' display group
+     *
+     * @param DirectorObjectForm $form
      */
-    protected function attachFieldsToForm(QuickForm $form)
+    protected function attachFieldsToForm(DirectorObjectForm $form)
     {
         $elements = $this->getElements($form);
         foreach ($elements as $element) {
@@ -216,6 +220,8 @@ class IcingaObjectFieldLoader
 
     /**
      * Get the form elements based on the given form
+     *
+     * @param QuickForm $form
      *
      * @return ZfElement[]
      */

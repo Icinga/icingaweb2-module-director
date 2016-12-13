@@ -76,10 +76,10 @@ class DirectorDatafield extends DbObjectWithSettings
             return $el;
         }
 
-        /** @var DataTypeHook $datatype */
-        $datatype = new $className;
-        $datatype->setSettings($this->getSettings());
-        $el = $datatype->getFormElement($name, $form);
+        /** @var DataTypeHook $dataType */
+        $dataType = new $className;
+        $dataType->setSettings($this->getSettings());
+        $el = $dataType->getFormElement($name, $form);
 
         if ($this->getSetting('is_required') === 'y') {
             $el->setRequired(true);
@@ -112,11 +112,6 @@ class DirectorDatafield extends DbObjectWithSettings
                 $object->getInheritedVar($varname),
                 $object->getOriginForVar($varname)
             );
-
-        } else {
-            if ($this->required) {
-                $el->setRequired(true);
-            }
         }
     }
 }
