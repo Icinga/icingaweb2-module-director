@@ -38,9 +38,14 @@ class DirectorDatafield extends DbObjectWithSettings
         // TODO: $obj->setUnmodified();
         $obj->hasBeenModified = false;
         $obj->modifiedProperties = array();
-
+        $settings = $obj->getSettings();
         // TODO: eventually prefetch
         $obj->onLoadFromDb();
+
+        // Restoring values eventually destroyed by onLoadFromDb
+        foreach ($settings as $key => $value) {
+            $obj->settings[$key] = $value;
+        }
         return $obj;
     }
 
