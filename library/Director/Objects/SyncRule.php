@@ -262,6 +262,7 @@ class SyncRule extends DbObject
             if ($this->get('object_type') === 'service') {
                 $hasHost = false;
                 $hasObjectName = false;
+                $hasServiceSet = false;
 
                 foreach ($this->getSyncProperties() as $key => $property) {
                     if ($property->destination_field === 'host') {
@@ -284,8 +285,7 @@ class SyncRule extends DbObject
                     );
 
                     $this->destinationKeyPattern = '${host}!${object_name}';
-                }
-                elseif ($hasServiceSet !== false && $hasObjectName !== false) {
+                } elseif ($hasServiceSet !== false && $hasObjectName !== false) {
                     $this->hasCombinedKey = true;
                     $this->sourceKeyPattern = sprintf(
                         '%s!%s',
