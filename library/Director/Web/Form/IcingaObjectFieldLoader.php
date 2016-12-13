@@ -92,15 +92,21 @@ class IcingaObjectFieldLoader
 
             $varName = $this->getElementVarName($prefix . $key);
             if ($varName === null) {
-                throw new IcingaException(
-                    'Cannot set variable value for "%s", got no such element',
-                    $key
-                );
+                // throw new IcingaException(
+                //     'Cannot set variable value for "%s", got no such element',
+                //     $key
+                // );
+
+                // Silently ignore additional fields. One might have switched
+                // template or command
+                continue;
             }
 
             $el = $this->getElement($varName);
             if ($el === null) {
-                throw new IcingaException('No such element %s', $key);
+                // throw new IcingaException('No such element %s', $key);
+                // Same here.
+                continue;
             }
 
             $el->setValue($value);
