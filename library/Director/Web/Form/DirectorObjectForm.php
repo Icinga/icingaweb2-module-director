@@ -1034,7 +1034,8 @@ abstract class DirectorObjectForm extends QuickForm
             'multiOptions' => $this->optionalEnum($this->db->enumCheckcommands()),
             'class'        => 'autosubmit', // This influences fields
         ));
-        $this->addToCheckExecutionDisplayGroup('check_command_id');
+        $this->getDisplayGroup('object_definition')
+            ->addElement($this->getElement('check_command_id'));
 
         $eventCommands = $this->db->enumEventcommands();
 
