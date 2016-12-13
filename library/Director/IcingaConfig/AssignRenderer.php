@@ -60,7 +60,14 @@ class AssignRenderer
 
     protected function renderEquals($column, $expression)
     {
-        if (substr($column, -7) === '.groups') {
+        if ($column[0] === '"') {
+            // "me"=vars.users -> "me" in vars.users
+            return sprintf(
+                '%s in %s',
+                $column,
+                $expression
+            );
+        } else if (substr($column, -7) === '.groups') {
             return sprintf(
                 '%s in %s',
                 $expression,

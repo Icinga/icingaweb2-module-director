@@ -275,6 +275,14 @@ class DataFilter extends FormElement
                 '=',
                 json_encode($value)
             );
+        } elseif ($entry['sign'] === 'contains') {
+            $value = array_key_exists('value', $entry) ? $entry['value'] : null;
+
+            return Filter::expression(
+                json_encode($value),
+                '=',
+                $entry['column']
+            );
         } else {
             $value = array_key_exists('value', $entry) ? $entry['value'] : null;
 

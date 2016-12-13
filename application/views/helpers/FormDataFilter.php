@@ -160,7 +160,12 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $type = 'host';
             $filter = clone($filter);
 
-            $filter->setExpression(json_decode($filter->getExpression()));
+            if ($this->columnIsJson($filter)) {
+                $filter->setExpression(json_decode($filter->getColumn()));
+            } else {
+                $filter->setExpression(json_decode($filter->getExpression()));
+            }
+
             $dummy = IcingaObject::createByType($type);
             $col = $filter->getColumn();
             if ($dummy->hasProperty($col)) {
@@ -202,6 +207,12 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         );
 
         return $el;
+    }
+
+    protected function columnIsJson(FilterExpression $filter)
+    {
+        $col = $filter->getColumn();
+        return strlen($col) && $col[0] === '"';
     }
 
     protected function text(Filter $filter = null)
@@ -275,7 +286,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         );
     }
 
-    protected function selectSign(Filter $filter = null)
+    protected function selectSign(FilterExpression $filter = null)
     {
         $signs = array(
             '='  => '=',
@@ -285,19 +296,24 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             '>=' => '>=',
             '<=' => '<=',
             'in' => 'in',
+            'contains' => 'contains',
             // 'true' => 'is true (or set)',
         );
 
         if ($filter === null) {
             $sign = null;
         } else {
-            $expression = json_decode($filter->getExpression());
-            if ($expression === true) {
-                $sign = 'true';
-            } elseif (is_array($expression)) {
-                $sign = 'in';
+            if ($this->columnIsJson($filter)) {
+                $sign = 'contains';
             } else {
-                $sign = $filter->getSign();
+                $expression = json_decode($filter->getExpression());
+                if ($expression === true) {
+                    $sign = 'true';
+                } elseif (is_array($expression)) {
+                    $sign = 'in';
+                } else {
+                    $sign = $filter->getSign();
+                }
             }
         }
 
@@ -320,9 +336,12 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return $this;
     }
 
-    protected function selectColumn(Filter $filter = null)
+    protected function selectColumn(FilterExpression $filter = null)
     {
         $active = $filter === null ? null : $filter->getColumn();
+        if ($filter && $this->columnIsJson($filter)) {
+            $active = $filter->getExpression();
+        }
 
         if (! $this->hasColumnList()) {
             return $this->view->formText(
