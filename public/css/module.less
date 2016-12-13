@@ -1128,7 +1128,7 @@ ul.assign-rule {
     }
 
 
-    ul {
+    li.filter-chain > ul {
         list-style-type: none;
         padding-left: 2em;
 
@@ -1184,7 +1184,7 @@ ul.filter-root {
         }
     }
 
-    input[type=submit].icon-button {
+    .filter-chain > input[type=submit].icon-button, .filter-expression > input[type=submit].icon-button {
         display: none;
         font-family: 'ifont';
         font-weight: normal;
@@ -1241,6 +1241,7 @@ div.filter-expression {
 
     div.expression-wrapper {
         display: inline-block;
+        vertical-align: top;
     }
 
     div.expression-wrapper > input[type=text], 
