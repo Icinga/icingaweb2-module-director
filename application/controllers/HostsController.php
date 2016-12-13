@@ -8,7 +8,8 @@ class HostsController extends ObjectsController
 {
     protected $multiEdit = array(
         'imports',
-        'groups'
+        'groups',
+        'disabled'
     );
 
     protected function checkDirectorPermissions()
