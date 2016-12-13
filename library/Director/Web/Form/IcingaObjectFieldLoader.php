@@ -151,6 +151,9 @@ class IcingaObjectFieldLoader
     protected function attachFieldsToForm(QuickForm $form)
     {
         $elements = $this->getElements($form);
+        foreach ($elements as $element) {
+            $form->addElement($element);
+        }
 
         if (! empty($elements)) {
             $form->addElementsToGroup(
