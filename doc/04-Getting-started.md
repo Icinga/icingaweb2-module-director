@@ -37,7 +37,7 @@ fresh Icinga 2 installation or a standalone setup with other ways of
 checking your clients, you will have to create them.
 
 The easiest way to set up Icinga 2 with a `zone` and `endpoint` is by
-running the [Icinga 2 Setup Wizard](http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client#icinga2-client-installation-master-setup).
+running the [Icinga 2 Setup Wizard](https://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring#distributed-monitoring-setup-master).
 
 Take some time to really understand how to work with Icinga Director first.
 
