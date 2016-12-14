@@ -84,12 +84,13 @@ abstract class DirectorObjectForm extends QuickForm
      *
      * @return DbObject|DbObjectWithSettings|IcingaObject
      */
-    protected function object($values = array())
+    protected function object()
     {
         if ($this->object === null) {
+            $values = array();
             /** @var DbObject|IcingaObject $class */
             $class = $this->getObjectClassname();
-            if ($this->preferredObjectType && ! array_key_exists('object_type', $values)) {
+            if ($this->preferredObjectType) {
                 $values['object_type'] = $this->preferredObjectType;
             }
 
@@ -103,7 +104,6 @@ abstract class DirectorObjectForm extends QuickForm
             if (! $this->object->hasConnection()) {
                 $this->object->setConnection($this->db);
             }
-            $this->object->setProperties($values);
         }
 
         return $this->object;
