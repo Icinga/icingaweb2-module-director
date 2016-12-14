@@ -11,6 +11,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Form\QuickBaseForm;
 use Icinga\Module\Director\Web\Table\QuickTable;
@@ -257,7 +258,7 @@ abstract class ActionController extends Controller
         $this->prepareTable($name)->setViewScript('list/table');
     }
 
-    protected function provideFilterEditorForTable(QuickTable $table)
+    protected function provideFilterEditorForTable(QuickTable $table, IcingaObject $dummy = null)
     {
         $filterEditor = $table->getFilterEditor($this->getRequest());
         $filter = $filterEditor->getFilter();
@@ -314,6 +315,10 @@ abstract class ActionController extends Controller
         }
 
         if ($this->getRequest()->isApiRequest()) {
+            if ($dummy === null) {
+                throw new NotFoundError('Not accessible via API');
+            }
+
             $objects = array();
             foreach ($dummy::loadAll($this->db) as $object) {
                 $objects[] = $object->toPlainObject(false, true);
