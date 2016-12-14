@@ -178,6 +178,55 @@ abstract class Dashlet
         return $this->view->translate($msg);
     }
 
+    public function getStats($type, $name = null)
+    {
+        if ($name === null) {
+            return $this->stats[$type];
+        } else {
+            return $this->stats[$type]->{'cnt_' . $name};
+        }
+    }
+
+    protected function getTemplateSummaryText($type)
+    {
+        $view = $this->view;
+        $stat = $this->stats[$type];
+        $cnt = (int) $this->stats[$type]->cnt_template;
+
+        if ($cnt === 0) {
+            return $view->translate('No template has been defined yet');
+        }
+
+        if ($cnt === 1) {
+            return $view->translate('One template has been defined');
+        }
+
+        return sprintf(
+            $view->translate('%d templates have been defined'),
+            $cnt
+        );
+    }
+
+    protected function getApplySummaryText($type)
+    {
+        $view = $this->view;
+        $stat = $this->stats[$type];
+        $cnt = (int) $this->stats[$type]->cnt_apply;
+
+        if ($cnt === 0) {
+            return $view->translate('No apply rule has been defined yet');
+        }
+
+        if ($cnt === 1) {
+            return $view->translate('One apply rule has been defined');
+        }
+
+        return sprintf(
+            $view->translate('%d apply rules have been defined'),
+            $cnt
+        );
+    }
+
     protected function statSummary($type)
     {
         $view = $this->view;
