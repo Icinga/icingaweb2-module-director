@@ -15,4 +15,4 @@ ALTER TABLE icinga_user_field
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (123, NOW());
+  VALUES (125, NOW());

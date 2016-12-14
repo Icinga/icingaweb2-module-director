@@ -337,6 +337,7 @@ CREATE TABLE icinga_command_field (
   command_id INT(10) UNSIGNED NOT NULL,
   datafield_id INT(10) UNSIGNED NOT NULL,
   is_required ENUM('y', 'n') NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (command_id, datafield_id),
   CONSTRAINT icinga_command_field_command
   FOREIGN KEY command_id (command_id)
@@ -502,6 +503,7 @@ CREATE TABLE icinga_host_field (
   host_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
   is_required ENUM('y', 'n') NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (host_id, datafield_id),
   CONSTRAINT icinga_host_field_host
   FOREIGN KEY host(host_id)
@@ -653,6 +655,7 @@ CREATE TABLE icinga_service_field (
   service_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
   is_required ENUM('y', 'n') NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (service_id, datafield_id),
   CONSTRAINT icinga_service_field_service
   FOREIGN KEY service(service_id)
@@ -921,6 +924,7 @@ CREATE TABLE icinga_user_field (
   user_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
   is_required ENUM('y', 'n') NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (user_id, datafield_id),
   CONSTRAINT icinga_user_field_user
   FOREIGN KEY user(user_id)
@@ -1056,6 +1060,7 @@ CREATE TABLE icinga_notification_field (
   notification_id INT(10) UNSIGNED NOT NULL COMMENT 'Makes only sense for templates',
   datafield_id INT(10) UNSIGNED NOT NULL,
   is_required ENUM('y', 'n') NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (notification_id, datafield_id),
   CONSTRAINT icinga_notification_field_notification
   FOREIGN KEY notification (notification_id)
@@ -1365,4 +1370,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (124, NOW());
+  VALUES (125, NOW());
