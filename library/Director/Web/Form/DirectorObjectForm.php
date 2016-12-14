@@ -131,13 +131,15 @@ abstract class DirectorObjectForm extends QuickForm
                 if ($el = $this->getElement($key)) {
                     if (array_key_exists($key, $post)) {
                         $this->populate(array($key => $post[$key]));
-
+                        $old = null;
                         try {
                             $old = $object->get($key);
                             $object->set($key, $el->getValue());
                             $object->resolveUnresolvedRelatedProperties();
                         } catch (Exception $e) {
-                            $object->set($key, $old);
+                            if ($old !== null) {
+                                $object->set($key, $old);
+                            }
                             $this->addException($e, $key);
                         }
                     }
