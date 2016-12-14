@@ -541,7 +541,7 @@ CREATE TABLE icinga_service_set (
   CONSTRAINT icinga_service_set_host
   FOREIGN KEY host (host_id)
   REFERENCES icinga_host (id)
-    ON DELETE RESTRICT
+    ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -613,7 +613,7 @@ CREATE TABLE icinga_service (
   CONSTRAINT icinga_service_service_set
     FOREIGN KEY service_set (service_set_id)
     REFERENCES icinga_service_set (id)
-    ON DELETE RESTRICT
+    ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1365,4 +1365,4 @@ CREATE TABLE sync_run (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (123, NOW());
+  VALUES (124, NOW());
