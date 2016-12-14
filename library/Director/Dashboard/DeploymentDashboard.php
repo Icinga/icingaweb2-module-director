@@ -4,8 +4,6 @@ namespace Icinga\Module\Director\Dashboard;
 
 class DeploymentDashboard extends Dashboard
 {
-    protected $name;
-
     protected $dashletNames = array(
         'Deployment',
         'ActivityLog',
@@ -17,10 +15,5 @@ class DeploymentDashboard extends Dashboard
     public function getTitle()
     {
         return $this->translate('Deploy configuration to your Icinga nodes');
-    }
-
-    public function getDescription()
-    {
-        return $this->translate('...');
     }
 }

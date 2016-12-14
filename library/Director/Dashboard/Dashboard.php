@@ -53,7 +53,10 @@ abstract class Dashboard implements Countable
 
     abstract public function getTitle();
 
-    abstract public function getDescription();
+    public function getDescription()
+    {
+        return null;
+    }
 
     public function count()
     {
