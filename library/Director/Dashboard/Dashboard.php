@@ -86,18 +86,30 @@ abstract class Dashboard implements Countable
     public function dashlets()
     {
         if ($this->dashlets === null) {
-            if ($this->dashletNames === null) {
-                $this->dashlets = Dashlet::loadAll($this);
-            } else {
-                $this->dashlets = Dashlet::loadByNames(
-                    $this->dashletNames,
-                    $this
-                );
-            }
+            $this->loadDashlets();
             $this->fetchDashletSummaries();
         }
 
         return $this->dashlets;
+    }
+
+    public function loadDashlets()
+    {
+        $names = $this->getDashletNames();
+
+        if (empty($names)) {
+            $this->dashlets = array();
+        } else {
+            $this->dashlets = Dashlet::loadByNames(
+                $this->dashletNames,
+                $this
+            );
+        }
+    }
+
+    public function getDashletNames()
+    {
+        return $this->dashletNames;
     }
 
     protected function fetchDashletSummaries()
