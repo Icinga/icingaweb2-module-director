@@ -53,6 +53,7 @@ abstract class DirectorObjectForm extends QuickForm
         'imports',
         'check_command',
         'check_command_id',
+        'has_agent',
         'command',
         'command_id',
         'event_command',
@@ -83,12 +84,13 @@ abstract class DirectorObjectForm extends QuickForm
      *
      * @return DbObject|DbObjectWithSettings|IcingaObject
      */
-    protected function object($values = array())
+    protected function object()
     {
         if ($this->object === null) {
+            $values = array();
             /** @var DbObject|IcingaObject $class */
             $class = $this->getObjectClassname();
-            if ($this->preferredObjectType && ! array_key_exists('object_type', $values)) {
+            if ($this->preferredObjectType) {
                 $values['object_type'] = $this->preferredObjectType;
             }
 
@@ -102,7 +104,6 @@ abstract class DirectorObjectForm extends QuickForm
             if (! $this->object->hasConnection()) {
                 $this->object->setConnection($this->db);
             }
-            $this->object->setProperties($values);
         }
 
         return $this->object;
@@ -130,13 +131,15 @@ abstract class DirectorObjectForm extends QuickForm
                 if ($el = $this->getElement($key)) {
                     if (array_key_exists($key, $post)) {
                         $this->populate(array($key => $post[$key]));
-
+                        $old = null;
                         try {
                             $old = $object->get($key);
                             $object->set($key, $el->getValue());
                             $object->resolveUnresolvedRelatedProperties();
                         } catch (Exception $e) {
-                            $object->set($key, $old);
+                            if ($old !== null) {
+                                $object->set($key, $old);
+                            }
                             $this->addException($e, $key);
                         }
                     }
@@ -258,42 +261,27 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function handleProperties(DbObject $object, & $values)
     {
-        $resolve = $this->assertResolvedImports();
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
-                if (in_array($key, $this->earlyProperties) || substr($key, 0, 4) === 'var_') {
-                    continue;
-                }
-
                 try {
-                    $object->set($key, $value);
-                    if ($object instanceof IcingaObject) {
-                        $object->resolveUnresolvedRelatedProperties();
+                    if ($object->hasProperty($key)) {
+                        $object->set($key, $value);
+                        if ($object instanceof IcingaObject) {
+                            $object->resolveUnresolvedRelatedProperties();
+                        }
                     }
-
                 } catch (Exception $e) {
                     $this->addException($e, $key);
                 }
             }
         }
+    }
 
-        if ($object instanceof IcingaObject) {
-            $props = (array) $object->toPlainObject(
-                false,
-                false,
-                null,
-                true // is default//false // Do not resolve IDs
-            );
-        } else {
-            $props = $object->getProperties();
-            unset($props['vars']);
-        }
-
-        $this->setDefaults($this->removeEmptyProperties($props));
-
-        if ($resolve) {
+    protected function loadInheritedProperties()
+    {
+        if ($this->assertResolvedImports()) {
             try {
-                $this->showInheritedProperties($object);
+                $this->showInheritedProperties($this->object());
             } catch (Exception $e) {
                 $this->addException($e);
             }
@@ -636,37 +624,51 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function onRequest()
     {
-        $values = array();
-
         $object = $this->object();
+        $this->setDefaultsFromObject($object);
         $this->prepareFields($object);
         if ($this->hasBeenSent()) {
-
-            if ($this->shouldBeDeleted()) {
-                $this->deleteObject($object);
-            }
-
-            $post = $this->getRequest()->getPost();
-            $this->populate($post);
-            $values = $this->getValues();
-
-            if ($object instanceof IcingaObject) {
-                $this->setCustomVarValues($object, $post);
-            }
+            $this->handlePost();
         }
+        $this->loadInheritedProperties();
         $this->addFields();
+    }
 
+    protected function handlePost()
+    {
+        $object = $this->object();
+        if ($this->shouldBeDeleted()) {
+            $this->deleteObject($object);
+        }
+
+        $post = $this->getRequest()->getPost();
+        $this->populate($post);
+        $values = $this->getValues();
+
+        if ($object instanceof IcingaObject) {
+            $this->setCustomVarValues($object, $post);
+        }
+
+        $this->handleProperties($object, $values);
+
+        // TODO: get rid of this
         if ($object instanceof IcingaObject) {
             $this->handleRanges($object, $values);
         }
-        $this->handleProperties($object, $values);
+    }
 
-        /*
-        // TODO: something like this could be used to remember unstored changes
-        if ($object->hasBeenModified()) {
-            $this->addHtmlHint($this->translate('Object has been modified'));
+    protected function setDefaultsFromObject(DbObject $object)
+    {
+        /** @var ZfElement $element */
+        foreach ($this->getElements() as $element) {
+            $key = $element->getName();
+            if ($object->hasProperty($key)) {
+                $value = $object->get($key);
+                if ($value !== null) {
+                    $element->setValue($value);
+                }
+            }
         }
-        */
     }
 
     protected function deleteObject($object)
