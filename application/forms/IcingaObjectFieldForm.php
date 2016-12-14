@@ -2,9 +2,12 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 
 class IcingaObjectFieldForm extends DirectorObjectForm
 {
@@ -20,8 +23,9 @@ class IcingaObjectFieldForm extends DirectorObjectForm
 
     public function setup()
     {
-        $type = $this->icingaObject->getShortTableName();
-        $this->addHidden($type . '_id', $this->icingaObject->get('id'));
+        $object = $this->icingaObject;
+        $type = $object->getShortTableName();
+        $this->addHidden($type . '_id', $object->get('id'));
 
         $this->addHtmlHint(
             'Custom data fields allow you to easily fill custom variables with'
@@ -48,8 +52,8 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         $argumentVars = array();
         $argumentVarDescriptions = array();
 
-        if ($this->icingaObject->supportsArguments()) {
-            foreach ($this->icingaObject->arguments() as $arg) {
+        if ($object->supportsArguments()) {
+            foreach ($object->arguments() as $arg) {
                 if ($arg->argument_format === 'string') {
                     $val = $arg->argument_value;
                     // TODO: create var::extractMacros or so
@@ -131,13 +135,48 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             )
         ));
 
+        $filterFields = array();
+        $prefix = null;
+        if ($object instanceof IcingaHost) {
+            $prefix = 'host.vars.';
+        } elseif ($object instanceof IcingaService) {
+            $prefix = 'service.vars.';
+        }
+
+        if ($prefix) {
+            $loader = new IcingaObjectFieldLoader($object);
+            $fields = $loader->getFields();
+
+            foreach ($fields as $varName => $field) {
+                $filterFields[$prefix . $field->varname] = $field->caption;
+            }
+
+            $this->addFilterElement('var_filter', array(
+                'description' => $this->translate(
+                    'You might want to show this field only when certain conditions are met.'
+                    . ' Otherwise it will not be available and values eventually set before'
+                    . ' will be cleared once stored'
+                ),
+                'columns' => $filterFields,
+            ));
+
+            $this->addDisplayGroup(array($this->getElement('var_filter')), 'field_filter', array(
+                'decorators' => array(
+                    'FormElements',
+                    array('HtmlTag', array('tag' => 'dl')),
+                    'Fieldset',
+                ),
+                'order'  => 30,
+                'legend' => $this->translate('Show based on filter')
+            ));
+        }
+
         $this->setButtons();
     }
 
     protected function onRequest()
     {
         parent::onRequest();
-
         if ($this->getSentValue('delete') === $this->translate('Delete')) {
             $this->object()->delete();
             $this->setSuccessUrl($this->getSuccessUrl()->without('field_id'));
@@ -154,13 +193,14 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                 'varname'     => trim($fieldId, '$'),
                 'caption'     => $this->getValue('caption'),
                 'description' => $this->getValue('description'),
-                'datatype'    => 'Icinga\Module\Director\DataType\DataTypeString'
+                'datatype'    => 'Icinga\Module\Director\DataType\DataTypeString',
             ));
             $field->store($this->getDb());
             $this->setElementValue('datafield_id', $field->get('id'));
             $this->object()->set('datafield_id', $field->get('id'));
         }
 
+        $this->object()->set('var_filter', $this->getValue('var_filter'));
         return parent::onSuccess();
     }
 }

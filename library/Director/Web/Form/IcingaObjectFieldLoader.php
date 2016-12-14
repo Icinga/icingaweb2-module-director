@@ -3,9 +3,13 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\IcingaService;
 use stdClass;
 use Zend_Form_Element as ZfElement;
 
@@ -179,7 +183,11 @@ class IcingaObjectFieldLoader
      */
     protected function attachFieldsToForm(DirectorObjectForm $form)
     {
-        $elements = $this->getElements($form);
+        if ($this->fields === null) {
+            return;
+        }
+        $elements = $this->removeFilteredFields($this->getElements($form));
+
         foreach ($elements as $element) {
             $form->addElement($element);
         }
@@ -192,6 +200,68 @@ class IcingaObjectFieldLoader
                 $form->translate('Custom properties')
             );
         }
+    }
+
+    /**
+     * @param ZfElement[] $elements
+     * @return ZfElement[]
+     */
+    protected function removeFilteredFields(array $elements)
+    {
+        $filters = array();
+        foreach ($this->fields as $key => $field) {
+            if ($filter = $field->var_filter) {
+
+                $filters[$key] = Filter::fromQueryString($filter);
+            }
+        }
+
+        $kill = array();
+        $columns = array();
+        $object = $this->object;
+
+        $object->invalidateResolveCache();
+        $vars = $object::fromPlainObject($object->toPlainObject(true))->vars()->flatten();
+        $prefixedVars = (object) array();
+        if ($object instanceof IcingaHost) {
+            $prefix = 'host.vars.';
+        } elseif ($object instanceof IcingaService) {
+            $prefix = 'service.vars.';
+        } else {
+            return $elements;
+        }
+
+        foreach ($vars as $k => $v) {
+            $prefixedVars->{$prefix . $k} = $v;
+        }
+
+        foreach ($filters as $key => $filter) {
+            /** @var $filter FilterChain|FilterExpression */
+            foreach ($filter->listFilteredColumns() as $column) {
+                $column = substr($column, strlen($prefix));
+                $columns[$column] = $column;
+            }
+            if (! $filter->matches($prefixedVars)) {
+                $kill[] = $key;
+            }
+        }
+
+        foreach ($kill as $key) {
+            unset($elements[$key]);
+        }
+        foreach ($columns as $col) {
+            if (array_key_exists($col, $elements)) {
+                $el = $elements[$col];
+                $existingClass = $el->getAttrib('class');
+                if (strlen($existingClass)) {
+                    $el->setAttrib('class', $existingClass . ' autosubmit');
+                } else {
+                    $el->setAttrib('class', 'autosubmit');
+                }
+            }
+        }
+
+        return $elements;
     }
 
     protected function getElementVarName($name)
@@ -351,14 +421,15 @@ class IcingaObjectFieldLoader
         $query = $db->select()->from(
             array('df' => 'director_datafield'),
             array(
-                'object_id'    => $idColumn,
-                'is_required'  => 'f.is_required',
-                'id'           => 'df.id',
-                'varname'      => 'df.varname',
-                'caption'      => 'df.caption',
-                'description'  => 'df.description',
-                'datatype'     => 'df.datatype',
-                'format'       => 'df.format',
+                'object_id'   => $idColumn,
+                'var_filter'  => 'f.var_filter',
+                'is_required' => 'f.is_required',
+                'id'          => 'df.id',
+                'varname'     => 'df.varname',
+                'caption'     => 'df.caption',
+                'description' => 'df.description',
+                'datatype'    => 'df.datatype',
+                'format'      => 'df.format',
             )
         )->join(
             array('f' => $object->getTableName() . '_field'),

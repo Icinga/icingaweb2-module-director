@@ -443,6 +443,7 @@ CREATE TABLE icinga_command_field (
   command_id integer NOT NULL,
   datafield_id integer NOT NULL,
   is_required enum_boolean NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (command_id, datafield_id),
   CONSTRAINT icinga_command_field_command
     FOREIGN KEY (command_id)
@@ -635,6 +636,7 @@ CREATE TABLE icinga_host_field (
   host_id integer NOT NULL,
   datafield_id integer NOT NULL,
   is_required enum_boolean NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (host_id, datafield_id),
   CONSTRAINT icinga_host_field_host
   FOREIGN KEY (host_id)
@@ -812,6 +814,7 @@ CREATE TABLE icinga_service_field (
   service_id integer NOT NULL,
   datafield_id integer NOT NULL,
   is_required enum_boolean NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (service_id, datafield_id),
   CONSTRAINT icinga_service_field_service
   FOREIGN KEY (service_id)
@@ -1121,6 +1124,7 @@ CREATE TABLE icinga_user_field (
   user_id integer NOT NULL,
   datafield_id integer NOT NULL,
   is_required enum_boolean NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (user_id, datafield_id),
   CONSTRAINT icinga_user_field_user
   FOREIGN KEY (user_id)
@@ -1552,6 +1556,7 @@ CREATE TABLE icinga_notification_field (
   notification_id integer NOT NULL,
   datafield_id integer NOT NULL,
   is_required enum_boolean NOT NULL,
+  var_filter TEXT DEFAULT NULL,
   PRIMARY KEY (notification_id, datafield_id),
   CONSTRAINT icinga_notification_field_notification
   FOREIGN KEY (notification_id)
@@ -1593,4 +1598,4 @@ CREATE UNIQUE INDEX notification_inheritance ON icinga_notification_inheritance 
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (124, NOW());
+  VALUES (125, NOW());
