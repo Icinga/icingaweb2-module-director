@@ -6,8 +6,10 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\IcingaService;
 use stdClass;
 use Zend_Form_Element as ZfElement;
 
@@ -181,27 +183,65 @@ class IcingaObjectFieldLoader
      */
     protected function attachFieldsToForm(DirectorObjectForm $form)
     {
-        $filters = array();
         if ($this->fields === null) {
             return;
         }
+        $elements = $this->removeFilteredFields($this->getElements($form));
+
+        foreach ($elements as $element) {
+            $form->addElement($element);
+        }
+
+        if (! empty($elements)) {
+            $form->addElementsToGroup(
+                $elements,
+                'custom_fields',
+                50,
+                $form->translate('Custom properties')
+            );
+        }
+    }
+
+    /**
+     * @param ZfElement[] $elements
+     * @return ZfElement[]
+     */
+    protected function removeFilteredFields(array $elements)
+    {
+        $filters = array();
         foreach ($this->fields as $key => $field) {
             if ($filter = $field->var_filter) {
 
                 $filters[$key] = Filter::fromQueryString($filter);
             }
         }
-        $elements = $this->getElements($form);
+
         $kill = array();
         $columns = array();
-        $vars = (object) $this->object->vars()->flatten();
+        $object = $this->object;
+
+        $object->invalidateResolveCache();
+        $vars = $object::fromPlainObject($object->toPlainObject(true))->vars()->flatten();
+        $prefixedVars = (object) array();
+        if ($object instanceof IcingaHost) {
+            $prefix = 'host.vars.';
+        } elseif ($object instanceof IcingaService) {
+            $prefix = 'service.vars.';
+        } else {
+            return $elements;
+        }
+
+        foreach ($vars as $k => $v) {
+            $prefixedVars->{$prefix . $k} = $v;
+        }
+
         foreach ($filters as $key => $filter) {
             /** @var $filter FilterChain|FilterExpression */
             foreach ($filter->listFilteredColumns() as $column) {
+                $column = substr($column, strlen($prefix));
                 $columns[$column] = $column;
             }
-
-            if (! $filter->matches($vars)) {
+            if (! $filter->matches($prefixedVars)) {
                 $kill[] = $key;
             }
         }
@@ -221,18 +261,7 @@ class IcingaObjectFieldLoader
             }
         }
 
-        foreach ($elements as $element) {
-            $form->addElement($element);
-        }
-
-        if (! empty($elements)) {
-            $form->addElementsToGroup(
-                $elements,
-                'custom_fields',
-                50,
-                $form->translate('Custom properties')
-            );
-        }
+        return $elements;
     }
 
     protected function getElementVarName($name)

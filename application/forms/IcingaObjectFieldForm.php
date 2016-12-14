@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 
@@ -133,25 +135,41 @@ class IcingaObjectFieldForm extends DirectorObjectForm
             )
         ));
 
-        $loader = new IcingaObjectFieldLoader($object);
-        $fields = $loader->getFields();
-        $this->addFilterElement('var_filter', array(
-            'description' => $this->translate(
-                'You might want to show this field only when certain conditions are met.'
-                . ' Otherwise it will not be available and values eventually set before'
-                . ' will be cleared once stored'
-            ),
-            'columns' => array_keys($fields),
-        ));
-        $this->addDisplayGroup(array($this->getElement('var_filter')), 'field_filter', array(
-            'decorators' => array(
-                'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
-                'Fieldset',
-            ),
-            'order'  => 30,
-            'legend' => $this->translate('Show based on filter')
-        ));
+        $filterFields = array();
+        $prefix = null;
+        if ($object instanceof IcingaHost) {
+            $prefix = 'host.vars.';
+        } elseif ($object instanceof IcingaService) {
+            $prefix = 'service.vars.';
+        }
+
+        if ($prefix) {
+            $loader = new IcingaObjectFieldLoader($object);
+            $fields = $loader->getFields();
+
+            foreach ($fields as $varName => $field) {
+                $filterFields[$prefix . $field->varname] = $field->caption;
+            }
+
+            $this->addFilterElement('var_filter', array(
+                'description' => $this->translate(
+                    'You might want to show this field only when certain conditions are met.'
+                    . ' Otherwise it will not be available and values eventually set before'
+                    . ' will be cleared once stored'
+                ),
+                'columns' => $filterFields,
+            ));
+
+            $this->addDisplayGroup(array($this->getElement('var_filter')), 'field_filter', array(
+                'decorators' => array(
+                    'FormElements',
+                    array('HtmlTag', array('tag' => 'dl')),
+                    'Fieldset',
+                ),
+                'order'  => 30,
+                'legend' => $this->translate('Show based on filter')
+            ));
+        }
 
         $this->setButtons();
     }
