@@ -127,7 +127,7 @@ abstract class NewObjectsController extends ActionController
             )
         );
 
-        $this->provideFilterEditorForTable($table);
+        $this->provideFilterEditorForTable($table, $dummy);
         $this->getTabs()->activate('sets');
         $this->setViewScript('objects/table');
     }
@@ -202,7 +202,7 @@ abstract class NewObjectsController extends ActionController
             }
         }
 
-        $this->provideFilterEditorForTable($table);
+        $this->provideFilterEditorForTable($table, $dummy);
         $this->setViewScript('objects/table');
 
         return $this;
