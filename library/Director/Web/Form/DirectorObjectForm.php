@@ -53,6 +53,7 @@ abstract class DirectorObjectForm extends QuickForm
         'imports',
         'check_command',
         'check_command_id',
+        'has_agent',
         'command',
         'command_id',
         'event_command',
