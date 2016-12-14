@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
-class NotificationsDashlet extends Dashlet
+class NotificationApplyDashlet extends Dashlet
 {
     protected $icon = 'megaphone';
 
@@ -16,9 +16,14 @@ class NotificationsDashlet extends Dashlet
     public function getSummary()
     {
         return $this->translate(
-            'Schedule your notifications. Define who should be notified, when,'
-            . ' and for which kind of problem'
+            'Apply notifications with specific properties according to given'
+            . ' rules.' . ' ' . $this->getApplySummaryText('notification')
         );
+    }
+
+    public function shouldBeShown()
+    {
+        return $this->getStats('notification', 'template') > 0;
     }
 
     public function listRequiredPermissions()
@@ -28,6 +33,6 @@ class NotificationsDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/dashboard?name=notifications';
+        return 'director/notifications/apply';
     }
 }
