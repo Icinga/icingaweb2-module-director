@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Dashboard;
 
 use Countable;
 use Exception;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\View;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
@@ -154,8 +155,8 @@ abstract class Dashboard implements Countable
         foreach ($types as $type) {
             $queries[] = $this->makeSummaryQuery($type);
         }
-
         $query = $this->db->select()->union($queries, ZfSelect::SQL_UNION_ALL);
+
         $result = array();
         foreach ($this->db->fetchAll($query) as $row) {
             $result[$row->icinga_type] = $row;
@@ -166,15 +167,25 @@ abstract class Dashboard implements Countable
 
     protected function makeSummaryQuery($type)
     {
-        return $this->db->select()->from(
+        $columns = array(
+            'icinga_type'  => "('" . $type . "')",
+            'cnt_object'   => $this->getCntSql('object'),
+            'cnt_template' => $this->getCntSql('template'),
+            'cnt_external' => $this->getCntSql('external_object'),
+            'cnt_apply'    => $this->getCntSql('apply'),
+            'cnt_total'    => 'COUNT(*)',
+        );
+
+        if ($this->db->isPgsql()) {
+            $dummy = IcingaObject::createByType($type);
+            if (! $dummy->supportsApplyRules()) {
+                $columns['cnt_apply'] = '(0)';
+            }
+        }
+
+        return $this->db->getDbAdapter()->select()->from(
             array('o' => 'icinga_' . $type),
-            array(
-                'icinga_type'  => "('" . $type . "')",
-                'cnt_object'   => $this->getCntSql('object'),
-                'cnt_template' => $this->getCntSql('template'),
-                'cnt_external' => $this->getCntSql('external_object'),
-                'cnt_total'    => 'COUNT(*)',
-            )
+            $columns
         );
     }
 
