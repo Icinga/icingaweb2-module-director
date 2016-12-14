@@ -221,7 +221,11 @@ class IcingaObjectFieldLoader
         $object = $this->object;
 
         $object->invalidateResolveCache();
-        $vars = $object::fromPlainObject($object->toPlainObject(true))->vars()->flatten();
+        $vars = $object::fromPlainObject(
+            $object->toPlainObject(true),
+            $object->getConnection()
+        )->vars()->flatten();
+
         $prefixedVars = (object) array();
         if ($object instanceof IcingaHost) {
             $prefix = 'host.vars.';
