@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\Web\Controller\ObjectsController;
+use Icinga\Module\Director\Web\Controller\NewObjectsController;
 
-class NotificationsController extends ObjectsController
+class NotificationsController extends NewObjectsController
 {
     protected function checkDirectorPermissions()
     {

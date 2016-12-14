@@ -8,8 +8,7 @@ class ObjectsDashboard extends Dashboard
         'HostObject',
         'ServiceObject',
         'CommandObject',
-        'UserObject',
-        'NotificationObject',
+        'Notifications',
         'TimeperiodObject',
     );
 
