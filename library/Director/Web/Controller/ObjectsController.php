@@ -33,15 +33,18 @@ abstract class ObjectsController extends ActionController
 
         $tabs = $this->getTabs();
         $type = $this->getType();
+        $ptype = preg_replace('/cys/','cies',$type.'s');
+        $ltype = strtolower($type);
+        $pltype = strtolower($ptype);
 
         if (in_array(ucfirst($type), $this->globalTypes)) {
-            $ltype = strtolower($type);
 
             foreach ($this->globalTypes as $tabType) {
                 $ltabType = strtolower($tabType);
+                $pltabType = preg_replace('/cys/','cies',$ltabType.'s');
                 $tabs->add($ltabType, array(
-                    'label' => $this->translate(ucfirst($ltabType) . 's'),
-                    'url'   => sprintf('director/%ss', $ltabType)
+                    'label' => $this->translate(ucfirst($pltype)),
+                    'url'   => sprintf('director/%s', $pltabType)
                 ));
             }
             $tabs->activate($ltype);
@@ -62,14 +65,14 @@ abstract class ObjectsController extends ActionController
         }
 
         $tabs->add('objects', array(
-            'url'   => sprintf('director/%ss', strtolower($type)),
-            'label' => $this->translate(ucfirst($type) . 's'),
+            'url'   => sprintf('director/%s', strtolower($ptype)),
+            'label' => $this->translate(ucfirst($ptype)),
         ));
 
         if ($this->hasPermission('director/admin')) {
             if ($object->supportsImports()) {
                 $tabs->add('templates', array(
-                    'url'   => sprintf('director/%ss/templates', strtolower($type)),
+                    'url'   => sprintf('director/%s/templates', strtolower($pltype)),
                     'label' => $this->translate('Templates'),
                 ));
             }
@@ -83,13 +86,13 @@ abstract class ObjectsController extends ActionController
 
             if ($baseObject->supportsSets()) {
                  $tabs->add('sets', array(
-                      'url'    => sprintf('director/%ss/sets', $type),
+                      'url'    => sprintf('director/%s/sets', $pltype),
                       'label' => $this->translate('Sets')
                  ));
             }
 
             $tabs->add('tree', array(
-                'url'   => sprintf('director/%ss/templatetree', $type),
+                'url'   => sprintf('director/%s/templatetree', $pltype),
                 'label' => $this->translate('Tree'),
             ));
         }
@@ -103,6 +106,9 @@ abstract class ObjectsController extends ActionController
 
         $type = $this->getType();
         $ltype = strtolower($type);
+        $ptype = preg_replace('/cys$/','cies',$type.'s');
+        $pltype = strtolower($ptype);
+        $this->assertPermission('director/' . $ptype . '/read');
         /** @var IcingaObject $dummy */
         $dummy = $this->dummyObject();
 
@@ -134,7 +140,8 @@ abstract class ObjectsController extends ActionController
             $table->enforceFilter(Filter::expression('object_type', '=', 'template'));
         } else {
             $addParams = array('type' => 'object');
-            $title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
+            $title = $this->translate('Icinga ' . ucfirst($pltype));
+            $addTitle = $this->translate('Add %s');
             if ($dummy->supportsImports()
                 && array_key_exists('object_type', $table->getColumns())
                 && ! in_array(ucfirst($type), $this->globalTypes)
@@ -236,7 +243,7 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        $this->provideFilterEditorForTable($table);
+        $this->provideFilterEditorForTable($table, $dummy);
         $this->getTabs()->activate('sets');
         $this->setViewScript('objects/table');
     }
@@ -268,8 +275,8 @@ abstract class ObjectsController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'Dependency'),
             str_replace(
                 'template',
                 '',
