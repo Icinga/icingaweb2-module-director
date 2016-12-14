@@ -20,9 +20,15 @@ class DashboardController extends ActionController
         }
 
         $this->view->title = $this->translate('Icinga Director');
-        $this->singleTab($this->translate('Overview'));
+        $names = $this->params->getValues('name', array('Objects', 'Deployment', 'Data'));
+        if (count($names) === 1) {
+            // TODO: Find a better way for this
+            $this->singleTab($this->translate(ucfirst($names[0])));
+        } else {
+            $this->singleTab($this->translate('Overview'));
+        }
         $dashboards = array();
-        foreach (array('Objects', 'Deployment', 'Data') as $name) {
+        foreach ($names as $name) {
             $dashboard = Dashboard::loadByName($name, $this->db(), $this->view);
             if ($dashboard->isAvailable()) {
                 $dashboards[$name] = $dashboard;
