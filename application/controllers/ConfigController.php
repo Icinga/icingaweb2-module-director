@@ -59,7 +59,6 @@ class ConfigController extends ActionController
         $this->assertPermission('director/deploy');
 
         // TODO: require POST
-        $isApiRequest = $this->getRequest()->isApiRequest();
         $checksum = $this->params->get('checksum');
         if ($checksum) {
             $config = IcingaConfig::load(Util::hex2binary($checksum), $this->db());
@@ -68,28 +67,44 @@ class ConfigController extends ActionController
             $checksum = $config->getHexChecksum();
         }
 
-        $this->api()->wipeInactiveStages($this->db());
+        try {
+            $this->api()->wipeInactiveStages($this->db());
+        } catch (Exception $e) {
+            $this->deploymentFailed($checksum, $e->getMessage());
+        }
 
         if ($this->api()->dumpConfig($config, $this->db())) {
-            if ($isApiRequest) {
-                return $this->sendJson((object) array('checksum' => $checksum));
-            } else {
-                $url = Url::fromPath('director/config/deployments');
-                Notification::success(
-                    $this->translate('Config has been submitted, validation is going on')
-                );
-                $this->redirectNow($url);
-            }
+            $this->deploymentSucceeded($checksum);
         } else {
-            if ($isApiRequest) {
-                return $this->sendJsonError('Config deployment failed');
-            } else {
-                $url = Url::fromPath('director/config/show', array('checksum' => $checksum));
-                Notification::success(
-                    $this->translate('Config deployment failed')
-                );
-                $this->redirectNow($url);
-            }
+            $this->deploymentFailed($checksum);
+        }
+    }
+
+    protected function deploymentSucceeded($checksum)
+    {
+        if ($this->getRequest()->isApiRequest()) {
+            return $this->sendJson((object) array('checksum' => $checksum));
+        } else {
+            $url = Url::fromPath('director/config/deployments');
+            Notification::success(
+                $this->translate('Config has been submitted, validation is going on')
+            );
+            $this->redirectNow($url);
+        }
+    }
+
+    protected function deploymentFailed($checksum, $error = null)
+    {
+        $extra = $error ? ': ' . $error: '';
+
+        if ($this->getRequest()->isApiRequest()) {
+            return $this->sendJsonError('Config deployment failed' . $extra);
+        } else {
+            $url = Url::fromPath('director/config/files', array('checksum' => $checksum));
+            Notification::error(
+                $this->translate('Config deployment failed') . $extra
+            );
+            $this->redirectNow($url);
         }
     }
 
