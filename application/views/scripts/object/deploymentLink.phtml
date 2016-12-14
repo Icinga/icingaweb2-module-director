@@ -10,7 +10,7 @@ if (! $this->hasPermission('director/deploy')) {
 
 if ($this->undeployedChanges === 0) {
     if ($this->totalUndeployedChanges) {
-        $msg = $this->translate('The is a single pending change');
+        $msg = $this->translate('There is a single pending change');
     } else {
         $msg = sprintf(
             $this->translate('There are %d pending changes'),
