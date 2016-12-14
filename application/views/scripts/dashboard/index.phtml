@@ -21,6 +21,7 @@ if ($description !== null): ?>
 <?php endif ?>
 <ul class="main-actions" data-base-target="_next">
 <?php foreach ($dashboard->dashlets() as $dashlet): ?>
+<?php if (! $dashlet->shouldBeShown()) { continue; } ?>
 <li>
 <?= $dashlet->render() ?>
 </li>

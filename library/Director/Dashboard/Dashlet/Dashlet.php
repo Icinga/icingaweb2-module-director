@@ -151,6 +151,11 @@ abstract class Dashlet
         return true;
     }
 
+    public function shouldBeShown()
+    {
+        return true;
+    }
+
     public function getSummary()
     {
         $result = '';
