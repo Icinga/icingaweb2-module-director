@@ -15,23 +15,6 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 SET @stmt = NULL;
 
-SET @stmt = (SELECT IF(
-    (SELECT EXISTS(
-        SELECT 1
-        FROM information_schema.statistics
-        WHERE table_schema = SCHEMA()
-            AND table_name = 'icinga_service_set'
-            AND index_name = 'icinga_service_set_host'
-    )),
-    'ALTER TABLE icinga_service_set DROP INDEX icinga_service_set_host',
-    'SELECT 1'
-));
-
-PREPARE stmt FROM @stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-SET @stmt = NULL;
-
 
 SET @stmt = (SELECT IF(
     (SELECT EXISTS(
@@ -42,23 +25,6 @@ SET @stmt = (SELECT IF(
             AND constraint_name = 'icinga_service_set_ibfk_1'
     )),
     'ALTER TABLE icinga_service_set DROP FOREIGN KEY icinga_service_set_ibfk_1',
-    'SELECT 1'
-));
-
-PREPARE stmt FROM @stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-SET @stmt = NULL;
-
-SET @stmt = (SELECT IF(
-    (SELECT EXISTS(
-        SELECT 1
-        FROM information_schema.statistics
-        WHERE table_schema = SCHEMA()
-            AND table_name = 'icinga_service_set'
-            AND index_name = 'icinga_service_set_ibfk_1'
-    )),
-    'ALTER TABLE icinga_service_set DROP INDEX icinga_service_set_ibfk_1',
     'SELECT 1'
 ));
 
@@ -85,24 +51,6 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 SET @stmt = NULL;
 
-SET @stmt = (SELECT IF(
-    (SELECT EXISTS(
-        SELECT 1
-        FROM information_schema.statistics
-        WHERE table_schema = SCHEMA()
-            AND table_name = 'icinga_service_set'
-            AND index_name = 'icinga_service_set_ibfk_2'
-    )),
-    'ALTER TABLE icinga_service_set DROP INDEX icinga_service_set_ibfk_2',
-    'SELECT 1'
-));
-
-PREPARE stmt FROM @stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-SET @stmt = NULL;
-
-
 
 SET @stmt = (SELECT IF(
     (SELECT EXISTS(
@@ -113,23 +61,6 @@ SET @stmt = (SELECT IF(
             AND constraint_name = 'icinga_service_service_set'
     )),
     'ALTER TABLE icinga_service DROP FOREIGN KEY icinga_service_service_set',
-    'SELECT 1'
-));
-
-PREPARE stmt FROM @stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-SET @stmt = NULL;
-
-SET @stmt = (SELECT IF(
-    (SELECT EXISTS(
-        SELECT 1
-        FROM information_schema.statistics
-        WHERE table_schema = SCHEMA()
-            AND table_name = 'icinga_service'
-            AND index_name = 'icinga_service_service_set'
-    )),
-    'ALTER TABLE icinga_service DROP INDEX icinga_service_service_set',
     'SELECT 1'
 ));
 
@@ -156,6 +87,61 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 SET @stmt = NULL;
 
+
+SET @stmt = (SELECT IF(
+    (SELECT EXISTS(
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = SCHEMA()
+              AND table_name = 'icinga_service'
+              AND index_name = 'icinga_service_service_set'
+    )),
+    'ALTER TABLE icinga_service DROP INDEX icinga_service_service_set',
+    'SELECT 1'
+));
+
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+SET @stmt = NULL;
+
+
+SET @stmt = (SELECT IF(
+    (SELECT EXISTS(
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = SCHEMA()
+              AND table_name = 'icinga_service_set'
+              AND index_name = 'icinga_service_set_ibfk_1'
+    )),
+    'ALTER TABLE icinga_service_set DROP INDEX icinga_service_set_ibfk_1',
+    'SELECT 1'
+));
+
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+SET @stmt = NULL;
+
+
+SET @stmt = (SELECT IF(
+    (SELECT EXISTS(
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = SCHEMA()
+              AND table_name = 'icinga_service_set'
+              AND index_name = 'icinga_service_set_host'
+    )),
+    'ALTER TABLE icinga_service_set DROP INDEX icinga_service_set_host',
+    'SELECT 1'
+));
+
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+SET @stmt = NULL;
+
+
 SET @stmt = (SELECT IF(
     (SELECT EXISTS(
         SELECT 1
@@ -165,6 +151,24 @@ SET @stmt = (SELECT IF(
             AND index_name = 'icinga_service_ibfk_1'
     )),
     'ALTER TABLE icinga_service_set DROP INDEX icinga_service_ibfk_1',
+    'SELECT 1'
+));
+
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+SET @stmt = NULL;
+
+
+SET @stmt = (SELECT IF(
+    (SELECT EXISTS(
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = SCHEMA()
+              AND table_name = 'icinga_service_set'
+              AND index_name = 'icinga_service_set_ibfk_2'
+    )),
+    'ALTER TABLE icinga_service_set DROP INDEX icinga_service_set_ibfk_2',
     'SELECT 1'
 ));
 
