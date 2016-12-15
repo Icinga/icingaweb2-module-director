@@ -664,6 +664,14 @@ abstract class DirectorObjectForm extends QuickForm
             $key = $element->getName();
             if ($object->hasProperty($key)) {
                 $value = $object->get($key);
+                if ($object instanceof IcingaObject) {
+                    if ($object->propertyIsRelatedSet($key)) {
+                        if (! count((array) $value)) {
+                            continue;
+                        }
+                    }
+                }
+
                 if ($value !== null) {
                     $element->setValue($value);
                 }
