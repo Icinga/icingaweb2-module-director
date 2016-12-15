@@ -34,7 +34,13 @@ class CoreApi implements DeploymentApiInterface
         $name = strtolower($name);
         $params = (object) array(
         );
-        if ($ignorePackage) {
+        if (is_array($ignorePackage)) {
+            $filters = array();
+            foreach ($ignorePackage as $ignore) {
+                $filters[] = 'obj.package!="' . $ignorePackage . '"';
+            }
+            $params->filter = implode('&&', $filters);
+        } elseif ($ignorePackage) {
             $params->filter = 'obj.package!="' . $ignorePackage . '"';
         }
 
@@ -302,7 +308,7 @@ constants
         );
 
         $objects = array();
-        $result  = $this->getObjects($single, $plural, $attrs, 'director');
+        $result  = $this->getObjects($single, $plural, $attrs, array('director', '_cluster'));
         foreach ($result as $name => $row) {
             $attrs = $row->attrs;
 
