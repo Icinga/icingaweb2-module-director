@@ -23,6 +23,9 @@ table.common-table {
     text-decoration: none;
   }
 
+  th {
+    padding-top: 0.5em;
+  }
   td {
     vertical-align: top;
   }
@@ -147,6 +150,7 @@ table.avp th {
 }
 
 .content form {
+  margin-top: 0.5em;
   margin-bottom: 2em;
 }
 
@@ -1119,38 +1123,6 @@ table.config-diff {
         // icon-flapping
         color: @color-warning;
         content: '\e85d';
-    }
-}
-
-
-ul.assign-rule {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    select, input[type=text] {
-        min-width: auto;
-    }
-
-    select.assign-type {
-        width: 8em;
-    }
-
-
-    li.filter-chain > ul {
-        list-style-type: none;
-        padding-left: 2em;
-
-        li::before {
-            // icon: down-dir
-            font-family: 'ifont';
-            content: '\e81d';
-            // icon: right-small
-            content: '\e877';
-            margin-left: -1em;
-            padding-top: 0em;
-            float: left;
-            color: inherit;
-        }
     }
 }
 
