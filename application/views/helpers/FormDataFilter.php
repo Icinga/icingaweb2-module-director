@@ -346,7 +346,8 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         if (! $this->hasColumnList()) {
             return $this->view->formText(
                 $this->elementId('column', $filter),
-                $active
+                $active,
+                array('class' => 'column autosubmit')
             );
         }
 
