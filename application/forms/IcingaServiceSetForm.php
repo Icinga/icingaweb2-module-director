@@ -2,6 +2,11 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Exception;
+use Icinga\Application\Benchmark;
+use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\IcingaObjectFilterRenderer;
+use Icinga\Module\Director\Data\Db\IcingaObjectQuery;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -132,5 +137,58 @@ class IcingaServiceSetForm extends DirectorObjectForm
         ));
 
         return $this;
+    }
+
+    protected function onRequest()
+    {
+        parent::onRequest();
+        Benchmark::measure('Checking preview');
+        $el = $this->getElement('assign_filter');
+        if ($el && $el->hasErrors()) {
+            return;
+        }
+        try {
+            $filter = Filter::fromQueryString( $this->object->get('assign_filter'));
+        } catch (Exception $e) {
+            return;
+        }
+
+        if ($filter->isEmpty()) {
+            return;
+        }
+
+        try {
+            $q = new IcingaObjectQuery('host', $this->db);
+            IcingaObjectFilterRenderer::apply($filter, $q);
+            $match = $q->list();
+        } catch (Exception $e) {
+            $this->addError(sprintf('Failed to apply filter: %s', $e->getMessage()));
+        }
+
+        if (empty($match)) {
+            $this->addHtmlHint($this->translate('Found not a single node where this filter applies'));
+        } else {
+            $max = 5;
+            if (count($match) === 1) {
+                $this->addHtmlHint(sprintf(
+                    $this->translate('This filter matches exactly one host, %s'),
+                    $match[0]
+                ));
+            } elseif (count($match) < $max) {
+                $this->addHtmlHint(sprintf(
+                    $this->translate('This filter matches %d hosts: %s'),
+                    count($match),
+                    implode(', ', $match)
+                ));
+            } else {
+                $this->addHtmlHint(sprintf(
+                    $this->translate('This filter matches %d hosts: %s and <a href="#">%d more</a>'),
+                    count($match),
+                    implode(', ', array_slice($match, 0, 5)),
+                    count($match) - $max
+                ));
+            }
+        }
+        Benchmark::measure('Checking preview done');
     }
 }
