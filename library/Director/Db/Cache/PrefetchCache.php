@@ -68,6 +68,11 @@ class PrefetchCache
         return $this->varsCache($object)->getVarsForObject($object);
     }
 
+    public function renderVars(IcingaObject $object)
+    {
+        return $this->varsCache($object)->renderForObject($object);
+    }
+
     public function groups(IcingaObject $object)
     {
         return $this->groupsCache($object)->getGroupsForObject($object);

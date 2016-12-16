@@ -1897,7 +1897,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderCustomVars()
     {
         if ($this->supportsCustomVars()) {
-            return $this->vars()->toConfigString($this->isApplyRule());
+            if (PrefetchCache::shouldBeUsed() && $this->keyName === 'object_name') {
+                return PrefetchCache::instance()->renderVars($this);
+            } else {
+                return $this->vars()->toConfigString($this->isApplyRule());
+            }
         } else {
             return '';
         }
