@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaServiceSetForm extends DirectorObjectForm
@@ -26,6 +26,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function setupFields()
     {
+        /** @var IcingaServiceSet $object */
         $object = $this->object();
 
         $this->assertResolvedImports();
@@ -61,14 +62,15 @@ class IcingaServiceSetForm extends DirectorObjectForm
     {
        $object = $this->object();
         if ($this->hasBeenSent()) {
-            $object->object_name = $object->imports = $this->getSentValue('imports');
+            $object->set('object_name', $this->getSentValue('imports'));
+            $object->set('imports', $object->object_name);
         }
 
         if (! $object->hasBeenLoadedFromDb()) {
             $this->addSingleImportsElement();
         }
 
-        if (count($object->imports)) {
+        if (count($object->get('imports'))) {
             $this->addHtmlHint(
                 $this->getView()->escape(
                     $object->getResolvedProperty('description')
