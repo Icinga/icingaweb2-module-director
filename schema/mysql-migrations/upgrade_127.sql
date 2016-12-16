@@ -40,7 +40,7 @@ CREATE TABLE icinga_flat_var (
   flatname VARCHAR(512) NOT NULL COLLATE utf8_bin,
   flatvalue TEXT NOT NULL,
   PRIMARY KEY (var_checksum, flatname_checksum),
-  INDEX search_varname (flatname),
+  INDEX search_varname (flatname (191)),
   INDEX search_varvalue (flatvalue (128)),
   CONSTRAINT flat_var_var
     FOREIGN KEY checksum (var_checksum)
