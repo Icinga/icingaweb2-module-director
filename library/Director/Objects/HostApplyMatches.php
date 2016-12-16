@@ -74,7 +74,8 @@ class HostApplyMatches
             if ($host->isTemplate()) {
                 continue;
             }
-            $object = $host->toPlainObject(true);
+
+            $object = $host->toPlainObject(true, false);
             static::flattenVars($object);
             $objects[$host->getObjectName()] = $object;
         }
