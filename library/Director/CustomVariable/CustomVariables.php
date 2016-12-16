@@ -9,6 +9,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Countable;
 use Exception;
+use Icinga\Module\Director\Objects\IcingaVar;
 use Iterator;
 
 class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
@@ -166,6 +167,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 'v.varname',
                 'v.varvalue',
                 'v.format',
+                'v.checksum'
             )
         )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->get('id'));
 
@@ -192,6 +194,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     public function storeToDb(IcingaObject $object)
     {
+        $conn          = $object->getConnection();
         $db            = $object->getDb();
         $table         = $object->getVarsTableName();
         $foreignColumn = $object->getVarsIdColumn();
@@ -199,6 +202,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
 
         foreach ($this->vars as $var) {
+            if (! IcingaVar::exists($var->checksum(), $conn)) {
+                IcingaVar::generateForCustomVar($var, $conn);
+            }
+
             if ($var->isNew()) {
                 $db->insert(
                     $table,
