@@ -7,10 +7,8 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\NestingError;
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Web\Url;
 
 abstract class ObjectController extends ActionController
 {
@@ -26,6 +24,23 @@ abstract class ObjectController extends ActionController
     public function init()
     {
         parent::init();
+
+        if ($this->getRequest()->isApiRequest()) {
+            $response = $this->getResponse();
+            try {
+                $this->loadObject();
+                return $this->handleApiRequest();
+            } catch (NotFoundError $e) {
+                $response->setHttpResponseCode(404);
+                return $this->sendJson((object) array('error' => $e->getMessage()));
+            } catch (Exception $e) {
+                if ($response->getHttpResponseCode() === 200) {
+                    $response->setHttpResponseCode(500);
+                }
+
+                return $this->sendJson((object) array('error' => $e->getMessage()));
+            }
+        }
 
         $type = strtolower($this->getType());
 
@@ -81,16 +96,7 @@ abstract class ObjectController extends ActionController
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
-            try {
-                return $this->handleApiRequest();
-            } catch (Exception $e) {
-                $response = $this->getResponse();
-                if ($response->getHttpResponseCode() === 200) {
-                    $response->setHttpResponseCode(500);
-                }
-
-                return $this->sendJson((object) array('error' => $e->getMessage()));
-            }
+            return;
         }
 
         if ($this->object
