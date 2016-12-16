@@ -2413,7 +2413,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $props = array();
 
         if ($resolved) {
-            $p = $this->getResolvedProperties();
+            $p = $this->getInheritedProperties();
+            foreach ($this->properties as $k => $v) {
+                if ($v === null && property_exists($p, $k)) {
+                    continue;
+                }
+                $p->$k = $v;
+            }
         } else {
             $p = $this->properties;
         }
