@@ -2,12 +2,10 @@
 
 namespace Icinga\Module\Director;
 
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Util;
 use Icinga\Exception\ConfigurationError;
 use Zend_Db_Expr;
 use Zend_Db_Select;
@@ -43,7 +41,7 @@ class Db extends DbConnection
 
         if ($object !== null) {
             $query .= $db->quoteInto(' AND object_type = ?', $object->getTableName());
-            $query .= $db->quoteInto(' AND object_name = ?', $object->object_name);
+            $query .= $db->quoteInto(' AND object_name = ?', $object->getObjectName());
         }
         return (int) $db->fetchOne($query);
     }
@@ -224,7 +222,7 @@ class Db extends DbConnection
     public function fetchActivityLogChecksumById($id, $binary = true)
     {
         $sql = sprintf(
-            'SELECT %s AS checksum FROM director_activity_log WHERE id = %d',
+            'SELECT' . ' %s AS checksum FROM director_activity_log WHERE id = %d',
             $this->dbHexFunc('checksum'),
             (int) $id
         );
