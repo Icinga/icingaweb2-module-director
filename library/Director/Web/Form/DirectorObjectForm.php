@@ -96,9 +96,7 @@ abstract class DirectorObjectForm extends QuickForm
 
             $this->object = $class::create($values, $this->db);
             foreach ($this->getValues() as $key => $value) {
-                if ($this->object->hasProperty($key)) {
-                    $this->object->$key = $value;
-                }
+                $this->object->$key = $value;
             }
         } else {
             if (! $this->object->hasConnection()) {
@@ -264,11 +262,9 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
                 try {
-                    if ($object->hasProperty($key)) {
-                        $object->set($key, $value);
-                        if ($object instanceof IcingaObject) {
-                            $object->resolveUnresolvedRelatedProperties();
-                        }
+                    $object->set($key, $value);
+                    if ($object instanceof IcingaObject) {
+                        $object->resolveUnresolvedRelatedProperties();
                     }
                 } catch (Exception $e) {
                     $this->addException($e, $key);
@@ -959,6 +955,10 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    /**
+     * @param bool $required
+     * @return $this
+     */
     protected function addImportsElement($required = null)
     {
         $required = $required !== null ? $required : !$this->isTemplate();
