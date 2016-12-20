@@ -686,8 +686,9 @@
         restoreFieldsets: function(idx, form) {
             var $form = $(form);
             var self = this;
+            var $sets = $('fieldset', $form);
 
-            $('fieldset', $form).each(function(idx, fieldset) {
+            $sets.each(function(idx, fieldset) {
                 var $fieldset = $(fieldset);
                 if ($fieldset.attr('id') === 'fieldset-assign') {
                     return;
@@ -697,6 +698,10 @@
                     self.fixFieldsetInfo($fieldset);
                 }
             });
+
+            if ($sets.length === 1) {
+                $sets.first().removeClass('collapsed');
+            }
         },
 
         fieldsetWasOpened: function($fieldset) {
