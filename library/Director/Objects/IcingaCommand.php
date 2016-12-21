@@ -53,7 +53,7 @@ class IcingaCommand extends IcingaObject
     protected function renderMethods_execute()
     {
         // @codingStandardsIgnoreEnd
-        return c::renderKeyValue('execute', $this->methods_execute);
+        //return c::renderKeyValue('execute', $this->methods_execute);
     }
 
     protected function renderObjectHeader()
