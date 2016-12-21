@@ -540,7 +540,7 @@ abstract class DirectorObjectForm extends QuickForm
         $el->setLabel($datafield->caption);
         $el->setDescription($datafield->description);
 
-        if ($field->is_required === 'y' && ! $this->isTemplate() && $inherited === null) {
+        if ($field->is_required === 'y' && ! $this->isTemplate() && $inherited === null && $this->object->type !== 'CheckCommand') {
             $el->setRequired(true);
         }
 
@@ -1124,7 +1124,7 @@ abstract class DirectorObjectForm extends QuickForm
                 . ' matters when importing properties from multiple templates: last one'
                 . ' wins'
             ),
-            'required'     => !$this->isTemplate(),
+            'required'     => !$this->isTemplate() && $this->object->type !== 'CheckCommand',
             'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'class'        => 'autosubmit'
