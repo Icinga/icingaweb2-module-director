@@ -26,4 +26,9 @@ class IcingaConfigRendered implements IcingaConfigRenderer
     {
         return $this->toConfigString();
     }
+
+    public function toLegacyConfigString()
+    {
+        return $this->rendered;
+    }
 }

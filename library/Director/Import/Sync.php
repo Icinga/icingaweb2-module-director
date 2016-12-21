@@ -4,7 +4,8 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Import\SyncUtils;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -19,6 +20,11 @@ class Sync
      * @var SyncRule
      */
     protected $rule;
+
+    /**
+     * @var Db
+     */
+    protected $db;
 
     /**
      * Related ImportSource objects
@@ -63,6 +69,9 @@ class Sync
 
     protected $syncProperties;
 
+    /**
+     * @var SyncRun
+     */
     protected $run;
 
     protected $runStartTime;
@@ -72,6 +81,8 @@ class Sync
     /**
      * Constructor. No direct initialization allowed right now. Please use one
      * of the available static factory methods
+     *
+     * @param SyncRule $rule
      */
     public function __construct(SyncRule $rule)
     {
@@ -101,7 +112,7 @@ class Sync
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
                 $modified[] = $object;
-            } elseif ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+            } elseif ($object->shouldBeRemoved()) {
                 $modified[] = $object;
             }
         }
@@ -240,6 +251,7 @@ class Sync
         $combinedKey = $this->rule->hasCombinedKey();
 
         foreach ($this->sources as $source) {
+            /** @var ImportSource $source */
             $sourceId = $source->id;
 
             // Provide an alias column for our key. TODO: double-check this!
@@ -313,7 +325,7 @@ class Sync
 
         $no = array();
         foreach ($this->objects as $k => $o) {
-            if ($o->list_id !== $listId) {
+            if ((int) $o->list_id !== (int) $listId) {
                 $no[] = $k;
             }
         }
@@ -337,7 +349,10 @@ class Sync
             ) as $object) {
 
                 if ($object instanceof IcingaService) {
-                    if (! $object->host_id) {
+                    if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
+                        continue;
+                    }
+                    elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
                         continue;
                     }
                 }
@@ -470,6 +485,8 @@ class Sync
             return $this->objects;
         }
 
+        PrefetchCache::initialize($this->db);
+
         $this->raiseLimits()
              ->startMeasurements()
              ->fetchSyncProperties()
@@ -544,6 +561,8 @@ class Sync
         $dba = $db->getDbAdapter();
         $dba->beginTransaction();
 
+        $object = null;
+
         try {
             $formerActivityChecksum = Util::hex2binary(
                 $db->getLastActivityChecksum()
@@ -552,18 +571,7 @@ class Sync
             $modified = 0;
             $deleted = 0;
             foreach ($objects as $object) {
-                if ($object instanceof IcingaObject && $object->isTemplate()) {
-                    // TODO: allow to sync templates
-                    if ($object->hasBeenModified()) {
-                        throw new IcingaException(
-                            'Sync is not allowed to modify template "%s"',
-                            $object->$objectKey
-                        );
-                    }
-                    continue;
-                }
-
-                if ($object instanceof IcingaObject && $object->shouldBeRemoved()) {
+                if ($object->shouldBeRemoved()) {
                     $object->delete($db);
                     $deleted++;
                     continue;
@@ -604,7 +612,15 @@ class Sync
 
         } catch (Exception $e) {
             $dba->rollBack();
-            throw $e;
+            if ($object !== null && $object instanceof IcingaObject) {
+                throw new IcingaException(
+                    'Exception while syncing %s %s: %s',
+                    get_class($object), $object->get('object_name'), $e->getMessage(), $e
+                );
+            }
+            else {
+                throw $e;
+            }
         }
 
         return $this->run->id;

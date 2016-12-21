@@ -2,28 +2,38 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Application\Icinga;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\FormLoader;
+use Icinga\Module\Director\Web\Form\QuickBaseForm;
+use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Module\Director\Web\Table\TableLoader;
+use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\Widget;
 
 abstract class ActionController extends Controller
 {
+    /** @var Db */
     protected $db;
 
     protected $isApified = false;
 
+    /** @var CoreApi */
     private $api;
 
+    /** @var Monitoring */
     private $monitoring;
+
+    protected $icingaConfig;
 
     public function init()
     {
@@ -36,6 +46,35 @@ abstract class ActionController extends Controller
                 throw new NotFoundError('No such API endpoint found');
             }
         }
+
+        $this->checkDirectorPermissions();
+    }
+
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/admin');
+    }
+
+    /**
+     * Assert that the current user has one of the given permission
+     *
+     * @param   array $permissions      Permission name list
+     *
+     * @throws  SecurityException       If the current user lacks the given permission
+     */
+    protected function assertOneOfPermissions($permissions)
+    {
+        $auth = $this->Auth();
+
+        foreach ($permissions as $permission)
+        if ($auth->hasPermission($permission)) {
+            return;
+        }
+
+        throw new SecurityException(
+            'Got none of the following permissions: %s',
+            implode(', ', $permissions)
+        );
     }
 
     protected function isApified()
@@ -53,6 +92,11 @@ abstract class ActionController extends Controller
         return $paginatable;
     }
 
+    /**
+     * @param string $name
+     *
+     * @return QuickBaseForm
+     */
     public function loadForm($name)
     {
         $form = FormLoader::load($name, $this->Module());
@@ -64,6 +108,11 @@ abstract class ActionController extends Controller
         return $form;
     }
 
+    /**
+     * @param string $name
+     *
+     * @return QuickTable
+     */
     public function loadTable($name)
     {
         return TableLoader::load($name, $this->Module());
@@ -88,6 +137,17 @@ abstract class ActionController extends Controller
         }
 
         $this->sendJson((object) array('error' => $message));
+    }
+
+    protected function singleTab($label)
+    {
+        return $this->view->tabs = Widget::create('tabs')->add(
+            'tab',
+            array(
+                'label' => $label,
+                'url'   => $this->getRequest()->getUrl()
+            )
+        )->activate('tab');
     }
 
     protected function setConfigTabs()
@@ -117,16 +177,16 @@ abstract class ActionController extends Controller
     protected function setDataTabs()
     {
         $this->view->tabs = Widget::create('tabs')->add(
-            'datalist',
-            array(
-                'label' => $this->translate('Data lists'),
-                'url'   => 'director/data/lists'
-            )
-        )->add(
             'datafield',
             array(
                 'label' => $this->translate('Data fields'),
                 'url'   => 'director/data/fields'
+            )
+        )->add(
+            'datalist',
+            array(
+                'label' => $this->translate('Data lists'),
+                'url'   => 'director/data/lists'
             )
         );
         return $this->view->tabs;
@@ -198,6 +258,78 @@ abstract class ActionController extends Controller
         $this->prepareTable($name)->setViewScript('list/table');
     }
 
+    protected function provideFilterEditorForTable(QuickTable $table, IcingaObject $dummy = null)
+    {
+        $filterEditor = $table->getFilterEditor($this->getRequest());
+        $filter = $filterEditor->getFilter();
+
+        if ($filter->isEmpty()) {
+
+            if ($this->params->get('modifyFilter')) {
+                $this->view->addLink .= ' ' . $this->view->qlink(
+                        $this->translate('Show unfiltered'),
+                        $this->getRequest()->getUrl()->setParams(array()),
+                        null,
+                        array(
+                            'class' => 'icon-cancel',
+                            'data-base-target' => '_self',
+                        )
+                    );
+            } else {
+                $this->view->addLink .= ' ' . $this->view->qlink(
+                        $this->translate('Filter'),
+                        $this->getRequest()->getUrl()->with('modifyFilter', true),
+                        null,
+                        array(
+                            'class' => 'icon-search',
+                            'data-base-target' => '_self',
+                        )
+                    );
+            }
+
+        } else {
+
+            $this->view->addLink .= ' ' . $this->view->qlink(
+                    $this->shorten($filter, 32),
+                    $this->getRequest()->getUrl()->with('modifyFilter', true),
+                    null,
+                    array(
+                        'class' => 'icon-search',
+                        'data-base-target' => '_self',
+                    )
+                );
+
+            $this->view->addLink .= ' ' . $this->view->qlink(
+                    $this->translate('Show unfiltered'),
+                    $this->getRequest()->getUrl()->setParams(array()),
+                    null,
+                    array(
+                        'class' => 'icon-cancel',
+                        'data-base-target' => '_self',
+                    )
+                );
+        }
+
+        if ($this->params->get('modifyFilter')) {
+            $this->view->filterEditor = $filterEditor;
+        }
+
+        if ($this->getRequest()->isApiRequest()) {
+            if ($dummy === null) {
+                throw new NotFoundError('Not accessible via API');
+            }
+
+            $objects = array();
+            foreach ($dummy::loadAll($this->db) as $object) {
+                $objects[] = $object->toPlainObject(false, true);
+            }
+            return $this->sendJson((object) array('objects' => $objects));
+        }
+
+        $this->view->table = $this->applyPaginationLimits($table);
+        $this->provideQuickSearch();
+    }
+
     // TODO: just return json_last_error_msg() for PHP >= 5.5.0
     protected function getLastJsonError()
     {
@@ -215,8 +347,6 @@ abstract class ActionController extends Controller
             default:
                 return 'An error occured when parsing a JSON string';
         }
-
-        return $this;
     }
 
     protected function getApiIfAvailable()
@@ -246,6 +376,11 @@ abstract class ActionController extends Controller
         return $this->api;
     }
 
+    /**
+     * @throws ConfigurationError
+     *
+     * @return Db
+     */
     protected function db()
     {
         if ($this->db === null) {
@@ -254,7 +389,7 @@ abstract class ActionController extends Controller
                 $this->db = Db::fromResourceName($resourceName);
             } else {
                 if ($this->getRequest()->isApiRequest()) {
-                    throw new ConfigError('Icinga Director is not correctly configured');
+                    throw new ConfigurationError('Icinga Director is not correctly configured');
                 } else {
                     $this->redirectNow('director');
                 }
@@ -264,6 +399,9 @@ abstract class ActionController extends Controller
         return $this->db;
     }
 
+    /**
+     * @return Monitoring
+     */
     protected function monitoring()
     {
         if ($this->monitoring === null) {
@@ -271,5 +409,13 @@ abstract class ActionController extends Controller
         }
 
         return $this->monitoring;
+    }
+
+    protected function IcingaConfig() {
+        if ($this->icingaConfig === null) {
+            $this->icingaConfig = new IcingaConfig($this->db);
+        }
+
+        return $this->icingaConfig;
     }
 }

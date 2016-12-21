@@ -10,20 +10,21 @@ class IcingaUserForm extends DirectorObjectForm
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
-            return $this->groupMainProperties();
+            $this->groupMainProperties();
+            return;
         }
 
         if ($this->isTemplate()) {
             $this->addElement('text', 'object_name', array(
                 'label'       => $this->translate('User template name'),
                 'required'    => true,
-                'description' => $this->translate('User for the Icinga host template you are going to create')
+                'description' => $this->translate('Name for the Icinga user template you are going to create')
             ));
         } else {
             $this->addElement('text', 'object_name', array(
                 'label'       => $this->translate('Username'),
                 'required'    => true,
-                'description' => $this->translate('Username for the Icinga host you are going to create')
+                'description' => $this->translate('Name for the Icinga user object you are going to create')
             ));
         }
 
@@ -45,9 +46,30 @@ class IcingaUserForm extends DirectorObjectForm
              ->addDisplayNameElement()
              ->addEnableNotificationsElement()
              ->addDisabledElement()
+             ->addZoneElements()
              ->addEventFilterElements()
              ->groupMainProperties()
              ->setButtons();
+    }
+
+    protected function addZoneElements()
+    {
+        if (! $this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addZoneElement();
+        $this->addDisplayGroup(array('zone_id'), 'clustering', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 80,
+            'legend' => $this->translate('Zone settings')
+        ));
+
+        return $this;
     }
 
     protected function addEnableNotificationsElement()

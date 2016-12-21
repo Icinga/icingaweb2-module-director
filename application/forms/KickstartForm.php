@@ -7,18 +7,22 @@ use Icinga\Application\Config;
 use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class KickstartForm extends QuickForm
 {
-    protected $config;
+    private $config;
 
-    protected $storeConfigLabel;
+    private $storeConfigLabel;
 
-    protected $createDbLabel;
+    private $createDbLabel;
 
-    protected $migrateDbLabel;
+    private $migrateDbLabel;
+
+    /** @var IcingaEndpoint */
+    private $endpoint;
 
     public function setup()
     {
@@ -56,7 +60,7 @@ class KickstartForm extends QuickForm
             return;
         }
 
-        if ($this->getDb()->hasDeploymentEndpoint()) {
+        if (! $this->endpoint && $this->getDb()->hasDeploymentEndpoint()) {
             $hint = sprintf($this->translate(
                 'Your database looks good, you are ready to %s'
             ), $this->getView()->qlink(
@@ -135,6 +139,24 @@ class KickstartForm extends QuickForm
             ),
             'required'    => true,
         ));
+
+        if ($ep = $this->endpoint) {
+            $user = $ep->getApiUser();
+            $this->setDefaults(array(
+                'endpoint' => $ep->get('object_name'),
+                'host'     => $ep->get('host'),
+                'port'     => $ep->get('port'),
+                'username' => $user->get('object_name'),
+                'password' => $user->get('password'),
+            ));
+
+            if (! empty($user->password)) {
+                $this->getElement('password')->setAttrib(
+                    'placeholder',
+                    '(use stored password)'
+                )->setRequired(false);
+            }
+        }
 
         $this->addKickstartDisplayGroup();
         $this->setSubmitLabel($this->translate('Run import'));
@@ -288,12 +310,18 @@ class KickstartForm extends QuickForm
         }
     }
 
+    public function setEndpoint(IcingaEndpoint $endpoint)
+    {
+        $this->endpoint = $endpoint;
+        return $this;
+    }
+
     public function onSuccess()
     {
         try {
             if ($this->getSubmitLabel() === $this->storeConfigLabel) {
                 if ($this->storeResourceConfig()) {
-                    return parent::onSuccess();
+                    parent::onSuccess();
                 } else {
                     return;
                 }
@@ -302,10 +330,14 @@ class KickstartForm extends QuickForm
             if ($this->getSubmitLabel() === $this->createDbLabel
                 || $this->getSubmitLabel() === $this->migrateDbLabel) {
                 $this->migrations()->applyPendingMigrations();
-                return parent::onSuccess();
+                parent::onSuccess();
             }
 
             $values = $this->getValues();
+            if ($this->endpoint && empty($values['password'])) {
+                $values['password'] = $this->endpoint->getApiUser()->password;
+            }
+
             $kickstart = new KickstartHelper($this->getDb());
             unset($values['resource']);
             $kickstart->setConfig($values)->run();
@@ -322,6 +354,8 @@ class KickstartForm extends QuickForm
             $resources = $this->enumResources();
             if (in_array($resource, $resources)) {
                 return $resource;
+            } else {
+                return null;
             }
         } else {
             return $this->config()->get('db', 'resource');
@@ -364,7 +398,7 @@ class KickstartForm extends QuickForm
         $allowed = array('mysql', 'pgsql');
 
         foreach (ResourceFactory::getResourceConfigs() as $name => $resource) {
-            if ($resource->type === 'db' && in_array($resource->db, $allowed)) {
+            if ($resource->get('type') === 'db' && in_array($resource->get('db'), $allowed)) {
                 $resources[$name] = $name;
             }
         }

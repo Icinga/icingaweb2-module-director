@@ -3,9 +3,11 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\ConfigDiff;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Exception;
 
 class ShowController extends ActionController
 {
@@ -13,9 +15,14 @@ class ShowController extends ActionController
 
     protected $oldObject;
 
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/showconfig');
+    }
+
     protected function objectKey($entry)
     {
-        if ($entry->object_type === 'icinga_service') {
+        if ($entry->object_type === 'icinga_service' || $entry->object_type === 'icinga_service_set') {
             // TODO: this is not correct. Activity needs to get (multi) key support
             return array('name' => $entry->object_name);
         }
@@ -73,33 +80,68 @@ class ShowController extends ActionController
         return $tabs;
     }
 
+    protected function newConfig($entry)
+    {
+        return $this->newObject($entry)->toSingleIcingaConfig();
+    }
+
+    protected function oldConfig($entry)
+    {
+        return $this->oldObject($entry)->toSingleIcingaConfig();
+    }
+
     protected function showDiff($entry)
     {
         $this->view->title = sprintf('%s config diff', $entry->object_name);
         $this->getTabs()->activate('diff');
-        $old = $this->oldObject($entry);
-        $new = $this->newObject($entry);
 
-        $d = ConfigDiff::create(
-            $old,
-            $new
-        );
+        $oldConfig = $this->oldConfig($entry);
+        $newConfig = $this->newConfig($entry);
+        $this->showConfigDiff($oldConfig, $newConfig);
+    }
 
-        $this->view->output = $d->renderHtml();
+    protected function showConfigDiff(IcingaConfig $oldConfig, IcingaConfig $newConfig)
+    {
+        $oldFilenames = $oldConfig->getFileNames();
+        $newFilenames = $newConfig->getFileNames();
+
+        $fileNames = array_merge($oldFilenames, $newFilenames);
+
+        $this->view->diffs = array();
+        foreach ($fileNames as $filename) {
+            if (in_array($filename, $oldFilenames)) {
+                $left = $oldConfig->getFile($filename)->getContent();
+            } else {
+                $left = '';
+            }
+
+            if (in_array($filename, $newFilenames)) {
+                $right = $newConfig->getFile($filename)->getContent();
+            } else {
+                $right = '';
+            }
+            if ($left === $right) {
+                continue;
+            }
+
+            $d = ConfigDiff::create($left, $right);
+
+            $this->view->diffs[$filename] = $d->renderHtml();
+        }
     }
 
     protected function showOld($entry)
     {
         $this->view->title = sprintf('%s former config', $entry->object_name);
         $this->getTabs()->activate('old');
-        $this->showObject($this->oldObject($entry));
+        $this->showConfigDiff($this->oldConfig($entry), new IcingaConfig($this->db()));
     }
 
     protected function showNew($entry)
     {
         $this->view->title = sprintf('%s new config', $entry->object_name);
         $this->getTabs()->activate('new');
-        $this->showObject($this->newObject($entry));
+        $this->showConfigDiff(new IcingaConfig($this->db()), $this->newConfig($entry));
     }
 
     protected function oldObject($entry)
@@ -120,23 +162,6 @@ class ShowController extends ActionController
             $entry->object_type,
             $entry->new_properties
         );
-    }
-
-    protected function showObject($object)
-    {
-        $error = '';
-        if ($object->disabled === 'y') {
-            $error = '<p class="error">'
-                . $this->translate('This object will not be deployed as it has been disabled')
-                . '</p>';
-        }
-
-        $this->view->output = $error
-            . ' <pre'
-            . ($object->disabled === 'y' ? ' class="disabled"' : '')
-            . '>'
-            . $this->view->escape($object->toConfigString())
-            . '</pre>';
     }
 
     protected function showInfo($entry)
@@ -209,10 +234,17 @@ class ShowController extends ActionController
     protected function createObject($type, $props)
     {
         $props = json_decode($props);
-        return IcingaObject::createByType($type, array(
-            'object_name' => $props->object_name,
-            'object_type' => $props->object_type,
-        ), $this->db())->setProperties((array) $props);
-        return IcingaObject::createByType($type, (array) $props, $this->db());
+        $newProps = array(
+            'object_name' => $props->object_name
+        );
+        if (property_exists($props, 'object_type')) {
+            $newProps['object_type'] = $props->object_type;
+        }
+
+        return IcingaObject::createByType(
+            $type,
+            $newProps,
+            $this->db()
+        )->setProperties((array) $props);
     }
 }

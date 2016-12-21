@@ -3,7 +3,10 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
+use Exception;
 
 abstract class CustomVariable implements IcingaConfigRenderer
 {
@@ -21,6 +24,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     protected $deleted = false;
 
+    protected $checksum;
+
     protected function __construct($key, $value = null)
     {
         $this->key = $key;
@@ -37,8 +42,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
         if ($this->type === null) {
             $parts = explode('\\', get_class($this));
             $class = end($parts);
-            // strlen('CustomVariable') === 9
-            $this->type = substr(end($parts), 9);
+            // strlen('CustomVariable') === 14
+            $this->type = substr($class, 14);
         }
 
         return $this->type;
@@ -62,6 +67,15 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->getValue();
     }
 
+    public function toJson()
+    {
+        if ($this->getDbFormat() === 'string') {
+            return json_encode($this->getDbValue());
+        } else {
+            return $this->getDbValue();
+        }
+    }
+
     // TODO: abstract
     public function getDbFormat()
     {
@@ -75,6 +89,45 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     abstract public function setValue($value);
 
+    abstract public function getValue();
+
+    public function toConfigString($renderExpressions = false)
+    {
+        // TODO: this should be an abstract method once we deprecate PHP < 5.3.9
+        throw new ProgrammingError(
+            '%s has no toConfigString() implementation',
+            get_class($this)
+        );
+    }
+
+    public function flatten(array & $flat, $prefix)
+    {
+        $flat[$prefix] = $this->getDbValue();
+    }
+
+    public function render($renderExpressions = false)
+    {
+        return c::renderKeyValue(
+            $this->renderKeyName($this->getKey()),
+            $this->toConfigStringPrefetchable($renderExpressions)
+        );
+    }
+
+    protected function renderKeyName($key)
+    {
+        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+            return 'vars.' . c::escapeIfReserved($key);
+        } else {
+            return 'vars[' . c::renderString($key) . ']';
+        }
+    }
+
+    public function checksum()
+    {
+        // TODO: remember checksum, invalidate on change
+        return sha1($this->getKey() . '=' . $this->toJson(), true);
+    }
+
     public function isNew()
     {
         return ! $this->loadedFromDb;
@@ -83,6 +136,15 @@ abstract class CustomVariable implements IcingaConfigRenderer
     public function hasBeenModified()
     {
         return $this->modified;
+    }
+
+    public function toConfigStringPrefetchable($renderExpressions = false)
+    {
+        if (PrefetchCache::shouldBeUsed()) {
+            return PrefetchCache::instance()->renderVar($this, $renderExpressions);
+        } else {
+            return $this->toConfigString($renderExpressions);
+        }
     }
 
     public function setModified($modified = true)
@@ -115,6 +177,17 @@ abstract class CustomVariable implements IcingaConfigRenderer
     public function differsFrom(CustomVariable $var)
     {
         return ! $this->equals($var);
+    }
+
+    protected function setChecksum($checksum)
+    {
+        $this->checksum = $checksum;
+        return $this;
+    }
+
+    public function getChecksum()
+    {
+        return $this->checksum;
     }
 
     public static function wantCustomVariable($key, $value)
@@ -181,6 +254,9 @@ abstract class CustomVariable implements IcingaConfigRenderer
                     '%s is not a supported custom variable format',
                     $row->format
                 );
+        }
+        if (property_exists($row, 'checksum')) {
+            $var->setChecksum($row->checksum);
         }
 
         $var->loadedFromDb = true;

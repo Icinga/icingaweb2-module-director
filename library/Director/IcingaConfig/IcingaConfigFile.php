@@ -21,6 +21,11 @@ class IcingaConfigFile
 
     protected $cntApply = 0;
 
+    /**
+     * @param $content
+     *
+     * @return self
+     */
     public function prepend($content)
     {
         $this->content = $content . $this->content;
@@ -40,6 +45,17 @@ class IcingaConfigFile
         return $this;
     }
 
+    public function addContent($content)
+    {
+        if ($this->content === null) {
+            $this->content = $content;
+        } else {
+            $this->content .= $content;
+        }
+        $this->checksum = null;
+        return $this;
+    }
+
     public function getObjectCount()
     {
         return $this->cntObject;
@@ -48,6 +64,11 @@ class IcingaConfigFile
     public function getTemplateCount()
     {
         return $this->cntTemplate;
+    }
+
+    public function getApplyCount()
+    {
+        return $this->cntApply;
     }
 
     public function getSize()
@@ -64,6 +85,12 @@ class IcingaConfigFile
     public function setTemplateCount($cnt)
     {
         $this->cntTemplate = $cnt;
+        return $this;
+    }
+
+    public function setApplyCount($cnt)
+    {
+        $this->cntApply = $cnt;
         return $this;
     }
 

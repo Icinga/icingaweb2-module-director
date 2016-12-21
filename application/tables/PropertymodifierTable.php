@@ -12,7 +12,9 @@ class PropertymodifierTable extends QuickTable
             'id'                => 'm.id',
             'source_id'         => 'm.source_id',
             'source_name'       => 's.source_name',
-            'property_name'     => 'm.property_name',
+            'property'          => 'CASE WHEN m.target_property IS NULL'
+                                 . ' THEN m.property_name'
+                                 . " ELSE m.target_property || ' <- ' || m.property_name END",
             'provider_class'    => 'm.provider_class',
             'priority'          => 'm.priority',
         );
@@ -33,23 +35,20 @@ class PropertymodifierTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'property_name'     => $view->translate('Property'),
+            'property' => $view->translate('Property'),
         );
     }
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'import_source'),
             array()
         )->join(
             array('m' => 'import_row_modifier'),
             's.id = m.source_id',
             array()
-        )->order('m.property_name');
-
-        return $query;
+        )->order('property')
+        ->order('priority');
     }
 }

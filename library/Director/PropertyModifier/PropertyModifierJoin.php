@@ -18,6 +18,11 @@ class PropertyModifierJoin extends PropertyModifierHook
         ));
     }
 
+    public function hasArraySupport()
+    {
+        return true;
+    }
+
     public function transform($value)
     {
         if ($value === null) {

@@ -36,13 +36,10 @@ class IcingaCommandTable extends IcingaObjectTable
 
     protected function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('c' => 'icinga_command'),
             array()
         )->order('c.object_name');
-
-        return $query;
     }
 
     public function getBaseQuery()

@@ -10,16 +10,16 @@ class IcingaTimePeriodRangeTable extends QuickTable
     protected $period;
 
     protected $searchColumns = array(
-        'timeperiod_key',
-        'timeperiod_value',
+        'range_key',
+        'range_value',
     );
 
     public function getColumns()
     {
         return array(
-            'timeperiod_id'    => 'r.timeperiod_id',
-            'timeperiod_key'   => 'r.timeperiod_key',
-            'timeperiod_value' => 'r.timeperiod_value',
+            'timeperiod_id' => 'r.timeperiod_id',
+            'range_key'     => 'r.range_key',
+            'range_value'   => 'r.range_value',
         );
     }
 
@@ -36,7 +36,7 @@ class IcingaTimePeriodRangeTable extends QuickTable
             'director/timeperiod/ranges',
             array(
                 'name'       => $this->period->object_name,
-                'range'      => $row->timeperiod_key,
+                'range'      => $row->range_key,
                 'range_type' => 'include'
             )
         );
@@ -46,19 +46,16 @@ class IcingaTimePeriodRangeTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'timeperiod_key'   => $view->translate('Day(s)'),
-            'timeperiod_value' => $view->translate('Timeperiods'),
+            'range_key'   => $view->translate('Day(s)'),
+            'range_value' => $view->translate('Timeperiods'),
         );
     }
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('r' => 'icinga_timeperiod_range'),
             array()
         )->where('r.timeperiod_id = ?', $this->period->id);
-
-        return $query;
     }
 }

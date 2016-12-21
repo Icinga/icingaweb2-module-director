@@ -3,10 +3,10 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
-use Icinga\Application\Modules\Module;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
+use Icinga\Web\Response;
 use Icinga\Web\Url;
 use Exception;
 
@@ -52,6 +52,8 @@ abstract class QuickForm extends QuickBaseForm
 
     protected $submitButtonName;
 
+    protected $deleteButtonName;
+
     protected $fakeSubmitButtonName;
 
     /**
@@ -59,18 +61,28 @@ abstract class QuickForm extends QuickBaseForm
      */
     protected $didSetup = false;
 
-    protected $hintCount = 0;
-
     protected $isApiRequest = false;
 
     public function __construct($options = null)
     {
-        parent::__construct($this->handleOptions($options));
+        parent::__construct($options);
 
         $this->setMethod('post');
+        $this->getActionFromRequest()
+            ->createIdElement()
+            ->regenerateCsrfToken()
+            ->setPreferredDecorators();
+    }
+
+    protected function getActionFromRequest()
+    {
         $this->setAction(Url::fromRequest());
-        $this->createIdElement();
-        $this->regenerateCsrfToken();
+        return $this;
+    }
+
+    protected function setPreferredDecorators()
+    {
+        $this->setAttrib('class', 'autofocus');
         $this->setDecorators(
             array(
                 'Description',
@@ -79,11 +91,17 @@ abstract class QuickForm extends QuickBaseForm
                 'Form'
             )
         );
+
+        return $this;
     }
 
     protected function addSubmitButtonIfSet()
     {
         if (false === ($label = $this->getSubmitLabel())) {
+            return;
+        }
+
+        if ($this->submitButtonName && $el = $this->getElement($this->submitButtonName)) {
             return;
         }
 
@@ -140,6 +158,7 @@ abstract class QuickForm extends QuickBaseForm
         $this->detectName();
         $this->addHidden(self::ID, $this->getName());
         $this->getElement(self::ID)->setIgnore(true);
+        return $this;
     }
 
     public function getSentValue($name, $default = null)
@@ -255,7 +274,7 @@ abstract class QuickForm extends QuickBaseForm
                     $this->getSubmitLabel()
                 );
             } else {
-                $this->hasBeenSubmitted === false;
+                $this->hasBeenSubmitted = false;
             }
         }
 
@@ -316,7 +335,7 @@ abstract class QuickForm extends QuickBaseForm
                     try {
                         $this->onSuccess();
                     } catch (Exception $e) {
-                        $this->addError($e->getMessage());
+                        $this->addException($e);
                         $this->onFailure();
                     }
                 } else {
@@ -330,6 +349,24 @@ abstract class QuickForm extends QuickBaseForm
         }
 
         return $this;
+    }
+
+    public function addException(Exception $e, $elementName = null)
+    {
+        $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
+        $file = array_pop($file);
+        $msg = sprintf(
+            '%s (%s:%d)',
+            $e->getMessage(),
+            $file,
+            $e->getLine()
+        );
+
+        if ($el = $this->getElement($elementName)) {
+            $el->addError($msg);
+        } else {
+            $this->addError($msg);
+        }
     }
 
     public function onSuccess()
@@ -388,7 +425,9 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function redirectAndExit($url)
     {
-        Icinga::app()->getFrontController()->getResponse()->redirectAndExit($url);
+        /** @var Response $response */
+        $response = Icinga::app()->getFrontController()->getResponse();
+        $response->redirectAndExit($url);
     }
 
     protected function setHttpResponseCode($code)
@@ -413,10 +452,15 @@ abstract class QuickForm extends QuickBaseForm
         return $this;
     }
 
+    /**
+     * @return Request
+     */
     public function getRequest()
     {
         if ($this->request === null) {
-            $this->setRequest(Icinga::app()->getFrontController()->getRequest());
+            /** @var Request $request */
+            $request = Icinga::app()->getFrontController()->getRequest();
+            $this->setRequest($request);
         }
         return $this->request;
     }
@@ -425,6 +469,7 @@ abstract class QuickForm extends QuickBaseForm
     {
         if ($this->hasBeenSent === null) {
 
+            /** @var Request $req */
             if ($this->request === null) {
                 $req = Icinga::app()->getFrontController()->getRequest();
             } else {
@@ -436,7 +481,7 @@ abstract class QuickForm extends QuickBaseForm
                 $this->hasBeenSent = array_key_exists(self::ID, $post) &&
                     $post[self::ID] === $this->getName();
             } else {
-                $this->hasBeenSent === false;
+                $this->hasBeenSent = false;
             }
         }
 

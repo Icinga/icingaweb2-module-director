@@ -37,8 +37,7 @@ class IcingaHostVarTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        return $db->select()->from(
+        return $this->db()->select()->from(
             array('hv' => 'icinga_host_var'),
             array()
         )->join(

@@ -5,29 +5,35 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Application\Icinga;
 use Icinga\Data\Filter\FilterAnd;
 use Icinga\Data\Filter\FilterChain;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Data\Filter\FilterNot;
 use Icinga\Data\Filter\FilterOr;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Selectable;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\QueryException;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Web\Request;
 use Icinga\Web\Url;
+use Icinga\Web\View;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
 use stdClass;
+use Zend_Db_Select as ZfDbSelect;
 
 abstract class QuickTable implements Paginatable
 {
     protected $view;
 
+    /** @var Db */
     protected $connection;
 
     protected $limit;
 
     protected $offset;
 
+    /** @var Filter */
     protected $filter;
 
     protected $enforcedFilters = array();
@@ -65,6 +71,41 @@ abstract class QuickTable implements Paginatable
         } else {
             return implode(' ', $classes);
         }
+    }
+
+    protected function getMultiselectProperties()
+    {
+        /* array(
+         *     'url'       => 'director/hosts/edit',
+         *     'sourceUrl' => 'director/hosts',
+         *     'keys'      => 'name'
+         * ) */
+
+        return array();
+    }
+
+    protected function renderMultiselectAttributes()
+    {
+        $props = $this->getMultiselectProperties();
+
+        if (empty($props)) {
+            return '';
+        }
+
+        $prefix = 'data-icinga-multiselect-';
+        $view = $this->view();
+        $parts = array();
+        $multi = array(
+            'url'         => $view->href($props['url']),
+            'controllers' => $view->href($props['sourceUrl']),
+            'data'        => implode(',', $props['keys']),
+        );
+
+        foreach ($multi as $k => $v) {
+            $parts[] = $prefix . $k . '="' . $v . '"';
+        }
+
+        return ' ' . implode(' ', $parts);
     }
 
     protected function renderRow($row)
@@ -125,11 +166,14 @@ abstract class QuickTable implements Paginatable
         return $this;
     }
 
+    /**
+     * @return ZfDbSelect
+     */
     abstract protected function getBaseQuery();
 
     public function fetchData()
     {
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         $query = $this->getBaseQuery()->columns($this->getColumns());
 
         if ($this->hasLimit() || $this->hasOffset()) {
@@ -141,7 +185,7 @@ abstract class QuickTable implements Paginatable
         return $db->fetchAll($query);
     }
 
-    protected function applyFiltersToQuery($query)
+    protected function applyFiltersToQuery(ZfDbSelect $query)
     {
         $filter = null;
         $enforced = $this->enforcedFilters;
@@ -170,7 +214,7 @@ abstract class QuickTable implements Paginatable
 
     public function count()
     {
-        $db = $this->connection()->getConnection();
+        $db = $this->db();
         $query = clone($this->getBaseQuery());
         $query->reset('order')->columns(array('COUNT(*)'));
         $this->applyFiltersToQuery($query);
@@ -211,6 +255,7 @@ abstract class QuickTable implements Paginatable
         return method_exists($this, 'renderAdditionalActions');
     }
 
+    /** @return Db */
     protected function connection()
     {
         // TODO: Fail if missing? Require connection in constructor?
@@ -219,7 +264,7 @@ abstract class QuickTable implements Paginatable
 
     protected function db()
     {
-        return $this->connection()->getConnection();
+        return $this->connection()->getDbAdapter();
     }
 
     protected function renderTitles($row)
@@ -245,14 +290,23 @@ abstract class QuickTable implements Paginatable
 
     protected function listTableClasses()
     {
-        return array('simple', 'common-table', 'table-row-selectable');
+        $classes = array('simple', 'common-table', 'table-row-selectable');
+        $multi = $this->getMultiselectProperties();
+        if (! empty($multi)) {
+            $classes[] = 'multiselect';
+        }
+
+        return $classes;
     }
 
     public function render()
     {
         $data = $this->fetchData();
 
-        $htm = '<table' . $this->createClassAttribute($this->listTableClasses()) . '>' . "\n"
+        $htm = '<table'
+             . $this->createClassAttribute($this->listTableClasses())
+             . $this->renderMultiselectAttributes()
+             . '>' . "\n"
              . $this->renderTitles($this->getTitles())
              . "<tbody>\n";
         foreach ($data as $row) {
@@ -261,6 +315,9 @@ abstract class QuickTable implements Paginatable
         return $htm . "</tbody>\n</table>\n";
     }
 
+    /**
+     * @return View
+     */
     protected function view()
     {
         if ($this->view === null) {
@@ -329,7 +386,7 @@ abstract class QuickTable implements Paginatable
         return $cols[$col];
     }
 
-    protected function renderFilter($filter, $level = 0)
+    protected function renderFilter(Filter $filter, $level = 0)
     {
         $str = '';
         if ($filter instanceof FilterChain) {
@@ -363,6 +420,7 @@ abstract class QuickTable implements Paginatable
                 }
             }
         } else {
+            /** @var FilterExpression $filter */
             $str .= $this->whereToSql(
                 $this->mapFilterColumn($filter->getColumn()),
                 $filter->getSign(),

@@ -6,9 +6,9 @@ use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Web\Url;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 abstract class ObjectController extends ActionController
 {
@@ -25,7 +25,24 @@ abstract class ObjectController extends ActionController
     {
         parent::init();
 
-        $type = $this->getType();
+        if ($this->getRequest()->isApiRequest()) {
+            $response = $this->getResponse();
+            try {
+                $this->loadObject();
+                return $this->handleApiRequest();
+            } catch (NotFoundError $e) {
+                $response->setHttpResponseCode(404);
+                return $this->sendJson((object) array('error' => $e->getMessage()));
+            } catch (Exception $e) {
+                if ($response->getHttpResponseCode() === 200) {
+                    $response->setHttpResponseCode(500);
+                }
+
+                return $this->sendJson((object) array('error' => $e->getMessage()));
+            }
+        }
+
+        $type = strtolower($this->getType());
 
         if ($object = $this->loadObject()) {
             $this->beforeTabs();
@@ -43,24 +60,30 @@ abstract class ObjectController extends ActionController
                 ));
             }
 
-            $tabs->add('render', array(
-                'url'       => sprintf('director/%s/render', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('Preview'),
-            ))->add('history', array(
-                'url'       => sprintf('director/%s/history', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('History')
-            ));
+            if ($this->hasPermission('director/showconfig')) {
+                $tabs->add('render', array(
+                    'url'       => sprintf('director/%s/render', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate('Preview'),
+                ));
+            }
 
-            if ($this->hasFields()) {
+            if ($this->hasPermission('director/audit')) {
+                $tabs->add('history', array(
+                    'url'       => sprintf('director/%s/history', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate('History')
+                ));
+            }
+
+
+            if ($this->hasPermission('director/admin') && $this->hasFields()) {
                 $tabs->add('fields', array(
                     'url'       => sprintf('director/%s/fields', $type),
                     'urlParams' => $params,
                     'label'     => $this->translate('Fields')
                 ));
             }
-
         } else {
             $this->beforeTabs();
             $this->getTabs()->add('add', array(
@@ -73,16 +96,7 @@ abstract class ObjectController extends ActionController
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
-            try {
-                return $this->handleApiRequest();
-            } catch (Exception $e) {
-                $response = $this->getResponse();
-                if ($response->getHttpResponseCode() === 200) {
-                    $response->setHttpResponseCode(500);
-                }
-
-                return $this->sendJson((object) array('error' => $e->getMessage()));
-            }
+            return;
         }
 
         if ($this->object
@@ -99,6 +113,7 @@ abstract class ObjectController extends ActionController
 
     public function renderAction()
     {
+        $this->assertPermission('director/showconfig');
         $type = $this->getType();
         $this->getTabs()->activate('render');
         $object = $this->object;
@@ -117,24 +132,22 @@ abstract class ObjectController extends ActionController
                 array('class' => 'icon-resize-small state-warning')
             );
         } else {
-
-            if ($object->supportsImports() && $object->imports()->count() > 0) {
-                $this->view->actionLinks = $this->view->qlink(
-                    $this->translate('Show resolved'),
-                    $this->getRequest()->getUrl()->with('resolved', true),
-                    null,
-                    array('class' => 'icon-resize-full')
-                );
+            try {
+                if ($object->supportsImports() && $object->imports()->count() > 0) {
+                    $this->view->actionLinks = $this->view->qlink(
+                        $this->translate('Show resolved'),
+                        $this->getRequest()->getUrl()->with('resolved', true),
+                        null,
+                        array('class' => 'icon-resize-full')
+                    );
+                }
+            } catch (NestingError $e) {
+                // No resolve link with nesting errors
             }
         }
 
-        if ($this->view->isExternal) {
-            $object->object_type = 'object';
-        }
-
         $this->view->object = $object;
-        $this->view->config = new IcingaConfig($this->db());
-        $object->renderToConfig($this->view->config);
+        $this->view->config = $object->toSingleIcingaConfig();
 
         $this->view->title = sprintf(
             $this->translate('Config preview: %s'),
@@ -180,15 +193,28 @@ abstract class ObjectController extends ActionController
         $ltype = strtolower($type);
 
         $url = sprintf('director/%ss', $ltype);
+        /** @var DirectorObjectForm $form */
         $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
+            ->presetImports($this->params->shift('imports'))
             ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
-        $this->view->title = sprintf(
-            $this->translate('Add new Icinga %s'),
-            ucfirst($ltype)
-        );
+        if ($type = $this->params->shift('type')) {
+            $form->setPreferredObjectType($type);
+        }
+
+        if ($type === 'template') {
+            $this->view->title = sprintf(
+                $this->translate('Add new Icinga %s template'),
+                ucfirst($ltype)
+            );
+        } else {
+            $this->view->title = sprintf(
+                $this->translate('Add new Icinga %s'),
+                ucfirst($ltype)
+            );
+        }
 
         $this->beforeHandlingAddRequest($form);
 
@@ -228,6 +254,7 @@ abstract class ObjectController extends ActionController
 
     public function fieldsAction()
     {
+        $this->hasPermission('director/admin');
         $object = $this->object;
         $type = $this->getType();
 
@@ -269,6 +296,7 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
+        $this->hasPermission('director/audit');
         $this->setAutorefreshInterval(10);
         $db = $this->db();
         $type = $this->getType();
@@ -291,8 +319,8 @@ abstract class ObjectController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/set$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'Set'),
             $this->getRequest()->getControllerName()
         );
     }

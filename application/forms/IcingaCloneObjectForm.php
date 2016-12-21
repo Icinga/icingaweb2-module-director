@@ -7,6 +7,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class IcingaCloneObjectForm extends QuickForm
 {
+    /** @var IcingaObject */
     protected $object;
 
     public function setup()
@@ -14,7 +15,7 @@ class IcingaCloneObjectForm extends QuickForm
         $this->addElement('text', 'new_object_name', array(
             'label'    => $this->translate('New name'),
             'required' => true,
-            'value'    => $this->object->object_name,
+            'value'    => $this->object->getObjectName(),
         ));
 
         $this->addElement('select', 'clone_type', array(
@@ -28,13 +29,14 @@ class IcingaCloneObjectForm extends QuickForm
 
         $this->submitLabel = sprintf(
             $this->translate('Clone "%s"'),
-            $this->object->object_name
+            $this->object->getObjectName()
         );
 
     }
 
     public function onSuccess()
     {
+
         $object = $this->object;
         $newname = $this->getValue('new_object_name');
         $resolve = $this->getValue('clone_type') === 'flat';
@@ -43,7 +45,7 @@ class IcingaCloneObjectForm extends QuickForm
             'The %s "%s" has been cloned from "%s"',
             $object->getShortTableName(),
             $newname,
-            $object->object_name
+            $object->getObjectName()
         );
 
         $new = $object::fromPlainObject(
@@ -51,15 +53,13 @@ class IcingaCloneObjectForm extends QuickForm
             $object->getConnection()
         )->set('object_name', $newname);
 
-        $this->setSuccessUrl(
-            'director/' . strtolower($object->getShortTableName()),
-            $new->getUrlParams()
-        );
-
         if ($new->store()) {
+            $this->setSuccessUrl(
+                'director/' . strtolower($object->getShortTableName()),
+                $new->getUrlParams()
+            );
+
             $this->redirectOnSuccess($msg);
-        } else {
-            $this->redirectOnFailure($msg);
         }
     }
 

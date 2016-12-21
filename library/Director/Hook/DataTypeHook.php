@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Hook;
 
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 abstract class DataTypeHook
@@ -28,6 +29,12 @@ abstract class DataTypeHook
         return 'string';
     }
 
+    /**
+     * @param $name
+     * @param QuickForm|DirectorObjectForm $form
+     *
+     * @return \Zend_Form_Element
+     */
     abstract public function getFormElement($name, QuickForm $form);
 
     public static function addSettingsFormFields(QuickForm $form)

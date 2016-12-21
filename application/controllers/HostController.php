@@ -4,8 +4,11 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
@@ -22,16 +25,25 @@ class HostController extends ObjectController
                 'urlParams' => array('name' => $this->object->object_name),
                 'label'     => 'Services'
             ));
-            if ($this->object->object_type === 'object'
-                && $this->object->getResolvedProperty('has_agent') === 'y'
-            ) {
-                $tabs->add('agent', array(
-                    'url'       => 'director/host/agent',
-                    'urlParams' => array('name' => $this->object->object_name),
-                    'label'     => 'Agent'
-                ));
+            try {
+                if ($this->object->object_type === 'object'
+                    && $this->object->getResolvedProperty('has_agent') === 'y'
+                ) {
+                    $tabs->add('agent', array(
+                        'url'       => 'director/host/agent',
+                        'urlParams' => array('name' => $this->object->object_name),
+                        'label'     => 'Agent'
+                    ));
+                }
+            } catch (NestingError $e) {
+                // Ignore nesting errors
             }
         }
+    }
+
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/hosts');
     }
 
     public function editAction()
@@ -54,11 +66,17 @@ class HostController extends ObjectController
 
     public function servicesAction()
     {
+        $db = $this->db();
         $host = $this->object;
 
         $this->view->addLink = $this->view->qlink(
             $this->translate('Add service'),
             'director/service/add',
+            array('host' => $host->object_name),
+            array('class' => 'icon-plus')
+        ) . ' ' .  $this->view->qlink(
+            $this->translate('Add service set'),
+            'director/serviceset/add',
             array('host' => $host->object_name),
             array('class' => 'icon-plus')
         );
@@ -68,10 +86,161 @@ class HostController extends ObjectController
             $this->translate('Services: %s'),
             $host->object_name
         );
-        $this->view->table = $this->loadTable('IcingaHostService')
+
+        $resolver = $this->object->templateResolver();
+
+        $tables = array();
+        $table = $this->loadTable('IcingaHostService')
             ->setHost($host)
+            ->setTitle($this->translate('Individual Service objects'))
             ->enforceFilter('host_id', $host->id)
-            ->setConnection($this->db());
+            ->setConnection($db);
+
+        if (count($table)) {
+            $tables[0] = $table;
+        }
+
+        if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
+            $table = $this->loadTable('IcingaHostAppliedForService')
+                ->setHost($host)
+                ->setDictionary($applied)
+                ->setTitle($this->translate('Generated from host vars'));
+
+            if (count($table)) {
+                $tables[1] = $table;
+            }
+        }
+
+        foreach ($resolver->fetchResolvedParents() as $parent) {
+            $table = $this->loadTable('IcingaHostService')
+                ->setHost($parent)
+                ->setInheritedBy($host)
+                ->enforceFilter('host_id', $parent->id)
+                ->setConnection($db);
+            if (! count($table)) {
+                continue;
+            }
+
+            // dup dup
+            $title = sprintf(
+                'Inherited from %s',
+                $parent->object_name
+            );
+
+            $tables[$title] = $table->setTitle($title);
+        }
+
+        $title = $this->translate('Service sets');
+        $table = $this->loadTable('IcingaHostServiceSet')
+            ->setHost($host)
+            ->setTitle($title)
+           ->setConnection($db);
+
+        $tables[$title] = $table;
+
+        $this->view->tables = $tables;
+    }
+
+    public function appliedserviceAction()
+    {
+        $db = $this->db();
+        $host = $this->object;
+        $serviceName = $this->params->get('service');
+
+        $applied = $host->vars()->get($db->settings()->magic_apply_for);
+
+        $props = $applied->{$serviceName};
+
+        $parent = IcingaService::create(array(
+            'object_type' => 'template',
+            'object_name' => $this->translate('Host'),
+        ), $db);
+
+        if (isset($props->vars)) {
+            $parent->vars = $props->vars->getValue();
+        }
+
+        $service = IcingaService::create(array(
+            'object_type' => 'apply',
+            'object_name' => $serviceName,
+            'host_id'     => $host->id,
+            'vars'        => $host->getOverriddenServiceVars($serviceName),
+        ), $db);
+
+
+        if (isset($props->templates) && $templates = $props->templates->getValue()) {
+            $imports = $templates;
+        } else {
+            $imports = $serviceName;
+        }
+
+        if (! is_array($imports)) {
+            $imports = array($imports);
+        }
+
+        // TODO: Validation for $imports? They might not exist!
+        array_push($imports, $parent);
+        $service->imports = $imports;
+
+        $this->view->title = sprintf(
+            $this->translate('Applied service: %s'),
+            $serviceName
+        );
+
+        $this->getTabs()->activate('services');
+
+        $this->view->form = $this->loadForm('IcingaService')
+            ->setDb($db)
+            ->setHost($host)
+            ->setHostGenerated()
+            ->setObject($service)
+            ->handleRequest()
+            ;
+
+        $this->setViewScript('object/form');
+    }
+
+    public function inheritedserviceAction()
+    {
+        $db = $this->db();
+        $host = $this->object;
+        $serviceName = $this->params->get('service');
+        $from = IcingaHost::load($this->params->get('inheritedFrom'), $this->db());
+
+        $parent = IcingaService::load(
+            array(
+                'object_name' => $serviceName,
+                'host_id'     => $from->id
+            ),
+            $this->db()
+        );
+
+        $parent->object_name = $from->object_name;
+
+        $service = IcingaService::create(array(
+            'object_type' => 'apply',
+            'object_name' => $serviceName,
+            'host_id'     => $host->id,
+            'imports'     => array($parent),
+            'vars'        => $host->getOverriddenServiceVars($serviceName),
+        ), $db);
+
+        $this->view->title = sprintf(
+            $this->translate('Inherited service: %s'),
+            $serviceName
+        );
+
+        $this->getTabs()->activate('services');
+
+        $this->view->form = $this->loadForm('IcingaService')
+            ->setDb($db)
+            ->setHost($host)
+            ->setInheritedFrom($from->object_name)
+            ->setObject($service);
+        $this->view->form->setResolvedImports();
+        $this->view->form->handleRequest();
+
+        $this->setViewScript('object/form');
     }
 
     public function agentAction()
@@ -84,6 +253,14 @@ class HostController extends ObjectController
                 $wizard = $this->view->wizard = new AgentWizard($this->object);
                 $wizard->setTicketSalt($this->api()->getTicketSalt());
                 echo preg_replace('/\n/', "\r\n", $wizard->renderWindowsInstaller());
+                exit;
+            case 'linux':
+                header('Content-type: application/octet-stream');
+                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.bash');
+
+                $wizard = $this->view->wizard = new AgentWizard($this->object);
+                $wizard->setTicketSalt($this->api()->getTicketSalt());
+                echo $wizard->renderLinuxInstaller();
                 exit;
         }
 
@@ -101,6 +278,7 @@ class HostController extends ObjectController
             $wizard = $this->view->wizard = new AgentWizard($this->object);
             $wizard->setTicketSalt($this->api()->getTicketSalt());
             $this->view->windows = $wizard->renderWindowsInstaller();
+            $this->view->linux = $wizard->renderLinuxInstaller();
 
         } catch (Exception $e) {
             $this->view->ticket = 'ERROR';

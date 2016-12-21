@@ -10,7 +10,7 @@ class DataController extends ActionController
     public function listsAction()
     {
         $this->view->addLink = $this->view->qlink(
-            $this->translate('Add list'),
+            $this->translate('Add'),
             'director/data/list',
             null,
             array('class' => 'icon-plus')
@@ -19,6 +19,7 @@ class DataController extends ActionController
         $this->setDataTabs()->activate('datalist');
         $this->view->title = $this->translate('Data lists');
         $this->prepareAndRenderTable('datalist');
+        $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listAction()
@@ -62,7 +63,7 @@ class DataController extends ActionController
             ))->activate('editlist');
 
         } else {
-            $this->view->title = $this->translate('Add data list');
+            $this->view->title = $this->translate('Add');
 
             $this->getTabs()->add('addlist', array(
                 'url'       => 'director/data/list',
@@ -116,7 +117,7 @@ class DataController extends ActionController
     public function fieldsAction()
     {
         $this->view->addLink = $this->view->qlink(
-            $this->translate('Add field'),
+            $this->translate('Add'),
             'director/datafield/add',
             null,
             array('class' => 'icon-plus')
@@ -125,6 +126,7 @@ class DataController extends ActionController
         $this->setDataTabs()->activate('datafield');
         $this->view->title = $this->translate('Data fields');
         $this->prepareAndRenderTable('datafield');
+        $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listentryAction()

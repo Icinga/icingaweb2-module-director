@@ -3,9 +3,11 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Import\Import;
+use Icinga\Module\Director\Import\SyncUtils;
 use Exception;
 
 class ImportSource extends DbObjectWithSettings
@@ -97,12 +99,29 @@ class ImportSource extends DbObjectWithSettings
         foreach ($modifiers as $key => $mods) {
             foreach ($mods as $mod) {
                 if (! property_exists($row, $key)) {
+                    // Partial support for nested keys. Must write result to
+                    // a dedicated flat key
+                    if (strpos($key, '.') !== false) {
+                        $val = SyncUtils::getSpecificValue($row, $key);
+                        if ($val !== null) {
+                            $target = $mod->getTargetProperty($key);
+                            if (strpos($target, '.') !== false) {
+                                throw new ConfigurationError(
+                                    'Cannot set value for nested key "%s"',
+                                    $target
+                                );
+                            }
+
+                            $row->$target = $mod->transform($val);
+                        }
+                    }
+
                     continue;
                 }
 
                 $target = $mod->getTargetProperty($key);
 
-                if (is_array($row->$key)) {
+                if (is_array($row->$key) && ! $mod->hasArraySupport()) {
                     $new = array();
                     foreach ($row->$key as $k => $v) {
                         $new[$k] = $mod->transform($v);

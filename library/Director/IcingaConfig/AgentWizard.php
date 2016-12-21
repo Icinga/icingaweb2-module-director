@@ -25,7 +25,7 @@ class AgentWizard
         if ($host->getResolvedProperty('has_agent') !== 'y') {
             throw new ProgrammingError(
                 'The given host "%s" is not an Agent',
-                $host->object_name
+                $host->getObjectName()
             );
         }
 
@@ -36,13 +36,13 @@ class AgentWizard
     {
         return $this->db()->getDeploymentEndpointName();
 
-        // TODO: This is a problem. Should look like this:
-        return current($this->getParentEndpoints())->object_name;
+        // TODO: This is a problem with Icinga 2. Should look like this:
+        // return current($this->getParentEndpoints())->object_name;
     }
 
     protected function shouldConnectToMaster()
     {
-        return $this->getResolvedProperty('master_should_connect') !== 'y';
+        return $this->host->getResolvedProperty('master_should_connect') !== 'y';
     }
 
     protected function getParentZone()
@@ -82,7 +82,7 @@ class AgentWizard
             ->from('icinga_endpoint')
             ->where(
                 'zone_id = ?',
-                $this->getParentZone()->id
+                $this->getParentZone()->get('id')
             );
 
         return IcingaEndpoint::loadAll(
@@ -109,7 +109,9 @@ class AgentWizard
     protected function getTicketSalt()
     {
         if ($this->salt === null) {
-            $this->salt = $this->api()->getTicketSalt();
+            throw new ProgrammingError('Requesting salt, but got none');
+            // TODO: No API, not yet. Pass in constructor or throw, still tbd
+            // $this->salt = $this->api()->getTicketSalt();
         }
 
         return $this->salt;
@@ -117,7 +119,7 @@ class AgentWizard
 
     protected function getCertName()
     {
-        return $this->host->object_name;
+        return $this->host->getObjectName();
     }
 
     protected function loadPowershellModule()
@@ -137,7 +139,7 @@ class AgentWizard
                 array(
                     'AgentName'       => $this->getCertName(),
                     'Ticket'          => $this->getTicket(),
-                    'ParentZone'      => $this->getParentZone()->object_name,
+                    'ParentZone'      => $this->getParentZone()->getObjectName(),
                     'ParentEndpoints' => array_keys($this->getParentEndpoints()),
                     'CAServer'        => $this->getCaServer(),
                 )
@@ -191,5 +193,69 @@ class AgentWizard
         }
 
         return $this->db;
+    }
+    public function renderLinuxInstaller()
+    {
+        return $this->loadBashModuleHead()
+            . $this->renderBashParameters(
+                array(
+                    'ICINGA2_NODENAME'        => $this->getCertName(),
+                    'ICINGA2_CA_TICKET'           => $this->getTicket(),
+                    'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
+                    'ICINGA2_PARENT_ENDPOINTS' => array_keys($this->getParentEndpoints()),
+                    'ICINGA2_CA_NODE'         => $this->getCaServer(),
+                )
+            )
+            . "\n"
+            . $this->loadBashModule()
+            . "\n\n";
+    }
+
+    protected function loadBashModule()
+    {
+        return file_get_contents(
+            dirname(dirname(dirname(__DIR__)))
+            . '/contrib/linux-agent-installer/Icinga2Agent.bash'
+        );
+    }
+
+    protected function loadBashModuleHead()
+    {
+        return file_get_contents(
+            dirname(dirname(dirname(__DIR__)))
+            . '/contrib/linux-agent-installer/Icinga2AgentHead.bash'
+        );
+    }
+    protected function renderBashParameters($parameters)
+    {
+        $maxKeyLength = max(array_map('strlen', array_keys($parameters)));
+        $parts = array();
+
+        foreach ($parameters as $key => $value) {
+            $parts[] = $this->renderBashParameter($key, $value, $maxKeyLength);
+        }
+
+        return implode("\n    ", $parts);
+    }
+
+    protected function renderBashParameter($key, $value, $maxKeyLength = null)
+    {
+        $ret = $key . '=';
+
+        //if ($maxKeyLength !== null) {
+        //    $ret .= str_repeat(' ', $maxKeyLength - strlen($key));
+        //}
+
+        if (is_array($value)) {
+            $vals = array();
+            foreach ($value as $val) {
+                $vals[] = $this->renderPowershellString($val);
+            }
+            $ret .= implode(', ', $vals);
+        } else {
+            $ret .= $this->renderPowershellString($value);
+        }
+
+        return $ret;
     }
 }

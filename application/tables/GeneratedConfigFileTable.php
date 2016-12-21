@@ -8,6 +8,8 @@ class GeneratedConfigFileTable extends QuickTable
 {
     protected $deploymentId;
 
+    protected $activeFile;
+
     public function getColumns()
     {
         $columns = array(
@@ -15,6 +17,8 @@ class GeneratedConfigFileTable extends QuickTable
             'size'            => 'LENGTH(f.content)',
             'cnt_object'      => 'f.cnt_object',
             'cnt_template'    => 'f.cnt_template',
+            'cnt_apply'       => 'f.cnt_apply',
+            'cnt_all'         => "f.cnt_object || ' / ' || f.cnt_template || ' / ' || f.cnt_apply",
             'checksum'        => 'LOWER(HEX(f.checksum))',
             'config_checksum' => 'LOWER(HEX(cf.config_checksum))',
         );
@@ -25,6 +29,21 @@ class GeneratedConfigFileTable extends QuickTable
         }
 
         return $columns;
+    }
+
+    public function setActiveFilename($filename)
+    {
+        $this->activeFile = $filename;
+        return $this;
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->file_path === $this->activeFile) {
+            return 'active';
+        }
+
+        return parent::getRowClasses($row);
     }
 
     protected function getActionUrl($row)
@@ -52,8 +71,12 @@ class GeneratedConfigFileTable extends QuickTable
         $view = $this->view();
         return array(
             'file_path'    => $view->translate('File'),
+            'cnt_all'      => $view->translate('Object/Tpl/Apply'),
+            /*
             'cnt_object'   => $view->translate('Objects'),
             'cnt_template' => $view->translate('Templates'),
+            'cnt_apply'    => $view->translate('Apply rules'),
+            */
             'size'         => $view->translate('Size'),
         );
     }
@@ -66,9 +89,7 @@ class GeneratedConfigFileTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('cf' => 'director_generated_config_file'),
             array()
         )->join(
@@ -76,7 +97,5 @@ class GeneratedConfigFileTable extends QuickTable
             'cf.file_checksum = f.checksum',
             array()
         )->order('cf.file_path ASC');
-
-        return $query;
     }
 }

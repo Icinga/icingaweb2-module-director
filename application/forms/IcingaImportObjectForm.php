@@ -7,6 +7,7 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class IcingaImportObjectForm extends QuickForm
 {
+    /** @var IcingaObject */
     protected $object;
 
     public function setup()
@@ -30,17 +31,18 @@ class IcingaImportObjectForm extends QuickForm
 
     public function onSuccess()
     {
-        if ($this->object->set('object_type', 'object')->store()) {
+        $object = $this->object;
+        if ($object->set('object_type', 'object')->store()) {
             $this->redirectOnSuccess(sprintf(
                 $this->translate('%s "%s" has been imported"'),
                 $object->getShortTableName(),
-                $object->object_name
+                $object->getObjectName()
             ));
         } else {
-            $this->redirectOnFailure(sprintf(
+            $this->addError(sprintf(
                 $this->translate('Failed to import %s "%s"'),
                 $object->getShortTableName(),
-                $object->object_name
+                $object->getObjectName()
             ));
         }
     }

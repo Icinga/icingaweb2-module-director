@@ -10,6 +10,7 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ImportsourceHookTable extends QuickTable
 {
+    /** @var  ImportSource */
     protected $source;
 
     protected $dataCache;
@@ -27,6 +28,13 @@ class ImportsourceHookTable extends QuickTable
             );
 
             sort($this->columnCache);
+
+            // prioritize key column
+            $keyColumn = $this->source->get('key_column');
+            if ($keyColumn !== null && ($pos = array_search($keyColumn, $this->columnCache)) !== false) {
+                unset($this->columnCache[$pos]);
+                array_unshift($this->columnCache, $keyColumn);
+            }
         }
 
         return $this->columnCache;

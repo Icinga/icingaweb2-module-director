@@ -8,6 +8,7 @@ use Iterator;
 use Countable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -38,6 +39,11 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         $this->object = $object;
         $this->propertyName = $propertyName;
         $this->relatedObjectClass = $relatedObjectClass;
+    }
+
+    public function getObjects()
+    {
+        return $this->relations;
     }
 
     public function count()
@@ -186,7 +192,15 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
             $connection = $this->object->getConnection();
             try {
-                $relation = $class::load($relation, $connection);
+                // Related services can only be objects, used by ServiceSets
+                if ($class === 'Icinga\\Module\\Director\\Objects\\IcingaService') {
+                    $relation = $class::load(array(
+                        'object_name' => $relation,
+                        'object_type' => 'template'
+                    ), $connection);
+                } else {
+                    $relation = $class::load($relation, $connection);
+                }
             } catch (Exception $e) {
 
                 switch ($onError) {
@@ -400,5 +414,16 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
                 die($e->getMessage());
             }
         }
+    }
+
+    public function toLegacyConfigString()
+    {
+        $relations = array_keys($this->relations);
+
+        if (empty($relations)) {
+            return '';
+        }
+
+        return c1::renderKeyValue($this->propertyName, c1::renderArray($relations));
     }
 }

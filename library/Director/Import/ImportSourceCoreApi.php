@@ -57,12 +57,14 @@ class ImportSourceCoreApi extends ImportSourceHook
     protected static function enumObjectTypes($form)
     {
         $types = array(
-            'CheckCommand'  => $form->translate('Commands'),
-            'Endpoint'      => $form->translate('Endpoints'),
-            'Host'          => $form->translate('Hosts'),
-            'HostGroup'     => $form->translate('Hostgroups'),
-            'User'          => $form->translate('Users'),
-            'Zone'          => $form->translate('Zones'),
+            'CheckCommand'        => $form->translate('Check Commands'),
+            'NotificationCommand' => $form->translate('Notification Commands'),
+            'Endpoint'            => $form->translate('Endpoints'),
+            'Host'                => $form->translate('Hosts'),
+            'HostGroup'           => $form->translate('Hostgroups'),
+            'User'                => $form->translate('Users'),
+            'UserGroup'           => $form->translate('Usergroups'),
+            'Zone'                => $form->translate('Zones'),
         );
 
         asort($types);

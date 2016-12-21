@@ -53,13 +53,9 @@ class SyncruleTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'sync_rule'),
             array()
         )->order('rule_name');
-
-        return $query;
     }
 }

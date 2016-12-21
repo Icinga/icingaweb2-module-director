@@ -1,17 +1,7 @@
 <?php
 
 use Icinga\Util\Format;
-
-function colorize($log) {
-    $log = preg_replace(
-        '/^(debug|notice|information|warning|critical)\/(\w+)/m',
-        '<span class="loglevel \1">\1</span>/<span class="application">\2</span>',
-        $log
-    );
-
-    $log = preg_replace('/([\^]{2,})/', '<span class="error-hint">\1</span>', $log);
-    return $log;
-}
+use Icinga\Module\Director\StartupLogRenderer;
 
 ?><div class="controls">
 <?= $this->tabs ?>
@@ -41,9 +31,10 @@ function colorize($log) {
         'deployment_id' => $deployment->id
     )
 ) ?>, <?= sprintf(
-    $this->translate('%d objects, %d templates'),
+    $this->translate('%d objects, %d templates, %d apply rules'),
     $config->getObjectCount(),
-    $config->getTemplateCount()
+    $config->getTemplateCount(),
+    $config->getApplyCount()
   )?>, <?= Format::bytes($config->getSize()) ?></td>
  </tr>
  <tr>
@@ -84,9 +75,7 @@ if ($deployment->startup_succeeded === null) {
 <?php if ($deployment->startup_succeeded !== null): ?>
 <h2>Startup log</h2>
 <pre class="logfile">
-<?= colorize(
-    $this->escape($deployment->startup_log)
-) ?>
+<?= StartupLogRenderer::beautify($deployment, $this) ?>
 </pre>
 <?php endif ?>
 </div>

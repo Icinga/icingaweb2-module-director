@@ -36,12 +36,9 @@ class IcingaHostGroupTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('hg' => 'icinga_hostgroup'),
             array()
         );
-
-        return $query;
     }
 }

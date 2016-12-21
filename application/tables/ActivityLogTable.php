@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Tables;
 
+use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Table\QuickTable;
 
 class ActivityLogTable extends QuickTable
@@ -18,18 +19,27 @@ class ActivityLogTable extends QuickTable
 
     protected $isUsEnglish;
 
+    protected $searchColumns = array(
+        //'log_message'
+        'author',
+        'object_name',
+        'object_type',
+        'action',
+    );
+
     public function getColumns()
     {
         return array(
+            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
+                . " || REPLACE(l.object_type, 'icinga_', '')"
+                . " || ' \"' || l.object_name || '\"'",
+            'author'          => 'l.author',
+            'action'          => 'l.action_name',
+            'object_name'     => 'l.object_name',
+            'object_type'     => 'l.object_type',
             'id'              => 'l.id',
             'change_time'     => 'l.change_time',
             'ts_change_time'  => 'UNIX_TIMESTAMP(l.change_time)',
-            'author'          => 'l.author',
-            'action'          => 'l.action_name',
-            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
-                               . " || REPLACE(l.object_type, 'icinga_', '')"
-                               . " || ' \"' || l.object_name || '\"'",
-            'action_name'     => 'l.action_name',
         );
     }
 
@@ -41,7 +51,11 @@ class ActivityLogTable extends QuickTable
 
     protected function listTableClasses()
     {
-        return array_merge(array('activity-log'), parent::listTableClasses());
+        if (Util::hasPermission('director/showconfig')) {
+            return array_merge(array('activity-log'), parent::listTableClasses());
+        } else {
+            return array('simple', 'common-table', 'activity-log');
+        }
     }
 
     public function render()
@@ -64,7 +78,7 @@ class ActivityLogTable extends QuickTable
 
     protected function getRowClasses($row)
     {
-        $action = 'action-' . $row->action_name . ' ';
+        $action = 'action-' . $row->action. ' ';
 
         if ($row->id > $this->lastDeployedId) {
             return $action . 'undeployed';
@@ -75,10 +89,15 @@ class ActivityLogTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        return $this->url(
-            'director/show/activitylog',
-            array_merge(array('id' => $row->id), $this->extraParams)
-        );
+        if (Util::hasPermission('director/showconfig')) {
+            return $this->url(
+                'director/show/activitylog',
+                array_merge(array('id' => $row->id), $this->extraParams)
+            );
+
+        } else {
+            return false;
+        }
     }
 
     public function getTitles()
@@ -105,6 +124,10 @@ class ActivityLogTable extends QuickTable
         return $this->isUsEnglish;
     }
 
+    /**
+     * @param object $row
+     * @return string
+     */
     protected function renderDayIfNew($row)
     {
         $view = $this->view();
@@ -116,7 +139,7 @@ class ActivityLogTable extends QuickTable
         }
 
         if ($this->lastDay === $day) {
-            return;
+            return '';
         }
 
         if ($this->lastDay === null) {
@@ -129,7 +152,7 @@ class ActivityLogTable extends QuickTable
             $this->columnCount = count($this->getTitles());
         }
 
-        $htm .= '<th colspan="' . $this->columnCount . '">' . $this->view()->escape($day) . '</th>' . "\n";
+        $htm .= '<th colspan="' . $this->columnCount . '">' . $view->escape($day) . '</th>' . "\n";
         if ($this->lastDay === null) {
             $htm .= "  </tr>\n";
         } else {
@@ -155,9 +178,7 @@ class ActivityLogTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        $query = $this->db()->select()->from(
             array('l' => 'director_activity_log'),
             array()
         )->order('change_time DESC')->order('id DESC');

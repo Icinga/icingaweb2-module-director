@@ -11,6 +11,8 @@ class IcingaHostServiceTable extends QuickTable
 
     protected $host;
 
+    protected $inheritedBy;
+
     protected $searchColumns = array(
         'service',
     );
@@ -38,8 +40,24 @@ class IcingaHostServiceTable extends QuickTable
         return $this;
     }
 
+    public function setInheritedBy(IcingaHost $host)
+    {
+        $this->inheritedBy = $host;
+        return $this;
+    }
+
     protected function getActionUrl($row)
     {
+        if ($target = $this->inheritedBy) {
+            $params = array(
+                'name'          => $target->object_name,
+                'service'       => $row->service,
+                'inheritedFrom' => $row->host,
+            );
+
+            return $this->url('director/host/inheritedservice', $params);
+        }
+
         if ($row->object_type === 'apply') {
             $params['id'] = $row->id;
         } else {
@@ -49,7 +67,7 @@ class IcingaHostServiceTable extends QuickTable
             }
         }
 
-        return $this->url('director/service', $params);
+        return $this->url('director/service/edit', $params);
     }
 
     public function getTitles()
@@ -62,17 +80,14 @@ class IcingaHostServiceTable extends QuickTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('s' => 'icinga_service'),
             array()
         )->joinLeft(
             array('h' => 'icinga_host'),
             'h.id = s.host_id',
             array()
-        );
-
-        return $query;
+        )->order('s.object_name');
     }
 
     public function getBaseQuery()

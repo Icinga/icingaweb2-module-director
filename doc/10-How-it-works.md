@@ -3,7 +3,7 @@
 
 This chapter wants to give you some basic understanding off how the
 Director works with your Icinga installation. At least once you start
-to work with satellite zones it might be woth to give this a read.
+to work with satellite zones it might be worth to give this a read.
 
 
 How your configuration is going to be rendered

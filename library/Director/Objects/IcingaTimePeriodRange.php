@@ -6,16 +6,16 @@ use Icinga\Module\Director\Data\Db\DbObject;
 
 class IcingaTimePeriodRange extends DbObject
 {
-    protected $keyName = array('timeperiod_id', 'timeperiod_key', 'range_type');
+    protected $keyName = array('timeperiod_id', 'range_key', 'range_type');
 
     protected $table = 'icinga_timeperiod_range';
 
     protected $defaultProperties = array(
-        'timeperiod_id'       => null,
-        'timeperiod_key'      => null,
-        'timeperiod_value'    => null,
-        'range_type'          => 'include',
-        'merge_behaviour'     => 'set',
+        'timeperiod_id'   => null,
+        'range_key'       => null,
+        'range_value'     => null,
+        'range_type'      => 'include',
+        'merge_behaviour' => 'set',
     );
 
     public function isActive($now = null)
@@ -24,18 +24,16 @@ class IcingaTimePeriodRange extends DbObject
             $now = time();
         }
 
-        if (false === ($wday = $this->getWeekDay($this->timeperiod_key))) {
+        if (false === ($weekDay = $this->getWeekDay($this->get('range_key')))) {
             // TODO, dates are not yet supported
             return false;
         }
 
-        $wdayName = $this->timeperiod_key;
-
-        if ((int) strftime('%w', $now) !== $wday) {
+        if ((int) strftime('%w', $now) !== $weekDay) {
             return false;
         }
 
-        $timeRanges = preg_split('/\s*,\s*/', $this->timeperiod_value, -1, PREG_SPLIT_NO_EMPTY);
+        $timeRanges = preg_split('/\s*,\s*/', $this->get('range_value'), -1, PREG_SPLIT_NO_EMPTY);
         foreach ($timeRanges as $timeRange) {
             if ($this->timeRangeIsActive($timeRange, $now)) {
                 return true;
@@ -47,6 +45,7 @@ class IcingaTimePeriodRange extends DbObject
 
     protected function timeRangeIsActive($rangeString, $now)
     {
+        $hBegin = $mBegin = $hEnd = $mEnd = null;
         if (sscanf($rangeString, '%2d:%2d-%2d:%2d', $hBegin, $mBegin, $hEnd, $mEnd) === 4) {
             if ($this->timeFromHourMin($hBegin, $mBegin, $now) <= $now
                 && $this->timeFromHourMin($hEnd, $mEnd, $now) >= $now

@@ -4,8 +4,10 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHost extends IcingaObject
@@ -81,24 +83,25 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
-    public static function enumProperties(DbConnection $connection = null, $prefix = '')
-    {
-        $hostProperties = array($prefix . 'name' => 'name');
+    protected $supportedInLegacy = true;
+
+    public static function enumProperties(
+        DbConnection $connection = null,
+        $prefix = '',
+        $filter = null
+    ) {
+        $hostProperties = array();
+        if ($filter === null) {
+            $filter = new PropertiesFilter();
+        }
         $realProperties = static::create()->listProperties();
         sort($realProperties);
 
-        $blacklist = array(
-            'id',
-            'object_name',
-            'object_type',
-            'disabled',
-            'has_agent',
-            'master_should_connect',
-            'accept_config',
-        );
-
+        if ($filter->match(PropertiesFilter::$HOST_PROPERTY, 'name')) {
+            $hostProperties[$prefix . 'name'] = 'name';
+        }
         foreach ($realProperties as $prop) {
-            if (in_array($prop, $blacklist)) {
+            if (!$filter->match(PropertiesFilter::$HOST_PROPERTY, $prop)) {
                 continue;
             }
 
@@ -110,16 +113,19 @@ class IcingaHost extends IcingaObject
         }
 
         $hostVars = array();
+
         if ($connection !== null) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
-                if ($var->datatype) {
-                    $hostVars[$prefix . 'vars.' . $var->varname] = sprintf(
-                        '%s (%s)',
-                        $var->varname,
-                        $var->caption
-                    );
-                } else {
-                    $hostVars[$prefix . 'vars.' . $var->varname] = $var->varname;
+                if ($filter->match(PropertiesFilter::$CUSTOM_PROPERTY, $var->varname, $var)) {
+                    if ($var->datatype) {
+                        $hostVars[$prefix . 'vars.' . $var->varname] = sprintf(
+                            '%s (%s)',
+                            $var->varname,
+                            $var->caption
+                        );
+                    } else {
+                        $hostVars[$prefix . 'vars.' . $var->varname] = $var->varname;
+                    }
                 }
             }
         }
@@ -130,9 +136,12 @@ class IcingaHost extends IcingaObject
 
         $props = mt('director', 'Host properties');
         $vars  = mt('director', 'Custom variables');
-        $properties = array(
-            $props => $hostProperties,
-        );
+
+        $properties = array();
+        if (!empty($hostProperties)) {
+            $properties[$props] = $hostProperties;
+            $properties[$props][$prefix . 'groups'] = 'Groups';
+        }
 
         if (!empty($hostVars)) {
             $properties[$vars] = $hostVars;
@@ -143,7 +152,7 @@ class IcingaHost extends IcingaObject
 
     public function getCheckCommand()
     {
-        $id = $this->getResolvedProperty('check_command_id');
+        $id = $this->getSingleResolvedProperty('check_command_id');
         return IcingaCommand::loadWithAutoIncId(
             $id,
             $this->getConnection()
@@ -152,13 +161,18 @@ class IcingaHost extends IcingaObject
 
     public function hasCheckCommand()
     {
-        return $this->getResolvedProperty('check_command_id') !== null;
+        return $this->getSingleResolvedProperty('check_command_id') !== null;
     }
 
     public function renderToConfig(IcingaConfig $config)
     {
         parent::renderToConfig($config);
-        $this->renderAgentZoneAndEndpoint($config);
+
+        // TODO: We might alternatively let the whole config fail in case we have
+        //       used use_agent together with a legacy config
+        if (! $config->isLegacy()) {
+            $this->renderAgentZoneAndEndpoint($config);
+        }
     }
 
     public function renderAgentZoneAndEndpoint(IcingaConfig $config = null)
@@ -167,7 +181,11 @@ class IcingaHost extends IcingaObject
             return;
         }
 
-        if ($this->getResolvedProperty('has_agent') !== 'y') {
+        if ($this->getRenderingZone($config) === self::RESOLVE_ERROR) {
+            return;
+        }
+
+        if ($this->getSingleResolvedProperty('has_agent') !== 'y') {
             return;
         }
 
@@ -182,11 +200,11 @@ class IcingaHost extends IcingaObject
             'log_duration' => 0
         );
 
-        if ($this->getResolvedProperty('master_should_connect') === 'y') {
-            $props['host'] = $this->getResolvedProperty('address');
+        if ($this->getSingleResolvedProperty('master_should_connect') === 'y') {
+            $props['host'] = $this->getSingleResolvedProperty('address');
         }
 
-        $props['zone_id'] = $this->getResolvedProperty('zone_id');
+        $props['zone_id'] = $this->getSingleResolvedProperty('zone_id');
 
         $endpoint = IcingaEndpoint::create($props);
 
@@ -203,6 +221,76 @@ class IcingaHost extends IcingaObject
         $pre = 'zones.d/' . $this->getRenderingZone($config) . '/';
         $config->configFile($pre . 'agent_endpoints')->addObject($endpoint);
         $config->configFile($pre . 'agent_zones')->addObject($zone);
+    }
+
+    public function hasAnyOverridenServiceVars()
+    {
+        $varname = $this->getServiceOverrivesVarname();
+        return isset($this->vars()->$varname);
+    }
+
+    public function getAllOverriddenServiceVars()
+    {
+        if ($this->hasAnyOverridenServiceVars()) {
+            $varname = $this->getServiceOverrivesVarname();
+            return $this->vars()->$varname->getValue();
+        } else {
+            return (object) array();
+        }
+    }
+
+    public function hasOverriddenServiceVars($service)
+    {
+        $all = $this->getAllOverriddenServiceVars();
+        return property_exists($all, $service);
+    }
+
+    public function getOverriddenServiceVars($service)
+    {
+        if ($this->hasOverriddenServiceVars($service)) {
+            $all = $this->getAllOverriddenServiceVars();
+            return $all->$service;
+        } else {
+            return (object) array();
+        }
+    }
+
+    public function overrideServiceVars($service, $vars)
+    {
+        // For PHP < 5.5.0:
+        $array = (array) $vars;
+        if (empty($array)) {
+            return $this->unsetOverriddenServiceVars($service);
+        }
+
+        $all = $this->getAllOverriddenServiceVars();
+        $all->$service = $vars;
+        $varname = $this->getServiceOverrivesVarname();
+        $this->vars()->$varname = $all;
+
+        return $this;
+    }
+
+    public function unsetOverriddenServiceVars($service)
+    {
+        if ($this->hasOverriddenServiceVars($service)) {
+            $all = (array) $this->getAllOverriddenServiceVars();
+            unset($all[$service]);
+
+            $varname = $this->getServiceOverrivesVarname();
+            if (empty($all)) {
+                unset($this->vars()->$varname);
+            } else {
+                $this->vars()->$varname = (object) $all;
+            }
+        }
+
+        return $this;
+    }
+
+    protected function getServiceOverrivesVarname()
+    {
+        return $this->connection->settings()->override_services_varname;
     }
 
     /**
@@ -247,6 +335,22 @@ class IcingaHost extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
         return '';
+    }
+
+    protected function renderLegacyDisplay_Name()
+    {
+        return c1::renderKeyValue('display_name', $this->display_name);
+    }
+
+    protected function renderLegacyCustomExtensions()
+    {
+        $str = parent::renderLegacyCustomExtensions();
+
+        if (($alias = $this->vars()->get('alias')) !== null) {
+            $str .= c1::renderKeyValue('alias', $alias->getValue());
+        }
+
+        return $str;
     }
 
     public static function loadWithApiKey($key, Db $db)

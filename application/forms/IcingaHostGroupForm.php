@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostGroupForm extends DirectorObjectForm
@@ -17,6 +18,21 @@ class IcingaHostGroupForm extends DirectorObjectForm
         ));
 
         $this->addGroupDisplayNameElement()
+             ->addAssignmentElements()
              ->setButtons();
+    }
+
+    protected function addAssignmentElements()
+    {
+        $this->addAssignFilter(array(
+            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+            'required' => true,
+            'description' => $this->translate(
+                'This allows you to configure an assignment filter. Please feel'
+                . ' free to combine as many nested operators as you want'
+            )
+        ));
+
+        return $this;
     }
 }

@@ -28,14 +28,17 @@ class Boolean extends ZfSelect
         return null;
     }
 
-    public function isValid($value, $context = null)
+    protected function _filterValue(&$value, &$key)
     {
-        return $value === 'y'
-            || $value === 'n'
-            || $value === null
-            || $value === ''
-            || $value === true
-            || $value === false;
+        if ($value === true) {
+            $value = 'y';
+        } elseif ($value === false) {
+            $value = 'n';
+        } elseif ($value === '') {
+            $value = null;
+        }
+
+        parent::_filterValue($value, $key);
     }
 
     public function setValue($value)

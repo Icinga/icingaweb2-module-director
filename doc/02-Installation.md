@@ -35,8 +35,12 @@ command.
 
     psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8';"
     psql director -q -c "CREATE USER director WITH PASSWORD 'some-password';
-    GRANT ALL PRIVILEGES ON DATABASE director TO director;"
+    GRANT ALL PRIVILEGES ON DATABASE director TO director;
+    CREATE EXTENSION pgcrypto;"
 
+Hint: pgcrypto helps to boost performance, but is currently optional. In case you
+do not have it available on your platform and/or do not know how to solve this
+just leave away the 'CREATE EXTENSION' part.
 
 Web-based Configuration
 -----------------------

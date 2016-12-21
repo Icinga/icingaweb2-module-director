@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-
 class IcingaUser extends IcingaObject
 {
     protected $table = 'icinga_user';
@@ -42,9 +40,4 @@ class IcingaUser extends IcingaObject
         'period' => 'IcingaTimePeriod',
         'zone'   => 'IcingaZone',
     );
-
-    public function getRenderingZone(IcingaConfig $config = null)
-    {
-        return $this->connection->getMasterZoneName();
-    }
 }

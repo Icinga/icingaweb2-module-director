@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DataType;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\Decorator\ViewHelperRaw;
 use Icinga\Module\Director\Web\Form\QuickForm;
+use Zend_Form_Element as ZfElement;
 
 class DataTypeBoolean extends DataTypeHook
 {
@@ -15,7 +16,7 @@ class DataTypeBoolean extends DataTypeHook
         );
     }
 
-    protected function applyRawViewHelper($element)
+    protected function applyRawViewHelper(ZfElement $element)
     {
         $vhClass = 'Zend_Form_Decorator_ViewHelper';
         $decorators = $element->getDecorators();

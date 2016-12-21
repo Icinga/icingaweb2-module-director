@@ -22,10 +22,20 @@ class ConfigDiff
     {
         require_once dirname(__DIR__) . '/vendor/php-diff/lib/Diff.php';
 
-        $this->a = explode("\n", (string) $a);
-        $this->b = explode("\n", (string) $b);
+        if (empty($a)) {
+            $this->a = array();
+        } else {
+            $this->a = explode("\n", (string) $a);
+        }
+
+        if (empty($b)) {
+            $this->b = array();
+        } else {
+            $this->b = explode("\n", (string) $b);
+        }
 
         $options = array(
+            'context' => 5,
             // 'ignoreWhitespace' => true,
             // 'ignoreCase' => true,
         );

@@ -10,6 +10,7 @@ class ImportedrowsTable extends QuickTable
 {
     protected $columns;
 
+    /** @var ImportRun */
     protected $importRun;
 
     public function setImportRun(ImportRun $run)
@@ -28,6 +29,12 @@ class ImportedrowsTable extends QuickTable
     {
         if ($this->columns === null) {
             $cols = $this->importRun->listColumnNames();
+
+            $keyColumn = $this->importRun->importSource()->get('key_column');
+            if ($keyColumn !== null && ($pos = array_search($keyColumn, $cols)) !== false) {
+                unset($cols[$pos]);
+                array_unshift($cols, $keyColumn);
+            }
         } else {
             $cols = $this->columns;
         }

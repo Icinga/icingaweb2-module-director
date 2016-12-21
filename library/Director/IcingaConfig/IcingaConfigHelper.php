@@ -15,6 +15,7 @@ class IcingaConfigHelper
         'template',
         'include',
         'include_recursive',
+        'ignore_on_error',
         'library',
         'null',
         'true',
@@ -35,6 +36,8 @@ class IcingaConfigHelper
         'if',
         'else',
         'in',
+        'current_filename',
+        'current_line',
     );
 
     public static function renderKeyValue($key, $value, $prefix = '    ')
@@ -104,6 +107,15 @@ class IcingaConfigHelper
         return '"' . $string . '"';
     }
 
+    public static function renderDictionaryKey($key)
+    {
+        if (preg_match('/^[a-z_]+[a-z0-9_]*$/i', $key)) {
+            return static::escapeIfReserved($key);
+        } else {
+            return static::renderString($key);
+        }
+    }
+
     // Requires an array
     public static function renderArray($array)
     {
@@ -115,24 +127,38 @@ class IcingaConfigHelper
                 $data[] = self::renderString($entry);
             }
         }
-        $str = '[ ' . implode(', ', $data) . ' ]';
+
+        return static::renderEscapedArray($data);
+    }
+
+    public static function renderEscapedArray($array)
+    {
+        $str = '[ ' . implode(', ', $array) . ' ]';
 
         if (strlen($str) < 60) {
             return $str;
         }
 
         // Prefix for toConfigString?
-        return "[\n    " . implode(",\n    ", $data) . "\n]";
-
+        return "[\n    " . implode(",\n    ", $array) . "\n]";
     }
 
     public static function renderDictionary($dictionary)
     {
         $vals = array();
         foreach ($dictionary as $key => $value) {
-            $vals[$key] = rtrim(self::renderKeyValue(self::renderString($key), $value));
+            $vals[$key] = rtrim(
+                self::renderKeyValue(
+                    self::renderDictionaryKey($key),
+                    $value
+                )
+            );
         }
-        ksort($vals);
+
+        if (empty($vals)) {
+            return '{}';
+        }
+        ksort($vals, SORT_STRING);
 
         // Prefix for toConfigString?
         return "{\n" . implode("\n", $vals) . "\n}";
@@ -151,7 +177,7 @@ class IcingaConfigHelper
 
     public static function isReserved($string)
     {
-        return in_array($string, self::$reservedWords);
+        return in_array($string, self::$reservedWords, true);
     }
 
     public static function escapeIfReserved($string)
@@ -170,7 +196,6 @@ class IcingaConfigHelper
         }
 
         $parts = preg_split('/\s+/', $interval, -1, PREG_SPLIT_NO_EMPTY);
-        $value = 0;
         foreach ($parts as $part) {
             if (! preg_match('/^(\d+)([dhms]?)$/', $part)) {
                 return false;
@@ -225,7 +250,6 @@ class IcingaConfigHelper
             return '0s';
         }
 
-        $parts = array();
         $steps = array(
             'd' => 86400,
             'h' => 3600,
@@ -239,5 +263,28 @@ class IcingaConfigHelper
         }
 
         return $seconds . 's';
+    }
+
+    public static function stringHasMacro($string)
+    {
+        return preg_match('/(?<!\$)\$[\w\.]+\$(?!\$)/', $string);
+    }
+
+    public static function renderStringWithVariables($string)
+    {
+        $string = preg_replace(
+            '/(?<!\$)\$([\w\.]+)\$(?!\$)/',
+            '" + ${1} + "',
+            static::renderString($string)
+        );
+
+        if (substr($string, 0, 5) === '"" + ') {
+            $string = substr($string, 5);
+        }
+        if (substr($string, -5) === ' + ""') {
+            $string = substr($string, 0, -5);
+        }
+
+        return $string;
     }
 }

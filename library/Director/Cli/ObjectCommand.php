@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Cli;
 
-use Icinga\Module\Director\Cli\Command;
+use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Objects\IcingaObject;
 
 class ObjectCommand extends Command
@@ -37,8 +37,8 @@ class ObjectCommand extends Command
      *   --json        Use JSON format
      *   --no-pretty   JSON is pretty-printed per default (for PHP >= 5.4)
      *                 Use this flag to enforce unformatted JSON
-     *   --no-defaults Per default JSON output skips null or default values
-     *                 With this flag you will get all properties
+     *   --no-defaults Per default JSON output ships null or default values
+     *                 With this flag you will skip those properties
      */
     public function showAction()
     {
@@ -84,11 +84,9 @@ class ObjectCommand extends Command
      */
     public function createAction()
     {
-        $db = $this->db();
         $type = $this->getType();
         $name = $this->params->shift();
 
-        $db = $this->db();
         $props = $this->remainingParams();
         if (! array_key_exists('object_type', $props)) {
             $props['object_type'] = 'object';
@@ -175,7 +173,6 @@ class ObjectCommand extends Command
      */
     public function setAction()
     {
-        $db = $this->db();
         $name = $this->getName();
 
         if ($this->params->shift('auto-create') && ! $this->exists($name)) {
@@ -210,18 +207,28 @@ class ObjectCommand extends Command
      * USAGE
      *
      * icingacli director <type> delete <name>
+     *
+     * EXAMPLES
+     *
+     * icingacli director host delete localhost2
+     *
+     * icingacli director host delete localhost{3..8}
      */
     public function deleteAction()
     {
         $type = $this->getType();
-        $name = $this->getName();
-        if ($this->getObject()->delete()) {
-            printf("%s '%s' has been deleted\n", $type, $name);
-            exit(0);
-        } else {
-            printf("Something went wrong while deleting %s '%s'\n", $type, $name);
-            exit(1);
+
+        foreach ($this->shiftOneOrMoreNames() as $name) {
+            if ($this->load($name)->delete()) {
+                printf("%s '%s' has been deleted\n", $type, $name);
+            } else {
+                printf("Something went wrong while deleting %s '%s'\n", $type, $name);
+                exit(1);
+            }
+
+            $this->object = null;
         }
+        exit(0);
     }
 
     /**
@@ -267,6 +274,8 @@ class ObjectCommand extends Command
      *
      *   icingacli director host clone localhost2 --from localhost
      *
+     *   icingacli director host clone localhost{3..8} --from localhost2
+     *
      *   icingacli director host clone localhost3 --from localhost \
      *     --address 127.0.0.3
      */
@@ -275,30 +284,48 @@ class ObjectCommand extends Command
         $fromName = $this->params->shiftRequired('from');
         $from = $this->load($fromName);
 
-        $name = $this->getName();
+        // $name = $this->getName();
         $type = $this->getType();
 
         $resolve = $this->params->shift('flat');
         $replace = $this->params->shift('replace');
 
-        $object = $from::fromPlainObject(
-            $from->toPlainObject($resolve),
-            $from->getConnection()
-        )->set('object_name', $name);
+        $from->setProperties($this->remainingParams());
 
-        $object->setProperties($this->remainingParams());
+        foreach ($this->shiftOneOrMoreNames() as $name) {
+            $object = $from::fromPlainObject(
+                $from->toPlainObject($resolve),
+                $from->getConnection()
+            );
 
-        if ($replace && $this->exists($name)) {
-            $object = $this->load($name)->replaceWith($object);
+            $object->set('object_name', $name);
+
+            if ($replace && $this->exists($name)) {
+                $object = $this->load($name)->replaceWith($object);
+            }
+
+            if ($object->hasBeenModified() && $object->store()) {
+                printf("%s '%s' has been cloned from %s\n", $type, $name, $fromName);
+            } else {
+                printf("%s '%s' has not been modified\n", $this->getType(), $name);
+            }
         }
 
-        if ($object->hasBeenModified() && $object->store()) {
-            printf("%s '%s' has been cloned from %s\n", $type, $name, $fromName);
-            exit(0);
-        }
-
-        printf("%s '%s' has not been modified\n", $this->getType(), $name);
         exit(0);
+    }
+
+    protected function shiftOneOrMoreNames()
+    {
+        $names = array();
+        while ($name = $this->params->shift()) {
+            $names[] = $name;
+        }
+
+        if (empty($names)) {
+            throw new MissingParameterException('Required object name is missing');
+        }
+
+        return $names;
     }
 
     protected function remainingParams()
@@ -340,6 +367,9 @@ class ObjectCommand extends Command
         );
     }
 
+    /**
+     * @return IcingaObject
+     */
     protected function getObject()
     {
         if ($this->object === null) {

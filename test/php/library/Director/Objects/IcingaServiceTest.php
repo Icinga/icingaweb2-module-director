@@ -13,6 +13,8 @@ class IcingaServiceTest extends BaseTestCase
 
     protected $testServiceName = '___TEST___service';
 
+    protected $createdServices = array();
+
     public function testUnstoredHostCanBeLazySet()
     {
         $service = $this->service();
@@ -38,15 +40,14 @@ class IcingaServiceTest extends BaseTestCase
         $service->display_name = 'Something else';
         $service->host = 'not yet';
         $service->store($db);
+        $service->delete();
     }
 
     public function testAcceptsAssignRules()
     {
         $service = $this->service();
         $service->object_type = 'apply';
-        $service->assignments = array(
-            'host.address="127.*"'
-        );
+        $service->assign_filter = 'host.address="127.*"';
     }
 
     /**
@@ -55,19 +56,23 @@ class IcingaServiceTest extends BaseTestCase
     public function testRefusesAssignRulesWhenNotBeingAnApply()
     {
         $service = $this->service();
-        $service->assignments = array(
-            'host.address=127.*'
-        );
+        $service->assign_filter = 'host.address=127.*';
     }
 
     public function testAcceptsAndRendersFlatAssignRules()
     {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
         $service = $this->service();
+
+        // Service apply rule rendering requires access to settings:
+        $service->setConnection($db);
         $service->object_type = 'apply';
-        $service->assignments = array(
-            'host.address="127.*"',
-            'host.vars.env="test"'
-        );
+        $service->assign_filter = 'host.address="127.*"|host.vars.env="test"';
 
         $this->assertEquals(
             $this->loadRendered('service1'),
@@ -75,19 +80,24 @@ class IcingaServiceTest extends BaseTestCase
         );
 
         $this->assertEquals(
-            'host.address="127.*"',
-            $service->toPlainObject()->assignments['assign'][0]
+            'host.address="127.*"|host.vars.env="test"',
+            $service->assign_filter
         );
     }
 
     public function testAcceptsAndRendersStructuredAssignRules()
     {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
         $service = $this->service();
+        // Service apply rule rendering requires access to settings:
+        $service->setConnection($db);
         $service->object_type = 'apply';
-        $service->assignments = array(
-            'host.address="127.*"',
-            'host.vars.env="test"'
-        );
+        $service->assign_filter = 'host.address="127.*"|host.vars.env="test"';
 
         $this->assertEquals(
             $this->loadRendered('service1'),
@@ -95,8 +105,8 @@ class IcingaServiceTest extends BaseTestCase
         );
 
         $this->assertEquals(
-            'host.address="127.*"',
-            $service->toPlainObject()->assignments['assign'][0]
+            'host.address="127.*"|host.vars.env="test"',
+            $service->assign_filter = 'host.address="127.*"|host.vars.env="test"'
         );
     }
 
@@ -110,10 +120,8 @@ class IcingaServiceTest extends BaseTestCase
 
         $service = $this->service();
         $service->object_type = 'apply';
-        $service->assignments = array(
-            'host.address="127.*"',
-            'host.vars.env="test"'
-        );
+        $service->assign_filter = 'host.address="127.*"|host.vars.env="test"';
+
         $service->store($db);
 
         $service = IcingaService::loadWithAutoIncId($service->id, $db);
@@ -123,73 +131,11 @@ class IcingaServiceTest extends BaseTestCase
         );
 
         $this->assertEquals(
-            'host.address="127.*"',
-            $service->toPlainObject()->assignments['assign'][0]
-        );
-    }
-
-    public function testStaysUnmodifiedWhenSameFiltersAreSetInDifferentWays()
-    {
-        if ($this->skipForMissingDb()) {
-            return;
-        }
-
-        $db = $this->getDb();
-
-        $service = $this->service();
-        $service->object_type = 'apply';
-        $service->assignments = 'host.address="127.*"';
-        $service->store($db);
-        $this->assertFalse($service->hasBeenModified());
-
-        $service->assignments = array(
-            'host.address="127.*"',
-        );
-        $this->assertFalse($service->hasBeenModified());
-
-        $service->assignments = 'host.address="128.*"';
-        $this->assertTrue($service->hasBeenModified());
-
-        $service->store();
-        $this->assertFalse($service->hasBeenModified());
-
-        $service->assignments = array('assign' => 'host.address="128.*"');
-        $this->assertFalse($service->hasBeenModified());
-
-        $service->assignments = array(
-            'assign' => array(
-                'host.address="128.*"'
-             )
+            'host.address="127.*"|host.vars.env="test"',
+            $service->assign_filter
         );
 
-        $this->assertFalse($service->hasBeenModified());
-
-        $service->assignments = array(
-            'assign' => array(
-                'host.address="128.*"'
-            ),
-            'ignore' => 'host.name="localhost"'
-        );
-
-        $this->assertTrue($service->hasBeenModified());
-
-        $service->store();
-        $service = IcingaService::loadWithAutoIncId($service->id, $db);
-
-        $this->assertEquals(
-            'host.address="128.*"',
-            $service->toPlainObject()->assignments['assign'][0]
-        );
-
-        $this->assertEquals(
-            'host.name="localhost"',
-            $service->toPlainObject()->assignments['ignore'][0]
-        );
-
-        $this->assertEquals(
-            $this->loadRendered('service2'),
-            (string) $service
-        );
+        $service->delete();
     }
 
     public function testRendersToTheCorrectZone()
@@ -210,6 +156,78 @@ class IcingaServiceTest extends BaseTestCase
         );
     }
 
+    public function testVariablesInPropertiesAndCustomVariables()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service('___TEST___service_$not_replaced$');
+        $service->setConnection($db);
+        $service->object_type = 'apply';
+        $service->display_name = 'Service: $host.vars.replaced$';
+        $service->assign_filter = 'host.address="127.*"';
+        $service->{'vars.custom_var'} = '$host.vars.replaced$';
+
+        $this->assertEquals(
+            $this->loadRendered('service3'),
+            (string) $service
+        );
+    }
+
+    public function testVariablesAreNotReplacedForNonApplyObjects()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service('___TEST___service_$not_replaced$');
+        $service->object_type = 'object';
+        $service->display_name = 'Service: $host.vars.not_replaced$';
+        $service->{'vars.custom_var'} = '$host.vars.not_replaced$';
+        $service->store($db);
+
+        $service = IcingaService::loadWithAutoIncId($service->id, $db);
+        $this->assertEquals(
+            $this->loadRendered('service4'),
+            (string) $service
+        );
+    }
+
+    public function testApplyForRendersInVariousModes()
+    {
+        if ($this->skipForMissingDb()) {
+            return;
+        }
+
+        $db = $this->getDb();
+
+        $service = $this->service()->setConnection($db);
+        $service->object_type = 'apply';
+        $service->apply_for = 'host.vars.test1';
+        $service->assign_filter = 'host.vars.env="test"';
+        $this->assertEquals(
+            $this->loadRendered('service5'),
+            (string) $service
+        );
+
+        $service->object_name = '___TEST$config$___service $host.var.bla$';
+        $this->assertEquals(
+            $this->loadRendered('service6'),
+            (string) $service
+        );
+
+        $service->object_name = '';
+        $this->assertEquals(
+            $this->loadRendered('service7'),
+            (string) $service
+        );
+    }
+
     protected function host()
     {
         return IcingaHost::create(array(
@@ -219,10 +237,14 @@ class IcingaServiceTest extends BaseTestCase
         ));
     }
 
-    protected function service()
+    protected function service($objectName = null)
     {
+        if ($objectName === null) {
+            $objectName = $this->testServiceName;
+        }
+        $this->createdServices[] = $objectName;
         return IcingaService::create(array(
-            'object_name'  => $this->testServiceName,
+            'object_name'  => $objectName,
             'object_type'  => 'object',
             'display_name' => 'Whatever service',
             'vars'         => array(
@@ -256,7 +278,7 @@ class IcingaServiceTest extends BaseTestCase
                 }
             }
 
-            $kill = array($this->testServiceName);
+            $kill = $this->createdServices;
             foreach ($kill as $name) {
                 if (IcingaService::exists(array($name), $db)) {
                     IcingaService::load($name, $db)->delete();

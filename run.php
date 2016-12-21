@@ -15,6 +15,7 @@ $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeArray');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeBoolean');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDatalist');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeNumber');
+$this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeDirectorObject');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeSqlQuery');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeString');
 
@@ -28,27 +29,18 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierSplit');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierJoin');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierGetHostByName');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierDnsRecords');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierExtractFromDN');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromAdSid');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromLatin1');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierBitmask');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierMakeBoolean');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierJsonDecode');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierToInt');
 
 $this->provideHook('director/Job', $prefix . 'Job\\HousekeepingJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ConfigJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ImportJob');
 $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
 
-if (Icinga::app()->isCli()) {
-    return;
-}
-
-$screenshotRoute = new Zend_Controller_Router_Route(
-    'screenshot/director/:subdir/:file',
-    array(
-        'module'        => 'director',
-        'controller'    => 'screenshot',
-    )
-);
-
-$this->addRoute('screenshot/director', $screenshotRoute);
+$this->provideHook('cube/Actions', 'CubeLinks');

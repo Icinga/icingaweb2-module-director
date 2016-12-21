@@ -87,9 +87,7 @@ class DeploymentLogTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('l' => 'director_deployment_log'),
             array()
         )->joinLeft(
@@ -97,7 +95,5 @@ class DeploymentLogTable extends QuickTable
             'c.checksum = l.config_checksum',
             array()
         )->order('l.start_time DESC');
-
-        return $query;
     }
 }

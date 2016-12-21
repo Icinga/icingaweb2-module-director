@@ -2,16 +2,21 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Iterator;
 use Countable;
+use Exception;
+use Iterator;
 
 class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 {
+    /** @var CustomVariable[] */
     protected $storedVars = array();
 
+    /** @var CustomVariable[]  */
     protected $vars = array();
 
     protected $modified = false;
@@ -19,6 +24,42 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     private $position = 0;
 
     protected $idx = array();
+
+    protected static $allTables = array(
+        'icinga_command_var',
+        'icinga_host_var',
+        'icinga_notification_var',
+        'icinga_service_set_var',
+        'icinga_service_var',
+        'icinga_user_var',
+    );
+
+    public static function countAll($varname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $parts = array();
+        $where = $db->quoteInto('varname = ?', $varname);
+        foreach (static::$allTables as $table) {
+            $parts[] = sprintf(
+                'SELECT COUNT(*) as cnt FROM ' . $table . ' WHERE %s',
+                $where
+            );
+        }
+
+        $query = 'SELECT SUM(cnt) AS cnt FROM ('
+            . implode(' UNION ALL ', $parts)
+            . ') sub';
+        return (int) $db->fetchOne($query);
+    }
+
+    public static function deleteAll($varname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $where = $db->quoteInto('varname = ?', $varname);
+        foreach (static::$allTables as $table) {
+            $db->delete($table, $where);
+        }
+    }
 
     public function count()
     {
@@ -65,10 +106,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /**
      * Generic setter
      *
-     * @param string $property
+     * @param string $key
      * @param mixed  $value
      *
-     * @return array
+     * @return self
      */
     public function set($key, $value)
     {
@@ -77,6 +118,10 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         if ($value instanceof CustomVariable) {
             $value = clone($value);
         } else {
+            if ($value === null) {
+                $this->__unset($key);
+                return $this;
+            }
             $value = CustomVariable::create($key, $value);
         }
 
@@ -122,7 +167,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
                 'v.varvalue',
                 'v.format',
             )
-        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->id);
+        )->where(sprintf('v.%s = ?', $object->getVarsIdColumn()), $object->get('id'));
 
         $vars = new CustomVariables;
         foreach ($db->fetchAll($query) as $row) {
@@ -150,7 +195,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $db            = $object->getDb();
         $table         = $object->getVarsTableName();
         $foreignColumn = $object->getVarsIdColumn();
-        $foreignId     = $object->id;
+        $foreignId     = $object->get('id');
 
 
         foreach ($this->vars as $var) {
@@ -228,27 +273,97 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this->storedVars;
     }
 
-    public function toConfigString()
+    public function flatten()
+    {
+        $flat = array();
+        foreach ($this->vars as $key => $var) {
+            $var->flatten($flat, $key);
+        }
+
+        return $flat;
+    }
+
+    public function checksum()
+    {
+        $sums = array();
+        foreach ($this->vars as $key => $var) {
+            $sums[] = $key . '=' . $var->checksum();
+        }
+
+        return sha1(implode('|', $sums), true);
+    }
+
+    public function toConfigString($renderExpressions = false)
     {
         $out = '';
 
         ksort($this->vars);
         foreach ($this->vars as $key => $var) {
             // TODO: ctype_alnum + underscore?
-            if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
-                $out .= c::renderKeyValue(
-                    'vars.' . c::escapeIfReserved($key),
-                    $var->toConfigString()
-                );
-            } else {
-                $out .= c::renderKeyValue(
-                    'vars[' . c::renderString($key) . ']',
-                    $var->toConfigString()
-                );
-            }
+            $out .= $this->renderSingleVar($key, $var, $renderExpressions);
         }
 
         return $out;
+    }
+
+    public function toLegacyConfigString()
+    {
+        $out = '';
+
+        ksort($this->vars);
+        foreach ($this->vars as $key => $var) {
+            // TODO: ctype_alnum + underscore?
+            // vars with ARGn will be handled by IcingaObject::renderLegacyCheck_command
+            if (substr($key, 0, 3) == 'ARG') {
+                continue;
+            }
+
+            switch ($type = $var->getType()) {
+                case 'String':
+                case 'Number':
+                    # TODO: Make Prefetchable
+                    $out .= c1::renderKeyValue(
+                        '_' . $key,
+                        $var->toLegacyConfigString()
+                    );
+                    break;
+                default:
+                    $out .= c1::renderKeyValue(
+                        '# _' . $key,
+                        sprintf('(unsupported: %s)', $type)
+                    );
+            }
+        }
+
+        if ($out !== '') {
+            $out = "\n".$out;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param string $key
+     * @param CustomVariable $var
+     * @param bool $renderExpressions
+     *
+     * @return string
+     */
+    protected function renderSingleVar($key, $var, $renderExpressions = false)
+    {
+        return c::renderKeyValue(
+            $this->renderKeyName($key),
+            $var->toConfigStringPrefetchable($renderExpressions)
+        );
+    }
+
+    protected function renderKeyName($key)
+    {
+        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+            return 'vars.' . c::escapeIfReserved($key);
+        } else {
+            return 'vars[' . c::renderString($key) . ']';
+        }
     }
 
     public function __get($key)
@@ -272,6 +387,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     /**
      * Magic isset check
      *
+     * @param string $key
+     *
      * @return boolean
      */
     public function __isset($key)
@@ -281,6 +398,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     /**
      * Magic unsetter
+     *
+     * @param string $key
      *
      * @return void
      */

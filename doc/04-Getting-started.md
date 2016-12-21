@@ -7,7 +7,17 @@ environment. Director is not allowed to modify existing configuration in
 example automagically at kickstart time), it is a pretty advanced task you
 should not tackle at the early beginning.
 
+Define a new global zone
+------------------------
 
+This zone must exist on every node directly or indirectly managed by the
+Icinga Director:
+
+```icinga2
+object Zone "director-global" {
+  global = true
+}
+```
 
 Create an API user
 ------------------
@@ -27,7 +37,7 @@ fresh Icinga 2 installation or a standalone setup with other ways of
 checking your clients, you will have to create them.
 
 The easiest way to set up Icinga 2 with a `zone` and `endpoint` is by
-running the [Icinga 2 Setup Wizard](http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/icinga2-client#icinga2-client-installation-master-setup).
+running the [Icinga 2 Setup Wizard](https://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring#distributed-monitoring-setup-master).
 
 Take some time to really understand how to work with Icinga Director first.
 

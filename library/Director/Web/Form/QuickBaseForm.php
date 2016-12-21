@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Application\Icinga;
+use Icinga\Application\Modules\Module;
 use Zend_Form;
 
 abstract class QuickBaseForm extends Zend_Form
@@ -9,30 +11,62 @@ abstract class QuickBaseForm extends Zend_Form
     /**
      * The Icinga module this form belongs to. Usually only set if the
      * form is initialized through the FormLoader
+     *
+     * @var Module
      */
     protected $icingaModule;
 
     protected $icingaModuleName;
 
+    private $hintCount = 0;
+
     public function __construct($options = null)
     {
-        parent::__construct($this->handleOptions($options));
+        $this->callZfConstructor($this->handleOptions($options))
+            ->initializePrefixPaths();
+    }
 
-        if ($this->icingaModule) {
-            $basedir = sprintf(
-                '%s/%s/Web/Form',
-                $this->icingaModule->getLibDir(),
-                ucfirst($this->icingaModuleName)
-            );
+    protected function callZfConstructor($options = null)
+    {
+        parent::__construct($options);
+        return $this;
+    }
 
-            $this->addPrefixPaths(array(
-                array(
-                    'prefix'    => __NAMESPACE__ . '\\Element\\',
-                    'path'      => $basedir . '/Element',
-                    'type'      => static::ELEMENT
-                )
-            ));
+    protected function initializePrefixPaths()
+    {
+        $this->addPrefixPathsForDirector();
+        if ($this->icingaModule && $this->icingaModuleName !== 'director') {
+            $this->addPrefixPathsForModule($this->icingaModule);
         }
+    }
+
+    protected function addPrefixPathsForDirector()
+    {
+        $module = Icinga::app()
+            ->getModuleManager()
+            ->loadModule('director')
+            ->getModule('director');
+
+        $this->addPrefixPathsForModule($module);
+    }
+
+    public function addPrefixPathsForModule(Module $module)
+    {
+        $basedir = sprintf(
+            '%s/%s/Web/Form',
+            $module->getLibDir(),
+            ucfirst($module->getName())
+        );
+
+        $this->addPrefixPaths(array(
+            array(
+                'prefix'    => __NAMESPACE__ . '\\Element\\',
+                'path'      => $basedir . '/Element',
+                'type'      => static::ELEMENT
+            )
+        ));
+
+        return $this;
     }
 
     public function addHidden($name, $value = null)
@@ -72,11 +106,13 @@ abstract class QuickBaseForm extends Zend_Form
         return $this;
     }
 
-    public function optionalEnum($enum)
+    public function optionalEnum($enum, $nullLabel = null)
     {
-        return array(
-            null => $this->translate('- please choose -')
-        ) + $enum;
+        if ($nullLabel === null) {
+            $nullLabel = $this->translate('- please choose -');
+        }
+
+        return array(null => $nullLabel) + $enum;
     }
 
     protected function handleOptions($options = null)
@@ -86,6 +122,7 @@ abstract class QuickBaseForm extends Zend_Form
         }
 
         if (array_key_exists('icingaModule', $options)) {
+            /** @var Module icingaModule */
             $this->icingaModule = $options['icingaModule'];
             $this->icingaModuleName = $this->icingaModule->getName();
             unset($options['icingaModule']);

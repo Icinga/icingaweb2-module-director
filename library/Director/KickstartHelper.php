@@ -27,6 +27,8 @@ class KickstartHelper
 
     protected $loadedZones;
 
+    protected $removeZones;
+
     protected $config = array(
         'endpoint' => null,
         'host'     => null,
@@ -101,6 +103,7 @@ class KickstartHelper
              ->loadZones()
              ->storeZones()
              ->storeEndpoints()
+             ->removeZones()
              ->importCommands();
 
         $this->apiUser()->store();
@@ -130,6 +133,10 @@ class KickstartHelper
         return $this->apiUser;
     }
 
+    /**
+     * @throws ConfigurationError
+     * @return self
+     */
     protected function loadZones()
     {
         $db = $this->db;
@@ -178,6 +185,7 @@ class KickstartHelper
     {
         $db = $this->db;
         $existing = $db->listExternal('zone');
+
         foreach ($this->loadedZones as $name => $zone) {
             if ($zone::exists($name, $db)) {
                 $zone = $zone::load($name, $db)->replaceWith($zone);
@@ -185,7 +193,17 @@ class KickstartHelper
             $zone->store();
             unset($existing[$name]);
         }
-        foreach ($existing as $name) {
+
+        $this->removeZones = $existing;
+
+        return $this;
+    }
+
+    protected function removeZones()
+    {
+        $db = $this->db;
+
+        foreach ($this->removeZones as $name) {
             IcingaZone::load($name, $db)->delete();
         }
 
@@ -268,7 +286,7 @@ class KickstartHelper
             $object->store();
         }
 
-        $db->storeSetting('master_zone', $this->deploymentEndpoint->zone);
+        $db->settings()->master_zone = $this->deploymentEndpoint->zone;
 
         return $this;
     }
@@ -283,6 +301,16 @@ class KickstartHelper
                 $new = $object;
             }
     
+            $new->store();
+        }
+
+        foreach ($this->api()->setDb($db)->getNotificationCommandObjects() as $object) {
+            if ($object::exists($object->object_name, $db)) {
+                $new = $object::load($object->object_name, $db)->replaceWith($object);
+            } else {
+                $new = $object;
+            }
+
             $new->store();
         }
 

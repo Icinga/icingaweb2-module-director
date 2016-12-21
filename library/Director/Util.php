@@ -46,6 +46,9 @@ class Util
      * @param int    $length     Desired key length
      * @param bool   $raw        Returns the binary key if true, hex string otherwise
      *
+     * @throws NotImplementedError when asking for an unsupported algorightm
+     * @throws ProgrammingError    when passing invalid parameters
+     *
      * @return string  A $length byte long key, derived from secret and salt
      */
     public static function pbkdf2($alg, $secret, $salt, $iterations, $length, $raw = false)
@@ -142,7 +145,7 @@ class Util
     {
         $resources = array();
         foreach (ResourceFactory::getResourceConfigs() as $name => $resource) {
-            if ($resource->type === $type && self::resourceIsAllowed($name)) {
+            if ($resource->get('type') === $type && self::resourceIsAllowed($name)) {
                 $resources[$name] = $name;
             }
         }

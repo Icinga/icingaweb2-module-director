@@ -2,11 +2,14 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Countable;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -25,6 +28,12 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     public function __construct(IcingaObject $object)
     {
         $this->object = $object;
+
+        if (! $object->hasBeenLoadedFromDb() && PrefetchCache::shouldBeUsed()) {
+            /** @var IcingaObjectGroup $class */
+            $class = $this->getGroupClass();
+            $class::prefetchAll($this->object->getConnection());
+        }
     }
 
     public function count()
@@ -160,6 +169,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
+        /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 
         if ($group instanceof $class) {
@@ -168,28 +178,24 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         } elseif (is_string($group)) {
 
             $connection = $this->object->getConnection();
-
-            // TODO: fix this, prefetch or whatever - this is expensive
-            $query = $this->object->getDb()->select()->from(
-                $this->getGroupTableName()
-            )->where('object_name = ?', $group);
-            $groups = $class::loadAll($connection, $query, 'object_name');
-
-            if (! array_key_exists($group, $groups)) {
+            try {
+                $this->groups[$group] = $class::load($group, $connection);
+            } catch (NotFoundError $e) {
                 switch ($onError) {
                     case 'autocreate':
-                        $groups[$group] = $class::create(array(
+                        $newGroup = $class::create(array(
                             'object_type' => 'object',
                             'object_name' => $group
                         ));
-                        $groups[$group]->store($connection);
-                        // TODO
+                        $newGroup->store($connection);
+                        $this->groups[$group] = $newGroup;
+                        break;
                     case 'fail':
-                        throw new ProgrammingError(
+                        throw new NotFoundError(
                             'The group "%s" doesn\'t exists.',
                             $group
                         );
-                    break;
+                        break;
                     case 'ignore':
                         return $this;
                 }
@@ -201,7 +207,6 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        $this->groups[$group] = $groups[$group];
         $this->modified = true;
         $this->refreshIndex();
 
@@ -318,7 +323,15 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     public static function loadForStoredObject(IcingaObject $object)
     {
         $groups = new static($object);
-        return $groups->loadFromDb();
+
+        if (PrefetchCache::shouldBeUsed()) {
+            $groups->groups = PrefetchCache::instance()->groups($object);
+            $groups->cloneStored();
+        } else {
+            $groups->loadFromDb();
+        }
+
+        return $groups;
     }
 
     public function toConfigString()
@@ -330,6 +343,18 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
 
         return c::renderKeyValue('groups', c::renderArray($groups));
+    }
+
+    public function toLegacyConfigString()
+    {
+        $groups = array_keys($this->groups);
+
+        if (empty($groups)) {
+            return '';
+        }
+
+        $type = $this->object->getLegacyObjectType();
+        return c1::renderKeyValue($type.'groups', c1::renderArray($groups));
     }
 
     public function __toString()

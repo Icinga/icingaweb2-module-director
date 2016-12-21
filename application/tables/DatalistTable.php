@@ -32,19 +32,15 @@ class DatalistTable extends QuickTable
         $view = $this->view();
         return array(
             'list_name' => $view->translate('List name'),
-            'owner'     => $view->translate('Owner'),
+            // 'owner'     => $view->translate('Owner'),
         );
     }
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('l' => 'director_datalist'),
             array()
         )->order('list_name ASC');
-
-        return $query;
     }
 }

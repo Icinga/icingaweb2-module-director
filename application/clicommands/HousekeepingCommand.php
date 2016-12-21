@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
-use Icinga\Application\Benchmark;
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Db\Housekeeping;

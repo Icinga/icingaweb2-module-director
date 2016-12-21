@@ -40,7 +40,7 @@ class Migration
 
         try {
             foreach ($queries as $query) {
-                if (preg_match('/^OPTIMIZE /i', $query)) {
+                if (preg_match('/^(?:OPTIMIZE|EXECUTE) /i', $query)) {
                     $db->query($query);
                 } else {
                     $db->exec($query);

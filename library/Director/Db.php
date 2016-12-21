@@ -2,11 +2,10 @@
 
 namespace Icinga\Module\Director;
 
-use Icinga\Data\Db\DbConnection;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Util;
 use Icinga\Exception\ConfigurationError;
 use Zend_Db_Expr;
 use Zend_Db_Select;
@@ -42,7 +41,7 @@ class Db extends DbConnection
 
         if ($object !== null) {
             $query .= $db->quoteInto(' AND object_type = ?', $object->getTableName());
-            $query .= $db->quoteInto(' AND object_name = ?', $object->object_name);
+            $query .= $db->quoteInto(' AND object_name = ?', $object->getObjectName());
         }
         return (int) $db->fetchOne($query);
     }
@@ -61,6 +60,15 @@ class Db extends DbConnection
         return (int) $db->fetchOne($query);
     }
 
+    public function settings()
+    {
+        if ($this->settings === null) {
+            $this->settings = new Settings($this);
+        }
+
+        return $this->settings;
+    }
+
     public function getMasterZoneName()
     {
         if ($this->masterZoneName === null) {
@@ -72,7 +80,7 @@ class Db extends DbConnection
 
     protected function detectMasterZoneName()
     {
-        if ($zone = $this->getSetting('master_zone')) {
+        if ($zone = $this->settings()->master_zone) {
             return $zone;
         }
 
@@ -93,7 +101,7 @@ class Db extends DbConnection
 
     public function getDefaultGlobalZoneName()
     {
-        return $this->getSetting('default_global_zone', 'director-global');
+        return $this->settings()->default_global_zone;
     }
 
     public function hasDeploymentEndpoint()
@@ -147,66 +155,12 @@ class Db extends DbConnection
         return $name;
     }
 
+    /**
+     * @return IcingaEndpoint
+     */
     public function getDeploymentEndpoint()
     {
         return IcingaEndpoint::load($this->getDeploymentEndpointName(), $this);
-    }
-
-    public function getSetting($name, $default = null)
-    {
-        if ($this->settings === null) {
-            $this->fetchSettings();
-        }
-
-        if (array_key_exists($name, $this->settings)) {
-            return $this->settings[$name];
-        }
-
-        return $default;
-    }
-
-    public function storeSetting($name, $value)
-    {
-        $db = $this->db();
-        if ($this->getSetting($name) === $value) {
-            return $this;
-        }
-
-        $updated = $db->update(
-            'director_setting',
-            array('setting_value' => $value),
-            $db->quoteInto('setting_name = ?', $name)
-        );
-
-        if ($updated === 0) {
-            $db->insert(
-                'director_setting',
-                array(
-                    'setting_name'  => $name,
-                    'setting_value' => $value,
-                )
-            );
-        }
-
-        if ($this->settings !== null) {
-            $this->settings[$name] = $value;
-        }
-
-        return $this;
-    }
-
-    public function fetchSettings($force = true)
-    {
-        if ($force || $this->settings === null) {
-            $db = $this->db();
-            $query = $db->select()->from(
-                array('s' => 'director_setting'),
-                array('setting_name', 'setting_value')
-            );
-            $this->settings = (array) $db->fetchPairs($query);
-        }
-
-        return $this->settings;
     }
 
     public function getActivitylogNeighbors($id, $type = null, $name = null)
@@ -268,7 +222,7 @@ class Db extends DbConnection
     public function fetchActivityLogChecksumById($id, $binary = true)
     {
         $sql = sprintf(
-            'SELECT %s AS checksum FROM director_activity_log WHERE id = %d',
+            'SELECT' . ' %s AS checksum FROM director_activity_log WHERE id = %d',
             $this->dbHexFunc('checksum'),
             (int) $id
         );
@@ -292,6 +246,8 @@ class Db extends DbConnection
 
     public function fetchActivityLogEntry($checksum)
     {
+        $db = $this->db();
+
         $sql = 'SELECT id, object_type, object_name, action_name,'
              . ' old_properties, new_properties, author, change_time,'
              . ' %s AS checksum, %s AS parent_checksum'
@@ -303,9 +259,8 @@ class Db extends DbConnection
             $this->dbHexFunc('parent_checksum')
         );
 
-        return $this->db()->fetchRow(
-            $sql,
-            $this->quoteBinary(Util::hex2binary($checksum))
+        return $db->fetchRow(
+            $db->quoteInto($sql, $this->quoteBinary(Util::hex2binary($checksum)))
         );
     }
 
@@ -743,6 +698,9 @@ class Db extends DbConnection
         return $db->fetchPairs($query);
     }
 
+    /**
+     * @return DirectorDeploymentLog[]
+     */
     public function getUncollectedDeployments()
     {
         $db = $this->db();
@@ -755,5 +713,17 @@ class Db extends DbConnection
             ->order('stage_name');
 
         return DirectorDeploymentLog::loadAll($this, $query, 'stage_name');
+    }
+
+    public function hasUncollectedDeployments()
+    {
+        $db = $this->db();
+        $query = $db->select()
+            ->from('director_deployment_log', array('cnt' => 'COUNT(*)'))
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL');
+
+        return $db->fetchOne($query) > 0;
     }
 }

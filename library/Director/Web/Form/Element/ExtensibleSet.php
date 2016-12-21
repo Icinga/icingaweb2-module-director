@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Form\Element;
 
+use Icinga\Exception\ProgrammingError;
+
 /**
  * Input control for extensible sets
  */
@@ -18,8 +20,16 @@ class ExtensibleSet extends FormElement
     public function getValue()
     {
         $value = parent::getValue();
-        if (! is_array($value)) {
+        if (is_string($value)) {
             $value = array($value);
+        } elseif ($value === null) {
+            return $value;
+        }
+        if (! is_array($value)) {
+            throw new ProgrammingError(
+                'ExtensibleSet expects to work with Arrays, got %s',
+                var_export($value, 1)
+            );
         }
         $value = array_filter($value, 'strlen');
 
@@ -28,6 +38,17 @@ class ExtensibleSet extends FormElement
         }
 
         return $value;
+    }
+
+    /**
+     * We do not want one message per entry
+     *
+     * @codingStandardsIgnoreStart
+     */
+    protected function _getErrorMessages()
+    {
+        return $this->_errorMessages;
+        // @codingStandardsIgnoreEnd
     }
 
     /**

@@ -50,6 +50,16 @@ class DirectorDeploymentLog extends DbObject
         return $this->config;
     }
 
+    public function isPending()
+    {
+        return $this->dump_succeeded === 'y' && $this->startup_log === null;
+    }
+
+    public function succeeded()
+    {
+        return $this->startup_succeeded === 'y';
+    }
+
     public function configEquals(IcingaConfig $config)
     {
         return $this->config_checksum === $config->getChecksum();

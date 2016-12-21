@@ -7,14 +7,15 @@ use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Hook\ShipConfigFilesHook;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
-use Icinga\Module\Director\Objects\IcingaEndpoint;
-use Exception;
 
 class IcingaConfig
 {
@@ -35,7 +36,9 @@ class IcingaConfig
 
     protected $generationTime;
 
-    protected $configFormat = 'v2';
+    protected $configFormat;
+
+    protected $deploymentModeV1;
 
     public static $table = 'director_generated_config';
 
@@ -46,6 +49,8 @@ class IcingaConfig
 
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+        $this->configFormat = $this->connection->settings()->config_format;
+        $this->deploymentModeV1 = $this->connection->settings()->deployment_mode_v1;
     }
 
     public function getSize()
@@ -59,7 +64,7 @@ class IcingaConfig
 
     public function getDuration()
     {
-        return $this->duration;
+        return $this->generationTime;
     }
 
     public function getFileCount()
@@ -70,6 +75,16 @@ class IcingaConfig
     public function getConfigFormat()
     {
         return $this->configFormat;
+    }
+
+    public function getDeploymentMode()
+    {
+        if ($this->isLegacy()) {
+            return $this->deploymentModeV1;
+        }
+        else {
+            throw new ProgrammingError('There is no deployment mode for Icinga 2 config format!');
+        }
     }
 
     public function setConfigFormat($format)
@@ -109,6 +124,15 @@ class IcingaConfig
         return $cnt;
     }
 
+    public function getApplyCount()
+    {
+        $cnt = 0;
+        foreach ($this->getFiles() as $file) {
+            $cnt += $file->getApplyCount();
+        }
+        return $cnt;
+    }
+
     public function getChecksum()
     {
         return $this->checksum;
@@ -119,6 +143,9 @@ class IcingaConfig
         return Util::binary2hex($this->checksum);
     }
 
+    /**
+     * @return IcingaConfigFile[]
+     */
     public function getFiles()
     {
         return $this->files;
@@ -134,25 +161,30 @@ class IcingaConfig
         return $result;
     }
 
+    /**
+     * @return string
+     */
     public function getFileNames()
     {
         return array_keys($this->files);
     }
 
+    /**
+     * @param string $name
+     *
+     * @return IcingaConfigFile
+     */
     public function getFile($name)
     {
         return $this->files[$name];
     }
 
-    public function getMissingFiles($missing)
-    {
-        $files = array();
-        foreach ($this->files as $name => $file) {
-            $files[] = $name . '=' . $file->getChecksum();
-        }
-        return $files;
-    }
-
+    /**
+     * @param string $checksum
+     * @param Db $connection
+     *
+     * @return static
+     */
     public static function load($checksum, Db $connection)
     {
         $config = new static($connection);
@@ -160,6 +192,12 @@ class IcingaConfig
         return $config;
     }
 
+    /**
+     * @param string $checksum
+     * @param Db $connection
+     *
+     * @return bool
+     */
     public static function exists($checksum, Db $connection)
     {
         $db = $connection->getDbAdapter();
@@ -210,6 +248,11 @@ class IcingaConfig
         return $db->fetchOne($query) === $checksum;
     }
 
+    /**
+     * @param Db $connection
+     *
+     * @return mixed
+     */
     public static function generate(Db $connection)
     {
         $config = new static($connection);
@@ -316,15 +359,17 @@ class IcingaConfig
     {
         if (! array_key_exists($id, $this->zoneMap)) {
             $zone = IcingaZone::loadWithAutoIncId($id, $this->connection);
-            $this->zoneMap[$id] = $zone->object_name;
+            $this->zoneMap[$id] = $zone->get('object_name');
         }
 
         return $this->zoneMap[$id];
     }
 
+    /**
+     * @return self
+     */
     public function store()
     {
-
         $fileTable = IcingaConfigFile::$table;
         $fileKey = IcingaConfigFile::$keyName;
 
@@ -392,6 +437,11 @@ class IcingaConfig
         return $this;
     }
 
+    /**
+     * @throws IcingaException
+     *
+     * @return self
+     */
     protected function generateFromDb()
     {
         PrefetchCache::initialize($this->connection);
@@ -425,13 +475,16 @@ class IcingaConfig
             ->createFileFromDb('host')
             ->createFileFromDb('serviceGroup')
             ->createFileFromDb('service')
+            ->createFileFromDb('serviceSet')
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ->createFileFromDb('notification')
             ;
 
-        $this->configFile('zones.d/director-global/commands')
-             ->prepend("library \"methods\"\n\n");
+        if (! $this->isLegacy()) {
+            $this->configFile('zones.d/director-global/commands')
+                ->prepend("library \"methods\"\n\n");
+        }
 
         PrefetchCache::forget();
         IcingaHost::clearAllPrefetchCaches();
@@ -441,8 +494,24 @@ class IcingaConfig
         return $this;
     }
 
+    /**
+     * @return self
+     */
     protected function prepareGlobalBasics()
     {
+        if ($this->isLegacy()) {
+            $this->configFile(
+                sprintf(
+                    'director/%s/001-director-basics',
+                    $this->connection->getDefaultGlobalZoneName()
+                ), '.cfg'
+            )->prepend(
+                $this->renderLegacyDefaultNotification()
+            );
+
+            return $this;
+        }
+
         $this->configFile(
             sprintf(
                 'zones.d/%s/001-director-basics',
@@ -450,10 +519,41 @@ class IcingaConfig
             )
         )->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+            . $this->renderHostOverridableVars()
             . $this->renderMagicApplyFor()
         );
 
         return $this;
+    }
+
+    protected function renderHostOverridableVars()
+    {
+        $settings = $this->connection->settings();
+
+        return sprintf(
+            '
+const DirectorOverrideVars = "%s"
+const DirectorOverrideTemplate = "%s"
+
+template Service DirectorOverrideTemplate {
+  /**
+   * Seems that host is missing when used in a service object, works fine for
+   * apply rules
+   */
+  if (! host) {
+    var host = get_host(host_name)
+  }
+
+  if (vars) {
+    vars += host.vars[DirectorOverrideVars][name]
+  } else {
+    vars = host.vars[DirectorOverrideVars][name]
+  }
+}
+',
+            $settings->override_services_varname,
+            $settings->override_services_templatename
+        );
     }
 
     protected function renderMagicApplyFor()
@@ -466,27 +566,28 @@ class IcingaConfig
 
         return sprintf(
             '
+/* Warning: this is experimental and might be removed */
 apply Service for (title => params in host.vars["%s"]) {
 
   var override = host.vars["%s_vars"][title]
 
   if (typeof(params["templates"]) in [Array, String]) {
-    import params["templates"]
+    for (tpl in params["templates"]) {
+      import tpl
+    }
   } else {
     import title
   }
 
   if (typeof(params.vars) == Dictionary) {
-    vars += params
-  }
-
-  if (typeof(override.vars) == Dictionary) {
-    vars += override.vars
+    vars += params.vars
   }
 
   if (typeof(params["host_name"]) == String) {
     host_name = params["host_name"]
   }
+
+  import DirectorOverrideTemplate
 }
 ',
             $varname,
@@ -496,10 +597,7 @@ apply Service for (title => params in host.vars["%s"]) {
 
     protected function getMagicApplyVarName()
     {
-        return $this->connection->getSetting(
-            'magic_apply_for',
-            '_director_apply_for'
-        );
+        return $this->connection->settings()->magic_apply_for;
     }
 
     protected function usesMagicApplyFor()
@@ -516,6 +614,13 @@ apply Service for (title => params in host.vars["%s"]) {
         return $db->fetchOne($query);
     }
 
+    /**
+     * @param string $checksum
+     *
+     * @throws NotFoundError
+     *
+     * @return self
+     */
     protected function loadFromDb($checksum)
     {
         $query = $this->db->select()->from(
@@ -525,11 +630,11 @@ apply Service for (title => params in host.vars["%s"]) {
         $result = $this->db->fetchRow($query);
 
         if (empty($result)) {
-            throw new Exception(sprintf('Got no config for %s', Util::binary2hex($checksum)));
+            throw new NotFoundError('Got no config for %s', Util::binary2hex($checksum));
         }
 
         $this->checksum = $this->binFromDb($result->checksum);
-        $this->duration = $result->duration;
+        $this->generationTime = $result->duration;
         $this->lastActivityChecksum = $this->binFromDb($result->last_activity_checksum);
 
         $query = $this->db->select()->from(
@@ -540,6 +645,7 @@ apply Service for (title => params in host.vars["%s"]) {
                 'content'      => 'f.content',
                 'cnt_object'   => 'f.cnt_object',
                 'cnt_template' => 'f.cnt_template',
+                'cnt_apply'    => 'f.cnt_apply',
             )
         )->join(
             array('f' => 'director_generated_file'),
@@ -552,7 +658,8 @@ apply Service for (title => params in host.vars["%s"]) {
             $this->files[$row->file_path] = $file
                 ->setContent($row->content)
                 ->setObjectCount($row->cnt_object)
-                ->setTemplateCount($row->cnt_template);
+                ->setTemplateCount($row->cnt_template)
+                ->setApplyCount($row->cnt_apply);
         }
 
         return $this;
@@ -560,12 +667,19 @@ apply Service for (title => params in host.vars["%s"]) {
 
     protected function createFileFromDb($type)
     {
+        /** @var IcingaObject $class */
         $class = 'Icinga\\Module\\Director\\Objects\\Icinga' . ucfirst($type);
         Benchmark::measure(sprintf('Prefetching %s', $type));
         $objects = $class::prefetchAll($this->connection);
         return $this->createFileForObjects($type, $objects);
     }
 
+    /**
+     * @param string         $type    Short object type, like 'service' or 'zone'
+     * @param IcingaObject[] $objects
+     *
+     * @return self
+     */
     protected function createFileForObjects($type, $objects)
     {
         if (empty($objects)) {
@@ -576,14 +690,13 @@ apply Service for (title => params in host.vars["%s"]) {
         foreach ($objects as $object) {
             if ($object->isExternal()) {
                 if ($type === 'zone') {
-                    $this->zoneMap[$object->id] = $object->object_name;
+                    $this->zoneMap[$object->get('id')] = $object->getObjectName();
                 }
             }
-
             $object->renderToConfig($this);
         }
 
-        Benchmark::measure(sprintf('%ss done', $type, count($objects)));
+        Benchmark::measure(sprintf('%ss done', $type));
         return $this;
     }
 
@@ -613,6 +726,12 @@ apply Service for (title => params in host.vars["%s"]) {
         return in_array($type, $types);
     }
 
+    /**
+     * @param string $name   Relative config file name
+     * @param string $suffix Config file suffix, defaults to '.conf'
+     *
+     * @return IcingaConfigFile
+     */
     public function configFile($name, $suffix = '.conf')
     {
         $filename = $name . $suffix;
@@ -625,6 +744,7 @@ apply Service for (title => params in host.vars["%s"]) {
 
     protected function collectExtraFiles()
     {
+        /** @var ShipConfigFilesHook $hook */
         foreach (Hook::all('Director\\ShipConfigFiles') as $hook) {
             foreach ($hook->fetchFiles() as $filename => $file) {
                 if (array_key_exists($filename, $this->files)) {
@@ -669,5 +789,40 @@ apply Service for (title => params in host.vars["%s"]) {
         }
 
         return $this->lastActivityChecksum;
+    }
+
+    protected function renderLegacyDefaultNotification()
+    {
+        return preg_replace('~^ {12}~m', '', '
+            #
+            # Default objects to avoid warnings
+            #
+
+            define contact {
+                contact_name                   icingaadmin
+                alias                          Icinga Admin
+                host_notifications_enabled     0
+                host_notification_commands     notify-never-default
+                host_notification_period       notification_none
+                service_notifications_enabled  0
+                service_notification_commands  notify-never-default
+                service_notification_period    notification_none
+            }
+
+            define contactgroup {
+                contactgroup_name  icingaadmins
+                members            icingaadmin
+            }
+
+            define timeperiod {
+                timeperiod_name  notification_none
+                alias            No Notifications
+            }
+
+            define command {
+                command_name notify-never-default
+                command_line /bin/echo "NOOP"
+            }
+        ');
     }
 }

@@ -5,8 +5,16 @@
   }
 }
 
+div.controls h1 {
+  padding-top: 0.5em;
+}
+
 h1 {
   margin-bottom: 0.5em;
+}
+
+p {
+  max-width: 48em;
 }
 
 table.common-table {
@@ -15,6 +23,9 @@ table.common-table {
     text-decoration: none;
   }
 
+  th {
+    padding-top: 0.5em;
+  }
   td {
     vertical-align: top;
   }
@@ -47,6 +58,10 @@ pre.disabled {
   color: @gray;
 }
 
+form i.link-color::before {
+  color: @icinga-blue;
+}
+
 /* TODO: remove this, but autosubmit looks ugly otherwise */
 input[disabled] {
   background: inherit;
@@ -64,6 +79,10 @@ pre.logfile {
   color: #ddd;
   overflow: auto;
   white-space: pre;
+
+  a {
+    color: #fff;
+  }
 
   .loglevel, .application {
     font-weight: bold;
@@ -95,18 +114,60 @@ pre.logfile {
   }
 }
 
+pre.generated-config {
+
+    a {
+      color: inherit;
+      font-weight: bold;
+    }
+
+
+  .highlight {
+    border-bottom: 1px dashed @gray-light;
+    &::before {
+      // icon: right-big
+      font-family: 'ifont';
+      content: '\e826';
+      margin-left: -1em;
+      padding-top: 0em;
+      float: left;
+    }
+
+    &.critical::before {
+      color: @color-critical;
+    }
+    &.warning::before {
+      color: @color-warning;
+    }
+    &.ok::before {
+      color: @color-ok;
+    }
+  }
+}
+
 table.avp th {
     font-size: inherit;
 }
 
 .content form {
+  margin-top: 0.5em;
   margin-bottom: 2em;
+}
+
+.content form.inline {
+  margin: 0;
 }
 
 .invisible {
     position: absolute;
     left: -100%;
 }
+
+form input[type=file] {
+  background-color: white;
+  padding-right: 1em;
+}
+
 
 form input[type=submit] {
   .button();
@@ -152,6 +213,7 @@ input, select, select option, textarea {
 
 form ul.form-errors {
     margin-bottom: 0.5em;
+
     ul.errors li {
         background: @color-critical;
         font-weight: bold;
@@ -189,9 +251,17 @@ input[type=text], input[type=password], textarea, select {
     }
 }
 
+select[multiple] {
+    height: auto;
+}
+
 select option {
     height: 2em;
     padding-top: 0.3em;
+}
+
+select[multiple=multiple] {
+  height: auto;
 }
 
 label {
@@ -553,7 +623,7 @@ fieldset {
             margin: 0;
         }
 
-        dd, dt, ul {
+        dd, dt, ul, div {
             display: none;
         }
 
@@ -583,31 +653,6 @@ form dt label {
     &:hover {
         text-decoration: underline;
         cursor: pointer;
-    }
-}
-
-ul.assign-rule {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    select, input[type=text] {
-        min-width: auto;
-    }
-
-    select.assign-type {
-        width: 8em;
-    }
-
-    select.assign-operator {
-        width: 3em;
-    }
-
-    select.assign-property {
-        width: 12em;
-    }
-
-    input.assign-expression {
-        width: 12em;
     }
 }
 
@@ -655,6 +700,10 @@ form dt {
     }
 }
 
+form .errors label {
+    color: @color-critical;
+}
+
 form dd {
     display: inline-block;
     width: 63%;
@@ -665,6 +714,11 @@ form dd {
         input[type=text], select {
             border-color: @color-critical;
         }
+    }
+
+    &.full-width {
+        padding: 0.5em;
+        width: 100%;
     }
 }
 
@@ -680,7 +734,6 @@ form textarea {
 form dd ul.errors {
     list-style-type: none;
     padding-left: 0.3em;
-    font-size: 0.857em;
 
     li {
         color: @colorCritical;
@@ -750,6 +803,15 @@ table.tinystats {
       text-align: right;
     }
   }
+}
+
+table th.actions, table td.actions {
+    text-align: right;
+}
+
+table tr.disabled td {
+  color: @gray-light;
+  font-style: italic;
 }
 
 /* Simple table, test */
@@ -861,25 +923,25 @@ table.icinga-objects {
 }
 
 table.assignment-table {
-    ul.apply-rules {
+    table.apply-rules {
         margin: 1em 0 1em 0;
         padding: 0;
-        border: 1px solid @gray-lighter;
+        width: 100%;
 
-        li {
-            display: block;
+        tr {
+            border-bottom: 1px solid @gray-lighter;
+            border-left: 5px solid transparent;
 
-            a {
-                display: block;
-                float: none;
-                font-weight: normal;
-                background-color: white;
-                padding: 0.3em 1.5em;
-                &:hover {
-                    background-color: @icinga-blue;
-                    color: white;
-                    text-decoration: none;
-                }
+            td {
+                padding: 0.5em 1em;
+            }
+
+            &:hover, &:active, &.active {
+                border-left: 5px solid @icinga-blue;
+            }
+
+            &:hover {
+                background: white;
             }
         }
     }
@@ -1064,6 +1126,144 @@ table.config-diff {
     }
 }
 
+ul.filter-root {
+    margin-top: 0;
+    width: 100%;
+    padding-left: 0.5em;
+    list-style-type: none;
+
+    ul.filter {
+        padding-left: 1.5em;
+        list-style-type: none;
+        width: 100%;
+    }
+
+    li.filter-chain, div.filter-expression {
+        width: 100%;
+        padding: 0.3em 0.5em;
+        min-width: 30em;
+    }
+
+    ul li.filter-chain::before, ul .filter-expression::before {
+       font-family: 'ifont';
+        // Formerly: icon-down-open: e821
+        // icon-right-small:
+        content: '\e877';
+        float: left;
+        margin-left: -1.5em;
+        margin-top: 0.5em;
+    }
+
+    ul.extensible-set {
+        padding-left: 0;
+        border: none;
+        display: inline-block;
+        vertical-align: top;
+        li::before {
+            content: none;
+        }
+    }
+
+    .filter-chain > input[type=submit].icon-button, .filter-expression > input[type=submit].icon-button {
+        display: none;
+        font-family: 'ifont';
+        font-weight: normal;
+        background: none;
+        border: none;
+        padding: 0.2em 0.4em 0.2em 0.4em;
+        margin: 0 0 0 0.2em;
+    }
+
+    .active input[type=submit].icon-button,
+    li:hover input[type=submit].icon-button,
+    div:hover input[type=submit].icon-button
+    {
+        display: inline;
+    }
+}
+
+.errors > ul.filter-root {
+    input[type=text], select {
+        border-color: transparent;
+        border-bottom-color: @gray-lighter;
+    }
+
+    select.column, select.operator {
+        border-left-color: @color-critical;
+    }
+}
+
+
+li.filter-chain > select.operator {
+    min-width: 5em;
+    max-width: 5em;
+    width: 5em;
+}
+
+div.filter-expression {
+    .column {
+        min-width: 7em;
+        max-width: 10em;
+        width: 10em;
+    }
+
+    .sign {
+        min-width: 4em;
+        max-width: 4em;
+        width: 4em;
+        margin: 0 0.3em;
+        &.wide {
+            min-width: 6em;
+            max-width: 6em;
+            width: 6em;
+        }
+    }
+
+    div.expression-wrapper {
+        display: inline-block;
+        vertical-align: top;
+    }
+
+    div.expression-wrapper > input[type=text], 
+    div.expression-wrapper > select {
+        min-width: 7em;
+        width: 10em;
+        max-width: 10em;
+    }
+}
+
+ul.director-suggestions {
+  width: 20em;
+  max-width: 30em;
+  max-height: 25em;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid @gray-light;
+  position: absolute;
+  z-index: 2000;
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  background-color: rgba(255, 255, 255, 100);
+  li {
+    margin: 0;
+    padding: 0.5em 1em;
+  }
+
+  li:hover {
+    background-color: @gray-lighter;
+    cursor: pointer;
+  }
+
+  li.active {
+    background-color: @icinga-blue;
+    color: white;
+    &:hover {
+      color: inherit;
+    }
+  }
+}
+
 .tree li a {
   display: inline-block;
   padding-left: 2.4em;
@@ -1202,7 +1402,7 @@ form.editor {
             background: @color-diff-del;
         }
         td.Right {
-            background: @gray-ligher;
+            background: @gray-lighter;
         }
     }
 

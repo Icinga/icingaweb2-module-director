@@ -17,7 +17,25 @@ class IcingaUserGroupForm extends DirectorObjectForm
         ));
 
         $this->addGroupDisplayNameElement()
+             ->addZoneElements()
+             ->groupMainProperties()
              ->setButtons();
 
+    }
+
+    protected function addZoneElements()
+    {
+        $this->addZoneElement();
+        $this->addDisplayGroup(array('zone_id'), 'clustering', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 80,
+            'legend' => $this->translate('Zone settings')
+        ));
+
+        return $this;
     }
 }

@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterChain;
+use Icinga\Data\Filter\FilterExpression;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostVar;
@@ -14,6 +16,7 @@ class BenchmarkCommand extends Command
     {
         $flat = array();
 
+        /** @var FilterChain|FilterExpression $filter */
         $filter = Filter::fromQueryString(
             // 'object_name=*ic*2*&object_type=object'
             'vars.bpconfig=*'
@@ -23,9 +26,9 @@ class BenchmarkCommand extends Command
         Benchmark::measure('db done');
 
         foreach ($objs as $host) {
-            $flat[$host->id] = (object) array();
+            $flat[$host->get('id')] = (object) array();
             foreach ($host->getProperties() as $k => $v) {
-                $flat[$host->id]->$k = $v;
+                $flat[$host->get('id')]->$k = $v;
             }
         }
         Benchmark::measure('objects ready');
@@ -33,11 +36,11 @@ class BenchmarkCommand extends Command
         $vars = IcingaHostVar::loadAll($this->db());
         Benchmark::measure('vars loaded');
         foreach ($vars as $var) {
-            if (! array_key_exists($var->host_id, $flat)) {
+            if (! array_key_exists($var->get('host_id'), $flat)) {
                 // Templates?
                 continue;
             }
-            $flat[$var->host_id]->{'vars.' . $var->varname} = $var->varvalue;
+            $flat[$var->get('host_id')]->{'vars.' . $var->get('varname')} = $var->get('varvalue');
         }
         Benchmark::measure('vars done');
 
@@ -46,8 +49,5 @@ class BenchmarkCommand extends Command
                 echo $host->object_name . "\n";
             }
         }
-        return;
-
-        Benchmark::measure('all done');
     }
 }

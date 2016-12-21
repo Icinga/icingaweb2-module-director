@@ -5,8 +5,8 @@ object Host "___TEST___host" {
     vars.test2 = 17
     vars.test3 = false
     vars.test4 = {
-        "a" = [ "dict", "ionary" ]
-        "this" = "is"
+        a = [ "dict", "ionary" ]
+        @this = "is"
     }
 }
 

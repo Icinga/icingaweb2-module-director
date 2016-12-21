@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -14,15 +15,15 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addHidden('timeperiod_id', $this->period->id);
-        $this->addElement('text', 'timeperiod_key', array(
+        $this->addHidden('timeperiod_id', $this->period->get('id'));
+        $this->addElement('text', 'range_key', array(
             'label'       => $this->translate('Day(s)'),
             'description' => $this->translate(
                 'Might by, monday, tuesday, 2016-01-28 - have a look at the documentation for more examples'
             ),
         ));
 
-        $this->addElement('text', 'timeperiod_value', array(
+        $this->addElement('text', 'range_value', array(
             'label'       => $this->translate('Timerperiods'),
             'description' => $this->translate(
                 'One or more time periods, e.g. 00:00-24:00 or 00:00-09:00,17:00-24:00'
@@ -44,8 +45,8 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
         $object = $this->object();
         if ($object->hasBeenModified()) {
             $this->period->ranges()->setRange(
-                $this->getValue('timeperiod_key'),
-                $this->getValue('timeperiod_value')
+                $this->getValue('range_key'),
+                $this->getValue('range_value')
             );
         }
 
@@ -58,7 +59,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
                 $object->hasBeenLoadedFromDb()
                 ? $this->translate('The %s has successfully been stored')
                 : $this->translate('A new %s has successfully been created'),
-                $this->translate($this->getObjectName())
+                $this->translate($this->getObjectShortClassName())
             );
 
             $this->period->store($this->db);
@@ -71,7 +72,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
         }
         if ($object instanceof IcingaObject) {
             $this->setSuccessUrl(
-                'director/' . strtolower($this->getObjectName()),
+                'director/' . strtolower($this->getObjectShortClassName()),
                 $object->getUrlParams()
             );
         }

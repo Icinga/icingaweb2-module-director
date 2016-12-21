@@ -36,12 +36,18 @@ class CustomVariableBoolean extends CustomVariable
         }
 
         $this->value = $value;
+        $this->deleted = false;
 
         return $this;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
         return $this->value ? 'true' : 'false';
+    }
+
+    public function toLegacyConfigString()
+    {
+        return $this->toConfigString();
     }
 }

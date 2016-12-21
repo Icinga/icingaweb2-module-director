@@ -49,7 +49,7 @@ class IcingaCommandForm extends DirectorObjectForm
             'description' => $this->translate('Identifier for the Icinga command you are going to create')
         ));
 
-        $this->addImportsElement();
+        $this->addImportsElement(false);
 
         $this->addElement('text', 'command', array(
             'label'       => $this->translate('Command'),
@@ -72,5 +72,27 @@ class IcingaCommandForm extends DirectorObjectForm
         $this->addDisabledElement();
 
         $this->setButtons();
+    }
+
+    protected function enumAllowedTemplates()
+    {
+        $object = $this->object();
+        $tpl = $this->db->enum($object->getTableName());
+        if (empty($tpl)) {
+            return array();
+        }
+
+        $id = $object->get('id');
+
+        if (array_key_exists($id, $tpl)) {
+            unset($tpl[$id]);
+        }
+
+        if (empty($tpl)) {
+            return array();
+        }
+
+        $tpl = array_combine($tpl, $tpl);
+        return $tpl;
     }
 }

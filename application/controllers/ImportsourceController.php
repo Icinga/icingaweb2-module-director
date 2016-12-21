@@ -13,6 +13,7 @@ class ImportsourceController extends ActionController
 {
     public function indexAction()
     {
+        $this->setAutoRefreshInterval(10);
         $id = $this->params->get('id');
         $this->prepareTabs($id)->activate('show');
         $source = $this->view->source = ImportSource::load($id, $this->db());
@@ -107,7 +108,9 @@ class ImportsourceController extends ActionController
 
         $this->prepareTabs($id)->activate('history');
         $this->view->title = $this->translate('Import run history');
-        $this->view->stats = $this->db()->fetchImportStatistics();
+
+        // TODO: temporarily disabled, find a better place for stats:
+        // $this->view->stats = $this->db()->fetchImportStatistics();
         $this->prepareTable('importrun');
         $this->view->table->enforceFilter(Filter::where('source_id', $id));
     }

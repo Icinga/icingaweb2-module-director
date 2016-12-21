@@ -3,10 +3,14 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Countable;
 
 class CustomVariableDictionary extends CustomVariable implements Countable
 {
+    /** @var  CustomVariable[] */
+    protected $value;
+
     public function equals(CustomVariable $var)
     {
         if (! $var instanceof CustomVariableDictionary) {
@@ -46,6 +50,8 @@ class CustomVariableDictionary extends CustomVariable implements Countable
             $new[$key] = self::wantCustomVariable($key, $val);
         }
 
+        $this->deleted = false;
+
         // WTF?
         if ($this->value === $new) {
             return $this;
@@ -67,6 +73,13 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         }
 
         return $ret;
+    }
+
+    public function flatten(array & $flat, $prefix)
+    {
+        foreach ($this->value as $k => $v) {
+            $v->flatten($flat, sprintf('%s["%s"]', $prefix, $k));
+        }
     }
 
     public function listKeys()
@@ -93,13 +106,24 @@ class CustomVariableDictionary extends CustomVariable implements Countable
         return $this->value[$key];
     }
 
+    public function __isset($key)
+    {
+        return array_key_exists($key, $this->value);
+    }
+
     public function getInternalValue($key)
     {
         return $this->value[$key];
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
+        // TODO
         return c::renderDictionary($this->value);
+    }
+
+    public function toLegacyConfigString()
+    {
+        return c1::renderDictionary($this->value);
     }
 }

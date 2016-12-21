@@ -46,9 +46,7 @@ class SyncpropertyTable extends QuickTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('r' => 'sync_rule'),
             array()
         )->join(
@@ -60,7 +58,5 @@ class SyncpropertyTable extends QuickTable
             's.id = p.source_id',
             array()
         )->order('id');
-
-        return $query;
     }
 }

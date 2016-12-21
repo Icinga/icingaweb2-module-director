@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Exception;
-use Icinga\Exception\InvalidPropertyException;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -17,6 +16,7 @@ class SyncPropertyForm extends DirectorObjectForm
      */
     private $rule;
 
+    /** @var ImportSource */
     private $importSource;
 
     private $dummyObject;
@@ -25,7 +25,7 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function setup()
     {
-        $this->addHidden('rule_id', $this->rule_id);
+        $this->addHidden('rule_id', $this->rule->get('id'));
 
         $this->addElement('select', 'source_id', array(
             'label'        => $this->translate('Source Name'),
@@ -71,67 +71,13 @@ class SyncPropertyForm extends DirectorObjectForm
             }
         }
 
-        if ($destination === 'import') {
-            $funcTemplates = 'enum' . ucfirst($this->rule->object_type) . 'Templates';
-            $templates = $this->db->$funcTemplates();
-            if (! empty($templates)) {
-                $templates = array_combine($templates, $templates);
-            }
+        $this->addSourceColumnElement($destination);
 
-            $this->addElement('select', 'source_expression', array(
-                'label'        => $this->translate('Template'), // Objecttype?
-                'multiOptions' => $this->optionalEnum($templates),
-                'required'     => true,
-                'class'        => 'autosubmit',
-            ));
-        } else {
-            $this->addSourceColumnElement();
-        }
-
-        if ($this->hasObject()) {
-            if (($col = $this->getObject()->getSourceColumn()) === null) {
-                $this->setElementValue('source_column', self::EXPRESSION);
-                $this->addElement('text', 'source_expression', array(
-                    'label'    => $this->translate('Source Expression'),
-                    'required' => true,
-                ));
-                if ($this->getSentValue('source_column') === '${' . self::EXPRESSION . '}') {
-                    unset($this->source_column);
-                }
-            } else {
-                $this->setElementValue('source_column', $col);
-            }
-        }
-
-        if ($this->getSentValue('source_column') === self::EXPRESSION) {
-            $this->addElement('text', 'source_expression', array(
-                'label'    => $this->translate('Source Expression'),
-                'required' => true,
-            ));
-            if ($this->getSentValue('source_column') === '${' . self::EXPRESSION . '}') {
-                unset($this->source_column);
-            }
-        }
-
-        /*
-        if ($this->hasObject()) {
-            // TODO: Add up/down links to table
-            $this->addElement('text', 'priority', array(
-                'label'       => $this->translate('Priority'),
-                'description' => $this->translate('Priority for the specified source expression'),
-                'required'    => true,
-            ));
-        }
-        */
-
-
-        // TODO: we need modifier
-        $this->addElement('select', 'use_filter', array(
+        $this->addElement('YesNo', 'use_filter', array(
             'label'        => $this->translate('Set based on filter'),
             'ignore'       => true,
             'class'        => 'autosubmit',
             'required'     => true,
-            'multiOptions' => $this->enumBoolean()
         ));
 
         if ($this->hasBeenSent()) {
@@ -162,7 +108,8 @@ class SyncPropertyForm extends DirectorObjectForm
             $this->addElement('select', 'merge_policy', array(
                 'label'        => $this->translate('Merge Policy'),
                 'description'  => $this->translate(
-                    'Whether you want to merge or replace the destination field. Makes no difference for strings'
+                    'Whether you want to merge or replace the destination field.'
+                    . ' Makes no difference for strings'
                 ),
                 'required'     => true,
                 'multiOptions' => $this->optionalEnum(array(
@@ -178,30 +125,96 @@ class SyncPropertyForm extends DirectorObjectForm
 
     }
 
-    protected function addSourceColumnElement()
+    protected function hasSubOption($options, $key)
+    {
+        foreach ($options as $mainKey => $sub) {
+            if (! is_array($sub)) {
+                // null -> please choose - or similar
+                continue;
+            }
+
+            if (array_key_exists($key, $sub)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function addSourceColumnElement($destination)
     {
         $error = false;
+
+        $srcTitle = $this->translate('Source columns');
         try {
-            $data = $this->listSourceColumns();
+            $columns[$srcTitle] = $this->listSourceColumns();
+            natsort($columns[$srcTitle]);
         } catch (Exception $e) {
-            $data = array();
+            $srcTitle .= sprintf(' (%s)', $this->translate('failed to fetch'));
+            $columns[$srcTitle] = array();
             $error = sprintf(
                 $this->translate('Unable to fetch data: %s'),
                 $e->getMessage()
             );
         }
 
+        if ($destination === 'import') {
+            $funcTemplates = 'enum' . ucfirst($this->rule->get('object_type')) . 'Templates';
+            if (method_exists($this->db, $funcTemplates)) {
+                $templates = $this->db->$funcTemplates();
+                if (! empty($templates)) {
+                    $templates = array_combine($templates, $templates);
+                }
+
+                $importTitle = $this->translate('Existing templates');
+                $columns[$importTitle] = $templates;
+                natsort($columns[$importTitle]);
+            }
+        }
+
+        $xpTitle = $this->translate('Expert mode');
+        $columns[$xpTitle][self::EXPRESSION] = $this->translate('Custom expression');
+
         $this->addElement('select', 'source_column', array(
             'label'        => $this->translate('Source Column'),
-            // TODO: List them as ${} ?
-            'multiOptions' => $this->optionalEnum($data),
+            'multiOptions' => $this->optionalEnum($columns),
             'required'     => true,
+            'ignore'       => true,
             'class'        => 'autosubmit',
         ));
 
         if ($error) {
             $this->getElement('source_column')->addError($error);
         }
+
+        $showExpression = false;
+
+        if ($this->hasBeenSent()) {
+            $sentValue = $this->getSentValue('source_column');
+            if ($sentValue === self::EXPRESSION) {
+                $showExpression = true;
+            }
+        } elseif ($this->hasObject()) {
+            $objectValue = $this->getObject()->source_expression;
+            if ($this->hasSubOption($columns, $objectValue)) {
+                $this->setElementValue('source_column', $objectValue);
+            } else {
+                $this->setElementValue('source_column', self::EXPRESSION);
+                $showExpression = true;
+            }
+        }
+
+        if ($showExpression) {
+            $this->addElement('text', 'source_expression', array(
+                'label'       => $this->translate('Source Expression'),
+                'description' => $this->translate(
+                    'A custom string. Might contain source columns, please use placeholders'
+                    . ' of the form ${columnName} in such case'
+                ),
+                'required'    => true,
+            ));
+        }
+
 
         return $this;
     }
@@ -233,9 +246,11 @@ class SyncPropertyForm extends DirectorObjectForm
 
     protected function listSourceColumns()
     {
-        $columns = $this->getImportSource()->listColumns();
-        $columns = array_combine($columns, $columns);
-        $columns[self::EXPRESSION] = $this->translate('Custom expression');
+        $columns = array();
+        foreach ($this->getImportSource()->listColumns() as $col) {
+            $columns['${' . $col . '}'] = $col;
+        }
+
         return $columns;
     }
 
@@ -246,7 +261,7 @@ class SyncPropertyForm extends DirectorObjectForm
         $dummy = $this->dummyObject();
 
         if ($dummy instanceof IcingaObject) {
-            if ($dummy->supportsCustomvars()) {
+            if ($dummy->supportsCustomVars()) {
                 $special['vars.*'] = $this->translate('Custom variable (vars.)');
                 $special['vars']   = $this->translate('All custom variables (vars)');
             }
@@ -258,6 +273,9 @@ class SyncPropertyForm extends DirectorObjectForm
             }
             if ($dummy->supportsGroups()) {
                 $special['groups']  = $this->translate('Group membership');
+            }
+            if ($dummy->supportsRanges()) {
+                $special['ranges']  = $this->translate('Time ranges');
             }
         }
 
@@ -278,6 +296,10 @@ class SyncPropertyForm extends DirectorObjectForm
             $props[$prop] = $prop;
         }
 
+        foreach ($dummy->listMultiRelations() as $prop) {
+            $props[$prop] = sprintf('%s (%s)', $prop, $this->translate('a list'));
+        }
+
         ksort($props);
 
         return array(
@@ -290,11 +312,11 @@ class SyncPropertyForm extends DirectorObjectForm
     {
         if ($this->importSource === null) {
             if ($this->hasObject()) {
-                $src = ImportSource::load($this->object->source_id, $this->db);
+                $src = ImportSource::load($this->object->get('source_id'), $this->db);
             } else {
                 $src = ImportSource::load($this->getSentValue('source_id'), $this->db);
             }
-            $this->importSource = ImportSourceHook::loadByName($src->source_name, $this->db);
+            $this->importSource = ImportSourceHook::loadByName($src->get('source_name'), $this->db);
         }
 
         return $this->importSource;
@@ -302,21 +324,19 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        $sourceColumn = $this->getValue('source_column');
-        if ($sourceColumn === self::EXPRESSION) {
-            unset($this->source_column);
-            $this->removeElement('source_column');
-        } else {
-            if (! $this->getElement('source_expression')) {
-                $this->addHidden('source_expression', '${' . $sourceColumn . '}');
-            }
-        }
-
         $object = $this->getObject();
-        $object->rule_id = $this->rule->id; // ?!
+        $object->set('rule_id', $this->rule->get('id')); // ?!
 
         if ($this->getValue('use_filter') === 'n') {
-            $object->filter_expression = null;
+            $object->set('filter_expression', null);
+        }
+
+        $sourceColumn = $this->getValue('source_column');
+        unset($this->source_column);
+        $this->removeElement('source_column');
+
+        if ($sourceColumn !== self::EXPRESSION) {
+           $object->source_expression = $sourceColumn;
         }
 
         $destination = $this->getValue('destination_field');
@@ -339,7 +359,7 @@ class SyncPropertyForm extends DirectorObjectForm
     {
         if ($this->dummyObject === null) {
             $this->dummyObject = IcingaObject::createByType(
-                $this->rule->object_type,
+                $this->rule->get('object_type'),
                 array(),
                 $this->db
             );

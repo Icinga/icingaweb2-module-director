@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\CustomVariable;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class CustomVariableString extends CustomVariable
 {
@@ -31,11 +32,28 @@ class CustomVariableString extends CustomVariable
             $this->setModified();
         }
 
+        $this->deleted = false;
+
         return $this;
     }
 
-    public function toConfigString()
+    public function flatten(array & $flat, $prefix)
     {
-        return c::renderString($this->getValue());
+        // TODO: we should get rid of type=string and always use JSON
+        $flat[$prefix] = json_encode($this->getValue());
+    }
+
+    public function toConfigString($renderExpressions = false)
+    {
+        if ($renderExpressions) {
+            return c::renderStringWithVariables($this->getValue());
+        } else {
+            return c::renderString($this->getValue());
+        }
+    }
+
+    public function toLegacyConfigString()
+    {
+        return c1::renderString($this->getValue());
     }
 }

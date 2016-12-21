@@ -28,7 +28,7 @@ abstract class ImportSourceHook
         return $class;
     }
 
-    public static function loadByName($name, $db)
+    public static function loadByName($name, Db $db)
     {
         $db = $db->getDbAdapter();
         $source = $db->fetchRow(
@@ -51,7 +51,7 @@ abstract class ImportSourceHook
                 $source->provider_class
             );
         }
-
+        /** @var ImportSourceHook $obj */
         $obj = new $source->provider_class;
         $obj->setSettings($settings);
 

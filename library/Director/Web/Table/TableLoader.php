@@ -8,6 +8,7 @@ use Icinga\Exception\ProgrammingError;
 
 class TableLoader
 {
+    /** @return QuickTable */
     public static function load($name, Module $module = null)
     {
         if ($module === null) {
@@ -23,6 +24,7 @@ class TableLoader
             $file = sprintf('%s/%s/%s.php', rtrim($basedir, '/'), implode('/', $parts), $class);
             if (file_exists($file)) {
                 require_once($file);
+                /** @var QuickTable $class */
                 $class = $ns . $class;
                 return new $class();
             }

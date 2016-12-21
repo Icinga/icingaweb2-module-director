@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
+use Icinga\Module\Director\Hook\JobHook;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Web\Hook;
 
@@ -84,8 +86,8 @@ class DirectorJobForm extends DirectorObjectForm
         if ($this->hasObject()) {
             $value = $this->getSentValue($name);
             if ($value === null) {
+                /** @var DbObjectWithSettings $object */
                 $object = $this->getObject();
-
                 return $object->getSetting($name, $default);
             } else {
                 return $value;
@@ -124,9 +126,11 @@ class DirectorJobForm extends DirectorObjectForm
 
     protected function enumJobTypes()
     {
+        /** @var JobHook[] $hooks */
         $hooks = Hook::all('Director\\Job');
 
         $enum = array();
+
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
         }

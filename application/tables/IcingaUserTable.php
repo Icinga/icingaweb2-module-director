@@ -42,8 +42,7 @@ class IcingaUserTable extends IcingaObjectTable
 
     public function getUnfilteredQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('u' => 'icinga_user'),
             array()
         )->joinLeft(
@@ -51,8 +50,6 @@ class IcingaUserTable extends IcingaObjectTable
             'u.zone_id = z.id',
             array()
         );
-
-        return $query;
     }
 
     public function getBaseQuery()

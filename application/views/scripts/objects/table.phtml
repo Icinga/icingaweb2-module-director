@@ -4,7 +4,7 @@
 
 <h1><?= $this->escape($this->title) ?><?= $this->quickSearch ?></h1>
 <span class="action-links"<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
-<?= $this->addLink ?>
+<?= $this->addLink ?><?= $this->render('object/deploymentLink.phtml') ?>
 </span>
 <?php if ($this->filterEditor): ?>
 <?= $this->filterEditor ?>
@@ -15,7 +15,7 @@
 
 <div class="content<?php if ($this->compact): ?> compact<?php endif ?>"<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
 <?= $this->form ?>
-<?php if (count($table)): ?>
+<?php if ($table->count()): ?>
 <?= $this->table->render() ?>
 <?php endif ?>
 </div>

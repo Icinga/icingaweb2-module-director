@@ -33,7 +33,7 @@ class IcingaTimePeriodTest extends BaseTestCase
         $period = $this->loadTestPeriod();
         $this->assertEquals(
             '18:00-24:00',
-            $period->ranges()->get('tuesday')->timeperiod_value
+            $period->ranges()->get('tuesday')->range_value
         );
 
         $this->assertEquals(

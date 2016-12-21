@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\ProgrammingError;
 
 class CustomVariableNull extends CustomVariable
@@ -36,11 +35,18 @@ class CustomVariableNull extends CustomVariable
             );
         }
 
+        $this->deleted = false;
+
         return $this;
     }
 
-    public function toConfigString()
+    public function toConfigString($renderExpressions = false)
     {
         return 'null';
+    }
+
+    public function toLegacyConfigString()
+    {
+        return $this->toConfigString();
     }
 }

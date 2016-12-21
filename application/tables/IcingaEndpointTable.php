@@ -55,8 +55,6 @@ class IcingaEndpointTable extends IcingaObjectTable
 
     public function getBaseQuery()
     {
-        $db = $this->connection()->getConnection();
-
         if ($this->deploymentEndpoint === null) {
             $c = $this->connection();
             if ($c->hasDeploymentEndpoint()) {
@@ -64,7 +62,7 @@ class IcingaEndpointTable extends IcingaObjectTable
             }
         }
 
-        $query = $db->select()->from(
+        return $this->db()->select()->from(
             array('e' => 'icinga_endpoint'),
             array()
         )->joinLeft(
@@ -72,7 +70,5 @@ class IcingaEndpointTable extends IcingaObjectTable
             'e.zone_id = z.id',
             array()
         );
-
-        return $query;
     }
 }

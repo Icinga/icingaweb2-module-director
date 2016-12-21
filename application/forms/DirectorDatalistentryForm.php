@@ -7,6 +7,7 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class DirectorDatalistEntryForm extends DirectorObjectForm
 {
+    /** @var  DirectorDatalist */
     protected $datalist;
 
     public function setup()
@@ -28,10 +29,10 @@ class DirectorDatalistEntryForm extends DirectorObjectForm
             )
         ));
 
-        $this->addHidden('list_id', $this->datalist->id);
+        $this->addHidden('list_id', $this->datalist->get('id'));
         $this->addHidden('format', 'string');
         if (!$this->isNew()) {
-            $this->addHidden('entry_name', $this->object->entry_name);
+            $this->addHidden('entry_name', $this->object->get('entry_name'));
         }
 
         $this->addSimpleDisplayGroup(array('entry_name', 'entry_value'), 'entry', array(

@@ -26,9 +26,12 @@ class IcingaNotification extends IcingaObject
         'notification_interval' => null,
         'period_id'             => null,
         'zone_id'               => null,
+        'assign_filter'         => null,
     );
 
     protected $supportsCustomVars = true;
+
+    protected $supportsFields = true;
 
     protected $supportsImports = true;
 
@@ -57,6 +60,11 @@ class IcingaNotification extends IcingaObject
         'times_begin'           => 'times_begin',
         'times_end'             => 'times_end',
     );
+
+    protected function prefersGlobalZone()
+    {
+        return false;
+    }
 
     /**
      * We have distinct properties in the db

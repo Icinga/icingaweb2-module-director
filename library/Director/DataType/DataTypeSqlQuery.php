@@ -10,6 +10,7 @@ use Icinga\Module\Director\Util;
 
 class DataTypeSqlQuery extends DataTypeHook
 {
+    /** @var  \Zend_Db_Adapter_Pdo_Abstract */
     protected $db;
 
     protected static $cachedResult;

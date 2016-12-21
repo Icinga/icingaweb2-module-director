@@ -16,6 +16,8 @@ abstract class IcingaObjectTable extends QuickTable
             case 'apply':
                 return 'icinga-apply';
         }
+
+        return null;
     }
 
     protected function listTableClasses()

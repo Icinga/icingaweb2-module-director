@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaCommand extends IcingaObject
 {
@@ -30,6 +30,8 @@ class IcingaCommand extends IcingaObject
 
     protected $supportsArguments = true;
 
+    protected $supportedInLegacy = true;
+
     protected $intervalProperties = array(
         'timeout' => 'timeout',
     );
@@ -39,6 +41,20 @@ class IcingaCommand extends IcingaObject
     );
 
     protected static $pluginDir;
+
+    protected $hiddenExecuteTemplates = array(
+        'PluginCheck'        => 'plugin-check-command',
+        'PluginNotification' => 'plugin-notification-command',
+        'PluginEvent'        => 'plugin-event-command',
+
+        // Special, internal:
+        'IcingaCheck'      => 'icinga-check-command',
+        'ClusterCheck'     => 'cluster-check-command',
+        'ClusterZoneCheck' => 'plugin-check-command',
+        'IdoCheck'         => 'ido-check-command',
+        'RandomCheck'      => 'random-check-command',
+        'CrlCheck'         => 'clr-check-command',
+    );
 
     /**
      * Render the 'medhods_execute' property as 'execute'
@@ -53,19 +69,27 @@ class IcingaCommand extends IcingaObject
     protected function renderMethods_execute()
     {
         // @codingStandardsIgnoreEnd
-        //return c::renderKeyValue('execute', $this->methods_execute);
+        return '';
     }
 
     protected function renderObjectHeader()
     {
-        $execute = $this->getResolvedProperty('methods_execute');
-
-        if ($execute === 'PluginNotification') {
-            return $this->renderObjectHeaderWithType('NotificationCommand');
-        } elseif ($execute === 'PluginEvent') {
-            return $this->renderObjectHeaderWithType('EventCommand');
+        if ($this->methods_execute) {
+            $itlImport = sprintf(
+                '    import "%s"' . "\n",
+                $this->hiddenExecuteTemplates[$this->methods_execute]
+            );
         } else {
-            return parent::renderObjectHeader();
+            $itlImport = '';
+        }
+
+        $execute = $this->getSingleResolvedProperty('methods_execute');
+        if ($execute === 'PluginNotification') {
+            return $this->renderObjectHeaderWithType('NotificationCommand') . $itlImport;
+        } elseif ($execute === 'PluginEvent') {
+            return $this->renderObjectHeaderWithType('EventCommand') . $itlImport;
+        } else {
+            return parent::renderObjectHeader() . $itlImport;
         }
     }
 
@@ -98,9 +122,30 @@ class IcingaCommand extends IcingaObject
         return $value;
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getNextSkippableKeyName()
     {
-        return $this->connection->getDefaultGlobalZoneName();
+        $key = $this->makeSkipKey();
+        $cnt = 1;
+        while (isset($this->arguments()->$key)) {
+            $cnt++;
+            $key = $this->makeSkipKey($cnt);
+        }
+
+        return $key;
+    }
+
+    protected function makeSkipKey($num = null)
+    {
+        if ($num === null) {
+            return '(no key)';
+        }
+
+        return sprintf('(no key.%d)', $num);
+    }
+
+    protected function prefersGlobalZone()
+    {
+        return true;
     }
 
     protected function renderCommand()
@@ -130,5 +175,26 @@ class IcingaCommand extends IcingaObject
     public static function setPluginDir($pluginDir)
     {
         self::$pluginDir = $pluginDir;
+    }
+
+    public function getLegacyObjectType()
+    {
+        // there is only one type of command in Icinga 1.x
+        return 'command';
+    }
+
+    protected function renderLegacyCommand()
+    {
+        $command = $this->command;
+        if (preg_match('~^(\$USER\d+\$/?)(.+)$~', $command)) {
+            // should be fine, since the user decided to use a macro
+        } elseif (! $this->isAbsolutePath($command)) {
+            $command = '$USER1$/'.$command;
+        }
+
+        return c1::renderKeyValue(
+            $this->getLegacyObjectType().'_line',
+            c1::renderString($command)
+        );
     }
 }
