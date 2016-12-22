@@ -47,7 +47,7 @@ class PropertyModifierJsonDecode extends PropertyModifierHook
                     throw new InvalidPropertyException(
                         'JSON decoding failed with "%s" for %s',
                         $this->getLastJsonError(),
-                        $value
+                        substr($value, 0, 128)
                     );
             }
         }
