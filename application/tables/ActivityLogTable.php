@@ -189,4 +189,18 @@ class ActivityLogTable extends QuickTable
 
         return $query;
     }
+
+    public function count()
+    {
+        $db = $this->db();
+        $sub = clone($this->getBaseQuery());
+        $sub->reset('order')->columns('l.id')->limit(2501);
+        $this->applyFiltersToQuery($sub);
+        $query = $db->select()->from(
+            array('s' => $sub),
+            array('c' => 'COUNT(*)')
+        );
+
+        return $db->fetchOne($query);
+    }
 }
