@@ -933,26 +933,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->resolve('Properties');
     }
 
-    public function getResolvedFields()
-    {
-        return $this->getResolved('Fields');
-    }
-
-    public function getInheritedFields()
-    {
-        return $this->getInherited('Fields');
-    }
-
-    public function getOriginsFields()
-    {
-        return $this->getOrigins('Fields');
-    }
-
-    public function resolveFields()
-    {
-        return $this->resolve('Fields');
-    }
-
     public function getResolvedVars()
     {
         return $this->getResolved('Vars');
@@ -1250,42 +1230,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getVarsIdColumn()
     {
         return $this->getShortTableName() . '_id';
-    }
-
-    public function getFields()
-    {
-        $fields = (object) array();
-
-        if (! $this->supportsFields()) {
-            return $fields;
-        }
-
-        $db = $this->getDb();
-
-        $query = $db->select()->from(
-            array('df' => 'director_datafield'),
-            array(
-                'datafield_id' => 'f.datafield_id',
-                'is_required'  => 'f.is_required',
-                'varname'      => 'df.varname',
-                'description'  => 'df.description',
-                'datatype'     => 'df.datatype',
-                'format'       => 'df.format',
-            )
-        )->join(
-            array('f' => $this->getTableName() . '_field'),
-            'df.id = f.datafield_id',
-            array()
-        )->where('f.' . $this->getShortTableName() . '_id = ?', (int) $this->get('id'))
-         ->order('df.caption ASC');
-
-        $res = $db->fetchAll($query);
-
-        foreach ($res as $r) {
-            $fields->{$r->varname} = $r;
-        }
-
-        return $fields;
     }
 
     public function hasProperty($key)
