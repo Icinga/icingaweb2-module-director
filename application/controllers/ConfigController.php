@@ -118,8 +118,16 @@ class ConfigController extends ActionController
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
         $this->prepareTable('activityLog');
         $this->view->table->setLastDeployedId($lastDeployedId);
+        $this->view->addLink = $this->view->qlink(
+            $this->translate('My changes'),
+            $this->getRequest()->getUrl()
+                ->with('author', $this->Auth()->getUser()->getUsername())
+                ->without('page'),
+            null,
+            array('class' => 'icon-user', 'data-base-target' => '_self')
+        );
         if ($this->hasPermission('director/deploy')) {
-            $this->view->addLink = $this
+            $this->view->addLink .= $this
                 ->loadForm('DeployConfig')
                 ->setDb($this->db())
                 ->setApi($this->api())
