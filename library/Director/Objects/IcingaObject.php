@@ -2543,7 +2543,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getOnDeleteUrl()
     {
-        return 'director/' . strtolower($this->getShortTableName()) . 's';
+        $plural= preg_replace('/cys$/','cies', strtolower($this->getShortTableName()) . 's');
+        return 'director/' . $plural;
     }
 
     public function toJson(
