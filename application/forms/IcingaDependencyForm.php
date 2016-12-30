@@ -213,9 +213,9 @@ class IcingaDependencyForm extends DirectorObjectForm
 
             $childHostId = $this->getSentOrObjectValue('child_host_id');
             $childServices = $this->enumAllowedServices($childHostId);
-    
+
             if (! empty($childServices) && ($childHostId != null)) {
-    
+
                 $this->addElement(
                     'select',
                     'child_service_id',
@@ -274,31 +274,31 @@ class IcingaDependencyForm extends DirectorObjectForm
             $apply_services = $this->enumApplyServices();
         }
 
-        if ($host_id != null) { 
+        if ($host_id != null) {
             $host_services = $this->db->enumIcingaObjects('service', array('host_id = ?' => $host_id));
             asort($host_services);
 
-            //services for applicable templates 
+            //services for applicable templates
             $host_templates_done = array();
             $tmp_host = IcingaHost::loadWithAutoIncId($host_id, $this->db);
             $host_templates = $tmp_host->imports()->getObjects();
 
             foreach ($host_templates as $host_template => $template_obj) {
                 if (in_array($template_obj->id, $host_templates_done)) continue;
-               
+
                 $host_templates_done[] = $template_obj->id;
                 $get_template_services = $this->enumAllowedServices($template_obj->id, $host_templates_done); //recursively get services for this host's template tree
                 // indicate host template name in 'inherited' services
                 foreach ($get_template_services as $id => &$label) {
                     if (!preg_match("/via host template/", $label)) $get_template_services[$id]= $label.': via host template '.$host_template;
                 }
-                $host_template_services+=$get_template_services;   
+                $host_template_services+=$get_template_services;
             }
             asort($host_template_services);
         }
 
         $r_services += $host_services += $host_template_services += $apply_services;
-      
+
         return $r_services;
     }
 
