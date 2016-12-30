@@ -190,6 +190,51 @@ class IcingaTemplateResolver
         return $this->resolveParentNames($name);
     }
 
+    /**
+     * Gives a list of all object ids met when walking through ancestry
+     *
+     * Tree is walked in import order, duplicates are preserved, the given
+     * objectId is added last
+     *
+     * @param int $objectId
+     *
+     * @return array
+     */
+    public function listFullInheritancePathIds($objectId = null)
+    {
+        $parentIds = $this->listParentIds($objectId);
+        $ids = array();
+
+        foreach ($parentIds as $parentId) {
+            foreach ($this->listFullInheritancePathIds($parentId) as $id) {
+                $ids[] = $id;
+            }
+
+            $ids[] = $parentId;
+        }
+
+        $object = $this->object;
+        if ($objectId === null && $object->hasBeenLoadedFromDb()) {
+            $ids[] = $object->id;
+        }
+
+        return $ids;
+    }
+
+    public function listInheritancePathIds($objectId = null)
+    {
+        $full = $this->listFullInheritancePathIds($objectId);
+        $single = array();
+        foreach (array_reverse($full) as $id) {
+            if (array_key_exists($id, $single)) {
+                continue;
+            }
+            $single[$id] = $id;
+        }
+
+        return array_reverse(array_keys($single));
+    }
+
     protected function resolveParentNames($name, &$list = array(), $path = array())
     {
         $this->assertNotInList($name, $path);
@@ -262,6 +307,7 @@ class IcingaTemplateResolver
 
     protected function getIdsForNames($names)
     {
+        $this->requireTemplates();
         $ids = array();
         foreach ($names as $name) {
             $ids[] = $this->getIdForName($name);
