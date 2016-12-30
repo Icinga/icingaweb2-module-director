@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\PropertyModifier;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
-class PropertyModifierRegexpSplit extends PropertyModifierHook
+class PropertyModifierRegexSplit extends PropertyModifierHook
 {
     public static function addSettingsFormFields(QuickForm $form)
     {
