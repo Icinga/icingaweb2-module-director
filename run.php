@@ -21,6 +21,7 @@ $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeString');
 
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierLowercase');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierRegexReplace');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierRegexSplit');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierReplace');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierStripDomain');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierSubstring');
