@@ -308,11 +308,26 @@ abstract class QuickTable implements Paginatable
              . $this->renderMultiselectAttributes()
              . '>' . "\n"
              . $this->renderTitles($this->getTitles())
-             . "<tbody>\n";
+             . $this->beginTableBody();
         foreach ($data as $row) {
             $htm .= $this->renderRow($row);
         }
-        return $htm . "</tbody>\n</table>\n";
+        return $htm . $this->endTableBody() . $this->endTable();
+    }
+
+    protected function beginTableBody()
+    {
+        return "<tbody>\n";
+    }
+
+    protected function endTableBody()
+    {
+        return "</tbody>\n";
+    }
+
+    protected function endTable()
+    {
+        return "</table>\n";
     }
 
     /**
