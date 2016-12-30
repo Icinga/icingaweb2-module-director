@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Util;
@@ -17,12 +18,12 @@ class Import
     protected $source;
 
     /**
-     * @var Icinga\Data\Db\DbConnection
+     * @var Db
      */
     protected $connection;
 
     /**
-     * @var Zend_Db_Adapter_Abstract
+     * @var \Zend_Db_Adapter_Abstract
      */
     protected $db;
 
@@ -100,7 +101,7 @@ class Import
         $this->db->insert(
             'import_run',
             array(
-                'source_id'       => $this->source->id,
+                'source_id'       => $this->source->get('id'),
                 'rowset_checksum' => $this->quoteBinary($this->rowsetChecksum()),
                 'start_time'      => date('Y-m-d H:i:s'),
                 'succeeded'       => 'y'
@@ -155,13 +156,13 @@ class Import
     /**
      * Checksum of all available rows
      *
-     * @return string
+     * @return array
      */
     protected function & rawData()
     {
         if ($this->data === null) {
             $this->data = ImportSourceHook::loadByName(
-                $this->source->source_name,
+                $this->source->get('source_name'),
                 $this->connection
             )->fetchData();
         }
@@ -172,6 +173,9 @@ class Import
 
     /**
      * Prepare and remember an ImportedProperty
+     *
+     * @param string $key
+     * @param mixed  $rawValue
      *
      * @return array
      */
@@ -207,7 +211,7 @@ class Import
      */
     protected function prepareChecksummedRows()
     {
-        $keyColumn = $this->source->key_column;
+        $keyColumn = $this->source->get('key_column');
         $this->rows = array();
         $this->rowProperties = array();
         $objects = array();
@@ -329,10 +333,14 @@ class Import
 
     /**
      * Whether the last run of this import matches the given checksum
+     *
+     * @param  string $checksum Binary checksum
+     *
+     * @return bool
      */
     protected function lastRowsetIs($checksum)
     {
-        return $this->connection->getLatestImportedChecksum($this->source->id)
+        return $this->connection->getLatestImportedChecksum($this->source->get('id'))
             === Util::binary2hex($checksum);
     }
 
@@ -406,6 +414,10 @@ class Import
 
     /**
      * Sort a given stdClass object by property name
+     *
+     * @param  stdClass $object
+     *
+     * @return object
      */
     protected function sortObject($object)
     {
@@ -422,6 +434,8 @@ class Import
      *
      * Please note that the array itself will NOT be sorted, as arrays must
      * keep their ordering
+     *
+     * @param array $array
      */
     protected function sortArrayObject(& $array)
     {
@@ -432,6 +446,8 @@ class Import
 
     /**
      * Recursively sort a given property
+     *
+     * @param mixed $el
      */
     protected function sortElement(& $el)
     {
