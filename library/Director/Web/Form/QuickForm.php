@@ -447,8 +447,8 @@ abstract class QuickForm extends QuickBaseForm
         }
 
         $this->request = $request;
-        $this->onRequest();
         $this->prepareElements();
+        $this->onRequest();
         return $this;
     }
 
