@@ -118,7 +118,8 @@ class ServiceController extends ObjectController
 
             $parent = IcingaService::create(array(
                 'object_type' => 'template',
-                'object_name' => 'myself',
+                // TODO: => 'myself', -> There is no such import: "myself"
+                'object_name' => $object->object_name,
                 'vars'        => $object->vars,
             ), $this->db());
 
@@ -126,8 +127,16 @@ class ServiceController extends ObjectController
             $object->imports()->add($parent);
         }
 
-        parent::editAction();
+        $this->getTabs()->activate('modify');
 
+        $this->view->form = $form = $this->loadForm('icingaService')
+            ->setDb($this->db())
+            ->setObject($object);
+
+        $this->view->form->handleRequest();
+        $this->view->actionLinks = $this->createCloneLink();
+
+        $this->view->title = $object->object_name;
         if ($this->host) {
             $this->view->subtitle = sprintf(
                 $this->translate('(on %s)'),
@@ -150,6 +159,8 @@ class ServiceController extends ObjectController
         } catch (Exception $e) {
             // ignore the error, show no apply link
         }
+
+        $this->setViewScript('object/form');
     }
 
     public function assignAction()
