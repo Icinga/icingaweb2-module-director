@@ -125,6 +125,12 @@ class ServiceController extends ObjectController
 
             $object->vars = $this->host->getOverriddenServiceVars($object->object_name);
             $object->imports()->add($parent);
+            $this->view->actionLinks = $this->view->qlink(
+                $this->translate('back'),
+                'director/host/services',
+                array('name' => $this->host->object_name),
+                array('class' => 'icon-left-big')
+            );
         }
 
         $this->getTabs()->activate('modify');
@@ -134,7 +140,7 @@ class ServiceController extends ObjectController
             ->setObject($object);
 
         $this->view->form->handleRequest();
-        $this->view->actionLinks = $this->createCloneLink();
+        $this->view->actionLinks .= $this->createCloneLink();
 
         $this->view->title = $object->object_name;
         if ($this->host) {
