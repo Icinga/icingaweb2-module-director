@@ -20,5 +20,6 @@ env:
     DIRECTOR_TESTDB_USER="director_test"
 
 before_script:
+  - composer self-update --stable
   - ./test/travis-prepare.sh
   - composer install
