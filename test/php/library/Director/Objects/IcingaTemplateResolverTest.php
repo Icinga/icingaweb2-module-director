@@ -93,26 +93,27 @@ class IcingaTemplateResolverTest extends BaseTestCase
 
         // 5, 6, 5, 5, 4, 3, 5, 6, 2, 1
 
-        $prefix = $this->prefix;
-        $t1 = $this->create($prefix . 't1');
-        $t4 = $this->create($prefix . 't4');
-        $t3 = $this->create($prefix . 't3');
-        $t2 = $this->create($prefix . 't2');
-        $t5 = $this->create($prefix . 't5');
-        $t6 = $this->create($prefix . 't6');
+        $t1 = $this->create('t1');
+        $t4 = $this->create('t4');
+        $t3 = $this->create('t3');
+        $t2 = $this->create('t2');
+        $t5 = $this->create('t5');
+        $t6 = $this->create('t6');
 
-        $t1->set('imports', array($prefix . 't6', $prefix . 't5', $prefix . 't2'));
+        // TODO: Must work without this:
+        $t1->templateResolver()->clearCache();
+        $t1->set('imports', array($t6, $t5, $t2));
         $t6->set('imports', array($t5));
         $t3->set('imports', array($t4));
         $t2->set('imports', array($t3, $t6));
         $t4->set('imports', array($t5));
 
-        $t1->store();
-        $t2->store();
-        $t3->store();
-        $t4->store();
         $t5->store();
+        $t4->store();
+        $t3->store();
         $t6->store();
+        $t2->store();
+        $t1->store();
 
         // TODO: Must work without this:
         $t1->templateResolver()->clearCache();
@@ -134,18 +135,13 @@ class IcingaTemplateResolverTest extends BaseTestCase
     {
         $host = IcingaHost::create(
             array(
-                'object_name' => $name,
+                'object_name' => $this->prefixed($name),
                 'object_type' => 'template'
             )
         );
 
         $host->store($this->getDb());
         return $host;
-    }
-
-    protected function loadRendered($name)
-    {
-        return file_get_contents(__DIR__ . '/rendered/' . $name . '.out');
     }
 
     public function tearDown()
