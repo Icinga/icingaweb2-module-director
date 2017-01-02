@@ -716,7 +716,9 @@
             if ($fieldset.hasClass('collapsed')) {
                 if ($fieldset.find('legend span.element-count').length === 0) {
                     var cnt = $fieldset.find('dt, li').not('.extensible-set li').length;
-                    $fieldset.find('legend').append($('<span class="element-count"> (' + cnt + ')</span>'));
+                    if (cnt > 0) {
+                        $fieldset.find('legend').append($('<span class="element-count"> (' + cnt + ')</span>'));
+                    }
                 }
             } else {
                 $fieldset.find('legend span.element-count').remove();
