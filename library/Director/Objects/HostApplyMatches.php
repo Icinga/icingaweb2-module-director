@@ -16,6 +16,22 @@ class HostApplyMatches
         'name' => 'object_name'
     );
 
+    protected $host;
+
+    protected $flatHost;
+
+    public static function prepare(IcingaHost $host)
+    {
+        return new static($host);
+    }
+
+    public function matchesFilter(Filter $filter)
+    {
+        $filter = clone($filter);
+        static::fixFilterColumns($filter);
+        return $filter->matches($this->flatHost);
+    }
+
     /**
      * @param Filter $filter
      * @param Db $db
@@ -116,7 +132,10 @@ class HostApplyMatches
         }
     }
 
-    protected function __construct()
+    protected function __construct(IcingaHost $host)
     {
+        $this->host = $host;
+        $this->flatHost = $host->toPlainObject(true, false);
+        static::flattenVars($this->flatHost);
     }
 }
