@@ -39,18 +39,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function setup()
     {
-        if ($this->object && $this->object->usesVarOverrides()) {
-            $this->setupForVarOverrides();
-            return;
-        }
-
-        if ($this->hostGenerated) {
-            $this->setupHostGenerated();
-            return;
-        }
-
-        if ($this->inheritedFrom) {
-            $this->setupInherited();
+        if ($this->providesOverrides()) {
             return;
         }
 
@@ -68,6 +57,46 @@ class IcingaServiceForm extends DirectorObjectForm
             $this->setupServiceElements();
         } else {
             $this->setupHostRelatedElements();
+        }
+    }
+
+    protected function providesOverrides()
+    {
+        return ($this->object && $this->object->usesVarOverrides())
+            || $this->hostGenerated
+            || $this->inheritedFrom;
+    }
+
+    protected function onAddedFields()
+    {
+        if (! $this->providesOverrides()) {
+            return;
+        }
+
+        $this->addHtmlHint(
+            $this->getOverrideHint(),
+            array('name' => 'inheritance_hint')
+        );
+
+        $group = $this->getDisplayGroup('custom_fields');
+
+        if ($group) {
+            $elements = $group->getElements();
+            $group->setElements(array($this->getElement('inheritance_hint')));
+            $group->addElements($elements);
+            $this->setSubmitLabel(
+                $this->translate('Override vars')
+            );
+
+        } else {
+            $this->addElementsToGroup(
+                array('inheritance_hint'),
+                'custom_fields',
+                20,
+                $this->translate('Hints regarding this service')
+            );
+
+            $this->setSubmitLabel(false);
         }
     }
 
@@ -104,63 +133,41 @@ class IcingaServiceForm extends DirectorObjectForm
              ->setButtons();
     }
 
-    protected function setupForVarOverrides()
+    protected function getOverrideHint()
     {
-        $msg = $this->translate(
-            'This service has been generated in an automated way, but still'
-            . ' allows you to override the following properties in a safe way.'
-        );
+        if ($this->object && $this->object->usesVarOverrides()) {
+            return $this->translate(
+                'This service has been generated in an automated way, but still'
+                . ' allows you to override the following properties in a safe way.'
+            );
+        }
 
-        $this->addHtmlHint($msg);
-        $this->setButtons();
-        $this->setSubmitLabel(
-            $this->translate('Override vars')
-        );
-    }
+        if ($this->hostGenerated) {
+            return $this->translate(
+                'This service has been generated from host properties.'
+            );
+        }
 
-    protected function setupHostGenerated()
-    {
-        $msg = $this->translate(
-            'This service has been generated from host properties.'
-        );
+        if ($this->inheritedFrom) {
+            $view = $this->getView();
+            $msg = $view->escape($this->translate(
+                'This service has been inherited from %s. Still, you might want'
+                . ' to change the following properties for this host only.'
+            ));
 
-        $this->addHtmlHint($msg);
+            $name = $this->inheritedFrom;
+            $link = $view->qlink(
+                $name,
+                'director/service',
+                array(
+                    'host' => $name,
+                    'name' => $this->object->object_name,
+                ),
+                array('data-base-target' => '_next')
+            );
 
-        $this->setSubmitLabel(
-            $this->translate('Override vars')
-        );
-    }
-
-    protected function setupInherited()
-    {
-        $view = $this->getView();
-        $msg = $view->escape($this->translate(
-            'This service has been inherited from %s. Still, you might want'
-            . ' to change the following properties for this host only.'
-        ));
-
-        $name = $this->inheritedFrom;
-        $link = $view->qlink(
-            $name,
-            'director/service',
-            array(
-                'host' => $name,
-                'name' => $this->object->object_name,
-            ),
-            array('data-base-target' => '_next')
-        );
-
-        $this->addHtmlHint(
-            sprintf($msg, $link),
-            array('name' => 'inheritance_hint')
-        );
-
-        $this->addElementsToGroup(
-            array('inheritance_hint'),
-            'custom_fields',
-            50,
-            $this->translate('Custom properties')
-        );
+            return sprintf($msg, $link);
+        }
 
         $this->setSubmitLabel(
             $this->translate('Override vars')
