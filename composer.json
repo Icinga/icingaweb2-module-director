@@ -15,10 +15,15 @@
       "type": "package",
       "package": {
         "name": "icinga/icingaweb2",
-        "version": "2.3.4",
+        "version": "2.4.0",
         "dist": {
-          "url": "https://github.com/Icinga/icingaweb2/archive/v2.3.4.zip",
+          "url": "https://github.com/Icinga/icingaweb2/archive/v2.4.0.zip",
           "type": "zip"
+        },
+        "source": {
+          "url": "https://github.com/Icinga/icingaweb2.git",
+          "type": "git",
+          "reference": "master"
         }
       }
     }
