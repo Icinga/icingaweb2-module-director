@@ -55,8 +55,8 @@ class IcingaHostAppliedServicesTable extends QuickTable
     protected function getActionUrl($row)
     {
         $params = array(
-            'name' => $this->host->object_name,
-            'id'   => $row->id,
+            'name'       => $this->host->object_name,
+            'service_id' => $row->id,
         );
 
         return $this->url('director/host/appliedservice', $params);
