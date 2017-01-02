@@ -9,6 +9,7 @@ use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
@@ -130,74 +131,56 @@ class HostController extends ObjectController
             $tables[$title] = $table->setTitle($title);
         }
 
-        $title = $this->translate('Service sets');
         $table = $this->loadTable('IcingaHostServiceSet')
             ->setHost($host)
+            ->setConnection($db);
+
+        $tables[$this->translate('Service sets')] = $table;
+
+        $title = $this->translate('Applied services');
+        $table = $this->loadTable('IcingaHostAppliedServices')
+            ->setHost($host)
             ->setTitle($title)
-           ->setConnection($db);
+            ->setConnection($db);
 
         $tables[$title] = $table;
 
         $this->view->tables = $tables;
     }
 
+    /**
+     * @deprecated
+     */
     public function appliedserviceAction()
     {
         $db = $this->db();
+        /** @var IcingaHost $host */
         $host = $this->object;
-        $serviceName = $this->params->get('service');
-
-        $applied = $host->vars()->get($db->settings()->magic_apply_for);
-
-        $props = $applied->{$serviceName};
-
-        $parent = IcingaService::create(array(
-            'object_type' => 'template',
-            'object_name' => $this->translate('Host'),
-        ), $db);
-
-        if (isset($props->vars)) {
-            $parent->vars = $props->vars->getValue();
-        }
+        $serviceId = $this->params->get('service_id');
+        $parent = IcingaService::loadWithAutoIncId($serviceId, $db);
+        $serviceName = $parent->object_name;
 
         $service = IcingaService::create(array(
+            'imports'     => $parent,
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->id,
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ), $db);
 
-
-        if (isset($props->templates) && $templates = $props->templates->getValue()) {
-            $imports = $templates;
-        } else {
-            $imports = $serviceName;
-        }
-
-        if (! is_array($imports)) {
-            $imports = array($imports);
-        }
-
-        // TODO: Validation for $imports? They might not exist!
-        array_push($imports, $parent);
-        $service->imports = $imports;
-
         $this->view->title = sprintf(
             $this->translate('Applied service: %s'),
             $serviceName
         );
 
-        $this->getTabs()->activate('services');
-
         $this->view->form = $this->loadForm('IcingaService')
             ->setDb($db)
             ->setHost($host)
-            ->setHostGenerated()
+            ->setApplyGenerated($parent)
             ->setObject($service)
-            ->handleRequest()
             ;
 
-        $this->setViewScript('object/form');
+        $this->commonForServices();
     }
 
     public function inheritedserviceAction()
@@ -230,16 +213,68 @@ class HostController extends ObjectController
             $serviceName
         );
 
-        $this->getTabs()->activate('services');
-
         $this->view->form = $this->loadForm('IcingaService')
             ->setDb($db)
             ->setHost($host)
             ->setInheritedFrom($from->object_name)
             ->setObject($service);
         $this->view->form->setResolvedImports();
-        $this->view->form->handleRequest();
+        $this->commonForServices();
+    }
 
+    public function servicesetserviceAction()
+    {
+        $db = $this->db();
+        /** @var IcingaHost $host */
+        $host = $this->object;
+        $serviceName = $this->params->get('service');
+        $set = IcingaServiceSet::loadWithAutoIncId((int) $this->params->get('serviceSet'), $this->db());
+
+        $parent = IcingaService::load(
+            array(
+                'object_type'    => 'apply',
+                'object_name'    => $serviceName,
+                'service_set_id' => (int) $set->id
+            ),
+            $this->db()
+        );
+
+        $parent->object_name = $set->object_name;
+
+        $service = IcingaService::create(array(
+            'object_type' => 'apply',
+            'object_name' => $serviceName,
+            'host_id'     => $host->id,
+            'imports'     => array($parent),
+            'vars'        => $host->getOverriddenServiceVars($serviceName),
+        ), $db);
+
+        $this->view->title = sprintf(
+            $this->translate('Service "%s" (from set "%s")'),
+            $serviceName,
+            $set->object_name
+        );
+
+        $this->view->form = $this->loadForm('IcingaService')
+            ->setDb($db)
+            ->setHost($host)
+            ->setInheritedFrom($parent->object_name)
+            ->setObject($service);
+        $this->view->form->setResolvedImports();
+        $this->commonForServices();
+    }
+
+    protected function commonForServices()
+    {
+        $host = $this->object;
+        $this->view->actionLinks = $this->view->qlink(
+            $this->translate('back'),
+            'director/host/services',
+            array('name' => $host->object_name),
+            array('class' => 'icon-left-big')
+        );
+        $this->getTabs()->activate('services');
+        $this->view->form->handleRequest();
         $this->setViewScript('object/form');
     }
 

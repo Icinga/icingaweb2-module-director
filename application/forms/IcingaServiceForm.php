@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -21,13 +22,13 @@ class IcingaServiceForm extends DirectorObjectForm
     /** @var IcingaService */
     protected $object;
 
-    private $hostGenerated = false;
+    private $applyGenerated;
 
     private $inheritedFrom;
 
-    public function setHostGenerated($hostGenerated = true)
+    public function setApplyGenerated(IcingaService $applyGenerated)
     {
-        $this->hostGenerated = $hostGenerated;
+        $this->applyGenerated = $applyGenerated;
         return $this;
     }
 
@@ -63,7 +64,7 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function providesOverrides()
     {
         return ($this->object && $this->object->usesVarOverrides())
-            || $this->hostGenerated
+            || $this->applyGenerated
             || $this->inheritedFrom;
     }
 
@@ -135,6 +136,8 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function getOverrideHint()
     {
+        $view = $this->getView();
+
         if ($this->object && $this->object->usesVarOverrides()) {
             return $this->translate(
                 'This service has been generated in an automated way, but still'
@@ -142,14 +145,16 @@ class IcingaServiceForm extends DirectorObjectForm
             );
         }
 
-        if ($this->hostGenerated) {
-            return $this->translate(
-                'This service has been generated from host properties.'
-            );
+        if ($this->applyGenerated) {
+            return $view->escape(sprintf(
+                $this->translate(
+                    'This service has been generated using an apply rule, assigned where %s'
+                ),
+                Filter::fromQueryString($this->applyGenerated->assign_filter)
+            ));
         }
 
         if ($this->inheritedFrom) {
-            $view = $this->getView();
             $msg = $view->escape($this->translate(
                 'This service has been inherited from %s. Still, you might want'
                 . ' to change the following properties for this host only.'
@@ -432,7 +437,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        if ($this->hostGenerated || $this->inheritedFrom || $this->object->usesVarOverrides()) {
+        if ($this->applyGenerated || $this->inheritedFrom || $this->object->usesVarOverrides()) {
             return $this->succeedForOverrides();
         }
 
