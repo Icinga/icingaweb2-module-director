@@ -334,7 +334,12 @@ abstract class DirectorObjectForm extends QuickForm
     {
         if ($this->fieldLoader) {
             $this->fieldLoader->addFieldsToForm($this);
+            $this->onAddedFields();
         }
+    }
+
+    protected function onAddedFields()
+    {
     }
 
     // TODO: remove, used in sets I guess
