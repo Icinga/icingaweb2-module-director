@@ -309,7 +309,6 @@ abstract class QuickForm extends QuickBaseForm
         if (! $this->didSetup) {
             $this->beforeSetup();
             $this->setup();
-            $this->addSubmitButtonIfSet();
             $this->onSetup();
             $this->didSetup = true;
         }
@@ -326,6 +325,7 @@ abstract class QuickForm extends QuickBaseForm
         }
 
         $this->prepareElements();
+        $this->addSubmitButtonIfSet();
 
         if ($this->hasBeenSent()) {
             $post = $request->getPost();
@@ -447,8 +447,8 @@ abstract class QuickForm extends QuickBaseForm
         }
 
         $this->request = $request;
-        $this->prepareElements();
         $this->onRequest();
+        $this->prepareElements();
         return $this;
     }
 
