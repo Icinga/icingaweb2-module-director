@@ -52,6 +52,26 @@ DEALLOCATE PREPARE stmt;
 SET @stmt = NULL;
 
 
+
+SET @stmt = (SELECT IF(
+    (SELECT EXISTS(
+        SELECT * FROM information_schema.table_constraints
+        WHERE
+            table_schema   = DATABASE()
+            AND table_name = 'icinga_service_set'
+            AND constraint_name = 'icinga_service_set_ibfk_3'
+    )),
+    'ALTER TABLE icinga_service_set DROP FOREIGN KEY icinga_service_set_ibfk_3',
+    'SELECT 1'
+));
+
+PREPARE stmt FROM @stmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+SET @stmt = NULL;
+
+
+
 SET @stmt = (SELECT IF(
     (SELECT EXISTS(
         SELECT * FROM information_schema.table_constraints
