@@ -1,9 +1,8 @@
-Running Unit-Tests for the Director
-===================================
+<a id="Testing"></a>Running Unit-Tests for the Director
+=======================================================
 
 There are basically multiple ways of running our Unit-Tests. All of them
 are explained here.
-
 
 Let others do the job
 ---------------------
@@ -12,6 +11,26 @@ Well, as there are tests available you might come to the conclusion that
 there is probably already someone running them from time to time. So, just
 lean back with full trust in our development toolchain and spend your time
 elsewhere ;-) Cheers!
+
+### Tests on Travis-CI
+
+When pushing to [GitHub](https://github.com/Icinga/icingaweb2-module-director/)
+or sending pull requests, Unit-Tests are automatically triggered on
+[Travis-CI](https://travis-ci.org/Icinga/icingaweb2-module-director):
+
+[![Build Status](https://travis-ci.org/Icinga/icingaweb2-module-director.svg?branch=master)](https://travis-ci.org/Icinga/icingaweb2-module-director)
+
+We run our tests against MySQL and PostgreSQL, with PHP versions ranging from
+5.3 to 7.1, including nightly builds.
+
+### Tests for supported Platforms
+
+As far as we know, Director is currently mostly used on CentOS (or RHEL)
+versions 6 and 7, Debian Stable (Jessie) and Ubuntu LTS (Xenial). So we are
+running our tests on our own platforms for exactly those systems. All of them
+with PostgreSQL, MySQL (or MariaDB).
+
+This way we reach the mostly used Database and PHP versions:
 
 ![Test result](screenshot/director/93_testing/931_director_testing_duration.png)
 
