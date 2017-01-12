@@ -50,10 +50,6 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addClusteringElements()
     {
-        if (!$this->isTemplate() && !$this->hasClusterProperties()) {
-            return $this;
-        }
-
         $this->addZoneElement();
 
         $this->addBoolean('has_agent', array(
@@ -81,16 +77,18 @@ class IcingaHostForm extends DirectorObjectForm
             $this->addHidden('command_endpoint_id', null);
             $this->setSentValue('command_endpoint_id', null);
         } else {
-            $this->addElement('select', 'command_endpoint_id', array(
-                'label' => $this->translate('Command endpoint'),
-                'description' => $this->translate(
-                    'Setting a command endpoint allows you to force host checks'
-                    . ' to be executed by a specific endpoint. Please carefully'
-                    . ' study the related Icinga documentation before using this'
-                    . ' feature'
-                ),
-                'multiOptions' => $this->optionalEnum($this->enumEndpoints())
-            ));
+            if ($this->isTemplate()) {
+                $this->addElement('select', 'command_endpoint_id', array(
+                    'label' => $this->translate('Command endpoint'),
+                    'description' => $this->translate(
+                        'Setting a command endpoint allows you to force host checks'
+                        . ' to be executed by a specific endpoint. Please carefully'
+                        . ' study the related Icinga documentation before using this'
+                        . ' feature'
+                    ),
+                    'multiOptions' => $this->optionalEnum($this->enumEndpoints())
+                ));
+            }
 
             foreach (array('master_should_connect', 'accept_config') as $key) {
                 $this->addHidden($key, null);
@@ -116,15 +114,6 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         return $this;
-    }
-
-    protected function hasClusterProperties()
-    {
-        if (!$object = $this->object) {
-            return false;
-        }
-
-        return $object->get('zone_id') || $object->get('has_agent') === 'y';
     }
 
     protected function beforeSuccessfulRedirect()

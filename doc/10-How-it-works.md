@@ -72,9 +72,7 @@ Zone membership handling
 
 Mostly you do not need to care much about Zones when working with the
 Director. In case you have no Satellite node, you wouldn't even notice
-their existence. When running Satellites, the way to go is to create
-dedicated templates for your zones. Usually this requires one template
-per Satellite zone.
+their existence.
 
 You are not required to deal with Agent Zones, as the Director does
 this for you. Please refer to [Working with agents](24-Working-with-agents.md)
