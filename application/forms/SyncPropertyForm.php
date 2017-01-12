@@ -19,6 +19,9 @@ class SyncPropertyForm extends DirectorObjectForm
     /** @var ImportSource */
     private $importSource;
 
+    /** @var ImportSourceHook */
+    private $importSourceHook;
+
     private $dummyObject;
 
     const EXPRESSION = '__EXPRESSION__';
@@ -247,8 +250,14 @@ class SyncPropertyForm extends DirectorObjectForm
     protected function listSourceColumns()
     {
         $columns = array();
-        foreach ($this->getImportSource()->listColumns() as $col) {
+        $source = $this->getImportSource();
+        $hook = $this->getImportSourceHook();
+        foreach ($hook->listColumns() as $col) {
             $columns['${' . $col . '}'] = $col;
+        }
+
+        foreach ($source->listModifierTargetProperties() as $property) {
+            $columns['${' . $property . '}'] = $property;
         }
 
         return $columns;
@@ -308,18 +317,35 @@ class SyncPropertyForm extends DirectorObjectForm
         );
     }
 
+    /**
+     * @return ImportSource
+     */
     protected function getImportSource()
     {
         if ($this->importSource === null) {
             if ($this->hasObject()) {
-                $src = ImportSource::load($this->object->get('source_id'), $this->db);
+                $this->importSource = ImportSource::load($this->object->get('source_id'), $this->db);
             } else {
-                $src = ImportSource::load($this->getSentValue('source_id'), $this->db);
+                $this->importSource = ImportSource::load($this->getSentValue('source_id'), $this->db);
             }
-            $this->importSource = ImportSourceHook::loadByName($src->get('source_name'), $this->db);
         }
 
         return $this->importSource;
+    }
+
+    /**
+     * @return ImportSourceHook
+     */
+    protected function getImportSourceHook()
+    {
+        if ($this->importSourceHook === null) {
+            $this->importSourceHook = ImportSourceHook::loadByName(
+                $this->getImportSource()->get('source_name'),
+                $this->db
+            );
+        }
+
+        return $this->importSourceHook;
     }
 
     public function onSuccess()
