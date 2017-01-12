@@ -1,12 +1,92 @@
 <a id="Changelog"></a>Changelog
 ===============================
 
+1.3.0
+-----
+
+### Fixed a lot of issues and related features
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://dev.icinga.com/versions/331)
+
+### Service Sets
+* You are now allowed to create sets of services and assign all of them at
+  once with an apply rule, to host templates or directly to single hosts
+
+### Service Variable Overrides
+* When switching to a Host View's services tab, you'll now not only see it's
+  very own services, but also ones that result from an apply rule
+* You can override those Service's custom field values for every single host
+* Same goes for services belonging to Service Sets
+
+### Apply rules
+* A new "contains" operator gives more possibilities when working with with
+  arrays
+* Service vars are now also offered in the apply rule form wizard
+
+### Custom Variables and Fields
+* Issues with special characters in custom variables have been fixed
+* In case mandatory fields should not have been enforced, this should work
+  fine right now
+* Fields can now be shown based on filter rules. Example use case: show a
+  `Community String` field in case `SNMPv2` has been selected, but show
+  five other fields for `SNMPv3`. This allows one to build powerful little
+  wizard-like forms
+
+### Agents and Satellites
+* It is now possible to set Agent and Zone settings on every single host. This
+  means that you no longer need to provide dedicated Templates for Satellite
+  nodes
+* The proposed Agent Deployment script has been improved for Windows and Linux
+
+### Commands
+* Command arguments are now always appended when inheriting a template. This
+  slightly changes the former behavior, but should mostly be what one would
+  expect anyways.
+
+### Testing
+* [Testing instructions](Testing.md) have been improved
+* Running the test suite has been simplified
+* While we keep running our own [tests](Testing.md) on software platforms, tests
+  are now also visible on Travis-CI and triggered for all pull requests
+
+### Compatibility
+* We worked around a but in very old PHP 5.3 versions on CentOS 6
+
+### Activity log
+* You can now search and filter in the Activity log
+* In case you have hundreds of thousands of changes you'll notice that pagination
+  performance improve a lot
+
+### Deployment
+* More performance tweaking took place. 1.2.0 was already very fast, 1.3.0 should
+  beat it
+* Deployment log got better at detecting files and linking them directly from the
+  log output, in case any error occured
+
+### Work related to Icinga 1.x
+* Deploying to Icinga 1.x is completely unsupported. However, it works and a
+  lot of effort has been put into this feature, so it should be mentioned here.
+* Please note that the Icinga Director has not been designed to deploy legacy
+  1.x configuration. This is a sponsored feature for a larger migration project
+  and has therefore been built in a very opinionated way. You shouldn't even
+  try to use it. And if so, you're on your own. Nobody will help you when
+  running into trouble.
+
+### REST API
+* Issues related to fetching object lists have been fixed
+
+### Integrations
+* We now hook into the [Cube](https://github.com/icinga/icingaweb2-module-cube)
+  module, this gives one more possibility to benefit from our multi-edit feature
+* Icinga Web 2.4 caused some minor issues for 1.2.0. It works, but an upgrade to
+  Director 1.3.0 is strongly suggested
+
 1.2.0
 -----
 
 ### Fixed a lot of issues and related features
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://dev.icinga.org/versions/310)
+  [roadmap](https://dev.icinga.com/versions/310)
 
 ### Permissions and restrictions
 * Permissions are now enforced. Please check your role definitions, permission
@@ -78,7 +158,7 @@
 
 ### Fixed a lot of issues and related features
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://dev.icinga.org/versions/301)
+  [roadmap](https://dev.icinga.com/versions/301)
 
 ### Icinga Agent handling
 * A lot of effort has been put into making config deployment easier for
@@ -104,4 +184,3 @@
 ### Data Types
 * Booleans, Integers and Arrays are now first-class citizens when dealing with
   custom variables
-
