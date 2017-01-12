@@ -7,13 +7,16 @@ use Icinga\Application\Hook;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
+use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class ImportRowModifierForm extends DirectorObjectForm
 {
+    /** @var  ImportSource */
     protected $source;
 
+    /** @var  ImportSourceHook */
     protected $importSource;
 
     public function setup()
@@ -85,16 +88,22 @@ class ImportRowModifierForm extends DirectorObjectForm
 
     protected function enumSourceColumns()
     {
-        $columns = $this->getImportSource()->listColumns();
+        $columns = array_merge(
+            $this->getImportSource()->listColumns(),
+            $this->source->listModifierTargetProperties()
+        );
+
         $columns = array_combine($columns, $columns);
         return $columns;
     }
 
-
     protected function getImportSource()
     {
         if ($this->importSource === null) {
-            $this->importSource = ImportSourceHook::loadByName($this->source->source_name, $this->db);
+            $this->importSource = ImportSourceHook::loadByName(
+                $this->source->get('source_name'),
+                $this->db
+            );
         }
 
         return $this->importSource;
