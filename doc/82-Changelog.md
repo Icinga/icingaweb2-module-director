@@ -4,23 +4,23 @@
 1.3.0
 -----
 
-### Fixed a lot of issues and related features
+### Fixed issues and related features
 * You can find issues and feature requests related to this release on our
   [roadmap](https://dev.icinga.com/versions/331)
 
 ### Service Sets
 * You are now allowed to create sets of services and assign all of them at
-  once with an apply rule, to host templates or directly to single hosts
+  once with an apply rule
+* Sets can be assigned to host templates or directly to single hosts
 
 ### Service Variable Overrides
-* When switching to a Host View's services tab, you'll now not only see it's
+* When switching to a host view's services tab, you'll now not only see its
   very own services, but also ones that result from an apply rule
-* You can override those Service's custom field values for every single host
+* You can override those services custom field values for every single host
 * Same goes for services belonging to Service Sets
 
 ### Apply rules
-* A new "contains" operator gives more possibilities when working with with
-  arrays
+* A new "contains" operator gives more possibilities when working with arrays
 * Service vars are now also offered in the apply rule form wizard
 
 ### Custom Variables and Fields
@@ -50,7 +50,7 @@
   are now also visible on Travis-CI and triggered for all pull requests
 
 ### Compatibility
-* We worked around a but in very old PHP 5.3 versions on CentOS 6
+* We worked around a bug in very old PHP 5.3 versions on CentOS 6
 
 ### Activity log
 * You can now search and filter in the Activity log
@@ -65,12 +65,12 @@
 
 ### Work related to Icinga 1.x
 * Deploying to Icinga 1.x is completely unsupported. However, it works and a
-  lot of effort has been put into this feature, so it should be mentioned here.
+  lot of effort has been put into this feature, so it should be mentioned here
 * Please note that the Icinga Director has not been designed to deploy legacy
   1.x configuration. This is a sponsored feature for a larger migration project
   and has therefore been built in a very opinionated way. You shouldn't even
   try to use it. And if so, you're on your own. Nobody will help you when
-  running into trouble.
+  running into trouble
 
 ### REST API
 * Issues related to fetching object lists have been fixed
