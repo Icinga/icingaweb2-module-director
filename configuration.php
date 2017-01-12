@@ -2,12 +2,20 @@
 
 $this->providePermission('director/api', $this->translate('Allow to access the director API'));
 $this->providePermission('director/audit', $this->translate('Allow to access the full audit log'));
-$this->providePermission('director/showconfig', $this->translate('Allow to show configuration (could contain sensitive information)'));
+$this->providePermission(
+    'director/showconfig',
+    $this->translate('Allow to show configuration (could contain sensitive information)')
+);
 $this->providePermission('director/deploy', $this->translate('Allow to deploy configuration'));
 $this->providePermission('director/hosts', $this->translate('Allow to configure hosts'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
 $this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
-$this->providePermission('director/inspect', $this->translate('Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'));
+$this->providePermission(
+    'director/inspect',
+    $this->translate(
+        'Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'
+    )
+);
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
 $this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
