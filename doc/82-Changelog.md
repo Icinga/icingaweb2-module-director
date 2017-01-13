@@ -1,6 +1,9 @@
 <a id="Changelog"></a>Changelog
 ===============================
 
+Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
+before switching to a new version.
+
 1.3.0
 -----
 
@@ -56,6 +59,7 @@
 * You can now search and filter in the Activity log
 * In case you have hundreds of thousands of changes you'll notice that pagination
   performance improve a lot
+* A quick-filter allows you to see just your very own changes with a single click
 
 ### Deployment
 * More performance tweaking took place. 1.2.0 was already very fast, 1.3.0 should
