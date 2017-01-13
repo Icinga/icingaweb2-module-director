@@ -25,7 +25,6 @@
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
             this.module.on('focus', 'form input, form textarea, form select', this.formElementFocus);
-            this.module.icinga.logger.debug('Director module initialized');
             this.module.on('keyup', '.director-suggest', this.autoSuggest);
             this.module.on('keydown', '.director-suggest', this.suggestionKeyDown);
             this.module.on('dblclick', '.director-suggest', this.suggestionDoubleClick);
@@ -33,6 +32,7 @@
             this.module.on('focusout', '.director-suggest', this.leaveSuggestionField);
             this.module.on('click', '.director-suggestions li', this.clickSuggestion);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
+            this.module.icinga.logger.debug('Director module initialized');
         },
 
         /**
@@ -693,7 +693,7 @@
                 if ($fieldset.attr('id') === 'fieldset-assign') {
                     return;
                 }
-                if ($fieldset.find('.required').length == 0 && (! self.fieldsetWasOpened($fieldset))) {
+                if ($fieldset.find('.required').length === 0 && (! self.fieldsetWasOpened($fieldset))) {
                     $fieldset.addClass('collapsed');
                     self.fixFieldsetInfo($fieldset);
                 }
