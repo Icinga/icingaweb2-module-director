@@ -112,7 +112,8 @@ class HostController extends ObjectController
             }
         }
 
-        foreach ($resolver->fetchResolvedParents() as $parent) {
+        $parents = $resolver->fetchResolvedParents();
+        foreach ($parents as $parent) {
             $table = $this->loadTable('IcingaHostService')
                 ->setHost($parent)
                 ->setInheritedBy($host)
@@ -131,11 +132,10 @@ class HostController extends ObjectController
             $tables[$title] = $table->setTitle($title);
         }
 
-        $table = $this->loadTable('IcingaHostServiceSet')
-            ->setHost($host)
-            ->setConnection($db);
-
-        $tables[$this->translate('Service sets')] = $table;
+        $this->addHostServiceSetTables($host, $tables);
+        foreach ($parents as $parent) {
+            $this->addHostServiceSetTables($host, $tables);
+        }
 
         $title = $this->translate('Applied services');
         $table = $this->loadTable('IcingaHostAppliedServices')
@@ -146,6 +146,38 @@ class HostController extends ObjectController
         $tables[$title] = $table;
 
         $this->view->tables = $tables;
+    }
+
+    protected function addHostServiceSetTables(IcingaHost $host, & $tables)
+    {
+        $db = $this->db();
+
+        $query = $db->getDbAdapter()->select()
+            ->from(
+                array('ss' => 'icinga_service_set'),
+                'ss.*'
+            )->join(
+                array('hsi' => 'icinga_service_set_inheritance'),
+                'hsi.parent_service_set_id = ss.id',
+                array()
+            )->join(
+                array('hs' => 'icinga_service_set'),
+                'hs.id = hsi.service_set_id',
+                array()
+            )->where('hs.host_id = ?', $host->id);
+
+        $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
+        foreach ($sets as $name => $set) {
+
+            $title = sprintf($this->translate('%s (Service set)'), $name);
+            $table = $this->loadTable('IcingaServiceSetService')
+                ->setServiceSet($set)
+                ->setHost($host)
+                ->setTitle($title)
+                ->setConnection($db);
+
+            $tables[$title] = $table;
+        }
     }
 
     /**
@@ -228,39 +260,33 @@ class HostController extends ObjectController
         /** @var IcingaHost $host */
         $host = $this->object;
         $serviceName = $this->params->get('service');
-        $set = IcingaServiceSet::loadWithAutoIncId((int) $this->params->get('serviceSet'), $this->db());
+        $set = IcingaServiceSet::load($this->params->get('set'), $db);
 
-        $parent = IcingaService::load(
+        $service = IcingaService::load(
             array(
-                'object_type'    => 'apply',
                 'object_name'    => $serviceName,
-                'service_set_id' => (int) $set->id
+                'service_set_id' => $set->get('id')
             ),
             $this->db()
         );
 
-        $parent->object_name = $set->object_name;
-
-        $service = IcingaService::create(array(
-            'object_type' => 'apply',
-            'object_name' => $serviceName,
-            'host_id'     => $host->id,
-            'imports'     => array($parent),
-            'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ), $db);
-
+        $set->copyVarsToService($service);
         $this->view->title = sprintf(
-            $this->translate('Service "%s" (from set "%s")'),
+            $this->translate('%s on %s (from set: %s)'),
             $serviceName,
-            $set->object_name
+            $host->getObjectName(),
+            $set->getObjectName()
         );
+
+        $this->getTabs()->activate('services');
 
         $this->view->form = $this->loadForm('IcingaService')
             ->setDb($db)
             ->setHost($host)
-            ->setInheritedFrom($parent->object_name)
+            ->setServiceSet($set)
             ->setObject($service);
-        $this->view->form->setResolvedImports();
+        // $this->view->form->setResolvedImports();
+        $this->view->form->handleRequest();
         $this->commonForServices();
     }
 
