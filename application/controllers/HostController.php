@@ -180,9 +180,6 @@ class HostController extends ObjectController
         }
     }
 
-    /**
-     * @deprecated
-     */
     public function appliedserviceAction()
     {
         $db = $this->db();
