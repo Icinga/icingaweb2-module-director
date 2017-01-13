@@ -5,18 +5,18 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Director Module (1.2.0)\n"
+"Project-Id-Version: Director Module (1.3.0)\n"
 "Report-Msgid-Bugs-To: dev@icinga.org\n"
 "POT-Creation-Date: 2017-01-12 21:54+0100\n"
-"PO-Revision-Date: 2017-01-12 22:50+0100\n"
-"Last-Translator: Thomas Widhalm <widhalmt@widhalm.or.at>\n"
+"PO-Revision-Date: 2017-01-13 12:55+0100\n"
+"Last-Translator: Thomas Gelf <thomas@gelf.net>\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Language-Team: \n"
-"X-Generator: Poedit 1.8.8\n"
+"X-Generator: Poedit 1.8.7.1\n"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:450
 #, php-format
@@ -40,9 +40,9 @@ msgid "# Vars"
 msgstr "# Vars"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:225
-#, fuzzy, php-format
+#, php-format
 msgid "%d apply rules have been defined"
-msgstr "%d Objekte wurden definiert"
+msgstr "%d Apply-Regeln wurden definiert"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:25
 #, php-format
@@ -70,14 +70,14 @@ msgid "%d objects have been defined"
 msgstr "%d Objekte wurden definiert"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaMultiEditForm.php:86
-#, fuzzy, php-format
+#, php-format
 msgid "%d objects have been modified"
 msgstr "%s Objekte wurden verändert"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:34
-#, fuzzy, php-format
+#, php-format
 msgid "%d objects, %d templates, %d apply rules"
-msgstr "%d Objekte, %d Vorlagen"
+msgstr "%d Objekte, %d Vorlagen, %d Apply-Regeln"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:262
 #, php-format
@@ -85,9 +85,9 @@ msgid "%d of them are templates"
 msgstr "%d davon sind Vorlagen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:205
-#, fuzzy, php-format
+#, php-format
 msgid "%d templates have been defined"
-msgstr "Eine Vorlage wurde definiert"
+msgstr "%d Vorlagen wurden definiert"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ShowController.php:176
 #, php-format
@@ -118,7 +118,7 @@ msgstr "%s (default)"
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostAppliedServicesTable.php:68
 #, php-format
 msgid "%s (where %s)"
-msgstr ""
+msgstr "%s (wo %s)"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:99
 #, php-format
@@ -137,9 +137,9 @@ msgid "%s related group objects have been created"
 msgstr "%s verwandte Gruppenobjekte wurden erstellt"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:148
-#, fuzzy, php-format
+#, php-format
 msgid "(on %s)"
-msgstr "Auftrag %s"
+msgstr "(auf %s)"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:878
 msgid "- click to add more -"
@@ -222,11 +222,8 @@ msgstr ""
 "wie \"Puppet Hosts importieren\" bieten sich an"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceSetForm.php:51
-#, fuzzy
 msgid "A short name identifying this set of services"
-msgstr ""
-"Eine kurzer Name um diesen Auftrag zu bezeichnen. Sprechende Bezeichnungen "
-"wie \"Puppet Hosts importieren\" bieten sich an"
+msgstr "Eine kurzer Name um dieses Service-Set zu bezeichnen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:322
 #, php-format
@@ -334,9 +331,8 @@ msgid "Add a job"
 msgstr "Auftrag hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/DatafieldController.php:39
-#, fuzzy
 msgid "Add a new Data Field"
-msgstr "Einen neuen Eintrag hinzufügen"
+msgstr "Einen neues Datenfeld hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/views/helpers/FormExtensibleSet.php:228
 msgid "Add a new entry"
@@ -347,14 +343,14 @@ msgid "Add a new one..."
 msgstr "Einen Neuen hinzufügen..."
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServicesetController.php:50
-#, fuzzy, php-format
+#, php-format
 msgid "Add a service set to \"%s\""
-msgstr "Service hinzufügen"
+msgstr "Füge ein Service-Set zu \"%s\" hinzu"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:85
-#, fuzzy, php-format
+#, php-format
 msgid "Add a service to \"%s\""
-msgstr "Service hinzufügen"
+msgstr "Füge einen Service zu \"%s\" hinzu"
 
 #: /usr/share/icingaweb2/modules/director/application/views/helpers/FormDataFilter.php:427
 msgid "Add another filter"
@@ -383,9 +379,9 @@ msgid "Add new Icinga %s"
 msgstr "Neuen Icinga %s hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectController.php:209
-#, fuzzy, php-format
+#, php-format
 msgid "Add new Icinga %s template"
-msgstr "Neuen Icinga %s hinzufügen"
+msgstr "Neue Icinga %s Vorlage hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:88
 msgid "Add property modifier"
@@ -397,9 +393,8 @@ msgid "Add service"
 msgstr "Service hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:79
-#, fuzzy
 msgid "Add service set"
-msgstr "Service hinzufügen"
+msgstr "Service-Set hinzufügen"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/SyncpropertyController.php:35
 #: /usr/share/icingaweb2/modules/director/application/controllers/SyncruleController.php:108
@@ -425,9 +420,8 @@ msgid "Additional properties"
 msgstr "Weitere Eigenschaften"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostTable.php:55
-#, fuzzy
 msgid "Address"
-msgstr "Mehr hinzufügen"
+msgstr "Adresse"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:70
 msgid ""
@@ -450,35 +444,31 @@ msgstr "Alle benutzerdefinierten Variablen (vars)"
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:421
 #, php-format
 msgid "All overrides have been removed from \"%s\""
-msgstr ""
+msgstr "Alle überschriebenen Eigenschaften wurden von \"%s\" entfernt"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:3
 msgid "Allow to access the director API"
 msgstr "Zugriff auf die Director API erlauben"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:4
-#, fuzzy
 msgid "Allow to access the full audit log"
-msgstr "Zugriff auf die Director API erlauben"
+msgstr "Zugriff auf das volle Audit-Log erlauben"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:10
 msgid "Allow to configure hosts"
 msgstr "Erlauben, Hosts zu konfigurieren"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:12
-#, fuzzy
 msgid "Allow to configure notifications"
-msgstr "Erlauben, Hosts zu konfigurieren"
+msgstr "Erlauben, Benachrichtigungen zu konfigurieren"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:11
-#, fuzzy
 msgid "Allow to configure users"
-msgstr "Erlauben, Hosts zu konfigurieren"
+msgstr "Erlauben, Benutzer zu konfigurieren"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:9
-#, fuzzy
 msgid "Allow to deploy configuration"
-msgstr "Nicht ausgebrachte Konfigurationen"
+msgstr "Das Ausbringen von Konfigurationen erlauben"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:16
 msgid ""
@@ -493,9 +483,8 @@ msgid "Allow to show configuration (could contain sensitive information)"
 msgstr "Anzeigen der Konfiguration erlauben (könnte sensible Daten enthalten)"
 
 #: /usr/share/icingaweb2/modules/director/configuration.php:19
-#, fuzzy
 msgid "Allow unrestricted access to Icinga Director"
-msgstr "Zugriff auf die Director API erlauben"
+msgstr "Unbeschränkten Zugriff auf die Director API erlauben"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:57
 #, php-format
@@ -525,21 +514,19 @@ msgid "Alternative text to be shown in case above icon is missing"
 msgstr "Alternativer Text der angezeigt werden soll, falls obiges Icon fehlt"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:86
-#, fuzzy
 msgid ""
 "An Icinga DSL expression that returns a boolean value, e.g.: var cmd = "
 "bool(macro(\"$cmd$\")); return cmd ..."
 msgstr ""
-"Und Icinga DSL Ausdruck, z.B.: var cmd = macro(\"$cmd$\"); return "
-"typeof(command) == String ..."
+"Ein Icinga DSL Ausdruck welcher einen booleschen Wert liefert, z.B.: var cmd "
+"= bool(macro(\"$cmd$\")); return cmd ..."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandArgumentForm.php:47
-#, fuzzy
 msgid ""
 "An Icinga DSL expression, e.g.: var cmd = macro(\"$cmd$\"); return "
 "typeof(command) == String ..."
 msgstr ""
-"Und Icinga DSL Ausdruck, z.B.: var cmd = macro(\"$cmd$\"); return "
+"Ein Icinga DSL Ausdruck, z.B.: var cmd = macro(\"$cmd$\"); return "
 "typeof(command) == String ..."
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1220
@@ -598,14 +585,13 @@ msgid "Api users"
 msgstr "Api Benutzer"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:172
-#, fuzzy, php-format
+#, php-format
 msgid "Applied service: %s"
-msgstr "Service hinzufügen"
+msgstr "Zugewiesener Service: %s"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:140
-#, fuzzy
 msgid "Applied services"
-msgstr "Service hinzufügen"
+msgstr "Zugewiesene Services"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServiceController.php:90
 #, php-format
@@ -613,24 +599,22 @@ msgid "Apply \"%s\""
 msgstr "Apply \"%s\""
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ApplyMigrationsForm.php:25
-#, fuzzy, php-format
+#, php-format
 msgid "Apply %d pending schema migrations"
-msgstr "Schema-Migrations-Scripte anwenden"
+msgstr "%d Schema-Migrations-Scripte anwenden"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:312
-#, fuzzy
 msgid "Apply For"
 msgstr "Anwenden auf"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/NewObjectsController.php:166
-#, fuzzy, php-format
+#, php-format
 msgid "Apply Icinga %s"
-msgstr "Klone Icinga %s"
+msgstr "Icinga %s anwenden"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ApplyMigrationsForm.php:20
-#, fuzzy
 msgid "Apply a pending schema migration"
-msgstr "Schema-Migrations-Scripte anwenden"
+msgstr "Ein ausstehende Schema-Migration durchführen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Job/SyncJob.php:61
 msgid "Apply changes"
@@ -679,9 +663,8 @@ msgid "Array"
 msgstr "Array"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1289
-#, fuzzy
 msgid "Assign where"
-msgstr "Assign"
+msgstr "Zuweisen wo"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/show/activitylog.phtml:33
 msgid "Author"
@@ -866,9 +849,8 @@ msgid "Configuration"
 msgstr "Konfiguration"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:81
-#, fuzzy
 msgid "Configuration format"
-msgstr "Bedingungsformat"
+msgstr "Konfigurationsformat"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:286
 msgid "Configuration has been stored"
@@ -887,7 +869,6 @@ msgid "Create immediately"
 msgstr "Sofort erstellen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ApplyMigrationsForm.php:31
-#, fuzzy
 msgid "Create schema"
 msgstr "Datenbankschema erstellen"
 
@@ -955,6 +936,11 @@ msgid ""
 "defined templates. This gives you a granular control over what properties "
 "your users should be allowed to configure in which way."
 msgstr ""
+"Datenfelder erlauben es, Eingabefelder für benutzerdefinierte Variablen zu "
+"personalisieren. Sobald diese hier definiert wurden, können sie über "
+"definierte Templates zur Verfügung gestellt werden. Das erlaubt eine "
+"granuläre Kontrolle darüber, welche Eigenschaften in welche Weise "
+"konfigurierbar sein sollen."
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/DatafieldDashlet.php:17
 msgid "Data fields make sure that configuration fits your rules"
@@ -1017,11 +1003,14 @@ msgid ""
 "transitional projects only and completely unsupported. There are no plans to "
 "make Director a first-class configuration backends for Icinga 1.x"
 msgstr ""
+"Standardkonfigurationsformat. Bitte beachten, dass v1.x nur für ganz "
+"spezielle Migrationsprojekte implementiert wurde und in keiner Weise "
+"unterstützt wird. Es gibt keine Pläne aus dem Director ein "
+"Konfigurationswerkzeug für Icinga 1.x zu machen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:35
-#, fuzzy
 msgid "Default global zone"
-msgstr "Default-Wert"
+msgstr "Globale Standard-Zone"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/ImportSourceDashlet.php:29
 msgid "Define and manage imports from various data sources"
@@ -1101,23 +1090,20 @@ msgid "Deployment"
 msgstr "Deployment"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:125
-#, fuzzy
 msgid "Deployment Path"
-msgstr "Deployment"
+msgstr "Ausbringungspfad"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/DeploymentController.php:19
 msgid "Deployment details"
 msgstr "Deployment Details"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:110
-#, fuzzy
 msgid "Deployment mode"
-msgstr "Deployment Zeit"
+msgstr "Ausbringungsmodus"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:119
-#, fuzzy
 msgid "Deployment mode for Icinga 1 configuration"
-msgstr "Nicht ausgebrachte Konfigurationen"
+msgstr "Ausbringungsmodus für Icinga 1 Konfiguration"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/deployment/index.phtml:14
 msgid "Deployment time"
@@ -1209,9 +1195,8 @@ msgid "Duration"
 msgstr "Dauer"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/DatafieldController.php:37
-#, fuzzy
 msgid "Edit a field"
-msgstr "Feld bearbeiten"
+msgstr "Ein Feld bearbeiten"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ImportsourceController.php:50
 msgid "Edit import source"
@@ -1281,16 +1266,19 @@ msgid ""
 "through \"$config$\". NOTE: only custom variables of type \"Array\" are "
 "eligible."
 msgstr ""
+"Berechnet die Apply-Regel für alle Objekte für welche diese "
+"benutzerdefinierte Eigenschaft spezifiziert wurde. Wählt man z.B. \"host."
+"vars.custom_attr\", wird \"for (config in host.vars.array_var)\" generiert. "
+"Dabei ist \"config\" dann als \"$config$\" zugänglich. HINWEIS: nur "
+"benutzerdefinierte Eigenschaften vom Typ \"Array\" sind wählbar."
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1059
-#, fuzzy
 msgid "Event command"
-msgstr "Check-Kommando"
+msgstr "Event-Kommando"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1060
-#, fuzzy
 msgid "Event command definition"
-msgstr "Check-Kommandodefinition"
+msgstr "Event-Kommandodefinition"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1126
 msgid "Execute active checks"
@@ -1301,9 +1289,8 @@ msgid "Execution interval for this job, in seconds"
 msgstr "Ausführungsintervall dieses Auftrags, in Sekunden"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:172
-#, fuzzy
 msgid "Existing templates"
-msgstr "%s Vorlage hinzufügen"
+msgstr "Vorhandene Vorlagen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:178
 msgid "Expert mode"
@@ -1377,7 +1364,7 @@ msgstr "Erstellen erzwingen"
 #: /usr/share/icingaweb2/modules/director/library/Director/Objects/DirectorDatafield.php:74
 #, php-format
 msgid "Form element could not be created, %s is missing"
-msgstr ""
+msgstr "Formularelement konnte nicht erstellt werden, %s ist nicht vorhanden"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:389
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:414
@@ -1402,9 +1389,8 @@ msgid "Generated files"
 msgstr "Erzeugte Dateien"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:108
-#, fuzzy
 msgid "Generated from host vars"
-msgstr "Erzeugte Dateien"
+msgstr "Aus Host-Variablen generiert"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaZoneForm.php:22
 msgid "Global zone"
@@ -1452,9 +1438,8 @@ msgstr "Host"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Objects/IcingaService.php:470
 #: /usr/share/icingaweb2/modules/director/application/controllers/SuggestController.php:127
-#, fuzzy
 msgid "Host Custom variables"
-msgstr "Benutzerdefinierte Variablen"
+msgstr "Benutzerdefinierte Host-Variablen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:165
 msgid "Host address"
@@ -1534,14 +1519,13 @@ msgstr "Hosts"
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServicesetController.php:91
 #, php-format
 msgid "Hosts using this set: %s"
-msgstr ""
+msgstr "Hosts welche dieses Set benutzen: %s"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:32
 msgid "IP address / hostname of remote node"
 msgstr "IP Adresse / Hostname des entfernten Knoten"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:106
-#, fuzzy
 msgid ""
 "IP address / hostname of your Icinga node. Please note that this information "
 "will only be used for the very first connection to your Icinga instance. The "
@@ -1552,9 +1536,9 @@ msgid ""
 msgstr ""
 "IP Adresse / Hostname des Icinga Knotens. Diese Information wird nur für den "
 "ersten Verbindungsaufbau zur Icinga Instanz verwendet. Danach verlässt sich "
-"der Director auf ein richtig konfiguriertes Endpunktsobjekt, wobei \"richtig "
-"konfiguriert\" bedeutet, dass entweder der Name auflösbar ist oder die host "
-"Eigenschaft entweder eine IP Adresse oder einen auflösbaren Hostname "
+"der Director auf ein richtig konfiguriertes Endpunkt-Objekt. \"Richtig "
+"konfiguriert\" bedeutet dabei, dass entweder der Name auflösbar ist oder die "
+"host-Eigenschaft entweder eine IP Adresse oder einen auflösbaren Hostname "
 "enthält. Der Director muss diesen Endpunkt erreichen können"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:173
@@ -1568,19 +1552,19 @@ msgid "Icinga "
 msgstr "Icinga "
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/NewObjectsController.php:171
-#, fuzzy, php-format
+#, php-format
 msgid "Icinga %s"
-msgstr "Icinga "
+msgstr "Icinga %s"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/NewObjectsController.php:114
-#, fuzzy, php-format
+#, php-format
 msgid "Icinga %s Sets"
-msgstr "Icinga-Host"
+msgstr "Icinga %s-Sets"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/NewObjectsController.php:161
-#, fuzzy, php-format
+#, php-format
 msgid "Icinga %s Templates"
-msgstr "%s Vorlage hinzufügen"
+msgstr "Icinga %s-Vorlagen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:378
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostForm.php:113
@@ -1603,6 +1587,9 @@ msgid ""
 "zone. This defaults to \"director-global\" but might be adjusted to a custom "
 "Zone name"
 msgstr ""
+"Icinga Director bevorzugt es, Objekte wie CheckCommands in eine globale Zone "
+"auszubringen. Der Standard dafür ist \"director-global\", es kann aber auch "
+"eine benutzerdefinierte Zone verwendet werden"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:104
 msgid "Icinga Host"
@@ -1770,9 +1757,9 @@ msgid "Inheritance (import)"
 msgstr "Vererbung (Import)"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:212
-#, fuzzy, php-format
+#, php-format
 msgid "Inherited service: %s"
-msgstr "Überwachte Services"
+msgstr "Geerbter Service: %s"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/InspectController.php:32
 #: /usr/share/icingaweb2/modules/director/application/controllers/EndpointController.php:19
@@ -1780,9 +1767,8 @@ msgid "Inspect"
 msgstr "Inspizieren"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/InspectController.php:59
-#, fuzzy
 msgid "Inspect - object list"
-msgstr "Hostobjekte"
+msgstr "Inspizieren - Objektliste"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandForm.php:25
 msgid "Internal commands"
@@ -1844,18 +1830,16 @@ msgid "Keep the DN as is"
 msgstr "DN unverändert behalten"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierJsonDecode.php:20
-#, fuzzy
 msgid "Keep the JSON string as is"
-msgstr "DN unverändert behalten"
+msgstr "JSON-String beibehalten"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierGetHostByName.php:18
 msgid "Keep the property (hostname) as is"
 msgstr "Die Eigenschaft (hostname) behalten, wie sie ist"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierDnsRecords.php:35
-#, fuzzy
 msgid "Keep the property as is"
-msgstr "Die Eigenschaft (hostname) behalten, wie sie ist"
+msgstr "Die Eigenschaft beibehalten"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatalistentryForm.php:16
 #: /usr/share/icingaweb2/modules/director/application/tables/DatalistEntryTable.php:49
@@ -1915,6 +1899,13 @@ msgid ""
 "field for the same variable later on, everything will continue to work as "
 "before"
 msgstr ""
+"Benutzerdefinierte Eigenschaften beizubehalten während das zugehörige Feld "
+"entfernt wird ist durchaus legal und kann eine gewünschte Operation sein. "
+"Auf diesem Wege lassen sich zugehörige Felder dann nicht mehr in der "
+"Director-Oberfläche bearbeiten, aber die jeweiligen Werte bleiben "
+"konfiguriert und werden weiterhin ausgebracht. Wenn man ein Feld mit "
+"demselben Namen zu einem späteren Zeitpunkt wieder hinzufügt, wird alles "
+"wieder funktionieren wie zuvor"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierMakeBoolean.php:45
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierMap.php:35
@@ -1944,6 +1935,9 @@ msgid ""
 "Local directory to deploy Icinga 1.x configuration. Must be writable by "
 "icingaweb2. (e.g. /etc/icinga/director)"
 msgstr ""
+"Lokales Verzeichnis in welches die Icinga 1.x Konfiguration ausgebracht "
+"werden soll. Muss von icingaweb2 beschreibbar sein (z.B. /etc/icinga/"
+"director)"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:41
 msgid "Log Duration"
@@ -1960,7 +1954,7 @@ msgstr "Pflicht"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:115
 msgid "Master-less"
-msgstr ""
+msgstr "Masterlos"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1100
 msgid "Max check attempts"
@@ -2007,9 +2001,9 @@ msgstr "%d Hosts verändern"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:185
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/NewObjectsController.php:90
-#, fuzzy, php-format
+#, php-format
 msgid "Modify %d objects"
-msgstr "Hostobjekte"
+msgstr "%d Objekte bearbeiten"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/DatafieldController.php:34
 #, php-format
@@ -2038,9 +2032,8 @@ msgstr "Nach oben bewegen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:168
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/NewObjectsController.php:73
-#, fuzzy
 msgid "Multiple objects"
-msgstr "Hostobjekte"
+msgstr "Mehrere Objekte"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ConfigController.php:122
 msgid "My changes"
@@ -2136,9 +2129,8 @@ msgid "No action taken, object has not been modified"
 msgstr "Keine Aktion durchgeführt, das Objekt wurde nicht verändert"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:217
-#, fuzzy
 msgid "No apply rule has been defined yet"
-msgstr "Kein Objekt wurde bisher definiert"
+msgstr "Bisher wurde kein Apply-Regel definiert"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/runSummary.phtml:4
 msgid "No changes have been made"
@@ -2147,6 +2139,8 @@ msgstr "Keine Änderungen wurden gemacht"
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/dashboard/index.phtml:11
 msgid "No dashboard available, you might have not enough permissions"
 msgstr ""
+"Kein Dashboard verfügbar, eventuell wurden nicht genügend Zugriffsrechte "
+"gewährt"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:55
 msgid "No database has been configured for Icinga Director"
@@ -2173,29 +2167,24 @@ msgid "No object has been defined yet"
 msgstr "Kein Objekt wurde bisher definiert"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaMultiEditForm.php:81
-#, fuzzy
 msgid "No object has been modified"
-msgstr "Ein Objekt wurde verändert"
+msgstr "Kein Objekt wurde verändert"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:979
-#, fuzzy
 msgid "No related template has been provided yet"
-msgstr "Kein Datenbankschema wurde bisher erstellt"
+msgstr "Es wurde noch keine passende Vorlage bereitgestellt"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:974
-#, fuzzy
 msgid "No template has been chosen"
-msgstr "Eine Vorlage wurde definiert"
+msgstr "Keine Vorlage wurde ausgewählt"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:197
-#, fuzzy
 msgid "No template has been defined yet"
-msgstr "Eine Vorlage wurde definiert"
+msgstr "Es wurde noch keine Vorlage definiert"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:314
-#, fuzzy
 msgid "None"
-msgstr "Zone"
+msgstr "Keine"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/EndpointObjectDashlet.php:57
 msgid "None could be used for deployments right now"
@@ -2232,9 +2221,8 @@ msgid "Notification"
 msgstr "Benachrichtigung"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Import/ImportSourceCoreApi.php:61
-#, fuzzy
 msgid "Notification Commands"
-msgstr "Benachrichtigungskommando"
+msgstr "Benachrichtigungskommandos"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaNotificationForm.php:223
 msgid "Notification command"
@@ -2245,9 +2233,8 @@ msgid "Notification interval"
 msgstr "Benachrichtigungsintervall"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/NotificationTemplateDashlet.php:13
-#, fuzzy
 msgid "Notification templates"
-msgstr "Benachrichtigungsintervall"
+msgstr "Benachrichtigungsvorlagen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/NotificationApplyDashlet.php:13
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/NotificationsDashlet.php:13
@@ -2271,6 +2258,22 @@ msgid ""
 "providers. The possibilities are endless, as you are allowed to define as "
 "many custom notification commands as you want"
 msgstr ""
+"Benachrichtigungen werden gesendet, wenn ein Host oder Services einen harten "
+"Nicht-OK-Zustand erreicht oder sich von einem solchen erholt. Es könnte "
+"zudem wünschenswert sein, Benachrichtigungen auch für spezielle Events wie "
+"den Beginn einer Downtime, das Bestätigen eines Problems und mehr zu "
+"versenden. Benachrichtigungen lassen sich auf Wunsch nur innerhalb "
+"bestimmter Zeitfenster versenden. Zudem können sie künstlich verzögert und / "
+"oder in bestimmten Intervallen neu versandt werden.\n"
+"\n"
+"Wer Eskalationsebenen umsetzen möchte kombiniert diese Möglichkeiten. Man "
+"könnte z.B. erst das Operating benachrichtigen, und erst wenn das Problem "
+"für längere Zeit unbehandelt bleibt das Management mit einbeziehen.\n"
+"\n"
+"Man könnte E-Mails oder SMS versenden, Telefonanrufe durchführen und sich "
+"auf unterschiedlichsten Kanälen anpiepen lassen. Benachrichtigungen lassen "
+"sich natürlich auch an externe Serviceanbieter auslagern. Die Möglichkeiten "
+"sind endlos, nachdem man beliebig viele eigene Kommandos anbinden kann"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/IcingaConfig/StateFilterSet.php:24
 msgid "OK"
@@ -2283,9 +2286,8 @@ msgid "Object"
 msgstr "Objekt"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/InspectController.php:79
-#, fuzzy
 msgid "Object Inspection"
-msgstr "Objekteigenschaften"
+msgstr "Objekt-Inspektion"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:33
 msgid "Object Type"
@@ -2320,16 +2322,15 @@ msgstr "Objekttyp \"%s\""
 
 #: /usr/share/icingaweb2/modules/director/application/tables/GeneratedConfigFileTable.php:74
 msgid "Object/Tpl/Apply"
-msgstr ""
+msgstr "Objekt/Vorlage/Apply"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:27
 msgid "On failure"
 msgstr "Bei Fehler"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:221
-#, fuzzy
 msgid "One apply rule has been defined"
-msgstr "Eine Vorlage wurde definiert"
+msgstr "Eine Apply-Regel wurde definiert"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/Dashlet.php:244
 msgid "One external object has been defined, it will not be deployed"
@@ -2436,9 +2437,8 @@ msgid "Please choose a data list that can be used for map lookups"
 msgstr "Eine Datenliste auswählen, die für Map lookups verwendet wird"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/DataType/DataTypeDirectorObject.php:61
-#, fuzzy
 msgid "Please choose a specific Icinga object type"
-msgstr "Einen Objekttyp auswählen"
+msgstr "Bitte einen bestimmten Icinga-Objekttyp auswählen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Job/ImportJob.php:48
 msgid ""
@@ -2472,7 +2472,7 @@ msgstr "%s klicken, um neue Ressourcen zu erstellen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:977
 msgid "Please define a related template first"
-msgstr ""
+msgstr "Bitte zuerst eine entsprechende Vorlage definieren"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:191
 msgid ""
@@ -2488,6 +2488,9 @@ msgid ""
 "required to do so. Usually the defaults chosen by the Icinga Director should "
 "make a good fit for your environment."
 msgstr ""
+"Diese Einstellungen sollten nur dann geändert werden, wenn es als unbedingt "
+"nötig erachtet wird. Für gewöhnlich sollten die vom Icinga Director "
+"gewählten Standardwerte für Umgebungen jeglicher Art passend sein."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:28
 msgid "Please provide a rule name"
@@ -2572,9 +2575,8 @@ msgid "Provide data lists to make life easier for your users"
 msgstr "Datenlisten erleichtern Anwendern die Arbeit"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/NotificationTemplateDashlet.php:18
-#, fuzzy
 msgid "Provide templates for your notifications."
-msgstr "Benachrichtigungen planen."
+msgstr "Vorlagen für Benachrichtigungen bereitstellen."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:56
 msgid "Purge"
@@ -2595,6 +2597,8 @@ msgstr "Erholung"
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierRegexSplit.php:16
 msgid "Regular expression pattern to split the string (e.g. /\\s+/ or /[,;]/)"
 msgstr ""
+"Regulärer Ausdruck anhand dessen eine String aufgeteilt werden soll (z.B. /"
+"\\s+/ oder /[,;]/)"
 
 #: /usr/share/icingaweb2/modules/director/application/views/helpers/FormExtensibleSet.php:240
 msgid "Remove this entry"
@@ -2691,15 +2695,16 @@ msgstr ""
 "planen und automatisieren"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/NotificationsDashboard.php:16
-#, fuzzy
 msgid "Schedule your notifications"
-msgstr "Benachrichtigungen planen."
+msgstr "Benachrichtigungen planen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/NotificationsDashlet.php:19
 msgid ""
 "Schedule your notifications. Define who should be notified, when, and for "
 "which kind of problem"
 msgstr ""
+"Benachrichtigungen planen. Wer soll wann benachrichtigt werden, wofür, und "
+"für welche Art von Problemen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:137
 msgid ""
@@ -2707,6 +2712,9 @@ msgid ""
 "sudo /usr/local/bin/icinga-director-activate) (name of the stage will be the "
 "argument for the script)"
 msgstr ""
+"Skript oder Tools welches beim Aktivieren einer neuen Konfigurationsphase "
+"ausgeführt werden soll. (z.B. sudo /usr/local/bin/icinga-director-activate) "
+"(der Name der Konfiguration wird dem Skript als Argument mitgegeben)"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ActionController.php:228
 msgid "Search..."
@@ -2730,24 +2738,21 @@ msgid "Service"
 msgstr "Service"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:253
-#, fuzzy, php-format
+#, php-format
 msgid "Service \"%s\" (from set \"%s\")"
-msgstr "(geerbt von \"%s\")"
+msgstr "Service \"%s\" (aus dem Set \"%s\")"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:16
-#, fuzzy
 msgid "Service Set"
-msgstr "Service"
+msgstr "Service-Set"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncRuleForm.php:15
-#, fuzzy
 msgid "Service group"
 msgstr "Servicegruppe"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/DataType/DataTypeDirectorObject.php:53
-#, fuzzy
 msgid "Service groups"
-msgstr "Servicegruppe"
+msgstr "Servicegruppen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:338
 msgid ""
@@ -2765,9 +2770,8 @@ msgstr ""
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Objects/IcingaService.php:456
 #: /usr/share/icingaweb2/modules/director/application/controllers/SuggestController.php:125
-#, fuzzy
 msgid "Service properties"
-msgstr "Synchronisationseigenschaften"
+msgstr "Service-Eigenschaften"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceSetForm.php:95
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaServiceSetTable.php:41
@@ -2775,9 +2779,8 @@ msgid "Service set"
 msgstr "Service-Set"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceSetForm.php:49
-#, fuzzy
 msgid "Service set name"
-msgstr "Servicename"
+msgstr "Service-Set Name"
 
 #: /usr/share/icingaweb2/modules/director/application/tables/IcingaHostServiceSetTable.php:56
 #, php-format
@@ -2811,9 +2814,9 @@ msgid "Services"
 msgstr "Services"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/ServicesetController.php:71
-#, fuzzy, php-format
+#, php-format
 msgid "Services in this set: %s"
-msgstr "Services: %s"
+msgstr "Services in diesem Set: %s"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:87
 #, php-format
@@ -2826,7 +2829,7 @@ msgstr "Basierend auf Filter setzen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierMakeBoolean.php:44
 msgid "Set false"
-msgstr ""
+msgstr "Auf \"false\" setzen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:30
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierJsonDecode.php:19
@@ -2838,12 +2841,11 @@ msgstr "Keinen Wert setzen (null)"
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierMakeBoolean.php:42
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierMap.php:33
 msgid "Set null"
-msgstr "null setzen"
+msgstr "Auf \"null\" setzen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierMakeBoolean.php:43
-#, fuzzy
 msgid "Set true"
-msgstr "Senden an"
+msgstr "Auf \"true\" setzen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:87
 msgid "Sets"
@@ -2865,9 +2867,8 @@ msgid "Settings"
 msgstr "Einstellungen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:173
-#, fuzzy
 msgid "Settings have been stored"
-msgstr "Objekt wurde wiederhergestellt"
+msgstr "Einstellungen wurden gespeichert"
 
 #: /usr/share/icingaweb2/modules/director/application/controllers/HostController.php:57
 msgid "Show"
@@ -2975,7 +2976,7 @@ msgstr "Zeichenkette"
 
 #: /usr/share/icingaweb2/modules/director/application/views/helpers/FormDataFilter.php:445
 msgid "Strip this operator, preserve child nodes"
-msgstr ""
+msgstr "Diesen Operator entfernen, Kind-Knoten beibehalten"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/QuickForm.php:177
 msgid "Submit"
@@ -3041,14 +3042,12 @@ msgid "Synchronize"
 msgstr "Synchronisieren"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/DataType/DataTypeDirectorObject.php:69
-#, fuzzy
 msgid "Target data type"
-msgstr "Datentyp"
+msgstr "Zieldatentyp"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportRowModifierForm.php:35
-#, fuzzy
 msgid "Target property"
-msgstr "Nach Hosteigenschaft"
+msgstr "Zieleigenschaft"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:899
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:903
@@ -3080,21 +3079,19 @@ msgstr ""
 "Der \"Sync\" Auftrag erlaubt das Ausführen von Synchronisationen in "
 "regelmäßigen Abständen"
 
-# Geschlecht kann leider nicht bestimmt werden -Thw
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:489
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaTimePeriodRangeForm.php:60
 #, php-format
 msgid "The %s has successfully been stored"
-msgstr "Die %s wurde erfolgreich gespeichert"
+msgstr "%s wurde erfolgreich gespeichert"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:219
-#, fuzzy
 msgid ""
 "The Config job allows you to generate and eventually deploy your Icinga 2 "
 "configuration"
 msgstr ""
-"Der \"Konfiguration\" Auftrag erlaubt das Erstellen und Ausrollen der Icinga "
-"2 Konfiguration"
+"Der Auftrag \"Konfiguration\" erlaubt das Erstellen und eventuelle Ausrollen "
+"der Icinga 2 Konfiguration"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:35
 msgid "The Email address of the user."
@@ -3126,10 +3123,9 @@ msgid "The caption which should be displayed"
 msgstr "Die Beschriftung, die angezeigt werden soll"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:99
-#, fuzzy
 msgid ""
 "The caption which should be displayed to your users when this field is shown"
-msgstr "Die Beschriftung, die angezeigt werden soll"
+msgstr "Die Beschriftung welche Benutzern zu diesem Feld angezeigt werden soll"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaCommandForm.php:58
 msgid ""
@@ -3165,7 +3161,7 @@ msgstr "Die erste (linkeste) OU"
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:422
 #, php-format
 msgid "The given properties have been stored for \"%s\""
-msgstr ""
+msgstr "Die übergebenen Eigenschaften wurden für \"%s\" gespeichert"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1334
 msgid "The host/service states you want to get notifications for"
@@ -3191,9 +3187,8 @@ msgid "The last deployment did not succeed"
 msgstr "Das letzte Ausbringen war nicht erfolgreich"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/DeploymentDashlet.php:85
-#, fuzzy
 msgid "The last deployment is currently pending"
-msgstr "Dieser Auftrag läuft alle %d und ist aktuell ausständig"
+msgstr "Das Ausrollen der Konfiguration ist im Gange"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaEndpointForm.php:42
 msgid "The log duration time."
@@ -3242,17 +3237,16 @@ msgstr ""
 "auf 0 gesetzt, sind Benachrichtungswiederholungen deaktiviert."
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierBitmask.php:16
-#, fuzzy
 msgid ""
 "The numeric bitmask you want to apply. In case you have a hexadecimal or "
 "binary mask please transform it to a decimal number first. The result of "
 "this modifier is a boolean value, telling whether the given mask applies to "
 "the numeric value in your source column"
 msgstr ""
-"Die numerische Bitmaske, die angelegt werden soll. Hexadezimale und binäre "
-"Masken müssen zuvor in eine dezimale Zahl umgewandelt werden. Das Ergebnis "
-"ist ein boole'scher Wert, der angibt, ob die Maske auf den numerischen Wert "
-"in der Quellspalte zutrifft"
+"Die numerische Bitmaske welche angewandt werden soll. Hexadezimale und "
+"binäre Masken müssen zuvor in eine dezimale Zahl umgewandelt werden. Das "
+"Ergebnis ist ein boolescher Wert welcher angibt, ob die Maske auf den "
+"numerischen Wert in der Quellspalte zutrifft"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaUserForm.php:40
 msgid "The pager address of the user."
@@ -3279,11 +3273,8 @@ msgstr ""
 "Wert 5665"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceSetForm.php:97
-#, fuzzy
 msgid "The service set that should be assigned to this host"
-msgstr ""
-"Ein oder mehrere Zeichen, die zum Trennen der Zeichenkette genutzt werden "
-"sollen"
+msgstr "Das Service-Set welches diesem Host zugewiesen werden soll"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:1342
 msgid "The state transition types you want to get notifications for"
@@ -3304,6 +3295,9 @@ msgid ""
 "The unique name of the field. This will be the name of the custom variable "
 "in the rendered Icinga configuration."
 msgstr ""
+"Der eindeutige Bezeichner dieses Feldes. Dieser wird als Name der "
+"benutzerdefinierten Eigenschaft in der gerenderten Icinga-Konfiguration "
+"benutzt."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:65
 #, php-format
@@ -3311,11 +3305,13 @@ msgid ""
 "There are %d objects with a related property. Should I also remove the \"%s"
 "\" property from them?"
 msgstr ""
+"Es gibt %d Objekte mit einer entsprechenden Eigenschaft. Soll der Wert für "
+"\"%s\" von all diesen entfernt werden?"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/object/deploymentLink.phtml:16
-#, fuzzy, php-format
+#, php-format
 msgid "There are %d pending changes"
-msgstr "Es sind %d Datenbankmigrationen ausständig"
+msgstr "Es gibt %d noch nicht ausgerollte Änderungen"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/object/deploymentLink.phtml:29
 #, php-format
@@ -3337,14 +3333,12 @@ msgstr ""
 "Es sind keine Datenfelder verfügbar. Ein Administrator kann welche anlegen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/DeploymentDashlet.php:91
-#, fuzzy
 msgid "There are no pending changes"
-msgstr "Es sind %d Datenbankmigrationen ausständig"
+msgstr "Es gibt keine anstehenden Änderungen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DeployConfigForm.php:38
-#, fuzzy
 msgid "There are no pending changes. Deploy anyways"
-msgstr "Es sind %d Datenbankmigrationen ausständig"
+msgstr "Es gibt keine anstehenden Änderungen. Dennoch ausbringen"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:25
 msgid ""
@@ -3411,9 +3405,9 @@ msgid "This Import Source provides modified data"
 msgstr "Diese Importquelle stellt veränderte Daten zur Verfügung"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/importsource/index.phtml:15
-#, fuzzy, php-format
+#, php-format
 msgid "This Import Source was last found to be in sync at %s."
-msgstr "Diese Importquelle war zuletzt synchron um %s."
+msgstr "Diese Importquelle war zuletzt um %s syncron."
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/syncrule/index.phtml:36
 #, php-format
@@ -3455,6 +3449,8 @@ msgid ""
 "This allows you to configure an assignment filter. Please feel free to "
 "combine as many nested operators as you want"
 msgstr ""
+"Hiermit lässt sich ein Zuweisungsfilter (assign) definieren. Dabei lassen "
+"sich beliebig viele Operatoren beliebig tief verschachtelt benutzen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceSetForm.php:127
 msgid ""
@@ -3462,6 +3458,11 @@ msgid ""
 "combine as many nested operators as you want. You might also want to skip "
 "this, define it later and/or just add this set of services to single hosts"
 msgstr ""
+"Hiermit lässt sich ein Zuweisungsfilter (assign) definieren. Dabei lassen "
+"sich beliebig viele Operatoren beliebig tief verschachtelt benutzen. Dieser "
+"Schritt lässt sich auch überspringen und eventuell später umsetzen. "
+"Alternativ kann man diesen Service auch ausschließlich an einzelne Hosts "
+"direkt zuweisen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:195
 msgid "This allows you to immediately deploy a modified configuration"
@@ -3475,6 +3476,7 @@ msgstr "Erlaubt das Ändern der Eigenschaften von \"%s\""
 #: /usr/share/icingaweb2/modules/director/library/Director/ProvidedHook/CubeLinks.php:51
 msgid "This allows you to modify properties for all chosen hosts at once"
 msgstr ""
+"Hiermit lassen sich Eigenschaften für alle gewählten Hosts auf einmal ändern"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:222
 msgid "This has to be a MySQL or PostgreSQL database"
@@ -3535,6 +3537,12 @@ msgid ""
 "those? You could return a null value, or default to false or true. You might "
 "also consider interrupting the whole import process as of invalid source data"
 msgstr ""
+"Dieser Modifikator verwandelt 0/\"0\"/false/\"false\"/\"n\"/\"no\" nach "
+"false und , \"1\", true, \"true\", \"y\" and \"yes\" nach true, jeweils "
+"unabhängig von Groß-/Kleinschreibung. Was soll passieren falls keiner dieser "
+"Fälle zutrifft? In diesem Fall lässt sich ein Null-Wert zurückgeben oder "
+"aber true oder false als Fallback nutzen. Alternativ kann man auch den "
+"komplette Importvorgang aufgrund ungültiger Daten fehlschlagen lassen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportSourceForm.php:68
 msgid ""
@@ -3569,26 +3577,29 @@ msgid "This object will not be deployed as it has been disabled"
 msgstr "Das Objekt wird nicht ausgebracht, da es deaktiviert wurde"
 
 #: /usr/share/icingaweb2/modules/director/application/views/scripts/host/agent.phtml:31
-#, fuzzy
 msgid ""
 "This requires the Icinga Agent to be installed. It generates and signs it's "
 "certificate and it also generates a minimal icinga2.conf to get your agent "
 "connected to it's parents"
 msgstr ""
-"Dafür muss der Icinga Agent installiert sein. Es erstellt und signiert sein "
-"Zertifikat und erstellt eine minimale icinga2.conf mit der der Agent mit den "
-"übergeordneten Systemen verbunden wird"
+"Hierfür muss der Icinga Agent installiert sein. Es erstellt und signiert "
+"sein Zertifikat und erstellt eine minimale icinga2.conf mit welcher der "
+"Agent zu den ihm übergeordneten Systemen verbunden wird"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:143
 msgid ""
 "This service has been generated in an automated way, but still allows you to "
 "override the following properties in a safe way."
 msgstr ""
+"Dieser Service wurde durch einen Automatismus erstellt, erlaubt es aber "
+"dennoch die folgenden Eigenschaften auf sichere Weise zu überschreiben."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:151
 #, php-format
 msgid "This service has been generated using an apply rule, assigned where %s"
 msgstr ""
+"Dieser Service wurde durch eine Apply-Regel erstellt, und wird zugewiesen wo "
+"%s"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceForm.php:159
 #, php-format
@@ -3596,6 +3607,8 @@ msgid ""
 "This service has been inherited from %s. Still, you might want to change the "
 "following properties for this host only."
 msgstr ""
+"Dieser Service wurde von %s geerbt. Dennoch können die folgenden "
+"Eigenschaften nur für diesen speziellen Host ändern."
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Form/DirectorObjectForm.php:736
 #, php-format
@@ -3872,10 +3885,9 @@ msgstr ""
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierRegexSplit.php:24
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierSplit.php:24
 msgid "What should happen when the given string is empty?"
-msgstr ""
+msgstr "Was soll passieren wenn der übergebene String leer ist?"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierDnsRecords.php:32
-#, fuzzy
 msgid "What should we do if the DNS lookup fails?"
 msgstr "Was soll geschehen, wenn die (DNS) Auflösung fehlschlägt?"
 
@@ -3888,9 +3900,9 @@ msgid "What should we do if the host (DNS) lookup fails?"
 msgstr "Was soll geschehen, wenn die (DNS) Auflösung fehlschlägt?"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierJsonDecode.php:16
-#, fuzzy
 msgid "What should we do in case we are unable to decode the given string?"
-msgstr "Was soll geschehen, wenn der gewünschte Teil nicht existiert?"
+msgstr ""
+"Was soll geschehen, wenn sich der übergebene String nicht dekodieren lässt?"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:16
 msgid "What should we extract from the DN?"
@@ -3914,9 +3926,8 @@ msgid "When the last notification should be sent"
 msgstr "Wann soll die letzte Nachricht versandt werden?"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SettingsForm.php:55
-#, fuzzy
 msgid "Whether all configured Jobs should be disabled"
-msgstr "Soll dieses Feld Pflicht sein?"
+msgstr "Ob alle konfigurierten Jobs deaktiviert werden sollen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Job/ConfigJob.php:181
 msgid ""
@@ -4055,7 +4066,7 @@ msgstr ""
 
 #: /usr/share/icingaweb2/modules/director/application/forms/DirectorDatafieldForm.php:44
 msgid "Wipe related vars"
-msgstr ""
+msgstr "Zugehörige Eigenschaften leeren"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Dashboard/Dashlet/ActivityLogDashlet.php:17
 msgid "Wondering about what changed why? Track your changes!"
@@ -4063,7 +4074,7 @@ msgstr "Hier kann nachvollzogen werden, was weshalb verändert wurde."
 
 #: /usr/share/icingaweb2/modules/director/application/views/helpers/FormDataFilter.php:436
 msgid "Wrap this expression into an operator"
-msgstr ""
+msgstr "Diesen Ausdruck in einen Operator packen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaDeleteObjectForm.php:17
 #, php-format
@@ -4099,6 +4110,9 @@ msgid ""
 "Otherwise it will not be available and values eventually set before will be "
 "cleared once stored"
 msgstr ""
+"Es könnte erwünscht sein, dieses Feld nur unter bestimmten Bedingungen "
+"anzuzeigen. Treffen diese nicht zu wird es nicht angezeigt, eventuell "
+"zugehörige Eigenschaften werden beim Speichern dann auch wieder entfernt."
 
 #: /usr/share/icingaweb2/modules/director/application/forms/ImportRowModifierForm.php:37
 msgid ""
@@ -4107,6 +4121,11 @@ msgid ""
 "unmodified. Please leave this blank in case you just want to modify the "
 "value of a specific property"
 msgstr ""
+"Es kann erwünscht sein, den geänderten Wert in eine andere (neue) "
+"Eigenschaft zu schreiben. Dieser Eigenschaftsname kann hier definiert "
+"werden, die ursprüngliche Eigenschaft bleibt dann unverändert. Falls "
+"lediglich der ursprüngliche Wert an Ort und Stelle geändert werden soll, "
+"dieses Feld bitte leer lassen"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:130
 msgid "Your Icinga 2 API username"
@@ -4183,12 +4202,10 @@ msgid "back"
 msgstr "Zurück"
 
 #: /usr/share/icingaweb2/modules/director/application/locale/translateMe.php:11
-#, fuzzy
 msgid "critical"
 msgstr "Kritisch"
 
 #: /usr/share/icingaweb2/modules/director/application/locale/translateMe.php:6
-#, fuzzy
 msgid "down"
 msgstr "Down"
 
@@ -4201,9 +4218,8 @@ msgid "e.g. 5%, $hostname$, $lower$%:$upper$%"
 msgstr "z.B. 5%, $hostname$, $lower$%:$upper$%"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/SyncPropertyForm.php:156
-#, fuzzy
 msgid "failed to fetch"
-msgstr "Daten konnten nicht geholt werden: %s"
+msgstr "Abholen fehlgeschlagen"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Util.php:181
 #: /usr/share/icingaweb2/modules/director/application/forms/KickstartForm.php:227
@@ -4242,7 +4258,7 @@ msgstr "NULL zurückgeben"
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierRegexSplit.php:28
 #: /usr/share/icingaweb2/modules/director/library/Director/PropertyModifier/PropertyModifierSplit.php:28
 msgid "return an empty array"
-msgstr ""
+msgstr "ein leeres Array zurückliefern"
 
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:43
 #: /usr/share/icingaweb2/modules/director/library/Director/Web/Controller/ObjectsController.php:66
@@ -4271,11 +4287,11 @@ msgstr "Unbekannt"
 
 #: /usr/share/icingaweb2/modules/director/application/locale/translateMe.php:7
 msgid "unreachable"
-msgstr ""
+msgstr "unreachable"
 
 #: /usr/share/icingaweb2/modules/director/application/locale/translateMe.php:5
 msgid "up"
-msgstr ""
+msgstr "up"
 
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaHostVarForm.php:33
 #: /usr/share/icingaweb2/modules/director/application/forms/IcingaServiceVarForm.php:33
@@ -4283,9 +4299,8 @@ msgid "value format"
 msgstr "Wertformat"
 
 #: /usr/share/icingaweb2/modules/director/application/locale/translateMe.php:10
-#, fuzzy
 msgid "warning"
-msgstr "Warnung"
+msgstr "warning"
 
 #~ msgid "Add data list"
 #~ msgstr "Datenliste hinzufügen"
