@@ -34,7 +34,7 @@ class IcingaServiceSetHostTable extends QuickTable
             'name' => $row->host
         );
     
-        return $this->url('director/host/services', $params);
+        return $this->url('director/host', $params);
     }
 
     public function getTitles()
