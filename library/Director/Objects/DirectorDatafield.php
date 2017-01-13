@@ -46,6 +46,7 @@ class DirectorDatafield extends DbObjectWithSettings
         foreach ($settings as $key => $value) {
             $obj->settings[$key] = $value;
         }
+
         return $obj;
     }
 
@@ -58,7 +59,6 @@ class DirectorDatafield extends DbObjectWithSettings
     {
         return $this->object;
     }
-
 
     public function getFormElement(DirectorObjectForm $form, $name = null)
     {
