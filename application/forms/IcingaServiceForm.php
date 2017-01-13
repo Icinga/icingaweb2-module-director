@@ -44,6 +44,11 @@ class IcingaServiceForm extends DirectorObjectForm
             return;
         }
 
+        if ($this->host && $this->set) {
+            $this->setupOnHostForSet();
+            return;
+        }
+
         try {
             if (!$this->isNew() && $this->host === null) {
                 $this->host = $this->object->getResolvedRelated('host');
@@ -105,7 +110,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         $this->apply = $service;
         $object = $this->object();
-        $object->imports = $service->object_name;
+        $object->set('imports', $service->getObjectName());
         $object->object_type = 'apply';
         $object->object_name = $service->object_name;
         return $this;
@@ -173,6 +178,41 @@ class IcingaServiceForm extends DirectorObjectForm
 
             return sprintf($msg, $link);
         }
+
+        $this->setSubmitLabel(
+            $this->translate('Override vars')
+        );
+    }
+
+    protected function setupOnHostForSet()
+    {
+        $view = $this->getView();
+        $msg = $view->escape($this->translate(
+            'This service belongs to the service set "%s". Still, you might want'
+            . ' to change the following properties for this host only.'
+        ));
+
+        $name = $this->set->getObjectName();
+        $link = $view->qlink(
+            $name,
+            'director/serviceset',
+            array(
+                'name' => $name,
+            ),
+            array('data-base-target' => '_next')
+        );
+
+        $this->addHtmlHint(
+            sprintf($msg, $link),
+            array('name' => 'inheritance_hint')
+        );
+
+        $this->addElementsToGroup(
+            array('inheritance_hint'),
+            'custom_fields',
+            50,
+            $this->translate('Custom properties')
+        );
 
         $this->setSubmitLabel(
             $this->translate('Override vars')
@@ -411,7 +451,7 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $host = $this->host;
-        $serviceName = $this->object->object_name;
+        $serviceName = $this->object->getObjectName();
 
         $this->host->overrideServiceVars($serviceName, (object) $vars);
 
@@ -420,7 +460,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 empty($vars)
                 ? $this->translate('All overrides have been removed from "%s"')
                 : $this->translate('The given properties have been stored for "%s"'),
-                $this->translate($host->object_name)
+                $this->translate($host->getObjectName())
             );
 
             $host->store();
@@ -437,7 +477,11 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        if ($this->applyGenerated || $this->inheritedFrom || $this->object->usesVarOverrides()) {
+        if ($this->applyGenerated
+            || $this->inheritedFrom
+            || ($this->host && $this->set)
+            || $this->object->usesVarOverrides()
+        ) {
             return $this->succeedForOverrides();
         }
 
