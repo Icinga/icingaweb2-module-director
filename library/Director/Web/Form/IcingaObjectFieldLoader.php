@@ -467,6 +467,7 @@ class IcingaObjectFieldLoader
             array('df' => 'director_datafield'),
             array(
                 'object_id'   => $idColumn,
+                'icinga_type' => "('" . $object->getShortTableName() . "')",
                 'var_filter'  => 'f.var_filter',
                 'is_required' => 'f.is_required',
                 'id'          => 'df.id',

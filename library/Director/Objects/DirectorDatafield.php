@@ -81,7 +81,9 @@ class DirectorDatafield extends DbObjectWithSettings
         $dataType->setSettings($this->getSettings());
         $el = $dataType->getFormElement($name, $form);
 
-        if ($this->getSetting('is_required') === 'y') {
+        if ($this->getSetting('icinga_type') !== 'command'
+            && $this->getSetting('is_required') === 'y'
+        ) {
             $el->setRequired(true);
         }
         if ($caption = $this->get('caption')) {
