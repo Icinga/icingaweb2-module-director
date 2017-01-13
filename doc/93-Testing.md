@@ -175,7 +175,7 @@ sed -i'' 's/repo_gpgcheck=1/repo_gpgcheck=0/' /etc/yum.repos.d/runner_gitlab-ci-
 
 # Package installation
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-yum install -y https://packages.icinga.org/epel/7/release/noarch/icinga-rpm-release-7-1.el7.centos.noarch.rpm
+yum install -y https://packages.icinga.com/epel/7/release/noarch/icinga-rpm-release-7-1.el7.centos.noarch.rpm
 yum install -y php-Icinga icingaweb2-common phpunit mariadb-server postgresql-server \
   postgresql-contrib gitlab-ci-multi-runner
 
@@ -217,7 +217,7 @@ curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-ci-multi-
 
 # Package installation
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
-yum install -y https://packages.icinga.org/epel/6/release/noarch/icinga-rpm-release-6-1.el6.noarch.rpm
+yum install -y https://packages.icinga.com/epel/6/release/noarch/icinga-rpm-release-6-1.el6.noarch.rpm
 yum install -y php-Icinga icingaweb2-common phpunit mysql-server gitlab-ci-multi-runner
 
 # Start and enable MySQL
@@ -240,8 +240,8 @@ gitlab-ci-multi-runner register -n \
 # Package installation
 apt-get update -q -q
 apt-get install -y -q wget curl
-wget -q -O - http://packages.icinga.org/icinga.key | apt-key add -
-echo 'deb http://packages.icinga.org/debian icinga-jessie main' > /etc/apt/sources.list.d/icinga.list
+wget -q -O - http://packages.icinga.com/icinga.key | apt-key add -
+echo 'deb http://packages.icinga.com/debian icinga-jessie main' > /etc/apt/sources.list.d/icinga.list
 curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-ci-multi-runner/script.deb.sh | bash
 apt-get update -q -q
 DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -q -y \
@@ -266,8 +266,8 @@ gitlab-ci-multi-runner register -n \
 # Package installation
 apt-get update -q -q
 apt-get install -y -q wget curl
-wget -q -O - http://packages.icinga.org/icinga.key | apt-key add -
-echo 'deb http://packages.icinga.org/ubuntu icinga-xenial main' > /etc/apt/sources.list.d/icinga.list
+wget -q -O - http://packages.icinga.com/icinga.key | apt-key add -
+echo 'deb http://packages.icinga.com/ubuntu icinga-xenial main' > /etc/apt/sources.list.d/icinga.list
 curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-ci-multi-runner/script.deb.sh | bash
 apt-get update -q -q
 DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -q -y \

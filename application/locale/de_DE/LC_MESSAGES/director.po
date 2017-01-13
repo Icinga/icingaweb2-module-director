@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Director Module (1.3.0)\n"
-"Report-Msgid-Bugs-To: dev@icinga.org\n"
+"Report-Msgid-Bugs-To: dev@icinga.com\n"
 "POT-Creation-Date: 2017-01-12 21:54+0100\n"
 "PO-Revision-Date: 2017-01-13 12:55+0100\n"
 "Last-Translator: Thomas Gelf <thomas@gelf.net>\n"

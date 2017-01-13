@@ -13,7 +13,7 @@ case you miss a feature or have a cool idea of what else we could add
 please let us know. Just file an issue or a feature request to our
 issue tracker:
 
-  https://dev.icinga.org
+  https://dev.icinga.com/projects/icingaweb2-module-director/issues
 
 The Icinga project is and remains Open Source Software and lives from
 community ideas and contributions.

@@ -87,7 +87,7 @@ class KickstartForm extends QuickForm
                 . ' up the connection to your Icinga 2 server.'
             ),
             array('name' => 'HINT_kickstart')
-            // http://docs.icinga.org/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
+            // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
         );
 
         $this->addElement('text', 'endpoint', array(

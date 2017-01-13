@@ -15,7 +15,7 @@ function Icinga2AgentModule {
         [array]$ParentEndpoints,
 
         # Agent installation / update
-        [string]$DownloadUrl              = 'https://packages.icinga.org/windows/',
+        [string]$DownloadUrl              = 'https://packages.icinga.com/windows/',
         [bool]$AllowUpdates               = $FALSE,
         [array]$InstallerHashes,
         [bool]$FlushApiDirectory          = $FALSE,

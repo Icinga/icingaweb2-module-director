@@ -1,11 +1,5 @@
 <?php
 
-/**
- * This file ...
- *
- * @copyright  Icinga Team <team@icinga.org>
- * @license  GPLv2 http://www.gnu.org/licenses/gpl-2.0.html
- */
 namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Exception\IcingaException as IE;

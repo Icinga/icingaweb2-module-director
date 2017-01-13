@@ -8,7 +8,7 @@ class IcingaConfigHelper
 {
     /**
      * Reserved words according to
-     * http://docs.icinga.org/icinga2/snapshot/doc/module/icinga2/chapter/language-reference#reserved-keywords
+     * https://docs.icinga.com/icinga2/snapshot/doc/module/icinga2/chapter/language-reference#reserved-keywords
      */
     protected static $reservedWords = array(
         'object',
