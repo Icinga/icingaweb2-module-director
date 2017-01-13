@@ -35,7 +35,9 @@ class IcingaServiceSetForm extends DirectorObjectForm
             $object->service = $services;
         }
 
-        if ($this->assertResolvedImports()) {
+        // TODO: disabled for now. Sets have no fields, so somehow the resolver
+        //       fails here
+        if (false && $this->assertResolvedImports()) {
             $this->fieldLoader($object)
                 ->loadFieldsForMultipleObjects($object->getServiceObjects());
         }
