@@ -278,20 +278,7 @@ abstract class ActionController extends Controller
                 );
             } else {
                 $this->view->addLink .= ' ' . $this->view->qlink(
-                        $this->translate('Filter'),
-                        $this->getRequest()->getUrl()->with('modifyFilter', true),
-                        null,
-                        array(
-                            'class' => 'icon-search',
-                            'data-base-target' => '_self',
-                        )
-                    );
-            }
-
-        } else {
-
-            $this->view->addLink .= ' ' . $this->view->qlink(
-                    $this->shorten($filter, 32),
+                    $this->translate('Filter'),
                     $this->getRequest()->getUrl()->with('modifyFilter', true),
                     null,
                     array(
@@ -299,16 +286,29 @@ abstract class ActionController extends Controller
                         'data-base-target' => '_self',
                     )
                 );
+            }
+
+        } else {
 
             $this->view->addLink .= ' ' . $this->view->qlink(
-                    $this->translate('Show unfiltered'),
-                    $this->getRequest()->getUrl()->setParams(array()),
-                    null,
-                    array(
-                        'class' => 'icon-cancel',
-                        'data-base-target' => '_self',
-                    )
-                );
+                $this->shorten($filter, 32),
+                $this->getRequest()->getUrl()->with('modifyFilter', true),
+                null,
+                array(
+                    'class' => 'icon-search',
+                    'data-base-target' => '_self',
+                )
+            );
+
+            $this->view->addLink .= ' ' . $this->view->qlink(
+                $this->translate('Show unfiltered'),
+                $this->getRequest()->getUrl()->setParams(array()),
+                null,
+                array(
+                    'class' => 'icon-cancel',
+                    'data-base-target' => '_self',
+                )
+            );
         }
 
         if ($this->params->get('modifyFilter')) {
