@@ -2,14 +2,17 @@
 
 namespace Icinga\Module\Director\ProvidedHook;
 
-use Icinga\Module\Cube\Hook\ActionsHook;
-use Icinga\Module\Cube\Cube;
-use Icinga\Module\Cube\Ido\IdoHostStatusCube;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Cube\Cube;
+use Icinga\Module\Cube\Hook\ActionsHook;
+use Icinga\Module\Cube\Ido\IdoHostStatusCube;
 use Icinga\Web\View;
 
 class CubeLinks extends ActionsHook
 {
+    /**
+     * @inheritdoc
+     */
     public function prepareActionLinks(Cube $cube, View $view)
     {
         if (! $cube instanceof IdoHostStatusCube) {
@@ -38,7 +41,7 @@ class CubeLinks extends ActionsHook
             $params = null;
 
             $filter = Filter::matchAny();
-            foreach($hosts as $host) {
+            foreach ($hosts as $host) {
                 $filter->addFilter(
                     Filter::matchAny(Filter::expression('name', '=', $host))
                 );
