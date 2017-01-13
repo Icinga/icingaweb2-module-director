@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
+use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Web\Url;
 
@@ -19,23 +21,38 @@ class IcingaObjectDatafieldTable extends QuickTable
 
     protected $searchColumns = array(
         'varname',
+        'caption'
     );
 
     public function getColumns()
     {
         return array(
-            'id'          => 'f.id',
-            'varname'     => 'f.varname',
-            'caption'     => 'f.caption',
-            'description' => 'f.description',
-            'datatype'    => 'f.datatype',
-            'required'    => "CASE WHEN of.is_required = 'y' THEN 'mandatory' ELSE 'optional' END",
+            'object_id',
+            'var_filter',
+            'is_required',
+            'id',
+            'varname',
+            'caption',
+            'description',
+            'datatype',
+            'format',
         );
     }
 
     protected function getActionUrl($row)
     {
+        if ($row->object_id !== $this->object->id) {
+            return null;
+        }
+
         return Url::fromRequest()->with('field_id', $row->id);
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->object_id !== $this->object->id) {
+            return array('disabled');
+        }
     }
 
     public function getTitles()
@@ -44,23 +61,25 @@ class IcingaObjectDatafieldTable extends QuickTable
         return array(
             'caption'     => $view->translate('Label'),
             'varname'     => $view->translate('Field name'),
-            'required'    => $view->translate('Required'),
+            'is_required' => $view->translate('Mandatory'),
         );
+    }
+
+    public function count()
+    {
+        return $this->getBaseQuery()->count();
+    }
+
+    public function fetchData()
+    {
+        return $this->getBaseQuery()->fetchAll();
     }
 
     public function getBaseQuery()
     {
-        $otable = $this->object->getTableName() . '_field';
-        $oname  = $this->object->getShortTableName();
-
-        return $this->db()->select()->from(
-            array('of' => $otable),
-            array()
-        )->join(
-            array('f' => 'director_datafield'),
-            'f.id = of.datafield_id',
-            array()
-        )->where('of.' . $oname . '_id = ?', $this->object->id)
-         ->order('caption ASC');
+        $loader = new IcingaObjectFieldLoader($this->object);
+        $fields = $loader->fetchFieldDetailsForObject($this->object);
+        $ds = new ArrayDatasource($fields);
+        return $ds->select();
     }
 }
