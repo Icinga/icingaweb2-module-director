@@ -76,6 +76,9 @@ before switching to a new version.
   try to use it. And if so, you're on your own. Nobody will help you when
   running into trouble
 
+### Translation
+* German translation is now again at 100%
+
 ### REST API
 * Issues related to fetching object lists have been fixed
 
