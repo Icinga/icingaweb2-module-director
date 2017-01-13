@@ -46,7 +46,6 @@ class IcingaServiceSetServiceTable extends QuickTable
     public function setServiceSet(IcingaServiceSet $set)
     {
         $this->set = $set;
-        $this->setId = $set->get('id');
         return $this;
     }
 
