@@ -223,9 +223,13 @@ class IcingaTemplateResolver
 
     public function listInheritancePathIds($objectId = null)
     {
-        $full = $this->listFullInheritancePathIds($objectId);
+        return $this->uniquePathIds($this->listFullInheritancePathIds($objectId));
+    }
+
+    public function uniquePathIds(array $ids)
+    {
         $single = array();
-        foreach (array_reverse($full) as $id) {
+        foreach (array_reverse($ids) as $id) {
             if (array_key_exists($id, $single)) {
                 continue;
             }
