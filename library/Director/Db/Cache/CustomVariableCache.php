@@ -41,7 +41,6 @@ class CustomVariableCache
         );
 
         foreach ($db->fetchAll($query) as $row) {
-
             $id = $row->id;
             unset($row->id);
 

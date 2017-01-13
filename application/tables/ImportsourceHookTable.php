@@ -73,7 +73,6 @@ class ImportsourceHookTable extends QuickTable
     public function fetchData()
     {
         if ($this->dataCache === null) {
-
             $query = $this->getBaseQuery()->columns($this->getColumns());
 
             if ($this->hasLimit() || $this->hasOffset()) {

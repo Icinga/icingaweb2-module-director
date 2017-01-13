@@ -55,7 +55,6 @@ class IcingaHostGroup extends IcingaObjectGroup
             $file = $this->legacyZoneHostgroupFile($config);
             $this->properties['members'] = array();
             $file->addLegacyObject($this);
-
         } else {
             $allMembers = array();
 

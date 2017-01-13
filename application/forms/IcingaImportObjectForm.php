@@ -26,7 +26,6 @@ class IcingaImportObjectForm extends QuickForm
             $this->translate('Import external "%s"'),
             $this->object->object_name
         );
-
     }
 
     public function onSuccess()

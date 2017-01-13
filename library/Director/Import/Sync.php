@@ -276,9 +276,7 @@ class Sync
                             json_encode($row)
                         );
                     }
-
                 } else {
-
                     if (! property_exists($row, $key)) {
                         throw new IcingaException(
                             'There is no key column "%s" in this row from "%s": %s',
@@ -287,7 +285,6 @@ class Sync
                             json_encode($row)
                         );
                     }
-
                 }
 
                 if (! $this->rule->matches($row)) {
@@ -339,7 +336,6 @@ class Sync
     {
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->rule->hasCombinedKey()) {
-
             $this->objects = array();
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
 
@@ -347,7 +343,6 @@ class Sync
                 $this->rule->object_type,
                 $this->db
             ) as $object) {
-
                 if ($object instanceof IcingaService) {
                     if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
                         continue;
@@ -608,9 +603,9 @@ class Sync
             $this->run->set('duration_ms', (int) round(
                 (microtime(true) - $this->runStartTime) * 1000
             ))->store();
-
         } catch (Exception $e) {
             $dba->rollBack();
+
             if ($object !== null && $object instanceof IcingaObject) {
                 throw new IcingaException(
                     'Exception while syncing %s %s: %s',

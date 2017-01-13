@@ -112,7 +112,6 @@ class KickstartHelper
     protected function apiUser()
     {
         if ($this->apiUser === null) {
-
             $name = $this->getValue('username');
 
             $user = IcingaApiUser::create(array(
@@ -217,7 +216,6 @@ class KickstartHelper
 
         $endpoints = array();
         foreach ($this->api()->setDb($db)->getEndpointObjects() as $object) {
-
             if ($object->object_name === $master) {
                 $apiuser = $this->apiUser();
                 $apiuser->store();
@@ -257,7 +255,6 @@ class KickstartHelper
         try {
             $this->switchToDeploymentApi()->getStatus();
         } catch (Exception $e) {
-
             throw new ConfigurationError(
                 'I was unable to re-establish a connection to the Endpoint "%s" (%s:%d).'
                 . ' When reconnecting to the configured Endpoint (%s:%d) I get an error: %s'

@@ -51,8 +51,8 @@ class DirectorJobForm extends DirectorObjectForm
         ));
 
         $periods = $this->db->enumTimeperiods();
-        if (!empty($periods)) {
 
+        if (!empty($periods)) {
             $this->addElement(
                 'select',
                 'timeperiod_id',

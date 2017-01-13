@@ -93,7 +93,6 @@ class IcingaServiceForm extends DirectorObjectForm
             $this->setSubmitLabel(
                 $this->translate('Override vars')
             );
-
         } else {
             $this->addElementsToGroup(
                 array('inheritance_hint'),
@@ -360,8 +359,8 @@ class IcingaServiceForm extends DirectorObjectForm
                     'NOTE: only custom variables of type "Array" are eligible.'
                 )
             ));
-
         }
+
         return $this;
     }
 

@@ -20,7 +20,6 @@ class IcingaUserGroupForm extends DirectorObjectForm
              ->addZoneElements()
              ->groupMainProperties()
              ->setButtons();
-
     }
 
     protected function addZoneElements()

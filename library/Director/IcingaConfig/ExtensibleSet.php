@@ -61,8 +61,8 @@ class ExtensibleSet
     {
         if (null === $set) {
             $this->reset();
-            return $this;
 
+            return $this;
         } elseif (is_array($set) || is_string($set)) {
             $this->reset();
             $this->override($set);

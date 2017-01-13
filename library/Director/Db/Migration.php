@@ -46,9 +46,7 @@ class Migration
                     $db->exec($query);
                 }
             }
-
         } catch (Exception $e) {
-
             throw new IcingaException(
                 'Migration %d failed (%s) while running %s',
                 $this->version,

@@ -94,7 +94,6 @@ class ActivityLogTable extends QuickTable
                 'director/show/activitylog',
                 array_merge(array('id' => $row->id), $this->extraParams)
             );
-
         } else {
             return false;
         }

@@ -31,7 +31,6 @@ class IcingaCloneObjectForm extends QuickForm
             $this->translate('Clone "%s"'),
             $this->object->getObjectName()
         );
-
     }
 
     public function onSuccess()

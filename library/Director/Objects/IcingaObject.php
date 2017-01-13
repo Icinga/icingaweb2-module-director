@@ -2378,7 +2378,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         foreach ($p as $k => $v) {
-
             // Do not ship ids for IcingaObjects:
             if ($resolveIds) {
                 if ($k === 'id' && $this->hasProperty('object_name')) {
@@ -2389,7 +2388,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     $relKey = substr($k, 0, -3);
 
                     if ($this->hasRelation($relKey)) {
-
                         if ($this->hasUnresolvedRelatedProperty($k)) {
                             $v = $this->$relKey;
                         } elseif ($v !== null) {
@@ -2419,7 +2417,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     } else {
                         $props[$k] = $v;
                     }
-
                 } else {
                     $props[$k] = $v;
                 }

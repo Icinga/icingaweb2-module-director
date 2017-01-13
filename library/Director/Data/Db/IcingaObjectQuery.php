@@ -221,7 +221,6 @@ class IcingaObjectQuery
             if (! $this->hasAlias($alias . $cnt)) {
                 return $alias . $cnt;
             }
-
         } while (! $this->hasAlias($alias));
 
         return $alias;

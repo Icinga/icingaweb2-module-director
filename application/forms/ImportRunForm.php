@@ -33,7 +33,6 @@ class ImportRunForm extends QuickForm
             $this->setSuccessMessage(
                 $this->translate('Imported new data from this Import Source')
             );
-
         } else {
             $this->setSuccessMessage(
                 $this->translate(

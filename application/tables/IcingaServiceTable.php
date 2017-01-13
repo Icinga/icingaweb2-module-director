@@ -35,7 +35,6 @@ class IcingaServiceTable extends QuickTable
             $params['id'] = $row->id;
         } else {
             $params = array('name' => $row->service);
-
         }
 
         return $this->url('director/service', $params);
@@ -56,7 +55,6 @@ class IcingaServiceTable extends QuickTable
                     array('class' => 'icon-plus')
                 );
             }
-
         } else {
             $htm .= '. Related apply rules: <table class="apply-rules">';
             foreach ($extra as $service) {

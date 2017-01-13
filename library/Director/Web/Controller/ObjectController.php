@@ -282,7 +282,6 @@ abstract class ObjectController extends ActionController
                 null,
                 array('class' => 'icon-left-big')
             );
-
         }
 
         $form->handleRequest();

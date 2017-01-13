@@ -61,7 +61,6 @@ class DataController extends ActionController
                 'url'       => 'director/data/listentry' . '?list_id=' . $id,
                 'label'     => $this->translate('List entries'),
             ))->activate('editlist');
-
         } else {
             $this->view->title = $this->translate('Add');
 

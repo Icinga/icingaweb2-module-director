@@ -61,7 +61,6 @@ class DataFilter extends FormElement
             } else {
                 $value = $this->arrayToFilter($value);
             }
-
         } catch (Exception $e) {
             $value = null;
             // TODO: getFile, getLine

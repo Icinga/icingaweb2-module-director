@@ -213,7 +213,6 @@ class ImportSource extends DbObjectWithSettings
             }
 
             $this->last_error_message = null;
-
         } catch (Exception $e) {
             $this->import_state = 'failing';
             Benchmark::measure('Import failed for ' . $this->source_name);

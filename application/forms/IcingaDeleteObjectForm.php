@@ -17,7 +17,6 @@ class IcingaDeleteObjectForm extends QuickForm
             $this->translate('YES, please delete "%s"'),
             $this->object->getObjectName()
         );
-
     }
 
     public function onSuccess()

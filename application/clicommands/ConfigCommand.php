@@ -110,7 +110,6 @@ class ConfigCommand extends Command
 
                 return;
             }
-
         }
 
         if ($api->dumpConfig($config, $db)) {

@@ -44,7 +44,6 @@ class IcingaTimePeriodForm extends DirectorObjectForm
                 'description' => $this->translate('the update method'),
                 'value'       => 'LegacyTimePeriod',
             ));
-
         } else {
             // TODO: I'd like to skip this for objects inheriting from a template
             //       with a defined update_method. However, unfortunately it's too

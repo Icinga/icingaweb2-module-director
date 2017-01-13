@@ -23,7 +23,7 @@ class JobsController extends ActionController
             $this->loadTable('job')
                 ->setConnection($this->db())
         );
-        $this->setViewScript('list/table');
 
+        $this->setViewScript('list/table');
     }
 }

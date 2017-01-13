@@ -169,7 +169,7 @@ class IcingaServiceSet extends IcingaObject
         return sprintf($comment, $this->getObjectName());
     }
 
-    protected function copyVarsToService(IcingaService $service)
+    public function copyVarsToService(IcingaService $service)
     {
         $serviceVars = $service->vars();
 
@@ -208,7 +208,6 @@ class IcingaServiceSet extends IcingaObject
                 }
             }
         } else {
-
             foreach ($this->getServiceObjects() as $service) {
                 $service->set('object_type', 'object');
                 $service->set('host_id', $this->get('host_id'));

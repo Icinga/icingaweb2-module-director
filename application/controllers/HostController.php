@@ -6,11 +6,9 @@ use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
-use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 
@@ -167,8 +165,8 @@ class HostController extends ObjectController
             )->where('hs.host_id = ?', $host->id);
 
         $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
-        foreach ($sets as $name => $set) {
 
+        foreach ($sets as $name => $set) {
             $title = sprintf($this->translate('%s (Service set)'), $name);
             $table = $this->loadTable('IcingaServiceSetService')
                 ->setServiceSet($set)
@@ -337,7 +335,6 @@ class HostController extends ObjectController
             $wizard->setTicketSalt($this->api()->getTicketSalt());
             $this->view->windows = $wizard->renderWindowsInstaller();
             $this->view->linux = $wizard->renderLinuxInstaller();
-
         } catch (Exception $e) {
             $this->view->ticket = 'ERROR';
             $this->view->error = sprintf(

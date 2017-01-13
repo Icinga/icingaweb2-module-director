@@ -214,11 +214,8 @@ abstract class CustomVariable implements IcingaConfigRenderer
         }
 
         if (is_string($value)) {
-
             return new CustomVariableString($key, $value);
-
         } elseif (is_array($value)) {
-
             foreach (array_keys($value) as $k) {
                 if (! (is_int($k) || ctype_digit($k))) {
                     return new CustomVariableDictionary($key, $value);
@@ -226,11 +223,9 @@ abstract class CustomVariable implements IcingaConfigRenderer
             }
 
             return new CustomVariableArray($key, array_values($value));
-
         } elseif (is_object($value)) {
             // TODO: check for specific class/stdClass/interface?
             return new CustomVariableDictionary($key, $value);
-
         } else {
             throw new ProgrammingError('WTF (%s): %s', $key, var_export($value, 1));
         }
