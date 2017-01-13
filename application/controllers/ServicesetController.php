@@ -83,9 +83,6 @@ class ServicesetController extends ObjectController
     {
         $db = $this->db();
         $set = $this->object;
-
-        $this->view->stayHere = true;
-
         $this->getTabs()->activate('hosts');
         $this->view->title = sprintf(
             $this->translate('Hosts using this set: %s'),
