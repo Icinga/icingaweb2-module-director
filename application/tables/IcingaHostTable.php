@@ -24,7 +24,7 @@ class IcingaHostTable extends QuickTable
         );
     }
 
-        protected function getActionUrl($row)
+    protected function getActionUrl($row)
     {
         return $this->url('director/host', array('name' => $row->host));
     }

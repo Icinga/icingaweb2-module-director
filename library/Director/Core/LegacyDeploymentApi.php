@@ -84,8 +84,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         // try to expire old deployments
         foreach ($uncollected as $name => $deployment) {
             /** @var DirectorDeploymentLog $deployment */
-            if (
-                $deployment->get('dump_succeeded') === 'n'
+            if ($deployment->get('dump_succeeded') === 'n'
                 || $deployment->get('startup_succeeded') === null
             ) {
                 $start_time = strtotime($deployment->start_time);
@@ -100,16 +99,13 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         }
 
         foreach ($this->listModuleStages($moduleName) as $stage) {
-            if (
-                array_key_exists($stage, $uncollected)
+            if (array_key_exists($stage, $uncollected)
                 && $uncollected[$stage]->get('startup_succeeded') === null
             ) {
                 continue;
-            }
-            elseif ($stage === $currentStage) {
+            } elseif ($stage === $currentStage) {
                 continue;
-            }
-            else {
+            } else {
                 $this->deleteStage($moduleName, $stage);
             }
         }
@@ -132,15 +128,15 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                     return $linkTargetName;
                 } else {
                     throw new IcingaException(
-                        'Active stage link pointing to a invalid target: %s -> %s', $path, $linkTarget
+                        'Active stage link pointing to a invalid target: %s -> %s',
+                        $path,
+                        $linkTarget
                     );
                 }
-            }
-            else {
+            } else {
                 throw new IcingaException('Active stage is not a symlink: %s', $path);
             }
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -170,14 +166,13 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         while ($file = readdir($dh)) {
             if ($file === '.' || $file === '..') {
                 continue;
-            }
-            elseif (
-                is_dir($this->deploymentPath . DIRECTORY_SEPARATOR . $file)
+            } elseif (is_dir($this->deploymentPath . DIRECTORY_SEPARATOR . $file)
                 && substr($file, 0, 9) === 'director-'
             ) {
                 $stages[] = $file;
             }
         }
+
         return $stages;
     }
 
@@ -190,8 +185,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
 
         if (! file_exists($filePath)) {
             throw new IcingaException('Could not find file %s', $filePath);
-        }
-        else {
+        } else {
             return file_get_contents($filePath);
         }
     }
@@ -267,8 +261,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
 
         if (file_exists($path)) {
             throw new IcingaException('Stage "%s" does already exist at: ', $stage, $path);
-        }
-        else {
+        } else {
             try {
                 mkdir($path);
             } catch (Exception $e) {
@@ -291,6 +284,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                 if ($fh === null) {
                     throw new IcingaException('Could not open file "%s" for writing.', $fullPath);
                 }
+
                 fwrite($fh, $content);
                 fclose($fh);
             }
@@ -315,8 +309,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         if ($this->activationScript === null || trim($this->activationScript) === '') {
             // skip activation, could be done by external cron worker
             return true;
-        }
-        else {
+        } else {
             $command = sprintf('%s %s 2>&1', escapeshellcmd($this->activationScript), escapeshellarg($stage));
             $output = null;
             $rc = null;
@@ -339,7 +332,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
      *
      * @throws IcingaException  When directory could not be opened
      */
-    protected function listDirectoryContents($path, $depth=0)
+    protected function listDirectoryContents($path, $depth = 0)
     {
         $dh = @opendir($path);
         if ($dh === null) {
@@ -351,20 +344,20 @@ class LegacyDeploymentApi implements DeploymentApiInterface
             $fullPath = $path . DIRECTORY_SEPARATOR . $file;
             if ($file === '.' || $file === '..') {
                 continue;
-            }
-            elseif (is_dir($fullPath)) {
+            } elseif (is_dir($fullPath)) {
                 $subdirFiles = $this->listDirectoryContents($fullPath, $depth + 1);
                 foreach ($subdirFiles as $subFile) {
                     $files[] = $file . DIRECTORY_SEPARATOR . $subFile;
                 }
-            }
-            else {
+            } else {
                 $files[] = $file;
             }
         }
+
         if ($depth === 0) {
             sort($files);
         }
+
         return $files;
     }
 
@@ -390,11 +383,9 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     {
         if ($this->deploymentPath === null) {
             throw new IcingaException('Deployment path is not configured for legacy config!');
-        }
-        elseif (! is_dir($this->deploymentPath)) {
+        } elseif (! is_dir($this->deploymentPath)) {
             throw new IcingaException('Deployment path is not a directory: %s', $this->deploymentPath);
-        }
-        elseif (! is_writeable($this->deploymentPath)) {
+        } elseif (! is_writeable($this->deploymentPath)) {
             throw new IcingaException('Deployment path is not a writeable: %s', $this->deploymentPath);
         }
     }
@@ -445,13 +436,16 @@ class LegacyDeploymentApi implements DeploymentApiInterface
      * @from https://php.net/manual/de/function.rmdir.php#108113
      * @param $dir
      */
-    protected static function rrmdir($dir) {
-        foreach(glob($dir . '/*') as $file) {
-            if(is_dir($file))
+    protected static function rrmdir($dir)
+    {
+        foreach (glob($dir . '/*') as $file) {
+            if (is_dir($file)) {
                 static::rrmdir($file);
-            else
+            } else {
                 unlink($file);
+            }
         }
+
         rmdir($dir);
     }
 }

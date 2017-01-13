@@ -67,7 +67,7 @@ class AssignRenderer
                 $column,
                 $expression
             );
-        } else if (substr($column, -7) === '.groups') {
+        } elseif (substr($column, -7) === '.groups') {
             return sprintf(
                 '%s in %s',
                 $expression,

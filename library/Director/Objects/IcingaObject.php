@@ -1440,7 +1440,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if (! $this->isSupportedInLegacy()) {
             $config->configFile(
-                'director/ignored-objects', '.cfg'
+                'director/ignored-objects',
+                '.cfg'
             )->prepend(
                 sprintf(
                     "# Not supported for legacy config: %s object_name=%s\n",
@@ -1455,8 +1456,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         $deploymentMode = $config->getDeploymentMode();
         if ($deploymentMode === 'active-passive') {
-            if (
-                $this->getSingleResolvedProperty('zone_id')
+            if ($this->getSingleResolvedProperty('zone_id')
                 && array_key_exists('enable_active_checks', $this->defaultProperties)
             ) {
                 $passive = clone($this);
@@ -1467,11 +1467,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     '.cfg'
                 )->addLegacyObject($passive);
             }
-        }
-        elseif ($deploymentMode === 'masterless') {
+        } elseif ($deploymentMode === 'masterless') {
             // no additional config
-        }
-        else {
+        } else {
             throw new ProgrammingError('Unsupported deployment mode: %s' .$deploymentMode);
         }
 
@@ -1691,8 +1689,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function renderLegacyProperties()
     {
         $out = '';
-        $blacklist = array_merge($this->propertiesNotForRendering,
-            array() /* $this->prioritizedProperties */);
+        $blacklist = array_merge(
+            $this->propertiesNotForRendering,
+            array() /* $this->prioritizedProperties */
+        );
 
         foreach ($this->properties as $key => $value) {
             if (in_array($key, $blacklist)) {
@@ -1957,10 +1957,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         );
     }
 
+    /**
+     * @param $value
+     * @return string
+     * @codingStandardsIgnoreStart
+     */
     protected function renderLegacyCheck_command($value)
     {
+        // @codingStandardsIgnoreEnd
         $args = array();
-        foreach($this->vars() as $k => $v) {
+        foreach ($this->vars() as $k => $v) {
             if (substr($k, 0, 3) == 'ARG') {
                 $args[] = $v->getValue();
             }
@@ -1970,8 +1976,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return c1::renderKeyValue('check_command', join('!', $args));
     }
 
+    /**
+     * @param $value
+     * @return string
+     * @codingStandardsIgnoreStart
+     */
     protected function renderLegacyEvent_command($value)
     {
+        // @codingStandardsIgnoreEnd
         return c1::renderKeyValue('event_handler', $value);
     }
 
@@ -1999,8 +2011,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $str = '';
 
         // Set notification settings for the object to suppress warnings
-        if (
-            array_key_exists('enable_notifications', $this->defaultProperties)
+        if (array_key_exists('enable_notifications', $this->defaultProperties)
             && $this->isTemplate()
         ) {
             $str .= c1::renderKeyValue('notification_period', 'notification_none');
@@ -2010,8 +2021,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         // force rendering of check_command when ARG1 is set
         if ($this->supportsCustomVars() && array_key_exists('check_command_id', $this->defaultProperties)) {
-            if (
-                $this->vars()->get('ARG1') !== null
+            if ($this->vars()->get('ARG1') !== null
                 && $this->get('check_command') === null
             ) {
                 $command = $this->getResolvedRelated('check_command');
@@ -2123,8 +2133,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if (preg_match('/^\s{4}([^\t]+)\t+(.+)$/', $line, $m)) {
                 if ($len - strlen($m[1]) < 0) {
                     $fill = ' ';
-                }
-                else {
+                } else {
                     $fill = str_repeat(' ', $len - strlen($m[1]));
                 }
 
@@ -2289,9 +2298,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 foreach ($class::prefetchAll($db) as $row) {
                     $result[$row->object_name] = $row;
                 }
+
                 return $result;
-            }
-            else {
+            } else {
                 return $class::loadAll($db, $query, $keyColumn);
             }
         }

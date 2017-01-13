@@ -351,8 +351,7 @@ class Sync
                 if ($object instanceof IcingaService) {
                     if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
                         continue;
-                    }
-                    elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
+                    } elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
                         continue;
                     }
                 }
@@ -454,7 +453,7 @@ class Sync
                 }
 
                 foreach ($newProps as $prop => $value) {
-                    // TODO: data type? 
+                    // TODO: data type?
                     $object->set($prop, $value);
                 }
 
@@ -615,10 +614,12 @@ class Sync
             if ($object !== null && $object instanceof IcingaObject) {
                 throw new IcingaException(
                     'Exception while syncing %s %s: %s',
-                    get_class($object), $object->get('object_name'), $e->getMessage(), $e
+                    get_class($object),
+                    $object->get('object_name'),
+                    $e->getMessage(),
+                    $e
                 );
-            }
-            else {
+            } else {
                 throw $e;
             }
         }

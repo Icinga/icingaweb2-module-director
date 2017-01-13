@@ -370,7 +370,7 @@ class IcingaHostTest extends BaseTestCase
         $host->zone = '___TEST___zone';
         $host->renderToConfig($config);
         $this->assertEquals(
-            array('zones.d/___TEST___zone/hosts.conf'), 
+            array('zones.d/___TEST___zone/hosts.conf'),
             $config->getFileNames()
         );
 
@@ -483,7 +483,8 @@ class IcingaHostTest extends BaseTestCase
         IcingaHost::loadWithApiKey('No___such___key', $db);
     }
 
-    public function testEnumProperties() {
+    public function testEnumProperties()
+    {
         if ($this->skipForMissingDb()) {
             return;
         }
@@ -499,7 +500,8 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testEnumPropertiesWithCustomVars() {
+    public function testEnumPropertiesWithCustomVars()
+    {
         if ($this->skipForMissingDb()) {
             return;
         }
@@ -524,7 +526,8 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testEnumPropertiesWithPrefix() {
+    public function testEnumPropertiesWithPrefix()
+    {
         if ($this->skipForMissingDb()) {
             return;
         }
@@ -549,7 +552,8 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testEnumPropertiesWithFilter() {
+    public function testEnumPropertiesWithFilter()
+    {
         if ($this->skipForMissingDb()) {
             return;
         }
@@ -583,7 +587,8 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
-    public function testEnumPropertiesWithArrayFilter() {
+    public function testEnumPropertiesWithArrayFilter()
+    {
         if ($this->skipForMissingDb()) {
             return;
         }
@@ -647,7 +652,8 @@ class IcingaHostTest extends BaseTestCase
         ));
     }
 
-    protected function getDefaultHostProperties($prefix = '') {
+    protected function getDefaultHostProperties($prefix = '')
+    {
         return array(
             "${prefix}name" => "name",
             "${prefix}action_url" => "action_url",
@@ -705,7 +711,8 @@ class IcingaHostTest extends BaseTestCase
         }
     }
 
-    protected function deleteDatafields() {
+    protected function deleteDatafields()
+    {
         $db = $this->getDb();
         $dbAdapter = $db->getDbAdapter();
         $kill = array($this->testDatafieldName);

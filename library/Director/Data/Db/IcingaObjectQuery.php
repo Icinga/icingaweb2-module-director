@@ -97,7 +97,7 @@ class IcingaObjectQuery
         return $this;
     }
 
-    public function list()
+    public function listNames()
     {
         return $this->db->fetchCol(
             $this->baseQuery
@@ -135,10 +135,11 @@ class IcingaObjectQuery
 
     /**
      * @param $column
-     *
      * @return string
+     * @throws NotFoundError
+     * @throws NotImplementedError
      */
-    public function getAliasforRequiredFilterColumn($column)
+    public function getAliasForRequiredFilterColumn($column)
     {
         $dot = strpos($column, '.');
         list($key, $sub) = $this->splitFilterKey($column);
@@ -215,7 +216,7 @@ class IcingaObjectQuery
         }
 
         $cnt = 1;
-        {
+        do {
             $cnt++;
             if (! $this->hasAlias($alias . $cnt)) {
                 return $alias . $cnt;

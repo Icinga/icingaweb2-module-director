@@ -81,8 +81,7 @@ class IcingaConfig
     {
         if ($this->isLegacy()) {
             return $this->deploymentModeV1;
-        }
-        else {
+        } else {
             throw new ProgrammingError('There is no deployment mode for Icinga 2 config format!');
         }
     }
@@ -504,7 +503,8 @@ class IcingaConfig
                 sprintf(
                     'director/%s/001-director-basics',
                     $this->connection->getDefaultGlobalZoneName()
-                ), '.cfg'
+                ),
+                '.cfg'
             )->prepend(
                 $this->renderLegacyDefaultNotification()
             );

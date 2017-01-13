@@ -56,8 +56,7 @@ abstract class ObjectsController extends ActionController
             /** @var IcingaObject $baseType */
             $baseType = $this->getObjectClassname($type);
             $baseObject = $baseType::create(array());
-        }
-        else {
+        } else {
             $baseObject = $object;
         }
 

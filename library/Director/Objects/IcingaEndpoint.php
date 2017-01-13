@@ -61,17 +61,15 @@ class IcingaEndpoint extends IcingaObject
 
             $user = $this->getApiUser();
             $client->setCredentials(
-            // TODO: $user->client_dn,
+                // TODO: $user->client_dn,
                 $user->object_name,
                 $user->password
             );
 
             return new CoreApi($client);
-        }
-        elseif ($format === 'v1') {
+        } elseif ($format === 'v1') {
             return new LegacyDeploymentApi($this->connection);
-        }
-        else {
+        } else {
             throw new ProgrammingError('Unsupported config format: %s', $format);
         }
     }

@@ -66,9 +66,10 @@ abstract class ActionController extends Controller
     {
         $auth = $this->Auth();
 
-        foreach ($permissions as $permission)
-        if ($auth->hasPermission($permission)) {
-            return;
+        foreach ($permissions as $permission) {
+            if ($auth->hasPermission($permission)) {
+                return;
+            }
         }
 
         throw new SecurityException(
@@ -267,14 +268,14 @@ abstract class ActionController extends Controller
 
             if ($this->params->get('modifyFilter')) {
                 $this->view->addLink .= ' ' . $this->view->qlink(
-                        $this->translate('Show unfiltered'),
-                        $this->getRequest()->getUrl()->setParams(array()),
-                        null,
-                        array(
-                            'class' => 'icon-cancel',
-                            'data-base-target' => '_self',
-                        )
-                    );
+                    $this->translate('Show unfiltered'),
+                    $this->getRequest()->getUrl()->setParams(array()),
+                    null,
+                    array(
+                        'class' => 'icon-cancel',
+                        'data-base-target' => '_self',
+                    )
+                );
             } else {
                 $this->view->addLink .= ' ' . $this->view->qlink(
                         $this->translate('Filter'),
@@ -409,13 +410,5 @@ abstract class ActionController extends Controller
         }
 
         return $this->monitoring;
-    }
-
-    protected function IcingaConfig() {
-        if ($this->icingaConfig === null) {
-            $this->icingaConfig = new IcingaConfig($this->db);
-        }
-
-        return $this->icingaConfig;
     }
 }

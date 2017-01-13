@@ -337,8 +337,14 @@ class IcingaHost extends IcingaObject
         return '';
     }
 
+    /**
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     protected function renderLegacyDisplay_Name()
     {
+        // @codingStandardsIgnoreEnd
         return c1::renderKeyValue('display_name', $this->display_name);
     }
 

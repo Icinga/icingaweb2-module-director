@@ -14,7 +14,7 @@ class StateFilterSetTest extends BaseTestCase
 
     public function testIsEmptyForAnUnstoredUser()
     {
-         $this->assertEquals(
+        $this->assertEquals(
             array(),
             StateFilterSet::forIcingaObject(
                 IcingaUser::create(),

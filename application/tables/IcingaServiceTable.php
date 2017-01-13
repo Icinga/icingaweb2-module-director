@@ -50,11 +50,11 @@ class IcingaServiceTable extends QuickTable
         if (empty($extra)) {
             if ($row->check_command_id) {
                 $htm .= ' ' . $v->qlink(
-                        'Create apply-rule',
-                        'director/service/add',
-                        array('apply' => $row->service),
-                        array('class' => 'icon-plus')
-                    );
+                    'Create apply-rule',
+                    'director/service/add',
+                    array('apply' => $row->service),
+                    array('class' => 'icon-plus')
+                );
             }
 
         } else {
@@ -67,8 +67,7 @@ class IcingaServiceTable extends QuickTable
                     $prettyFilter = AssignRenderer::forFilter(
                         Filter::fromQueryString($service->assign_filter)
                     )->renderAssign();
-                }
-                catch (IcingaException $e) {
+                } catch (IcingaException $e) {
                     // ignore errors in filter rendering
                     $prettyFilter = 'Error in Filter rendering: ' . $e->getMessage();
                 }

@@ -28,8 +28,14 @@ class Boolean extends ZfSelect
         return null;
     }
 
+    /**
+     * @param string $value
+     * @param string $key
+     * @codingStandardsIgnoreStart
+     */
     protected function _filterValue(&$value, &$key)
     {
+        // @codingStandardsIgnoreEnd
         if ($value === true) {
             $value = 'y';
         } elseif ($value === false) {

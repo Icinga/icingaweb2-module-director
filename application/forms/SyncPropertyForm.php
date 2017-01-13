@@ -362,7 +362,7 @@ class SyncPropertyForm extends DirectorObjectForm
         $this->removeElement('source_column');
 
         if ($sourceColumn !== self::EXPRESSION) {
-           $object->source_expression = $sourceColumn;
+            $object->source_expression = $sourceColumn;
         }
 
         $destination = $this->getValue('destination_field');

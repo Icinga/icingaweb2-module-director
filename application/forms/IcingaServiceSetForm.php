@@ -62,7 +62,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function setupHost()
     {
-       $object = $this->object();
+        $object = $this->object();
         if ($this->hasBeenSent()) {
             $object->set('object_name', $this->getSentValue('imports'));
             $object->set('imports', $object->object_name);

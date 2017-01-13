@@ -12,7 +12,7 @@ class ServicesetController extends ObjectController
 
     public function init()
     {
-        if ($host = $this->params->get('host')) { 
+        if ($host = $this->params->get('host')) {
             $this->host = IcingaHost::load($host, $this->db());
         }
 

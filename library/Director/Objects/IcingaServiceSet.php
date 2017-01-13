@@ -7,7 +7,6 @@ use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
-
 class IcingaServiceSet extends IcingaObject
 {
     protected $table = 'icinga_service_set';
@@ -54,8 +53,7 @@ class IcingaServiceSet extends IcingaObject
             if (count($keyComponents) === 1) {
                 $this->set('object_name', $keyComponents[0]);
                 $this->set('object_type', 'template');
-            }
-            else {
+            } else {
                 throw new IcingaException('Can not parse key: %s', $key);
             }
         } else {

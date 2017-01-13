@@ -84,7 +84,7 @@ class IcingaNotificationForm extends DirectorObjectForm
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function addUsersElement()
     {
@@ -109,7 +109,7 @@ class IcingaNotificationForm extends DirectorObjectForm
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function addUsergroupsElement()
     {

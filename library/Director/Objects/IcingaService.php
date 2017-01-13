@@ -179,8 +179,7 @@ class IcingaService extends IcingaObject
     {
         if ($this->get('service_set_id') !== null) {
             return;
-        }
-        else if ($this->isApplyRule()) {
+        } elseif ($this->isApplyRule()) {
             $this->renderLegacyApplyToConfig($config);
         } else {
             parent::renderToLegacyConfig($config);
@@ -325,7 +324,7 @@ class IcingaService extends IcingaObject
     {
         $output = '';
 
-         if ($this->hasBeenAssignedToHostTemplate()) {
+        if ($this->hasBeenAssignedToHostTemplate()) {
             // TODO: use assignment renderer?
             $filter = sprintf(
                 'assign where %s in host.templates',
@@ -335,7 +334,7 @@ class IcingaService extends IcingaObject
             $output .= "\n    " . $filter . "\n";
         }
 
-       // A hand-crafted command endpoint overrides use_agent
+        // A hand-crafted command endpoint overrides use_agent
         if ($this->command_endpoint_id !== null) {
             return $output;
         }

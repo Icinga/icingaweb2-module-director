@@ -2,11 +2,10 @@
 
 namespace Tests\Icinga\Module\Director\Objects;
 
-use Icinga\Data\Db\DbQuery;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Test\IcingaObjectTestCase;
 
-class IcingaServiceSetTestIcinga extends IcingaObjectTestCase
+class IcingaServiceSetTest extends IcingaObjectTestCase
 {
     protected $table = 'icinga_service_set';
     protected $testObjectName = '___TEST___set';
@@ -33,7 +32,7 @@ class IcingaServiceSetTestIcinga extends IcingaObjectTestCase
         $this->assertTrue($set->hasBeenModified());
         $set->store();
 
-        $set->set('assign_filter','host.name=foobar');
+        $set->set('assign_filter', 'host.name=foobar');
         $this->assertTrue($set->hasBeenModified());
         $set->store();
 
@@ -179,7 +178,12 @@ class IcingaServiceSetTestIcinga extends IcingaObjectTestCase
 
         $ids = $db->fetchCol($query);
 
-        $this->assertEmpty($ids,
-            sprintf('Found dangling service_set\'s for a host, without the host in database: %s', join(', ', $ids)));
+        $this->assertEmpty(
+            $ids,
+            sprintf(
+                'Found dangling service_set\'s for a host, without the host in database: %s',
+                join(', ', $ids)
+            )
+        );
     }
 }

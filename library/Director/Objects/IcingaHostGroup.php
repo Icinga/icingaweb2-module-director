@@ -80,7 +80,7 @@ class IcingaHostGroup extends IcingaObjectGroup
                 $this->properties['members'] = $allMembers;
                 $this->legacyZoneHostgroupFile($config, 0)
                     ->addLegacyObject($this);
-            } else if ($deploymentMode == 'masterless') {
+            } elseif ($deploymentMode == 'masterless') {
                 // nothing to add
             } else {
                 throw new ProgrammingError('Unsupported deployment mode: %s' . $deploymentMode);
@@ -96,7 +96,8 @@ class IcingaHostGroup extends IcingaObjectGroup
             $zone = $this->connection->getDefaultGlobalZoneName();
         }
         return $config->configFile(
-            'director/' . $zone . '/hostgroups', '.cfg'
+            'director/' . $zone . '/hostgroups',
+            '.cfg'
         );
     }
 
@@ -112,9 +113,12 @@ class IcingaHostGroup extends IcingaObjectGroup
      * Note: rendered with renderLegacyMembers()
      *
      * @return string
+     *
+     * @codingStandardsIgnoreStart
      */
     protected function renderLegacyAssign_filter()
     {
+        // @codingStandardsIgnoreEnd
         return '';
     }
 }

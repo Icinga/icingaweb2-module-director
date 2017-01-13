@@ -50,6 +50,7 @@ class IcingaObjectFilterRenderer
 
     /**
      * @param Filter $filter
+     * @return string
      */
     protected function renderFilter(Filter $filter)
     {
@@ -122,7 +123,7 @@ class IcingaObjectFilterRenderer
     protected function renderFilterExpression(FilterExpression $filter)
     {
         $query = $this->query;
-        $column = $query->getAliasforRequiredFilterColumn($filter->getColumn());
+        $column = $query->getAliasForRequiredFilterColumn($filter->getColumn());
         return $query->whereToSql(
             $column,
             $filter->getSign(),

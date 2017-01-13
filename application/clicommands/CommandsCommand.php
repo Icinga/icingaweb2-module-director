@@ -12,4 +12,3 @@ use Icinga\Module\Director\Cli\ObjectsCommand;
 class CommandsCommand extends ObjectsCommand
 {
 }
-
