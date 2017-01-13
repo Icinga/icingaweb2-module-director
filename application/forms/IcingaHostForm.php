@@ -38,15 +38,16 @@ class IcingaHostForm extends DirectorObjectForm
              ->addAddressElements()
              ->addDisabledElement()
              ->groupMainProperties()
-             ->addClusteringElements()
-             ->addCheckCommandElements()
+             ->addClusteringElements();
+
+        $this->addCheckCommandElements()
              ->addCheckExecutionElements()
              ->addExtraInfoElements()
              ->setButtons();
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function addClusteringElements()
     {
@@ -127,7 +128,7 @@ class IcingaHostForm extends DirectorObjectForm
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function addGroupsElement()
     {
@@ -153,7 +154,7 @@ class IcingaHostForm extends DirectorObjectForm
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function addAddressElements()
     {
@@ -178,7 +179,7 @@ class IcingaHostForm extends DirectorObjectForm
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function addDisplayNameElement()
     {

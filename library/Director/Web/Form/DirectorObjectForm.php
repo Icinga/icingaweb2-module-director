@@ -372,7 +372,7 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function groupMainProperties()
     {
@@ -1035,7 +1035,7 @@ abstract class DirectorObjectForm extends QuickForm
     /**
      * @param bool $force
      *
-     * @return self
+     * @return $this
      */
     protected function addCheckCommandElements($force = false)
     {
@@ -1268,7 +1268,7 @@ abstract class DirectorObjectForm extends QuickForm
      *
      * @param array  $properties Form element properties
      *
-     * @return self
+     * @return $this
      */
     protected function addAssignFilter($properties)
     {
@@ -1301,7 +1301,7 @@ abstract class DirectorObjectForm extends QuickForm
      * @param string $name       Element name
      * @param array  $properties Form element properties
      *
-     * @return self
+     * @return $this
      */
     protected function addFilterElement($name, $properties)
     {
