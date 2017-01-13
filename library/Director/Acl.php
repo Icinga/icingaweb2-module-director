@@ -1,16 +1,22 @@
-<?php 
+<?php
 
 namespace Icinga\Module\Director;
 
 use Icinga\Authentication\Auth;
+use Icinga\Authentication\Role;
 use Icinga\Exception\AuthenticationException;
 
 class Acl
 {
+    /** @var Auth */
     protected $auth;
 
+    /** @var self */
     private static $instance;
 
+    /**
+     * @return self
+     */
     public static function instance()
     {
         if (self::$instance === null) {
@@ -20,16 +26,47 @@ class Acl
         return self::$instance;
     }
 
+    /**
+     * Acl constructor
+     *
+     * @param Auth $auth
+     */
     public function __construct(Auth $auth)
     {
         $this->auth = $auth;
     }
 
+    /**
+     * Whether the given permission is available
+     *
+     * @param $name
+     *
+     * @return bool
+     */
     public function hasPermission($name)
     {
         return $this->auth->hasPermission($name);
     }
 
+    /**
+     * List all given roles
+     *
+     * @return array
+     */
+    public function listRoleNames()
+    {
+        return array_map(
+            array($this, 'getNameForRole'),
+            $this->getUser()->getRoles()
+        );
+    }
+
+    /**
+     * Get our user object, throws auth error if not available
+     *
+     * @return \Icinga\User
+     * @throws AuthenticationException
+     */
     protected function getUser()
     {
         if (null === ($user = $this->auth->getUser())) {
@@ -39,15 +76,14 @@ class Acl
         return $user;
     }
 
-    public function listRoleNames()
-    {
-        return array_map(
-            array($this, 'getNameForRole'),
-            $this->getUser()->getRoles()
-        );
-    }
-
-    protected function getNameForRole($role)
+    /**
+     * Get the name for a given role
+     *
+     * @param Role $role
+     *
+     * @return string
+     */
+    protected function getNameForRole(Role $role)
     {
         return $role->getName();
     }
