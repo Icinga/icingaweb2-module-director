@@ -16,13 +16,11 @@ class DirectorDatafieldForm extends DirectorObjectForm
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {
-
             if ($this->shouldBeDeleted()) {
                 $varname = $this->getSentValue('varname');
                 if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
                     $this->askForVariableDeletion($varname, $cnt);
                 }
-
             }
         }
 

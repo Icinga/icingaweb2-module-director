@@ -457,7 +457,6 @@ class IcingaConfig
         ini_set('zend.enable_gc', 0);
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
-
             throw new IcingaException(
                 'Refusing to render the configuration, your DB layer corrupts binary data.'
                 . ' You might be affected by Zend Framework bug #655'

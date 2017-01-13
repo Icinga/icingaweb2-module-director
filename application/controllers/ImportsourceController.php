@@ -13,7 +13,7 @@ class ImportsourceController extends ActionController
 {
     public function indexAction()
     {
-        $this->setAutoRefreshInterval(10);
+        $this->setAutorefreshInterval(10);
         $id = $this->params->get('id');
         $this->prepareTabs($id)->activate('show');
         $source = $this->view->source = ImportSource::load($id, $this->db());
@@ -173,7 +173,6 @@ class ImportsourceController extends ActionController
                 'url'       => 'director/importsource/preview' . '?id=' . $id,
                 'label'     => $this->translate('Preview'),
             ));
-
         } else {
             $tabs->add('add', array(
                 'url'       => 'director/importsource/add',

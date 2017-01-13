@@ -92,7 +92,6 @@ class AssignRenderer
                 $column,
                 $expression
             );
-
         } elseif ($filter instanceof FilterMatch) {
             if (strpos($expression, '*') === false) {
                 return $this->renderEquals($column, $expression);
@@ -103,7 +102,6 @@ class AssignRenderer
                     $column
                 );
             }
-
         } elseif ($filter instanceof FilterMatchNot) {
             if (strpos($expression, '*') === false) {
                 return sprintf(
@@ -118,42 +116,36 @@ class AssignRenderer
                     $column
                 );
             }
-
         } elseif ($filter instanceof FilterNotEqual) {
-                return sprintf(
-                    '%s != %s',
-                    $column,
-                    $expression
-                );
-
+            return sprintf(
+                '%s != %s',
+                $column,
+                $expression
+            );
         } elseif ($filter instanceof FilterEqualOrGreaterThan) {
-                return sprintf(
-                    '%s >= %s',
-                    $column,
-                    $expression
-                );
-
+            return sprintf(
+                '%s >= %s',
+                $column,
+                $expression
+            );
         } elseif ($filter instanceof FilterEqualOrLessThan) {
-                return sprintf(
-                    '%s <= %s',
-                    $column,
-                    $expression
-                );
-
+            return sprintf(
+                '%s <= %s',
+                $column,
+                $expression
+            );
         } elseif ($filter instanceof FilterGreaterThan) {
-                return sprintf(
-                    '%s > %s',
-                    $column,
-                    $expression
-                );
-
+            return sprintf(
+                '%s > %s',
+                $column,
+                $expression
+            );
         } elseif ($filter instanceof FilterLessThan) {
-                return sprintf(
-                    '%s < %s',
-                    $column,
-                    $expression
-                );
-
+            return sprintf(
+                '%s < %s',
+                $column,
+                $expression
+            );
         } else {
             throw new QueryException(
                 'Filter expression of type "%s" is not supported',

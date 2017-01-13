@@ -75,7 +75,6 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
             $total = count($value);
 
             foreach ($value as $val) {
-
                 if ($multiOptions !== null) {
                     if (in_array($val, $validOptions)) {
                         $multiOptions = $this->removeOption($multiOptions, $val);
@@ -129,7 +128,6 @@ class Zend_View_Helper_FormExtensibleSet extends Zend_View_Helper_FormElement
                 $elements[] = $htm;
             }
         } else {
-
             $elements[] = '<li><input type="text"'
                     . ' name="' . $name . '[]"'
                     . ($cnt === 0 ? '' : ' class="extend-set"')

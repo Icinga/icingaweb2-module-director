@@ -62,6 +62,5 @@ class TestSuiteStyle extends TestSuite
         echo $out ."\n";
         echo file_get_contents($out);
         unlink($out);
-
     }
 }

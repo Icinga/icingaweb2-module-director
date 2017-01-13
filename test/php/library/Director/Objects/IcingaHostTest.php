@@ -724,7 +724,6 @@ class IcingaHostTest extends BaseTestCase
             foreach (DirectorDatafield::loadAll($db, $query, 'id') as $datafield) {
                 $datafield->delete();
             }
-
         }
     }
 }

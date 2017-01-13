@@ -31,7 +31,6 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
         ));
 
         $this->setButtons();
-
     }
 
     public function setTimePeriod(IcingaTimePeriod $period)
@@ -52,9 +51,9 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
 
         if ($this->period->hasBeenModified()) {
             if (! $object->hasBeenLoadedFromDb()) {
-
                 $this->setHttpResponseCode(201);
             }
+
             $msg = sprintf(
                 $object->hasBeenLoadedFromDb()
                 ? $this->translate('The %s has successfully been stored')
@@ -63,7 +62,6 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
             );
 
             $this->period->store($this->db);
-
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);

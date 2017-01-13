@@ -18,8 +18,8 @@ class StartupLogRenderer
         $markPattern = null;
         // len [stage] + 1
         $markReplace = '        ^';
-        foreach (preg_split('/\n/', $log) as $line) {
 
+        foreach (preg_split('/\n/', $log) as $line) {
             if (preg_match($sevPattern, $line, $m)) {
                 $severity = $m[1];
                 $line = preg_replace(

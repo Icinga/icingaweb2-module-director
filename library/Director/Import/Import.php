@@ -287,7 +287,6 @@ class Import
         $db->beginTransaction();
 
         try {
-
             if ($this->isEmpty()) {
                 $newRows = array();
                 $newProperties = array();

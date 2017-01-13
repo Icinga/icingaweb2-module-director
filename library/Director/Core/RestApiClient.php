@@ -135,7 +135,6 @@ class RestApiClient
 
         if (! $raw) {
             $headers[] = 'Accept: application/json';
-
         }
 
         if ($body !== null) {

@@ -124,7 +124,6 @@ class ServiceController extends ObjectController
         }
 
         if ($this->host && $object->usesVarOverrides()) {
-
             $parent = IcingaService::create(array(
                 'object_type' => 'template',
                 // TODO: => 'myself', -> There is no such import: "myself"
@@ -157,7 +156,6 @@ class ServiceController extends ObjectController
             if ($object->isTemplate()
                 && $object->getResolvedProperty('check_command_id')
             ) {
-
                 $this->view->actionLinks .= ' ' . $this->view->qlink(
                     'Create apply-rule',
                     'director/service/add',

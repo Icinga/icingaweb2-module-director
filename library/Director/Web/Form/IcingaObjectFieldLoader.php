@@ -223,7 +223,6 @@ class IcingaObjectFieldLoader
         $filters = array();
         foreach ($this->fields as $key => $field) {
             if ($filter = $field->var_filter) {
-
                 $filters[$key] = Filter::fromQueryString($filter);
             }
         }

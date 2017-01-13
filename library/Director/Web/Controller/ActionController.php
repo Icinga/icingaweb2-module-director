@@ -265,7 +265,6 @@ abstract class ActionController extends Controller
         $filter = $filterEditor->getFilter();
 
         if ($filter->isEmpty()) {
-
             if ($this->params->get('modifyFilter')) {
                 $this->view->addLink .= ' ' . $this->view->qlink(
                     $this->translate('Show unfiltered'),
@@ -287,9 +286,7 @@ abstract class ActionController extends Controller
                     )
                 );
             }
-
         } else {
-
             $this->view->addLink .= ' ' . $this->view->qlink(
                 $this->shorten($filter, 32),
                 $this->getRequest()->getUrl()->with('modifyFilter', true),

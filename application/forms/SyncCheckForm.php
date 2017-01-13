@@ -62,6 +62,5 @@ class SyncCheckForm extends QuickForm
         } else {
             $this->addError($this->translate('Checking this sync rule failed'));
         }
-
     }
 }

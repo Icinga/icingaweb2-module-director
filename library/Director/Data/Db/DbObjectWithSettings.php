@@ -124,7 +124,6 @@ abstract class DbObjectWithSettings extends DbObject
                ->from($this->settingsTable, array('setting_name', 'setting_value'))
                ->where($this->settingsRemoteId . ' = ?', $this->get('id'))
         );
-
     }
 
     protected function onLoadFromDb()

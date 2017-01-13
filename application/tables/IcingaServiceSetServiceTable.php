@@ -59,7 +59,6 @@ class IcingaServiceSetServiceTable extends QuickTable
             );
 
             return $this->url('director/host/servicesetservice', $params);
-
         } else {
             $params = array(
                 'name' => $row->service,

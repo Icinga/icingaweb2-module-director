@@ -86,7 +86,6 @@ class IcingaTemplateResolver
             $object = $this->object;
 
             if ($object->hasBeenLoadedFromDb()) {
-
                 if ($object->gotImports() && $object->imports()->hasBeenModified()) {
                     return $this->listUnstoredParentIds();
                 }
@@ -121,11 +120,9 @@ class IcingaTemplateResolver
         $this->requireTemplates();
 
         if ($name === null) {
-
             $object = $this->object;
 
             if ($object->hasBeenLoadedFromDb()) {
-
                 if ($object->gotImports() && $object->imports()->hasBeenModified()) {
                     return $this->listUnstoredParentNames();
                 }

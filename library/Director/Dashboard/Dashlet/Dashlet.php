@@ -246,7 +246,6 @@ abstract class Dashlet
             } else {
                 $msg = $view->translate('One object has been defined');
             }
-
         } else {
             $msg = sprintf(
                 $view->translate('%d objects have been defined'),
@@ -256,13 +255,13 @@ abstract class Dashlet
 
         $extra = array();
         if ($stat->cnt_total !== $stat->cnt_object) {
-
             if ($stat->cnt_template > 0) {
                 $extra[] = sprintf(
                     $view->translate('%d of them are templates'),
                     $stat->cnt_template
                 );
             }
+
             if ($stat->cnt_external > 0) {
                 $extra[] = sprintf(
                     $view->translate(

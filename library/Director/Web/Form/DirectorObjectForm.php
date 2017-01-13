@@ -479,11 +479,10 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $object = $this->object();
         if ($object->hasBeenModified()) {
-
             if (! $object->hasBeenLoadedFromDb()) {
-
                 $this->setHttpResponseCode(201);
             }
+
             $msg = sprintf(
                 $object->hasBeenLoadedFromDb()
                 ? $this->translate('The %s has successfully been stored')
@@ -603,7 +602,6 @@ abstract class DirectorObjectForm extends QuickForm
         $post = $values = $this->getRequest()->getPost();
 
         foreach ($post as $key => $value) {
-
             if (preg_match('/^(.+?)_(\d+)__(MOVE_DOWN|MOVE_UP|REMOVE)$/', $key, $m)) {
                 $values[$m[1]] = array_filter($values[$m[1]], 'strlen');
                 switch ($m[3]) {
@@ -779,7 +777,6 @@ abstract class DirectorObjectForm extends QuickForm
 
         if (!$this->hasObject()) {
             if ($this->hasBeenSent()) {
-
                 return $this->getSentValue($name, $default);
             } else {
                 if ($this->valueIsEmpty($val = $this->getValue($name))) {
@@ -1105,8 +1102,8 @@ abstract class DirectorObjectForm extends QuickForm
         );
 
         $periods = $this->db->enumTimeperiods();
-        if (!empty($periods)) {
 
+        if (!empty($periods)) {
             $this->addElement(
                 'select',
                 'check_period_id',

@@ -260,8 +260,8 @@ class IcingaService extends IcingaObject
     {
         if ($this->isApplyRule()
             && !$this->hasBeenAssignedToHostTemplate()
-            && $this->get('apply_for') !== null) {
-
+            && $this->get('apply_for') !== null
+        ) {
             $name = $this->getObjectName();
             $extraName = '';
 
@@ -280,6 +280,7 @@ class IcingaService extends IcingaObject
                 $this->get('apply_for')
             ) . $extraName;
         }
+
         return parent::renderObjectHeader();
     }
 

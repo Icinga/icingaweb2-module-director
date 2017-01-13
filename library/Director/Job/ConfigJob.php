@@ -114,7 +114,6 @@ class ConfigJob extends JobHook
             } catch (Exception $e) {
                 // Ignore those errors, Icinga may be reloading
             }
-
         } else {
             throw new IcingaException('Failed to deploy config "%s"', $checksum);
         }
@@ -129,7 +128,6 @@ class ConfigJob extends JobHook
     {
         if ($this->isWithinGracePeriod()) {
             if ($deployment = $this->lastDeployment()) {
-
                 return $deployment->getDeploymentTimestamp()
                 + $this->getSetting('grace_period')
                 - time();

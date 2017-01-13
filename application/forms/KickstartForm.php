@@ -39,7 +39,6 @@ class KickstartForm extends QuickForm
         }
 
         if (!$this->migrations()->hasSchema()) {
-
             $this->addHtmlHint($this->translate(
                 'No database schema has been created yet'
             ), array('name' => 'HINT_schema'));
@@ -50,7 +49,6 @@ class KickstartForm extends QuickForm
         }
 
         if ($this->migrations()->hasPendingMigrations()) {
-
             $this->addHtmlHint($this->translate(
                 'There are pending database migrations'
             ), array('name' => 'HINT_schema'));
@@ -182,7 +180,6 @@ class KickstartForm extends QuickForm
 
             try {
                 $db->fetchOne('SELECT 1');
-
             } catch (Exception $e) {
                 $this->getElement('resource')
                     ->addError('Could not connect to database: ' . $e->getMessage());

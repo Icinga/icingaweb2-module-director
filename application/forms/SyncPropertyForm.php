@@ -125,7 +125,6 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         $this->setButtons();
-
     }
 
     protected function hasSubOption($options, $key)

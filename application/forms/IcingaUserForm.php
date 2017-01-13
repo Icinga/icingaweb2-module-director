@@ -29,7 +29,6 @@ class IcingaUserForm extends DirectorObjectForm
         }
 
         if (! $this->isTemplate()) {
-
             $this->addElement('text', 'email', array(
                 'label' => $this->translate('Email'),
                 'description' => $this->translate('The Email address of the user.')

@@ -151,7 +151,6 @@ class IcingaNotification extends IcingaObject
                 c::renderString($this->getObjectName()),
                 ucfirst($to)
             );
-
         } else {
             return parent::renderObjectHeader();
         }

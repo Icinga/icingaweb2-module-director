@@ -154,7 +154,6 @@ class SyncRule extends DbObject
                 }
 
                 $hadChanges = true;
-
             } else {
                 Benchmark::measure('No modifications for sync rule ' . $this->get('rule_name'));
                 $this->set('sync_state', 'in-sync');
@@ -255,7 +254,6 @@ class SyncRule extends DbObject
     public function hasCombinedKey()
     {
         if ($this->hasCombinedKey === null) {
-
             $this->hasCombinedKey = false;
 
             // TODO: Move to Objects
@@ -341,7 +339,6 @@ class SyncRule extends DbObject
 
                     $this->destinationKeyPattern = '${list_id}!${entry_name}';
                 }
-
             }
         }
 

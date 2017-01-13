@@ -149,8 +149,8 @@ abstract class QuickForm extends QuickBaseForm
                 'Fieldset',
             );
         }
-        return $this->addDisplayGroup($elements, $name, $options);
 
+        return $this->addDisplayGroup($elements, $name, $options);
     }
 
     protected function createIdElement()

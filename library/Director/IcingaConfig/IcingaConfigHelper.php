@@ -158,7 +158,6 @@ class IcingaConfigHelper
 
         // Prefix for toConfigString?
         return "{\n" . implode("\n", $vals) . "\n}";
-
     }
 
     public static function renderExpression($string)

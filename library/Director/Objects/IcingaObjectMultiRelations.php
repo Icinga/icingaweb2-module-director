@@ -110,7 +110,6 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         $unset = array();
 
         foreach ($relation as $k => $ro) {
-
             if ($ro instanceof $class) {
                 $new[] = $ro->object_name;
             } else {
@@ -187,9 +186,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
         if ($relation instanceof $class) {
             $this->relations[$relation->object_name] = $relation;
-
         } elseif (is_string($relation)) {
-
             $connection = $this->object->getConnection();
             try {
                 // Related services can only be objects, used by ServiceSets
@@ -202,7 +199,6 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
                     $relation = $class::load($relation, $connection);
                 }
             } catch (Exception $e) {
-
                 switch ($onError) {
                     case 'autocreate':
                         $relation = $class::create(array(

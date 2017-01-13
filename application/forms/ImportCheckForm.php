@@ -33,7 +33,6 @@ class ImportCheckForm extends QuickForm
             $this->setSuccessMessage(
                 $this->translate('This Import Source provides modified data')
             );
-
         } else {
             $this->setSuccessMessage(
                 $this->translate(

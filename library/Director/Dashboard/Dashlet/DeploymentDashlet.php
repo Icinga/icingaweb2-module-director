@@ -90,7 +90,6 @@ class DeploymentDashlet extends Dashlet
         if ($cnt === 0) {
             $msgs[] = $this->translate('There are no pending changes');
         } else {
-
             $msgs[] = sprintf(
                 $this->translate(
                     'A total of %d config changes happened since your last'

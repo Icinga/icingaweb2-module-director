@@ -579,7 +579,6 @@ abstract class DbObject
         $properties = $this->db->fetchRow($select);
 
         if (empty($properties)) {
-
             if (is_array($this->getKeyName())) {
                 throw new NotFoundError(
                     'Failed to load %s for %s',
@@ -654,7 +653,6 @@ abstract class DbObject
             $properties,
             $this->createWhere()
         );
-
     }
 
     /**
@@ -749,7 +747,6 @@ abstract class DbObject
                     );
                 }
             }
-
         } catch (Exception $e) {
             if ($e instanceof IE) {
                 throw $e;
@@ -1001,7 +998,6 @@ abstract class DbObject
                 self::$prefetchStats[$class]->miss++;
                 return false;
             }
-
         } else {
             self::$prefetchStats[$class]->miss++;
             return false;

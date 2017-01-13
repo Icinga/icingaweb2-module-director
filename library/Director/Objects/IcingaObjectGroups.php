@@ -96,7 +96,6 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $unset = array();
 
         foreach ($group as $k => $g) {
-
             if ($g instanceof $class) {
                 $new[] = $g->object_name;
             } else {
@@ -174,10 +173,9 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         if ($group instanceof $class) {
             $this->groups[$group->object_name] = $group;
-
         } elseif (is_string($group)) {
-
             $connection = $this->object->getConnection();
+
             try {
                 $this->groups[$group] = $class::load($group, $connection);
             } catch (NotFoundError $e) {

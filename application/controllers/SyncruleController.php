@@ -25,7 +25,6 @@ class SyncruleController extends ActionController
 
         if ($lastRunId = $rule->getLastSyncRunId()) {
             $this->loadSyncRun($lastRunId);
-
         } else {
             $this->view->run = null;
         }
