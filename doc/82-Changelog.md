@@ -40,6 +40,9 @@ before switching to a new version.
   means that you no longer need to provide dedicated Templates for Satellite
   nodes
 * The proposed Agent Deployment script has been improved for Windows and Linux
+* Infrastructure management got a dedicated dashboard
+* Kickstart Wizard helps when working with Satellites. This has formerly been
+  a hidden, now it can be accessed through the Infrastructure dashboard
 
 ### Commands
 * Command arguments are now always appended when inheriting a template. This
