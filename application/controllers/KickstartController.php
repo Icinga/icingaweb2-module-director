@@ -10,9 +10,13 @@ class KickstartController extends DashboardController
     public function indexAction()
     {
         $this->singleTab($this->view->title = $this->translate('Kickstart'));
-        $this->view->form = $this
-            ->loadForm('kickstart')
-            ->setEndpoint($this->db()->getDeploymentEndpoint())
-            ->handleRequest();
+        $form = $this->view->form = $this->loadForm('kickstart');
+        try {
+            $form->setEndpoint($this->db()->getDeploymentEndpoint());
+        } catch (Exception $e) {
+            // Silently ignore DB errors
+        }
+
+        $form->handleRequest();
     }
 }
