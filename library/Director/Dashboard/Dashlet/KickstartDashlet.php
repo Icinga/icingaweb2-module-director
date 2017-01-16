@@ -14,7 +14,8 @@ class KickstartDashlet extends Dashlet
     public function getEscapedSummary()
     {
         return $this->translate(
-            'This syncronizes Icinga Director to your Icinga 2 infrastructure'
+            'This synchronizes Icinga Director to your Icinga 2 infrastructure.'
+            . ' A new run should be triggered on infrastructure changes'
         );
     }
 
