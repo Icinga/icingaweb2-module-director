@@ -267,7 +267,7 @@ class KickstartForm extends QuickForm
                 'Fieldset',
             ),
             'order' => 60,
-            'legend' => $this->translate('Kickstart wizard')
+            'legend' => $this->translate('Kickstart Wizard')
         ));
     }
 

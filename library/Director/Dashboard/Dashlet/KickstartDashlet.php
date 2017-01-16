@@ -8,7 +8,7 @@ class KickstartDashlet extends Dashlet
 
     public function getTitle()
     {
-        return $this->translate('Kickstart Helper');
+        return $this->translate('Kickstart Wizard');
     }
 
     public function getEscapedSummary()
