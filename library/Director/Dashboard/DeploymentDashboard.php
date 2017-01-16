@@ -7,9 +7,8 @@ class DeploymentDashboard extends Dashboard
     protected $dashletNames = array(
         'Deployment',
         'ActivityLog',
-        'ApiUserObject',
-        'EndpointObject',
-        'ZoneObject',
+        'Job',
+        'Infrastructure',
     );
 
     public function getTitle()

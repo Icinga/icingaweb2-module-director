@@ -7,7 +7,6 @@ class DataDashboard extends Dashboard
     protected $dashletNames = array(
         'ImportSource',
         'Sync',
-        'Job',
         'Datafield',
         'Datalist',
     );

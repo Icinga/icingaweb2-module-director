@@ -9,7 +9,6 @@ class ObjectsDashboard extends Dashboard
         'ServiceObject',
         'CommandObject',
         'Notifications',
-        'TimeperiodObject',
     );
 
     public function getTitle()
