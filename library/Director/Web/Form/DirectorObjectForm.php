@@ -321,7 +321,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function setCustomVarValues($object, & $values)
+    protected function setCustomVarValues($values)
     {
         if ($this->fieldLoader) {
             $this->fieldLoader->setValues($values, 'var_');
@@ -645,7 +645,7 @@ abstract class DirectorObjectForm extends QuickForm
         $values = $this->getValues();
 
         if ($object instanceof IcingaObject) {
-            $this->setCustomVarValues($object, $post);
+            $this->setCustomVarValues($post);
         }
 
         $this->handleProperties($object, $values);
