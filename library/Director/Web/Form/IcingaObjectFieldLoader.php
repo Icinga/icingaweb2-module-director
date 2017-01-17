@@ -31,6 +31,8 @@ class IcingaObjectFieldLoader
 
     protected $elements;
 
+    protected $forceNull = array();
+
     /** @var array Map element names to variable names 'elName' => 'varName' */
     protected $nameMap = array();
 
@@ -134,6 +136,13 @@ class IcingaObjectFieldLoader
             }
 
             $vars->set($varName, $value);
+        }
+
+        // Hint: this does currently not happen, as removeFilteredFields did not
+        //       take place yet. This has been added to be on the safe side when
+        //       cleaning things up one future day
+        foreach ($this->forceNull as $key) {
+            $vars->set($key, null);
         }
 
         return $this;
@@ -261,9 +270,15 @@ class IcingaObjectFieldLoader
             }
         }
 
+        $vars = $object->vars();
         foreach ($kill as $key) {
             unset($elements[$key]);
+            $this->forceNull[$key] = $key;
+            // Hint: this should happen later on, currently execution order is
+            //       a little bit weird
+            $vars->set($key, null);
         }
+
         foreach ($columns as $col) {
             if (array_key_exists($col, $elements)) {
                 $el = $elements[$col];
@@ -291,7 +306,8 @@ class IcingaObjectFieldLoader
     /**
      * Get the form element for a specific field by it's variable name
      *
-     * @return ZfElement|null
+     * @param  string $name
+     * @return null|ZfElement
      */
     protected function getElement($name)
     {
@@ -481,6 +497,7 @@ class IcingaObjectFieldLoader
             'df.id = f.datafield_id',
             array()
         )->where($idColumn . ' IN (?)', $ids)
+            ->order('CASE WHEN var_filter IS NULL THEN 0 ELSE 1 END ASC')
             ->order('df.caption ASC');
 
         return $query;
