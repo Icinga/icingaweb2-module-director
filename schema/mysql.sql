@@ -24,6 +24,7 @@ CREATE TABLE director_activity_log (
   INDEX sort_idx (change_time),
   INDEX search_idx (object_name),
   INDEX search_idx2 (object_type(32), object_name(64), change_time),
+  INDEX search_author (author),
   INDEX checksum (checksum)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1507,4 +1508,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (127, NOW());
+  VALUES (128, NOW());

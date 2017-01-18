@@ -66,6 +66,7 @@ CREATE TABLE director_activity_log (
 CREATE INDEX activity_log_sort_idx ON director_activity_log (change_time);
 CREATE INDEX activity_log_search_idx ON director_activity_log (object_name);
 CREATE INDEX activity_log_search_idx2 ON director_activity_log (object_type, object_name, change_time);
+CREATE INDEX activity_log_author ON director_activity_log (author);
 COMMENT ON COLUMN director_activity_log.old_properties IS 'Property hash, JSON';
 COMMENT ON COLUMN director_activity_log.new_properties IS 'Property hash, JSON';
 
@@ -1774,4 +1775,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (127, NOW());
+  VALUES (128, NOW());
