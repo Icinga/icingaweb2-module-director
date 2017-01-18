@@ -199,11 +199,11 @@ class AgentWizard
         return $this->loadBashModuleHead()
             . $this->renderBashParameters(
                 array(
-                    'ICINGA2_NODENAME'        => $this->getCertName(),
-                    'ICINGA2_CA_TICKET'           => $this->getTicket(),
+                    'ICINGA2_NODENAME'         => $this->getCertName(),
+                    'ICINGA2_CA_TICKET'        => $this->getTicket(),
                     'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
                     'ICINGA2_PARENT_ENDPOINTS' => array_keys($this->getParentEndpoints()),
-                    'ICINGA2_CA_NODE'         => $this->getCaServer(),
+                    'ICINGA2_CA_NODE'          => $this->getCaServer(),
                 )
             )
             . "\n"
@@ -228,30 +228,30 @@ class AgentWizard
     }
     protected function renderBashParameters($parameters)
     {
-        $maxKeyLength = max(array_map('strlen', array_keys($parameters)));
         $parts = array();
 
         foreach ($parameters as $key => $value) {
-            $parts[] = $this->renderBashParameter($key, $value, $maxKeyLength);
+            $parts[] = $this->renderBashParameter($key, $value);
         }
 
-        return implode("\n    ", $parts);
+        return implode("\n", $parts);
     }
 
-    protected function renderBashParameter($key, $value, $maxKeyLength = null)
+    protected function renderBashParameter($key, $value)
     {
         $ret = $key . '=';
 
-        //if ($maxKeyLength !== null) {
-        //    $ret .= str_repeat(' ', $maxKeyLength - strlen($key));
-        //}
+        // Cheating, this doesn't really help. We should ship the rendered config
+        if (is_array($value) && count($value) === 1) {
+            $value = array_shift($value);
+        }
 
         if (is_array($value)) {
             $vals = array();
             foreach ($value as $val) {
                 $vals[] = $this->renderPowershellString($val);
             }
-            $ret .= implode(', ', $vals);
+            $ret .= '(' . implode(' ', $vals) . ')';
         } else {
             $ret .= $this->renderPowershellString($value);
         }
