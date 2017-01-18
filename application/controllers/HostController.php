@@ -11,6 +11,7 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
+use Icinga\Web\Url;
 
 class HostController extends ObjectController
 {
@@ -251,6 +252,28 @@ class HostController extends ObjectController
         // TODO: figure out whether this has any effect
         // $this->view->form->setResolvedImports();
         $this->commonForServices();
+    }
+
+    public function removesetAction()
+    {
+        // TODO: clean this up, use POST
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()->from(
+            array('ss' => 'icinga_service_set'),
+            array('id' => 'ss.id')
+        )->join(
+            array('si' => 'icinga_service_set_inheritance'),
+            'si.service_set_id = ss.id',
+            array()
+        )->where('si.parent_service_set_id = ?', $this->params->get('setId'))
+        ->where('ss.host_id = ?', $this->object->id);
+
+        IcingaServiceSet::loadWithAutoIncId($db->fetchOne($query), $this->db())->delete();
+        $this->redirectNow(
+            Url::fromPath('director/host/services', array(
+                'name' => $this->object->getObjectName()
+            ))
+        );
     }
 
     public function servicesetserviceAction()

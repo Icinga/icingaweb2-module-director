@@ -49,6 +49,15 @@ class IcingaServiceSetServiceTable extends QuickTable
         return $this;
     }
 
+    protected function renderTitles($row)
+    {
+        if ($this->host) {
+            return $this->renderHostTitles($row);
+        } else {
+            return parent::renderTitles($row);
+        }
+    }
+
     protected function getActionUrl($row)
     {
         if ($this->host) {
@@ -75,6 +84,33 @@ class IcingaServiceSetServiceTable extends QuickTable
         return array(
             'service' => $this->title ?: $view->translate('Servicename'),
         );
+    }
+
+    protected function renderHostTitles($row)
+    {
+        $view = $this->view();
+        // Hint: row is an array of titles!?!?!?
+        $title = $view->escape(array_shift($row));
+
+        $htm = "<thead>\n  <tr>\n";
+
+        $deleteLink = $view->qlink(
+            $view->translate('Remove'),
+            'director/host/removeset',
+            array(
+                'name' => $this->host->getObjectName(),
+                'setId' => $this->set->id
+            ),
+            array(
+                'class' => 'icon-cancel',
+                'style' => 'float: right; font-weight: normal',
+                'title' => $view->translate('Remove this set from this host')
+            )
+        );
+
+        $htm .= '    <th>' . $view->escape($title) . "$deleteLink</th>\n";
+
+        return $htm . "  </tr>\n</thead>\n";
     }
 
     public function getUnfilteredQuery()
