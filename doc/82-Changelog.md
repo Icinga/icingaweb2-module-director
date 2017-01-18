@@ -9,7 +9,7 @@ before switching to a new version.
 
 ### Fixed issues and related features
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://dev.icinga.com/versions/331)
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/7?closed=1)
 
 ### Service Sets
 * You are now allowed to create sets of services and assign all of them at
@@ -96,7 +96,7 @@ before switching to a new version.
 
 ### Fixed a lot of issues and related features
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://dev.icinga.com/versions/310)
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/5?closed=1)
 
 ### Permissions and restrictions
 * Permissions are now enforced. Please check your role definitions, permission
@@ -168,7 +168,7 @@ before switching to a new version.
 
 ### Fixed a lot of issues and related features
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://dev.icinga.com/versions/301)
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/4?closed=1)
 
 ### Icinga Agent handling
 * A lot of effort has been put into making config deployment easier for
