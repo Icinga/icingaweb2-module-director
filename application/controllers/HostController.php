@@ -335,23 +335,28 @@ class HostController extends ObjectController
 
     public function agentAction()
     {
-        switch ($this->params->get('download')) {
-            case 'windows-kickstart':
-                header('Content-type: application/octet-stream');
-                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.ps1');
+        if ($os = $this->params->get('download')) {
 
-                $wizard = $this->view->wizard = new AgentWizard($this->object);
-                $wizard->setTicketSalt($this->api()->getTicketSalt());
-                echo preg_replace('/\n/', "\r\n", $wizard->renderWindowsInstaller());
-                exit;
-            case 'linux':
-                header('Content-type: application/octet-stream');
-                header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.bash');
+            $wizard = new AgentWizard($this->object);
+            $wizard->setTicketSalt($this->api()->getTicketSalt());
 
-                $wizard = $this->view->wizard = new AgentWizard($this->object);
-                $wizard->setTicketSalt($this->api()->getTicketSalt());
-                echo $wizard->renderLinuxInstaller();
-                exit;
+            switch ($os) {
+                case 'windows-kickstart':
+                    $ext = 'ps1';
+                    $script = preg_replace('/\n/', "\r\n", $wizard->renderWindowsInstaller());
+                    break;
+                case 'linux':
+                    $ext = 'bash';
+                    $script = $wizard->renderLinuxInstaller();
+                    break;
+                default:
+                    throw new NotFoundError('There is no kickstart helper for %s', $os);
+            }
+
+            header('Content-type: application/octet-stream');
+            header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.' . $ext);
+            echo $script;
+            exit;
         }
 
         $this->gracefullyActivateTab('agent');
