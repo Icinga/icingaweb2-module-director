@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
-use Icinga\Module\Director\Db\Migrations;
 
 class KickstartController extends DashboardController
 {
