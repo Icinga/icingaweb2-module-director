@@ -225,7 +225,9 @@ class HostController extends ObjectController
             $this->db()
         );
 
-        $parent->object_name = $from->object_name;
+        // TODO: we want to eventually show the host template name, doesn't work
+        //       as template resolution would break.
+        // $parent->object_name = $from->object_name;
 
         $service = IcingaService::create(array(
             'object_type' => 'apply',
@@ -245,7 +247,9 @@ class HostController extends ObjectController
             ->setHost($host)
             ->setInheritedFrom($from->object_name)
             ->setObject($service);
-        $this->view->form->setResolvedImports();
+
+        // TODO: figure out whether this has any effect
+        // $this->view->form->setResolvedImports();
         $this->commonForServices();
     }
 
@@ -264,8 +268,15 @@ class HostController extends ObjectController
             ),
             $this->db()
         );
+        $service = IcingaService::create(array(
+            'object_type' => 'apply',
+            'object_name' => $serviceName,
+            'host_id'     => $host->id,
+            'imports'     => array($service),
+            'vars'        => $host->getOverriddenServiceVars($serviceName),
+        ), $db);
 
-        $set->copyVarsToService($service);
+        // $set->copyVarsToService($service);
         $this->view->title = sprintf(
             $this->translate('%s on %s (from set: %s)'),
             $serviceName,
