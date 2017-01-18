@@ -336,7 +336,6 @@ class HostController extends ObjectController
     public function agentAction()
     {
         if ($os = $this->params->get('download')) {
-
             $wizard = new AgentWizard($this->object);
             $wizard->setTicketSalt($this->api()->getTicketSalt());
 
