@@ -10,7 +10,7 @@ Requirements
 ------------
 
 * Icinga 2 (&gt;= 2.4.3)
-* Icinga Web 2 (&gt;= 2.2.0)
+* Icinga Web 2 (&gt;= 2.2.0 - but &gt;= 2.4.1 is strongly suggested)
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1) database (MariaDB and
   other forks are also fine)
 * php5-curl
