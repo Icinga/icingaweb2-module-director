@@ -68,9 +68,10 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function providesOverrides()
     {
-        return ($this->object && $this->object->usesVarOverrides())
-            || $this->applyGenerated
-            || $this->inheritedFrom;
+        return  $this->applyGenerated
+            || $this->inheritedFrom
+            || ($this->host && $this->set)
+            || ($this->object && $this->object->usesVarOverrides());
     }
 
     protected function onAddedFields()
@@ -476,11 +477,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     public function onSuccess()
     {
-        if ($this->applyGenerated
-            || $this->inheritedFrom
-            || ($this->host && $this->set)
-            || $this->object->usesVarOverrides()
-        ) {
+        if ($this->providesOverrides()) {
             return $this->succeedForOverrides();
         }
 
