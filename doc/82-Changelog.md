@@ -33,7 +33,7 @@ before switching to a new version.
 * Fields can now be shown based on filter rules. Example use case: show a
   `Community String` field in case `SNMPv2` has been selected, but show
   five other fields for `SNMPv3`. This allows one to build powerful little
-  wizard-like forms
+  wizard-like forms like shown [here](16-Fields-example-SNMP.md)
 
 ### Agents and Satellites
 * It is now possible to set Agent and Zone settings on every single host. This
