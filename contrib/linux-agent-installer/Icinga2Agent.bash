@@ -120,4 +120,3 @@ EOF
 icinga2 feature enable api
 
 echo "Please restart icinga2!"
-echo "Please restart icinga2!"
