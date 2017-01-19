@@ -122,6 +122,9 @@ class DirectorDatafield extends DbObjectWithSettings
                 try {
                     /** @var IcingaCommand $command */
                     $command = $object->getResolvedRelated('check_command');
+                    if ($command === null) {
+                        return;
+                    }
                     $inherited = $command->vars()->get($varname);
                     $inheritedFrom = null;
 
