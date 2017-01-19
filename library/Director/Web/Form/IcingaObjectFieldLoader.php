@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -376,6 +377,7 @@ class IcingaObjectFieldLoader
         $fields = $this->loadResolvedFieldsForObject($object);
         if ($object->hasRelation('check_command')) {
             try {
+                /** @var IcingaCommand $command */
                 $command = $object->getResolvedRelated('check_command');
             } catch (Exception $e) {
                 // Ignore failures
@@ -383,7 +385,8 @@ class IcingaObjectFieldLoader
             }
 
             if ($command) {
-                $cmdFields = $this->loadResolvedFieldsForObject($command);
+                $cmdLoader = new static($command);
+                $cmdFields = $cmdLoader->getFields($command);
                 foreach ($cmdFields as $varname => $field) {
                     if (! array_key_exists($varname, $fields)) {
                         $fields[$varname] = $field;

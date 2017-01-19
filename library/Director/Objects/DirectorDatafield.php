@@ -109,11 +109,47 @@ class DirectorDatafield extends DbObjectWithSettings
 
             $varname = $this->get('varname');
 
-            $form->setInheritedValue(
-                $el,
-                $object->getInheritedVar($varname),
-                $object->getOriginForVar($varname)
-            );
+            $inherited = $object->getInheritedVar($varname);
+
+            if (null !== $inherited) {
+                $form->setInheritedValue(
+                    $el,
+                    $inherited,
+                    $object->getOriginForVar($varname)
+                );
+            } elseif ($object->hasRelation('check_command')) {
+                // TODO: Move all of this elsewhere and test it
+                try {
+                    /** @var IcingaCommand $command */
+                    $command = $object->getResolvedRelated('check_command');
+                    $inherited = $command->vars()->get($varname);
+                    $inheritedFrom = null;
+
+                    if ($inherited !== null) {
+                        $inherited = $inherited->getValue();
+                    }
+
+                    if ($inherited === null) {
+                        $inherited = $command->getResolvedVar($varname);
+                        if ($inherited === null) {
+                            $inheritedFrom = $command->getOriginForVar($varname);
+                        }
+
+                    } else {
+                        $inheritedFrom = $command->getObjectName();
+                    }
+                    $inherited = $command->getResolvedVar($varname);
+                    if (null !== $inherited) {
+                        $form->setInheritedValue(
+                            $el,
+                            $inherited,
+                            $inheritedFrom
+                        );
+                    }
+                } catch (\Exception $e) {
+                    // Ignore failures
+                }
+            }
         }
     }
 }
