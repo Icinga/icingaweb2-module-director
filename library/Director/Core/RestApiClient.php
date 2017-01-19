@@ -193,6 +193,14 @@ class RestApiClient
         }
     }
 
+    protected function readPart($curl, $data)
+    {
+        $length = strlen($data);
+        $this->readBuffer .= $data;
+        $this->processEvents();
+        return $length;
+    }
+
     public function get($url, $body = null)
     {
         return $this->request('get', $url, $body);
