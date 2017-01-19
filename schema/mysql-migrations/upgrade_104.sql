@@ -1,6 +1,3 @@
-DELETE FROM icinga_timeperiod_range
-  WHERE range_key IS NULL OR range_value IS NULL;
-
 ALTER TABLE icinga_timeperiod_range
   ADD COLUMN range_key VARCHAR(255) NOT NULL COMMENT 'monday, ...',
   ADD COLUMN range_value VARCHAR(255) NOT NULL COMMENT '00:00-24:00, ...';
