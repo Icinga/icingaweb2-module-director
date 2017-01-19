@@ -1,3 +1,6 @@
+DELETE FROM icinga_timeperiod_range
+  WHERE range_key IS NULL OR range_value IS NULL;
+
 ALTER TABLE icinga_timeperiod_range
   ADD COLUMN range_key character varying(255) NOT NULL,
   ADD COLUMN range_value character varying(255) NOT NULL;
