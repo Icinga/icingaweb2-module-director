@@ -137,10 +137,10 @@ class DirectorDatafield extends DbObjectWithSettings
                         if ($inherited === null) {
                             $inheritedFrom = $command->getOriginForVar($varname);
                         }
-
                     } else {
                         $inheritedFrom = $command->getObjectName();
                     }
+
                     $inherited = $command->getResolvedVar($varname);
                     if (null !== $inherited) {
                         $form->setInheritedValue(
