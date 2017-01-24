@@ -40,6 +40,20 @@ class IcingaZoneTable extends IcingaObjectTable
         );
     }
 
+    public function count()
+    {
+        $db = $this->db();
+        $sub = clone($this->getBaseQuery());
+        $sub->columns($this->getColumns());
+        $this->applyFiltersToQuery($sub);
+        $query = $db->select()->from(
+            array('sub' => $sub),
+            'COUNT(*)'
+        );
+
+        return $db->fetchOne($query);
+    }
+
     public function getBaseQuery()
     {
         return $this->db()->select()->from(
