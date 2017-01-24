@@ -4,7 +4,8 @@ namespace Icinga\Module\Director\Db;
 
 use DirectoryIterator;
 use Exception;
-use Icinga\Module\Director\Db;
+use Icinga\Application\Icinga;
+use Icinga\Module\Director\Data\Db\DbConnection;
 
 class Migrations
 {
@@ -14,13 +15,13 @@ class Migrations
     protected $db;
 
     /**
-     * @var Db
+     * @var DbConnection
      */
     protected $connection;
 
     protected $migrationsDir;
 
-    public function __construct(Db $connection)
+    public function __construct(DbConnection $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
@@ -142,10 +143,9 @@ class Migrations
     protected function getMigrationsDir()
     {
         if ($this->migrationsDir === null) {
-            $this->migrationsDir = dirname(dirname(dirname(__DIR__)))
-                . '/schema/'
-                . $this->connection->getDbType()
-                . '-migrations';
+            $this->migrationsDir = $this->getSchemaDir(
+                $this->connection->getDbType() . '-migrations'
+            );
         }
 
         return $this->migrationsDir;
@@ -153,9 +153,38 @@ class Migrations
 
     protected function getFullSchemaFile()
     {
-        return dirname(dirname(dirname(__DIR__)))
-            . '/schema/'
-            . $this->connection->getDbType()
-            . '.sql';
+        return $this->getSchemaDir(
+            $this->connection->getDbType() . '.sql'
+        );
+    }
+
+    protected function getSchemaDir($sub = null)
+    {
+        $dir = $this->getModuleDir('/schema');
+        if ($sub === null) {
+            return $dir;
+        } else {
+            return $dir . '/' . ltrim($sub, '/');
+        }
+    }
+
+    protected function getModuleDir($sub = '')
+    {
+        return Icinga::app()->getModuleManager()->getModuleDir(
+            $this->getModuleName(),
+            $sub
+        );
+    }
+
+    protected function getModuleName()
+    {
+        return $this->getModuleNameForObject($this);
+    }
+
+    protected function getModuleNameForObject($object)
+    {
+        $class = get_class($object);
+        // Hint: Icinga\Module\ -> 14 chars
+        return lcfirst(substr($class, 14, strpos($class, '\\', 15) - 14));
     }
 }
