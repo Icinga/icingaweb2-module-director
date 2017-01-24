@@ -12,4 +12,8 @@ use Icinga\Module\Director\Cli\ObjectCommand;
  */
 class EndpointCommand extends ObjectCommand
 {
+    public function statusAction()
+    {
+        print_r($this->api()->getStatus());
+    }
 }
