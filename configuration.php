@@ -39,7 +39,7 @@ $this->provideConfigTab('config', array(
 ));
 
 $section = $this->menuSection(
-    $this->translate('Icinga Director')
+    N_('Icinga Director')
 )->setUrl('director')->setPriority(60)->setIcon(
     'cubes'
 )->setRenderer(array(
