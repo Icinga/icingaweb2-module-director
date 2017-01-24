@@ -181,6 +181,10 @@ class IcingaHost extends IcingaObject
             return;
         }
 
+        if ($this->isDisabled()) {
+            return;
+        }
+
         if ($this->getRenderingZone($config) === self::RESOLVE_ERROR) {
             return;
         }
