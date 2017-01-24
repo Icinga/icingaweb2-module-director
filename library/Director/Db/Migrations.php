@@ -31,7 +31,7 @@ class Migrations
     {
         try {
             $query = $this->db->select()->from(
-                array('m' => 'director_schema_migration'),
+                array('m' => $this->getTableName()),
                 array('schema_version' => 'MAX(schema_version)')
             );
 
@@ -39,6 +39,11 @@ class Migrations
         } catch (Exception $e) {
             return 0;
         }
+    }
+
+    protected function getTableName()
+    {
+        return $this->getModuleName() . '_schema_migration';
     }
 
     public function hasSchema()
