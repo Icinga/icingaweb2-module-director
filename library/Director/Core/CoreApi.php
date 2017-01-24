@@ -48,9 +48,9 @@ class CoreApi implements DeploymentApiInterface
         )->getResult('name');
     }
 
-    public function onEvent($callback)
+    public function onEvent($callback, $raw = false)
     {
-        $this->client->onEvent($callback);
+        $this->client->onEvent($callback, $raw);
         return $this;
     }
 
