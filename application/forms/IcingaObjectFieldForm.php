@@ -62,8 +62,13 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                         foreach ($m[1] as $val) {
                             if (array_key_exists($val, $blacklistedVars)) {
                                 $id = $blacklistedVars[$val];
-                                $suggestedFields[$id] = $existingFields[$id];
-                                unset($existingFields[$id]);
+
+                                // Hint: if not set it might already have been
+                                //       removed in this loop
+                                if (array_key_exists($id, $existingFields)) {
+                                    $suggestedFields[$id] = $existingFields[$id];
+                                    unset($existingFields[$id]);
+                                }
                             } else {
                                 $argumentVars[$val] = $val;
                                 $argumentVarDescriptions[$val] = $arg->description;
