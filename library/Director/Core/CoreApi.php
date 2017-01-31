@@ -102,6 +102,36 @@ class CoreApi implements DeploymentApiInterface
         );
     }
 
+    public function acknowledgeHostProblem($host, $author, $comment)
+    {
+        $filter = 'host.name == "' . $host . '"';
+        return $this->client->post(
+            'actions/acknowledge-problem?type=Host&filter=' . rawurlencode($filter),
+            (object) array(
+                'author'  => $author,
+                'comment' => $comment
+            )
+        );
+    }
+
+    public function removeHostAcknowledgement($host)
+    {
+        $filter = 'host.name == "' . $host . '"';
+        return $this->client->post(
+            'actions/remove-acknowledgement?type=Host&filter=' . rawurlencode($filter)
+        );
+    }
+
+    public function reloadNow()
+    {
+        try {
+            $this->client->post('actions/restart-process');
+            return true;
+        }  catch (Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
     public function getHostOutput($host)
     {
         try {
@@ -118,13 +148,12 @@ class CoreApi implements DeploymentApiInterface
 
     public function checkHostAndWaitForResult($host, $timeout = 10)
     {
+        $now = microtime(true);
         $this->checkHostNow($host);
-        $now = time();
 
         while (true) {
             try {
                 $object = $this->getObject($host, 'hosts');
-
                 if (isset($object->attrs->last_check_result)) {
                     $res = $object->attrs->last_check_result;
                     if ($res->execution_start > $now) {
@@ -140,7 +169,7 @@ class CoreApi implements DeploymentApiInterface
                     $host
                 );
             }
-            if (time() > ($now + $timeout)) {
+            if (microtime(true) > ($now + $timeout)) {
                 break;
             }
 
@@ -220,7 +249,7 @@ constants
         return $constants;
     }
 
-    protected function runConsoleCommand($command)
+    public function runConsoleCommand($command)
     {
         return $this->client->post(
             'console/execute-script',
