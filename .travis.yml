@@ -16,6 +16,11 @@ cache:
   directories:
     - vendor
 
+matrix:
+  fast_finish: true
+  allow_failures:
+    - php: nightly
+
 env:
   - DB=mysql DIRECTOR_TESTDB_RES="Director MySQL TestDB" DIRECTOR_TESTDB="director_test"
   - DB=pgsql DIRECTOR_TESTDB_RES="Director PostgreSQL TestDB" DIRECTOR_TESTDB="director_test"
