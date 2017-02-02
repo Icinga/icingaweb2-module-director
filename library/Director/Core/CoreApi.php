@@ -126,8 +126,9 @@ class CoreApi implements DeploymentApiInterface
     {
         try {
             $this->client->post('actions/restart-process');
+
             return true;
-        }  catch (Exception $e) {
+        } catch (Exception $e) {
             return $e->getMessage();
         }
     }
