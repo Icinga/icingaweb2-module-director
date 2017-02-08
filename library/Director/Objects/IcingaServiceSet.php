@@ -133,6 +133,7 @@ class IcingaServiceSet extends IcingaObject
                 $service->set('assign_filter', $filter);
             } elseif ($hostId = $this->get('host_id')) {
                 $service->set('object_type', 'object');
+                $service->set('use_var_overrides', 'y');
                 $service->set('host_id', $this->get('host_id'));
             } else {
                 // Service set template without assign filter or host
