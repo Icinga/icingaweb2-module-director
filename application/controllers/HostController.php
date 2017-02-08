@@ -393,8 +393,8 @@ class HostController extends ObjectController
     {
         // TODO: I hate doing this:
         if ($this->getRequest()->getActionName() === 'ticket') {
-
             $host = $this->object;
+
             if ($host->getResolvedProperty('has_agent') !== 'y') {
                 throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
             }
