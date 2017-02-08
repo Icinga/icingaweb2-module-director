@@ -12,6 +12,7 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 abstract class ObjectController extends ActionController
 {
+    /** @var IcingaObject */
     protected $object;
 
     protected $isApified = true;

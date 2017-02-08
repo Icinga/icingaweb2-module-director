@@ -389,22 +389,31 @@ class HostController extends ObjectController
         $this->view->globalzone = $this->db()->getDefaultGlobalZoneName();
     }
 
+    protected function handleApiRequest()
+    {
+        // TODO: I hate doing this:
+        if ($this->getRequest()->getActionName() === 'ticket') {
+
+            $host = $this->object;
+            if ($host->getResolvedProperty('has_agent') !== 'y') {
+                throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
+            }
+
+            return $this->sendJson(
+                Util::getIcingaTicket(
+                    $host->object_name,
+                    $this->api()->getTicketSalt()
+                )
+            );
+        }
+
+        return parent::handleApiRequest();
+    }
+
     public function ticketAction()
     {
-        if (! $this->getRequest()->isApiRequest() || ! $this->object) {
+        if (! $this->getRequest()->isApiRequest()) {
             throw new NotFoundError('Not found');
         }
-
-        $host = $this->object;
-        if ($host->getResolvedProperty('has_agent') !== 'y') {
-            throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
-        }
-
-        return $this->sendJson(
-            Util::getIcingaTicket(
-                $host->object_name,
-                $this->api()->getTicketSalt()
-            )
-        );
     }
 }
