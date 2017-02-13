@@ -77,7 +77,7 @@ include "features-enabled/*.conf"
 
 include <itl>
 include <plugins>
-// include <plugins-contrib>
+include <plugins-contrib>
 EOF
 `
 ZONES_ICINGA2=`cat << EOF
