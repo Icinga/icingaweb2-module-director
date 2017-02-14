@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Db;
 
 use Exception;
 use Icinga\Exception\IcingaException;
-use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Data\Db\DbConnection;
 
 class Migration
 {
@@ -24,7 +24,7 @@ class Migration
         $this->sql     = $sql;
     }
 
-    public function apply(Db $connection)
+    public function apply(DbConnection $connection)
     {
         $db = $connection->getDbAdapter();
 
