@@ -115,7 +115,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     protected function renderKeyName($key)
     {
-        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+        if (preg_match('/^[a-z][a-z0-9_]*$/i', $key)) {
             return 'vars.' . c::escapeIfReserved($key);
         } else {
             return 'vars[' . c::renderString($key) . ']';
