@@ -10,8 +10,6 @@
 <div class="content">
 <?= $this->form ?>
 <?php foreach ($this->tables as $key => $table): ?>
-<?php if (count($table)): ?>
 <?= $table->render() ?>
-<?php endif ?>
 <?php endforeach ?>
 </div>

@@ -142,7 +142,9 @@ class HostController extends ObjectController
             ->setTitle($title)
             ->setConnection($db);
 
-        $tables[$title] = $table;
+        if (count($table)) {
+            $tables[$title] = $table;
+        }
 
         $this->view->tables = $tables;
     }
