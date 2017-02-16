@@ -15,6 +15,8 @@ class IcingaServiceSetServiceTable extends QuickTable
     /** @var IcingaHost */
     protected $host;
 
+    protected $affectedHost;
+
     protected $searchColumns = array(
         'service',
     );
@@ -43,6 +45,12 @@ class IcingaServiceSetServiceTable extends QuickTable
         return $this;
     }
 
+    public function setAffectedHost(IcingaHost $host)
+    {
+        $this->affectedHost = $host;
+        return $this;
+    }
+
     public function setServiceSet(IcingaServiceSet $set)
     {
         $this->set = $set;
@@ -62,7 +70,7 @@ class IcingaServiceSetServiceTable extends QuickTable
     {
         if ($this->host) {
             $params = array(
-                'name'    => $this->host->getObjectName(),
+                'name'    => $this->affectedHost->getObjectName(),
                 'service' => $row->service,
                 'set'     => $row->service_set
             );
@@ -93,20 +101,38 @@ class IcingaServiceSetServiceTable extends QuickTable
         $title = $view->escape(array_shift($row));
 
         $htm = "<thead>\n  <tr>\n";
-
-        $deleteLink = $view->qlink(
-            $view->translate('Remove'),
-            'director/host/removeset',
-            array(
-                'name' => $this->host->getObjectName(),
-                'setId' => $this->set->id
-            ),
-            array(
-                'class' => 'icon-cancel',
-                'style' => 'float: right; font-weight: normal',
-                'title' => $view->translate('Remove this set from this host')
-            )
-        );
+        if ($this->affectedHost->id !== $this->host->id) {
+            $deleteLink = $view->qlink(
+                $this->host->getObjectName(),
+                'director/host/services',
+                array(
+                    'name' => $this->host->getObjectName(),
+                ),
+                array(
+                    'class' => 'icon-paste',
+                    'style' => 'float: right; font-weight: normal',
+                    'data-base-target' => '_next',
+                    'title' => sprintf(
+                        $view->translate('This set has been inherited from %s'),
+                        $this->host->getObjectName()
+                    )
+                )
+            );
+        } else {
+            $deleteLink = $view->qlink(
+                $view->translate('Remove'),
+                'director/host/removeset',
+                array(
+                    'name' => $this->host->getObjectName(),
+                    'setId' => $this->set->id
+                ),
+                array(
+                    'class' => 'icon-cancel',
+                    'style' => 'float: right; font-weight: normal',
+                    'title' => $view->translate('Remove this set from this host')
+                )
+            );
+        }
 
         $htm .= '    <th>' . $view->escape($title) . "$deleteLink</th>\n";
 

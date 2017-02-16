@@ -133,7 +133,7 @@ class HostController extends ObjectController
 
         $this->addHostServiceSetTables($host, $tables);
         foreach ($parents as $parent) {
-            $this->addHostServiceSetTables($host, $tables);
+            $this->addHostServiceSetTables($parent, $tables, $host);
         }
 
         $title = $this->translate('Applied services');
@@ -149,9 +149,12 @@ class HostController extends ObjectController
         $this->view->tables = $tables;
     }
 
-    protected function addHostServiceSetTables(IcingaHost $host, & $tables)
+    protected function addHostServiceSetTables(IcingaHost $host, & $tables, IcingaHost $affectedHost = null)
     {
         $db = $this->db();
+        if ($affectedHost === null) {
+            $affectedHost = $host;
+        }
 
         $query = $db->getDbAdapter()->select()
             ->from(
@@ -168,12 +171,12 @@ class HostController extends ObjectController
             )->where('hs.host_id = ?', $host->id);
 
         $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
-
         foreach ($sets as $name => $set) {
             $title = sprintf($this->translate('%s (Service set)'), $name);
             $table = $this->loadTable('IcingaServiceSetService')
                 ->setServiceSet($set)
                 ->setHost($host)
+                ->setAffectedHost($affectedHost)
                 ->setTitle($title)
                 ->setConnection($db);
 
