@@ -159,6 +159,13 @@ class IcingaServiceForm extends DirectorObjectForm
             ));
         }
 
+        if ($this->host && $this->set) {
+            return $this->translate(
+                'This service belongs to a Service Set. Still, you might want'
+                . ' to override the following properties for this host only.'
+            );
+        }
+
         if ($this->inheritedFrom) {
             $msg = $view->escape($this->translate(
                 'This service has been inherited from %s. Still, you might want'

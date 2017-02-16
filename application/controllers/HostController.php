@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -134,6 +135,19 @@ class HostController extends ObjectController
         $this->addHostServiceSetTables($host, $tables);
         foreach ($parents as $parent) {
             $this->addHostServiceSetTables($parent, $tables, $host);
+        }
+
+        $appliedSets = AppliedServiceSetLoader::fetchForHost($host);
+        foreach ($appliedSets as $set) {
+            $title = sprintf($this->translate('%s (Applied Service set)'), $set->getObjectName());
+            $table = $this->loadTable('IcingaServiceSetService')
+                ->setServiceSet($set)
+                // ->setHost($host)
+                ->setAffectedHost($host)
+                ->setTitle($title)
+                ->setConnection($db);
+
+            $tables[$title] = $table;
         }
 
         $title = $this->translate('Applied services');

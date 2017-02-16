@@ -59,7 +59,7 @@ class IcingaServiceSetServiceTable extends QuickTable
 
     protected function renderTitles($row)
     {
-        if ($this->host) {
+        if ($this->host || $this->affectedHost) {
             return $this->renderHostTitles($row);
         } else {
             return parent::renderTitles($row);
@@ -68,7 +68,7 @@ class IcingaServiceSetServiceTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        if ($this->host) {
+        if ($this->affectedHost) {
             $params = array(
                 'name'    => $this->affectedHost->getObjectName(),
                 'service' => $row->service,
@@ -101,7 +101,9 @@ class IcingaServiceSetServiceTable extends QuickTable
         $title = $view->escape(array_shift($row));
 
         $htm = "<thead>\n  <tr>\n";
-        if ($this->affectedHost->id !== $this->host->id) {
+        if (! $this->host) {
+            $deleteLink = '';
+        } elseif ($this->affectedHost->id !== $this->host->id) {
             $deleteLink = $view->qlink(
                 $this->host->getObjectName(),
                 'director/host/services',
