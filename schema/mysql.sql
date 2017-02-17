@@ -120,7 +120,7 @@ CREATE TABLE director_datalist_entry (
 
 CREATE TABLE director_datafield (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  varname VARCHAR(64) NOT NULL,
+  varname VARCHAR(64) NOT NULL COLLATE utf8_bin,
   caption VARCHAR(255) NOT NULL,
   description TEXT DEFAULT NULL,
   datatype varchar(255) NOT NULL,
@@ -1508,4 +1508,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (128, NOW());
+  VALUES (129, NOW());
