@@ -40,6 +40,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $object = $this->object;
 
         $loader = new IcingaObjectFieldLoader($object);
+        $loader->prepareElements($this);
         $loader->addFieldsToForm($this);
 
         if ($form = $this->relatedForm) {
