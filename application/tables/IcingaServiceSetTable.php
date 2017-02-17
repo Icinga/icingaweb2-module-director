@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Tables;
 
-use Icinga\Module\Director\Web\Table\IcingaObjectTable;
+use Icinga\Module\Director\Web\Table\QuickTable;
 
-class IcingaServiceSetTable extends IcingaObjectTable
+class IcingaServiceSetTable extends QuickTable
 {
     protected $searchColumns = array(
         'name',
@@ -18,7 +18,8 @@ class IcingaServiceSetTable extends IcingaObjectTable
             'object_type'    => 'sset.object_type',
             'assign_filter'  => 'sset.assign_filter',
             'description'    => 'sset.description',
-            'count_hosts'    => 'count(distinct ssetobj.id)',
+            // Disabled for now, misleading
+            // 'count_hosts'    => 'count(distinct ssetobj.id)',
             'count_services' => 'count(distinct s.id)',
         );
     }
@@ -40,7 +41,7 @@ class IcingaServiceSetTable extends IcingaObjectTable
         return array(
             'name' => $view->translate('Service set'),
             'count_services' => $view->translate('# Services'),
-            'count_hosts' => $view->translate('# Hosts'),
+            // 'count_hosts' => $view->translate('# Hosts'),
         );
     }
 
