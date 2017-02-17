@@ -4,6 +4,40 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.3.1
+-----
+
+### Fixed issues and related features
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/8?closed=1)
+
+### Service Sets
+* Various little issues have been fixed. You can now remove Sets from hosts,
+  even when being empty. Services from Sets assigned to parents or via apply
+  rule are now shown for every single host, and their custom vars can be
+  overridden at a single host level
+* Sets assigned to single hosts have been shown, variable overrides have been
+  offered - but rendering did not include the Director-generated template
+  necessary to really put them into place. This has been fixed
+
+### Usability
+* A nasty bug hindered fields inherited from Commands from being shown ad a
+  Service level - works fine right now
+* There is now a pagination for Zones
+
+### Rendering
+* Disabling a host now also disables rendering of related objects (Endpoint,
+  Zone) for hosts using the Icinga Agent
+
+### REST API
+* Ticket creation through the REST API has been broken, is now fixed
+
+### Performance, Internals
+* A data encoding inconsistency slowed down apply rule editing where a lot of
+  host custom vars exists
+* Some internal changes have been made to make parts of the code easier to be
+  used by other modules
+
 1.3.0
 -----
 
