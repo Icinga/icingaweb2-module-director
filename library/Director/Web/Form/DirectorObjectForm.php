@@ -496,14 +496,22 @@ abstract class DirectorObjectForm extends QuickForm
             }
             $msg = $this->translate('No action taken, object has not been modified');
         }
+
+        $this->setObjectSuccessUrl();
+        $this->beforeSuccessfulRedirect();
+        $this->redirectOnSuccess($msg);
+    }
+
+    protected function setObjectSuccessUrl()
+    {
+        $object = $this->object();
+
         if ($object instanceof IcingaObject) {
             $this->setSuccessUrl(
                 'director/' . strtolower($this->getObjectShortClassName()),
                 $object->getUrlParams()
             );
         }
-        $this->beforeSuccessfulRedirect();
-        $this->redirectOnSuccess($msg);
     }
 
     protected function beforeSuccessfulRedirect()

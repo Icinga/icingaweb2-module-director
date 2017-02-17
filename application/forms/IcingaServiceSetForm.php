@@ -60,6 +60,18 @@ class IcingaServiceSetForm extends DirectorObjectForm
             ->addAssignmentElements();
     }
 
+    protected function setObjectSuccessUrl()
+    {
+        if ($this->host) {
+            $this->setSuccessUrl(
+                'director/host/services',
+                array('name' => $this->host->getObjectName())
+            );
+        } else {
+            parent::setObjectSuccessUrl();
+        }
+    }
+
     protected function setupHost()
     {
         $object = $this->object();
