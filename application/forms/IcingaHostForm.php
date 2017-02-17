@@ -224,7 +224,10 @@ class IcingaHostForm extends DirectorObjectForm
                 'name'    => 'object_name',
                 'display' => 'COALESCE(display_name, object_name)'
             )
-        )->where('object_type = ?', 'object')->order('display');
+        )->where(
+            'object_type IN (?)',
+            array('object', 'external_object')
+        )->order('display');
 
         return $db->fetchPairs($select);
     }

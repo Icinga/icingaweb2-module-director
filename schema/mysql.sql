@@ -730,7 +730,7 @@ CREATE TABLE icinga_service_set_var (
 CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
-  object_type ENUM('object', 'template') NOT NULL,
+  object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
