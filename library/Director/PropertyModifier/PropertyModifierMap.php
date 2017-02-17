@@ -65,8 +65,17 @@ class PropertyModifierMap extends PropertyModifierHook
 
     protected function getDatalistName()
     {
-        // TODO: need the db for ->enumDatalist()
-        return sprintf('List with id %s', $this->getSetting('datalist'));
+        $db = $this->getDb()->getDbAdapter();
+        $query = $db->select()->from(
+            'director_datalist',
+            'list_name'
+        )->where(
+            'id = ?',
+            $this->getSetting('datalist_id')
+        );
+        $result = $db->fetchOne($query);
+
+        return $result;
     }
 
     protected function loadCache($force = false)
