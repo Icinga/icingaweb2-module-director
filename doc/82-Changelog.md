@@ -24,6 +24,7 @@ before switching to a new version.
 * A nasty bug hindered fields inherited from Commands from being shown ad a
   Service level - works fine right now
 * There is now a pagination for Zones
+* Multiedit no longer showed custom fields, now it works again as it should
 
 ### Rendering
 * Disabling a host now also disables rendering of related objects (Endpoint,
