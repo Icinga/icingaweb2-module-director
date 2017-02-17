@@ -935,9 +935,9 @@ abstract class DirectorObjectForm extends QuickForm
         return ! $this->valueIsEmpty($this->getSentOrObjectValue('object_type'));
     }
 
-    protected function addZoneElement()
+    protected function addZoneElement($all = false)
     {
-        if ($this->isTemplate()) {
+        if ($all || $this->isTemplate()) {
             $zones = $this->db->enumZones();
         } else {
             $zones = $this->db->enumNonglobalZones();

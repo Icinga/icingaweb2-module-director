@@ -70,8 +70,28 @@ class IcingaCommandForm extends DirectorObjectForm
             )
         ));
         $this->addDisabledElement();
-
+        $this->addZoneSection();
         $this->setButtons();
+    }
+
+    protected function addZoneSection()
+    {
+        $this->addZoneElement(true);
+
+        $elements = array(
+            'zone_id',
+        );
+        $this->addDisplayGroup($elements, 'clustering', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 80,
+            'legend' => $this->translate('Zone settings')
+        ));
+
+        return $this;
     }
 
     protected function enumAllowedTemplates()
