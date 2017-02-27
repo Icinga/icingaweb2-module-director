@@ -11,6 +11,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 
 class ServiceController extends ObjectController
 {
+    /** @var IcingaHost */
     protected $host;
 
     protected $set;
@@ -112,6 +113,9 @@ class ServiceController extends ObjectController
 
     public function editAction()
     {
+        $this->getTabs()->activate('modify');
+
+        /** @var IcingaService $object */
         $object = $this->object;
 
         if ($this->host) {
@@ -123,23 +127,24 @@ class ServiceController extends ObjectController
             );
         }
 
+        $this->view->form = $form = $this
+            ->loadForm('icingaService')
+            ->setDb($this->db());
+
         if ($this->host && $object->usesVarOverrides()) {
-            $parent = IcingaService::create(array(
-                'object_type' => 'template',
-                // TODO: => 'myself', -> There is no such import: "myself"
+            $fake = IcingaService::create(array(
+                'object_type' => 'object',
+                'host_id' => $object->get('host_id'),
+                'imports' => $object,
                 'object_name' => $object->object_name,
-                'vars'        => $object->vars,
+                'use_var_overrides' => 'y',
+                'vars' => $this->host->getOverriddenServiceVars($object->object_name),
             ), $this->db());
 
-            $object->vars = $this->host->getOverriddenServiceVars($object->object_name);
-            $object->imports()->add($parent);
+            $form->setObject($fake);
+        } else {
+            $form->setObject($object);
         }
-
-        $this->getTabs()->activate('modify');
-
-        $this->view->form = $form = $this->loadForm('icingaService')
-            ->setDb($this->db())
-            ->setObject($object);
 
         $this->view->form->handleRequest();
         $this->view->actionLinks .= $this->createCloneLink();
