@@ -39,6 +39,6 @@ class IcingaHostGroupTable extends QuickTable
         return $this->db()->select()->from(
             array('hg' => 'icinga_hostgroup'),
             array()
-        );
+        )->order('hg.object_name');
     }
 }
