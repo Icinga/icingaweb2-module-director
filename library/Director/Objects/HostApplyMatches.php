@@ -103,20 +103,38 @@ class HostApplyMatches
     protected static function fixFilterColumns(Filter $filter)
     {
         if ($filter->isExpression()) {
-            /** @var FilterExpression $filter */
-            $col = $filter->getColumn();
-            if (substr($col, 0, 5) === 'host.') {
-                $filter->setColumn($col = substr($col, 5));
-            }
-            if (array_key_exists($col, self::$columnMap)) {
-                $filter->setColumn(self::$columnMap[$col]);
-            }
-            $filter->setExpression(json_decode($filter->getExpression()));
+            static::fixFilterExpressionColumn($filter);
         } else {
             foreach ($filter->filters() as $sub) {
                 static::fixFilterColumns($sub);
             }
         }
+    }
+
+    protected static function fixFilterExpressionColumn(FilterExpression $filter)
+    {
+        if (static::columnIsJson($filter)) {
+            $column = $filter->getExpression();
+            $filter->setExpression($filter->getColumn());
+            $filter->setColumn($column);
+        }
+
+        /** @var FilterExpression $filter */
+        $col = $filter->getColumn();
+        if (substr($col, 0, 5) === 'host.') {
+            $filter->setColumn($col = substr($col, 5));
+        }
+
+        if (array_key_exists($col, self::$columnMap)) {
+            $filter->setColumn(self::$columnMap[$col]);
+        }
+        $filter->setExpression(json_decode($filter->getExpression()));
+    }
+
+    protected static function columnIsJson(FilterExpression $filter)
+    {
+        $col = $filter->getColumn();
+        return strlen($col) && $col[0] === '"';
     }
 
     protected static function flattenVars(& $object, $key = 'vars')

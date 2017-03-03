@@ -64,6 +64,21 @@ class HostApplyMatchesTest extends BaseTestCase
         );
     }
 
+    public function testArrayVariableMatches()
+    {
+        $matcher = HostApplyMatches::prepare($this->sampleHost());
+        $this->assertTrue(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('%22Amazing%22=host.vars.tags')
+            )
+        );
+        $this->assertFalse(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('%22Amazingg%22=host.vars.tags')
+            )
+        );
+    }
+
     protected function sampleHost()
     {
         return IcingaHost::create(array(
