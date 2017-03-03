@@ -85,7 +85,8 @@ class AssignRenderer
     protected function renderFilterExpression(FilterExpression $filter)
     {
         $column = $filter->getColumn();
-        $expression = $filter->getExpression();
+        $expression = $this->renderExpressionValue(json_decode($filter->getExpression()));
+
         if ($filter instanceof FilterEqual) {
             return sprintf(
                 '%s == %s',
@@ -152,6 +153,11 @@ class AssignRenderer
                 get_class($filter)
             );
         }
+    }
+
+    protected function renderExpressionValue($value)
+    {
+        return IcingaConfigHelper::renderPhpValue($value);
     }
 
     protected function renderFilterChain(FilterChain $filter)
