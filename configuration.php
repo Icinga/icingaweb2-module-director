@@ -18,6 +18,14 @@ $this->providePermission(
 );
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
+$this->provideRestriction(
+    'director/beta-filter/hostgroups',
+    $this->translate(
+        'BETA: Limit access to the given comma-separated list of hostgroups. This'
+        . ' restriction might change without pre-announcement'
+    )
+);
+
 $this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
 
 /*

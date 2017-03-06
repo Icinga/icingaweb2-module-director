@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Restriction\BetaHostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostForm extends DirectorObjectForm
@@ -132,6 +133,10 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
+        if ($this->hasHostGroupRestriction()) {
+            return $this;
+        }
+
         $groups = $this->enumHostgroups();
         if (empty($groups)) {
             return $this;
@@ -151,6 +156,19 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         return $this;
+    }
+
+    protected function hasHostGroupRestriction()
+    {
+        foreach ($this->getObjectRestrictions() as $restriction) {
+            if ($restriction instanceof BetaHostgroupRestriction) {
+                if ($restriction->isRestricted()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

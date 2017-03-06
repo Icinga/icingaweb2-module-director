@@ -22,6 +22,16 @@ abstract class ObjectController extends ActionController
         'endpoint'
     );
 
+    protected function loadRestrictions()
+    {
+        return array();
+    }
+
+    protected function allowsObject(IcingaObject $object)
+    {
+        return true;
+    }
+
     public function init()
     {
         parent::init();
@@ -169,6 +179,7 @@ abstract class ObjectController extends ActionController
             ->setDb($this->db())
             ->setApi($this->getApiIfAvailable());
         $form->setObject($object);
+        $form->setObjectRestrictions($this->loadRestrictions());
 
         $this->view->title = $object->object_name;
         $this->view->form->handleRequest();
@@ -334,6 +345,11 @@ abstract class ObjectController extends ActionController
                     $name,
                     $this->db()
                 );
+
+                if (! $this->allowsObject($this->object)) {
+                    $this->object = null;
+                    throw new NotFoundError('No such object available');
+                }
             } elseif ($id = $this->params->get('id')) {
                 $this->object = IcingaObject::loadByType(
                     $this->getType(),

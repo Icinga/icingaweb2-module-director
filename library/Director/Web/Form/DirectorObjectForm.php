@@ -11,6 +11,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Restriction\ObjectRestriction;
 use Icinga\Module\Director\Util;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
@@ -48,6 +49,9 @@ abstract class DirectorObjectForm extends QuickForm
     private $api;
 
     private $presetImports;
+
+    /** @var ObjectRestriction[] */
+    private $objectRestrictions = array();
 
     private $earlyProperties = array(
         'imports',
@@ -559,6 +563,38 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $this;
+    }
+
+    /**
+     * @param ObjectRestriction[] $restrictions
+     * @return $this
+     */
+    public function setObjectRestrictions(array $restrictions)
+    {
+        $this->objectRestrictions = array();
+        foreach ($restrictions as $restriction) {
+            $this->addObjectRestriction($restriction);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ObjectRestriction $restriction
+     * @return $this
+     */
+    public function addObjectRestriction(ObjectRestriction $restriction)
+    {
+        $this->objectRestrictions[$restriction->getName()] = $restriction;
+        return $this;
+    }
+
+    /**
+     * @return ObjectRestriction[]
+     */
+    public function getObjectRestrictions()
+    {
+        return $this->objectRestrictions;
     }
 
     protected function getObjectClassname()
