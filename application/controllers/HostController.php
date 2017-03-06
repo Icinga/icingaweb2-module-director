@@ -8,8 +8,10 @@ use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Restriction\BetaHostgroupRestriction;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Web\Url;
@@ -45,6 +47,27 @@ class HostController extends ObjectController
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/hosts');
+    }
+
+    protected function loadRestrictions()
+    {
+        return array(
+            $this->getHostgroupRestriction()
+        );
+    }
+
+    protected function getHostgroupRestriction()
+    {
+        return new BetaHostgroupRestriction($this->db(), $this->Auth());
+    }
+
+    /**
+     * @param IcingaHost $object
+     * @return bool
+     */
+    protected function allowsObject(IcingaObject $object)
+    {
+        return $this->getHostgroupRestriction()->allowsHost($object);
     }
 
     public function editAction()

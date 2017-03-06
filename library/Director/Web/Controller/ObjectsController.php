@@ -142,6 +142,8 @@ abstract class ObjectsController extends ActionController
             }
         }
 
+        $this->applyTableFilters($table);
+
         $this->view->title = $title;
 
         $this->view->addLink = $this->view->qlink(
@@ -153,6 +155,10 @@ abstract class ObjectsController extends ActionController
 
         $this->provideFilterEditorForTable($table, $dummy);
         $this->setViewScript('objects/table');
+    }
+
+    protected function applyTableFilters($table)
+    {
     }
 
     public function editAction()

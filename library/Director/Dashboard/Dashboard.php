@@ -4,7 +4,9 @@ namespace Icinga\Module\Director\Dashboard;
 
 use Countable;
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Restriction\BetaHostgroupRestriction;
 use Icinga\Web\View;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
@@ -183,10 +185,40 @@ abstract class Dashboard implements Countable
             }
         }
 
-        return $this->db->getDbAdapter()->select()->from(
+        $query = $this->db->getDbAdapter()->select()->from(
             array('o' => 'icinga_' . $type),
             $columns
         );
+
+        return $this->applyRestrictions($type, $query);
+    }
+
+    protected function applyRestrictions($type, $query)
+    {
+        switch ($type) {
+            case 'hostgroup':
+                $r = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
+                $r->applyToHostGroupsQuery($query);
+                break;
+            case 'host':
+                $r = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
+                $r->applyToHostsQuery($query, 'o.id');
+                break;
+        }
+
+        return $query;
+    }
+
+    protected function applyHostgroupRestrictions($query)
+    {
+        $restrictions = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
+        $restrictions->applyToHostGroupsQuery($query);
+
+    }
+
+    protected function getAuth()
+    {
+        return Auth::getInstance();
     }
 
     protected function getCntSql($objectType)
