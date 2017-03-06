@@ -31,7 +31,7 @@ class DeploymentController extends ActionController
             'url'   => $this->getRequest()->getUrl()
         ))->activate('deployment');
 
-        if ($deployment->config_checksum !== null) {
+        if ($deployment->config_checksum !== null && $this->hasPermission('director/showconfig')) {
             $tabs->add('config', array(
                 'label'     => $this->translate('Config'),
                 'url'       => 'director/config/files',
