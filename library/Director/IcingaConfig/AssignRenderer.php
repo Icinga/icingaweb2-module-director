@@ -60,14 +60,7 @@ class AssignRenderer
 
     protected function renderEquals($column, $expression)
     {
-        if ($column[0] === '"') {
-            // "me"=vars.users -> "me" in vars.users
-            return sprintf(
-                '%s in %s',
-                $column,
-                $expression
-            );
-        } elseif (substr($column, -7) === '.groups') {
+        if (substr($column, -7) === '.groups') {
             return sprintf(
                 '%s in %s',
                 $expression,
@@ -82,8 +75,21 @@ class AssignRenderer
         }
     }
 
+    protected function renderContains(FilterExpression $filter)
+    {
+        return sprintf(
+            '%s in %s',
+            $this->renderExpressionValue(json_decode($filter->getColumn())),
+            $filter->getExpression()
+        );
+    }
+
     protected function renderFilterExpression(FilterExpression $filter)
     {
+        if ($this->columnIsJson($filter)) {
+            return $this->renderContains($filter);
+        }
+
         $column = $filter->getColumn();
         $expression = $this->renderExpressionValue(json_decode($filter->getExpression()));
 
@@ -158,6 +164,12 @@ class AssignRenderer
     protected function renderExpressionValue($value)
     {
         return IcingaConfigHelper::renderPhpValue($value);
+    }
+
+    protected function columnIsJson(FilterExpression $filter)
+    {
+        $col = $filter->getColumn();
+        return strlen($col) && $col[0] === '"';
     }
 
     protected function renderFilterChain(FilterChain $filter)

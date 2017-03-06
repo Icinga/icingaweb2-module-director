@@ -54,6 +54,27 @@ class AssignRendererTest extends BaseTestCase
         );
     }
 
+    public function testWhetherFakeContainsOperatorRendersCorrectly()
+    {
+        $string = json_encode('member') . '=host.groups';
+
+        $expected = 'assign where "member" in host.groups';
+
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+
+        $string = json_encode('member') . '=host.vars.some_array';
+
+        $expected = 'assign where "member" in host.vars.some_array';
+
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
     protected function renderer($string)
     {
         return AssignRenderer::forFilter(Filter::fromQueryString($string));
