@@ -18,10 +18,9 @@ class BetaHostgroupRestriction extends ObjectRestriction
         $query = $this->db->select()->from(
             array('h' => 'icinga_host'),
             array('id')
-        );
+        )->where('id = ?', $host->id);
 
         $this->applyToHostsQuery($query);
-
         return (int) $this->db->fetchOne($query) === (int) $host->get('id');
     }
 
