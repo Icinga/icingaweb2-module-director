@@ -288,24 +288,29 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         foreach ($dummy->listProperties() as $prop) {
-            if ($prop === 'id') {
+            if ($dummy instanceof IcingaObject && $prop === 'id') {
                 continue;
             }
 
             // TODO: allow those fields, but munge them (store ids)
             //if (preg_match('~_id$~', $prop)) continue;
             if (substr($prop, -3) === '_id') {
-                $prop = substr($prop, 0, -3);
-                if (! $dummy instanceof IcingaObject || ! $dummy->hasRelation($prop)) {
-                    continue;
+                if ($dummy instanceof IcingaObject) {
+                    if ($dummy->hasRelation($prop)) {
+                        $prop = substr($prop, 0, -3);
+                    } else {
+                        continue;
+                    }
                 }
             }
 
             $props[$prop] = $prop;
         }
 
-        foreach ($dummy->listMultiRelations() as $prop) {
-            $props[$prop] = sprintf('%s (%s)', $prop, $this->translate('a list'));
+        if ($dummy instanceof IcingaObject) {
+            foreach ($dummy->listMultiRelations() as $prop) {
+                $props[$prop] = sprintf('%s (%s)', $prop, $this->translate('a list'));
+            }
         }
 
         ksort($props);
