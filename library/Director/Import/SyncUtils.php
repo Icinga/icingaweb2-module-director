@@ -108,7 +108,7 @@ class SyncUtils
         }
 
         $func = function ($match) use ($row) {
-            return static::getSpecificValue($row, $match[1]);
+            return SyncUtils::getSpecificValue($row, $match[1]);
         };
 
         return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
