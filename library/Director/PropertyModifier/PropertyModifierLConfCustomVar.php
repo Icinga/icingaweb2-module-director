@@ -37,7 +37,7 @@ class PropertyModifierLConfCustomVar extends PropertyModifierHook
     protected function extractLConfVar($value, $vars)
     {
         list($key, $val) = preg_split('/ /', $value, 2);
-        $key = rtrim($key, '_');
+        $key = ltrim($key, '_');
         $vars->$key = $val;
     }
 }
