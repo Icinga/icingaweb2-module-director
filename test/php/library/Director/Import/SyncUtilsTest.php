@@ -75,7 +75,7 @@ class SyncUtilsTest extends BaseTestCase
         );
     }
 
-    public function testVariables()
+    public function testMultipleVariablesAreBeingReplacedCorrectly()
     {
         $string = '${addresses.entries.lo} and ${addresses.entries.eth0:1} are'
             . ' ${This one?.$höüld be}${addressesmissing}';
