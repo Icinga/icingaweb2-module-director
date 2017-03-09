@@ -23,6 +23,11 @@ class PropertyModifierLConfCustomVar extends PropertyModifierHook
         return 'Transform LConf CustomVars to Hash';
     }
 
+    public function hasArraySupport()
+    {
+        return true;
+    }
+
     protected function extractLConfVars($value, $vars)
     {
         if (is_string($value)) {
