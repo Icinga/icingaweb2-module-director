@@ -315,33 +315,30 @@ class KickstartForm extends QuickForm
 
     public function onSuccess()
     {
-        try {
-            if ($this->getSubmitLabel() === $this->storeConfigLabel) {
-                if ($this->storeResourceConfig()) {
-                    parent::onSuccess();
-                } else {
-                    return;
-                }
-            }
-
-            if ($this->getSubmitLabel() === $this->createDbLabel
-                || $this->getSubmitLabel() === $this->migrateDbLabel) {
-                $this->migrations()->applyPendingMigrations();
+        if ($this->getSubmitLabel() === $this->storeConfigLabel) {
+            if ($this->storeResourceConfig()) {
                 parent::onSuccess();
+            } else {
+                return;
             }
-
-            $values = $this->getValues();
-            if ($this->endpoint && empty($values['password'])) {
-                $values['password'] = $this->endpoint->getApiUser()->password;
-            }
-
-            $kickstart = new KickstartHelper($this->getDb());
-            unset($values['resource']);
-            $kickstart->setConfig($values)->run();
-            parent::onSuccess();
-        } catch (Exception $e) {
-            $this->addException($e);
         }
+
+        if ($this->getSubmitLabel() === $this->createDbLabel
+            || $this->getSubmitLabel() === $this->migrateDbLabel) {
+            $this->migrations()->applyPendingMigrations();
+            parent::onSuccess();
+        }
+
+        $values = $this->getValues();
+        if ($this->endpoint && empty($values['password'])) {
+            $values['password'] = $this->endpoint->getApiUser()->password;
+        }
+
+        $kickstart = new KickstartHelper($this->getDb());
+        unset($values['resource']);
+        $kickstart->setConfig($values)->run();
+
+        parent::onSuccess();
     }
 
     protected function getResourceName()
