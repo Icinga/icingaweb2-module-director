@@ -591,26 +591,6 @@ class Db extends DbConnection
         return $this->enum('icinga_' . $type, null, $filters);
     }
 
-    public function listExternal($type)
-    {
-        $table = IcingaObject::createByType($type)->getTableName();
-
-        $select = $this->db()->select()->from(
-            array('o' => $table),
-            array('object_name' => 'o.object_name')
-        )->where(
-            'object_type = ?',
-            'external_object'
-        )->order('o.object_name');
-
-        $res = $this->db()->fetchCol($select);
-        if (empty($res)) {
-            return array();
-        }
-
-        return array_combine($res, $res);
-    }
-
     public function fetchDistinctHostVars()
     {
         $select = $this->db()->select()->distinct()->from(

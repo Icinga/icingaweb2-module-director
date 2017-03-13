@@ -6,27 +6,38 @@ use Exception;
 use Icinga\Application\Config;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaApiUser;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\RestApiClient;
-use Icinga\Module\Director\Db;
 
 class KickstartHelper
 {
+    /** @var Db */
     protected $db;
 
+    /** @var CoreApi */
     protected $api;
 
+    /** @var IcingaApiUser */
     protected $apiUser;
 
+    /** @var  IcingaEndpoint */
     protected $deploymentEndpoint;
 
+    /** @var  IcingaEndpoint[] */
     protected $loadedEndpoints;
 
+    /** @var  IcingaEndpoint[] */
+    protected $removeEndpoints;
+
+    /** @var  IcingaZone[] */
     protected $loadedZones;
 
+    /** @var  IcingaZone[] */
     protected $removeZones;
 
     protected $config = array(
@@ -37,11 +48,35 @@ class KickstartHelper
         'password' => null,
     );
 
+    /**
+     * KickstartHelper constructor.
+     * @param Db $db
+     */
     public function __construct(Db $db)
     {
         $this->db = $db;
     }
 
+    /**
+     * Trigger a complete kickstart run
+     */
+    public function run()
+    {
+        $this->fetchEndpoints()
+            ->reconnectToDeploymentEndpoint()
+            ->fetchZones()
+            ->storeZones()
+            ->storeEndpoints()
+            ->removeEndpoints()
+            ->removeZones()
+            ->importCommands();
+
+        $this->apiUser()->store();
+    }
+
+    /**
+     * @return bool
+     */
     public function isConfigured()
     {
         $config = $this->fetchConfigFileSection();
@@ -49,11 +84,17 @@ class KickstartHelper
             && array_key_exists('username', $config);
     }
 
+    /**
+     * @return KickstartHelper
+     */
     public function loadConfigFromFile()
     {
         return $this->setConfig($this->fetchConfigFileSection());
     }
 
+    /**
+     * @return array
+     */
     protected function fetchConfigFileSection()
     {
         return Config::module('director', 'kickstart')
@@ -61,6 +102,11 @@ class KickstartHelper
             ->toArray();
     }
 
+    /**
+     * @param  array $config
+     * @return $this
+     * @throws ProgrammingError
+     */
     public function setConfig($config)
     {
         foreach ($config as $key => $value) {
@@ -81,12 +127,20 @@ class KickstartHelper
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function isRequired()
     {
         $stats = $this->db->getObjectSummary();
         return (int) $stats['apiuser']->cnt_total === 0;
     }
 
+    /**
+     * @param  $key
+     * @param  mixed $default
+     * @return mixed
+     */
     protected function getValue($key, $default = null)
     {
         if ($this->config[$key] === null) {
@@ -96,19 +150,9 @@ class KickstartHelper
         }
     }
 
-    public function run()
-    {
-        $this->loadEndpoints()
-             ->reconnectToDeploymentEndpoint()
-             ->loadZones()
-             ->storeZones()
-             ->storeEndpoints()
-             ->removeZones()
-             ->importCommands();
-
-        $this->apiUser()->store();
-    }
-
+    /**
+     * @return IcingaApiUser
+     */
     protected function apiUser()
     {
         if ($this->apiUser === null) {
@@ -133,64 +177,92 @@ class KickstartHelper
     }
 
     /**
-     * @throws ConfigurationError
-     * @return self
+     * @param IcingaObject[] $objects
+     * @return IcingaObject[]
      */
-    protected function loadZones()
+    protected function sortByInheritance(array $objects)
+    {
+        $sorted = array();
+
+        $cnt = 0;
+        while (! empty($objects)) {
+            $cnt++;
+            if ($cnt > 20) {
+                $this->throwObjectLoop($objects);
+            }
+            $unset = array();
+            foreach ($objects as $key => $object) {
+                foreach ($object->getImports() as $parentName) {
+                    if (! array_key_exists($parentName, $sorted)) {
+                        continue 2;
+                    }
+                }
+
+                $sorted[$object->getObjectName()] = $object;
+                $unset[] = $key;
+            }
+
+            foreach ($unset as $key) {
+                unset($objects[$key]);
+            }
+        }
+
+        return $sorted;
+    }
+
+    /**
+     * @param IcingaObject[] $objects
+     * @throws NestingError
+     */
+    protected function throwObjectLoop(array $objects)
+    {
+        $names = array();
+        if (empty($objects)) {
+            $class = 'Nothing';
+        } else {
+            $class = preg_split('/\\\/', get_class(current($objects)));
+            $class = end($class);
+        }
+
+        foreach ($objects as $object) {
+            $names[] = $object->getObjectName();
+        }
+
+        throw new NestingError(
+            'Loop detected while resolving %s: %s',
+            $class,
+            implode(', ', $names)
+        );
+    }
+
+    /**
+     * @return $this
+     */
+    protected function fetchZones()
     {
         $db = $this->db;
-        $imports = array();
-        $objects = array();
-        $children = array();
-        $root = array();
-
-        foreach ($this->api()->setDb($db)->getZoneObjects() as $object) {
-            if ($object->parent) {
-                $children[$object->parent][$object->object_name] = $object;
-            } else {
-                $root[$object->object_name] = $object;
-            }
-        }
-
-        foreach ($root as $name => $object) {
-            $objects[$name] = $object;
-        }
-
-        $loop = 0;
-        while (! empty($children)) {
-            $loop++;
-            $unset = array();
-            foreach ($objects as $name => $object) {
-                if (array_key_exists($name, $children)) {
-                    foreach ($children[$name] as $object) {
-                        $objects[$object->object_name] = $object;
-                    }
-
-                    unset($children[$name]);
-                }
-            }
-
-            if ($loop > 20) {
-                throw new ConfigurationError('Loop detected while importing zones');
-            }
-        }
-
-        $this->loadedZones = $objects;
+        $this->loadedZones = $this->sortByInheritance(
+            $this->api()->setDb($db)->getZoneObjects()
+        );
 
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     protected function storeZones()
     {
         $db = $this->db;
-        $existing = $db->listExternal('zone');
+        $existing = IcingaObject::loadAllExternalObjectsByType('zone', $db);
 
-        foreach ($this->loadedZones as $name => $zone) {
-            if ($zone::exists($name, $db)) {
-                $zone = $zone::load($name, $db)->replaceWith($zone);
+        foreach ($this->loadedZones as $name => $object) {
+            if (array_key_exists($name, $existing)) {
+                $object = $existing[$name]->replaceWith($object);
+                unset($existing[$name]);
             }
-            $zone->store();
-            unset($existing[$name]);
+
+            $object->store();
         }
 
         $this->removeZones = $existing;
@@ -198,45 +270,85 @@ class KickstartHelper
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     protected function removeZones()
     {
-        $db = $this->db;
-
-        foreach ($this->removeZones as $name) {
-            IcingaZone::load($name, $db)->delete();
+        foreach ($this->removeZones as $zone) {
+            $zone->delete();
         }
 
         return $this;
     }
 
-    protected function loadEndpoints()
+    /**
+     * @return $this
+     */
+    protected function fetchEndpoints()
     {
         $db = $this->db;
-        $master = $this->getValue('endpoint');
+        $this->loadedEndpoints = $this->sortByInheritance(
+            $this->api()->setDb($db)->getEndpointObjects()
+        );
 
-        $endpoints = array();
-        foreach ($this->api()->setDb($db)->getEndpointObjects() as $object) {
-            if ($object->object_name === $master) {
-                $apiuser = $this->apiUser();
-                $apiuser->store();
-                $object->apiuser = $apiuser->object_name;
-                $this->deploymentEndpoint = $object;
+        $master = $this->getValue('endpoint');
+        if (array_key_exists($master, $this->loadedEndpoints)) {
+            $apiuser = $this->apiUser();
+            $apiuser->store();
+            $object = $this->loadedEndpoints[$master];
+            $object->apiuser = $apiuser->object_name;
+            $this->deploymentEndpoint = $object;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    protected function storeEndpoints()
+    {
+        $db = $this->db;
+        $existing = IcingaObject::loadAllExternalObjectsByType('endpoint', $db);
+
+        foreach ($this->loadedEndpoints as $name => $object) {
+            if (array_key_exists($name, $existing)) {
+                $object = $existing[$name]->replaceWith($object);
+                unset($existing[$name]);
             }
 
-            $endpoints[$object->object_name] = $object;
+            $object->store();
         }
 
-        $this->loadedEndpoints = $endpoints;
+        $this->removeEndpoints = $existing;
+
+        $db->settings()->master_zone = $this->deploymentEndpoint->zone;
 
         return $this;
     }
 
+    /**
+     * @return $this
+     */
+    protected function removeEndpoints()
+    {
+        foreach ($this->removeEndpoints as $endpoint) {
+            $endpoint->delete();
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     * @throws ConfigurationError
+     */
     protected function reconnectToDeploymentEndpoint()
     {
-        $db = $this->db;
         $master = $this->getValue('endpoint');
 
-        if (!$this->deploymentEndpoint) {
+        if (! $this->deploymentEndpoint) {
             throw new ConfigurationError(
                 'I found no Endpoint object called "%s" on %s:%d',
                 $master,
@@ -248,8 +360,8 @@ class KickstartHelper
         $ep = $this->deploymentEndpoint;
 
         $epHost = $ep->get('host');
-        if (!$epHost) {
-            $epHost = $ep->object_name;
+        if (! $epHost) {
+            $epHost = $ep->getObjectName();
         }
 
         try {
@@ -271,26 +383,18 @@ class KickstartHelper
         return $this;
     }
 
-    protected function storeEndpoints()
-    {
-        $db = $this->db;
-
-        foreach ($this->loadedEndpoints as $name => $object) {
-            if ($object::exists($object->object_name, $db)) {
-                $object = $object::load($object->object_name, $db)->replaceWith($object);
-            }
-
-            $object->store();
-        }
-
-        $db->settings()->master_zone = $this->deploymentEndpoint->zone;
-
-        return $this;
-    }
-
+    /**
+     * Import existing commands as external objects
+     *
+     * TODO: remove outdated ones
+     *
+     * @return $this
+     */
     protected function importCommands()
     {
         $db = $this->db;
+        $zdb = $db->getDbAdapter();
+        $zdb->beginTransaction();
         foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
             if ($object::exists($object->object_name, $db)) {
                 $new = $object::load($object->object_name, $db)->replaceWith($object);
@@ -310,30 +414,40 @@ class KickstartHelper
 
             $new->store();
         }
+        $zdb->commit();
 
         return $this;
     }
 
-    public function setDb($db)
+    /**
+     * @param Db $db
+     * @return $this
+     */
+    public function setDb(Db $db)
     {
         $this->db = $db;
-        if ($this->object !== null) {
-            $this->object->setConnection($db);
-        }
-
         return $this;
     }
 
+    /**
+     * @return string
+     */
     protected function getHost()
     {
         return $this->getValue('host', $this->getValue('endpoint'));
     }
 
+    /**
+     * @return int
+     */
     protected function getPort()
     {
         return (int) $this->getValue('port', 5665);
     }
 
+    /**
+     * @return CoreApi
+     */
     protected function getDeploymentApi()
     {
         unset($this->api);
@@ -356,6 +470,9 @@ class KickstartHelper
         return $api;
     }
 
+    /**
+     * @return CoreApi
+     */
     protected function getConfiguredApi()
     {
         unset($this->api);
@@ -371,11 +488,17 @@ class KickstartHelper
         return $api;
     }
 
+    /**
+     * @return CoreApi
+     */
     protected function switchToDeploymentApi()
     {
         return $this->api = $this->getDeploymentApi();
     }
 
+    /**
+     * @return CoreApi
+     */
     protected function api()
     {
         if ($this->api === null) {
