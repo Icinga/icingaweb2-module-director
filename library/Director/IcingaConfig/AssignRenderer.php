@@ -75,6 +75,15 @@ class AssignRenderer
         }
     }
 
+    protected function renderInArray($column, $expression)
+    {
+        return sprintf(
+            '%s in %s',
+            $column,
+            $expression
+        );
+    }
+
     protected function renderContains(FilterExpression $filter)
     {
         return sprintf(
@@ -91,14 +100,27 @@ class AssignRenderer
         }
 
         $column = $filter->getColumn();
-        $expression = $this->renderExpressionValue(json_decode($filter->getExpression()));
+        $rawExpression = json_decode($filter->getExpression());
+        $expression = $this->renderExpressionValue($rawExpression);
+
+        if (is_array($rawExpression) && $filter instanceof FilterMatch) {
+            return $this->renderInArray($column, $expression);
+        }
 
         if ($filter instanceof FilterEqual) {
-            return sprintf(
-                '%s == %s',
-                $column,
-                $expression
-            );
+            if (is_array($rawExpression)) {
+                return sprintf(
+                    '%s in %s',
+                    $column,
+                    $expression
+                );
+            } else {
+                return sprintf(
+                    '%s == %s',
+                    $column,
+                    $expression
+                );
+            }
         } elseif ($filter instanceof FilterMatch) {
             if (strpos($expression, '*') === false) {
                 return $this->renderEquals($column, $expression);

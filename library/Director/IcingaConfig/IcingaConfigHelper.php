@@ -137,9 +137,10 @@ class IcingaConfigHelper
             return static::renderFloat($value);
         // TODO:
         // } elseif (is_object($value) || static::isAssocArray($value)) {
-        //     return static::renderHash($value, $prefix);
-        // } elseif (is_array($value)) {
-        //     return static::renderArray($value, $prefix);
+        //     return static::renderHash($value, $prefix)
+        // TODO: also check array
+        } elseif (is_array($value)) {
+            return static::renderArray($value);
         } elseif (is_string($value)) {
             return static::renderString($value);
         } else {
