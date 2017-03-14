@@ -1640,9 +1640,13 @@ msgstr ""
 "sprechende Namen für Vorlagen verwendet werden. z.B. ist \"Standard Linux "
 "Server\" leichter verständlich als \"generic-host\""
 
-#: application/forms/IcingaNotificationForm.php:22
-msgid "Icinga object name for this notification"
-msgstr "Icinga-Objektname für diese Benachrichtigung"
+#: application/forms/IcingaNotificationForm.php:23
+msgid "Name for the Icinga notification template you are going to create"
+msgstr "Name der Icinga-Benachrichtigungs-Vorlage, die erstellt werden soll"
+
+#: application/forms/IcingaNotificationForm.php:29
+msgid "Name for the Icinga notification you are going to create"
+msgstr "Name der Icinga-Benachrichtigung, die erstellt werden soll"
 
 #: application/forms/IcingaServiceGroupForm.php:17
 msgid "Icinga object name for this service group"
@@ -2233,7 +2237,11 @@ msgstr ""
 msgid "Nothing would change, this rule is still in sync"
 msgstr "Es würde sich nichts ändern, diese Regel ist noch synchron"
 
-#: application/forms/IcingaNotificationForm.php:20
+#: application/forms/IcingaNotificationForm.php:21
+msgid "Notification template"
+msgstr "Benachrichtigungsvorlage"
+
+#: application/forms/IcingaNotificationForm.php:27
 #: application/tables/IcingaNotificationTable.php:31
 msgid "Notification"
 msgstr "Benachrichtigung"
