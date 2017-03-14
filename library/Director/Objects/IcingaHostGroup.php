@@ -11,6 +11,9 @@ class IcingaHostGroup extends IcingaObjectGroup
 {
     protected $table = 'icinga_hostgroup';
 
+    /** @var HostGroupMembershipResolver */
+    protected $hostgroupMembershipResolver;
+
     public function supportsAssignments()
     {
         return true;
@@ -23,6 +26,26 @@ class IcingaHostGroup extends IcingaObjectGroup
         } else {
             parent::renderToLegacyConfig($config);
         }
+    }
+
+    protected function getHostGroupMembershipResolver()
+    {
+        if ($this->hostgroupMembershipResolver === null) {
+            $this->hostgroupMembershipResolver = new HostGroupMembershipResolver(
+                $this->getConnection()
+            );
+        }
+
+        return $this->hostgroupMembershipResolver;
+    }
+
+    protected function notifyResolvers()
+    {
+        $resolver = $this->getHostGroupMembershipResolver();
+        $resolver->addHostgroup($this);
+        $resolver->refreshDb();
+
+        return $this;
     }
 
     /**
