@@ -83,7 +83,7 @@ class Sync
     protected $columnFilters = array();
 
     /** @var HostGroupMembershipResolver|bool */
-    protected $hostGropMembershipResolver;
+    protected $hostGroupMembershipResolver;
 
     /**
      * Constructor. No direct initialization allowed right now. Please use one
@@ -496,9 +496,12 @@ class Sync
         return $this;
     }
 
-    protected function setResolver(IcingaObject $object)
+    protected function setResolver($object)
     {
-        if ($resolver = $this->getHostGropMembershipResolver()) {
+        if (! ($object instanceof IcingaObject)) {
+            return $this;
+        }
+        if ($resolver = $this->gethostGroupMembershipResolver()) {
             /** @var IcingaHost|IcingaHostGroup $object */
             $object->setHostGroupMembershipResolver($resolver);
         }
@@ -508,29 +511,29 @@ class Sync
 
     protected function notifyResolvers()
     {
-        if ($resolver = $this->getHostGropMembershipResolver()) {
+        if ($resolver = $this->gethostGroupMembershipResolver()) {
             $resolver->defer();
         }
 
         return $this;
     }
 
-    protected function getHostGropMembershipResolver()
+    protected function gethostGroupMembershipResolver()
     {
-        if ($this->hostGropMembershipResolver === null) {
+        if ($this->hostGroupMembershipResolver === null) {
             if (in_array(
                 $this->rule->get('object_type'),
                 array('host', 'hostgroup')
             )) {
-                $this->hostGropMembershipResolver = new HostGroupMembershipResolver(
+                $this->hostGroupMembershipResolver = new HostGroupMembershipResolver(
                     $this->db
                 );
             } else {
-                $this->hostGropMembershipResolver = false;
+                $this->hostGroupMembershipResolver = false;
             }
         }
 
-        return $this->hostGropMembershipResolver;
+        return $this->hostGroupMembershipResolver;
     }
 
     /**
