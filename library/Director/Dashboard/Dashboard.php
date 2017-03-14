@@ -213,7 +213,6 @@ abstract class Dashboard implements Countable
     {
         $restrictions = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
         $restrictions->applyToHostGroupsQuery($query);
-
     }
 
     protected function getAuth()
