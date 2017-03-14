@@ -315,6 +315,12 @@ class IcingaHost extends IcingaObject
         return $this->hostgroupMembershipResolver;
     }
 
+    public function setHostGroupMembershipResolver(HostGroupMembershipResolver $resolver)
+    {
+        $this->hostgroupMembershipResolver = $resolver;
+        return $this;
+    }
+
     protected function getServiceOverrivesVarname()
     {
         return $this->connection->settings()->override_services_varname;

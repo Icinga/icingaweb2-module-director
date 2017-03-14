@@ -1278,8 +1278,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeImports()
             ->storeRanges()
             ->storeRelatedSets()
-            ->storeArguments()
-            ->notifyResolvers();
+            ->storeArguments();
     }
 
     protected function beforeStore()
@@ -1297,6 +1296,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         DirectorActivityLog::logModification($this, $this->connection);
         $this->storeRelatedObjects();
+    }
+
+    public function onStore()
+    {
+        $this->notifyResolvers();
     }
 
     /**

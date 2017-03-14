@@ -39,6 +39,12 @@ class IcingaHostGroup extends IcingaObjectGroup
         return $this->hostgroupMembershipResolver;
     }
 
+    public function setHostGroupMembershipResolver(HostGroupMembershipResolver $resolver)
+    {
+        $this->hostgroupMembershipResolver = $resolver;
+        return $this;
+    }
+
     protected function notifyResolvers()
     {
         $resolver = $this->getHostGroupMembershipResolver();

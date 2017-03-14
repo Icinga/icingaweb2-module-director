@@ -6,6 +6,9 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -78,6 +81,9 @@ class Sync
 
     /** @var Filter[] */
     protected $columnFilters = array();
+
+    /** @var HostGroupMembershipResolver|bool */
+    protected $hostGropMembershipResolver;
 
     /**
      * Constructor. No direct initialization allowed right now. Please use one
@@ -480,6 +486,53 @@ class Sync
         return $newObjects;
     }
 
+    protected function deferResolvers()
+    {
+        if (in_array($this->rule->get('object_type'), array('host', 'hostgroup'))) {
+            $resolver = new HostGroupMembershipResolver($this->db);
+            $resolver->defer()->setUseTransactions(false);
+        }
+
+        return $this;
+    }
+
+    protected function setResolver(IcingaObject $object)
+    {
+        if ($resolver = $this->getHostGropMembershipResolver()) {
+            /** @var IcingaHost|IcingaHostGroup $object */
+            $object->setHostGroupMembershipResolver($resolver);
+        }
+
+        return $this;
+    }
+
+    protected function notifyResolvers()
+    {
+        if ($resolver = $this->getHostGropMembershipResolver()) {
+            $resolver->defer();
+        }
+
+        return $this;
+    }
+
+    protected function getHostGropMembershipResolver()
+    {
+        if ($this->hostGropMembershipResolver === null) {
+            if (in_array(
+                $this->rule->get('object_type'),
+                array('host', 'hostgroup')
+            )) {
+                $this->hostGropMembershipResolver = new HostGroupMembershipResolver(
+                    $this->db
+                );
+            } else {
+                $this->hostGropMembershipResolver = false;
+            }
+        }
+
+        return $this->hostGropMembershipResolver;
+    }
+
     /**
      * Evaluates a SyncRule and returns a list of modified objects
      *
@@ -501,7 +554,8 @@ class Sync
              ->prepareRelatedImportSources()
              ->prepareSourceColumns()
              ->loadExistingObjects()
-             ->fetchImportedData();
+             ->fetchImportedData()
+             ->deferResolvers();
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects();
@@ -579,6 +633,7 @@ class Sync
             $modified = 0;
             $deleted = 0;
             foreach ($objects as $object) {
+                $this->setResolver($object);
                 if ($object->shouldBeRemoved()) {
                     $object->delete($db);
                     $deleted++;

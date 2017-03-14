@@ -32,12 +32,16 @@ class HostGroupMembershipResolver
     /** @var IcingaHost[] */
     protected $hosts;
 
-    /** @var IcingaHostGroup */
+    /** @var IcingaHostGroup[] */
     protected $hostgroups = array();
 
     protected $table = 'icinga_hostgroup_host_resolved';
 
-    protected static $deferred;
+    /** @var bool */
+    protected $deferred = false;
+
+    /** @var bool */
+    protected $useTransactions = false;
 
     public function __construct(Db $connection)
     {
@@ -59,7 +63,7 @@ class HostGroupMembershipResolver
      */
     public function refreshDb($force = false)
     {
-        if ($force || ! static::$deferred) {
+        if ($force || ! $this->isDeferred()) {
             Benchmark::measure('Going to refresh all hostgroup mappings');
             $this->fetchStoredMappings();
             Benchmark::measure('Got stored HG mappings, rechecking all hosts');
@@ -72,14 +76,32 @@ class HostGroupMembershipResolver
         return $this;
     }
 
-    public static function defer($defer = true)
+    /**
+     * @param bool $defer
+     * @return $this
+     */
+    public function defer($defer = true)
     {
-        static::$deferred = $defer;
+        $this->deferred = $defer;
+        return $this;
     }
 
-    public static function isDeferred()
+    /**
+     * @param $use
+     * @return $this
+     */
+    public function setUseTransactions($use)
     {
-        return static::$deferred;
+        $this->useTransactions = $use;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDeferred()
+    {
+        return $this->deferred;
     }
 
     /**
@@ -205,7 +227,7 @@ class HostGroupMembershipResolver
         }
 
         $db = $this->db;
-        $db->beginTransaction();
+        $this->beginTransaction();
         foreach ($diff as $row) {
             $db->insert(
                 $this->table,
@@ -213,7 +235,7 @@ class HostGroupMembershipResolver
             );
         }
 
-        $db->commit();
+        $this->commit();
         Benchmark::measure(
             sprintf(
                 'Stored %d new resolved hostgroup memberships',
@@ -231,7 +253,7 @@ class HostGroupMembershipResolver
         }
 
         $db = $this->db;
-        $db->beginTransaction();
+        $this->beginTransaction();
         foreach ($diff as $row) {
             $db->delete(
                 $this->table,
@@ -243,7 +265,7 @@ class HostGroupMembershipResolver
             );
         }
 
-        $db->commit();
+        $this->commit();
         Benchmark::measure(
             sprintf(
                 'Removed %d outdated hostgroup memberships',
@@ -306,6 +328,12 @@ class HostGroupMembershipResolver
         $this->existingMappings = $mappings;
     }
 
+    /**
+     * @param ZfSelect $query
+     * @param string $column
+     * @param IcingaObject[] $objects
+     * @return ZfSelect
+     */
     protected function addMembershipWhere(ZfSelect $query, $column, & $objects)
     {
         if (empty($objects)) {
@@ -380,6 +408,30 @@ class HostGroupMembershipResolver
     }
 
     /**
+     * @return $this
+     */
+    protected function beginTransaction()
+    {
+        if ($this->useTransactions) {
+            $this->db->beginTransaction();
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    protected function commit()
+    {
+        if ($this->useTransactions) {
+            $this->db->commit();
+        }
+
+        return $this;
+    }
+
+    /**
      * @return IcingaHost[]
      */
     protected function getHosts()
@@ -393,7 +445,7 @@ class HostGroupMembershipResolver
 
     protected function assertBeenLoadedFromDb(IcingaObject $object)
     {
-        if (! $object->hasBeenLoadedFromDb()) {
+        if (! ctype_digit($object->get('id'))) {
             throw new ProgrammingError(
                 'Hostgroup resolver does not support unstored objects'
             );
