@@ -16,11 +16,19 @@ class IcingaNotificationForm extends DirectorObjectForm
             return;
         }
 
-        $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Notification'),
-            'required'    => true,
-            'description' => $this->translate('Icinga object name for this notification')
-        ));
+        if ($this->isTemplate()) {
+            $this->addElement('text', 'object_name', array(
+                'label'       => $this->translate('Notification Template'),
+                'required'    => true,
+                'description' => $this->translate('Name for the Icinga notification template you are going to create')
+            ));
+        } else {
+            $this->addElement('text', 'object_name', array(
+                'label'       => $this->translate('Notification'),
+                'required'    => true,
+                'description' => $this->translate('Name for the Icinga notification you are going to create')
+            ));
+        }
 
         $this->addDisabledElement()
              ->addImportsElement()
