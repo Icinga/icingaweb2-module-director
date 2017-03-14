@@ -35,7 +35,7 @@ class BetaHostgroupRestriction extends ObjectRestriction
             $query->where('(1 = 0)');
         } else {
             $sub = $this->db->select()->from(
-                array('hgh' => 'icinga_hostgroup_host'),
+                array('hgh' => 'icinga_hostgroup_host_resolved'),
                 array('e' => '(1)')
             )->join(
                 array('hg' => 'icinga_hostgroup'),
