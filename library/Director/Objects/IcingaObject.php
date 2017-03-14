@@ -1278,7 +1278,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeImports()
             ->storeRanges()
             ->storeRelatedSets()
-            ->storeArguments();
+            ->storeArguments()
+            ->notifyResolvers();
     }
 
     protected function beforeStore()
@@ -1356,6 +1357,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this;
+    }
+
+    protected function notifyResolvers()
+    {
     }
 
     /**
