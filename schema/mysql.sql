@@ -820,6 +820,22 @@ CREATE TABLE icinga_hostgroup_host (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_hostgroup_host_resolved (
+  hostgroup_id INT(10) UNSIGNED NOT NULL,
+  host_id INT(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (hostgroup_id, host_id),
+  CONSTRAINT icinga_hostgroup_host_resolved_host
+  FOREIGN KEY host (host_id)
+  REFERENCES icinga_host (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_hostgroup_host_resolved_hostgroup
+  FOREIGN KEY hostgroup (hostgroup_id)
+  REFERENCES icinga_hostgroup (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_hostgroup_parent (
   hostgroup_id INT(10) UNSIGNED NOT NULL,
   parent_hostgroup_id INT(10) UNSIGNED NOT NULL,
@@ -1508,4 +1524,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (130, NOW());
+  VALUES (131, NOW());
