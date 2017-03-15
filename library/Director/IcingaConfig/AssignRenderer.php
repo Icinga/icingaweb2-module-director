@@ -107,6 +107,17 @@ class AssignRenderer
             return $this->renderInArray($column, $expression);
         }
 
+        if (ctype_digit($rawExpression)) {
+            // TODO: doing this for compat reasons, should work for all filters
+            if ($filter instanceof FilterEqualOrGreaterThan
+                || $filter instanceof FilterGreaterThan
+                || $filter instanceof FilterEqualOrLessThan
+                || $filter instanceof FilterLessThan
+            ) {
+                $expression = $rawExpression;
+            }
+        }
+
         if ($filter instanceof FilterEqual) {
             if (is_array($rawExpression)) {
                 return sprintf(
