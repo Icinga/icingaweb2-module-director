@@ -62,10 +62,24 @@ class DirectorActivityLog extends DbObject
         }
     }
 
+    protected static function ip()
+    {
+        if (Icinga::app()->isCli()) {
+            return 'cli';
+        }
+
+        if (array_key_exists('REMOTE_ADDR', $_SERVER)) {
+            return $_SERVER['REMOTE_ADDR'];
+        } else {
+            return '0.0.0.0';
+        }
+    }
+
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();
         $query = $db->select()->from('director_activity_log', array('id' => 'MAX(id)'));
+
         return static::load($db->fetchOne($query), $connection);
     }
 
@@ -75,10 +89,11 @@ class DirectorActivityLog extends DbObject
         $name = $object->getObjectName();
         $type = $object->getTableName();
         $newProps = $object->toJson(null, true);
+
         $data = array(
             'object_name'     => $name,
             'action_name'     => 'create',
-            'author'          => self::username(),
+            'author'          => static::username(),
             'object_type'     => $type,
             'new_properties'  => $newProps,
             'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
@@ -87,10 +102,15 @@ class DirectorActivityLog extends DbObject
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
-        if ($db->settings()->enable_audit_log === 'y') {
-            Logger::info('(director) %s[%s] has been created: %s', $type, $name, $newProps);
-        }
-        return self::create($data)->store($db);
+
+        static::audit($db, array(
+            'action'      => 'create',
+            'object_type' => $type,
+            'object_name' => $name,
+            'new_props'   => $newProps,
+        ));
+
+        return static::create($data)->store($db);
     }
 
     public static function logModification(IcingaObject $object, Db $db)
@@ -99,10 +119,11 @@ class DirectorActivityLog extends DbObject
         $type = $object->getTableName();
         $oldProps = json_encode($object->getPlainUnmodifiedObject());
         $newProps = $object->toJson(null, true);
+
         $data = array(
             'object_name'     => $name,
             'action_name'     => 'modify',
-            'author'          => self::username(),
+            'author'          => static::username(),
             'object_type'     => $type,
             'old_properties'  => $oldProps,
             'new_properties'  => $newProps,
@@ -112,10 +133,16 @@ class DirectorActivityLog extends DbObject
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
-        if ($db->settings()->enable_audit_log === 'y') {
-            Logger::info('(director) %s[%s] has been modified from %s to %s', $type, $name, $oldProps, $newProps);
-        }
-        return self::create($data)->store($db);
+
+        static::audit($db, array(
+            'action'      => 'modify',
+            'object_type' => $type,
+            'object_name' => $name,
+            'old_props'   => $oldProps,
+            'new_props'   => $newProps,
+        ));
+
+        return static::create($data)->store($db);
     }
 
     public static function logRemoval(IcingaObject $object, Db $db)
@@ -127,7 +154,7 @@ class DirectorActivityLog extends DbObject
         $data = array(
             'object_name'     => $name,
             'action_name'     => 'delete',
-            'author'          => self::username(),
+            'author'          => static::username(),
             'object_type'     => $type,
             'old_properties'  => $oldProps,
             'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
@@ -136,9 +163,36 @@ class DirectorActivityLog extends DbObject
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
-        if ($db->settings()->enable_audit_log === 'y') {
-            Logger::info('(director) %s[%s] has been removed: %s', $type, $name, $oldProps);
+
+        static::audit($db, array(
+            'action'      => 'remove',
+            'object_type' => $type,
+            'object_name' => $name,
+            'old_props'   => $oldProps
+        ));
+
+        return static::create($data)->store($db);
+    }
+
+    public static function audit(Db $db, $properties)
+    {
+        if ($db->settings()->enable_audit_log !== 'y') {
+            return;
         }
-        return self::create($data)->store($db);
+
+        $log = array();
+        $properties = array_merge(
+            array(
+                'username' => static::username(),
+                'address'  => static::ip(),
+            ),
+            $properties
+        );
+
+        foreach ($properties as $key => & $val) {
+            $log[] = "$key=" . json_encode($val);
+        }
+
+        Logger::info('(director) ' . implode(' ', $log));
     }
 }
