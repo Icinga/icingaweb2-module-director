@@ -157,8 +157,8 @@ icingacli director host set localhost --json '{ "address": "127.0.0.2" }'
 ```
 
 This command will fail in case the specified object does not exist. This is
-when the `--auto-create` parameter comes in handy. Command output will thell
-you whether an object has either be created or (not) modified.
+when the `--auto-create` parameter comes in handy. Command output will tell
+you whether an object has either been created or (not) modified.
 
 With `set` you only set the specified properties and do not touch the other
 ones. You could also want to completely override an object, purging all other
@@ -192,7 +192,7 @@ in JSON format.
 
 ### Clone an existing object
 
-Use this command to clone a specific object
+Use this command to clone a specific object.
 
 #### Usage
 
