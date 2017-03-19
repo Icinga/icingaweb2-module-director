@@ -467,7 +467,7 @@ Content-Type: application/json
 
 Ok, no way. So let's use the correct method:
 
-    DELETE 'director/host?name=apitest
+    DELETE director/host?name=apitest
 
 ```
 HTTP/1.1 200 OK
