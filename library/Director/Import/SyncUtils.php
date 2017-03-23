@@ -16,7 +16,7 @@ class SyncUtils
      */
     public static function extractVariableNames($string)
     {
-        if (preg_match_all('/\${([A-Za-z0-9\._-]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
+        if (preg_match_all('/\${([^}]+)}/', $string, $m, PREG_PATTERN_ORDER)) {
             return $m[1];
         } else {
             return array();
@@ -103,15 +103,15 @@ class SyncUtils
      */
     public static function fillVariables($string, $row)
     {
-        if (preg_match('/^\${([A-Za-z0-9\._-]+)}$/', $string, $m)) {
+        if (preg_match('/^\${([^}]+)}$/', $string, $m)) {
             return static::getSpecificValue($row, $m[1]);
         }
 
         $func = function ($match) use ($row) {
-            return static::getSpecificValue($row, $match[1]);
+            return SyncUtils::getSpecificValue($row, $match[1]);
         };
 
-        return preg_replace_callback('/\${([A-Za-z0-9\._-]+)}/', $func, $string);
+        return preg_replace_callback('/\${([^}]+)}/', $func, $string);
     }
 
     public static function getRootVariables($vars)

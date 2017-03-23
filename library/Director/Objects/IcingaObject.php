@@ -2214,7 +2214,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
-    protected static function classByType($type)
+    public static function classByType($type)
     {
         // allow for icinga_host and host
         $type = lcfirst(preg_replace('/^icinga_/', '', $type));
@@ -2303,6 +2303,33 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             } else {
                 return $class::loadAll($db, $query, $keyColumn);
             }
+        }
+    }
+
+    /**
+     * @param $type
+     * @param Db $db
+     * @return IcingaObject[]
+     * @throws ProgrammingError
+     */
+    public static function loadAllExternalObjectsByType($type, Db $db)
+    {
+        /** @var IcingaObject $class */
+        $class = self::classByType($type);
+        $dummy = $class::create();
+
+        if (is_array($dummy->getKeyName())) {
+            throw new ProgrammingError(
+                'There is no support for loading external objects of type "%s"',
+                $type
+            );
+        } else {
+            $query = $db->getDbAdapter()
+                ->select()
+                ->from($dummy->getTableName())
+                ->where('object_type = ?', 'external_object');
+
+            return $class::loadAll($db, $query, 'object_name');
         }
     }
 

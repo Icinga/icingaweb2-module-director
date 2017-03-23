@@ -16,12 +16,20 @@ class IcingaNotificationForm extends DirectorObjectForm
             return;
         }
 
-        $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Notification'),
-            'required'    => true,
-            'description' => $this->translate('Icinga object name for this notification')
-        ));
- 
+        if ($this->isTemplate()) {
+            $this->addElement('text', 'object_name', array(
+                'label'       => $this->translate('Notification Template'),
+                'required'    => true,
+                'description' => $this->translate('Name for the Icinga notification template you are going to create')
+            ));
+        } else {
+            $this->addElement('text', 'object_name', array(
+                'label'       => $this->translate('Notification'),
+                'required'    => true,
+                'description' => $this->translate('Name for the Icinga notification you are going to create')
+            ));
+        }
+
         $this->addDisabledElement()
              ->addImportsElement()
              ->addUsersElement()
@@ -33,8 +41,29 @@ class IcingaNotificationForm extends DirectorObjectForm
              ->addDisabledElement()
              ->addCommandElements()
              ->addEventFilterElements()
+             ->addZoneElements()
              ->groupMainProperties()
              ->setButtons();
+    }
+
+    protected function addZoneElements()
+    {
+        if (! $this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addZoneElement();
+        $this->addDisplayGroup(array('zone_id'), 'clustering', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'dl')),
+                'Fieldset',
+            ),
+            'order' => 80,
+            'legend' => $this->translate('Zone settings')
+        ));
+
+        return $this;
     }
 
     /**

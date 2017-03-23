@@ -284,6 +284,14 @@ The Icinga Director distincts between the following object types:
 | `external_object` | An external object. Can be referenced and used, will not be |
 |                   | deployed                                                    |
 
+Example for creating a host template:
+
+```sh
+icingacli director host create 'Some template' \
+    --object_type template \
+    --check_command hostalive
+```
+
 Please take a lot of care when modifying object types, you should not do so for
 a good reason. The CLI allows you to issue operations that are not allowed in the
 web frontend. Do not use this unless you really understand its implications. And

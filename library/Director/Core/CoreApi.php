@@ -457,6 +457,9 @@ constants
         ));
     }
 
+    /**
+     * @return IcingaCommand[]
+     */
     public function getCheckCommandObjects()
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
@@ -475,6 +478,9 @@ constants
         return $objects;
     }
 
+    /**
+     * @return IcingaCommand[]
+     */
     public function getNotificationCommandObjects()
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
