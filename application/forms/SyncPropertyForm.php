@@ -212,7 +212,8 @@ class SyncPropertyForm extends DirectorObjectForm
                 'label'       => $this->translate('Source Expression'),
                 'description' => $this->translate(
                     'A custom string. Might contain source columns, please use placeholders'
-                    . ' of the form ${columnName} in such case'
+                    . ' of the form ${columnName} in such case.  Structured data sources'
+                    . ' can be referenced as ${columnName.sub.key}'
                 ),
                 'required'    => true,
             ));
