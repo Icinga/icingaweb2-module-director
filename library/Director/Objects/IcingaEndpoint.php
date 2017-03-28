@@ -54,24 +54,32 @@ class IcingaEndpoint extends IcingaObject
     {
         $format = $this->connection->settings()->config_format;
         if ($format === 'v2') {
-            $client = new RestApiClient(
-                $this->getResolvedProperty('host', $this->getObjectName()),
-                $this->getResolvedProperty('port')
-            );
-
-            $user = $this->getApiUser();
-            $client->setCredentials(
-                // TODO: $user->client_dn,
-                $user->object_name,
-                $user->password
-            );
-
-            return new CoreApi($client);
+            return new CoreApi($this->getRestApiClient());
         } elseif ($format === 'v1') {
             return new LegacyDeploymentApi($this->connection);
         } else {
             throw new ProgrammingError('Unsupported config format: %s', $format);
         }
+    }
+
+    /**
+     * @return RestApiClient
+     */
+    public function getRestApiClient()
+    {
+        $client = new RestApiClient(
+            $this->getResolvedProperty('host', $this->getObjectName()),
+            $this->getResolvedProperty('port')
+        );
+
+        $user = $this->getApiUser();
+        $client->setCredentials(
+        // TODO: $user->client_dn,
+            $user->object_name,
+            $user->password
+        );
+
+        return $client;
     }
 
     /**
