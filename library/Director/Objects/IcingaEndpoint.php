@@ -74,7 +74,7 @@ class IcingaEndpoint extends IcingaObject
 
         $user = $this->getApiUser();
         $client->setCredentials(
-        // TODO: $user->client_dn,
+            // TODO: $user->client_dn,
             $user->object_name,
             $user->password
         );
