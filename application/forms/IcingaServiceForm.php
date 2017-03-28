@@ -260,6 +260,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addDisabledElement()
              ->groupMainProperties()
              ->addCheckCommandElements()
+             ->addCheckExecutionElements()
              ->addExtraInfoElements()
              ->setButtons();
 

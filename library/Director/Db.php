@@ -629,6 +629,11 @@ class Db extends DbConnection
         return $this->db()->fetchAll($select);
     }
 
+    public function isPgsql()
+    {
+        return $this->getDbType() === 'pgsql';
+    }
+
     public function dbHexFunc($column)
     {
         if ($this->isPgsql()) {

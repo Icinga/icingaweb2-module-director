@@ -103,7 +103,7 @@ class DirectorDatafield extends DbObjectWithSettings
     {
         $object = $form->getObject();
         if ($object instanceof IcingaObject) {
-            if ($object->isTemplate()) {
+            if ($object->isTemplate() || $object->type === 'CheckCommand') {
                 $el->setRequired(false);
             }
 

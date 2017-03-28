@@ -6,6 +6,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\LegacyDeploymentApi;
 use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -60,6 +61,26 @@ class IcingaEndpoint extends IcingaObject
         } else {
             throw new ProgrammingError('Unsupported config format: %s', $format);
         }
+    }
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+	if($this->zone_id) {
+	    $thisZone = $this->getRelatedObject(
+	        'zone',
+	        $this->zone_id
+	    );
+	    if($thisZone && $parentZone = $thisZone->get('parent_id')) {
+	        return $config->getZoneName($parentZone);
+	    }
+	    return $config->getZoneName($this->zone_id);
+	}
+
+	if ($this->isTemplate() || $this->isApplyRule()) {
+	    return $this->connection->getDefaultGlobalZoneName();
+	}
+
+	return $this->connection->getMasterZoneName();
     }
 
     /**
