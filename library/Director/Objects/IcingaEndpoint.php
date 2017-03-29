@@ -6,6 +6,8 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\LegacyDeploymentApi;
 use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -80,6 +82,19 @@ class IcingaEndpoint extends IcingaObject
         );
 
         return $client;
+    }
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        try {
+            if ($zone = $this->getResolvedProperty('zone_id')) {
+                return $zone->getRenderingZone($config);
+            }
+        } catch (NestingError $e) {
+            return self::RESOLVE_ERROR;
+        }
+
+        return parent::getRenderingZone($config);
     }
 
     /**
