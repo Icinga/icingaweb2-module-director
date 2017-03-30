@@ -174,7 +174,7 @@ class Sync
     {
         $this->syncProperties = $this->rule->fetchSyncProperties();
         foreach ($this->syncProperties as $key => $prop) {
-            if (! strlen($prop->filter_expression)) {
+            if (!strlen($prop->filter_expression)) {
                 continue;
             }
 
@@ -205,7 +205,7 @@ class Sync
         $this->sources = array();
         foreach ($this->syncProperties as $p) {
             $id = $p->source_id;
-            if (! array_key_exists($id, $this->sources)) {
+            if (!array_key_exists($id, $this->sources)) {
                 $this->sources[$id] = ImportSource::load($id, $this->db);
             }
         }
@@ -225,7 +225,7 @@ class Sync
 
         foreach ($this->syncProperties as $p) {
             $sourceId = $p->source_id;
-            if (! array_key_exists($sourceId, $this->sourceColumns)) {
+            if (!array_key_exists($sourceId, $this->sourceColumns)) {
                 $this->sourceColumns[$sourceId] = array();
             }
 
@@ -279,7 +279,7 @@ class Sync
 
                 } else {
 
-                    if (! property_exists($row, $key)) {
+                    if (!property_exists($row, $key)) {
                         throw new IcingaException(
                             'There is no key column "%s" in this row from "%s": %s',
                             $key,
@@ -290,7 +290,7 @@ class Sync
 
                 }
 
-                if (! $this->rule->matches($row)) {
+                if (!$this->rule->matches($row)) {
                     continue;
                 }
 
@@ -313,7 +313,7 @@ class Sync
         $listId = null;
         foreach ($this->syncProperties as $prop) {
             if ($prop->destination_field === 'list_id') {
-                $listId = (int) $prop->source_expression;
+                $listId = (int)$prop->source_expression;
             }
         }
 
@@ -325,7 +325,7 @@ class Sync
 
         $no = array();
         foreach ($this->objects as $k => $o) {
-            if ((int) $o->list_id !== (int) $listId) {
+            if ((int)$o->list_id !== (int)$listId) {
                 $no[] = $k;
             }
         }
@@ -404,7 +404,7 @@ class Sync
                         continue;
                     }
 
-                    if (! $this->rowMatchesPropertyFilter($row, $propertyKey)) {
+                    if (!$this->rowMatchesPropertyFilter($row, $propertyKey)) {
                         continue;
                     }
 
@@ -427,7 +427,7 @@ class Sync
                         }
                     }
                 }
-                if (! array_key_exists($key, $newObjects)) {
+                if (!array_key_exists($key, $newObjects)) {
                     $newObjects[$key] = IcingaObject::createByType(
                         $this->rule->object_type,
                         array(),
@@ -439,13 +439,13 @@ class Sync
 
                 // Safe default values for object_type and object_name
                 if ($this->rule->object_type !== 'datalistEntry') {
-                    if (! array_key_exists('object_type', $newProps)
+                    if (!array_key_exists('object_type', $newProps)
                         || $newProps['object_type'] === null
                     ) {
                         $newProps['object_type'] = 'object';
                     }
 
-                    if (! array_key_exists('object_name', $newProps)
+                    if (!array_key_exists('object_name', $newProps)
                         || $newProps['object_name'] === null
                     ) {
                         $newProps['object_name'] = $key;
@@ -461,7 +461,7 @@ class Sync
                     $object->vars()->$prop = $var;
                 }
 
-                if (! empty($imports)) {
+                if (!empty($imports)) {
                     // TODO: merge imports!!!
                     $object->imports()->set($imports);
                 }
@@ -487,12 +487,12 @@ class Sync
         PrefetchCache::initialize($this->db);
 
         $this->raiseLimits()
-             ->startMeasurements()
-             ->fetchSyncProperties()
-             ->prepareRelatedImportSources()
-             ->prepareSourceColumns()
-             ->loadExistingObjects()
-             ->fetchImportedData();
+            ->startMeasurements()
+            ->fetchSyncProperties()
+            ->prepareRelatedImportSources()
+            ->prepareSourceColumns()
+            ->loadExistingObjects()
+            ->fetchImportedData();
 
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects();
@@ -514,27 +514,21 @@ class Sync
                         // policy 'ignore', no action
                 }
             } else {
-			   //Check if this->objects is not a key value array and the current object is as a object in the array.
-			   if($this->objects != null && is_array($this->objects))
-			   {
-					$array_filter_results = array_filter($this->objects, function($obj) use($key) {
-							//here we need the object_name as unique column, but it can be maybe a source->key_column
-							return ($obj->object_name == $key);
-					});
+                //Check if this->objects is not a key value array and the current object is as a object in the array.
+                if ($this->objects != null && is_array($this->objects)) {
+                    $array_filter_results = array_filter($this->objects, function ($obj) use ($key) {
+                        //here we need the object_name as unique column, but it can be maybe a source->key_column
+                        return ($obj->object_name == $key);
+                    });
 
-					if($array_filter_results != null && count($array_filter_results) > 0)
-					{
-					   continue;
-					}
-					else
-					{
-							$this->objects[$key] = $object;
-					}
-			   }
-			   else
-			   {
-					 $this->objects[$key] = $object;
-			   }
+                    if ($array_filter_results != null && count($array_filter_results) > 0) {
+                        continue;
+                    } else {
+                        $this->objects[$key] = $object;
+                    }
+                } else {
+                    $this->objects[$key] = $object;
+                }
             }
         }
 
@@ -547,14 +541,14 @@ class Sync
 
             if (array_key_exists($key, $this->objects)) {
                 $object = $this->objects[$key];
-                if (! $object->hasBeenModified()) {
+                if (!$object->hasBeenModified()) {
                     $object->markForRemoval();
                 }
             }
         }
 
         foreach ($this->objects as $key => $object) {
-            if (! $object->hasBeenModified() && ! $object->shouldBeRemoved()) {
+            if (!$object->hasBeenModified() && !$object->shouldBeRemoved()) {
                 $noAction[] = $key;
             }
         }
@@ -607,8 +601,8 @@ class Sync
             }
 
             $runProperties = array(
-                'objects_created'  => $created,
-                'objects_deleted'  => $deleted,
+                'objects_created' => $created,
+                'objects_deleted' => $deleted,
                 'objects_modified' => $modified,
             );
 
@@ -625,7 +619,7 @@ class Sync
             $dba->commit();
 
             // Store duration after commit, as the commit might take some time
-            $this->run->set('duration_ms', (int) round(
+            $this->run->set('duration_ms', (int)round(
                 (microtime(true) - $this->runStartTime) * 1000
             ))->store();
 
