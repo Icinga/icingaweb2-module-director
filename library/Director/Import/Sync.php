@@ -121,121 +121,94 @@ class Sync
     }
 
     /**
-     * Transform the given value to an array
+     * Evaluates a SyncRule and returns a list of modified objects
      *
-     * @param  array|string|null $value
+     * TODO: This needs to be splitted into smaller methods
      *
-     * @return array
+     * @return array          List of modified IcingaObjects
      */
-    protected function wantArray($value)
+    protected function prepare()
     {
-        if (is_array($value)) {
-            return $value;
-        } elseif ($value === null) {
-            return array();
-        } else {
-            return array($value);
+        if ($this->isPrepared) {
+            return $this->objects;
         }
-    }
 
-    /**
-     * Raise PHP resource limits
-     *
-     * TODO: do this in a failsafe way, and only if necessary
-     *
-     * @return self;
-     */
-    protected function raiseLimits()
-    {
-        ini_set('memory_limit', '768M');
-        ini_set('max_execution_time', 0);
+        PrefetchCache::initialize($this->db);
 
-        return $this;
-    }
+        $this->raiseLimits()
+            ->startMeasurements()
+            ->fetchSyncProperties()
+            ->prepareRelatedImportSources()
+            ->prepareSourceColumns()
+            ->loadExistingObjects()
+            ->fetchImportedData();
 
-    /**
-     * Initialize run summary measurements
-     *
-     * @return self;
-     */
-    protected function startMeasurements()
-    {
-        $this->run = SyncRun::start($this->rule);
-        $this->runStartTime = microtime(true);
-        return $this;
-    }
+        // TODO: directly work on existing objects, remember imported keys, then purge
+        $newObjects = $this->prepareNewObjects();
 
-    /**
-     * Fetch the configured properties involved in this sync
-     *
-     * @return self
-     */
-    protected function fetchSyncProperties()
-    {
-        $this->syncProperties = $this->rule->fetchSyncProperties();
-        foreach ($this->syncProperties as $key => $prop) {
-            if (!strlen($prop->filter_expression)) {
+        foreach ($newObjects as $key => $object) {
+            if (array_key_exists($key, $this->objects)) {
+                switch ($this->rule->update_policy) {
+                    case 'override':
+                        $this->objects[$key]->replaceWith($object);
+                        break;
+
+                    case 'merge':
+                        // TODO: re-evaluate merge settings. vars.x instead of
+                        //       just "vars" might suffice.
+                        $this->objects[$key]->merge($object);
+                        break;
+
+                    default:
+                        // policy 'ignore', no action
+                }
+            } else {
+                //Check if this->objects is not a key value array and the current object is as a object in the array.
+                if ($this->objects != null && is_array($this->objects)) {
+                    $array_filter_results = array_filter($this->objects, function ($obj) use ($key) {
+                        //here we need the object_name as unique column, but it can be maybe a source->key_column
+                        return ($obj->object_name == $key);
+                    });
+
+                    if ($array_filter_results != null && count($array_filter_results) > 0) {
+                        continue;
+                    } else {
+                        $this->objects[$key] = $object;
+                    }
+                } else {
+                    $this->objects[$key] = $object;
+                }
+            }
+        }
+
+        $noAction = array();
+        foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
+            if (array_key_exists($key, $newObjects)) {
+                // Object has been touched, do not delete
                 continue;
             }
 
-            $this->columnFilters[$key] = Filter::fromQueryString(
-                $prop->filter_expression
-            );
-        }
-
-        return $this;
-    }
-
-    protected function rowMatchesPropertyFilter($row, $key)
-    {
-        if (!array_key_exists($key, $this->columnFilters)) {
-            return true;
-        }
-
-        return $this->columnFilters[$key]->matches($row);
-    }
-
-    /**
-     * Instantiates all related ImportSource objects
-     *
-     * @return self
-     */
-    protected function prepareRelatedImportSources()
-    {
-        $this->sources = array();
-        foreach ($this->syncProperties as $p) {
-            $id = $p->source_id;
-            if (!array_key_exists($id, $this->sources)) {
-                $this->sources[$id] = ImportSource::load($id, $this->db);
+            if (array_key_exists($key, $this->objects)) {
+                $object = $this->objects[$key];
+                if (!$object->hasBeenModified()) {
+                    $object->markForRemoval();
+                }
             }
         }
 
-        return $this;
-    }
-
-    /**
-     * Prepare the source columns we want to fetch
-     *
-     * @return self
-     */
-    protected function prepareSourceColumns()
-    {
-        // $fieldMap = array();
-        $this->sourceColumns = array();
-
-        foreach ($this->syncProperties as $p) {
-            $sourceId = $p->source_id;
-            if (!array_key_exists($sourceId, $this->sourceColumns)) {
-                $this->sourceColumns[$sourceId] = array();
-            }
-
-            foreach (SyncUtils::extractVariableNames($p->source_expression) as $varname) {
-                $this->sourceColumns[$sourceId][$varname] = $varname;
-                // -> ? $fieldMap[
+        foreach ($this->objects as $key => $object) {
+            if (!$object->hasBeenModified() && !$object->shouldBeRemoved()) {
+                $noAction[] = $key;
             }
         }
 
-        return $this;
+        foreach ($noAction as $key) {
+            unset($this->objects[$key]);
+        }
+
+        $this->isPrepared = true;
+
+        return $this->objects;
     }
 
     /**
@@ -307,34 +280,6 @@ class Sync
         return $this;
     }
 
-    // TODO: This is rubbish, we need to filter at fetch time
-    protected function removeForeignListEntries()
-    {
-        $listId = null;
-        foreach ($this->syncProperties as $prop) {
-            if ($prop->destination_field === 'list_id') {
-                $listId = (int)$prop->source_expression;
-            }
-        }
-
-        if ($listId === null) {
-            throw new IcingaException(
-                'Cannot sync datalist entry without list_ist'
-            );
-        }
-
-        $no = array();
-        foreach ($this->objects as $k => $o) {
-            if ((int)$o->list_id !== (int)$listId) {
-                $no[] = $k;
-            }
-        }
-
-        foreach ($no as $k) {
-            unset($this->objects[$k]);
-        }
-    }
-
     protected function loadExistingObjects()
     {
         // TODO: Make object_type (template, object...) and object_name mandatory?
@@ -382,6 +327,126 @@ class Sync
         if ($this->rule->object_type === 'datalistEntry') {
             $this->removeForeignListEntries($this->objects);
         }
+
+        return $this;
+    }
+
+    protected function removeForeignListEntries()
+    {
+        $listId = null;
+        foreach ($this->syncProperties as $prop) {
+            if ($prop->destination_field === 'list_id') {
+                $listId = (int)$prop->source_expression;
+            }
+        }
+
+        if ($listId === null) {
+            throw new IcingaException(
+                'Cannot sync datalist entry without list_ist'
+            );
+        }
+
+        $no = array();
+        foreach ($this->objects as $k => $o) {
+            if ((int)$o->list_id !== (int)$listId) {
+                $no[] = $k;
+            }
+        }
+
+        foreach ($no as $k) {
+            unset($this->objects[$k]);
+        }
+    }
+
+    /**
+     * Prepare the source columns we want to fetch
+     *
+     * @return self
+     */
+    protected function prepareSourceColumns()
+    {
+        // $fieldMap = array();
+        $this->sourceColumns = array();
+
+        foreach ($this->syncProperties as $p) {
+            $sourceId = $p->source_id;
+            if (!array_key_exists($sourceId, $this->sourceColumns)) {
+                $this->sourceColumns[$sourceId] = array();
+            }
+
+            foreach (SyncUtils::extractVariableNames($p->source_expression) as $varname) {
+                $this->sourceColumns[$sourceId][$varname] = $varname;
+                // -> ? $fieldMap[
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Instantiates all related ImportSource objects
+     *
+     * @return self
+     */
+    protected function prepareRelatedImportSources()
+    {
+        $this->sources = array();
+        foreach ($this->syncProperties as $p) {
+            $id = $p->source_id;
+            if (!array_key_exists($id, $this->sources)) {
+                $this->sources[$id] = ImportSource::load($id, $this->db);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Fetch the configured properties involved in this sync
+     *
+     * @return self
+     */
+    protected function fetchSyncProperties()
+    {
+        $this->syncProperties = $this->rule->fetchSyncProperties();
+        foreach ($this->syncProperties as $key => $prop) {
+            if (!strlen($prop->filter_expression)) {
+                continue;
+            }
+
+            $this->columnFilters[$key] = Filter::fromQueryString(
+                $prop->filter_expression
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * Initialize run summary measurements
+     *
+     * @return self;
+     */
+    protected function startMeasurements()
+    {
+        $this->run = SyncRun::start($this->rule);
+        $this->runStartTime = microtime(true);
+        return $this;
+    }
+
+    // TODO: This is rubbish, we need to filter at fetch time
+
+    /**
+     * Raise PHP resource limits
+     *
+     * TODO: do this in a failsafe way, and only if necessary
+     *
+     * @return self;
+     */
+    protected function raiseLimits()
+    {
+        ini_set('memory_limit', '768M');
+        ini_set('max_execution_time', 0);
 
         return $this;
     }
@@ -471,95 +536,31 @@ class Sync
         return $newObjects;
     }
 
-    /**
-     * Evaluates a SyncRule and returns a list of modified objects
-     *
-     * TODO: This needs to be splitted into smaller methods
-     *
-     * @return array          List of modified IcingaObjects
-     */
-    protected function prepare()
+    protected function rowMatchesPropertyFilter($row, $key)
     {
-        if ($this->isPrepared) {
-            return $this->objects;
+        if (!array_key_exists($key, $this->columnFilters)) {
+            return true;
         }
 
-        PrefetchCache::initialize($this->db);
+        return $this->columnFilters[$key]->matches($row);
+    }
 
-        $this->raiseLimits()
-            ->startMeasurements()
-            ->fetchSyncProperties()
-            ->prepareRelatedImportSources()
-            ->prepareSourceColumns()
-            ->loadExistingObjects()
-            ->fetchImportedData();
-
-        // TODO: directly work on existing objects, remember imported keys, then purge
-        $newObjects = $this->prepareNewObjects();
-
-        foreach ($newObjects as $key => $object) {
-            if (array_key_exists($key, $this->objects)) {
-                switch ($this->rule->update_policy) {
-                    case 'override':
-                        $this->objects[$key]->replaceWith($object);
-                        break;
-
-                    case 'merge':
-                        // TODO: re-evaluate merge settings. vars.x instead of
-                        //       just "vars" might suffice.
-                        $this->objects[$key]->merge($object);
-                        break;
-
-                    default:
-                        // policy 'ignore', no action
-                }
-            } else {
-                //Check if this->objects is not a key value array and the current object is as a object in the array.
-                if ($this->objects != null && is_array($this->objects)) {
-                    $array_filter_results = array_filter($this->objects, function ($obj) use ($key) {
-                        //here we need the object_name as unique column, but it can be maybe a source->key_column
-                        return ($obj->object_name == $key);
-                    });
-
-                    if ($array_filter_results != null && count($array_filter_results) > 0) {
-                        continue;
-                    } else {
-                        $this->objects[$key] = $object;
-                    }
-                } else {
-                    $this->objects[$key] = $object;
-                }
-            }
+    /**
+     * Transform the given value to an array
+     *
+     * @param  array|string|null $value
+     *
+     * @return array
+     */
+    protected function wantArray($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        } elseif ($value === null) {
+            return array();
+        } else {
+            return array($value);
         }
-
-        $noAction = array();
-        foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
-            if (array_key_exists($key, $newObjects)) {
-                // Object has been touched, do not delete
-                continue;
-            }
-
-            if (array_key_exists($key, $this->objects)) {
-                $object = $this->objects[$key];
-                if (!$object->hasBeenModified()) {
-                    $object->markForRemoval();
-                }
-            }
-        }
-
-        foreach ($this->objects as $key => $object) {
-            if (!$object->hasBeenModified() && !$object->shouldBeRemoved()) {
-                $noAction[] = $key;
-            }
-        }
-
-        foreach ($noAction as $key) {
-            unset($this->objects[$key]);
-        }
-
-        $this->isPrepared = true;
-
-        return $this->objects;
     }
 
     /**
