@@ -6,6 +6,8 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\LegacyDeploymentApi;
 use Icinga\Module\Director\Core\RestApiClient;
+use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -54,24 +56,45 @@ class IcingaEndpoint extends IcingaObject
     {
         $format = $this->connection->settings()->config_format;
         if ($format === 'v2') {
-            $client = new RestApiClient(
-                $this->getResolvedProperty('host', $this->getObjectName()),
-                $this->getResolvedProperty('port')
-            );
-
-            $user = $this->getApiUser();
-            $client->setCredentials(
-                // TODO: $user->client_dn,
-                $user->object_name,
-                $user->password
-            );
-
-            return new CoreApi($client);
+            return new CoreApi($this->getRestApiClient());
         } elseif ($format === 'v1') {
             return new LegacyDeploymentApi($this->connection);
         } else {
             throw new ProgrammingError('Unsupported config format: %s', $format);
         }
+    }
+
+    /**
+     * @return RestApiClient
+     */
+    public function getRestApiClient()
+    {
+        $client = new RestApiClient(
+            $this->getResolvedProperty('host', $this->getObjectName()),
+            $this->getResolvedProperty('port')
+        );
+
+        $user = $this->getApiUser();
+        $client->setCredentials(
+            // TODO: $user->client_dn,
+            $user->object_name,
+            $user->password
+        );
+
+        return $client;
+    }
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        try {
+            if ($zone = $this->getResolvedRelated('zone')) {
+                return $zone->getRenderingZone($config);
+            }
+        } catch (NestingError $e) {
+            return self::RESOLVE_ERROR;
+        }
+
+        return parent::getRenderingZone($config);
     }
 
     /**
