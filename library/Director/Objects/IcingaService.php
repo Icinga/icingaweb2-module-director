@@ -460,6 +460,7 @@ class IcingaService extends IcingaObject
         if (!empty($serviceProperties)) {
             $properties[$props] = $serviceProperties;
             $properties[$props][$prefix . 'groups'] = 'Groups';
+            $properties[$props][$prefix . 'templates'] = 'Templates';
         }
 
         if (!empty($serviceVars)) {
