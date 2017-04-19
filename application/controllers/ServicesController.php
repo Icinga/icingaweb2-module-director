@@ -6,6 +6,10 @@ use Icinga\Module\Director\Web\Controller\ObjectsController;
 
 class ServicesController extends ObjectsController
 {
+    protected $multiEdit = array(
+        'disabled'
+    );
+
     public function init()
     {
         parent::init();

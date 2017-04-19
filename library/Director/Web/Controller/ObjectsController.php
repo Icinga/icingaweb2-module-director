@@ -164,7 +164,29 @@ abstract class ObjectsController extends ActionController
         }
         $formName = 'icinga' . $type;
 
+        $objects = $this->loadMultiObjectsFromParams();
         $this->singleTab($this->translate('Multiple objects'));
+
+        $this->view->title = sprintf(
+            $this->translate('Modify %d objects'),
+            count($objects)
+        );
+
+        $this->view->form = $form = $this->loadForm('IcingaMultiEdit')
+            ->setObjects($objects)
+            ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
+        if ($type === 'Service') {
+            $form->setListUrl('director/servicetemplate/hosts');
+        }
+
+        $form->handleRequest();
+        $this->view->totalUndeployedChanges = $this->db()
+            ->countActivitiesSinceLastDeployedConfig();
+        $this->setViewScript('objects/form');
+    }
+
+    protected function loadMultiObjectsFromParams()
+    {
         $filter = Filter::fromQueryString($this->params->toString());
         $dummy = $this->dummyObject();
         $objects = array();
@@ -174,24 +196,20 @@ abstract class ObjectsController extends ActionController
             /** @var $sub FilterChain */
             foreach ($sub->filters() as $ex) {
                 /** @var $ex FilterChain|FilterExpression */
-                if ($ex->isExpression() && $ex->getColumn() === 'name') {
-                    $name = $ex->getExpression();
-                    $objects[$name] = $dummy::load($name, $db);
+                $col = $ex->getColumn();
+                if ($ex->isExpression()) {
+                    if ($col === 'name') {
+                        $name = $ex->getExpression();
+                        $objects[$name] = $dummy::load($name, $db);
+                    } elseif ($col === 'id') {
+                        $name = $ex->getExpression();
+                        $objects[$name] = $dummy::load(['id' => $name], $db);
+                    }
                 }
             }
         }
-        $this->view->title = sprintf(
-            $this->translate('Modify %d objects'),
-            count($objects)
-        );
 
-        $this->view->form = $this->loadForm('IcingaMultiEdit')
-            ->setObjects($objects)
-            ->pickElementsFrom($this->loadForm($formName), $this->multiEdit)
-            ->handleRequest();
-        $this->view->totalUndeployedChanges = $this->db()
-            ->countActivitiesSinceLastDeployedConfig();
-        $this->setViewScript('objects/form');
+        return $objects;
     }
 
     public function templatesAction()
