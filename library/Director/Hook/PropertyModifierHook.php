@@ -79,6 +79,12 @@ abstract class PropertyModifierHook
         }
     }
 
+    public function setSetting($name, $value)
+    {
+        $this->settings[$name] = $value;
+        return $this;
+    }
+
     /**
      * Methode to transform the given value
      *
