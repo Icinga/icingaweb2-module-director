@@ -39,6 +39,7 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierJsonDecode');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierToInt');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierLConfCustomVar');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierArrayFilter');
 
 $this->provideHook('director/Job', $prefix . 'Job\\HousekeepingJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ConfigJob');
