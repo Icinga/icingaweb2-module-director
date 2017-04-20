@@ -15,7 +15,7 @@ class ServiceObjectDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/services';
+        return 'director/dashboard?name=services';
     }
 
     public function listRequiredPermissions()
