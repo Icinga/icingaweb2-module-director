@@ -440,6 +440,10 @@ class ExtensibleSet
             );
         }
 
+        if (empty($this->allowedValues)) {
+            return array();
+        }
+
         return array_combine($this->allowedValues, $this->allowedValues);
     }
 
