@@ -7,7 +7,6 @@ use Icinga\Module\Director\Web\Table\ServiceApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ServicesOnHostsTable;
 use Icinga\Module\Director\Web\Table\ServiceTemplatesTable;
 use ipl\Html\Link;
-use ipl\Web\Chart\Donut;
 
 class ServicetemplatesController extends SimpleController
 {
@@ -15,8 +14,9 @@ class ServicetemplatesController extends SimpleController
     {
         $this->addSingleTab($this->translate('Service Templates'));
         if ($this->quickSearch()) {
-
+            // Not yet
         }
+
         $this->addTitle($this->translate('All your Service Templates'));
         $this->actions()->add(
             $this->getBackToDashboardLink()
@@ -42,8 +42,9 @@ class ServicetemplatesController extends SimpleController
     {
         $this->addSingleTab($this->translate('Service Apply Rules'));
         if ($this->quickSearch()) {
-
+            // Not yet
         }
+
         $this->addTitle($this->translate('All your Service Apply Rules'));
         $this->actions()->add(
             $this->getBackToDashboardLink()
