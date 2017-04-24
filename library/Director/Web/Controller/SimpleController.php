@@ -62,14 +62,14 @@ abstract class SimpleController extends ActionController
         ]);
 
         $form->add(
-           Html::tag('input', [
-               'type' => 'text',
-               'name' => 'q',
-               'value' => $search,
-               'placeholder' => $this->translate('Search...'),
-               'class' => 'search'
-           ]
-        ));
+            Html::tag('input', [
+                'type' => 'text',
+                'name' => 'q',
+                'value' => $search,
+                'placeholder' => $this->translate('Search...'),
+                'class' => 'search'
+            ])
+        );
 
         $this->controls()->add($form);
 
