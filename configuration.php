@@ -52,7 +52,7 @@ $section->add(N_('Hosts'))
     ->setPermission('director/hosts')
     ->setPriority(30);
 $section->add(N_('Services'))
-    ->setUrl('director/services/templates')
+    ->setUrl('director/dashboard?name=services')
     ->setPermission('director/admin')
     ->setPriority(40);
 $section->add(N_('Commands'))
