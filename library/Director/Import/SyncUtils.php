@@ -125,6 +125,10 @@ class SyncUtils
             }
         }
 
+        if (empty($res)) {
+            return array();
+        }
+
         return array_combine($res, $res);
     }
 }
