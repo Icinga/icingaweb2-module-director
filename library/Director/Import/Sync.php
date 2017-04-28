@@ -268,8 +268,10 @@ class Sync
                     $filterColumns[$column] = $column;
                 }
             }
-            foreach (SyncUtils::getRootVariables($filterColumns) as $column) {
-                $usedColumns[$column] = $column;
+            if (! empty($filterColumns)) {
+                foreach (SyncUtils::getRootVariables($filterColumns) as $column) {
+                    $usedColumns[$column] = $column;
+                }
             }
 
             $rows = $run->fetchRows($usedColumns);
