@@ -7,7 +7,7 @@
 <?php if (! $rule->hasSyncProperties()): ?>
 <p class="warning">
 <?= sprintf(
-    $this->translate('You need must define some %s before you can run this Sync rule'),
+    $this->translate('You must define some %s before you can run this Sync Rule'),
     $this->qlink('Sync Properties', 'director/syncrule/property', array('rule_id' => $rule->id))
 )
 ?>
