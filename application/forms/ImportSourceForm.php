@@ -69,7 +69,10 @@ class ImportSourceForm extends DirectorObjectForm
                 . ' specified this will then be used as the object_name for the syncronized'
                 . ' Icinga object. Especially when getting started with director please make'
                 . ' sure to strictly follow this rule. Duplicate values for this column on different'
-                . ' rows will trigger a failure, your import run will not succeed'
+                . ' rows will trigger a failure, your import run will not succeed. Please pay attention'
+                . ' when synching services, as "purge" will only work correctly with a key_column'
+                . ' corresponding to host!name. Check the "Combine" property modifier in case your'
+                . ' data source cannot provide such a field'
             ),
             'placeholder' => $defaultKeyCol,
             'required'    => $defaultKeyCol === null,

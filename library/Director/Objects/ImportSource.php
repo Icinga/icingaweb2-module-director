@@ -6,6 +6,7 @@ use Icinga\Application\Benchmark;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
+use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\SyncUtils;
 use Exception;
@@ -97,7 +98,11 @@ class ImportSource extends DbObjectWithSettings
         $modifiers = $this->getRowModifiers();
 
         foreach ($modifiers as $key => $mods) {
+            /** @var PropertyModifierHook $mod */
             foreach ($mods as $mod) {
+                if ($mod->requiresRow()) {
+                    $mod->setRow($row);
+                }
                 if (! property_exists($row, $key)) {
                     // Partial support for nested keys. Must write result to
                     // a dedicated flat key
