@@ -24,6 +24,18 @@ class SyncUtils
     }
 
     /**
+     * Whether the given string contains variable names in the form ${var_name}
+     *
+     * @param  string $string
+     *
+     * @return bool
+     */
+    public static function hasVariables($string)
+    {
+        return preg_match('/\${([^}]+)}/', $string);
+    }
+
+    /**
      * Recursively extract a value from a nested structure
      *
      * For a $val looking like
@@ -34,11 +46,11 @@ class SyncUtils
      * return { size => '255GB' }
      *
      * @param  string $val  The value to extract data from
-     * @param  object $keys A list of nested keys pointing to desired data
+     * @param  array  $keys A list of nested keys pointing to desired data
      *
      * @return mixed
      */
-    public static function getDeepValue($val, $keys)
+    public static function getDeepValue($val, array $keys)
     {
         $key = array_shift($keys);
         if (! property_exists($val, $key)) {
