@@ -477,6 +477,7 @@ class IcingaConfig
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ->createFileFromDb('notification')
+            ->createFileFromDb('dependency')
             ;
 
         if (! $this->isLegacy()) {
@@ -719,7 +720,8 @@ apply Service for (title => params in host.vars["%s"]) {
             'user',
             'userGroup',
             'timePeriod',
-            'notification'
+            'notification',
+            'dependency'
         );
 
         return in_array($type, $types);
