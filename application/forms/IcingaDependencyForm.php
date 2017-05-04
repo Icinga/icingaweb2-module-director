@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaDependency;
 
 class IcingaDependencyForm extends DirectorObjectForm
