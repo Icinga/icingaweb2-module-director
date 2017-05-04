@@ -240,14 +240,6 @@ class IcingaObjectFieldLoader
         $kill = array();
         $columns = array();
         $object = $this->object;
-
-        $object->invalidateResolveCache();
-        $vars = $object::fromPlainObject(
-            $object->toPlainObject(true),
-            $object->getConnection()
-        )->vars()->flatten();
-
-        $prefixedVars = (object) array();
         if ($object instanceof IcingaHost) {
             $prefix = 'host.vars.';
         } elseif ($object instanceof IcingaService) {
@@ -256,6 +248,13 @@ class IcingaObjectFieldLoader
             return $elements;
         }
 
+        $object->invalidateResolveCache();
+        $vars = $object::fromPlainObject(
+            $object->toPlainObject(true),
+            $object->getConnection()
+        )->vars()->flatten();
+
+        $prefixedVars = (object) array();
         foreach ($vars as $k => $v) {
             $prefixedVars->{$prefix . $k} = $v;
         }

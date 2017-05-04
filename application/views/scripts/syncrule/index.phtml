@@ -4,6 +4,16 @@
 </div>
 
 <div class="content">
+<?php if (! $rule->hasSyncProperties()): ?>
+<p class="warning">
+<?= sprintf(
+    $this->translate('You must define some %s before you can run this Sync Rule'),
+    $this->qlink('Sync Properties', 'director/syncrule/property', array('rule_id' => $rule->id))
+)
+?>
+</p>
+</div>
+<?php return; endif ?>
 <?php if (! $this->run): ?>
 <p class="warning">
 <?= $this->translate('This Sync Rule has never been run before.') ?>

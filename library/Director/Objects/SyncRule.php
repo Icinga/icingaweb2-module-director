@@ -345,6 +345,12 @@ class SyncRule extends DbObject
         return $this->hasCombinedKey;
     }
 
+    public function hasSyncProperties()
+    {
+        $properties = $this->getSyncProperties();
+        return ! empty($properties);
+    }
+
     public function getSyncProperties()
     {
         if (! $this->hasBeenLoadedFromDb()) {
