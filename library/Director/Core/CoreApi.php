@@ -180,6 +180,40 @@ class CoreApi implements DeploymentApiInterface
         return false;
     }
 
+    public function checkServiceAndWaitForResult($host, $service, $timeout = 10)
+    {
+        $now = microtime(true);
+        $this->checkServiceNow($host, $service);
+
+        while (true) {
+            try {
+                $object = $this->getObject("$host!$service", 'services');
+                if (isset($object->attrs->last_check_result)) {
+                    $res = $object->attrs->last_check_result;
+                    if ($res->execution_start > $now) {
+                        return $res;
+                    }
+                } else {
+                    // no check result available
+                }
+            } catch (Exception $e) {
+                // Unable to fetch the requested object
+                throw new IcingaException(
+                    'Unable to fetch the requested service "%s" on "%s"',
+                    $service,
+                    $host
+                );
+            }
+            if (microtime(true) > ($now + $timeout)) {
+                break;
+            }
+
+            usleep(150000);
+        }
+
+        return false;
+    }
+
     public function getServiceOutput($host, $service)
     {
         try {
