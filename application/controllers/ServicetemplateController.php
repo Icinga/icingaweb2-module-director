@@ -59,10 +59,10 @@ class ServicetemplateController extends SimpleController
         $query = $db->select()->from(
             ['s' => 'icinga_service'],
             [
-                'cnt_templates'   => "COALESCE(SUM(CASE WHEN s.object_type = 'template' THEN 1 ELSE 0 END), 0)",
-                'cnt_objects'     => "COALESCE(SUM(CASE WHEN s.object_type = 'object' THEN 1 ELSE 0 END), 0)",
-                'cnt_apply_rules' => "COALESCE(SUM(CASE WHEN s.object_type = 'apply' AND s.service_set_id IS NULL THEN 1 ELSE 0 END), 0)",
-                'cnt_set_members' => "COALESCE(SUM(CASE WHEN s.object_type = 'apply' AND s.service_set_id IS NOT NULL THEN 1 ELSE 0 END), 0)",
+                'cnt_templates'   => $this->getSummaryLine('template'),
+                'cnt_objects'     => $this->getSummaryLine('object'),
+                'cnt_apply_rules' => $this->getSummaryLine('apply', 's.service_set_id IS NULL'),
+                'cnt_set_members' => $this->getSummaryLine('apply', 's.service_set_id IS NOT NULL'),
             ]
         )->joinLeft(
             ['ps' => 'icinga_service_inheritance'],
@@ -71,6 +71,14 @@ class ServicetemplateController extends SimpleController
         )->where('ps.parent_service_id IN (?)', $ids);
 
         return $db->fetchRow($query);
+    }
+
+    protected function getSummaryLine($type, $extra = null)
+    {
+        if ($extra !== null) {
+            $extra = " AND $extra";
+        }
+        return "COALESCE(SUM(CASE WHEN s.object_type = '${type}'${extra} THEN 1 ELSE 0 END), 0)";
     }
 
     protected function requireTemplate()
