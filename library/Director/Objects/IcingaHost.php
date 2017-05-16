@@ -298,7 +298,7 @@ class IcingaHost extends IcingaObject
     protected function notifyResolvers()
     {
         $resolver = $this->getHostGroupMembershipResolver();
-        $resolver->addHost($this);
+        $resolver->addObject($this);
         $resolver->refreshDb();
 
         return $this;
