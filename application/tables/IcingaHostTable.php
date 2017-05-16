@@ -2,15 +2,24 @@
 
 namespace Icinga\Module\Director\Tables;
 
+use Icinga\Module\Director\Restriction\ObjectRestriction;
 use Icinga\Module\Director\Web\Table\QuickTable;
 
 class IcingaHostTable extends QuickTable
 {
+    protected $objectRestrictions = array();
+
     protected $searchColumns = array(
         'host',
         'address',
         'display_name'
     );
+
+    public function addObjectRestriction(ObjectRestriction $restriction)
+    {
+        $this->objectRestrictions[$restriction->getName()] = $restriction;
+        return $this;
+    }
 
     public function getColumns()
     {
@@ -58,10 +67,16 @@ class IcingaHostTable extends QuickTable
 
     protected function getUnfilteredQuery()
     {
-        return $this->db()->select()->from(
+        $query = $this->db()->select()->from(
             array('h' => 'icinga_host'),
             array()
         )->order('h.object_name');
+
+        foreach ($this->objectRestrictions as $restriction) {
+            $restriction->applyToHostsQuery($query);
+        }
+
+        return $query;
     }
 
     public function getBaseQuery()

@@ -85,6 +85,9 @@ class IcingaHost extends IcingaObject
 
     protected $supportedInLegacy = true;
 
+    /** @var HostGroupMembershipResolver */
+    protected $hostgroupMembershipResolver;
+
     public static function enumProperties(
         DbConnection $connection = null,
         $prefix = '',
@@ -289,6 +292,32 @@ class IcingaHost extends IcingaObject
             }
         }
 
+        return $this;
+    }
+
+    protected function notifyResolvers()
+    {
+        $resolver = $this->getHostGroupMembershipResolver();
+        $resolver->addHost($this);
+        $resolver->refreshDb();
+
+        return $this;
+    }
+
+    protected function getHostGroupMembershipResolver()
+    {
+        if ($this->hostgroupMembershipResolver === null) {
+            $this->hostgroupMembershipResolver = new HostGroupMembershipResolver(
+                $this->getConnection()
+            );
+        }
+
+        return $this->hostgroupMembershipResolver;
+    }
+
+    public function setHostGroupMembershipResolver(HostGroupMembershipResolver $resolver)
+    {
+        $this->hostgroupMembershipResolver = $resolver;
         return $this;
     }
 
