@@ -372,6 +372,10 @@ class HostGroupMembershipResolver
             }
         }
 
+        foreach ($this->fetchMissingSingleAssignments() as $row) {
+            $mappings[$row->hostgroup_id][$row->host_id] = $row->host_id;
+        }
+
         $this->newMappings = $mappings;
     }
 
@@ -405,6 +409,26 @@ class HostGroupMembershipResolver
         )->where('assign_filter IS NOT NULL');
 
         return $this->db->fetchPairs($query);
+    }
+
+    protected function fetchMissingSingleAssignments()
+    {
+        $query = $this->db->select()->from(
+            array('hgh' => 'icinga_hostgroup_host'),
+            array(
+                'host_id',
+                'hostgroup_id',
+            )
+        )->joinLeft(
+            array('hghr' => 'icinga_hostgroup_host_resolved'),
+            'hgh.host_id = hghr.host_id AND hgh.hostgroup_id = hghr.hostgroup_id',
+            array()
+        )->where('hghr.host_id IS NULL');
+
+        $this->addMembershipWhere($query, 'hgh.host_id', $this->hosts);
+        $this->addMembershipWhere($query, 'hgh.hostgroup_id', $this->hostgroups);
+
+        return $this->db->fetchAll($query);
     }
 
     /**
