@@ -443,7 +443,7 @@ abstract class GroupMembershipResolver
             array("gor" => $this->getResolvedTableName()),
             "go.${type}_id = gor.${type}_id AND go.${type}group_id = gor.${type}group_id",
             array()
-        )->where("hghr.${type}_id IS NULL");
+        )->where("gor.${type}_id IS NULL");
 
         $this->addMembershipWhere($query, "go.${type}_id", $this->objects);
         $this->addMembershipWhere($query, "go.${type}group_id", $this->groups);
