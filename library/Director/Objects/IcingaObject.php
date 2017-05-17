@@ -318,6 +318,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return null;
     }
 
+    public function prefetchAllRelatedTypes()
+    {
+        foreach (array_unique(array_values($this->relations)) as $relClass) {
+            /** @var static $class */
+            $class = __NAMESPACE__ . '\\' . $relClass;
+            $class::prefetchAll($this->getConnection());
+        }
+    }
+
+    public static function prefetchAllRelationsByType($type, Db $db)
+    {
+        /** @var static $class */
+        $class = self::classByType($type);
+        /** @var static $dummy */
+        $dummy = $class::create(array(), $db);
+        $dummy->prefetchAllRelatedTypes();
+    }
+
+
     /**
      * Whether this Object supports custom variables
      *
