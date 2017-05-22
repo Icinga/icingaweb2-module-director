@@ -49,7 +49,7 @@ class IcingaUserTable extends IcingaObjectTable
             array('z' => 'icinga_zone'),
             'u.zone_id = z.id',
             array()
-        );
+        )->order('u.object_name');
     }
 
     public function getBaseQuery()
