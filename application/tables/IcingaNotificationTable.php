@@ -38,7 +38,7 @@ class IcingaNotificationTable extends QuickTable
         return $this->db()->select()->from(
             array('n' => 'icinga_notification'),
             array()
-        );
+        )->order('n.object_name');
     }
 
     public function getBaseQuery()
