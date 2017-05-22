@@ -22,6 +22,7 @@ class IcingaUserTable extends IcingaObjectTable
             'pager'                 => 'u.pager',
             // 'enable_notifications'  => 'u.enable_notifications',
             // 'period'                => ''
+            'disabled'              => 'u.disabled'
             'zone'                  => 'z.object_name',
         );
     }
@@ -39,6 +40,16 @@ class IcingaUserTable extends IcingaObjectTable
             'email'         => $view->translate('Email'),
         );
     }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->disabled === 'y') {
+            return 'disabled';
+        } else {
+            return null;
+        }
+    }
+
 
     public function getUnfilteredQuery()
     {
