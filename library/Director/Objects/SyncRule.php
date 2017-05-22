@@ -261,6 +261,7 @@ class SyncRule extends DbObject
                 $hasHost = false;
                 $hasObjectName = false;
                 $hasServiceSet = false;
+                $hasObjectType = false;
 
                 foreach ($this->getSyncProperties() as $key => $property) {
                     if ($property->destination_field === 'host') {
@@ -271,6 +272,9 @@ class SyncRule extends DbObject
                     }
                     if ($property->destination_field === 'object_name') {
                         $hasObjectName = $property->source_expression;
+                    }
+                    if ($property->destination_field === 'object_type') {
+                        $hasObjectType = $property->source_expression;
                     }
                 }
 
@@ -292,6 +296,15 @@ class SyncRule extends DbObject
                     );
 
                     $this->destinationKeyPattern = '${service_set}!${object_name}';
+                } elseif ($hasObjectName !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasObjectType !== false ? $hasObjectType : "object",
+                        $hasObjectName
+                    );
+
+                    $this->destinationKeyPattern = '${object_type}!${object_name}';
                 }
             } elseif ($this->get('object_type') === 'serviceSet') {
                 $hasHost = false;
