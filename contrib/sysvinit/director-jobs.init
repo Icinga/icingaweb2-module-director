@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+# director-jobs runs jobs defined in Icinga Web 2 director
+#
+# chkconfig: 2345 99 1
+# description: director-jobs runs jobs defined in Icinga Web 2 director
+
+### BEGIN INIT INFO
+# Provides: director-jobs
+# Required-Start: httpd
+# Required-Stop: httpd
+# Default-Start: 2345
+# Default-Stop: 016
+# Short-Description: director-jobs runs jobs defined in Icinga Web 2 director
+# Description: director-jobs runs jobs defined in Icinga Web 2 director
+### END INIT INFO
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+exec="/usr/bin/icingacli"
+prog="director-jobs"
+
+pidfile=/var/run/${prog}.pid
+lockfile=/var/lock/subsys/$prog
+
+start() {
+  [ -x $exec ] || exit 5
+  echo -n $"Starting $prog: "
+  nohup $exec director jobs run --forever >/dev/null 2>&1 &
+  retval=$?
+  PID=$!
+  [ $retval -eq 0 ] && success "$exec started" && touch $lockfile && echo $PID > ${pidfile} || failure "$exec start failed"
+  echo
+  return $retval
+}
+
+stop() {
+  echo -n $"Stopping $prog: "
+  killproc $prog
+  retval=$?
+  echo
+  [ $retval -eq 0 ] && rm -f $lockfile
+  return $retval
+}
+
+restart() {
+  stop
+  start
+}
+
+reload() {
+  restart
+}
+
+force_reload() {
+  restart
+}
+
+rh_status() {
+  status $prog
+}
+
+rh_status_q() {
+  rh_status >/dev/null 2>&1
+}
+
+case "$1" in
+  start)
+    rh_status_q && exit 0
+    $1
+    ;;
+  stop)
+    rh_status_q || exit 0
+    $1
+    ;;
+  restart)
+    $1
+    ;;
+  reload)
+    rh_status_q || exit 7
+    $1
+    ;;
+  force-reload)
+    force_reload
+    ;;
+  status)
+    rh_status
+    ;;
+  condrestart|try-restart)
+    rh_status_q || exit 0
+    restart
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|status|restart|reload|condrestart|try-restart|reload|force-reload}"
+    exit 2
+esac
+exit $?
