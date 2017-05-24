@@ -24,6 +24,8 @@ class IcingaTemplateResolver
 
     protected static $idIdx = array();
 
+    protected static $reverseIdIdx = array();
+
     protected static $nameIdx = array();
 
     protected static $idToName = array();
@@ -218,6 +220,32 @@ class IcingaTemplateResolver
         return $ids;
     }
 
+    public function listChildren($objectId = null)
+    {
+        if ($objectId === null) {
+            $objectId = $this->object->id;
+        }
+
+        if (array_key_exists($objectId, self::$reverseIdIdx[$this->type])) {
+            return self::$reverseIdIdx[$this->type][$objectId];
+        } else {
+            return array();
+        }
+    }
+
+    public function listChildIds($objectId = null)
+    {
+        return array_keys($this->listChildren($objectId));
+    }
+
+    public function listDescendantIds($objectId = null)
+    {
+        if ($objectId === null) {
+            $objectId = $this->object->id;
+        }
+
+    }
+
     public function listInheritancePathIds($objectId = null)
     {
         return $this->uniquePathIds($this->listFullInheritancePathIds($objectId));
@@ -355,34 +383,45 @@ class IcingaTemplateResolver
         $templates = $this->fetchTemplates();
 
         $ids = array();
+        $reverseIds = array();
         $names = array();
         $idToName = array();
         $nameToId = array();
 
         foreach ($templates as $row) {
-            $idToName[$row->id] = $row->name;
-            $nameToId[$row->name] = $row->id;
+            $id = $row->id;
+            $idToName[$id] = $row->name;
+            $nameToId[$row->name] = $id;
 
             if ($row->parent_id === null) {
                 continue;
             }
-            if (array_key_exists($row->id, $ids)) {
-                $ids[$row->id][$row->parent_id] = $row->parent_name;
-                $names[$row->name][$row->parent_name] = $row->parent_id;
+            $parentId = $row->parent_id;
+            $parentName = $row->parent_name;
+
+            if (array_key_exists($id, $ids)) {
+                $ids[$id][$parentId] = $parentName;
+                $names[$row->name][$parentName] = $row->parent_id;
             } else {
-                $ids[$row->id] = array(
-                    $row->parent_id => $row->parent_name
+                $ids[$id] = array(
+                    $parentId => $parentName
                 );
 
                 $names[$row->name] = array(
-                    $row->parent_name => $row->parent_id
+                    $parentName => $parentId
                 );
             }
+
+            if (! array_key_exists($parentId, $reverseIds)) {
+                $reverseIds[$parentId] = array();
+            }
+            $reverseIds[$parentId][$id] = $row->name;
         }
 
-        self::$idIdx[$type]     = $ids;
+        self::$idIdx[$type]        = $ids;
+        self::$reverseIdIdx[$type] = $reverseIds;
         self::$nameIdx[$type]   = $names;
-        self::$templates[$type] = $templates;
+        self::$templates[$type] = $templates; // TODO: this is unused, isn't it?
         self::$idToName[$type]  = $idToName;
         self::$nameToId[$type]  = $nameToId;
     }
@@ -423,13 +462,15 @@ class IcingaTemplateResolver
 
     public function refreshObject(IcingaObject $object)
     {
+        $type = $object->getShortTableName();
+        $name = $object->getObjectName();
         $parentNames = $object->imports;
-        self::$nameIdx[$object->object_name] = $parentNames;
+        self::$nameIdx[$type][$name] = $parentNames;
         if ($object->hasBeenLoadedFromDb()) {
-            $id = $object->getId();
-            if (! is_array($id)) {
-                self::$idIdx[$id] = $this->getIdsForNames($parentNames);
-            }
+            $id = $object->getProperty('id');
+            self::$idIdx[$type][$id] = $this->getIdsForNames($parentNames);
+            self::$idToName[$type][$id] = $name;
+            self::$nameToId[$type][$name] = $id;
         }
         return $this;
     }
