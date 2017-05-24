@@ -27,7 +27,9 @@ env:
     DIRECTOR_TESTDB_USER="director_test"
 
 before_script:
-  - curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
+  # TODO: Re-enable after dropping 5.3 support:
+  # - curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
+  - curl -OL https://github.com/squizlabs/PHP_CodeSniffer/releases/download/2.9.1/phpcs.phar
   - wget https://github.com/Icinga/icingaweb2/archive/v2.4.0.tar.gz
   - tar xfz v2.4.0.tar.gz
   - ln -s icingaweb2-2.4.0/library/Icinga
