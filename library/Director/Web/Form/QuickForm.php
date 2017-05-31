@@ -111,7 +111,10 @@ abstract class QuickForm extends QuickBaseForm
         $this->submitButtonName = $el->getName();
         $this->addElement($el);
 
-        $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT')
+        $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT', array(
+            'role' => 'none',
+            'tabindex' => '-1',
+        ))
             ->setLabel($label)
             ->setDecorators(array('ViewHelper'));
         $this->fakeSubmitButtonName = $fakeEl->getName();
