@@ -351,6 +351,17 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             );
         }
 
+
+        return $this->view->formText(
+            $this->elementId('column', $filter),
+            $active,
+            [
+                'class' => 'column autosubmit director-suggest',
+                'data-suggestion-context' => 'HostFilterColumns',
+            ]
+        );
+
+
         $cols = $this->getColumnList();
         if ($active && !isset($cols[$active])) {
             $cols[$active] = str_replace(
