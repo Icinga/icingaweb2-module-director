@@ -195,7 +195,7 @@ abstract class QuickTable implements Paginatable
         }
         if ($filter) {
             foreach ($enforced as $f) {
-                $filter->andFilter($f);
+                $filter = $filter->andFilter($f);
             }
             $query->where($this->renderFilter($filter));
         }
