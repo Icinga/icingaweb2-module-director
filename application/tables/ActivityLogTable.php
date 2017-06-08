@@ -30,9 +30,7 @@ class ActivityLogTable extends QuickTable
     public function getColumns()
     {
         return array(
-            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
-                . " || REPLACE(l.object_type, 'icinga_', '')"
-                . " || ' \"' || l.object_name || '\"'",
+            'log_message'     => "CONCAT('[',l.author,'] ',l.action_name,REPLACE(l.object_type, 'icinga_', ''),' \"',l.object_name,'\"')",
             'author'          => 'l.author',
             'action'          => 'l.action_name',
             'object_name'     => 'l.object_name',
