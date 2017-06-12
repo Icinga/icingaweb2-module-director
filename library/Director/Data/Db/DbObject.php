@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Exception\IcingaException as IE;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Util;
 use Exception;
@@ -247,6 +248,14 @@ abstract class DbObject
             throw new IE('Trying to get invalid property "%s"', $property);
         }
         return $this->properties[$property];
+    }
+
+    public function getProperty($key)
+    {
+        if (! array_key_exists($key, $this->properties)) {
+            throw new IE('Trying to get invalid property "%s"', $key);
+        }
+        return $this->properties[$key];
     }
 
     public function hasProperty($key)
@@ -527,12 +536,12 @@ abstract class DbObject
     /**
      * Get the autoinc value if set
      *
-     * @return string
+     * @return int
      */
     public function getAutoincId()
     {
         if (isset($this->properties[$this->autoincKeyName])) {
-            return $this->properties[$this->autoincKeyName];
+            return (int) $this->properties[$this->autoincKeyName];
         }
         return null;
     }
@@ -595,6 +604,18 @@ abstract class DbObject
         }
 
         return $this->setDbProperties($properties);
+    }
+
+    /**
+     * @param object $row
+     * @param Db $db
+     * @return self
+     */
+    public static function fromDbRow($row, Db $db)
+    {
+        return (new static())
+            ->setConnection($db)
+            ->setDbProperties($row);
     }
 
     protected function setDbProperties($properties)
