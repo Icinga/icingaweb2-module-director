@@ -16,6 +16,8 @@ abstract class ObjectsController extends ActionController
     /** @var IcingaObject */
     protected $dummy;
 
+    protected $setsDummy;
+
     protected $isApified = true;
 
     protected $multiEdit = array();
@@ -235,7 +237,13 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        $this->provideFilterEditorForTable($table);
+        if ($this->setsDummy === null) {
+            $class = $this->getObjectClassname($Type . 'Set');
+            $this->setsDummy = $class::create(array());
+            #$this->setsDummy->object_type = 'template';
+        }
+
+        $this->provideFilterEditorForTable($table, $this->setsDummy);
         $this->getTabs()->activate('sets');
         $this->setViewScript('objects/table');
     }
