@@ -34,11 +34,17 @@ class IcingaUserGroupTable extends QuickTable
         );
     }
 
-    public function getBaseQuery()
+    public function getUnfilteredQuery()
     {
+
         return $this->db()->select()->from(
             array('ug' => 'icinga_usergroup'),
             array()
-        );
+        )->order('ug.object_name');
+    }
+
+    public function getBaseQuery()
+    {
+        return $this->getUnfilteredQuery();
     }
 }

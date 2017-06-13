@@ -22,6 +22,7 @@ class IcingaUserTable extends IcingaObjectTable
             'pager'                 => 'u.pager',
             // 'enable_notifications'  => 'u.enable_notifications',
             // 'period'                => ''
+            'disabled'              => 'u.disabled'
             'zone'                  => 'z.object_name',
         );
     }
@@ -40,6 +41,16 @@ class IcingaUserTable extends IcingaObjectTable
         );
     }
 
+    protected function getRowClasses($row)
+    {
+        if ($row->disabled === 'y') {
+            return 'disabled';
+        } else {
+            return null;
+        }
+    }
+
+
     public function getUnfilteredQuery()
     {
         return $this->db()->select()->from(
@@ -49,7 +60,7 @@ class IcingaUserTable extends IcingaObjectTable
             array('z' => 'icinga_zone'),
             'u.zone_id = z.id',
             array()
-        );
+        )->order('u.object_name');
     }
 
     public function getBaseQuery()

@@ -33,7 +33,7 @@ class IcingaServiceSetHostTable extends QuickTable
         $params = array(
             'name' => $row->host
         );
-    
+
         return $this->url('director/host', $params);
     }
 

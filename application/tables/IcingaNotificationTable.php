@@ -16,6 +16,7 @@ class IcingaNotificationTable extends QuickTable
             'id'                    => 'n.id',
             'object_type'           => 'n.object_type',
             'notification'          => 'n.object_name',
+            'disabled'              => 'n.disabled',
         );
     }
 
@@ -32,13 +33,21 @@ class IcingaNotificationTable extends QuickTable
         );
     }
 
+    protected function getRowClasses($row)
+    {
+        if ($row->disabled === 'y') {
+            return 'disabled';
+        } else {
+            return null;
+        }
+    }
 
     public function getUnfilteredQuery()
     {
         return $this->db()->select()->from(
             array('n' => 'icinga_notification'),
             array()
-        );
+        )->order('n.object_name');
     }
 
     public function getBaseQuery()
