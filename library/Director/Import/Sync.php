@@ -430,7 +430,11 @@ class Sync
                         $newVars[$varName] = $val;
                     } else {
                         if ($prop === 'import') {
-                            $imports[] = $val;
+                            if (is_array($val)) {
+                                $imports = array_merge($imports, $val);
+                            } elseif (!is_null($val)) {
+                                $imports[] = $val;
+                            }
                         } else {
                             $newProps[$prop] = $val;
                         }
