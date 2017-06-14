@@ -4,32 +4,18 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
-use Icinga\Web\Widget\Tabs;
 use ipl\Html\Icon;
 use ipl\Html\Link;
 use ipl\Html\Table;
-use ipl\Translation\TranslationHelper;
 use ipl\Web\Url;
 
-class ServiceApplyRulesTable extends Table
+class ServiceApplyRulesTable extends QueryBasedTable
 {
-    use TranslationHelper;
-
-    protected $defaultAttributes = [
-        'class' => ['simple', 'common-table', 'table-row-selectable'],
-        'data-base-target' => '_next',
+    protected $searchColumns = [
+        's.object_name',
+        's.assign_filter',
     ];
-
-    private $db;
-
-    public function __construct(Db $connection)
-    {
-        $this->db = $connection->getDbAdapter();
-        $this->header();
-        $this->fetchRows();
-    }
 
     public function getColumnsToBeRendered()
     {
@@ -99,21 +85,6 @@ class ServiceApplyRulesTable extends Table
         return $links;
     }
 
-    protected function fetchRows()
-    {
-        $body = $this->body();
-        foreach ($this->fetch() as $row) {
-            $body->add($this->renderRow($row));
-        }
-    }
-
-    public function fetch()
-    {
-        return $this->db->fetchAll(
-            $this->prepareQuery()
-        );
-    }
-
     public function prepareQuery()
     {
         $columns = [
@@ -121,7 +92,7 @@ class ServiceApplyRulesTable extends Table
             'service'       => 's.object_name',
             'assign_filter' => 's.assign_filter',
         ];
-        $query = $this->db->select()->from(
+        $query = $this->db()->select()->from(
             ['s' => 'icinga_service'],
             $columns
         )->where(
