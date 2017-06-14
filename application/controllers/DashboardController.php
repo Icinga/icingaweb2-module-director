@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Dashboard\Dashboard;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
@@ -19,22 +17,20 @@ class DashboardController extends ActionController
             $this->setAutorefreshInterval(10);
         }
 
-        $this->view->title = $this->translate('Icinga Director');
+        $this->setTitle($this->translate('Icinga Director'));
         $names = $this->params->getValues('name', array('Objects', 'Deployment', 'Data'));
         if (count($names) === 1) {
             // TODO: Find a better way for this
-            $this->singleTab($this->translate(ucfirst($names[0])));
+            $this->addSingleTab($this->translate(ucfirst($names[0])));
         } else {
-            $this->singleTab($this->translate('Overview'));
-        }
-        $dashboards = array();
-        foreach ($names as $name) {
-            $dashboard = Dashboard::loadByName($name, $this->db(), $this->view);
-            if ($dashboard->isAvailable()) {
-                $dashboards[$name] = $dashboard;
-            }
+            $this->addSingleTab($this->translate('Overview'));
         }
 
-        $this->view->dashboards = $dashboards;
+        foreach ($names as $name) {
+            $dashboard = Dashboard::loadByName($name, $this->db());
+            if ($dashboard->isAvailable()) {
+                $this->content()->add($dashboard);
+            }
+        }
     }
 }
