@@ -11,7 +11,7 @@ class ServiceGroupsDashlet extends Dashlet
         return $this->translate('Service Groups');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Defining Service Groups get more structure. Great for Dashboards.'

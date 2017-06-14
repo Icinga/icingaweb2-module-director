@@ -11,7 +11,7 @@ class DatafieldDashlet extends Dashlet
         return $this->translate('Define data fields');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Data fields make sure that configuration fits your rules'

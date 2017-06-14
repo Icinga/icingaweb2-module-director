@@ -11,7 +11,7 @@ class ServiceSetsDashlet extends Dashlet
         return $this->translate('Service Sets');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Grouping your Services into Sets allow you to quickly assign services'

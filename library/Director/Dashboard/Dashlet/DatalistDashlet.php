@@ -11,7 +11,7 @@ class DatalistDashlet extends Dashlet
         return $this->translate('Provide data lists');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Provide data lists to make life easier for your users'

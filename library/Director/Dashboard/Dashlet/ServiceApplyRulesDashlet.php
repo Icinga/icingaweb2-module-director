@@ -11,7 +11,7 @@ class ServiceApplyRulesDashlet extends Dashlet
         return $this->translate('Service Apply Rules');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Using Apply Rules a Service can be applied to multiple hosts at once,'

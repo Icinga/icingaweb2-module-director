@@ -11,7 +11,7 @@ class SingleServicesDashlet extends Dashlet
         return $this->translate('Single Services');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Here you can find all single services directly attached to single'

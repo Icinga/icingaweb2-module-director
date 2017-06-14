@@ -11,7 +11,7 @@ class ServiceTemplatesDashlet extends Dashlet
         return $this->translate('Service Templates');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Manage your Service Templates. Use Fields to make it easy for'
