@@ -6,8 +6,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Restriction\BetaHostgroupRestriction;
-use Icinga\Module\Director\Tables\IcingaHostTable;
 use Icinga\Module\Director\Web\Controller\ObjectsController;
 
 class HostsController extends ObjectsController
@@ -77,15 +75,5 @@ class HostsController extends ObjectsController
             ->handleRequest();
 
         $this->setViewScript('objects/form');
-    }
-
-    /**
-     * @param IcingaHostTable $table
-     */
-    protected function applyTableFilters($table)
-    {
-        $table->addObjectRestriction(
-            new BetaHostgroupRestriction($this->db(), $this->Auth())
-        );
     }
 }
