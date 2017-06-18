@@ -33,6 +33,6 @@ class NotificationApplyDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/notifications/apply';
+        return 'director/notifications/applyrules';
     }
 }

@@ -21,7 +21,7 @@ class ServiceApplyRulesDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/servicetemplates/applyrules';
+        return 'director/services/applyrules';
     }
 
     public function listRequiredPermissions()

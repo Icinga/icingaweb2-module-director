@@ -21,7 +21,7 @@ class ServiceTemplatesDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/servicetemplates';
+        return 'director/services/templates';
     }
 
     public function listRequiredPermissions()

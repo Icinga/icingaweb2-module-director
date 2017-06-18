@@ -21,11 +21,11 @@ class SingleServicesDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/servicetemplates/services';
+        return 'director/services';
     }
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return array('director/services');
     }
 }

@@ -13,8 +13,13 @@ class HostObjectDashlet extends Dashlet
         return $this->translate('Host objects');
     }
 
+    public function listRequiredPermissions()
+    {
+        return ['director/hosts'];
+    }
+
     public function getUrl()
     {
-        return 'director/hosts';
+        return 'director/dashboard?name=hosts';
     }
 }

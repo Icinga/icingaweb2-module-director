@@ -20,6 +20,6 @@ class ServiceObjectDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return ['director/services'];
     }
 }
