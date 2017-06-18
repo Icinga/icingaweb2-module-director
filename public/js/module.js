@@ -103,7 +103,7 @@
         suggestionDoubleClick: function (ev)
         {
             var $el = $(ev.currentTarget);
-            this.getSuggestionList($el)
+            this.getSuggestionList($el);
         },
 
         /**
@@ -234,6 +234,7 @@
             } else {
                 $ul = $('<ul class="director-suggestions"></ul>');
                 $ul.insertAfter($input);
+                $ul.css({width: $input.css('width')});
                 return this.refreshSuggestionList($ul, $input);
             }
         },
@@ -347,7 +348,7 @@
          * @param ev
          */
         leaveSuggestionField: function(ev) {
-            return;
+//            return;
             var _this = this;
             setTimeout(function() {
                 _this.removeSuggestionList($(ev.currentTarget));
@@ -533,23 +534,19 @@
             var $dt = $dd.prev();
             var $form = $dd.closest('form');
 
+            var $desc = $dd.find('p.description');
+            if ($desc.length) {
+                $form.css({ marginBottom: ($desc.height() + 48) + 'px' });
+            }
+
             $form.find('dt, dd, li').removeClass('active');
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
-            $dd.find('p.description.fading-out')
-                .stop(true)
-                .removeClass('fading-out')
-                .fadeIn('fast');
 
             $form.find('dd').not($dd)
                 .find('p.description')
-                .not('.fading-out')
-                .addClass('fading-out')
-                .delay(2000)
-                .fadeOut('slow', function() {
-                    $(this).removeClass('fading-out').hide()
-                });
+                .hide();
         },
 
         highlightFormErrors: function($container)
