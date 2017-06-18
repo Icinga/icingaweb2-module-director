@@ -10,12 +10,12 @@ class CommandObjectDashlet extends Dashlet
 
     public function getTitle()
     {
-        return $this->view->translate('Commands');
+        return $this->translate('Commands');
     }
 
     public function getUrl()
     {
-        return 'director/commands';
+        return 'director/dashboard?name=commands';
     }
 
     public function listRequiredPermissions()
