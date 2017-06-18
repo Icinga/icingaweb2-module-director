@@ -28,6 +28,8 @@ class IconHelper
         'cancel'             => 'e804',
         'help'               => 'e85b',
         'angle-double-right' => 'e87b',
+        'up-big'             => 'e825',
+        'down-big'           => 'e828',
     );
 
     private $mappedUtf8Icons;
