@@ -1,0 +1,130 @@
+<?php
+
+namespace Icinga\Module\Director\Db;
+
+use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Resolver\TemplateTree;
+use Zend_Db_Select as ZfSelect;
+
+class IcingaObjectFilterHelper
+{
+    const INHERIT_DIRECT = 'direct';
+    const INHERIT_INDIRECT = 'indirect';
+    const INHERIT_DIRECT_OR_INDIRECT = 'total';
+
+    /**
+     * @param IcingaObject|int|string $id
+     * @return int
+     * @throws ProgrammingError
+     */
+    public static function wantId($id)
+    {
+        if (is_int($id)) {
+            return $id;
+        } elseif ($id instanceof IcingaObject) {
+            return (int) $id->get('id');
+        } elseif (is_string($id) && ctype_digit($id)) {
+            return (int) $id;
+        } else {
+            throw new ProgrammingError(
+                'Numeric ID or IcingaObject expected, got %s',
+                // TODO: just type/class info?
+                var_export($id, 1)
+            );
+        }
+    }
+
+    /**
+     * @param ZfSelect $query
+     * @param IcingaObject|int|string $template
+     * @param string $tableAlias
+     * @param string $inheritanceType
+     * @return ZfSelect
+     * @throws ProgrammingError
+     */
+    public static function filterByTemplate(
+        ZfSelect $query,
+        $template,
+        $tableAlias = 'o',
+        $inheritanceType = self::INHERIT_DIRECT
+    ) {
+        $i = $tableAlias . 'i';
+        $o = $tableAlias;
+        $type = $template->getShortTableName();
+        $db = $template->getDb();
+        $id = static::wantId($template);
+        $sub = $db->select()->from(
+            array($i => "icinga_${type}_inheritance"),
+            array('e' => '(1)')
+        )->where("$i.${type}_id = $o.id");
+
+        if ($inheritanceType === self::INHERIT_DIRECT) {
+            $sub->where("$i.parent_${type}_id = ?", $id);
+        } elseif ($inheritanceType === self::INHERIT_INDIRECT
+            || $inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT
+        ) {
+            $tree = new TemplateTree($type, $template->getConnection());
+            $ids = $tree->listDescendantIdsFor($template);
+            if ($inheritanceType === self::INHERIT_DIRECT_OR_INDIRECT) {
+                $ids[] = $template->getAutoincId();
+            }
+
+            $sub->where("$i.parent_${type}_id IN (?)", $ids);
+        } else {
+            throw new ProgrammingError(
+                'Unable to understand "%s" inheritance',
+                $inheritanceType
+            );
+        }
+
+        return $query->where('EXISTS ?', $sub);
+    }
+
+    public static function filterByHostgroups(
+        ZfSelect $query,
+        $type,
+        $groups,
+        $tableAlias = 'o'
+    ) {
+        if (empty($groups)) {
+            // Asked for an empty set of groups? Give no result
+            $query->where('(1 = 0)');
+        } else {
+            $sub = $query->getAdapter()->select()->from(
+                array('go' => "icinga_${type}group_${type}"),
+                array('e' => '(1)')
+            )->join(
+                array('g' => "icinga_${type}group"),
+                "go.${type}group_id = g.id"
+            )->where("go.${type}_id = ${tableAlias}.id")
+                ->where('g.object_name IN (?)', $groups);
+
+            $query->where('EXISTS ?', $sub);
+        }
+    }
+
+    public static function filterByResolvedHostgroups(
+        ZfSelect $query,
+        $type,
+        $groups,
+        $tableAlias = 'o'
+    ) {
+        if (empty($groups)) {
+            // Asked for an empty set of groups? Give no result
+            $query->where('(1 = 0)');
+        } else {
+            $sub = $query->getAdapter()->select()->from(
+                array('go' => "icinga_${type}group_${type}_resolved"),
+                array('e' => '(1)')
+            )->join(
+                array('g' => "icinga_${type}group"),
+                "go.${type}group_id = g.id",
+                []
+            )->where("go.${type}_id = ${tableAlias}.id")
+                ->where('g.object_name IN (?)', $groups);
+
+            $query->where('EXISTS ?', $sub);
+        }
+    }
+}
