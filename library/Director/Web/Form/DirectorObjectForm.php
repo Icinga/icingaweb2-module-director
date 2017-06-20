@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -10,6 +11,7 @@ use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
 use Icinga\Module\Director\Util;
@@ -38,6 +40,13 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $listUrl;
 
+    /** @var Auth */
+    private $auth;
+
+    private $choiceElements = [];
+
+    private $choiceTemplates = [];
+
     protected $preferredObjectType;
 
     /** @var IcingaObjectFieldLoader */
@@ -50,11 +59,8 @@ abstract class DirectorObjectForm extends QuickForm
 
     private $presetImports;
 
-    /** @var ObjectRestriction[] */
-    private $objectRestrictions = array();
-
     private $earlyProperties = array(
-        'imports',
+        // 'imports',
         'check_command',
         'check_command_id',
         'has_agent',
@@ -68,6 +74,17 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $this->preferredObjectType = $type;
         return $this;
+    }
+
+    public function setAuth(Auth $auth)
+    {
+        $this->auth = $auth;
+        return $this;
+    }
+
+    public function getAuth()
+    {
+        return $this->auth;
     }
 
     public function presetImports($imports)
@@ -84,8 +101,6 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
-     * @param array $values
-     *
      * @return DbObject|DbObjectWithSettings|IcingaObject
      */
     protected function object()
@@ -129,21 +144,35 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->hasBeenSent()) {
             // prefill special properties, required to resolve fields and similar
             $post = $this->getRequest()->getPost();
+
+            $key = 'imports';
+            if ($el = $this->getElement($key)) {
+                if (array_key_exists($key, $post)) {
+                    $imports = $post[$key];
+                    /** @var ZfElement $el */
+                    foreach ($this->choiceElements as $other) {
+                        $name = $other->getName();
+                        if (array_key_exists($name, $post)) {
+                            $value = $post[$name];
+                            if (is_string($value)) {
+                                $imports[] = $value;
+                            } elseif (is_array($value)) {
+                                foreach ($value as $chosen) {
+                                    $imports[] = $chosen;
+                                }
+                            }
+                        }
+                    }
+                    $this->populate([$key => $imports]);
+                    $el->setValue($imports);
+                    $this->tryToSetObjectPropertyFromElement($object, $el, $key);
+                }
+            }
             foreach ($this->earlyProperties as $key) {
                 if ($el = $this->getElement($key)) {
                     if (array_key_exists($key, $post)) {
-                        $this->populate(array($key => $post[$key]));
-                        $old = null;
-                        try {
-                            $old = $object->get($key);
-                            $object->set($key, $el->getValue());
-                            $object->resolveUnresolvedRelatedProperties();
-                        } catch (Exception $e) {
-                            if ($old !== null) {
-                                $object->set($key, $old);
-                            }
-                            $this->addException($e, $key);
-                        }
+                        $this->populate([$key => $post[$key]]);
+                        $this->tryToSetObjectPropertyFromElement($object, $el, $key);
                     }
                 }
             }
@@ -160,6 +189,24 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $this->setResolvedImports();
+    }
+
+    protected function tryToSetObjectPropertyFromElement(
+        IcingaObject $object,
+        ZfElement $element,
+        $key
+    ) {
+        $old = null;
+        try {
+            $old = $object->get($key);
+            $object->set($key, $element->getValue());
+            $object->resolveUnresolvedRelatedProperties();
+        } catch (Exception $e) {
+            if ($old !== null) {
+                $object->set($key, $old);
+            }
+            $this->addException($e, $key);
+        }
     }
 
     public function setResolvedImports($resolved = true)
@@ -266,6 +313,18 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
                 try {
+                    if ($key === 'imports' && ! empty($this->choiceElements)) {
+                        foreach ($this->choiceElements as $element) {
+                            $chosen = $element->getValue();
+                            if (is_string($chosen)) {
+                                $value[] = $chosen;
+                            } elseif (is_array($chosen)) {
+                                foreach ($chosen as $choice) {
+                                    $value[] = $choice;
+                                }
+                            }
+                        }
+                    }
                     $object->set($key, $value);
                     if ($object instanceof IcingaObject) {
                         $object->resolveUnresolvedRelatedProperties();
@@ -404,6 +463,14 @@ abstract class DirectorObjectForm extends QuickForm
             'create_live',
             'disabled',
         );
+
+        // Add template choices to the main section
+        /** @var \Zend_Form_Element $el */
+        foreach ($this->getElements() as $key => $el) {
+            if (substr($el->getName(), 0, 6) === 'choice') {
+                $elements[] = $key;
+            }
+        }
 
         $this->addDisplayGroup($elements, 'object_definition', array(
             'decorators' => array(
@@ -563,38 +630,6 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $this;
-    }
-
-    /**
-     * @param ObjectRestriction[] $restrictions
-     * @return $this
-     */
-    public function setObjectRestrictions(array $restrictions)
-    {
-        $this->objectRestrictions = array();
-        foreach ($restrictions as $restriction) {
-            $this->addObjectRestriction($restriction);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param ObjectRestriction $restriction
-     * @return $this
-     */
-    public function addObjectRestriction(ObjectRestriction $restriction)
-    {
-        $this->objectRestrictions[$restriction->getName()] = $restriction;
-        return $this;
-    }
-
-    /**
-     * @return ObjectRestriction[]
-     */
-    public function getObjectRestrictions()
-    {
-        return $this->objectRestrictions;
     }
 
     protected function getObjectClassname()
@@ -1002,6 +1037,65 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
+     * @param $type
+     * @return $this
+     */
+    protected function addChoices($type)
+    {
+        $connection = $this->getDb();
+        $choiceType = $type . 'TemplateChoice';
+        $choices = IcingaObject::loadAllByType($choiceType, $connection);
+        foreach ($choices as $choice) {
+            $this->addChoiceElement($choice);
+        }
+
+        return $this;
+    }
+
+    protected function addChoiceElement(IcingaTemplateChoiceHost $choice)
+    {
+        $db = $this->getDb()->getDbAdapter();
+        $query = $db->select()->from($choice->getObjectTableName(), [
+            'value' => 'object_name',
+            'label' => 'object_name'
+        ])->where('template_choice_id = ?', $choice->get('id'));
+
+        $min = (int) $choice->get('min_required');
+        $max = (int) $choice->get('max_allowed');
+
+        $required = $min > 0 && !$this->isTemplate();
+        $type = $max === 1 ? 'select' : 'multiselect';
+
+        $choices = $db->fetchPairs($query);
+        $chosen = [];
+        foreach ($this->object()->imports as $import) {
+            if (array_key_exists($import, $choices)) {
+                $chosen[] = $import;
+            }
+        }
+        $key = 'choice' . $choice->get('id');
+        $attributes = [
+            'label'        => $choice->getObjectName(),
+            'description'  => $choice->get('description'),
+            'required'     => $required,
+            'ignore'       => true,
+            'value'        => $chosen, //$this->getSentValue($key),
+            'multiOptions' => $this->optionalEnum($choices),
+            'class'        => 'autosubmit'
+        ];
+
+        // unused
+        if ($type === 'extensibleSet') {
+            $attributes['sorted'] = true;
+        }
+
+        $this->addElement($type, $key, $attributes);
+        $this->choiceElements[$key] = $this->getElement($key);
+
+        return $this;
+    }
+
+    /**
      * @param bool $required
      * @return $this
      */
@@ -1025,6 +1119,7 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
+        $type = $this->object()->getShortTableName();
         $this->addElement('extensibleSet', 'imports', array(
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate(
@@ -1033,7 +1128,9 @@ abstract class DirectorObjectForm extends QuickForm
                 . ' wins'
             ),
             'required'     => $required,
-            'multiOptions' => $this->optionallyAddFromEnum($enum),
+            'spellcheck'   => 'false',
+            'suggest'      => "${type}templates",
+            // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,
             'class'        => 'autosubmit'
@@ -1084,14 +1181,17 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
-        $this->addElement('select', 'check_command_id', array(
+        $this->addElement('text', 'check_command', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
-            'multiOptions' => $this->optionalEnum($this->db->enumCheckcommands()),
-            'class'        => 'autosubmit', // This influences fields
+            // 'multiOptions' => $this->optionalEnum($this->db->enumCheckcommands()),
+            'class'        => 'autosubmit director-suggest', // This influences fields
+            'data-suggestion-context' => 'checkcommandnames',
+            'value' => $this->getObject()->get('check_command')
         ));
         $this->getDisplayGroup('object_definition')
-            ->addElement($this->getElement('check_command_id'));
+            // ->addElement($this->getElement('check_command_id'))
+            ->addElement($this->getElement('check_command'));
 
         $eventCommands = $this->db->enumEventcommands();
 
