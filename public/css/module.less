@@ -1,5 +1,6 @@
 div.action-bar a {
   color: @icinga-blue;
+  margin-right: 1em;
 }
 
 .content a {
@@ -404,7 +405,7 @@ dd.active ul.extensible-set, ul.extensible-set.sortable {
 }
 
 dd.active ul.extensible-set {
-    border: 1px solid @gray-lighter;
+    border: 1px solid @icinga-blue;
 
     input[type=submit]:first-of-type {
         border-width: 1px;
@@ -669,11 +670,84 @@ form dd.active li.active input.related-action[type='submit'] {
     display: inline-block;
 }
 
-form dd.active {
+form {
+  p.description {
+    color: inherit;
+    font-style: normal;
+    position: absolute;
+    bottom: 1em;
+    width: 98%;
+    max-width: 98%;
+    max-height: 12em;
+    overflow-x: auto;
+    background: @tr-active-color;
+    border: 1px solid @icinga-blue;
+    border-radius: 0.5em;
+    font-size: 1.2em;
+    margin-right: 1.5em;
+    right: 0;
+    color: @icinga-blue;
+    padding-left: 3em;
+    display: none;
+    z-index: 100;
+  }
+
+  p.description:before {
+    content: '\e881';
+    font-family: 'ifont';
+    font-size: 1.5em;
+    color: @icinga-blue;
+    position: absolute;
+    margin-left: -1.5em;
+    margin-top: -0.25em;
+  }
+}
+
+#layout.poor-layout, #layout.minimal-layout {
+  form {
     p.description {
-        color: inherit;
-        font-style: normal;
+      width: 94%;
+      max-width: 94%;
     }
+  }
+}
+
+#layout.twocols {
+  form {
+    p.description {
+      width: 46%;
+      max-width: 46%;
+    }
+  }
+}
+
+#layout.twocols &#col1 {
+  form {
+    p.description {
+      margin-right: auto;
+      right: auto;
+      margin-left: 1em;
+      left: 0;
+    }
+  }
+}
+
+#layout.twocols.wide-layout &#col1 {
+  form {
+    p.description {
+      width: 31%;
+      max-width: 31%;
+    }
+  }
+}
+
+#layout.twocols.wide-layout &#col2 {
+  form {
+    p.description {
+      width: 64.5%;
+      max-width: 64.5%;
+    }
+  }
 }
 
 form dd {
@@ -1010,12 +1084,6 @@ table.deployment-log {
     }
 }
 
-table.endpoints {
-    tr.deployment-endpoint td:first-child::before {
-        color: @color-ok;
-    }
-}
-
 table.activity-log {
     thead th {
         text-align: right;
@@ -1070,7 +1138,7 @@ table.activity-log {
         &.active {
             background-color: @gray-lighter;
         }
-        &:hover {
+        &[href]:hover {
             background-color: @gray-light;
             td, a {
                 color: @text-color;
@@ -1234,12 +1302,17 @@ div.filter-expression {
 }
 
 ul.director-suggestions {
+/*
+  min-width: 18.5em;
+  max-width: 34.65em;
+  width: 100%;
+  */
   width: 20em;
-  max-width: 30em;
   max-height: 25em;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid @gray-light;
+  border: 1px solid @icinga-blue;
+  border-top: none;
   position: absolute;
   z-index: 2000;
   padding: 0;
@@ -1263,6 +1336,40 @@ ul.director-suggestions {
       color: inherit;
     }
   }
+
+  table.benchmark {
+    font-size: 0.8em;
+    font-family: @font-family-fixed;
+  }
+}
+
+table.pivot {
+  width: 100%;
+  table-layout: fixed;
+
+  thead th {
+    text-align: center;
+  }
+
+  tbody th {
+    text-align: right;
+    width: 25%;
+  }
+  tbody td {
+    text-align: center;
+  }
+  tbody td > a {
+    display: block;
+    font-size: 2em;
+    line-height: 1.5em;
+    text-decoration: none;
+    color: @icinga-blue;
+    &:hover {
+      background: @icinga-blue;
+      color: white;
+      text-decoration: none;
+    }
+  }
 }
 
 .tree li a {
@@ -1276,12 +1383,62 @@ ul.director-suggestions {
   background-position: 0.8em 0.4em;
 }
 
+ul.tree li > .handle {
+  background-image: none;
+  &:before {
+    content: '\e806';
+    font-family: 'ifont';
+    position: absolute;
+    font-size: 0.6em;
+    margin-left: 0.25em;
+    margin-top: 0.9em;
+  }
+}
+ul.tree li.collapsed > .handle {
+  background-image: none;
+  &:before {
+    content: '\e805';
+  }
+}
+.tree li a {
+  padding-left: 1em;
+}
+/*
+.tree li a {
+  display: inline-block;
+  padding-left: 2.5em;
+  text-decoration: none;
+  color: #777;
+  outline: 0;
+}
 
+.tree a:before {
+  font-family: 'ifont';
+  position: absolute;
+  font-size: 1.2em;
+  margin-left: -1.2em;
+}
 
-.tree a.root { background-image: url('../img/director/globe.png'); }
-.tree a.host { background-image: url('../img/director/server.png'); }
-.tree a.service { background-image: url('../img/director/service.png'); }
-.tree a.command { background-image: url('../img/director/script.png'); }
+.tree a.root:before {
+  content: '\e819';
+}
+.tree a.host:before {
+  content: '\e866';
+}
+.tree a.service:before {
+  content: '\e840';
+}
+*/
+
+div.sql-dump {
+  background-color: @gray-lightest;
+  border: 1px solid @gray-light;
+  padding: 1em;
+}
+
+div.exception {
+  margin: 1em;
+}
 
 .diff {
     font-family: @font-family-fixed;
@@ -1319,21 +1476,6 @@ div.diff {
 .diff.new del {
   display: none;
 }
-
-.tree li a {
-  display: inline-block;
-  padding-left: 2.4em;
-  line-height: 2em;
-  text-decoration: none;
-  color: #777;
-  outline: 0;
-  background-repeat: no-repeat;
-  background-position: 0.8em 0.4em;
-}
-
-.tree a.root  { background-image: url('../img/director/globe.png'); }
-.tree a.abstract  { background-image: url('../img/director/tree.png'); }
-.tree a.object { background-image: url('../img/director/leaf.gif'); }
 
 form.editor {
   select, input[type=text] {
