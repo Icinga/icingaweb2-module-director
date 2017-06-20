@@ -6,19 +6,21 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Web\Table\IcingaObjectTable;
-use Icinga\Module\Director\Web\Table\QuickTable;
-use Icinga\Web\Widget\FilterEditor;
+use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
+use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
+use Icinga\Module\Director\Web\Table\ObjectSetTable;
+use Icinga\Module\Director\Web\Table\ObjectsTable;
+use Icinga\Module\Director\Web\Table\ServiceApplyRulesTable;
+use Icinga\Module\Director\Web\Table\TemplatesTable;
+use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
+use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
+use ipl\Html\Link;
 
 abstract class ObjectsController extends ActionController
 {
-    /** @var IcingaObject */
-    protected $dummy;
-
     protected $isApified = true;
-
-    protected $multiEdit = array();
 
     protected $globalTypes = array(
         'ApiUser',
@@ -27,138 +29,40 @@ abstract class ObjectsController extends ActionController
         'TimePeriod',
     );
 
-    public function init()
+    protected function checkDirectorPermissions()
     {
-        parent::init();
-
-        $tabs = $this->getTabs();
-        $type = $this->getType();
-
-        if (in_array(ucfirst($type), $this->globalTypes)) {
-            $ltype = strtolower($type);
-
-            foreach ($this->globalTypes as $tabType) {
-                $ltabType = strtolower($tabType);
-                $tabs->add($ltabType, array(
-                    'label' => $this->translate(ucfirst($ltabType) . 's'),
-                    'url'   => sprintf('director/%ss', $ltabType)
-                ));
-            }
-            $tabs->activate($ltype);
-
-            return;
+        $this->assertPermission('director/' . $this->getPluralBaseType());
+    }
+    /**
+     * @return $this
+     */
+    protected function addObjectsTabs()
+    {
+        $tabName = $this->getRequest()->getActionName();
+        if (substr($this->getType(), -5) === 'Group') {
+            $tabName = 'groups';
         }
+        $this->tabs(
+            new ObjectsTabs($this->getBaseType(), $this->Auth())
+        )->activate(
+            $tabName
+        );
 
-        /** @var IcingaObject $object */
-        $object = $this->dummyObject();
-        if ($object->isGroup()) {
-            $type = substr($type, 0, -5);
-            /** @var IcingaObject $baseType */
-            $baseType = $this->getObjectClassname($type);
-            $baseObject = $baseType::create(array());
-        } else {
-            $baseObject = $object;
-        }
-
-        $tabs->add('objects', array(
-            'url'   => sprintf('director/%ss', strtolower($type)),
-            'label' => $this->translate(ucfirst($type) . 's'),
-        ));
-
-        if ($this->hasPermission('director/admin')) {
-            if ($object->supportsImports()) {
-                $tabs->add('templates', array(
-                    'url'   => sprintf('director/%ss/templates', strtolower($type)),
-                    'label' => $this->translate('Templates'),
-                ));
-            }
-
-            if ($baseObject->supportsGroups()) {
-                $tabs->add('objectgroups', array(
-                    'url'   => sprintf('director/%sgroups', $type),
-                    'label' => $this->translate('Groups')
-                ));
-            }
-
-            if ($baseObject->supportsSets()) {
-                 $tabs->add('sets', array(
-                      'url'    => sprintf('director/%ss/sets', $type),
-                      'label' => $this->translate('Sets')
-                 ));
-            }
-
-            $tabs->add('tree', array(
-                'url'   => sprintf('director/%ss/templatetree', $type),
-                'label' => $this->translate('Tree'),
-            ));
-        }
+        return $this;
     }
 
     public function indexAction()
     {
-        if (! $this->getRequest()->isApiRequest()) {
-            $this->setAutorefreshInterval(10);
-        }
-
         $type = $this->getType();
-        $ltype = strtolower($type);
-        /** @var IcingaObject $dummy */
-        $dummy = $this->dummyObject();
+        $this
+            ->addObjectsTabs()
+            ->setAutorefreshInterval(10)
+            ->addTitle($this->translate(ucfirst(strtolower($type)) . 's'))
+            ->actions(new ObjectsActionBar($type, $this->url()));
 
-        if (! in_array(ucfirst($type), $this->globalTypes)) {
-            if ($dummy->isGroup()) {
-                $this->getTabs()->activate('objectgroups');
-                $table = 'icinga' . ucfirst($type);
-            } elseif ($dummy->isTemplate()) {
-                $this->getTabs()->activate('templates');
-                // Trick the autoloader
-                $table = 'icinga' . ucfirst($type);
-                $this->loadTable($table);
-                $table .= 'Template';
-            } else {
-                $this->getTabs()->activate('objects');
-                $table = 'icinga' . ucfirst($type);
-            }
-        } else {
-            $table = 'icinga' . ucfirst($type);
-        }
-
-        /** @var IcingaObjectTable $table */
-        $table = $this->loadTable($table)->setConnection($this->db());
-
-        if ($dummy->isTemplate()) {
-            $addParams = array('type' => 'template');
-            $this->getTabs()->activate('templates');
-            $title = $this->translate('Icinga ' . ucfirst($ltype) . ' Templates');
-            $table->enforceFilter(Filter::expression('object_type', '=', 'template'));
-        } else {
-            $addParams = array('type' => 'object');
-            $title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
-            if ($dummy->supportsImports()
-                && array_key_exists('object_type', $table->getColumns())
-                && ! in_array(ucfirst($type), $this->globalTypes)
-            ) {
-                $table->enforceFilter(Filter::expression('object_type', '!=', 'template'));
-            }
-        }
-
-        $this->applyTableFilters($table);
-
-        $this->view->title = $title;
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add'),
-            'director/' . $ltype .'/add',
-            $addParams,
-            array('class' => 'icon-plus')
-        );
-
-        $this->provideFilterEditorForTable($table, $dummy);
-        $this->setViewScript('objects/table');
-    }
-
-    protected function applyTableFilters($table)
-    {
+        ObjectsTable::create($type, $this->db())
+            ->setAuth($this->Auth())
+            ->renderTo($this);
     }
 
     public function editAction()
@@ -168,17 +72,11 @@ abstract class ObjectsController extends ActionController
         if (empty($this->multiEdit)) {
             throw new NotFoundError('Cannot edit multiple "%s" instances', $type);
         }
-        $formName = 'icinga' . $type;
 
         $objects = $this->loadMultiObjectsFromParams();
-        $this->singleTab($this->translate('Multiple objects'));
-
-        $this->view->title = sprintf(
-            $this->translate('Modify %d objects'),
-            count($objects)
-        );
-
-        $this->view->form = $form = $this->loadForm('IcingaMultiEdit')
+        $formName = 'icinga' . $type;
+        /** @var IcingaMultiEditForm $form */
+        $form = $this->loadForm('IcingaMultiEdit')
             ->setObjects($objects)
             ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
         if ($type === 'Service') {
@@ -186,15 +84,79 @@ abstract class ObjectsController extends ActionController
         }
 
         $form->handleRequest();
-        $this->view->totalUndeployedChanges = $this->db()
-            ->countActivitiesSinceLastDeployedConfig();
-        $this->setViewScript('objects/form');
+
+        $this
+            ->addSingleTab($this->translate('Multiple objects'))
+            ->addTitle(
+                $this->translate('Modify %d objects'),
+                count($objects)
+            )->content()->add($form);
+    }
+
+    /**
+     * Loads the TemplatesTable or the TemplateTreeRenderer
+     *
+     * Passing render=tree switches to the tree view.
+     */
+    public function templatesAction()
+    {
+        $type = $this->getType();
+        $this
+            ->assertPermission('director/admin')
+            ->addObjectsTabs()
+            ->addTitle(
+                $this->translate('All your %s Templates'),
+                $this->translate(ucfirst($type))
+            )
+            ->actions(new TemplateActionBar($type, $this->url()));
+
+        $this->params->get('render') === 'tree'
+            ? TemplateTreeRenderer::showType($type, $this, $this->db())
+            : TemplatesTable::create($type, $this->db())->renderTo($this);
+    }
+
+    public function applyrulesAction()
+    {
+        $this
+            ->assertPermission('director/admin')
+            ->addObjectsTabs()
+            ->addTitle($this->translate('All your Service Apply Rules'));
+        $this->actions()/*->add(
+            $this->getBackToDashboardLink()
+        )*/->add(
+            Link::create(
+                $this->translate('Add'),
+                'director/service/add',
+                ['type' => 'apply_rule'],
+                [
+                    'title' => $this->translate('Create a new Service Apply Rule'),
+                    'class' => 'icon-plus'
+                ]
+            )
+        );
+
+        ServiceApplyRulesTable::show($this, $this->db());
+    }
+
+    public function setsAction()
+    {
+        $type = $this->getType();
+        $this
+            ->assertPermission('director/admin')
+            ->addObjectsTabs()
+            ->requireSupportFor('Sets')
+            ->addTitle(
+                $this->translate('Icinga %s Sets'),
+                $this->translate(ucfirst($type))
+            );
+
+        ObjectSetTable::create($type, $this->db())->renderTo($this);
     }
 
     protected function loadMultiObjectsFromParams()
     {
         $filter = Filter::fromQueryString($this->params->toString());
-        $dummy = $this->dummyObject();
+        $type = $this->getType();
         $objects = array();
         $db = $this->db();
         /** @var $filter FilterChain */
@@ -206,10 +168,10 @@ abstract class ObjectsController extends ActionController
                 if ($ex->isExpression()) {
                     if ($col === 'name') {
                         $name = $ex->getExpression();
-                        $objects[$name] = $dummy::load($name, $db);
+                        $objects[$name] = IcingaObject::loadByType($type, $name, $db);
                     } elseif ($col === 'id') {
                         $name = $ex->getExpression();
-                        $objects[$name] = $dummy::load(['id' => $name], $db);
+                        $objects[$name] = IcingaObject::loadByType($type, ['id' => $name], $db);
                     }
                 }
             }
@@ -218,73 +180,38 @@ abstract class ObjectsController extends ActionController
         return $objects;
     }
 
-    public function templatesAction()
-    {
-        $this->assertPermission('director/admin');
-        $this->indexAction();
-    }
-
-    public function templatetreeAction()
-    {
-        $this->assertPermission('director/admin');
-        $this->setAutorefreshInterval(10);
-        $this->getTabs()->activate('tree');
-        $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
-        $this->view->objectTypeName = $this->getType();
-        $this->setViewScript('objects/tree');
-    }
-
-    public function setsAction()
-    {
-        $this->assertPermission('director/admin');
-
-        $dummy = $this->dummyObject();
-        $type = $this->getType();
-        $Type = ucfirst($type);
-
-        if ($dummy->supportsSets() !== true) {
-            throw new NotFoundError('Sets are not available for %s', $type);
-        }
-
-        $this->view->title = $this->translate('Icinga ' . $Type . ' Sets');
-        $table = $this->loadTable('Icinga' . $Type . 'Set')->setConnection($this->db());
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add'),
-            'director/' . $type . 'set/add',
-            null,
-            array(
-                'class'            => 'icon-plus',
-                'data-base-target' => '_next'
-            )
-        );
-
-        $this->provideFilterEditorForTable($table);
-        $this->getTabs()->activate('sets');
-        $this->setViewScript('objects/table');
-    }
-
     /**
-     * @return IcingaObject
+     * @param $feature
+     * @return $this
+     * @throws NotFoundError
      */
-    protected function dummyObject()
+    protected function requireSupportFor($feature)
     {
-        if ($this->dummy === null) {
-            /** @var IcingaObject $class */
-            $class = $this->getObjectClassname();
-            $this->dummy = $class::create(array());
-            if ($this->dummy->hasProperty('object_type')) {
-                if (strpos($this->getRequest()->getControllerName(), 'template') !== false
-                    || strpos($this->getRequest()->getActionName(), 'templates') !== false
-                ) {
-                    $this->dummy->object_type = 'template';
-                } else {
-                    $this->dummy->object_type = 'object';
-                }
-            }
+        if ($this->supports($feature) !== true) {
+            throw new NotFoundError(
+                '%s does not support %s',
+                $this->getType(),
+                $feature
+            );
         }
 
-        return $this->dummy;
+        return $this;
+    }
+
+    protected function supports($feature)
+    {
+        $func = "supports$feature";
+        return IcingaObject::createByType($this->getType())->$func();
+    }
+
+    protected function getBaseType()
+    {
+        $type = $this->getType();
+        if (substr($type, -5) === 'Group') {
+            return substr($type, 0, -5);
+        } else {
+            return $type;
+        }
     }
 
     protected function getType()
@@ -301,12 +228,13 @@ abstract class ObjectsController extends ActionController
         );
     }
 
-    protected function getObjectClassname($type = null)
+    protected function getPluralType()
     {
-        if ($type === null) {
-            $type = $this->getType();
-        }
-        return 'Icinga\\Module\\Director\\Objects\\Icinga'
-            . ucfirst($type);
+        return $this->getType() . 's';
+    }
+
+    protected function getPluralBaseType()
+    {
+        return $this->getBaseType() . 's';
     }
 }
