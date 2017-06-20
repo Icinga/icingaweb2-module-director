@@ -2,16 +2,15 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
-use Icinga\Exception\AuthenticationException;
-use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Monitoring;
-use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
+use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
+use Icinga\Module\Director\Web\Controller\Extension\RestApi;
 use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Form\QuickBaseForm;
 use Icinga\Module\Director\Web\Table\QuickTable;
@@ -19,35 +18,31 @@ use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\Widget;
+use ipl\Web\Component\ControlsAndContent;
+use ipl\Web\Controller\Extension\ControlsAndContentHelper;
+use ipl\Zf1\SimpleViewRenderer;
 
-abstract class ActionController extends Controller
+abstract class ActionController extends Controller implements ControlsAndContent
 {
-    /** @var Db */
-    protected $db;
+    use DirectorDb;
+    use CoreApi;
+    use RestApi;
+    use ControlsAndContentHelper;
 
     protected $isApified = false;
-
-    /** @var CoreApi */
-    private $api;
 
     /** @var Monitoring */
     private $monitoring;
 
-    protected $icingaConfig;
-
     public function init()
     {
-        if ($this->getRequest()->isApiRequest()) {
-            if (! $this->hasPermission('director/api')) {
-                throw new AuthenticationException('You are not allowed to access this API');
-            }
-
-            if (! $this->isApified()) {
-                throw new NotFoundError('No such API endpoint found');
-            }
-        }
-
+        $this->checkForRestApiRequest();
         $this->checkDirectorPermissions();
+    }
+
+    public function getAuth()
+    {
+        return $this->Auth();
     }
 
     protected function checkDirectorPermissions()
@@ -78,9 +73,17 @@ abstract class ActionController extends Controller
         );
     }
 
-    protected function isApified()
+    /**
+     * @param int $interval
+     * @return $this
+     */
+    public function setAutorefreshInterval($interval)
     {
-        return $this->isApified;
+        if (! $this->getRequest()->isApiRequest()) {
+            parent::setAutorefreshInterval($interval);
+        }
+
+        return $this;
     }
 
     protected function applyPaginationLimits(Paginatable $paginatable, $limit = 25, $offset = null)
@@ -117,27 +120,6 @@ abstract class ActionController extends Controller
     public function loadTable($name)
     {
         return TableLoader::load($name, $this->Module());
-    }
-
-    protected function sendJson($object)
-    {
-        $this->getResponse()->setHeader('Content-Type', 'application/json', true);
-        $this->_helper->layout()->disableLayout();
-        $this->_helper->viewRenderer->setNoRender(true);
-        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
-        } else {
-            echo json_encode($object);
-        }
-    }
-
-    protected function sendJsonError($message, $code = null)
-    {
-        if ($code !== null) {
-            $this->setHttpResponseCode((int) $code);
-        }
-
-        $this->sendJson((object) array('error' => $message));
     }
 
     protected function singleTab($label)
@@ -191,6 +173,16 @@ abstract class ActionController extends Controller
             )
         );
         return $this->view->tabs;
+    }
+
+    /**
+     * @param string $permission
+     * @return $this
+     */
+    public function assertPermission($permission)
+    {
+        parent::assertPermission($permission);
+        return $this;
     }
 
     protected function setImportTabs()
@@ -317,84 +309,53 @@ abstract class ActionController extends Controller
                 throw new NotFoundError('Not accessible via API');
             }
 
+            $this->getResponse()->setHeader('Content-Type', 'application/json', true);
+            $this->_helper->layout()->disableLayout();
+            $this->_helper->viewRenderer->setNoRender(true);
+
+            echo '{ "objects": [' . "\n";
             $objects = array();
-            foreach ($dummy::loadAll($this->db) as $object) {
-                $objects[] = $object->toPlainObject(false, true);
+            Db\Cache\PrefetchCache::initialize($this->db());
+
+            $out = '';
+            $cnt = 0;
+            foreach ($dummy::prefetchAll($this->db) as $object) {
+                // $objects[] = $object->toPlainObject(false, true);
+                // continue;
+                $out .= json_encode($object->toPlainObject(false, true), JSON_PRETTY_PRINT) . "\n";
+                $cnt++;
+                if ($cnt > 50) {
+                    echo $out;
+                    flush();
+                    $cnt = 0;
+                    $out = '';
+                }
             }
-            return $this->sendJson((object) array('objects' => $objects));
+
+            if ($cnt > 0) {
+                echo $out;
+            }
+
+            echo "] }\n";
+            Benchmark::measure('All done');
+            // $this->sendJson((object) array('objects' => $objects));
+            echo Benchmark::dump();
+            return;
         }
 
         $this->view->table = $this->applyPaginationLimits($table);
         $this->provideQuickSearch();
     }
 
-    // TODO: just return json_last_error_msg() for PHP >= 5.5.0
-    protected function getLastJsonError()
+    public function postDispatch()
     {
-        switch (json_last_error()) {
-            case JSON_ERROR_DEPTH:
-                return 'The maximum stack depth has been exceeded';
-            case JSON_ERROR_CTRL_CHAR:
-                return 'Control character error, possibly incorrectly encoded';
-            case JSON_ERROR_STATE_MISMATCH:
-                return 'Invalid or malformed JSON';
-            case JSON_ERROR_SYNTAX:
-                return 'Syntax error';
-            case JSON_ERROR_UTF8:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            default:
-                return 'An error occured when parsing a JSON string';
-        }
-    }
-
-    protected function getApiIfAvailable()
-    {
-        if ($this->api === null) {
-            if ($this->db->hasDeploymentEndpoint()) {
-                $endpoint = $this->db()->getDeploymentEndpoint();
-                $this->api = $endpoint->api();
-            }
+        if ($this->view->content || $this->view->controls) {
+            $viewRenderer = new SimpleViewRenderer();
+            $viewRenderer->replaceZendViewRenderer();
+            $this->view = $viewRenderer->view;
         }
 
-        return $this->api;
-    }
-
-    protected function api($endpointName = null)
-    {
-        if ($this->api === null) {
-            if ($endpointName === null) {
-                $endpoint = $this->db()->getDeploymentEndpoint();
-            } else {
-                $endpoint = IcingaEndpoint::load($endpointName, $this->db());
-            }
-
-            $this->api = $endpoint->api();
-        }
-
-        return $this->api;
-    }
-
-    /**
-     * @throws ConfigurationError
-     *
-     * @return Db
-     */
-    protected function db()
-    {
-        if ($this->db === null) {
-            $resourceName = $this->Config()->get('db', 'resource');
-            if ($resourceName) {
-                $this->db = Db::fromResourceName($resourceName);
-            } else {
-                if ($this->getRequest()->isApiRequest()) {
-                    throw new ConfigurationError('Icinga Director is not correctly configured');
-                } else {
-                    $this->redirectNow('director');
-                }
-            }
-        }
-
-        return $this->db;
+        parent::postDispatch(); // TODO: Change the autogenerated stub
     }
 
     /**
