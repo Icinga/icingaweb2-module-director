@@ -8,10 +8,13 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 abstract class ObjectController extends ActionController
 {
+    use ObjectRestrictions;
+
     /** @var IcingaObject */
     protected $object;
 
@@ -22,16 +25,6 @@ abstract class ObjectController extends ActionController
         'endpoint'
     );
 
-    protected function loadRestrictions()
-    {
-        return array();
-    }
-
-    protected function allowsObject(IcingaObject $object)
-    {
-        return true;
-    }
-
     public function init()
     {
         parent::init();
@@ -40,16 +33,16 @@ abstract class ObjectController extends ActionController
             $response = $this->getResponse();
             try {
                 $this->loadObject();
-                return $this->handleApiRequest();
+                $this->handleApiRequest();
             } catch (NotFoundError $e) {
                 $response->setHttpResponseCode(404);
-                return $this->sendJson((object) array('error' => $e->getMessage()));
+                $this->sendJson($response, (object) array('error' => $e->getMessage()));
             } catch (Exception $e) {
                 if ($response->getHttpResponseCode() === 200) {
                     $response->setHttpResponseCode(500);
                 }
 
-                return $this->sendJson((object) array('error' => $e->getMessage()));
+                $this->sendJson($response, (object) array('error' => $e->getMessage()));
             }
         }
 
@@ -119,7 +112,7 @@ abstract class ObjectController extends ActionController
             );
         }
 
-        return $this->editAction();
+        $this->editAction();
     }
 
     public function renderAction()
@@ -178,8 +171,9 @@ abstract class ObjectController extends ActionController
         $this->view->form = $form = $this->loadForm($formName)
             ->setDb($this->db())
             ->setApi($this->getApiIfAvailable());
+        /** @var DirectorObjectForm */
         $form->setObject($object);
-        $form->setObjectRestrictions($this->loadRestrictions());
+        $form->setAuth($this->Auth());
 
         $this->view->title = $object->object_name;
         $this->view->form->handleRequest();
@@ -279,7 +273,7 @@ abstract class ObjectController extends ActionController
 
         $form = $this->view->form = $this
             ->loadForm('icingaObjectField')
-            ->setDb($this->db)
+            ->setDb($this->db())
             ->setIcingaObject($object);
 
         if ($id = $this->params->get('field_id')) {
@@ -393,13 +387,13 @@ abstract class ObjectController extends ActionController
         switch ($request->getMethod()) {
             case 'DELETE':
                 $this->requireObject();
-                $name = $this->object->object_name;
                 $obj = $this->object->toPlainObject(false, true);
-                $form = $this->loadForm(
+                $this->loadForm(
                     'icingaDeleteObject'
                 )->setObject($this->object)->setRequest($request)->onSuccess();
 
-                return $this->sendJson($obj);
+                $this->sendJson($this->getResponse(), $obj);
+                break;
 
             case 'POST':
             case 'PUT':
@@ -443,17 +437,20 @@ abstract class ObjectController extends ActionController
                     $response->setHttpResponseCode(304);
                 }
 
-                return $this->sendJson($object->toPlainObject(false, true));
+                $this->sendJson($response, $object->toPlainObject(false, true));
+                break;
 
             case 'GET':
                 $this->requireObject();
-                return $this->sendJson(
+                $this->sendJson(
+                    $this->getResponse(),
                     $this->object->toPlainObject(
                         $this->params->shift('resolved'),
                         ! $this->params->shift('withNull'),
                         $this->params->shift('properties')
                     )
                 );
+                break;
 
             default:
                 $request->getResponse()->setHttpResponseCode(400);
