@@ -47,6 +47,7 @@ class IcingaHost extends IcingaObject
         'master_should_connect' => null,
         'accept_config'         => null,
         'api_key'               => null,
+        'template_choice_id'    => null,
     );
 
     protected $relations = array(
@@ -55,6 +56,7 @@ class IcingaHost extends IcingaObject
         'check_period'     => 'IcingaTimePeriod',
         'command_endpoint' => 'IcingaEndpoint',
         'zone'             => 'IcingaZone',
+        'template_choice'  => 'IcingaTemplateChoiceHost',
     );
 
     protected $booleans = array(
