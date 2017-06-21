@@ -6,14 +6,22 @@ use Countable;
 use Exception;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Restriction\BetaHostgroupRestriction;
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Web\View;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
+use ipl\Html\BaseElement;
+use ipl\Html\Html;
+use ipl\Html\HtmlString;
+use ipl\Html\Util;
+use ipl\Html\ValidHtml;
+use ipl\Translation\TranslationHelper;
 use Zend_Db_Select as ZfSelect;
 
-abstract class Dashboard implements Countable
+abstract class Dashboard extends Html implements Countable
 {
+    use TranslationHelper;
+
     protected $name;
 
     /** @var  Dashlet[] */
@@ -24,9 +32,6 @@ abstract class Dashboard implements Countable
     /** @var  Db */
     protected $db;
 
-    /** @var View */
-    protected $view;
-
     final private function __construct()
     {
     }
@@ -34,20 +39,61 @@ abstract class Dashboard implements Countable
     /**
      * @param $name
      * @param Db $db
-     * @param View $view
      *
      * @return self
      */
-    public static function loadByName($name, Db $db, View $view)
+    public static function loadByName($name, Db $db)
     {
         $class = __NAMESPACE__ . '\\' . ucfirst($name) . 'Dashboard';
         $dashboard = new $class();
         $dashboard->db = $db;
         $dashboard->name = $name;
-        $dashboard->view = $view;
         return $dashboard;
     }
 
+    /**
+     * @param $description
+     * @return $this
+     */
+    protected function addDescription($description)
+    {
+        if ($description !== null) {
+            $this->add(
+                Html::tag('p', null, HtmlString::create(
+                    nl2br(Util::escapeForHtml($description)))
+                )
+            );
+        }
+
+        return $this;
+    }
+
+    public function render()
+    {
+        $this
+            ->setSeparator("\n")
+            ->add(Html::tag('h1', null, $this->getTitle()))
+            ->addDescription($this->getDescription())
+            ->add($this->renderDashlets());
+
+        return parent::render();
+    }
+
+    public function renderDashlets()
+    {
+        $ul = Html::tag('ul', [
+            'class' => 'main-actions',
+            'data-base-target' => '_next'
+        ]);
+
+        foreach ($this->dashlets() as $dashlet) {
+            if ($dashlet->shouldBeShown()) {
+                $ul->add($dashlet);
+            }
+        }
+
+        return $ul;
+    }
 
     public function getName()
     {
@@ -74,16 +120,6 @@ abstract class Dashboard implements Countable
     public function getDb()
     {
         return $this->db;
-    }
-
-    public function getView()
-    {
-        return $this->view;
-    }
-
-    protected function translate($msg)
-    {
-        return $this->view->translate($msg);
     }
 
     public function dashlets()
@@ -197,12 +233,12 @@ abstract class Dashboard implements Countable
     {
         switch ($type) {
             case 'hostgroup':
-                $r = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
-                $r->applyToHostGroupsQuery($query);
+                $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
+                $r->applyToQuery($query);
                 break;
             case 'host':
-                $r = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
-                $r->applyToHostsQuery($query, 'o.id');
+                $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
+                $r->applyToQuery($query);
                 break;
         }
 
@@ -211,7 +247,7 @@ abstract class Dashboard implements Countable
 
     protected function applyHostgroupRestrictions($query)
     {
-        $restrictions = new BetaHostgroupRestriction($this->getDb(), $this->getAuth());
+        $restrictions = new HostgroupRestriction($this->getDb(), $this->getAuth());
         $restrictions->applyToHostGroupsQuery($query);
     }
 
