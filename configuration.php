@@ -56,20 +56,20 @@ $section = $this->menuSection(
 ));
 
 $section->add(N_('Hosts'))
-    ->setUrl('director/hosts')
+    ->setUrl('director/dashboard?name=hosts')
     ->setPermission('director/hosts')
     ->setPriority(30);
 $section->add(N_('Services'))
     ->setUrl('director/dashboard?name=services')
-    ->setPermission('director/admin')
+    ->setPermission('director/services')
     ->setPriority(40);
 $section->add(N_('Commands'))
-    ->setUrl('director/commands')
+    ->setUrl('director/dashboard?name=commands')
     ->setPermission('director/admin')
     ->setPriority(50);
-$section->add(N_('Users'))
-    ->setUrl('director/users')
-    ->setPermission('director/users')
+$section->add(N_('Notifications'))
+    ->setUrl('director/dashboard?name=notifications')
+    ->setPermission('director/notifications')
     ->setPriority(70);
 $section->add(N_('Automation'))
     ->setUrl('director/list/importsource')
