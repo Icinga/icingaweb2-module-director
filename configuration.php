@@ -8,6 +8,7 @@ $this->providePermission(
 );
 $this->providePermission('director/deploy', $this->translate('Allow to deploy configuration'));
 $this->providePermission('director/hosts', $this->translate('Allow to configure hosts'));
+$this->providePermission('director/services', $this->translate('Allow to configure services'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
 $this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
 $this->providePermission(
@@ -19,10 +20,9 @@ $this->providePermission(
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
 $this->provideRestriction(
-    'director/beta-filter/hostgroups',
+    'director/filter/hostgroups',
     $this->translate(
-        'BETA: Limit access to the given comma-separated list of hostgroups. This'
-        . ' restriction might change without pre-announcement'
+        'Limit access to the given comma-separated list of hostgroups'
     )
 );
 
