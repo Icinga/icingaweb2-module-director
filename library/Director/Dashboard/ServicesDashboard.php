@@ -5,10 +5,11 @@ namespace Icinga\Module\Director\Dashboard;
 class ServicesDashboard extends Dashboard
 {
     protected $dashletNames = array(
-        'ServiceTemplates',
         'SingleServices',
-        'ServiceApplyRules',
+        'ServiceTemplates',
         'ServiceGroups',
+        'ServiceApplyRules',
+        'ServiceChoices',
         'ServiceSets'
     );
 
