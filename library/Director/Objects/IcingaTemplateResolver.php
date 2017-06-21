@@ -243,7 +243,6 @@ class IcingaTemplateResolver
         if ($objectId === null) {
             $objectId = $this->object->id;
         }
-
     }
 
     public function listInheritancePathIds($objectId = null)
