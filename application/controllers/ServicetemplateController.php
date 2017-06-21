@@ -3,82 +3,143 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Objects\IcingaService;
-use Icinga\Module\Director\Web\Controller\SimpleController;
-use Icinga\Module\Director\Web\Table\ServicesOnHostsTable;
+use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
+use Icinga\Module\Director\Web\Table\ObjectsTableService;
+use Icinga\Module\Director\Web\Table\TemplateUsageTable;
+use ipl\Html\FormattedString;
 use ipl\Html\Html;
+use ipl\Html\Link;
+use ipl\Web\CompatController;
+use ipl\Web\Component\UnorderedList;
 
-class ServicetemplateController extends SimpleController
+class ServicetemplateController extends CompatController
 {
-    public function hostsAction()
-    {
-        $this->addSingleTab($this->translate('Hosts using this service Template'));
-        $this->content()->add(
-            new ServicesOnHostsTable($this->db())
-        );
-    }
+    use DirectorDb;
 
-    public function servicesAction()
+    public function objectsAction()
     {
         $template = $this->requireTemplate();
-        $this->addSingleTab(
-            $this->translate('Single Services')
-        )->addTitle(
-            $this->translate('Services based on %s'),
-            $template->getObjectName()
+        $this
+            ->addSingleTab($this->translate('Single Services'))
+            ->addTitle(
+                $this->translate('Services based on %s'),
+                $template->getObjectName()
+            );
+
+        $this->actions()->add(
+            Link::create(
+                $this->translate('Back'),
+                'director/servicetemplate/usage',
+                ['name' => $template->getObjectName()],
+                ['class' => 'icon-left-big']
+            )
         );
 
-        $this->content()->add(
-            new ServicesOnHostsTable($this->db())
-        );
+        $table = new ObjectsTableService($this->db());
+        $table->setAuth($this->Auth());
+        $table->filterTemplate($template, $this->params->get('inheritance', 'direct'));
+        $table->renderTo($this);
+    }
+
+    public function applyrulesAction()
+    {
+        $template = $this->requireTemplate();
+        $this
+            ->addSingleTab($this->translate('Single Services'))
+            ->addTitle(
+                $this->translate('Services based on %s'),
+                $template->getObjectName()
+            );
+
+        $table = new ObjectsTableService($this->db());
+        $table->filterTemplate($template);
+        $this->content()->add($table);
     }
 
     public function usageAction()
     {
         $template = $this->requireTemplate();
+        $templateName = $template->getObjectName();
 
         $this->addSingleTab(
             $this->translate('Service Template Usage')
         )->addTitle(
             $this->translate('Template: %s'),
-            $template->getObjectName()
+            $templateName
+        );
+
+        $this->actions()->add([
+            Link::create(
+                $this->translate('Modify'),
+                'director/service/edit',
+                ['name' => $templateName],
+                ['class' => 'icon-edit']
+            ),
+            Link::create(
+                $this->translate('Preview'),
+                'director/service/render',
+                ['name' => $templateName],
+                [
+                    'title' => $this->translate('Template rendering preview'),
+                    'class' => 'icon-doc-text'
+                ]
+            ),
+            Link::create(
+                $this->translate('History'),
+                'director/service/history',
+                ['name' => $templateName],
+                [
+                    'title' => $this->translate('Template history'),
+                    'class' => 'icon-history'
+                ]
+            )
+        ]);
+
+        $this->content()->addPrintf(
+            $this->translate(
+                'This is the "%s" Service Template. Based on this, you might want to:'
+            ),
+            $templateName
+        )->add(
+            new UnorderedList([
+                new FormattedString($this->translate('Create new Service Checks for %s'), [
+                    Link::create(
+                        $this->translate('specific Hosts'),
+                        'director/servicetemplate/addhost',
+                        ['name' => $templateName]
+                    )
+                ]),
+                new FormattedString($this->translate('Assign this Template multiple times using %s'), [
+                    Link::create(
+                        $this->translate('Apply Rules'),
+                        'director/service/add',
+                        ['apply' => $templateName]
+                    )
+                ]),
+                new FormattedString($this->translate('Create a new %s inheriting from this one'), [
+                    Link::create(
+                        $this->translate('Template'),
+                        'director/servicetemplate/addhost',
+                        ['name' => $templateName]
+                    )
+                ]),
+                new FormattedString($this->translate('Make a Service based on this Template member of a %s'), [
+                    Link::create(
+                        $this->translate('Service Set'),
+                        'director/servicetemplate/addtoset',
+                        ['name' => $templateName]
+                    ),
+                ])
+            ], [
+                'class' => 'vertical-action-list'
+            ])
+        )->add(
+            Html::tag('h2', null, $this->translate('Current Template Usage'))
         );
 
         $this->content()->add(
-            Html::tag('pre', null, print_r(
-                $this->getUsageSummary($template),
-                1
-            ))
+            TemplateUsageTable::forTemplate($template)
         );
-    }
-
-    protected function getUsageSummary(IcingaService $template)
-    {
-        $ids = $template->templateResolver()->listInheritancePathIds();
-        $db = $this->db()->getDbAdapter();
-
-        $query = $db->select()->from(
-            ['s' => 'icinga_service'],
-            [
-                'cnt_templates'   => $this->getSummaryLine('template'),
-                'cnt_objects'     => $this->getSummaryLine('object'),
-                'cnt_apply_rules' => $this->getSummaryLine('apply', 's.service_set_id IS NULL'),
-                'cnt_set_members' => $this->getSummaryLine('apply', 's.service_set_id IS NOT NULL'),
-            ]
-        )->joinLeft(
-            ['ps' => 'icinga_service_inheritance'],
-            'ps.service_id = s.id',
-            []
-        )->where('ps.parent_service_id IN (?)', $ids);
-
-        return $db->fetchRow($query);
-    }
-
-    protected function getSummaryLine($type, $extra = null)
-    {
-        if ($extra !== null) {
-            $extra = " AND $extra";
-        }
-        return "COALESCE(SUM(CASE WHEN s.object_type = '${type}'${extra} THEN 1 ELSE 0 END), 0)";
     }
 
     protected function requireTemplate()
