@@ -11,21 +11,6 @@
 <?= $this->translate('No dashboard available, you might have not enough permissions') ?>
 <?php endif ?>
 <?php foreach ($this->dashboards as $dashboard): ?>
-<h1><?= $this->escape($dashboard->getTitle()) ?></h1>
-<?php
-
-$description = $dashboard->getDescription();
-
-if ($description !== null): ?>
-<p><?= nl2br($this->escape($description)) ?></p>
-<?php endif ?>
-<ul class="main-actions" data-base-target="_next">
-<?php foreach ($dashboard->dashlets() as $dashlet): ?>
-<?php if (! $dashlet->shouldBeShown()) { continue; } ?>
-<li>
-<?= $dashlet->render() ?>
-</li>
-<?php endforeach ?>
-</ul>
+<?= $dashboard ?>
 <?php endforeach ?>
 </div>
