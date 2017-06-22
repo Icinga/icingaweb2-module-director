@@ -1,6 +1,7 @@
 <?php
 
 use Icinga\Application\Icinga;
+use ipl\Loader\CompatLoader;
 
 $prefix = '\\Icinga\\Module\\Director\\';
 
@@ -48,3 +49,16 @@ $this->provideHook('director/Job', $prefix . 'Job\\ImportJob');
 $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
 
 $this->provideHook('cube/Actions', 'CubeLinks');
+
+// ipl compat, unless it is released:
+
+if (class_exists('ipl\\Html\\ValidHtml')) {
+    return;
+}
+
+if ($this->app->getModuleManager()->hasEnabled('ipl')) {
+    return;
+}
+
+require_once __DIR__ . '/library/vendor/ipl/Loader/CompatLoader.php';
+CompatLoader::delegateLoadingToIcingaWeb($this->app);
