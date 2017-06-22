@@ -1043,7 +1043,7 @@ abstract class DirectorObjectForm extends QuickForm
     protected function addChoices($type)
     {
         $connection = $this->getDb();
-        $choiceType = $type . 'TemplateChoice';
+        $choiceType = 'TemplateChoice' . ucfirst($type);
         $choices = IcingaObject::loadAllByType($choiceType, $connection);
         foreach ($choices as $choice) {
             $this->addChoiceElement($choice);
