@@ -34,7 +34,7 @@ class ObjectsTableService extends ObjectsTable
         $this->enableMultiSelect(
             'director/services/edit',
             'director/services',
-            ['name', 'host']
+            ['id']
         );
     }
 
