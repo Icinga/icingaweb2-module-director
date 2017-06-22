@@ -1054,44 +1054,9 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function addChoiceElement(IcingaTemplateChoiceHost $choice)
     {
-        $db = $this->getDb()->getDbAdapter();
-        $query = $db->select()->from($choice->getObjectTableName(), [
-            'value' => 'object_name',
-            'label' => 'object_name'
-        ])->where('template_choice_id = ?', $choice->get('id'));
-
-        $min = (int) $choice->get('min_required');
-        $max = (int) $choice->get('max_allowed');
-
-        $required = $min > 0 && !$this->isTemplate();
-        $type = $max === 1 ? 'select' : 'multiselect';
-
-        $choices = $db->fetchPairs($query);
-        $chosen = [];
-        foreach ($this->object()->imports as $import) {
-            if (array_key_exists($import, $choices)) {
-                $chosen[] = $import;
-            }
-        }
-        $key = 'choice' . $choice->get('id');
-        $attributes = [
-            'label'        => $choice->getObjectName(),
-            'description'  => $choice->get('description'),
-            'required'     => $required,
-            'ignore'       => true,
-            'value'        => $chosen, //$this->getSentValue($key),
-            'multiOptions' => $this->optionalEnum($choices),
-            'class'        => 'autosubmit'
-        ];
-
-        // unused
-        if ($type === 'extensibleSet') {
-            $attributes['sorted'] = true;
-        }
-
-        $this->addElement($type, $key, $attributes);
-        $this->choiceElements[$key] = $this->getElement($key);
-
+        $element = $choice->createFormElement($this, $this->object()->imports);
+        $this->addElement($element);
+        $this->choiceElements[$element->getName()] = $element;
         return $this;
     }
 

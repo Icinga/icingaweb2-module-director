@@ -2,6 +2,10 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Web\Form\QuickForm;
+use ipl\Translation\TranslationHelper;
+use Zend_Form_Element as ZfElement;
+
 class IcingaTemplateChoice extends IcingaObject
 {
     private $objectTable;
@@ -21,6 +25,55 @@ class IcingaTemplateChoice extends IcingaObject
     public function getObjectTableName()
     {
         return substr($this->table, 0, -16);
+    }
+
+    public function createFormElement(QuickForm $form, $imports = [], $namePrefix = 'choice')
+    {
+        $db = $this->getDb();
+        $query = $db->select()->from($this->getObjectTableName(), [
+            'value' => 'object_name',
+            'label' => 'object_name'
+        ])->where('template_choice_id = ?', $this->get('id'));
+
+        $required = $this->isRequired() && !$this->isTemplate();
+        $type = $this->allowsMultipleChoices() ? 'multiselect' : 'select';
+
+        $choices = $db->fetchPairs($query);
+
+        $chosen = [];
+        foreach ($imports as $import) {
+            if (array_key_exists($import, $choices)) {
+                $chosen[] = $import;
+            }
+        }
+
+        $attributes = [
+            'label'        => $this->getObjectName(),
+            'description'  => $this->get('description'),
+            'required'     => $required,
+            'ignore'       => true,
+            'value'        => $chosen,
+            'multiOptions' => $form->optionalEnum($choices),
+            'class'        => 'autosubmit'
+        ];
+
+        // unused
+        if ($type === 'extensibleSet') {
+            $attributes['sorted'] = true;
+        }
+
+        $key = $namePrefix . $this->get('id');
+        return $form->createElement($type, $key, $attributes);
+    }
+
+    public function isRequired()
+    {
+        return (int) $this->min_required > 0;
+    }
+
+    public function allowsMultipleChoices()
+    {
+        return (int) $this->max_allowed > 1;
     }
 
     public function getChoices()
