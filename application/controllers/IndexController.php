@@ -24,7 +24,8 @@ class IndexController extends DashboardController
             }
 
             if ($migrations->hasPendingMigrations()) {
-                $this->content()->prepend($this
+                $this->content()->prepend(
+                    $this
                     ->loadForm('applyMigrations')
                     ->setMigrations($migrations)
                     ->handleRequest()

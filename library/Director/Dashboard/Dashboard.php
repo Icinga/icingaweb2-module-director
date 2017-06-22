@@ -58,11 +58,11 @@ abstract class Dashboard extends Html implements Countable
     protected function addDescription($description)
     {
         if ($description !== null) {
-            $this->add(
-                Html::tag('p', null, HtmlString::create(
-                    nl2br(Util::escapeForHtml($description)))
-                )
-            );
+            $this->add(Html::tag(
+                'p',
+                null,
+                HtmlString::create(nl2br(Util::escapeForHtml($description)))
+            ));
         }
 
         return $this;

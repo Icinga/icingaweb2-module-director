@@ -156,12 +156,14 @@ class ObjectsTable extends QueryBasedTable
         $type = $this->getType();
         $object = IcingaObject::createByType($type);
         $table = $object->getTableName();
-        $query = $this->applyRestrictions($this->db()->select()
-            ->from(
-                ['o' => $table],
-                $this->getColumns()
-            )
-            ->order('o.object_name')
+        $query = $this->applyRestrictions(
+            $this->db()
+                ->select()
+                ->from(
+                    ['o' => $table],
+                    $this->getColumns()
+                )
+                ->order('o.object_name')
         );
 
         return $this->applyObjectTypeFilter($query);

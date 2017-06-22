@@ -61,7 +61,7 @@ class TemplateTreeRenderer extends BaseElement
         }
 
         if ($level === 0) {
-            $li->add( Html::tag('a', [
+            $li->add(Html::tag('a', [
                 'name'  => 'Templates',
                 'class' => 'icon-globe'
             ], $tree['name']));
