@@ -153,6 +153,13 @@ class Html implements ValidHtml
         return Element::create($tag, $attributes, $content);
     }
 
+    /**
+     * @deprecated
+     * @param $name
+     * @param null $attributes
+     * @return Element
+     * @throws ProgrammingError
+     */
     public static function element($name, $attributes = null)
     {
         // TODO: This might be anything here, add a better check
@@ -168,6 +175,38 @@ class Html implements ValidHtml
         }
 
         return $element;
+    }
+
+    /**
+     * @param $name
+     * @param $arguments
+     * @return BaseElement
+     */
+    public static function __callStatic($name, $arguments)
+    {
+        $attributes = array_shift($arguments);
+        $content = null;
+        if ($attributes instanceof ValidHtml || is_string($attributes)) {
+            $content = $attributes;
+            $attributes = null;
+        } elseif (is_array($attributes)) {
+            if (empty($attributes)) {
+                $attributes = null;
+            } elseif (is_int(key($attributes))) {
+                $content = $attributes;
+                $attributes = null;
+            }
+        }
+
+        if (! empty($arguments)) {
+            if (null === $content) {
+                $content = $arguments;
+            } else {
+                $content = [$content, $arguments];
+            }
+        }
+
+        return Element::create($name, $attributes, $content);
     }
 
     /**
