@@ -6,9 +6,10 @@ use Icinga\Module\Director\Db;
 use ipl\Html\Html;
 use ipl\Html\Icon;
 use ipl\Html\Link;
+use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 
-class TemplatesTable extends QueryBasedTable
+class TemplatesTable extends ZfQueryBasedTable
 {
     protected $searchColumns = ['o.object_name'];
 

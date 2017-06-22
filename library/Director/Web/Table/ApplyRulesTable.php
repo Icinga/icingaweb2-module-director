@@ -7,9 +7,10 @@ use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use ipl\Html\Icon;
 use ipl\Html\Link;
+use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 
-class ApplyRulesTable extends QueryBasedTable
+class ApplyRulesTable extends ZfQueryBasedTable
 {
     protected $searchColumns = [
         'o.object_name',

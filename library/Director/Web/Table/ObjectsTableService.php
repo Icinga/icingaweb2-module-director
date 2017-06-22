@@ -2,10 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaService;
-use Icinga\Module\Director\Web\Table\Extension\MultiSelect;
+use ipl\Web\Table\Extension\MultiSelect;
 use ipl\Html\Link;
 use ipl\Web\Url;
 

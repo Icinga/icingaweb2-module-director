@@ -1,6 +1,6 @@
 <?php
 
-namespace Icinga\Module\Director\Web\Table\Extension;
+namespace ipl\Web\Table\Extension;
 
 use ipl\Web\Url;
 

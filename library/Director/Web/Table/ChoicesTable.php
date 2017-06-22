@@ -5,9 +5,10 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Module\Director\Db;
 use ipl\Html\Link;
 use ipl\Web\Component\ControlsAndContent;
+use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 
-class ChoicesTable extends QueryBasedTable
+class ChoicesTable extends ZfQueryBasedTable
 {
     protected $searchColumns = ['o.object_name'];
 

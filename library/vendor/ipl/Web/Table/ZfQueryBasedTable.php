@@ -1,10 +1,9 @@
 <?php
 
-namespace Icinga\Module\Director\Web\Table;
+namespace ipl\Web\Table;
 
+use Icinga\Data\Db\DbConnection;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Web\Table\Extension\QuickSearch;
 use ipl\Db\Zf1\FilterRenderer;
 use ipl\Db\Zf1\SelectPaginationAdapter;
 use ipl\Html\Container;
@@ -15,9 +14,10 @@ use ipl\Html\Table;
 use ipl\Translation\TranslationHelper;
 use ipl\Web\Component\ControlsAndContent;
 use ipl\Web\Component\Paginator;
+use ipl\Web\Table\Extension\QuickSearch;
 use ipl\Web\Url;
 
-abstract class QueryBasedTable extends Table
+abstract class ZfQueryBasedTable extends Table
 {
     use TranslationHelper;
     use QuickSearch;
@@ -27,15 +27,17 @@ abstract class QueryBasedTable extends Table
         'data-base-target' => '_next',
     ];
 
+    /** @var DbConnection */
     private $connection;
 
+    /** @var \Zend_Db_Adapter_Abstract */
     private $db;
 
     private $query;
 
     protected $searchColumns = [];
 
-    public function __construct(Db $connection)
+    public function __construct(DbConnection $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
@@ -158,7 +160,7 @@ abstract class QueryBasedTable extends Table
         ]);
     }
 
-    public static function show(ControlsAndContent $controller, Db $db)
+    public static function show(ControlsAndContent $controller, DbConnection $db)
     {
         $table = new static($db);
         $table->renderTo($controller);

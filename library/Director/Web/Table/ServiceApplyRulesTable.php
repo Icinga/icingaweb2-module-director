@@ -8,9 +8,10 @@ use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use ipl\Html\Icon;
 use ipl\Html\Link;
 use ipl\Html\Table;
+use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 
-class ServiceApplyRulesTable extends QueryBasedTable
+class ServiceApplyRulesTable extends ZfQueryBasedTable
 {
     protected $searchColumns = [
         's.object_name',
