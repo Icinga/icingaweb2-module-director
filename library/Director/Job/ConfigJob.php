@@ -87,9 +87,13 @@ class ConfigJob extends JobHook
             return false;
         }
 
-        if ($this->getActiveChecksum() === $config->getHexChecksum()) {
+        //if ($this->getSetting('redeploy_on_error') !== 'y') {
+        if ($db->getLastDeploymentChecksum() === $config->getHexChecksum()) {
             return false;
         }
+        //} elseif ($this->getActiveChecksum() === $config->getHexChecksum()) {
+        //    return false;
+        //}
 
         // $current = $api->getActiveChecksum($db);
         // TODO: no current, but last deployment
