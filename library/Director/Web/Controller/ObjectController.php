@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
@@ -36,6 +37,9 @@ abstract class ObjectController extends ActionController
                 $this->handleApiRequest();
             } catch (NotFoundError $e) {
                 $response->setHttpResponseCode(404);
+                $this->sendJson($response, (object) array('error' => $e->getMessage()));
+            } catch (DuplicateKeyException $e) {
+                $response->setHttpResponseCode(422);
                 $this->sendJson($response, (object) array('error' => $e->getMessage()));
             } catch (Exception $e) {
                 if ($response->getHttpResponseCode() === 200) {
