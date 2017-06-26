@@ -34,10 +34,6 @@ trait RestApi
     protected function sendJson(Response $response, $object)
     {
         $response->setHeader('Content-Type', 'application/json', true);
-        $this->_helper->layout()->disableLayout();
-        $this->_helper->viewRenderer->setNoRender(true);
-        /** @var ServicetemplatesController $this */
-        $this->viewRenderer->disable();
         echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
     }
 
