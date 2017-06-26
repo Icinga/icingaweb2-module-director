@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaTemplateChoiceHost extends IcingaTemplateChoice
+class IcingaTemplateChoiceService extends IcingaTemplateChoice
 {
     protected $table = 'icinga_service_template_choice';
 

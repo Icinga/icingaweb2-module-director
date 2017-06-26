@@ -3,12 +3,10 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Web\Form\QuickForm;
-use ipl\Translation\TranslationHelper;
-use Zend_Form_Element as ZfElement;
 
 class IcingaTemplateChoice extends IcingaObject
 {
-    private $objectTable;
+    protected $objectTable;
 
     protected $defaultProperties = [
         'id'           => null,
@@ -90,11 +88,10 @@ class IcingaTemplateChoice extends IcingaObject
         if ($this->hasBeenLoadedFromDb()) {
             $db = $this->getDb();
             $query = $db->select()->from(
-                ['o' => $this->objectTable],
+                ['o' => $this->getObjectTableName()],
                 ['o.id', 'o.object_name']
             )->where("o.object_type = 'template'")
-             ->where('o.template_choice_id = ?', $this->get('id'));
-
+             ->where('o.template_choice_id IS NULL OR o.template_choice_id = ?', $this->get('id'));
             return $db->fetchPairs($query);
         } else {
             return [];
