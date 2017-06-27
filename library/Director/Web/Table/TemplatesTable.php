@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
+use Icinga\Module\Director\Objects\IcingaObject;
 use ipl\Html\Html;
 use ipl\Html\Icon;
 use ipl\Html\Link;
@@ -54,6 +56,20 @@ class TemplatesTable extends ZfQueryBasedTable
             $this::td(new Link($caption, $url)),
             $this::td(new Link(new Icon('plus'), $url))
         ]);
+    }
+
+    public function filterTemplate(
+        IcingaObject $template,
+        $inheritance = IcingaObjectFilterHelper::INHERIT_DIRECT
+    ) {
+        IcingaObjectFilterHelper::filterByTemplate(
+            $this->getQuery(),
+            $template,
+            'o',
+            $inheritance
+        );
+
+        return $this;
     }
 
     protected function prepareQuery()
