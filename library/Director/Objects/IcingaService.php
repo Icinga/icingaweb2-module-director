@@ -47,6 +47,7 @@ class IcingaService extends IcingaObject
         'apply_for'             => null,
         'use_var_overrides'     => null,
         'assign_filter'         => null,
+        'template_choice_id'    => null,
     );
 
     protected $relations = array(
@@ -57,6 +58,7 @@ class IcingaService extends IcingaObject
         'check_period'     => 'IcingaTimePeriod',
         'command_endpoint' => 'IcingaEndpoint',
         'zone'             => 'IcingaZone',
+        'template_choice'  => 'IcingaTemplateChoiceService',
     );
 
     protected $booleans = array(
@@ -87,6 +89,8 @@ class IcingaService extends IcingaObject
     protected $supportsApplyRules = true;
 
     protected $supportsSets = true;
+
+    protected $supportsChoices = true;
 
     protected $supportedInLegacy = true;
 

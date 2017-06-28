@@ -85,6 +85,8 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
+    protected $supportsChoices = true;
+
     protected $supportedInLegacy = true;
 
     /** @var HostGroupMembershipResolver */

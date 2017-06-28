@@ -51,6 +51,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether Sets of object can be defined */
     protected $supportsSets = false;
 
+    /** @var bool Whether this Object supports template-based Choices */
+    protected $supportsChoices = false;
+
     /** @var bool If the object is rendered in legacy config */
     protected $supportedInLegacy = false;
 
@@ -425,6 +428,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsSets()
     {
         return $this->supportsSets;
+    }
+
+    /**
+     * Whether this object supports template-based Choices
+     *
+     * @return bool
+     */
+    public function supportsChoices()
+    {
+        return $this->supportsChoices;
     }
 
     public function setAssignments($value)
