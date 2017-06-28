@@ -22,13 +22,6 @@ abstract class ObjectsController extends ActionController
 {
     protected $isApified = true;
 
-    protected $globalTypes = array(
-        'ApiUser',
-        'Zone',
-        'Endpoint',
-        'TimePeriod',
-    );
-
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/' . $this->getPluralBaseType());
