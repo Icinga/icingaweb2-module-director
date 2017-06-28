@@ -4,7 +4,9 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
+use Icinga\Module\Director\Objects\IcingaObject;
 use ipl\Html\Icon;
 use ipl\Html\Link;
 use ipl\Web\Table\ZfQueryBasedTable;
@@ -27,7 +29,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
-        return ['Name', 'assign where', 'Actions'];
+        return ['Name', 'assign where'/*, 'Actions'*/];
     }
 
     public function renderRow($row)
@@ -39,8 +41,22 @@ class ApplyRulesTable extends ZfQueryBasedTable
         return static::tr([
             static::td(Link::create($row->object_name, $url)),
             static::td($this->renderApplyFilter($row->assign_filter)),
-            static::td($this->createActionLinks($row))->setSeparator(' ')
+            // NOT (YET) static::td($this->createActionLinks($row))->setSeparator(' ')
         ]);
+    }
+
+    public function filterTemplate(
+        IcingaObject $template,
+        $inheritance = IcingaObjectFilterHelper::INHERIT_DIRECT
+    ) {
+        IcingaObjectFilterHelper::filterByTemplate(
+            $this->getQuery(),
+            $template,
+            'o',
+            $inheritance
+        );
+
+        return $this;
     }
 
     protected function renderApplyFilter($assignFilter)
