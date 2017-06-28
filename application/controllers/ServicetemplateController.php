@@ -2,9 +2,12 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
+use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
+use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Table\TemplateUsageTable;
 use ipl\Html\FormattedString;
 use ipl\Html\Html;
@@ -21,11 +24,53 @@ class ServicetemplateController extends CompatController
         $template = $this->requireTemplate();
         $this
             ->addSingleTab($this->translate('Single Services'))
+            ->setAutorefreshInterval(10)
             ->addTitle(
                 $this->translate('Services based on %s'),
                 $template->getObjectName()
-            );
+            )->addBackToUsageLink($template);
 
+        $table = new ObjectsTableService($this->db());
+        $table->setAuth($this->Auth());
+        $table->filterTemplate($template, $this->params->get('inheritance', 'direct'));
+        $table->renderTo($this);
+    }
+
+    public function templatesAction()
+    {
+        $template = $this->requireTemplate();
+        $this
+            ->addSingleTab($this->translate('Service Templates'))
+            ->setAutorefreshInterval(10)
+            ->addTitle(
+                $this->translate('Service templates based on %s'),
+                $template->getObjectName()
+            )->addBackToUsageLink($template);
+
+        $table = TemplatesTable::create('service', $this->db());
+        $table->filterTemplate($template, $this->params->get('inheritance', 'direct'));
+        $table->renderTo($this);
+    }
+
+    public function applyrulesAction()
+    {
+        $template = $this->requireTemplate();
+        $this
+            ->addSingleTab($this->translate('Applied services'))
+            ->setAutorefreshInterval(10)
+            ->addTitle(
+                $this->translate('Service Apply Rules based on %s'),
+                $template->getObjectName()
+            )->addBackToUsageLink($template);
+
+        $table = new ApplyRulesTable($this->db());
+        $table->setType('service');
+        $table->filterTemplate($template, $this->params->get('inheritance', 'direct'));
+        $table->renderTo($this);
+    }
+
+    protected function addBackToUsageLink(IcingaObject $template)
+    {
         $this->actions()->add(
             Link::create(
                 $this->translate('Back'),
@@ -35,25 +80,7 @@ class ServicetemplateController extends CompatController
             )
         );
 
-        $table = new ObjectsTableService($this->db());
-        $table->setAuth($this->Auth());
-        $table->filterTemplate($template, $this->params->get('inheritance', 'direct'));
-        $table->renderTo($this);
-    }
-
-    public function applyrulesAction()
-    {
-        $template = $this->requireTemplate();
-        $this
-            ->addSingleTab($this->translate('Single Services'))
-            ->addTitle(
-                $this->translate('Services based on %s'),
-                $template->getObjectName()
-            );
-
-        $table = new ObjectsTableService($this->db());
-        $table->filterTemplate($template);
-        $this->content()->add($table);
+        return $this;
     }
 
     public function usageAction()
@@ -61,12 +88,10 @@ class ServicetemplateController extends CompatController
         $template = $this->requireTemplate();
         $templateName = $template->getObjectName();
 
-        $this->addSingleTab(
-            $this->translate('Service Template Usage')
-        )->addTitle(
-            $this->translate('Template: %s'),
-            $templateName
-        );
+        $this
+            ->addSingleTab($this->translate('Service Template Usage'))
+            ->addTitle($this->translate('Template: %s'), $templateName)
+            ->setAutorefreshInterval(10);
 
         $this->actions()->add([
             Link::create(
