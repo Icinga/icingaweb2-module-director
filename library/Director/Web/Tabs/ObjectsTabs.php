@@ -44,6 +44,14 @@ class ObjectsTabs extends Tabs
                     'label' => $this->translate('Apply')
                 ));
             }
+
+            if ($object->supportsChoices()) {
+                $this->add('choices', array(
+                    'url'    => sprintf('director/templatechoices/%s', $type),
+                    'label' => $this->translate('Choices')
+                ));
+            }
+
             if ($object->supportsSets()) {
                 $this->add('sets', array(
                     'url'    => sprintf('director/%ss/sets', $type),
