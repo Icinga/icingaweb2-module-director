@@ -30,7 +30,7 @@ trait QuickSearch
         $search = $url->getParam('q');
 
         $form = Html::tag('form', [
-            'action' => $url->without(array('q', 'page', 'modifyFilter')),
+            'action' => $url->without(array('q', 'page', 'modifyFilter'))->getAbsoluteUrl(),
             'class'  => ['quicksearch', 'inline'],
             'method' => 'GET'
         ]);
