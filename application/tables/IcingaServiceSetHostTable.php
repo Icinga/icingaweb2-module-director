@@ -4,8 +4,9 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Table\QuickTable;
+use ipl\Html\ValidHtml;
 
-class IcingaServiceSetHostTable extends QuickTable
+class IcingaServiceSetHostTable extends QuickTable implements ValidHtml
 {
     protected $set;
 

@@ -163,7 +163,6 @@ abstract class ObjectController extends ActionController
             ->setObject($object)
             ->setAuth($this->Auth())
             ->handleRequest()
-
         );
 
         $this->actions()->add($this->createCloneLink());
