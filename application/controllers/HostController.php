@@ -8,13 +8,13 @@ use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Web\Url;
+use ipl\Html\Html;
 use ipl\Html\Link;
 
 class HostController extends ObjectController
@@ -95,23 +95,20 @@ class HostController extends ObjectController
         $db = $this->db();
         $host = $this->object;
 
-        $this->view->addLink = $this->view->qlink(
+        $this->tabs()->activate('services');
+        $this->addTitle($this->translate('Services: %s'), $host->object_name);
+
+        $this->actions()->add(Link::create(
             $this->translate('Add service'),
             'director/service/add',
-            array('host' => $host->object_name),
-            array('class' => 'icon-plus')
-        ) . ' ' .  $this->view->qlink(
+            ['host' => $host->object_name],
+            ['class' => 'icon-plus']
+        ))->add(Link::create(
             $this->translate('Add service set'),
             'director/serviceset/add',
-            array('host' => $host->object_name),
-            array('class' => 'icon-plus')
-        );
-
-        $this->getTabs()->activate('services');
-        $this->view->title = sprintf(
-            $this->translate('Services: %s'),
-            $host->object_name
-        );
+            ['host' => $host->object_name],
+            ['class' => 'icon-plus']
+        ));
 
         $resolver = $this->object->templateResolver();
 
@@ -185,7 +182,9 @@ class HostController extends ObjectController
             $tables[$title] = $table;
         }
 
-        $this->view->tables = $tables;
+        foreach ($tables as $table) {
+            $this->content()->add($table);
+        }
     }
 
     protected function addHostServiceSetTables(IcingaHost $host, & $tables, IcingaHost $affectedHost = null)
@@ -240,17 +239,18 @@ class HostController extends ObjectController
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ), $db);
 
-        $this->view->title = sprintf(
+        $this->addTitle(
             $this->translate('Applied service: %s'),
             $serviceName
         );
 
-        $this->view->form = $this->loadForm('IcingaService')
-            ->setDb($db)
-            ->setHost($host)
-            ->setApplyGenerated($parent)
-            ->setObject($service)
-            ;
+        $this->content()->add(
+            $this->loadForm('IcingaService')
+                ->setDb($db)
+                ->setHost($host)
+                ->setApplyGenerated($parent)
+                ->setObject($service)
+        );
 
         $this->commonForServices();
     }
@@ -282,20 +282,17 @@ class HostController extends ObjectController
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ), $db);
 
-        $this->view->title = sprintf(
-            $this->translate('Inherited service: %s'),
-            $serviceName
-        );
-
-        $this->view->form = $this->loadForm('IcingaService')
+        $this->addTitle($this->translate('Inherited service: %s'), $serviceName);
+        $form = $this->loadForm('IcingaService')
             ->setDb($db)
             ->setHost($host)
             ->setInheritedFrom($from->object_name)
             ->setObject($service);
-
-        // TODO: figure out whether this has any effect
-        // $this->view->form->setResolvedImports();
+        $form->handleRequest();
+        $this->content()->add($form);
         $this->commonForServices();
+        // TODO: figure out whether this has any effect
+        // $form->setResolvedImports();
     }
 
     public function removesetAction()
@@ -309,8 +306,10 @@ class HostController extends ObjectController
             array('si' => 'icinga_service_set_inheritance'),
             'si.service_set_id = ss.id',
             array()
-        )->where('si.parent_service_set_id = ?', $this->params->get('setId'))
-        ->where('ss.host_id = ?', $this->object->id);
+        )->where(
+            'si.parent_service_set_id = ?',
+            $this->params->get('setId')
+        )->where('ss.host_id = ?', $this->object->id);
 
         IcingaServiceSet::loadWithAutoIncId($db->fetchOne($query), $this->db())->delete();
         $this->redirectNow(
@@ -344,37 +343,35 @@ class HostController extends ObjectController
         ), $db);
 
         // $set->copyVarsToService($service);
-        $this->view->title = sprintf(
+        $this->addTitle(
             $this->translate('%s on %s (from set: %s)'),
             $serviceName,
             $host->getObjectName(),
             $set->getObjectName()
         );
 
-        $this->getTabs()->activate('services');
-
-        $this->view->form = $this->loadForm('IcingaService')
+        $form = $this->loadForm('IcingaService')
             ->setDb($db)
             ->setHost($host)
             ->setServiceSet($set)
             ->setObject($service);
-        // $this->view->form->setResolvedImports();
-        $this->view->form->handleRequest();
+        $form->handleRequest();
+        $this->getTabs()->activate('services');
+        $this->content()->add($form);
+        // $form->setResolvedImports();
         $this->commonForServices();
     }
 
     protected function commonForServices()
     {
         $host = $this->object;
-        $this->view->actionLinks = $this->view->qlink(
+        $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/host/services',
-            array('name' => $host->object_name),
-            array('class' => 'icon-left-big')
-        );
+            ['name' => $host->object_name],
+            ['class' => 'icon-left-big']
+        ));
         $this->getTabs()->activate('services');
-        $this->view->form->handleRequest();
-        $this->setViewScript('object/form');
     }
 
     public function agentAction()
@@ -402,35 +399,71 @@ class HostController extends ObjectController
             exit;
         }
 
+        $c = $this->content();
+        $docBaseUrl = 'https://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring';
+        $sectionSetup = 'distributed-monitoring-setup-satellite-client';
+        $sectionTopDown = 'distributed-monitoring-top-down';
+        $c->add(Html::p()->addf(
+            'Please check the %s for more related information.'
+            . ' The Director-assisted setup corresponds to configuring a %s environment.',
+            Html::a(
+                ['href' => $docBaseUrl . '#' . $sectionSetup],
+                $this->translate('Icinga 2 Client documentation')
+            ),
+            Html::a(
+                ['href' => $docBaseUrl . '#' . $sectionTopDown],
+                $this->translate('Top Down')
+            )
+        ));
+
         $this->gracefullyActivateTab('agent');
-        $this->view->title = 'Agent deployment instructions';
-        // TODO: Fail when no ticket
-        $this->view->certname = $this->object->object_name;
+        $this->addTitle('Agent deployment instructions');
+        $certname = $this->object->object_name;
 
         try {
-            $this->view->ticket = Util::getIcingaTicket(
-                $this->view->certname,
-                $this->api()->getTicketSalt()
-            );
-
-            $wizard = $this->view->wizard = new AgentWizard($this->object);
+            $ticket = Util::getIcingaTicket($certname, $this->api()->getTicketSalt());
+            $wizard = new AgentWizard($this->object);
             $wizard->setTicketSalt($this->api()->getTicketSalt());
-            $this->view->windows = $wizard->renderWindowsInstaller();
-            $this->view->linux = $wizard->renderLinuxInstaller();
         } catch (Exception $e) {
-            $this->view->ticket = 'ERROR';
-            $this->view->error = sprintf(
+            $c->add(Html::p(['class' => 'error'], sprintf(
                 $this->translate(
                     'A ticket for this agent could not have been requested from'
                     . ' your deployment endpoint: %s'
                 ),
                 $e->getMessage()
-            );
+            )));
+
+            return;
         }
 
-        $this->view->master = $this->db()->getDeploymentEndpointName();
-        $this->view->masterzone = $this->db()->getMasterZoneName();
-        $this->view->globalzone = $this->db()->getDefaultGlobalZoneName();
+        // TODO: move to CSS
+        $codeStyle = ['style' => 'background: black; color: white; height: 14em; overflow: scroll;'];
+        $c->add([
+            Html::h2($this->translate('For manual configuration')),
+            Html::p($this->translate('Ticket'), ': ', Html::code($ticket)),
+            Html::h2($this->translate('Windows Kickstart Script')),
+            Link::create(
+                $this->translate('Download'),
+                $this->url()->with('download', 'windows-kickstart'),
+                null,
+                ['class' => 'icon-download', 'target' => '_blank']
+            ),
+            Html::pre($codeStyle, $wizard->renderWindowsInstaller()),
+            Html::p($this->translate(
+                'This requires the Icinga Agent to be installed. It generates and signs'
+                . ' it\'s certificate and it also generates a minimal icinga2.conf to get'
+                . ' your agent connected to it\'s parents'
+            )),
+            Html::h2($this->translate('Linux commandline')),
+            Link::create(
+                $this->translate('Download'),
+                $this->url()->with('download', 'linux'),
+                null,
+                ['class' => 'icon-download', 'target' => '_blank']
+            ),
+            Html::p($this->translate('Just download and run this script on your Linux Client Machine:')),
+            Html::pre($codeStyle, $wizard->renderLinuxInstaller())
+        ]);
     }
 
     protected function handleApiRequest()
