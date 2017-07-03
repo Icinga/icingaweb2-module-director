@@ -13,6 +13,7 @@ class ObjectsTableCommand extends ObjectsTable
 
     protected $columns = [
         'object_name' => 'o.object_name',
+        'disabled'    => 'o.disabled',
         'command'     => 'o.command',
     ];
 

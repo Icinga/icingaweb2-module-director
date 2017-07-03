@@ -18,6 +18,7 @@ class ObjectsTableHost extends ObjectsTable
         'object_name'  => 'o.object_name',
         'display_name' => 'o.display_name',
         'address'      => 'o.address',
+        'disabled'     => 'o.disabled',
         'id'           => 'o.id',
     ];
 

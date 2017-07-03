@@ -27,6 +27,7 @@ class ObjectsTableEndpoint extends ObjectsTable
         return [
             'object_name' => 'o.object_name',
             'object_type' => 'o.object_type',
+            'disabled'    => 'o.disabled',
             'host' => "(CASE WHEN o.host IS NULL THEN NULL ELSE"
                 . " CONCAT(o.host || ':' || COALESCE(o.port, 5665)) END)",
             'zone' => 'z.object_name',

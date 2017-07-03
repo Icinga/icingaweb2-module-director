@@ -19,6 +19,7 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected $columns = [
         'object_name' => 'o.object_name',
+        'disabled'    => 'o.disabled',
         'id'          => 'o.id',
     ];
 
@@ -115,6 +116,9 @@ class ObjectsTable extends ZfQueryBasedTable
         ]);
 
         $classes = $this->getRowClasses($row);
+        if ($row->disabled === 'y') {
+            $classes[] = 'disabled';
+        }
         if (! empty($classes)) {
             $tr->attributes()->add('class', $classes);
         }
