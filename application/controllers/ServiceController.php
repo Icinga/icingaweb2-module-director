@@ -113,7 +113,7 @@ class ServiceController extends ObjectController
 
     public function editAction()
     {
-        $this->getTabs()->activate('modify');
+        $this->tabs()->activate('modify');
 
         /** @var IcingaService $object */
         $object = $this->object;
@@ -127,7 +127,7 @@ class ServiceController extends ObjectController
             );
         }
 
-        $this->view->form = $form = $this
+        $form = $this
             ->loadForm('icingaService')
             ->setDb($this->db());
 
@@ -146,7 +146,7 @@ class ServiceController extends ObjectController
             $form->setObject($object);
         }
 
-        $this->view->form->handleRequest();
+        $form->handleRequest();
         $this->view->actionLinks .= $this->createCloneLink();
 
         $this->view->title = $object->object_name;
@@ -172,7 +172,8 @@ class ServiceController extends ObjectController
             // ignore the error, show no apply link
         }
 
-        $this->setViewScript('object/form');
+        $this->content()->add($form);
+        // $this->setViewScript('object/form');
     }
 
     public function assignAction()

@@ -12,7 +12,7 @@ use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
 use Icinga\Module\Director\Web\Form\FormLoader;
-use Icinga\Module\Director\Web\Form\QuickBaseForm;
+use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Security\SecurityException;
@@ -99,7 +99,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
     /**
      * @param string $name
      *
-     * @return QuickBaseForm
+     * @return QuickForm
      */
     public function loadForm($name)
     {

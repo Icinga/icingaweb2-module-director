@@ -15,6 +15,7 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Web\Url;
+use ipl\Html\Link;
 
 class HostController extends ObjectController
 {
@@ -22,7 +23,7 @@ class HostController extends ObjectController
     {
         parent::init();
         if ($this->object) {
-            $tabs = $this->getTabs();
+            $tabs = $this->tabs();
             $tabs->add('services', array(
                 'url'       => 'director/host/services',
                 'urlParams' => array('name' => $this->object->object_name),
@@ -77,7 +78,7 @@ class HostController extends ObjectController
         $host = $this->object;
         $mon = $this->monitoring();
         if ($host->isObject() && $mon->isAvailable() && $mon->hasHost($host->object_name)) {
-            $this->view->actionLinks .= ' ' . $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('Show'),
                 'monitoring/host/show',
                 array('host' => $host->object_name),
@@ -85,7 +86,7 @@ class HostController extends ObjectController
                     'class'            => 'icon-globe critical',
                     'data-base-target' => '_next'
                 )
-            );
+            ));
         }
     }
 
