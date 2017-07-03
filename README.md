@@ -53,10 +53,12 @@ The following are to be considered community-supported modules, as they are not
 supported by the Icinga Team. At least not yet. But please give them a try if
 they fit your needs. They are being used in productive environments:
 
-* [AWS - Amazon Web Services](https://github.com/Thomas-Gelf/icingaweb2-module-aws):
+* [AWS - Amazon Web Services](https://github.com/Icinga/icingaweb2-module-aws):
   provides an Import Source for Autoscaling Groups on AWS
-* [File-Shipper](https://github.com/Thomas-Gelf/icingaweb2-module-fileshipper):
+* [File-Shipper](https://github.com/Icinga/icingaweb2-module-fileshipper):
   allows Director to ship additional config files with manual config with its
   deployments
-* [PuppetDB](https://github.com/Thomas-Gelf/icingaweb2-module-puppetdb): provides
+* [PuppetDB](https://github.com/Icinga/icingaweb2-module-puppetdb): provides
   an Import Source dealing with your PuppetDB
+* [vShere](https://github.com/Icinga/icingaweb2-module-puppetdb): VMware vSphere
+  Import Source for Virtual Machines and Host Systems
