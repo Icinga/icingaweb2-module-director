@@ -26,11 +26,20 @@ class DashboardController extends ActionController
             $this->addSingleTab($this->translate('Overview'));
         }
 
+        $cntDashboards = 0;
         foreach ($names as $name) {
             $dashboard = Dashboard::loadByName($name, $this->db());
             if ($dashboard->isAvailable()) {
+                $cntDashboards++;
                 $this->content()->add($dashboard);
             }
+        }
+
+        if ($cntDashboards === 0) {
+            $msg = $this->translate(
+                'No dashboard available, you might have not enough permissions'
+            );
+            $this->content()->add($msg);
         }
     }
 }
