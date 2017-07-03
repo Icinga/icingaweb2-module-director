@@ -70,23 +70,26 @@ class HostController extends ObjectController
     {
         return $this->getHostgroupRestriction()->allowsHost($object);
     }
-
 */
     public function editAction()
     {
         parent::editAction();
         $host = $this->object;
-        $mon = $this->monitoring();
-        if ($host->isObject() && $mon->isAvailable() && $mon->hasHost($host->object_name)) {
-            $this->actions()->add(Link::create(
-                $this->translate('Show'),
-                'monitoring/host/show',
-                array('host' => $host->object_name),
-                array(
-                    'class'            => 'icon-globe critical',
-                    'data-base-target' => '_next'
-                )
-            ));
+        try {
+            $mon = $this->monitoring();
+            if ($host->isObject() && $mon->isAvailable() && $mon->hasHost($host->object_name)) {
+                $this->actions()->add(Link::create(
+                    $this->translate('Show'),
+                    'monitoring/host/show',
+                    array('host' => $host->object_name),
+                    array(
+                        'class'            => 'icon-globe critical',
+                        'data-base-target' => '_next'
+                    )
+                ));
+            }
+        } catch (Exception $e) {
+            // Silently ignore errors in the monitoring module
         }
     }
 
