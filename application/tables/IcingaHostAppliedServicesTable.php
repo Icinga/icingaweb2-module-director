@@ -7,8 +7,9 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Table\QuickTable;
+use ipl\Html\ValidHtml;
 
-class IcingaHostAppliedServicesTable extends QuickTable
+class IcingaHostAppliedServicesTable extends QuickTable implements ValidHtml
 {
     protected $title;
 

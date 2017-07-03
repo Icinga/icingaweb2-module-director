@@ -6,8 +6,9 @@ use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Table\QuickTable;
+use ipl\Html\ValidHtml;
 
-class IcingaHostAppliedForServiceTable extends QuickTable
+class IcingaHostAppliedForServiceTable extends QuickTable implements ValidHtml
 {
     protected $title;
 
