@@ -421,6 +421,16 @@ CREATE TABLE icinga_endpoint_inheritance (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_host_template_choice (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  object_name VARCHAR(64) NOT NULL,
+  description TEXT DEFAULT NULL,
+  min_required SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  max_allowed SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE KEY (object_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_host (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
@@ -454,6 +464,7 @@ CREATE TABLE icinga_host (
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
   api_key VARCHAR(40) DEFAULT NULL,
+  template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   UNIQUE INDEX api_key (api_key),
@@ -481,6 +492,11 @@ CREATE TABLE icinga_host (
   CONSTRAINT icinga_host_command_endpoint
     FOREIGN KEY command_endpoint (command_endpoint_id)
     REFERENCES icinga_endpoint (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_template_choice
+    FOREIGN KEY choice (template_choice_id)
+    REFERENCES icinga_host_template_choice (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -553,6 +569,16 @@ CREATE TABLE icinga_service_set (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_service_template_choice (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  object_name VARCHAR(64) NOT NULL,
+  description TEXT DEFAULT NULL,
+  min_required SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  max_allowed SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE KEY (object_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_service (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
@@ -586,6 +612,7 @@ CREATE TABLE icinga_service (
   apply_for VARCHAR(255) DEFAULT NULL,
   use_var_overrides ENUM('y', 'n') DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
+  template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_host
@@ -622,6 +649,11 @@ CREATE TABLE icinga_service (
     FOREIGN KEY service_set (service_set_id)
     REFERENCES icinga_service_set (id)
     ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_template_choice
+    FOREIGN KEY choice (template_choice_id)
+    REFERENCES icinga_service_template_choice (id)
+    ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1524,4 +1556,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (131, NOW());
+  VALUES (133, NOW());
