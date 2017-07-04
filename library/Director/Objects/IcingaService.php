@@ -371,6 +371,11 @@ class IcingaService extends IcingaObject
         return '';
     }
 
+    protected function renderTempelate_choice_id()
+    {
+        return '';
+    }
+
     protected function renderLegacyDisplay_Name()
     {
         // @codingStandardsIgnoreEnd
@@ -430,6 +435,9 @@ class IcingaService extends IcingaObject
             }
 
             if (substr($prop, -3) === '_id') {
+                if ($prop === 'template_choice_id') {
+                    continue;
+                }
                 $prop = substr($prop, 0, -3);
             }
 

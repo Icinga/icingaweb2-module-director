@@ -113,6 +113,9 @@ class IcingaHost extends IcingaObject
             }
 
             if (substr($prop, -3) === '_id') {
+                if ($prop === 'template_choice_id') {
+                    continue;
+                }
                 $prop = substr($prop, 0, -3);
             }
 
@@ -359,6 +362,16 @@ class IcingaHost extends IcingaObject
      * @return string
      */
     protected function renderApi_key()
+    {
+        return '';
+    }
+
+    /**
+     * Internal property, will not be rendered
+     *
+     * @return string
+     */
+    protected function renderTempelate_choice_id()
     {
         return '';
     }
