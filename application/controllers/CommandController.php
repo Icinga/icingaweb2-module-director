@@ -10,36 +10,35 @@ class CommandController extends ObjectController
     public function init()
     {
         parent::init();
-        if ($this->object && ! $this->object->isExternal()) {
-            $this->getTabs()->add('arguments', array(
+        $o = $this->object;
+        if ($o && ! $o->isExternal()) {
+            $this->tabs()->add('arguments', [
                 'url'       => 'director/command/arguments',
-                'urlParams' => array('name' => $this->object->object_name),
+                'urlParams' => ['name' => $o->getObjectName()],
                 'label'     => 'Arguments'
-            ));
+            ]);
         }
     }
 
     public function argumentsAction()
     {
-        $this->gracefullyActivateTab('arguments');
-        $this->view->title = sprintf(
-            $this->translate('Command arguments: %s'),
-            $this->object->object_name
-        );
+        $p = $this->params;
+        $o = $this->object;
+        $this->tabs()->activate('arguments');
+        $this->setTitle($this->translate('Command arguments: %s'), $o->getObjectName());
 
-        $this->view->table = $this
-            ->loadTable('icingaCommandArgument')
-            ->setCommandObject($this->object)
-            ->setFilter(Filter::where('command', $this->params->get('name')));
-
-        $form = $this->view->form = $this
-            ->loadForm('icingaCommandArgument')
-            ->setCommandObject($this->object);
-
-        if ($id = $this->params->shift('argument_id')) {
+        /** @var \Icinga\Module\Director\Forms\IcingaCommandArgumentForm $form */
+        $form = $this->loadForm('icingaCommandArgument')->setCommandObject($o);
+        if ($id = $p->shift('argument_id')) {
             $form->loadObject($id);
         }
-
         $form->handleRequest();
+
+        $filter = Filter::where('command', $p->get('name'));
+        $table = $this->loadTable('icingaCommandArgument')
+            ->setCommandObject($o)
+            ->setFilter($filter);
+
+        $this->content()->add([$form, $table]);
     }
 }
