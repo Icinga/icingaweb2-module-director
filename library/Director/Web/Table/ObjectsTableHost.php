@@ -35,9 +35,4 @@ class ObjectsTableHost extends ObjectsTable
             ['name']
         );
     }
-
-    // Restrictions!
-    // foreach ($this->objectRestrictions as $restriction) {
-    //     $restriction->applyToHostsQuery($query);
-    // }
 }
