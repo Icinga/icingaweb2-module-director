@@ -156,13 +156,14 @@ abstract class ObjectController extends ActionController
         $this->tabs()->activate('modify');
 
         $formName = 'icinga' . ucfirst($this->getType());
-        $this->content()->add($form = $this->loadForm($formName)
-            ->setDb($this->db())
-            ->setAuth($this->Auth())
-            ->setApi($this->getApiIfAvailable())
-            ->setObject($object)
-            ->setAuth($this->Auth())
-            ->handleRequest()
+        $this->content()->add(
+            $form = $this->loadForm($formName)
+                ->setDb($this->db())
+                ->setAuth($this->Auth())
+                ->setApi($this->getApiIfAvailable())
+                ->setObject($object)
+                ->setAuth($this->Auth())
+                ->handleRequest()
         );
 
         $this->actions()->add($this->createCloneLink());
