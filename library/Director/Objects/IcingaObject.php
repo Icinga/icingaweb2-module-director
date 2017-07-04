@@ -1125,6 +1125,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     continue;
                 }
 
+                if (! property_exists($origins, $key)) {
+                    // TODO:  Introduced with group membership resolver or
+                    //        choices - this should not be required. Check this!
+                    continue;
+                }
+
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
                 $vals['_INHERITED_']->$key = $value;
