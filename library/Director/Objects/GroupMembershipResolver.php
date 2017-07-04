@@ -124,7 +124,11 @@ abstract class GroupMembershipResolver
      */
     public function addObject(IcingaObject $object)
     {
-        $this->assertBeenLoadedFromDb($object);
+        if (! $object->hasBeenLoadedFromDb()) {
+            return $this;
+        }
+        // Disabling for now, how should this work?
+        // $this->assertBeenLoadedFromDb($object);
         if ($this->objects === null) {
             $this->objects = array();
         }
