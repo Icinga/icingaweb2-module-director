@@ -48,9 +48,16 @@ class TemplatesTable extends ZfQueryBasedTable
                 )
             ];
 
-        $url = Url::fromPath("director/${type}template/usage", [
-            'name' => $row->object_name
-        ]);
+        // TODO: remove this once we have host template usage
+        if ($type === 'host') {
+            $url = Url::fromPath("director/host", [
+                'name' => $row->object_name
+            ]);
+        } else {
+            $url = Url::fromPath("director/${type}template/usage", [
+                'name' => $row->object_name
+            ]);
+        }
 
         return $this::tr([
             $this::td(new Link($caption, $url)),
