@@ -18,7 +18,12 @@ class IcingaTemplateChoice extends IcingaObject
 
     private $choices;
 
-    private $unstoredChoices;
+    private $newChoices;
+
+    public function getObjectShortTableName()
+    {
+        return substr(substr($this->table, 0, -16), 7);
+    }
 
     public function getObjectTableName()
     {
@@ -27,16 +32,9 @@ class IcingaTemplateChoice extends IcingaObject
 
     public function createFormElement(QuickForm $form, $imports = [], $namePrefix = 'choice')
     {
-        $db = $this->getDb();
-        $query = $db->select()->from($this->getObjectTableName(), [
-            'value' => 'object_name',
-            'label' => 'object_name'
-        ])->where('template_choice_id = ?', $this->get('id'));
-
         $required = $this->isRequired() && !$this->isTemplate();
         $type = $this->allowsMultipleChoices() ? 'multiselect' : 'select';
-
-        $choices = $db->fetchPairs($query);
+        $choices = $this->enumChoices();
 
         $chosen = [];
         foreach ($imports as $import) {
@@ -74,8 +72,44 @@ class IcingaTemplateChoice extends IcingaObject
         return (int) $this->max_allowed > 1;
     }
 
+    public function hasBeenModified()
+    {
+        if ($this->newChoices !== null && $this->choices !== $this->newChoices) {
+            return true;
+        }
+
+        return parent::hasBeenModified();
+    }
+
+    public function getMembers()
+    {
+        return $this->enumChoices();
+    }
+
+    public function setMembers($members)
+    {
+        if (empty($members)) {
+            $this->newChoices = array();
+            return $this;
+        }
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            ['o' => $this->getObjectTableName()],
+            ['o.id', 'o.object_name']
+        )->where("o.object_type = 'template'")
+        ->where('o.object_name IN (?)', $members)
+        ->order('o.object_name');
+
+        $this->newChoices = $db->fetchPairs($query);
+        return $this;
+    }
+
     public function getChoices()
     {
+        if ($this->newChoices !== null) {
+            return $this->newChoices;
+        }
+
         if ($this->choices === null) {
             $this->choices = $this->fetchChoices();
         }
@@ -91,7 +125,7 @@ class IcingaTemplateChoice extends IcingaObject
                 ['o' => $this->getObjectTableName()],
                 ['o.id', 'o.object_name']
             )->where("o.object_type = 'template'")
-             ->where('o.template_choice_id IS NULL OR o.template_choice_id = ?', $this->get('id'));
+             ->where('o.template_choice_id = ?', $this->get('id'));
             return $db->fetchPairs($query);
         } else {
             return [];
@@ -104,12 +138,46 @@ class IcingaTemplateChoice extends IcingaObject
         return array_combine($choices, $choices);
     }
 
-    /*
-     * TODO: mukti?
-    protected $relations = [
-        'depends_on' => 'IcingaHost',
-    ];
-    */
+    public function onStore()
+    {
+        parent::onStore();
+        if ($this->newChoices !== $this->choices) {
+            $this->storeChoices();
+        }
+    }
+
+    protected function storeChoices()
+    {
+        $id = $this->getProperty('id');
+        $db = $this->getDb();
+        $ids = array_keys($this->newChoices);
+        $table = $this->getObjectTableName();
+
+        if (empty($ids)) {
+            $db->update(
+                $table,
+                ['template_choice_id' => null],
+                $db->quoteInto(
+                    sprintf('template_choice_id = %d', $id),
+                    $ids
+                )
+            );
+        } else {
+            $db->update(
+                $table,
+                ['template_choice_id' => null],
+                $db->quoteInto(
+                    sprintf('template_choice_id = %d AND id NOT IN (?)', $id),
+                    $ids
+                )
+            );
+            $db->update(
+                $table,
+                ['template_choice_id' => $id],
+                $db->quoteInto('id IN (?)', $ids)
+            );
+        }
+    }
 
     /**
      * @param $type
@@ -120,19 +188,3 @@ class IcingaTemplateChoice extends IcingaObject
         // @codingStandardsIgnoreEnd
     }
 }
-
-/*
-
-
-Normale Imports -> Windows Basis Checks
-
-Execution speed:
-
-Add field
-* Type: host/service template choice
-*
-
-Build a host:
-* Kinds of templates
-
-*/

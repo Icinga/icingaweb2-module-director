@@ -2,15 +2,32 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
+use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
-// TODO: combine with the one for hosts
-class IcingaTemplateChoiceServiceForm extends DirectorObjectForm
+class IcingaTemplateChoiceForm extends DirectorObjectForm
 {
+    private $choiceType;
+
+    protected function getObjectClassname()
+    {
+        if ($this->className === null) {
+            return 'Icinga\\Module\\Director\\Objects\\IcingaTemplateChoice'
+                . ucfirst($this->choiceType);
+        }
+
+        return $this->className;
+    }
+
+    public function setChoiceType($type)
+    {
+        $this->choiceType = $type;
+        return $this;
+    }
+
     public function setup()
     {
-        /** @var IcingaTemplateChoiceService $object */
+        /** @var IcingaTemplateChoice $object */
         $object = $this->object();
 
         $this->addElement('text', 'object_name', array(
@@ -32,11 +49,9 @@ class IcingaTemplateChoiceServiceForm extends DirectorObjectForm
         $this->addElement('extensibleSet', 'members', array(
             'label'       => $this->translate('Available choices'),
             'required'    => true,
-            'ignore'      => true,
             'description' => $this->translate(
                 'Your users will be allowed to choose among those templates'
             ),
-            'value' => $object->getChoices(),
             'multiOptions' => $this->fetchUnboundTemplates()
         ));
 
@@ -45,15 +60,36 @@ class IcingaTemplateChoiceServiceForm extends DirectorObjectForm
 
     protected function fetchUnboundTemplates()
     {
+        /** @var IcingaTemplateChoice $object */
+        $object = $this->object();
         $db = $this->getDb()->getDbAdapter();
+        $table = $object->getObjectTableName();
         $query = $db->select()->from(
-            ['o' => 'icinga_service'],
+            ['o' => $table],
             [
                 'k' => 'o.object_name',
                 'v' => 'o.object_name',
             ]
         )->where("o.object_type = 'template'");
+        if ($object->hasBeenLoadedFromDb()) {
+            $query->where(
+                'o.template_choice_id IS NULL OR o.template_choice_id = ?',
+                $this->object()->getId()
+            );
+        } else {
+            $query->where('o.template_choice_id IS NULL');
+        }
 
         return $db->fetchPairs($query);
+    }
+
+    protected function setObjectSuccessUrl()
+    {
+        /** @var IcingaTemplateChoice $object */
+        $object = $this->object();
+        $this->setSuccessUrl(
+            'director/templatechoice/' . $object->getObjectshortTableName(),
+            $object->getUrlParams()
+        );
     }
 }

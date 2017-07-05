@@ -18,8 +18,9 @@ class TemplatechoiceController extends ActionController
         $this->addSingleTab('Choice')
              ->addTitle($this->translate('Host template choice'));
         $this->content()->add(
-            $form = $this->loadForm('IcingaTemplateChoiceHost')
+            $form = $this->loadForm('IcingaTemplateChoice')
                 ->setDb($this->db())
+                ->setChoiceType('host')
         );
         if ($name = $this->params->get('name')) {
             $form->setObject(IcingaTemplateChoiceHost::load($name, $this->db()));
@@ -32,8 +33,9 @@ class TemplatechoiceController extends ActionController
         $this->addSingleTab('Choice')
             ->addTitle($this->translate('Service template choice'));
         $this->content()->add(
-            $form = $this->loadForm('IcingaTemplateChoiceService')
+            $form = $this->loadForm('IcingaTemplateChoice')
                 ->setDb($this->db())
+                ->setChoiceType('service')
         );
         if ($name = $this->params->get('name')) {
             $form->setObject(IcingaTemplateChoiceService::load($name, $this->db()));
