@@ -1075,7 +1075,11 @@ abstract class DirectorObjectForm extends QuickForm
      */
     protected function addImportsElement($required = null)
     {
-        $required = $required !== null ? $required : !$this->isTemplate();
+        if (in_array($this->getObjectShortClassName(), ['TimePeriod'])) {
+            $required = false;
+        } else {
+            $required = $required !== null ? $required : !$this->isTemplate();
+        }
         $enum = $this->enumAllowedTemplates();
         if (empty($enum)) {
             if ($required) {
