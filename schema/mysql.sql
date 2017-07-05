@@ -497,7 +497,7 @@ CREATE TABLE icinga_host (
   CONSTRAINT icinga_host_template_choice
     FOREIGN KEY choice (template_choice_id)
     REFERENCES icinga_host_template_choice (id)
-    ON DELETE RESTRICT
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -653,7 +653,7 @@ CREATE TABLE icinga_service (
   CONSTRAINT icinga_service_template_choice
     FOREIGN KEY choice (template_choice_id)
     REFERENCES icinga_service_template_choice (id)
-    ON DELETE RESTRICT
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1556,4 +1556,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (133, NOW());
+  VALUES (134, NOW());

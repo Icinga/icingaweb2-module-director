@@ -618,7 +618,7 @@ CREATE TABLE icinga_host (
   CONSTRAINT icinga_host_template_choice
     FOREIGN KEY (template_choice_id)
     REFERENCES icinga_host_template_choice (id)
-    ON DELETE RESTRICT
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
 
@@ -803,7 +803,7 @@ CREATE TABLE icinga_service (
   CONSTRAINT icinga_service_template_choice
     FOREIGN KEY (template_choice_id)
     REFERENCES icinga_service_template_choice (id)
-    ON DELETE RESTRICT
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
 
@@ -1833,4 +1833,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (133, NOW());
+  VALUES (134, NOW());
