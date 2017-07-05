@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
@@ -13,7 +14,6 @@ use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Restriction\ObjectRestriction;
 use Icinga\Module\Director\Util;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
@@ -69,6 +69,16 @@ abstract class DirectorObjectForm extends QuickForm
         'event_command',
         'event_command_id',
     );
+
+    /**
+     * @return static
+     */
+    public static function load()
+    {
+        return new static([
+            'icingaModule' => Icinga::App()->getModuleManager()->getModule('director')
+        ]);
+    }
 
     public function setPreferredObjectType($type)
     {

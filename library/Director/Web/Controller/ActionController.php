@@ -17,6 +17,7 @@ use Icinga\Module\Director\Web\Table\QuickTable;
 use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
+use Icinga\Web\UrlParams;
 use Icinga\Web\Widget;
 use ipl\Web\Component\ControlsAndContent;
 use ipl\Web\Controller\Extension\ControlsAndContentHelper;
@@ -30,6 +31,9 @@ abstract class ActionController extends Controller implements ControlsAndContent
     use ControlsAndContentHelper;
 
     protected $isApified = false;
+
+    /** @var UrlParams Hint for IDE, somehow does not work in web */
+    protected $params;
 
     /** @var Monitoring */
     private $monitoring;

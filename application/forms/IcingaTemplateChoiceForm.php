@@ -2,12 +2,29 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaTemplateChoiceForm extends DirectorObjectForm
 {
     private $choiceType;
+
+    public static function create($type, Db $db)
+    {
+        return static::load()->setDb($db)->setChoiceType($type);
+    }
+
+    public function optionallyLoad($name)
+    {
+        if ($name !== null) {
+            /** @var IcingaTemplateChoice $class - cheating IDE */
+            $class = $this->getObjectClassName();
+            $this->setObject($class::load($name, $this->getDb()));
+        }
+
+        return $this;
+    }
 
     protected function getObjectClassname()
     {
@@ -27,9 +44,6 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
 
     public function setup()
     {
-        /** @var IcingaTemplateChoice $object */
-        $object = $this->object();
-
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Choice name'),
             'required'    => true,

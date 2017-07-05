@@ -197,7 +197,7 @@ abstract class QuickForm extends QuickBaseForm
 
     public function isApiRequest()
     {
-        return $this->isApiRequest;
+        return $this->isApiRequest || $this->getRequest()->isApiRequest();
     }
 
     public function regenerateCsrfToken()
