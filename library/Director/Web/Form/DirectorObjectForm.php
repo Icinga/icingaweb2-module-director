@@ -12,7 +12,7 @@ use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
-use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
+use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Zend_Form_Element as ZfElement;
@@ -44,8 +44,6 @@ abstract class DirectorObjectForm extends QuickForm
     private $auth;
 
     private $choiceElements = [];
-
-    private $choiceTemplates = [];
 
     protected $preferredObjectType;
 
@@ -1062,9 +1060,10 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addChoiceElement(IcingaTemplateChoiceHost $choice)
+    protected function addChoiceElement(IcingaTemplateChoice $choice)
     {
-        $element = $choice->createFormElement($this, $this->object()->imports);
+        $imports = $this->object()->imports;
+        $element = $choice->createFormElement($this, $imports);
         $this->addElement($element);
         $this->choiceElements[$element->getName()] = $element;
         return $this;
@@ -1094,7 +1093,20 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
-        $type = $this->object()->getShortTableName();
+        $db = $this->getDb()->getDbAdapter();
+        $object = $this->object;
+        if ($object->supportsChoices()) {
+            $choiceNames = $db->fetchCol(
+                $db->select()->from(
+                    $this->object()->getTableName(),
+                    'object_name'
+                )->where('template_choice_id IS NOT NULL')
+            );
+        } else {
+            $choiceNames = [];
+        }
+
+        $type = $object->getShortTableName();
         $this->addElement('extensibleSet', 'imports', array(
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate(
@@ -1104,6 +1116,7 @@ abstract class DirectorObjectForm extends QuickForm
             ),
             'required'     => $required,
             'spellcheck'   => 'false',
+            'hideOptions'  => $choiceNames,
             'suggest'      => "${type}templates",
             // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,

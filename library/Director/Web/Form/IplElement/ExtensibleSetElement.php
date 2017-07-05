@@ -40,6 +40,8 @@ class ExtensibleSetElement extends BaseElement
 
     private $remainingAttribs;
 
+    private $hideOptions = [];
+
     protected $defaultAttributes = [
         'class' => 'extensible-set'
     ];
@@ -47,6 +49,12 @@ class ExtensibleSetElement extends BaseElement
     protected function __construct($name)
     {
         $this->name = $this->id = $name;
+    }
+
+    public function hideOptions($options)
+    {
+        $this->hideOptions = array_merge($this->hideOptions, $options);
+        return $this;
     }
 
     private function setMultiOptions($options)
@@ -130,6 +138,11 @@ class ExtensibleSetElement extends BaseElement
         if (array_key_exists('multiOptions', $attribs)) {
             $this->setMultiOptions($attribs['multiOptions']);
             unset($attribs['multiOptions']);
+        }
+
+        if (array_key_exists('hideOptions', $attribs)) {
+            $this->hideOptions($attribs['hideOptions']);
+            unset($attribs['hideOptions']);
         }
 
         if (array_key_exists('sorted', $attribs)) {
@@ -270,6 +283,10 @@ class ExtensibleSetElement extends BaseElement
         $total = count($this->value);
 
         foreach ($this->value as $val) {
+            if (in_array($val, $this->hideOptions)) {
+                continue;
+            }
+
             if ($this->multiOptions !== null) {
                 if ($this->isValidOption($val)) {
                     $this->multiOptions = $this->removeOption(
