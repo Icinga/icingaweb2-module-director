@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Forms\IcingaTemplateChoiceForm;
-use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class TemplatechoiceController extends ActionController
@@ -15,21 +14,22 @@ class TemplatechoiceController extends ActionController
 
     public function hostAction()
     {
-        $form = IcingaTemplateChoiceForm::create('host', $this->db())
-            ->optionallyLoad($this->params->get('name'))
-            ->handleRequest();
-        $this->addSingleTab('Choice')
-             ->addTitle($this->translate('Host template choice'))
-             ->content()->add($form);
+        $this->prepare('host', $this->translate('Host template choice'));
     }
 
     public function serviceAction()
     {
-        $form = IcingaTemplateChoiceForm::create('service', $this->db())
+        $this->prepare('service', $this->translate('Service template choice'));
+    }
+
+    protected function prepare($type, $title)
+    {
+        $form = IcingaTemplateChoiceForm::create($type, $this->db())
             ->optionallyLoad($this->params->get('name'))
+            ->setListUrl("director/templatechoices/$type")
             ->handleRequest();
         $this->addSingleTab('Choice')
-            ->addTitle($this->translate('Service template choice'))
+            ->addTitle($title)
             ->content()->add($form);
     }
 }

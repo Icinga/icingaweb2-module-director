@@ -16,27 +16,26 @@ class TemplatechoicesController extends ActionController
 
     public function hostAction()
     {
-        $this->prepareTabs('host')
-             ->addTitle($this->translate('Host template choices'))
-             ->prepareActions('host');
-
-        ChoicesTable::create('host', $this->db())->renderTo($this);
+        $this->prepare('host', $this->translate('Host template choices'));
     }
 
     public function serviceAction()
     {
-        $this->prepareTabs('service')
-             ->addTitle($this->translate('Service template choices'))
-             ->prepareActions('service');
-        ChoicesTable::create('service', $this->db())->renderTo($this);
+        $this->prepare('service', $this->translate('Service template choices'));
     }
 
     public function notificationAction()
     {
-        $this->prepareTabs('notification')
-             ->addTitle($this->translate('Notification template choices'))
-             ->prepareActions('notification');
-        ChoicesTable::create('notification', $this->db())->renderTo($this);
+        $this->prepare('notification', $this->translate('Notification template choices'));
+    }
+
+    protected function prepare($type, $title)
+    {
+        $this->prepareTabs($type)
+            ->setAutorefreshInterval(10)
+            ->addTitle($title)
+            ->prepareActions($type);
+        ChoicesTable::create($type, $this->db())->renderTo($this);
     }
 
     protected function prepareTabs($type)
