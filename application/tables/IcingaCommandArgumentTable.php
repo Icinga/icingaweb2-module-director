@@ -4,9 +4,8 @@ namespace Icinga\Module\Director\Tables;
 
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Web\Table\QuickTable;
-use ipl\Html\ValidHtml;
 
-class IcingaCommandArgumentTable extends QuickTable implements ValidHtml
+class IcingaCommandArgumentTable extends QuickTable
 {
     protected $commandObject;
 

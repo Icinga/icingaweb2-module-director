@@ -19,10 +19,11 @@ use Icinga\Web\Url;
 use Icinga\Web\View;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
+use ipl\Html\ValidHtml;
 use stdClass;
 use Zend_Db_Select as ZfDbSelect;
 
-abstract class QuickTable implements Paginatable
+abstract class QuickTable implements Paginatable, ValidHtml
 {
     protected $view;
 
