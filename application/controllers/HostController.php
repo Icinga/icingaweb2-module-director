@@ -419,7 +419,7 @@ class HostController extends ObjectController
             )
         ));
 
-        $this->gracefullyActivateTab('agent');
+        $this->tabs()->activate('agent');
         $this->addTitle('Agent deployment instructions');
         $certname = $this->object->object_name;
 

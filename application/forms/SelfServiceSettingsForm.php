@@ -64,99 +64,8 @@ class SelfServiceSettingsForm extends DirectorForm
         );
 
         if ($downloadType) {
-            $this->addElement('text', 'download_url', [
-                'label'       => $this->translate('Source Path'),
-                'description' => $this->translate(
-                    'Define a download Url or local directory from which the a specific'
-                    . ' Icinga 2 Agent MSI Installer package should be fetched. Please'
-                    . ' ensure to only define the base download Url or Directory. The'
-                    . ' Module will generate the MSI file name based on your operating'
-                    . ' system architecture and the version to install. The Icinga 2 MSI'
-                    . ' Installer name is internally build as follows:'
-                    . ' Icinga2-v[InstallAgentVersion]-[OSArchitecture].msi (full example:'
-                    . ' Icinga2-v2.6.3-x86_64.msi)'
-                ),
-                'value'  => $settings->getStoredOrDefaultValue('self-service/download_url'),
-            ]);
-
-            // TODO: offer to check for available versions
-            if ($downloadType === 'icinga') {
-                $el = $this->getElement('download_url');
-                $el->setAttrib('disabled', 'disabled');
-                $value = 'https://packages.icinga.com/windows/';
-                $el->setValue($value);
-                $this->setSentValue('download_url', $value);
-            }
-            if ($downloadType === 'director') {
-                $el = $this->getElement('download_url');
-                $el->setAttrib('disabled', 'disabled');
-
-                $r = $this->getRequest();
-                $scheme = $r->getServer('HTTP_X_FORWARDED_PROTO', $r->getScheme());
-
-                $value = sprintf(
-                    '%s://%s%s/director/download/windows/',
-                    $scheme,
-                    $r->getHttpHost(),
-                    $this->getRequest()->getBaseUrl()
-                );
-                $el->setValue($value);
-                $this->setSentValue('download_url', $value);
-            }
-
-            $this->addElement('text', 'agent_version', [
-                'label'       => $this->translate('Agent Version'),
-                'description' => $this->translate(
-                    'In case the Icinga 2 Agent should be automatically installed,'
-                    . ' this has to be a string value like: 2.6.3'
-                ),
-                'value'  => $settings->getStoredOrDefaultValue('self-service/agent_version'),
-                'required' => true,
-            ]);
-
-            $hashes = $settings->getStoredOrDefaultValue('self-service/installer_hashes');
-            if ($hashes) {
-                $hashes = json_decode($hashes);
-            } else {
-                $hashes = null;
-            }
-            $this->addElement('extensibleSet', 'installer_hashes', [
-                'label'       => $this->translate('Installer Hashes'),
-                'description' => $this->translate(
-                    'To ensure downloaded packages are build by the Icinga Team'
-                    . ' and not compromised by third parties, you will be able'
-                    . ' to provide an array of SHA1 hashes here. In case you have'
-                    . ' defined any hashses, the module will not continue with'
-                    . ' updating / installing the Agent in case the SHA1 hash of'
-                    . ' the downloaded MSI package is not matching one of the'
-                    . ' provided hashes of this setting'
-                ),
-                'value'  => $hashes,
-            ]);
-
-            $this->addBoolean('allow_updates', [
-                'label'       => $this->translate('Allow Updates'),
-                'description' => $this->translate(
-                    'In case the Icinga 2 Agent is already installed on the system,'
-                    . ' this parameter will allow you to configure if you wish to'
-                    . ' upgrade / downgrade to a specified version with the as well.'
-                ),
-                'value'  => $settings->getStoredOrDefaultValue('self-service/allow_updates'),
-                'required' => true,
-            ], true);
+            $this->addInstallSettings($downloadType, $settings);
         }
-
-        /*
-        // This is managed through the template
-        $this->addBoolean('accept_config', [
-            'label'       => $this->translate('Accept Config'),
-            'description' => $this->translate(
-                'Whether this Agent should accept configuration from it\'s Icinga'
-                . ' parent Zone'
-            ),
-            'required' => true,
-        ], true);
-        */
 
         $this->addBoolean('flush_api_dir', [
             'label'       => $this->translate('Flush API directory'),
@@ -166,6 +75,90 @@ class SelfServiceSettingsForm extends DirectorForm
                 . ' By setting this parameter to true, all content inside the api directory'
                 . ' will be flushed before an eventual restart of the Icinga 2 Agent'
             ),
+            'required' => true,
+        ], true);
+    }
+
+    protected function addInstallSettings($downloadType, Settings $settings)
+    {
+        $this->addElement('text', 'download_url', [
+            'label'       => $this->translate('Source Path'),
+            'description' => $this->translate(
+                'Define a download Url or local directory from which the a specific'
+                . ' Icinga 2 Agent MSI Installer package should be fetched. Please'
+                . ' ensure to only define the base download Url or Directory. The'
+                . ' Module will generate the MSI file name based on your operating'
+                . ' system architecture and the version to install. The Icinga 2 MSI'
+                . ' Installer name is internally build as follows:'
+                . ' Icinga2-v[InstallAgentVersion]-[OSArchitecture].msi (full example:'
+                . ' Icinga2-v2.6.3-x86_64.msi)'
+            ),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/download_url'),
+        ]);
+
+        // TODO: offer to check for available versions
+        if ($downloadType === 'icinga') {
+            $el = $this->getElement('download_url');
+            $el->setAttrib('disabled', 'disabled');
+            $value = 'https://packages.icinga.com/windows/';
+            $el->setValue($value);
+            $this->setSentValue('download_url', $value);
+        }
+        if ($downloadType === 'director') {
+            $el = $this->getElement('download_url');
+            $el->setAttrib('disabled', 'disabled');
+
+            $r = $this->getRequest();
+            $scheme = $r->getServer('HTTP_X_FORWARDED_PROTO', $r->getScheme());
+
+            $value = sprintf(
+                '%s://%s%s/director/download/windows/',
+                $scheme,
+                $r->getHttpHost(),
+                $this->getRequest()->getBaseUrl()
+            );
+            $el->setValue($value);
+            $this->setSentValue('download_url', $value);
+        }
+
+        $this->addElement('text', 'agent_version', [
+            'label'       => $this->translate('Agent Version'),
+            'description' => $this->translate(
+                'In case the Icinga 2 Agent should be automatically installed,'
+                . ' this has to be a string value like: 2.6.3'
+            ),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/agent_version'),
+            'required' => true,
+        ]);
+
+        $hashes = $settings->getStoredOrDefaultValue('self-service/installer_hashes');
+        if ($hashes) {
+            $hashes = json_decode($hashes);
+        } else {
+            $hashes = null;
+        }
+        $this->addElement('extensibleSet', 'installer_hashes', [
+            'label'       => $this->translate('Installer Hashes'),
+            'description' => $this->translate(
+                'To ensure downloaded packages are build by the Icinga Team'
+                . ' and not compromised by third parties, you will be able'
+                . ' to provide an array of SHA1 hashes here. In case you have'
+                . ' defined any hashses, the module will not continue with'
+                . ' updating / installing the Agent in case the SHA1 hash of'
+                . ' the downloaded MSI package is not matching one of the'
+                . ' provided hashes of this setting'
+            ),
+            'value'  => $hashes,
+        ]);
+
+        $this->addBoolean('allow_updates', [
+            'label'       => $this->translate('Allow Updates'),
+            'description' => $this->translate(
+                'In case the Icinga 2 Agent is already installed on the system,'
+                . ' this parameter will allow you to configure if you wish to'
+                . ' upgrade / downgrade to a specified version with the as well.'
+            ),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/allow_updates'),
             'required' => true,
         ], true);
     }
