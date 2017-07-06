@@ -12,6 +12,7 @@ class SettingsController extends ActionController
     public function selfServiceAction()
     {
         $form = SelfServiceSettingsForm::create($this->db(), new Settings($this->db()));
+        $form->handleRequest();
 
         $hint = $this->translate(
             'The Icinga Director Self Service API allows your Hosts to register'

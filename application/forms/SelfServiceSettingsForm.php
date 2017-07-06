@@ -196,7 +196,7 @@ class SelfServiceSettingsForm extends DirectorForm
             }
 
             $this->setSuccessMessage($this->translate(
-                'Self Service Sttings have been stored'
+                'Self Service Settings have been stored'
             ));
 
             parent::onSuccess();
