@@ -11,16 +11,18 @@ class Settings
     protected $cache;
 
     protected $defaults = array(
-        'default_global_zone'            => 'director-global',
-        'magic_apply_for'                => '_director_apply_for',
-        'config_format'                  => 'v2',
-        'override_services_varname'      => '_override_servicevars',
-        'override_services_templatename' => 'host var overrides (Director)',
-        'disable_all_jobs'               => 'n', // 'y'
-        'enable_audit_log'               => 'n',
-        'deployment_mode_v1'             => 'active-passive',
-        'deployment_path_v1'             => null,
-        'activation_script_v1'           => null,
+        'default_global_zone'             => 'director-global',
+        'magic_apply_for'                 => '_director_apply_for',
+        'config_format'                   => 'v2',
+        'override_services_varname'       => '_override_servicevars',
+        'override_services_templatename'  => 'host var overrides (Director)',
+        'disable_all_jobs'                => 'n', // 'y'
+        'enable_audit_log'                => 'n',
+        'deployment_mode_v1'              => 'active-passive',
+        'deployment_path_v1'              => null,
+        'activation_script_v1'            => null,
+        'self-service/agent_name'         => 'fqdn',
+        'self-service/transform_hostname' => '0'
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     );
@@ -55,6 +57,16 @@ class Settings
             return $this->defaults[$key];
         } else {
             return null;
+        }
+    }
+
+    public function getStoredOrDefaultValue($key)
+    {
+        $value = $this->getStoredValue($key);
+        if ($value === null) {
+            return $this->getDefaultValue($key);
+        } else {
+            return $value;
         }
     }
 

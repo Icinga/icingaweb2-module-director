@@ -6,6 +6,7 @@ class InfrastructureDashboard extends Dashboard
 {
     protected $dashletNames = array(
         'Kickstart',
+        'SelfService',
         'ApiUserObject',
         'EndpointObject',
         'ZoneObject',
