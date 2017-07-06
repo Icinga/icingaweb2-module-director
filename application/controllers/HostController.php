@@ -406,7 +406,7 @@ class HostController extends ObjectController
         $docBaseUrl = 'https://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring';
         $sectionSetup = 'distributed-monitoring-setup-satellite-client';
         $sectionTopDown = 'distributed-monitoring-top-down';
-        $c->add(Html::p()->addf(
+        $c->add(Html::p()->addPrintf(
             'Please check the %s for more related information.'
             . ' The Director-assisted setup corresponds to configuring a %s environment.',
             Html::a(
