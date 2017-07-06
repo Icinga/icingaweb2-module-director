@@ -479,12 +479,14 @@ class HostController extends ObjectController
                 throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
             }
 
-            return $this->sendJson(
+            $this->sendJson(
+                $this->getResponse(),
                 Util::getIcingaTicket(
                     $host->object_name,
                     $this->api()->getTicketSalt()
                 )
             );
+            return;
         }
 
         return parent::handleApiRequest();
