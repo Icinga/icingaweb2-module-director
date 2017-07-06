@@ -18,13 +18,17 @@ trait RestApi
         }
     }
 
+    protected function assertApiPermission()
+    {
+        if (! $this->hasPermission('director/api')) {
+            throw new AuthenticationException('You are not allowed to access this API');
+        }
+    }
+
     protected function checkForRestApiRequest()
     {
         if ($this->getRequest()->isApiRequest()) {
-            if (! $this->hasPermission('director/api')) {
-                throw new AuthenticationException('You are not allowed to access this API');
-            }
-
+            $this->assertApiPermission();
             if (! $this->isApified()) {
                 throw new NotFoundError('No such API endpoint found');
             }
