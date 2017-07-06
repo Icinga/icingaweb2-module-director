@@ -536,7 +536,7 @@ the given one. [..]
 
 #### Request processing for Host registration
 
-A new node will `POST` to `self-servie/register-host`, with two parameters in
+A new node will `POST` to `self-service/register-host`, with two parameters in
 the URL:
 
 * `name`: it's desired object name, usually the FQDN
