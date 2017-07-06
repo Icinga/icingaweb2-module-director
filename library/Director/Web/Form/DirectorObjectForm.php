@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
-use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
@@ -18,11 +17,8 @@ use Icinga\Module\Director\Util;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 
-abstract class DirectorObjectForm extends QuickForm
+abstract class DirectorObjectForm extends DirectorForm
 {
-    /** @var  Db */
-    protected $db;
-
     /** @var IcingaObject */
     protected $object;
 
@@ -67,16 +63,6 @@ abstract class DirectorObjectForm extends QuickForm
         'event_command',
         'event_command_id',
     );
-
-    /**
-     * @return static
-     */
-    public static function load()
-    {
-        return new static([
-            'icingaModule' => Icinga::App()->getModuleManager()->getModule('director')
-        ]);
-    }
 
     public function setPreferredObjectType($type)
     {
@@ -597,24 +583,6 @@ abstract class DirectorObjectForm extends QuickForm
     {
     }
 
-    protected function addBoolean($key, $options, $default = null)
-    {
-        if ($default === null) {
-            return $this->addElement('OptionalYesNo', $key, $options);
-        } else {
-            $this->addElement('YesNo', $key, $options);
-            return $this->getElement($key)->setValue($default);
-        }
-    }
-
-    protected function optionalBoolean($key, $label, $description)
-    {
-        return $this->addBoolean($key, array(
-            'label'       => $label,
-            'description' => $description
-        ));
-    }
-
     public function hasElement($name)
     {
         return $this->getElement($name) !== null;
@@ -938,22 +906,13 @@ abstract class DirectorObjectForm extends QuickForm
         ));
     }
 
-    /**
-     * @return Db
-     */
-    public function getDb()
-    {
-        return $this->db;
-    }
-
     public function setDb(Db $db)
     {
-        $this->db = $db;
         if ($this->object !== null) {
             $this->object->setConnection($db);
         }
 
-        return $this;
+        return parent::setDb($db);
     }
 
     public function optionallyAddFromEnum($enum)
