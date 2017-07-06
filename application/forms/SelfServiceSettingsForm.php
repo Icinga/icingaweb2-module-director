@@ -114,6 +114,12 @@ class SelfServiceSettingsForm extends DirectorForm
                 'required' => true,
             ]);
 
+            $hashes = $settings->getStoredOrDefaultValue('self-service/installer_hashes');
+            if ($hashes) {
+                $hashes = json_decode($hashes);
+            } else {
+                $hashes = null;
+            }
             $this->addElement('extensibleSet', 'installer_hashes', [
                 'label'       => $this->translate('Installer Hashes'),
                 'description' => $this->translate(
@@ -125,7 +131,7 @@ class SelfServiceSettingsForm extends DirectorForm
                     . ' the downloaded MSI package is not matching one of the'
                     . ' provided hashes of this setting'
                 ),
-                'value'  => $settings->getStoredOrDefaultValue('self-service/installer_hashes'),
+                'value'  => $hashes,
             ]);
 
             $this->addBoolean('allow_updates', [

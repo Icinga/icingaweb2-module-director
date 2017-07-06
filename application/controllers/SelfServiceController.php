@@ -130,6 +130,8 @@ class SelfServiceController extends ActionController
         foreach ($params as $key => $value) {
             if (is_bool($value)) {
                 $value = $this->makePowerShellBoolean($value);
+            } elseif (is_array($value)) {
+                $value = implode(',', $value);
             }
             $plain .= "$key: $value\r\n";
         }
@@ -191,7 +193,7 @@ class SelfServiceController extends ActionController
             'transform_hostname'  => $settings->get('self-service/transform_hostname'),
             'parent_zone'         => $zoneName,
             'ca_server'           => $master->getObjectName(),
-            'parent_endpoints'    => implode(',', $zone->listEndpoints()),
+            'parent_endpoints'    => $zone->listEndpoints(),
             'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
         ];
 
@@ -199,7 +201,11 @@ class SelfServiceController extends ActionController
             $params['download_url'] = $settings->get('self-service/download_url');
             $params['agent_version'] = $settings->get('self-service/agent_version');
             $params['allow_updates'] = $settings->get('self-service/allow_updates') === 'y';
+
             $params['accept_config'] = $host->getSingleResolvedProperty('accept_config')=== 'y';
+            if ($hashes = $settings->get('self-service/installer_hashes')) {
+                $params['installer_hashes'] = json_decode($hashes);
+            }
         }
 
         if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
