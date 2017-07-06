@@ -2,7 +2,13 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Exception;
+use Icinga\Exception\NotFoundError;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Forms\IcingaHostSelfServiceForm;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaZone;
+use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use ipl\Html\Html;
 
@@ -23,40 +29,49 @@ class SelfServiceController extends ActionController
 
     public function registerHostAction()
     {
+        $request = $this->getRequest();
         $form = IcingaHostSelfServiceForm::create($this->db());
-        if ($key = $this->params->get('key')) {
-            $form->loadTemplateWithApiKey($key);
+        $form->setApiRequest($request->isApiRequest());
+        try {
+            if ($key = $this->params->get('key')) {
+                $form->loadTemplateWithApiKey($key);
+            }
+        } catch (Exception $e) {
+            $this->sendPowerShellError($e->getMessage(), 404);
+            return;
         }
         if ($name = $this->params->get('name')) {
             $form->setHostName($name);
         }
 
-        $form->handleRequest();
-
-        if ($this->getRequest()->isApiRequest()) {
+        if ($request->isApiRequest()) {
+            $data = json_decode($request->getRawBody());
+            $request->setPost((array) $data);
+            $form->handleRequest();
             if ($newKey = $form->getHostApiKey()) {
-                $this->sendJson($this->getResponse(), $newKey);
+                $this->sendPowerShellResponse($newKey);
             } else {
                 $error = implode('; ', $form->getErrorMessages());
                 if ($error === '') {
                     foreach ($form->getErrors() as $elName => $errors) {
                         if (in_array('isEmpty', $errors)) {
-                            $this->sendJsonError(
-                                $this->getResponse(),
-                                sprintf("%s is required", $elName)
+                            $this->sendPowerShellError(
+                                sprintf("%s is required", $elName),
+                                400
                             );
                             return;
                         } else {
-                            $this->sendJsonError($this->getResponse(), 'An unknown error ocurred');
+                            $this->sendPowerShellError('An unknown error ocurred', 500);
                         }
                     }
                 } else {
-                    $this->sendJsonError($this->getResponse(), $error);
+                    $this->sendPowerShellError($error, 400);
                 }
             }
             return;
         }
 
+        $form->handleRequest();
         $this->addSingleTab($this->translate('Self Service'))
               ->addTitle($this->translate('Self Service - Host Registration'))
               ->content()->add(Html::p($this->translate(
@@ -64,5 +79,128 @@ class SelfServiceController extends ActionController
                 . ' token, this is where you can register new hosts'
                 )))
             ->add($form);
+    }
+
+    protected function sendPowerShellResponse($response)
+    {
+        if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
+            if (is_array($response)) {
+                echo $this->makePlainTextPowerShellArray($response);
+            } else {
+                echo $response;
+            }
+        } else {
+            $this->sendJson($this->getResponse(), $response);
+        }
+    }
+
+    protected function sendPowerShellError($error, $code)
+    {
+        $this->getResponse()->setHttpResponseCode($code);
+        if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
+            echo "ERROR: $error";
+        } else {
+            $this->sendJsonError($this->getResponse(), $error);
+        }
+    }
+
+    protected function makePowerShellBoolean($value)
+    {
+        if ($value === 'y' || $value === true) {
+            return 'true';
+        } elseif ($value === 'n' || $value === false) {
+            return 'false';
+        } else {
+            throw new ProgrammingError(
+                'Expected boolean value, got %s',
+                var_export($value, 1)
+            );
+        }
+    }
+
+    protected function makePlainTextPowerShellArray(array $params)
+    {
+        $plain = '';
+
+        foreach ($params as $key => $value) {
+            if (is_bool($value)) {
+                $value = $this->makePowerShellBoolean($value);
+            }
+            $plain .= "$key: $value\r\n";
+        }
+
+        return $plain;
+    }
+
+    public function powershellParametersAction()
+    {
+        if (!$this->getRequest()->isApiRequest()) {
+            throw new NotFoundError('Not found');
+        }
+
+        try {
+            $this->shipPowershellParams();
+        } catch (Exception $e) {
+            if ($e instanceof NotFoundError) {
+                $this->sendPowerShellError($e->getMessage(), 404);
+            } else {
+                $this->sendPowerShellError($e->getMessage(), 500);
+            }
+        }
+    }
+
+    protected function shipPowershellParams()
+    {
+        $db = $this->db();
+        $key = $this->params->getRequired('key');
+        $host = IcingaHost::loadWithApiKey($key, $db);
+        if ($host->isTemplate()) {
+            throw new NotFoundError('Got invalid API key "%s"', $key);
+        }
+        $name = $host->getObjectName();
+
+        if ($host->getSingleResolvedProperty('has_agent') !== 'y') {
+            $this->sendPowerShellError(sprintf(
+                '%s is not configured for Icinga Agent usage',
+                $name
+            ), 403);
+            return;
+        }
+
+        $zoneName = $host->getRenderingZone();
+        if ($zoneName === IcingaHost::RESOLVE_ERROR) {
+            $this->sendPowerShellError(sprintf(
+                'Could not resolve target Zone for %s',
+                $name
+            ), 404);
+            return;
+        }
+
+
+        $zone = IcingaZone::load($zoneName, $db);
+        $master = $db->getDeploymentEndpoint();
+        $settings = new Settings($db);
+        $params = [
+            'fetch_agent_name'    => $settings->get('self-service/agent_name') === 'host',
+            'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
+            'transform_hostname'  => $settings->get('self-service/transform_hostname'),
+            'parent_zone'         => $zoneName,
+            'ca_server'           => $master->getObjectName(),
+            'parent_endpoints'    => implode(',', $zone->listEndpoints()),
+            'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
+        ];
+
+        if ($settings->get('self-service/download_type')) {
+            $params['download_url'] = $settings->get('self-service/download_url');
+            $params['agent_version'] = $settings->get('self-service/agent_version');
+            $params['allow_updates'] = $settings->get('self-service/allow_updates') === 'y';
+            $params['accept_config'] = $host->getSingleResolvedProperty('accept_config')=== 'y';
+        }
+
+        if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
+            echo $this->makePlainTextPowerShellArray($params);
+        } else {
+            $this->sendJson($this->getResponse(), $params);
+        }
     }
 }
