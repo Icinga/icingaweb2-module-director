@@ -9,6 +9,7 @@ use Icinga\Module\Director\Forms\IcingaHostSelfServiceForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Settings;
+use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use ipl\Html\Html;
 
@@ -84,6 +85,39 @@ class SelfServiceController extends ActionController
                 . ' token, this is where you can register new hosts'
                 )))
             ->add($form);
+    }
+
+    public function ticketAction()
+    {
+        if (!$this->getRequest()->isApiRequest()) {
+            throw new NotFoundError('Not found');
+        }
+
+        try {
+            $key = $this->params->getRequired('key');
+            $host = IcingaHost::loadWithApiKey($key, $this->db());
+            if ($host->isTemplate()) {
+                throw new NotFoundError('Got invalid API key "%s"', $key);
+            }
+            $name = $host->getObjectName();
+
+            if ($host->getResolvedProperty('has_agent') !== 'y') {
+                throw new NotFoundError('The host "%s" is not an agent', $name);
+            }
+
+            $this->sendPowerShellResponse(
+                Util::getIcingaTicket(
+                    $name,
+                    $this->api()->getTicketSalt()
+                )
+            );
+        } catch (Exception $e) {
+            if ($e instanceof NotFoundError) {
+                $this->sendPowerShellError($e->getMessage(), 404);
+            } else {
+                $this->sendPowerShellError($e->getMessage(), 500);
+            }
+        }
     }
 
     protected function sendPowerShellResponse($response)
