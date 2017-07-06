@@ -508,3 +508,76 @@ Content-Type: application/json
 
 Please expect an error in case the host does not exist or has not been
 configured to be an Icinga Agent.
+
+### Self Service API
+
+#### Theory of operation
+
+Icinga Director offers a Self Service API, allowing new Icinga nodes to register
+themselves. No credentials are required, authentication is based on API keys.
+There are two types of such keys:
+
+* Host Template API keys
+* Host Object API keys
+
+Template keys basically grant the permission to:
+
+* Create a new host based on that template
+* Specify name annd address properties for that host
+
+This is a one-time operation and allows one to claim ownership of a specific host.
+Now, there are two possible scenarios:
+
+* The host already exists
+* The host is not known to Icinga Director
+
+In case the host already exists, Director will check whether it's API key matches
+the given one. [..]
+
+#### Request processing for Host registration
+
+A new node will `POST` to `self-servie/register-host`, with two parameters in
+the URL:
+
+* `name`: it's desired object name, usually the FQDN
+* `key`: a valid Host Template API key
+
+In it's body it is allowed to specify a specific set of properties. At the time
+of this writing, these are:
+
+* `display_name`
+* `address`
+* `address6`
+
+Director will validate the `key` and load the corresponding *Host Template*. In
+case no such is found, the request is rejected. Then it checks whether a *Host*
+with the given `name` exists. In case it does, the request is rejected unless:
+
+* It inherits the loaded *Host Template*
+* It already has an API key
+
+If these conditions match, the request is processed. The following sketch roughly shows the decision tree (AFTER the key has been
+validated):
+
+```
+                               +-----------------------------+
+    +--------------+           | * Validate given properties |
+    | Host exists? | -- NO --> | * Create new host object    |-----------+
+    +--------------+           | * Return new Host API key   |           |
+           |                   +-----------------------------+           |
+          YES                                                            |
+           |                                                             |
+           v                          +-----------------------------+    |
+   +----------------------+           | * Validate given properties |    |
+   | Host has an API key? | -- NO --> | * Apply eventual changes    |----+
+   +----------------------+           | * Return new Host API key   |    |
+           |                          +-----------------------------+    |
+          YES                                                            |
+           |                                         +-------------------+
+           v                                         |
+   +--------------------+                            v
+   | Reject the request |                +---------------------+
+   +--------------------+                | Client persists the |
+                                         | new Host API key    |
+                                         +---------------------+
+```
