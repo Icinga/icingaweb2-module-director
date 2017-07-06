@@ -104,13 +104,6 @@ class ServiceController extends ObjectController
         }
     }
 
-    public function futureoverviewIndexAction()
-    {
-        $object = $this->loadObject();
-        $title = $this->view->title = $object->object_name;
-        $this->singleTab($this->translate('Icinga Service Template'));
-    }
-
     public function editAction()
     {
         $this->tabs()->activate('modify');
@@ -147,7 +140,7 @@ class ServiceController extends ObjectController
         }
 
         $form->handleRequest();
-        $this->view->actionLinks .= $this->createCloneLink();
+        $this->actions()->add($this->createCloneLink());
 
         $this->view->title = $object->object_name;
         if ($this->host) {
