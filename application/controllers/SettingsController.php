@@ -9,25 +9,9 @@ use ipl\Html\Html;
 
 class SettingsController extends ActionController
 {
-    public function indexAction()
-    {
-        $this->view->tabs = $this->Module()
-            ->getConfigTabs()
-            ->activate('config');
-
-        $this->view->form = $this->loadForm('kickstart')
-            ->setModuleConfig($this->Config())
-            ->handleRequest();
-    }
-
     public function selfServiceAction()
     {
         $form = SelfServiceSettingsForm::create($this->db(), new Settings($this->db()));
-
-        $form->handleRequest();
-        if ($this->getRequest()->isApiRequest()) {
-            return;
-        }
 
         $hint = $this->translate(
             'The Icinga Director Self Service API allows your Hosts to register'
