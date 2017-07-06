@@ -158,6 +158,9 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function createIdElement()
     {
+        if ($this->isApiRequest()) {
+            return $this;
+        }
         $this->detectName();
         $this->addHidden(self::ID, $this->getName());
         $this->getElement(self::ID)->setIgnore(true);
@@ -197,11 +200,24 @@ abstract class QuickForm extends QuickBaseForm
 
     public function isApiRequest()
     {
-        return $this->isApiRequest || $this->getRequest()->isApiRequest();
+        if ($this->isApiRequest === null) {
+            if ($this->request === null) {
+                throw new ProgrammingError(
+                    'Early acess to isApiRequest(). This is not possible, sorry'
+                );
+            }
+
+            return $this->getRequest()->isApiRequest();
+        } else {
+            return $this->isApiRequest;
+        }
     }
 
     public function regenerateCsrfToken()
     {
+        if ($this->isApiRequest()) {
+            return $this;
+        }
         if (! $element = $this->getElement(self::CSRF)) {
             $this->addHidden(self::CSRF, CsrfToken::generate());
             $element = $this->getElement(self::CSRF);
@@ -264,6 +280,9 @@ abstract class QuickForm extends QuickBaseForm
     {
         if ($this->hasBeenSubmitted === null) {
             $req = $this->getRequest();
+            if ($req->isApiRequest()) {
+                return $this->hasBeenSubmitted = true;
+            }
             if ($req->isPost()) {
                 if (! $this->hasSubmitButton()) {
                     return $this->hasBeenSubmitted = $this->hasBeenSent();
@@ -479,7 +498,9 @@ abstract class QuickForm extends QuickBaseForm
                 $req = $this->request;
             }
 
-            if ($req->isPost()) {
+            if ($req->isApiRequest()) {
+                $this->hasBeenSent = true;
+            } elseif ($req->isPost()) {
                 $post = $req->getPost();
                 $this->hasBeenSent = array_key_exists(self::ID, $post) &&
                     $post[self::ID] === $this->getName();
