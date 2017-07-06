@@ -8,6 +8,7 @@ use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -247,13 +248,12 @@ abstract class ObjectController extends ActionController
 
         $this->tabs()->activate('fields');
 
-        $this->view->title = sprintf(
+        $this->addTitle(
             $this->translate('Custom fields: %s'),
             $object->object_name
         );
 
-        $form = $this->view->form = $this
-            ->loadForm('icingaObjectField')
+        $form = IcingaObjectFieldForm::load()
             ->setDb($this->db())
             ->setIcingaObject($object);
 
@@ -263,21 +263,17 @@ abstract class ObjectController extends ActionController
                 'datafield_id' => $id
             ));
 
-            $this->view->actionLinks = $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('back'),
-                $this->getRequest()->getUrl()->without('field_id'),
+                $this->url()->without('field_id'),
                 null,
-                array('class' => 'icon-left-big')
-            );
+                ['class' => 'icon-left-big']
+            ));
         }
-
         $form->handleRequest();
 
-        $this->view->table = $this
-            ->loadTable('icingaObjectDatafield')
-            ->setObject($object);
-
-        $this->setViewScript('object/fields');
+        $table = $this->loadTable('icingaObjectDatafield')->setObject($object);
+        $this->content()->add([$form, $table]);
     }
 
     public function historyAction()
@@ -287,18 +283,19 @@ abstract class ObjectController extends ActionController
         $db = $this->db();
         $type = $this->getType();
         $this->tabs()->activate('history');
-        $this->view->title = sprintf(
+        $this->addTitle(
             $this->translate('Activity Log: %s'),
             $this->object->object_name
         );
         $lastDeployedId = $db->getLastDeploymentActivityLogId();
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('activityLog')
-                ->setConnection($db)
-                ->setLastDeployedId($lastDeployedId)
-                ->filterObject('icinga_' . $type, $this->object->object_name)
-        );
-        $this->setViewScript('object/history');
+        $this->content()->add(
+            $this->applyPaginationLimits(
+                $this->loadTable('activityLog')
+                    ->setConnection($db)
+                    ->setLastDeployedId($lastDeployedId)
+                    ->filterObject('icinga_' . $type, $this->object->object_name)
+            )
+        )->addAttributes(['data-base-target' => '_next']);
     }
 
     protected function getType()
