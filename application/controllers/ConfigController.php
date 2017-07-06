@@ -83,7 +83,8 @@ class ConfigController extends ActionController
     protected function deploymentSucceeded($checksum)
     {
         if ($this->getRequest()->isApiRequest()) {
-            return $this->sendJson((object) array('checksum' => $checksum));
+            $this->sendJson($this->getResponse(), (object) array('checksum' => $checksum));
+            return;
         } else {
             $url = Url::fromPath('director/config/deployments');
             Notification::success(
@@ -98,7 +99,8 @@ class ConfigController extends ActionController
         $extra = $error ? ': ' . $error: '';
 
         if ($this->getRequest()->isApiRequest()) {
-            return $this->sendJsonError('Config deployment failed' . $extra);
+            $this->sendJsonError($this->getResponse(), 'Config deployment failed' . $extra);
+            return;
         } else {
             $url = Url::fromPath('director/config/files', array('checksum' => $checksum));
             Notification::error(
