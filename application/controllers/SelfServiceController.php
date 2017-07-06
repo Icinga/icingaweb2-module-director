@@ -27,6 +27,11 @@ class SelfServiceController extends ActionController
     {
     }
 
+    public function apiVersionAction()
+    {
+        $this->sendPowerShellResponse('1.4.0');
+    }
+
     public function registerHostAction()
     {
         $request = $this->getRequest();
