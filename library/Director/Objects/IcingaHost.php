@@ -409,6 +409,37 @@ class IcingaHost extends IcingaObject
         return $str;
     }
 
+    /**
+     * @return string
+     */
+    public function generateApiKey()
+    {
+        $key = sha1(
+            (string) microtime(false)
+            . $this->getObjectName()
+            . rand(1, 1000000)
+        );
+
+        if ($this->dbHasApiKey($key)) {
+            $key = $this->generateApiKey();
+        }
+
+        $this->set('api_key', $key);
+
+        return $key;
+    }
+
+    protected function dbHasApiKey($key)
+    {
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            ['o' => $this->getTableName()],
+            'o.api_key'
+        )->where('api_key = ?', $key);
+
+        return $db->fetchOne($query) === $key;
+    }
+
     public static function loadWithApiKey($key, Db $db)
     {
         $query = $db->getDbAdapter()
