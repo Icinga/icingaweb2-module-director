@@ -195,11 +195,57 @@ class SelfServiceController extends ActionController
         $db = $this->db();
         $key = $this->params->getRequired('key');
         $host = IcingaHost::loadWithApiKey($key, $db);
-        if ($host->isTemplate()) {
-            throw new NotFoundError('Got invalid API key "%s"', $key);
-        }
-        $name = $host->getObjectName();
 
+        $settings = new Settings($db);
+        $params = [
+            'fetch_agent_name'    => $settings->get('self-service/agent_name') === 'hostname',
+            'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
+            'transform_hostname'  => $settings->get('self-service/transform_hostname'),
+            'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
+        ];
+
+        if ($settings->get('self-service/download_type')) {
+            $params['download_url'] = $settings->get('self-service/download_url');
+            $params['agent_version'] = $settings->get('self-service/agent_version');
+            $params['allow_updates'] = $settings->get('self-service/allow_updates') === 'y';
+
+            if ($hashes = $settings->get('self-service/installer_hashes')) {
+                $params['installer_hashes'] = json_decode($hashes);
+            }
+
+            if ($settings->get('self-service/install_nsclient') === 'y') {
+                $params['install_nsclient'] = true;
+                $this->addBooleanSettingsToParams($settings, [
+                    'nsclient_add_defaults',
+                    'nsclient_firewall',
+                    'nsclient_service',
+                ], $params);
+
+
+                $this->addStringSettingsToParams($settings, [
+                    'nsclient_directory',
+                    'nsclient_installer_path'
+                ], $params);
+            }
+        }
+
+        $this->addHostToParams($host, $params);
+
+        if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
+            echo $this->makePlainTextPowerShellArray($params);
+        } else {
+            $this->sendJson($this->getResponse(), $params);
+        }
+    }
+
+    protected function addHostToParams(IcingaHost $host, array & $params)
+    {
+        if (! $host->isObject()) {
+            return;
+        }
+
+        $db = $this->db();
+        $name = $host->getObjectName();
         if ($host->getSingleResolvedProperty('has_agent') !== 'y') {
             $this->sendPowerShellError(sprintf(
                 '%s is not configured for Icinga Agent usage',
@@ -220,32 +266,26 @@ class SelfServiceController extends ActionController
 
         $zone = IcingaZone::load($zoneName, $db);
         $master = $db->getDeploymentEndpoint();
-        $settings = new Settings($db);
-        $params = [
-            'fetch_agent_name'    => $settings->get('self-service/agent_name') === 'host',
-            'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
-            'transform_hostname'  => $settings->get('self-service/transform_hostname'),
-            'parent_zone'         => $zoneName,
-            'ca_server'           => $master->getObjectName(),
-            'parent_endpoints'    => $zone->listEndpoints(),
-            'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
-        ];
+        $params['parent_zone']      = $zoneName;
+        $params['ca_server']        = $master->getObjectName();
+        $params['parent_endpoints'] = $zone->listEndpoints();
+        $params['accept_config']    = $host->getSingleResolvedProperty('accept_config')=== 'y';
+    }
 
-        if ($settings->get('self-service/download_type')) {
-            $params['download_url'] = $settings->get('self-service/download_url');
-            $params['agent_version'] = $settings->get('self-service/agent_version');
-            $params['allow_updates'] = $settings->get('self-service/allow_updates') === 'y';
-
-            $params['accept_config'] = $host->getSingleResolvedProperty('accept_config')=== 'y';
-            if ($hashes = $settings->get('self-service/installer_hashes')) {
-                $params['installer_hashes'] = json_decode($hashes);
+    protected function addStringSettingsToParams(Settings $settings, array $keys, array & $params)
+    {
+        foreach ($keys as $key) {
+            $value = $settings->get("self-service/$key");
+            if (strlen($key)) {
+                $params[$key] = $value;
             }
         }
+    }
 
-        if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
-            echo $this->makePlainTextPowerShellArray($params);
-        } else {
-            $this->sendJson($this->getResponse(), $params);
+    protected function addBooleanSettingsToParams(Settings $settings, array $keys, array & $params)
+    {
+        foreach ($keys as $key) {
+            $params[$key] = $settings->get("self-service/$key") === 'y';
         }
     }
 }

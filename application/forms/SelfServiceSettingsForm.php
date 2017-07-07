@@ -161,6 +161,21 @@ class SelfServiceSettingsForm extends DirectorForm
             'value'  => $settings->getStoredOrDefaultValue('self-service/allow_updates'),
             'required' => true,
         ], true);
+
+        $this->addNscpSettings($settings);
+    }
+
+    protected function addNscpSettings(Settings $settings)
+    {
+        $this->addBoolean('install_nsclient', [
+            'label'       => $this->translate('Install NSClient++'),
+            'description' => $this->translate(
+                'Also install NSClient++. It can be used through the Icinga Agent'
+                . ' and comes with a bunch of additional Check Plugins'
+            ),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/allow_updates'),
+            'required' => true,
+        ], true);
     }
 
     public static function create(Db $db, Settings $settings)
