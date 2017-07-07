@@ -173,7 +173,7 @@ class SelfServiceSettingsForm extends DirectorForm
                 'Also install NSClient++. It can be used through the Icinga Agent'
                 . ' and comes with a bunch of additional Check Plugins'
             ),
-            'value'  => $settings->getStoredOrDefaultValue('self-service/allow_updates'),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/install_nsclient'),
             'required' => true,
         ], true);
     }
