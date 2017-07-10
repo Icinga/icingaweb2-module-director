@@ -276,7 +276,7 @@ class SelfServiceController extends ActionController
     {
         foreach ($keys as $key) {
             $value = $settings->get("self-service/$key");
-            if (strlen($key)) {
+            if (strlen($value)) {
                 $params[$key] = $value;
             }
         }
@@ -285,7 +285,10 @@ class SelfServiceController extends ActionController
     protected function addBooleanSettingsToParams(Settings $settings, array $keys, array & $params)
     {
         foreach ($keys as $key) {
-            $params[$key] = $settings->get("self-service/$key") === 'y';
+            $value = $settings->get("self-service/$key");
+            if ($value !== null) {
+                $params[$key] = $value === 'y';
+            }
         }
     }
 }
