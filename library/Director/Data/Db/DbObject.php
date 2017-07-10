@@ -1047,6 +1047,14 @@ abstract class DbObject
 
     public static function loadWithAutoIncId($id, DbConnection $connection)
     {
+        /* Need to cast to int, otherwise the id will be matched against
+         * object_name, which may wreak havoc if an object has a
+         * object_name matching some id. Note that DbObject::set() and
+         * DbObject::setDbProperties() will convert any property to
+         * string, including ids.
+         */
+        $id = (int) $id;
+
         if ($prefetched = static::getPrefetched($id)) {
             return $prefetched;
         }
