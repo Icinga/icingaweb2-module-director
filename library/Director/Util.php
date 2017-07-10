@@ -155,12 +155,12 @@ class Util
 
     public static function addDbResourceFormElement(QuickForm $form, $name)
     {
-        return self::addResourceFormElement($form, $name, 'db');
+        static::addResourceFormElement($form, $name, 'db');
     }
 
     public static function addLdapResourceFormElement(QuickForm $form, $name)
     {
-        return self::addResourceFormElement($form, $name, 'ldap');
+        static::addResourceFormElement($form, $name, 'ldap');
     }
 
     protected static function addResourceFormElement(QuickForm $form, $name, $type)
