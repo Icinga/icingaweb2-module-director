@@ -55,7 +55,7 @@ abstract class ObjectController extends ActionController
         }
 
         $type = strtolower($this->getType());
-        if ($name = $this->params->get('name')) {
+        if ($this->params->get('name') || $this->params->get('id')) {
             $this->loadObject();
         }
         $this->tabs(new ObjectTabs($type, $this->getAuth(), $this->object));
