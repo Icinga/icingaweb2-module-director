@@ -61,6 +61,15 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
     }
 
+    public static function renameAll($oldname, $newname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $where = $db->quoteInto('varname = ?', $oldname);
+        foreach (static::$allTables as $table) {
+            $db->update($table, ['varname' => $newname], $where);
+        }
+    }
+
     public function count()
     {
         $count = 0;

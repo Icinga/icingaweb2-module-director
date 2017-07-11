@@ -244,18 +244,23 @@ abstract class DbObject
             return $this->$func();
         }
 
-        if (! array_key_exists($property, $this->properties)) {
-            throw new IE('Trying to get invalid property "%s"', $property);
-        }
+        $this->assertPropertyExists($property);
         return $this->properties[$property];
     }
 
     public function getProperty($key)
     {
+        $this->assertPropertyExists($key);
+        return $this->properties[$key];
+    }
+
+    protected function assertPropertyExists($key)
+    {
         if (! array_key_exists($key, $this->properties)) {
             throw new IE('Trying to get invalid property "%s"', $key);
         }
-        return $this->properties[$key];
+
+        return $this;
     }
 
     public function hasProperty($key)
@@ -648,6 +653,16 @@ abstract class DbObject
     public function getOriginalProperties()
     {
         return $this->loadedProperties;
+    }
+
+    public function getOriginalProperty($key)
+    {
+        $this->assertPropertyExists($key);
+        if ($this->hasBeenLoadedFromDb()) {
+            return $this->loadedProperties[$key];
+        }
+
+        return null;
     }
 
     public function hasBeenLoadedFromDb()
