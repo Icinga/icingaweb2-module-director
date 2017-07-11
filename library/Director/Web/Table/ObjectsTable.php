@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
@@ -79,6 +80,20 @@ class ObjectsTable extends ZfQueryBasedTable
     public function getColumnsToBeRendered()
     {
         return $this->showColumns;
+    }
+
+    public function filterTemplate(
+        IcingaObject $template,
+        $inheritance = Db\IcingaObjectFilterHelper::INHERIT_DIRECT
+    ) {
+        IcingaObjectFilterHelper::filterByTemplate(
+            $this->getQuery(),
+            $template,
+            'o',
+            $inheritance
+        );
+
+        return $this;
     }
 
     protected function getMainLinkLabel($row)

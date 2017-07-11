@@ -8,6 +8,8 @@ class ObjectsTableHost extends ObjectsTable
 {
     use MultiSelect;
 
+    protected $type = 'host';
+
     protected $searchColumns = [
         'o.object_name',
         'o.display_name',

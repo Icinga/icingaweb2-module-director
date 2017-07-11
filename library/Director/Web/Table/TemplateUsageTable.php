@@ -116,7 +116,8 @@ abstract class TemplateUsageTable extends Table
         );
         //$indirect->templates = count($ids) - 1;
         $total = [];
-        foreach (['templates', 'objects', 'applyrules', 'setmembers'] as $type) {
+        $types = array_keys($this->getTypes());
+        foreach ($types as $type) {
             $total[$type] = $direct->$type + $indirect->$type;
         }
 

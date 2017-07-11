@@ -38,20 +38,6 @@ class ObjectsTableService extends ObjectsTable
         );
     }
 
-    public function filterTemplate(
-        IcingaService $template,
-        $inheritance = IcingaObjectFilterHelper::INHERIT_DIRECT
-    ) {
-        IcingaObjectFilterHelper::filterByTemplate(
-            $this->getQuery(),
-            $template,
-            'o',
-            $inheritance
-        );
-
-        return $this;
-    }
-
     public function getColumnsToBeRendered()
     {
         return [
