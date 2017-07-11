@@ -123,7 +123,8 @@ abstract class ObjectsController extends ActionController
                 ['type' => 'apply_rule'],
                 [
                     'title' => $this->translate('Create a new Service Apply Rule'),
-                    'class' => 'icon-plus'
+                    'class' => 'icon-plus',
+                    'data-base-target' => '_next'
                 ]
             )
         );

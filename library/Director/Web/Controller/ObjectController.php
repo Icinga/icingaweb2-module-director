@@ -12,6 +12,7 @@ use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use ipl\Html\Html;
 use ipl\Html\Link;
@@ -242,7 +243,7 @@ abstract class ObjectController extends ActionController
 
     public function fieldsAction()
     {
-        $this->hasPermission('director/admin');
+        $this->assertPermission('director/admin');
         $object = $this->object;
         $type = $this->getType();
 
@@ -278,7 +279,7 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
-        $this->hasPermission('director/audit');
+        $this->assertPermission('director/audit');
         $this->setAutorefreshInterval(10);
         $db = $this->db();
         $type = $this->getType();
@@ -296,6 +297,24 @@ abstract class ObjectController extends ActionController
                     ->filterObject('icinga_' . $type, $this->object->object_name)
             )
         )->addAttributes(['data-base-target' => '_next']);
+    }
+
+    public function membershipAction()
+    {
+        $this->requireObject();
+        if (! $this->object->isGroup()) {
+            throw new NotFoundError('Not Found');
+        }
+        $type = substr($this->getType(), 0, -5);
+
+        $this->setAutorefreshInterval(15);
+        $this->tabs()->activate('membership');
+        $this->addTitle(
+            $this->translate('Group membership: %s'),
+            $this->object->getObjectName()
+        );
+
+        GroupMemberTable::create($type, $this->db())->setGroup($this->object)->renderTo($this);
     }
 
     protected function getType()

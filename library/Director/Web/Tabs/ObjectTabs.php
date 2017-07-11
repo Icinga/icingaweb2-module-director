@@ -92,6 +92,14 @@ class ObjectTabs extends Tabs
                 'label'     => $this->translate('Fields')
             ));
         }
+
+        if ($object->isGroup()) {
+            $this->add('membership', [
+                'url'       => sprintf('director/%s/membership', $type),
+                'urlParams' => $params,
+                'label'     => $this->translate('Members')
+            ]);
+        }
     }
 
     protected function hasFields()
