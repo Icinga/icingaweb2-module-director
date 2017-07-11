@@ -181,8 +181,8 @@ class DirectorDatafieldForm extends DirectorObjectForm
             $this->getElement('datatype')->addError($error);
         }
 
+        $object = $this->object();
         try {
-            $object = $this->object();
             if ($class = $this->getSentValue('datatype')) {
                 if ($class && array_key_exists($class, $types)) {
                     $this->addSettings($class);
