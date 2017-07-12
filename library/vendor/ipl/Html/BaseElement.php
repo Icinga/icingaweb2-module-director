@@ -13,6 +13,23 @@ abstract class BaseElement extends Html
     /** @var string */
     protected $tag;
 
+    protected static $voidElements = [
+        'area',
+        'base',
+        'br',
+        'col',
+        'embed',
+        'hr',
+        'img',
+        'input',
+        'link',
+        'meta',
+        'param',
+        'source',
+        'track',
+        'wbr'
+    ];
+
     /**
      * @return Attributes
      */
@@ -98,7 +115,7 @@ abstract class BaseElement extends Html
         $tag = $this->getTag();
         $this->assemble();
         $content = $this->renderContent();
-        if (strlen($content) || $this->forcesClosingTag()) {
+        if (strlen($content) || $this->wantsClosingTag()) {
             return sprintf(
                 '<%s%s>%s</%s>',
                 $tag,
@@ -115,9 +132,15 @@ abstract class BaseElement extends Html
         }
     }
 
-    public function forcesClosingTag()
+    public function wantsClosingTag()
     {
-        return false;
+        // TODO: There is more. SVG and MathML namespaces
+        return ! $this->isVoidElement();
+    }
+
+    public function isVoidElement()
+    {
+        return in_array($this->tag, self::$voidElements);
     }
 
     /**

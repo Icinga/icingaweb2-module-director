@@ -22,9 +22,4 @@ class Icon extends BaseElement
     {
         return new static($name, $attributes);
     }
-
-    public function forcesClosingTag()
-    {
-        return true;
-    }
 }
