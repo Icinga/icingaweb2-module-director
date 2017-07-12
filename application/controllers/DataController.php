@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\Forms\DirectorDatalistentryForm;
+use Icinga\Module\Director\Forms\DirectorDatalistEntryForm;
 use Icinga\Module\Director\Forms\DirectorDatalistForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -15,26 +15,24 @@ class DataController extends ActionController
 {
     public function listsAction()
     {
+        $this->addTitle($this->translate('Data lists'));
         $this->actions()->add(Link::create(
             $this->translate('Add'),
             'director/data/list',
             null,
-            ['class' => 'icon-plus']
+            [
+                'class' => 'icon-plus',
+                'data-base-target' => '_next'
+            ]
         ));
 
         $this->setDataTabs()->activate('datalist');
-        $this->addTitle($this->translate('Data lists'));
         $table = new DatalistTable($this->db());
         $table->renderTo($this);
-//        $this->prepareAndRenderTable('datalist');
-//        $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listAction()
     {
-        // TODO: check this
-        // $this->view->stayHere = true;
-
         $form = DirectorDatalistForm::load()
             ->setSuccessUrl('director/data/lists')
             ->setDb($this->db());
@@ -48,18 +46,10 @@ class DataController extends ActionController
             );
 
             $this->actions()->add(Link::create(
-                $this->translate('back'),
-                'director/data/list',
-                null,
-                ['class' => 'icon-left-big']
-            ))->add(Link::create(
                 $this->translate('Entries'),
                 'director/data/listentry',
                 ['list_id' => $id],
-                [
-                    'class'            => 'icon-doc-text',
-                    'data-base-target' => '_next'
-                ]
+                ['class' => 'icon-doc-text']
             ));
 
             $this->tabs()->add('editlist', array(
@@ -131,23 +121,22 @@ class DataController extends ActionController
         $this->setDataTabs()->activate('datafield');
         $this->addTitle($this->translate('Data fields'));
         $this->content()->add(new DatafieldTable($this->db()));
-        // $this->prepareAndRenderTable('datafield');
-        // $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listentryAction()
     {
-        // $this->view->stayHere = true;
-
         $url = $this->url();
         $entryName = $url->shift('entry_name');
         $list = DirectorDatalist::load($url->shift('list_id'), $this->db());
         $listId = $list->id;
+        $title = $title = $this->translate('List entries') . ': ' . $list->list_name;
+        $this->addTitle($title);
 
-        $form = DirectorDatalistentryForm::load()
+        /** @var DirectorDatalistEntryForm $form */
+        $form = DirectorDatalistEntryForm::load()
             ->setSuccessUrl('director/data/listentry?list_id=' . $listId)
-            ->setList($list)
-            ->setDb($this->db());
+            ->setDb($this->db())
+            ->setList($list);
 
         if ($entryName) {
             $form->loadObject([
@@ -163,10 +152,6 @@ class DataController extends ActionController
         }
         $form->handleRequest();
 
-        $this->content()->add($form);
-
-        $this->addTitle($title = $this->translate('List entries')
-            . ': ' . $list->list_name);
         $this->tabs()->add('editlist', [
             'url'       => 'director/data/list' . '?id=' . $listId,
             'label'     => $this->translate('Edit list'),
@@ -178,7 +163,7 @@ class DataController extends ActionController
         $table = new DatalistEntryTable($this->db());
         $table->attributes()->set('data-base-target', '_self');
         $table->setList($list);
-        $this->content()->add($table);
+        $this->content()->add([$form, $table]);
     }
 
     protected function setDataTabs()
@@ -190,19 +175,5 @@ class DataController extends ActionController
             'label' => $this->translate('Data lists'),
             'url'   => 'director/data/lists'
         ]);
-    }
-
-    protected function prepareTable($name)
-    {
-        $table = $this->loadTable($name)->setConnection($this->db());
-        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
-        $this->view->table = $this->applyPaginationLimits($table);
-        return $table;
-    }
-
-    protected function prepareAndRenderTable($name)
-    {
-        $this->prepareTable($name);
-        $this->setViewScript('objects/table');
     }
 }

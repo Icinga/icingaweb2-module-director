@@ -44,6 +44,10 @@ class DirectorDatalistEntryForm extends DirectorObjectForm
         $this->setButtons();
     }
 
+    /**
+     * @param DirectorDatalist $list
+     * @return $this
+     */
     public function setList(DirectorDatalist $list)
     {
         $this->datalist = $list;
