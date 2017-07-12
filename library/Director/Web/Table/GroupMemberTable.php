@@ -91,13 +91,13 @@ class GroupMemberTable extends ZfQueryBasedTable
 
         if ($this->group === null) {
             $tr->add($this::td($row->group_name));
-
         }
 
         $tr->add([
             $this::td(Link::create($row->object_name, $url)),
             $this::td($row->membership_type)
         ]);
+
         return $tr;
     }
 

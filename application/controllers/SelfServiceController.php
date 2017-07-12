@@ -79,11 +79,11 @@ class SelfServiceController extends ActionController
 
         $form->handleRequest();
         $this->addSingleTab($this->translate('Self Service'))
-              ->addTitle($this->translate('Self Service - Host Registration'))
-              ->content()->add(Html::p($this->translate(
+            ->addTitle($this->translate('Self Service - Host Registration'))
+            ->content()->add(Html::p($this->translate(
                 'In case an Icinga Admin provided you with a self service API'
                 . ' token, this is where you can register new hosts'
-                )))
+            )))
             ->add($form);
     }
 
