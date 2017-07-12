@@ -22,7 +22,7 @@ class DirectorDatalistEntryForm extends DirectorObjectForm
         ));
 
         $this->addElement('text', 'entry_value', array(
-            'label'       => $this->translate('Value'),
+            'label'       => $this->translate('Label'),
             'required'    => true,
             'description' => $this->translate(
                 'This will be the visible caption for this entry'

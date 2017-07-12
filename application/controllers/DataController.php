@@ -2,59 +2,67 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\DirectorDatalistentryForm;
+use Icinga\Module\Director\Forms\DirectorDatalistForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Table\DatafieldTable;
+use Icinga\Module\Director\Web\Table\DatalistEntryTable;
+use Icinga\Module\Director\Web\Table\DatalistTable;
+use ipl\Html\Link;
 
 class DataController extends ActionController
 {
     public function listsAction()
     {
-        $this->view->addLink = $this->view->qlink(
+        $this->actions()->add(Link::create(
             $this->translate('Add'),
             'director/data/list',
             null,
-            array('class' => 'icon-plus')
-        );
+            ['class' => 'icon-plus']
+        ));
 
         $this->setDataTabs()->activate('datalist');
-        $this->view->title = $this->translate('Data lists');
-        $this->prepareAndRenderTable('datalist');
-        $this->provideFilterEditorForTable($this->view->table);
+        $this->addTitle($this->translate('Data lists'));
+        $table = new DatalistTable($this->db());
+        $table->renderTo($this);
+//        $this->prepareAndRenderTable('datalist');
+//        $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listAction()
     {
-        $this->view->stayHere = true;
+        // TODO: check this
+        // $this->view->stayHere = true;
 
-        $form = $this->view->form = $this->loadForm('directorDatalist')
+        $form = DirectorDatalistForm::load()
             ->setSuccessUrl('director/data/lists')
             ->setDb($this->db());
+        $this->content()->add($form);
 
-        if ($id = $this->getRequest()->getUrl()->shift('id')) {
+        if ($id = $this->url()->shift('id')) {
             $form->loadObject($id);
-            $this->view->title = sprintf(
+            $this->addTitle(
                 $this->translate('Data list: %s'),
                 $form->getObject()->list_name
             );
 
-            $this->view->addLink = $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('back'),
                 'director/data/list',
                 null,
-                array('class' => 'icon-left-big')
-            );
-
-            $this->view->addLink .= $this->view->qlink(
+                ['class' => 'icon-left-big']
+            ))->add(Link::create(
                 $this->translate('Entries'),
                 'director/data/listentry',
-                array('list_id' => $id),
-                array(
+                ['list_id' => $id],
+                [
                     'class'            => 'icon-doc-text',
                     'data-base-target' => '_next'
-                )
-            );
+                ]
+            ));
 
-            $this->getTabs()->add('editlist', array(
+            $this->tabs()->add('editlist', array(
                 'url'       => 'director/data/list' . '?id=' . $id,
                 'label'     => $this->translate('Edit list'),
             ))->add('entries', array(
@@ -62,16 +70,15 @@ class DataController extends ActionController
                 'label'     => $this->translate('List entries'),
             ))->activate('editlist');
         } else {
-            $this->view->title = $this->translate('Add');
+            $this->addTitle($title = $this->translate('Add'));
 
-            $this->getTabs()->add('addlist', array(
+            $this->tabs()->add('addlist', array(
                 'url'       => 'director/data/list',
-                'label'     => $this->view->title,
+                'label'     => $title,
             ))->activate('addlist');
         }
 
         $form->handleRequest();
-        $this->setViewScript('object/form');
     }
 
     public function indexAction()
@@ -83,23 +90,24 @@ class DataController extends ActionController
         }
 
         if ($edit) {
-            $this->view->title = $this->translate('Edit list');
+            $this->addTitle($title = $this->translate('Edit list'));
+
             $this->getTabs()->add('editlist', array(
                 'url'       => 'director/datalist/edit' . '?id=' . $id,
-                'label'     => $this->view->title,
+                'label'     => $title,
             ))->add('entries', array(
                 'url'       => 'director/data/listentry' . '?list_id=' . $id,
                 'label'     => $this->translate('List entries'),
             ))->activate('editlist');
         } else {
-            $this->view->title = $this->translate('Add list');
+            $this->addTitle($title = $this->translate('Add list'));
             $this->getTabs()->add('addlist', array(
                 'url'       => 'director/datalist/add',
-                'label'     => $this->view->title,
+                'label'     => $title,
             ))->activate('addlist');
         }
 
-        $form = $this->view->form = $this->loadForm('directorDatalist')
+        $form = DirectorDatalistForm::load()
             ->setSuccessUrl('director/data/lists')
             ->setDb($this->db());
 
@@ -108,68 +116,80 @@ class DataController extends ActionController
         }
 
         $form->handleRequest();
-
-        $this->render('object/form', null, true);
     }
 
 
     public function fieldsAction()
     {
-        $this->view->addLink = $this->view->qlink(
+        $this->actions()->add(Link::create(
             $this->translate('Add'),
             'director/datafield/add',
             null,
-            array('class' => 'icon-plus')
-        );
+            ['class' => 'icon-plus']
+        ));
 
         $this->setDataTabs()->activate('datafield');
-        $this->view->title = $this->translate('Data fields');
-        $this->prepareAndRenderTable('datafield');
-        $this->provideFilterEditorForTable($this->view->table);
+        $this->addTitle($this->translate('Data fields'));
+        $this->content()->add(new DatafieldTable($this->db()));
+        // $this->prepareAndRenderTable('datafield');
+        // $this->provideFilterEditorForTable($this->view->table);
     }
 
     public function listentryAction()
     {
-        $this->view->stayHere = true;
+        // $this->view->stayHere = true;
 
-        $url = $this->getRequest()->getUrl();
+        $url = $this->url();
         $entryName = $url->shift('entry_name');
         $list = DirectorDatalist::load($url->shift('list_id'), $this->db());
         $listId = $list->id;
 
-        $form = $this->view->form = $this->loadForm('directorDatalistentry')
+        $form = DirectorDatalistentryForm::load()
             ->setSuccessUrl('director/data/listentry?list_id=' . $listId)
             ->setList($list)
             ->setDb($this->db());
 
         if ($entryName) {
-            $form->loadObject(array(
+            $form->loadObject([
                 'list_id'    => $listId,
                 'entry_name' => $entryName
-            ));
-            $this->view->addLink = $this->view->qlink(
+            ]);
+            $this->actions()->add(Link::create(
                 $this->translate('back'),
-                'director/data/listentry' . '?list_id=' . $listId,
-                null,
-                array('class' => 'icon-left-big')
-            );
+                'director/data/listentry',
+                ['list_id' => $listId],
+                ['class' => 'icon-left-big']
+            ));
         }
-
         $form->handleRequest();
 
+        $this->content()->add($form);
 
-        $this->view->title = $this->translate('List entries')
-            . ': ' . $list->list_name;
-        $this->getTabs()->add('editlist', array(
+        $this->addTitle($title = $this->translate('List entries')
+            . ': ' . $list->list_name);
+        $this->tabs()->add('editlist', [
             'url'       => 'director/data/list' . '?id=' . $listId,
             'label'     => $this->translate('Edit list'),
-        ))->add('datalistentry', array(
+        ])->add('datalistentry', [
             'url'       => 'director/data/listentry' . '?list_id=' . $listId,
-            'label'     => $this->view->title,
-        ))->activate('datalistentry');
+            'label'     => $title,
+        ])->activate('datalistentry');
 
-        $this->prepareTable('datalistEntry')->setList($list);
-        $this->setViewScript('objects/table');
+        $table = new DatalistEntryTable($this->db());
+        $table->attributes()->set('data-base-target', '_self');
+        $table->setList($list);
+        $this->content()->add($table);
+    }
+
+    protected function setDataTabs()
+    {
+        return $this->tabs()->add('datafield', [
+            'label' => $this->translate('Data fields'),
+            'url'   => 'director/data/fields'
+        ])->add('datalist', [
+            'label' => $this->translate('Data lists'),
+            'url'   => 'director/data/lists'
+        ]);
     }
 
     protected function prepareTable($name)

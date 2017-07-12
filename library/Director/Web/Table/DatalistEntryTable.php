@@ -1,11 +1,12 @@
 <?php
 
-namespace Icinga\Module\Director\Tables;
+namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\DirectorDatalist;
-use Icinga\Module\Director\Web\Table\QuickTable;
+use ipl\Html\Link;
+use ipl\Web\Table\ZfQueryBasedTable;
 
-class DatalistEntryTable extends QuickTable
+class DatalistEntryTable extends ZfQueryBasedTable
 {
     protected $datalist;
 
@@ -34,28 +35,30 @@ class DatalistEntryTable extends QuickTable
         );
     }
 
-    protected function getActionUrl($row)
+    public function renderRow($row)
     {
-        return $this->url('director/data/listentry/edit', array(
-            'list_id'    => $row->list_id,
-            'entry_name' => $row->entry_name,
-        ));
+        return $this::tr([
+            $this::td(Link::create($row->entry_name, 'director/data/listentry/edit', [
+                'list_id'    => $row->list_id,
+                'entry_name' => $row->entry_name,
+            ])),
+            $this::td($row->entry_value)
+        ]);
     }
 
-    public function getTitles()
+    public function getColumnsToBeRendered()
     {
-        $view = $this->view();
         return array(
-            'entry_name'    => $view->translate('Key'),
-            'entry_value'   => $view->translate('Label'),
+            'entry_name'    => $this->translate('Key'),
+            'entry_value'   => $this->translate('Label'),
         );
     }
 
-    public function getBaseQuery()
+    public function prepareQuery()
     {
         return $this->db()->select()->from(
             array('l' => 'director_datalist_entry'),
-            array()
+            $this->getColumns()
         )->where(
             'l.list_id = ?',
             $this->getList()->id

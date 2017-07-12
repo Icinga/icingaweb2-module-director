@@ -15,7 +15,7 @@ use Icinga\Exception\QueryException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Web\Request;
-use Icinga\Web\Url;
+use ipl\Web\Url;
 use Icinga\Web\View;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;

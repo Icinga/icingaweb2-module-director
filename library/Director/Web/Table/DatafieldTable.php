@@ -1,12 +1,13 @@
 <?php
 
-namespace Icinga\Module\Director\Tables;
+namespace Icinga\Module\Director\Web\Table;
 
-use Icinga\Module\Director\Web\Table\QuickTable;
+use ipl\Html\Link;
+use ipl\Web\Table\ZfQueryBasedTable;
 use Zend_Db_Adapter_Abstract as ZfDbAdapter;
 use Zend_Db_Select as ZfDbSelect;
 
-class DatafieldTable extends QuickTable
+class DatafieldTable extends ZfQueryBasedTable
 {
     protected $searchColumns = array(
         'varname',
@@ -26,23 +27,31 @@ class DatafieldTable extends QuickTable
         );
     }
 
-    protected function getActionUrl($row)
+    public function renderRow($row)
     {
-        return $this->url('director/datafield/edit', array('id' => $row->id));
+        return $this::tr([
+            $this::td(Link::create(
+                $row->caption,
+                'director/datafield/edit',
+                ['id' => $row->id]
+            )),
+            $this::td($row->varname),
+            $this::td($row->assigned_fields),
+            $this::td($row->assigned_vars)
+        ]);
     }
 
-    public function getTitles()
+    public function getColumnsToBeRendered()
     {
-        $view = $this->view();
         return array(
-            'caption'         => $view->translate('Label'),
-            'varname'         => $view->translate('Field name'),
-            'assigned_fields' => $view->translate('# Used'),
-            'assigned_vars'   => $view->translate('# Vars'),
+            $this->translate('Label'),
+            $this->translate('Field name'),
+            $this->translate('# Used'),
+            $this->translate('# Vars'),
         );
     }
 
-    public function getBaseQuery()
+    public function prepareQuery()
     {
         $db = $this->db();
         $fieldTypes = array('command', 'host', 'notification', 'service', 'user');
@@ -60,7 +69,7 @@ class DatafieldTable extends QuickTable
 
         return $db->select()->from(
             array('df' => 'director_datafield'),
-            array()
+            $this->getColumns()
         )->joinLeft(
             array('used_fields' => $db->select()->union($fieldsQueries, ZfDbSelect::SQL_UNION_ALL)),
             'used_fields.datafield_id = df.id',
@@ -70,17 +79,6 @@ class DatafieldTable extends QuickTable
             'used_vars.varname = df.varname',
             array()
         )->group('df.id')->group('df.varname')->order('caption ASC');
-    }
-
-    public function count()
-    {
-        $db = $this->db();
-        return $db->fetchOne(
-            $db->select()->from(
-                array('sub' => $this->getBaseQuery()->columns($this->getColumns())),
-                'COUNT(*)'
-            )
-        );
     }
 
     /**
