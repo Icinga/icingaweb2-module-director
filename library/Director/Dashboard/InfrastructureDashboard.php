@@ -10,6 +10,7 @@ class InfrastructureDashboard extends Dashboard
         'ApiUserObject',
         'EndpointObject',
         'ZoneObject',
+        'Settings',
     );
 
     public function getTitle()

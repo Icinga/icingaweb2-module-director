@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\ConfigDiff;
+use Icinga\Module\Director\Forms\SettingsForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Util;
@@ -144,14 +145,13 @@ class ConfigController extends ActionController
     {
         $this->assertPermission('director/admin');
 
-        $this->overviewTabs()->activate('settings');
-        $this->view->title = $this->translate('Settings');
-        $this->view->form = $this
-            ->loadForm('Settings')
+        $this->addSingleTab($this->translate('Settings'))
+            ->addTitle($this->translate('Global Director Settings'));
+        $this->content()->add(
+            SettingsForm::load()
             ->setSettings(new Settings($this->db()))
-            ->handleRequest();
-
-        $this->setViewScript('object/form');
+            ->handleRequest()
+        );
     }
 
     // Show all files for a given config
@@ -346,15 +346,7 @@ class ConfigController extends ActionController
                 )
             );
         }
-        if ($this->hasPermission('director/admin')) {
-            $tabs->add(
-                'settings',
-                array(
-                    'label' => $this->translate('Settings'),
-                    'url' => 'director/config/settings'
-                )
-            );
-        }
+
         return $this->view->tabs;
     }
 

@@ -4,9 +4,9 @@ namespace Icinga\Module\Director\Forms;
 
 use Exception;
 use Icinga\Module\Director\Settings;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class SettingsForm extends QuickForm
+class SettingsForm extends DirectorForm
 {
     /** @var Settings */
     protected $settings;
