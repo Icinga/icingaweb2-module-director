@@ -171,7 +171,7 @@ class SelfServiceController extends ActionController
             if (is_bool($value)) {
                 $value = $this->makePowerShellBoolean($value);
             } elseif (is_array($value)) {
-                $value = implode(',', $value);
+                $value = implode('!', $value);
             }
             $plain .= "$key: $value\r\n";
         }
