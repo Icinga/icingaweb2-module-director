@@ -7,10 +7,13 @@ use Icinga\Module\Director\Resolver\TemplateTree;
 use ipl\Html\BaseElement;
 use ipl\Html\Html;
 use ipl\Html\Link;
+use ipl\Translation\TranslationHelper;
 use ipl\Web\Component\ControlsAndContent;
 
 class TemplateTreeRenderer extends BaseElement
 {
+    use TranslationHelper;
+
     protected $tag = 'ul';
 
     protected $defaultAttributes = [
@@ -37,7 +40,7 @@ class TemplateTreeRenderer extends BaseElement
         $this->add(
             $this->dumpTree(
                 array(
-                    'name' => 'Templates',
+                    'name' => $this->translate('Templates'),
                     'children' => $this->tree->getTree()
                 )
             )
@@ -62,7 +65,7 @@ class TemplateTreeRenderer extends BaseElement
 
         if ($level === 0) {
             $li->add(Html::tag('a', [
-                'name'  => 'Templates',
+                'name'  => $tree['name'],
                 'class' => 'icon-globe'
             ], $tree['name']));
         } else {
