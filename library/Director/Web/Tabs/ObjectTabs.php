@@ -101,6 +101,14 @@ class ObjectTabs extends Tabs
                 'label'     => $this->translate('Members')
             ]);
         }
+
+        if ($object->getShortTableName() === 'endpoint') {
+            $this->add('inspect', [
+                'url'       => 'director/inspect/types',
+                'urlParams' => ['endpoint' => $object->getObjectName()],
+                'label'     => $this->translate('Inspect')
+            ]);
+        }
     }
 
     protected function hasFields()
