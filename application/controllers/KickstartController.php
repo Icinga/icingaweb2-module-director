@@ -9,7 +9,8 @@ class KickstartController extends DashboardController
 {
     public function indexAction()
     {
-        $this->singleTab($this->view->title = $this->translate('Kickstart'));
+        $this->addSingleTab($this->translate('Kickstart'))
+            ->addTitle($this->translate('Director Kickstart Wizard'));
         $form = KickstartForm::load();
         try {
             $form->setEndpoint($this->db()->getDeploymentEndpoint());
