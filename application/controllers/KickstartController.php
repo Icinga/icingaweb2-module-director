@@ -3,13 +3,14 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Module\Director\Forms\KickstartForm;
 
 class KickstartController extends DashboardController
 {
     public function indexAction()
     {
         $this->singleTab($this->view->title = $this->translate('Kickstart'));
-        $form = $this->view->form = $this->loadForm('kickstart');
+        $form = KickstartForm::load();
         try {
             $form->setEndpoint($this->db()->getDeploymentEndpoint());
         } catch (Exception $e) {
@@ -17,5 +18,6 @@ class KickstartController extends DashboardController
         }
 
         $form->handleRequest();
+        $this->content()->add($form);
     }
 }

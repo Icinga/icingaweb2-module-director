@@ -9,9 +9,10 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\KickstartHelper;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
-class KickstartForm extends QuickForm
+class KickstartForm extends DirectorForm
 {
     private $config;
 
@@ -356,7 +357,7 @@ class KickstartForm extends QuickForm
         }
     }
 
-    protected function getDb()
+    public function getDb()
     {
         return Db::fromResourceName($this->getResourceName());
     }
