@@ -208,7 +208,7 @@ class SelfServiceController extends ActionController
             $params['download_url'] = $settings->get('self-service/download_url');
             $params['agent_version'] = $settings->get('self-service/agent_version');
             $params['allow_updates'] = $settings->get('self-service/allow_updates') === 'y';
-
+            $params['agent_listen_port'] = $host->getAgentListenPort();
             if ($hashes = $settings->get('self-service/installer_hashes')) {
                 $params['installer_hashes'] = json_decode($hashes);
             }
@@ -263,6 +263,16 @@ class SelfServiceController extends ActionController
             return;
         }
 
+        $params['agent_add_firewall_rule'] = $host
+            ->getSingleResolvedProperty('master_should_connect') === 'y';
+
+        $zdb = $db->getDbAdapter();
+        $params['global_zones'] = $zdb->fetchCol(
+            $zdb->select()->from('icinga_zone', 'object_name')
+                ->where('disabled = ?', 'n')
+                ->where('is_global = ?', 'y')
+                ->order('object_name')
+        );
 
         $zone = IcingaZone::load($zoneName, $db);
         $master = $db->getDeploymentEndpoint();

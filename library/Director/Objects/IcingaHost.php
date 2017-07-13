@@ -239,6 +239,17 @@ class IcingaHost extends IcingaObject
         $config->configFile($pre . 'agent_zones')->addObject($zone);
     }
 
+    public function getAgentListenPort()
+    {
+        $conn = $this->connection;
+        $name = $this->getObjectName();
+        if (IcingaEndpoint::exists($name, $conn)) {
+            return IcingaEndpoint::load($name, $conn)->getResolvedPort();
+        } else {
+            return 5665;
+        }
+    }
+
     public function hasAnyOverridenServiceVars()
     {
         $varname = $this->getServiceOverrivesVarname();

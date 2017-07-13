@@ -49,7 +49,8 @@ class SelfServiceSettingsForm extends DirectorForm
             ),
             'multiOptions' => [
                 null       => $this->translate('- no automatic installation -'),
-                'director' => $this->translate('Download via the Icinga Director'),
+                // TODO: not yet
+                // 'director' => $this->translate('Download via the Icinga Director'),
                 'icinga'   => $this->translate('Download from packages.icinga.com'),
                 'url'      => $this->translate('Download from a custom url'),
                 'file'     => $this->translate('Use a local file or network share'),
@@ -67,7 +68,7 @@ class SelfServiceSettingsForm extends DirectorForm
             $this->addInstallSettings($downloadType, $settings);
         }
 
-        $this->addBoolean('flush_api_dir', [
+        $this->addEventuallyConfiguredBoolean('flush_api_dir', [
             'label'       => $this->translate('Flush API directory'),
             'description' => $this->translate(
                 'In case the Icinga Agent will accept configuration from the parent'
@@ -76,7 +77,7 @@ class SelfServiceSettingsForm extends DirectorForm
                 . ' will be flushed before an eventual restart of the Icinga 2 Agent'
             ),
             'required' => true,
-        ], true);
+        ]);
     }
 
     protected function addInstallSettings($downloadType, Settings $settings)
@@ -151,36 +152,84 @@ class SelfServiceSettingsForm extends DirectorForm
             'value'  => $hashes,
         ]);
 
-        $this->addBoolean('allow_updates', [
-            'label'       => $this->translate('Allow Updates'),
+        $this->addElement('extensibleSet', 'installer_hashes', [
+            'label'       => $this->translate('Installer Hashes'),
+            'description' => $this->translate(
+                'To ensure downloaded packages are build by the Icinga Team'
+                . ' and not compromised by third parties, you will be able'
+                . ' to provide an array of SHA1 hashes here. In case you have'
+                . ' defined any hashses, the module will not continue with'
+                . ' updating / installing the Agent in case the SHA1 hash of'
+                . ' the downloaded MSI package is not matching one of the'
+                . ' provided hashes of this setting'
+            ),
+            'value'  => $hashes,
+        ]);
+
+        $this->addElement('text', 'icinga_service_user', [
+            'label'       => $this->translate('Service User'),
+            'description' => $this->translate(
+                'The user that should run the Icinga 2 service on Windows.'
+            ),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/icinga_service_user'),
+        ]);
+
+        $this->addEventuallyConfiguredBoolean('allow_updates', [
+            'label'        => $this->translate('Allow Updates'),
             'description' => $this->translate(
                 'In case the Icinga 2 Agent is already installed on the system,'
                 . ' this parameter will allow you to configure if you wish to'
                 . ' upgrade / downgrade to a specified version with the as well.'
             ),
-            'value'  => $settings->getStoredOrDefaultValue('self-service/allow_updates'),
             'required' => true,
-        ], true);
+        ]);
 
-        $this->addNscpSettings($settings);
+        $this->addNscpSettings();
     }
 
-    protected function addNscpSettings(Settings $settings)
+    protected function addNscpSettings()
     {
-        $this->addBoolean('install_nsclient', [
+        $this->addEventuallyConfiguredBoolean('install_nsclient', [
             'label'       => $this->translate('Install NSClient++'),
             'description' => $this->translate(
                 'Also install NSClient++. It can be used through the Icinga Agent'
                 . ' and comes with a bunch of additional Check Plugins'
             ),
-            'value'  => $settings->getStoredOrDefaultValue('self-service/install_nsclient'),
             'required' => true,
-        ], true);
+        ]);
     }
 
     public static function create(Db $db, Settings $settings)
     {
         return static::load()->setDb($db)->setSettings($settings);
+    }
+
+    protected function addEventuallyConfiguredBoolean($name, $params)
+    {
+        $key = "self-service/$name";
+        $value = $this->settings->getStoredValue($key);
+        $params['value'] = $value;
+        $params['multiOptions'] = $this->eventuallyConfiguredEnum($name, [
+            'y' => $this->translate('Yes'),
+            'n' => $this->translate('No'),
+        ]);
+
+        return $this->addElement('select', $name, $params);
+    }
+
+    protected function eventuallyConfiguredEnum($name, $enum)
+    {
+        $key = "self-service/$name";
+        $default = $this->settings->getDefaultValue($key);
+        if ($default === null) {
+            return [
+                null => $this->translate('- please choose -')
+            ] + $enum;
+        } else {
+            return [
+                null => sprintf($this->translate('%s (default)'), $enum[$default])
+            ] + $enum;
+        }
     }
 
     protected function setSentValue($key, $value)
