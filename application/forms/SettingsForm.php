@@ -23,13 +23,7 @@ class SettingsForm extends DirectorForm
                 . ' environment.'
             )
         );
-
-        $globalZones = array(
-            null => sprintf(
-                $this->translate('%s (default)'),
-                $settings->getDefaultValue('default_global_zone')
-            )
-        );
+        $globalZones = $this->eventuallyConfiguredEnum('default_global_zone', $this->enumGlobalZones());
 
         $this->addElement('select', 'default_global_zone', array(
             'label'        => $this->translate('Default global zone'),
@@ -156,6 +150,19 @@ class SettingsForm extends DirectorForm
     {
         $this->settings = $settings;
         return $this;
+    }
+
+    protected function enumGlobalZones()
+    {
+        $db = $this->settings->getDb();
+        $zones = $db->fetchCol(
+            $db->select()->from('icinga_zone', 'object_name')
+                ->where('disabled = ?', 'n')
+                ->where('is_global = ?', 'y')
+                ->order('object_name')
+        );
+
+        return array_combine($zones, $zones);
     }
 
     public function onSuccess()

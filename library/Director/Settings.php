@@ -23,7 +23,7 @@ class Settings
         'activation_script_v1'            => null,
         'self-service/agent_name'         => 'fqdn',
         'self-service/transform_hostname' => '0',
-        'self-service/global_zones'       => ['director_global'],
+        'self-service/global_zones'       => ['director-global'],
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     ];
@@ -37,6 +37,22 @@ class Settings
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+    }
+
+    /**
+     * @return Db
+     */
+    public function getConnection()
+    {
+        return $this->connection;
+    }
+
+    /**
+     * @return \Zend_Db_Adapter_Abstract
+     */
+    public function getDb()
+    {
+        return $this->db;
     }
 
     public function get($key, $default = null)
