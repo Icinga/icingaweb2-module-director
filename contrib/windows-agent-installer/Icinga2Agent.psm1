@@ -20,6 +20,7 @@ function Icinga2AgentModule {
         [bool]$AgentAddFirewallRule       = $FALSE,
         [array]$ParentEndpoints,
         [array]$EndpointsConfig,
+        [array]$GlobalZones,
 
         # Agent installation / update
         [string]$IcingaServiceUser,
@@ -77,12 +78,13 @@ function Icinga2AgentModule {
         icinga_enable_debug_log = $IcingaEnableDebugLog;
         agent_add_firewall_rule = $AgentAddFirewallRule;
         parent_endpoints        = $ParentEndpoints;
-        endpoint_config         = $EndpointsConfig;
+        endpoints_config         = $EndpointsConfig;
+        global_zones            = $GlobalZones;
         icinga_service_user     = $IcingaServiceUser;
         download_url            = $DownloadUrl;
         allow_updates           = $AllowUpdates;
         installer_hashes        = $InstallerHashes;
-        flush_api_dir           = $FlushApiDirectory;
+        flush_api_directory     = $FlushApiDirectory;
         ca_server               = $CAServer;
         ca_port                 = $CAPort;
         force_cert              = $ForceCertificateGeneration;
@@ -92,7 +94,7 @@ function Icinga2AgentModule {
         director_password       = $DirectorPassword;
         director_domain         = $DirectorDomain;
         director_auth_token     = $DirectorAuthToken;
-        director_host_json      = $DirectorHostObject;
+        director_host_object    = $DirectorHostObject;
         director_deploy_config  = $DirectorDeployConfig;
         install_nsclient        = $InstallNSClient;
         nsclient_add_defaults   = $NSClientAddDefaults;
@@ -285,8 +287,8 @@ function Icinga2AgentModule {
         $this.setProperty('api_dir', $Env:ProgramData + '\icinga2\var\lib\icinga2\api');
         $this.setProperty('icinga_ticket', $this.config('ticket'));
         $this.setProperty('local_hostname', $this.config('agent_name'));
-        # Generate endpoint nodes based on input parameters
-        $this.generateEndpointNodes();
+        # Ensure we generate the required configuration content
+        $this.generateConfigContent();
     }
 
     #
@@ -313,7 +315,7 @@ function Icinga2AgentModule {
         param([int] $currentIndex);
 
         # Load the config into a local variable for quicker access
-        [array]$endpoint_config = $this.config('endpoint_config');
+        [array]$endpoint_config = $this.config('endpoints_config');
 
         # In case no endpoint config is given, we should do nothing
         if ($endpoint_config -eq $NULL) {
@@ -372,6 +374,40 @@ function Icinga2AgentModule {
         } else {
             $this.setProperty('generate_config', 'false');
         }
+    }
+
+    #
+    # Generate global zones by configuration
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'generateGlobalZones' -value {
+
+        # Load all configured global zones
+        [array]$global_zones = $this.config('global_zones');
+        # Add director-global zone as default - always
+        [string]$zones = 'object Zone "director-global" {' + "`n" + ' global = true' + "`n" + '}' + "`n";
+
+        # In case no zones are given, simply add director-global
+        if ($global_zones -eq $NULL) {
+            $this.setProperty('global_zones', $zones);
+            return;
+        }
+
+        # Loop through all given zones and add them to our configuration
+        foreach ($zone in $global_zones) {
+            # Ignore possible configured director-global zone, as already present
+            if ($zone -ne 'director-global') {
+                $zones = $zones + 'object Zone "' + $zone + '" {' + "`n" + ' global = true' + "`n" + '}' + "`n";
+            }
+        }
+        $this.setProperty('global_zones', $zones);
+    }
+
+    #
+    # Generate default config values
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'generateConfigContent' -value {
+        $this.generateEndpointNodes();
+        $this.generateGlobalZones();
     }
 
     #
@@ -846,7 +882,7 @@ function Icinga2AgentModule {
     # -RemoveApiDirectory argument of the function builder
     #
     $installer | Add-Member -membertype ScriptMethod -name 'shouldFlushIcingaApiDirectory' -value {
-        return $this.config('flush_api_dir');
+        return $this.config('flush_api_directory');
     }
 
     #
@@ -1099,9 +1135,8 @@ object Endpoint "' + $this.getProperty('local_hostname') + '" {}
 object Zone "' + $this.config('parent_zone') + '" {
   endpoints = [ ' + $this.getProperty('endpoint_nodes') +' ]
 }
-object Zone "director-global" {
-  global = true
-}
+
+' + $this.getProperty('global_zones') + '
 object Zone "' + $this.getProperty('local_hostname') + '" {
   parent = "' + $this.config('parent_zone') + '"
   endpoints = [ "' + $this.getProperty('local_hostname') + '" ]
@@ -1691,12 +1726,12 @@ object ApiListener "api" {
                         [string]$url = $this.config('director_url') + 'self-service/register-host?name=' + $this.getProperty('local_hostname') + '&key=' + $apiKey;
                         [string]$json = '';
                         # If no JSON Object is defined (should be default), we shall create one
-                        if (-Not $this.config('director_host_json')) {
+                        if (-Not $this.config('director_host_object')) {
                             [string]$hostname = $this.getProperty('local_hostname');
                             $json = '{ "address": "' + $hostname + '", "display_name": "' + $hostname + '" }';
                         } else {
                             # Otherwise use the specified one and replace the host object placeholders
-                            $json = $this.doReplaceJSONPlaceholders($this.config('director_host_json'));
+                            $json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
                         }
 
                         $this.info('Creating host ' + $this.getProperty('local_hostname') + ' over API token inside Icinga Director.');
@@ -1715,11 +1750,11 @@ object ApiListener "api" {
                         }
                     }
                 }
-            } elseif ($this.config('director_host_json'))  {
+            } elseif ($this.config('director_host_object'))  {
                 # Setup the url we need to call
                 [string]$url = $this.config('director_url') + 'host';
                 # Replace the host object placeholders
-                [string]$host_object_json = $this.doReplaceJSONPlaceholders($this.config('director_host_json'));
+                [string]$host_object_json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
                 # Create the host object inside the director
                 [string]$httpResponse = $this.createHTTPRequest($url, $host_object_json, 'PUT', 'application/json', $FALSE, $FALSE);
 
@@ -1890,8 +1925,8 @@ object ApiListener "api" {
             } else {
                 $this.error('Received ' + $argumentString + ' from Icinga Director. Possibly your API token is no longer valid or the object does not exist.');
             }
-            # Ensure we generate the required configuration for our endpoints
-            $this.generateEndpointNodes();
+            # Ensure we generate the required configuration content
+            $this.generateConfigContent();
         }
     }
 
