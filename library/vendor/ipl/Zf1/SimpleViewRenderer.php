@@ -62,6 +62,9 @@ class SimpleViewRenderer extends Helper implements ValidHtml
 
     public function getName()
     {
+        // TODO: This is wrong, should be 'viewRenderer' - but that would
+        //       currently break nearly everything, starting with full layout
+        //       rendering
         return 'ViewRenderer';
     }
 }
