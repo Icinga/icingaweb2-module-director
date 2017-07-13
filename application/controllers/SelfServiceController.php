@@ -15,9 +15,14 @@ use ipl\Html\Html;
 
 class SelfServiceController extends ActionController
 {
+    /** @var bool */
     protected $isApified = true;
 
+    /** @var bool */
     protected $requiresAuthentication = false;
+
+    /** @var Settings */
+    protected $settings;
 
     protected function assertApiPermission()
     {
@@ -196,7 +201,7 @@ class SelfServiceController extends ActionController
         $key = $this->params->getRequired('key');
         $host = IcingaHost::loadWithApiKey($key, $db);
 
-        $settings = new Settings($db);
+        $settings = $this->getSettings();
         $params = [
             'fetch_agent_name'    => $settings->get('self-service/agent_name') === 'hostname',
             'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
@@ -210,7 +215,7 @@ class SelfServiceController extends ActionController
             $params['allow_updates'] = $settings->get('self-service/allow_updates') === 'y';
             $params['agent_listen_port'] = $host->getAgentListenPort();
             if ($hashes = $settings->get('self-service/installer_hashes')) {
-                $params['installer_hashes'] = json_decode($hashes);
+                $params['installer_hashes'] = $hashes;
             }
 
             if ($settings->get('self-service/install_nsclient') === 'y') {
@@ -245,6 +250,7 @@ class SelfServiceController extends ActionController
         }
 
         $db = $this->db();
+        $settings = $this->getSettings();
         $name = $host->getObjectName();
         if ($host->getSingleResolvedProperty('has_agent') !== 'y') {
             $this->sendPowerShellError(sprintf(
@@ -266,13 +272,7 @@ class SelfServiceController extends ActionController
         $params['agent_add_firewall_rule'] = $host
             ->getSingleResolvedProperty('master_should_connect') === 'y';
 
-        $zdb = $db->getDbAdapter();
-        $params['global_zones'] = $zdb->fetchCol(
-            $zdb->select()->from('icinga_zone', 'object_name')
-                ->where('disabled = ?', 'n')
-                ->where('is_global = ?', 'y')
-                ->order('object_name')
-        );
+        $params['global_zones'] = $settings->get('self-service/global_zones');
 
         $zone = IcingaZone::load($zoneName, $db);
         $master = $db->getDeploymentEndpoint();
@@ -300,5 +300,14 @@ class SelfServiceController extends ActionController
                 $params[$key] = $value === 'y';
             }
         }
+    }
+
+    protected function getSettings()
+    {
+        if ($this->settings === null) {
+            $this->settings = new Settings($this->db());
+        }
+
+        return $this->settings;
     }
 }

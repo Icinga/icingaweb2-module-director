@@ -133,11 +133,6 @@ class SelfServiceSettingsForm extends DirectorForm
         ]);
 
         $hashes = $settings->getStoredOrDefaultValue('self-service/installer_hashes');
-        if ($hashes) {
-            $hashes = json_decode($hashes);
-        } else {
-            $hashes = null;
-        }
         $this->addElement('extensibleSet', 'installer_hashes', [
             'label'       => $this->translate('Installer Hashes'),
             'description' => $this->translate(
@@ -152,8 +147,8 @@ class SelfServiceSettingsForm extends DirectorForm
             'value'  => $hashes,
         ]);
 
-        $this->addElement('extensibleSet', 'installer_hashes', [
-            'label'       => $this->translate('Installer Hashes'),
+        $this->addElement('extensibleSet', 'global_zones', [
+            'label'       => $this->translate('Global Zones'),
             'description' => $this->translate(
                 'To ensure downloaded packages are build by the Icinga Team'
                 . ' and not compromised by third parties, you will be able'
@@ -163,7 +158,8 @@ class SelfServiceSettingsForm extends DirectorForm
                 . ' the downloaded MSI package is not matching one of the'
                 . ' provided hashes of this setting'
             ),
-            'value'  => $hashes,
+            'multiOptions' => $this->enumGlobalZones(),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/global_zones'),
         ]);
 
         $this->addElement('text', 'icinga_service_user', [
@@ -238,6 +234,19 @@ class SelfServiceSettingsForm extends DirectorForm
         return $this;
     }
 
+    protected function enumGlobalZones()
+    {
+        $db = $this->getDb()->getDbAdapter();
+        $zones = $db->fetchCol(
+            $db->select()->from('icinga_zone', 'object_name')
+                ->where('disabled = ?', 'n')
+                ->where('is_global = ?', 'y')
+                ->order('object_name')
+        );
+
+        return array_combine($zones, $zones);
+    }
+
     public function setSettings(Settings $settings)
     {
         $this->settings = $settings;
@@ -252,9 +261,6 @@ class SelfServiceSettingsForm extends DirectorForm
                     $value = null;
                 }
 
-                if (is_array($value)) {
-                    $value = json_encode($value);
-                }
                 $this->settings->set("self-service/$key", $value);
             }
 
