@@ -112,7 +112,7 @@ class Util
 
     public static function canBeRenderedAsString($any)
     {
-        return is_string($any) || is_int($any) || is_null($any);
+        return is_string($any) || is_int($any) || is_null($any) || is_float($any);
     }
 
     /**
