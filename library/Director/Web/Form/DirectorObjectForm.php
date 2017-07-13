@@ -78,6 +78,9 @@ abstract class DirectorObjectForm extends DirectorForm
 
     public function getAuth()
     {
+        if ($this->auth === null) {
+            $this->auth = Auth::getInstance();
+        }
         return $this->auth;
     }
 
