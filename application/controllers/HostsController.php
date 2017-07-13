@@ -61,10 +61,11 @@ class HostsController extends ObjectsController
             count($objects)
         );
 
-        $this->content()->add(IcingaAddServiceToMultipleHostsForm::load()
-            ->setHosts($objects)
-            ->setDb($this->db())
-            ->handleRequest()
+        $this->content()->add(
+            IcingaAddServiceToMultipleHostsForm::load()
+                ->setHosts($objects)
+                ->setDb($this->db())
+                ->handleRequest()
         );
     }
 }
