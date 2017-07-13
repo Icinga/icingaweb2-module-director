@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Core;
 
 use Exception;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -322,12 +323,16 @@ constants
     {
         // TODO: more abstraction needed
         // TODO: autofetch and cache pluraltypes
-        $result = $this->client->get(
-            'objects/' . $pluralType,
-            array(
-                'attrs' => array('__name')
-            )
-        )->getResult('name');
+        try {
+            $result = $this->client->get(
+                'objects/' . $pluralType,
+                array(
+                    'attrs' => array('__name')
+                )
+            )->getResult('name');
+        } catch (NotFoundError $e) {
+            $result = [];
+        }
 
         return array_keys($result);
     }
