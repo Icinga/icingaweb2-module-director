@@ -126,11 +126,11 @@ abstract class ObjectController extends ActionController
         }
         if ($object->isExternal()) {
             $content->add(Html::p($this->translate((
-                'This is an external object. It has been imported from Icinga 2 throught the'
+                'This is an external object. It has been imported from Icinga 2 through the'
                 . ' Core API and cannot be managed with the Icinga Director. It is however'
                 . ' perfectly valid to create objects using this or referring to this object.'
                 . ' You might also want to define related Fields to make work based on this'
-                . ' object more enjoyable'
+                . ' object more enjoyable.'
             ))));
         }
         $config = $object->toSingleIcingaConfig();

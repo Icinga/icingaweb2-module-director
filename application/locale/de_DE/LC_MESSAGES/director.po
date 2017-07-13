@@ -3508,17 +3508,17 @@ msgstr "Muss eine MySQL oder PostgeSQL Datenbank sein"
 
 #: application/views/scripts/object/show.phtml:15
 msgid ""
-"This is an external object. It has been imported from Icinga 2 throught the "
+"This is an external object. It has been imported from Icinga 2 through the "
 "Core API and cannot be managed with the Icinga Director. It is however "
 "perfectly valid to create objects using this or referring to this object. "
 "You might also want to define related Fields to make work based on this "
-"object more enjoyable"
+"object more enjoyable."
 msgstr ""
 "Dies ist ein externes Objekt. Es wurde von Icinga 2 durch die Core API "
 "importiert und kann nicht mit Icinga Director verwaltet werden. Objekte, die "
 "sich auf dieses Objekt beziehen, können jedoch mit dem Director erstellt "
 "werden. Außerdem können darauf bezugnehmende Felder erstellt werden, um die "
-"Arbeit zu erleichtern"
+"Arbeit zu erleichtern."
 
 #: application/forms/KickstartForm.php:94
 msgid ""
