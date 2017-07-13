@@ -27,6 +27,7 @@ class IcingaHost extends IcingaObject
         'check_period_id'       => null,
         'check_interval'        => null,
         'retry_interval'        => null,
+        'check_timeout'         => null,
         'enable_notifications'  => null,
         'enable_active_checks'  => null,
         'enable_passive_checks' => null,
@@ -74,6 +75,7 @@ class IcingaHost extends IcingaObject
 
     protected $intervalProperties = array(
         'check_interval' => 'check_interval',
+        'check_timeout'  => 'check_timeout',
         'retry_interval' => 'retry_interval',
     );
 

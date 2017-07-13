@@ -1196,6 +1196,17 @@ abstract class DirectorObjectForm extends DirectorForm
             )
         );
 
+        $this->addElement(
+            'text',
+            'check_timeout',
+            array(
+                'label' => $this->translate('Check timeout'),
+                'description' => $this->translate(
+                    "Check command timeout in seconds. Overrides the CheckCommand's timeout attribute"
+                )
+            )
+        );
+
         $periods = $this->db->enumTimeperiods();
 
         if (!empty($periods)) {
@@ -1253,6 +1264,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'check_interval',
             'retry_interval',
             'max_check_attempts',
+            'check_timeout',
             'check_period_id',
             'enable_active_checks',
             'enable_passive_checks',

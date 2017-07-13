@@ -444,6 +444,7 @@ CREATE TABLE icinga_host (
   check_period_id INT(10) UNSIGNED DEFAULT NULL,
   check_interval VARCHAR(8) DEFAULT NULL,
   retry_interval VARCHAR(8) DEFAULT NULL,
+  check_timeout SMALLINT UNSIGNED DEFAULT NULL,
   enable_notifications ENUM('y', 'n') DEFAULT NULL,
   enable_active_checks ENUM('y', 'n') DEFAULT NULL,
   enable_passive_checks ENUM('y', 'n') DEFAULT NULL,
@@ -592,6 +593,7 @@ CREATE TABLE icinga_service (
   check_period_id INT(10) UNSIGNED DEFAULT NULL,
   check_interval VARCHAR(8) DEFAULT NULL,
   retry_interval VARCHAR(8) DEFAULT NULL,
+  check_timeout SMALLINT UNSIGNED DEFAULT NULL,
   enable_notifications ENUM('y', 'n') DEFAULT NULL,
   enable_active_checks ENUM('y', 'n') DEFAULT NULL,
   enable_passive_checks ENUM('y', 'n') DEFAULT NULL,
@@ -1556,4 +1558,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (134, NOW());
+  VALUES (135, NOW());

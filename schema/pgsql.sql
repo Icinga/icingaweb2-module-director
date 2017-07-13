@@ -568,6 +568,7 @@ CREATE TABLE icinga_host (
   check_period_id integer DEFAULT NULL,
   check_interval character varying(8) DEFAULT NULL,
   retry_interval character varying(8) DEFAULT NULL,
+  check_timeout smallint DEFAULT NULL,
   enable_notifications enum_boolean DEFAULT NULL,
   enable_active_checks enum_boolean DEFAULT NULL,
   enable_passive_checks enum_boolean DEFAULT NULL,
@@ -742,6 +743,7 @@ CREATE TABLE icinga_service (
   check_period_id integer DEFAULT NULL,
   check_interval character varying(8) DEFAULT NULL,
   retry_interval character varying(8) DEFAULT NULL,
+  check_timeout smallint DEFAULT NULL,
   enable_notifications enum_boolean DEFAULT NULL,
   enable_active_checks enum_boolean DEFAULT NULL,
   enable_passive_checks enum_boolean DEFAULT NULL,
@@ -1833,4 +1835,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (134, NOW());
+  VALUES (135, NOW());
