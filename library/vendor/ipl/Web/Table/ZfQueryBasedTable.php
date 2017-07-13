@@ -182,14 +182,12 @@ abstract class ZfQueryBasedTable extends Table
     public function renderTo(ControlsAndContent $controller)
     {
         $url = $controller->url();
+        $c = $controller->content();
         $this->initializeOptionalQuickSearch($controller);
-        $controller->content()->add([
-            $this->getPaginator($url),
-            $this
-        ]);
+        $c->add([$this->getPaginator($url), $this]);
 
         if ($url->getParam('format') === 'sql') {
-            $controller->content()->prepend($this->dumpSqlQuery($url));
+            $c->prepend($this->dumpSqlQuery($url));
         }
     }
 }
