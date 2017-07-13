@@ -997,41 +997,6 @@ table.icinga-objects {
 
 }
 
-table.assignment-table {
-    table.apply-rules {
-        margin: 1em 0 1em 0;
-        padding: 0;
-        width: 100%;
-
-        tr {
-            border-bottom: 1px solid @gray-lighter;
-            border-left: 5px solid transparent;
-
-            td {
-                padding: 0.5em 1em;
-            }
-
-            &:hover, &:active, &.active {
-                border-left: 5px solid @icinga-blue;
-            }
-
-            &:hover {
-                background: white;
-            }
-        }
-    }
-    a {
-        color: @icinga-blue;
-        float: right;
-
-        &:first-child {
-            float: none;
-            color: inherit;
-            font-weight: bold;
-        }
-    }
-}
-
 div.content.compact table.icinga-objects thead {
     display: none;
 }
@@ -1403,32 +1368,6 @@ ul.tree li.collapsed > .handle {
 .tree li a {
   padding-left: 1em;
 }
-/*
-.tree li a {
-  display: inline-block;
-  padding-left: 2.5em;
-  text-decoration: none;
-  color: #777;
-  outline: 0;
-}
-
-.tree a:before {
-  font-family: 'ifont';
-  position: absolute;
-  font-size: 1.2em;
-  margin-left: -1.2em;
-}
-
-.tree a.root:before {
-  content: '\e819';
-}
-.tree a.host:before {
-  content: '\e866';
-}
-.tree a.service:before {
-  content: '\e840';
-}
-*/
 
 div.sql-dump {
   background-color: @gray-lightest;
@@ -1438,43 +1377,6 @@ div.sql-dump {
 
 div.exception {
   margin: 1em;
-}
-
-.diff {
-    font-family: @font-family-fixed;
-    white-space: pre-wrap;
-
-
-    del, ins {
-        text-decoration: none;
-    }
-
-    del {
-        color: @colorCritical;
-        background-color: #fdd;
-    }
-
-    ins {
-        color: @colorOk;
-        background-color: #dfd;
-    }
-}
-
-div.diff {
-/*    line-height: 1.8em;
-    height: 1.8em;*/
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-}
-
-
-.diff.old ins {
-  display: none;
-}
-
-.diff.new del {
-  display: none;
 }
 
 form.editor {
