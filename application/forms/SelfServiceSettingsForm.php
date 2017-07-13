@@ -193,6 +193,23 @@ class SelfServiceSettingsForm extends DirectorForm
             ),
             'required' => true,
         ]);
+        /*
+         * TODO: eventually add those:
+        if ($settings->get('self-service/install_nsclient') === 'y') {
+            $params['install_nsclient'] = true;
+            $this->addBooleanSettingsToParams($settings, [
+                'nsclient_add_defaults',
+                'nsclient_firewall',
+                'nsclient_service',
+            ], $params);
+
+
+            $this->addStringSettingsToParams($settings, [
+                'nsclient_directory',
+                'nsclient_installer_path'
+            ], $params);
+        }
+        */
     }
 
     public static function create(Db $db, Settings $settings)
