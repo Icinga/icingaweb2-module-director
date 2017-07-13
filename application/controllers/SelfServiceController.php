@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Forms\IcingaHostSelfServiceForm;
+use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Settings;
@@ -292,16 +293,32 @@ class SelfServiceController extends ActionController
             return;
         }
 
-        $params['agent_add_firewall_rule'] = $host
-            ->getSingleResolvedProperty('master_should_connect') === 'y';
+        $masterConnectsToAgent = $host->getSingleResolvedProperty(
+            'master_should_connect'
+        ) === 'y';
+        $params['agent_add_firewall_rule'] = $masterConnectsToAgent;
 
         $params['global_zones'] = $settings->get('self-service/global_zones');
 
         $zone = IcingaZone::load($zoneName, $db);
+        $endpointNames = $zone->listEndpoints();
+        if (! $masterConnectsToAgent) {
+            $endpointsConfig = [];
+            foreach ($endpointNames as $endpointName) {
+                $endpoint = IcingaEndpoint::load($endpointName, $db);
+                $endpointsConfig[] = sprintf(
+                    '%s;%s',
+                    $endpoint->getSingleResolvedProperty('host'),
+                    $endpoint->getResolvedPort()
+                );
+            }
+
+            $params['endpoints_config'] = $endpointsConfig;
+        }
         $master = $db->getDeploymentEndpoint();
         $params['parent_zone']      = $zoneName;
         $params['ca_server']        = $master->getObjectName();
-        $params['parent_endpoints'] = $zone->listEndpoints();
+        $params['parent_endpoints'] = $endpointNames;
         $params['accept_config']    = $host->getSingleResolvedProperty('accept_config')=== 'y';
     }
 
