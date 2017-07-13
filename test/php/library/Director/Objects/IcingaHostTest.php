@@ -663,6 +663,7 @@ class IcingaHostTest extends BaseTestCase
             "${prefix}check_command" => "check_command",
             "${prefix}check_interval" => "check_interval",
             "${prefix}check_period" => "check_period",
+            "${prefix}check_timeout" => "check_timeout",
             "${prefix}command_endpoint" => "command_endpoint",
             "${prefix}display_name" => "display_name",
             "${prefix}enable_active_checks" => "enable_active_checks",
