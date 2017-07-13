@@ -202,12 +202,35 @@ class SelfServiceController extends ActionController
         $host = IcingaHost::loadWithApiKey($key, $db);
 
         $settings = $this->getSettings();
+        $transform = $settings->get('self-service/transform_hostname');
         $params = [
             'fetch_agent_name'    => $settings->get('self-service/agent_name') === 'hostname',
             'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
-            'transform_hostname'  => $settings->get('self-service/transform_hostname'),
+            'transform_hostname'  => $transform,
             'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
         ];
+
+        if ($transform === '2') {
+            $transformMethod = '.upperCase';
+        } elseif ($transform === '2') {
+            $transformMethod = '.lowerCase';
+        } else {
+            $transformMethod = '';
+        }
+
+        $hostObject = (object) [
+            'address' => '&ipaddress&',
+        ];
+
+        switch ($settings->get('self-service/agent_name')) {
+            case 'hostname':
+                $hostObject->display_name = "&fqdn$transformMethod&";
+                break;
+            case 'fqdn':
+                $hostObject->display_name = "&hostname$transformMethod&";
+                break;
+        }
+        $params['director_host_object'] = json_encode($hostObject);
 
         if ($settings->get('self-service/download_type')) {
             $params['download_url'] = $settings->get('self-service/download_url');
