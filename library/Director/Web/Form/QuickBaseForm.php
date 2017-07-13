@@ -59,13 +59,11 @@ abstract class QuickBaseForm extends Zend_Form implements ValidHtml
             ucfirst($module->getName())
         );
 
-        $this->addPrefixPaths(array(
-            array(
-                'prefix'    => __NAMESPACE__ . '\\Element\\',
-                'path'      => $basedir . '/Element',
-                'type'      => static::ELEMENT
-            )
-        ));
+        $this->addPrefixPath(
+            __NAMESPACE__ . '\\Element\\',
+            $basedir . '/Element',
+            static::ELEMENT
+        );
 
         return $this;
     }
