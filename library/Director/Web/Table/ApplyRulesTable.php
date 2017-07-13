@@ -41,11 +41,17 @@ class ApplyRulesTable extends ZfQueryBasedTable
             'id' => $row->id,
         ]);
 
-        return static::tr([
+        $tr = static::tr([
             static::td(Link::create($row->object_name, $url)),
             static::td($this->renderApplyFilter($row->assign_filter)),
             // NOT (YET) static::td($this->createActionLinks($row))->setSeparator(' ')
         ]);
+
+        if ($row->disabled === 'y') {
+            $tr->attributes()->add('class', 'disabled');
+        }
+
+        return $tr;
     }
 
     public function filterTemplate(
@@ -136,6 +142,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
         $columns = [
             'id'            => 'o.id',
             'object_name'   => 'o.object_name',
+            'disabled'      => 'o.disabled',
             'assign_filter' => 'o.assign_filter',
         ];
         $query = $this->db()->select()->from(
