@@ -1908,8 +1908,8 @@ object ApiListener "api" {
                         $value = $value.Replace("`r", '');
                         $value = $value.Replace("`n", '');
 
-                        if ($value.Contains( ',')) {
-                            [array]$valueArray = $value.Split(',');
+                        if ($value.Contains( '!')) {
+                            [array]$valueArray = $value.Split('!');
                             $this.overrideConfig($argument, $valueArray);
                         } else {
                             if ($value.toLower() -eq 'true') {
