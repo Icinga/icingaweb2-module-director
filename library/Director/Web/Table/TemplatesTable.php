@@ -2,14 +2,18 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Authentication\Auth;
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
+use ipl\Db\Zf1\FilterRenderer;
 use ipl\Html\Html;
 use ipl\Html\Icon;
 use ipl\Html\Link;
 use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
+use Zend_Db_Select as ZfSelect;
 
 class TemplatesTable extends ZfQueryBasedTable
 {
@@ -72,6 +76,23 @@ class TemplatesTable extends ZfQueryBasedTable
         return $this;
     }
 
+    protected function applyRestrictions(ZfSelect $query)
+    {
+        $auth = Auth::getInstance();
+        $type = $this->type;
+        $restrictions = $auth->getRestrictions("director/$type/template/filter-by-name");
+        if (empty($restrictions)) {
+            return $query;
+        }
+
+        $filter = Filter::matchAny();
+        foreach ($restrictions as $restriction) {
+            $filter->addFilter(Filter::where('o.object_name', $restriction));
+        }
+
+        return FilterRenderer::applyToQuery($filter, $query);
+    }
+
     protected function prepareQuery()
     {
         $type = $this->getType();
@@ -90,6 +111,6 @@ class TemplatesTable extends ZfQueryBasedTable
             "o.object_type = 'template'"
         )->order('o.object_name');
 
-        return $query;
+        return $this->applyRestrictions($query);
     }
 }

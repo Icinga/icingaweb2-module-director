@@ -2,15 +2,18 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
+use ipl\Db\Zf1\FilterRenderer;
 use ipl\Html\Icon;
 use ipl\Html\Link;
 use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
+use Zend_Db_Select as ZfSelect;
 
 class ApplyRulesTable extends ZfQueryBasedTable
 {
@@ -110,6 +113,23 @@ class ApplyRulesTable extends ZfQueryBasedTable
         return $links;
     }
 
+    protected function applyRestrictions(ZfSelect $query)
+    {
+        $auth = Auth::getInstance();
+        $type = $this->type;
+        $restrictions = $auth->getRestrictions("director/$type/applyrule/filter-by-name");
+        if (empty($restrictions)) {
+            return $query;
+        }
+
+        $filter = Filter::matchAny();
+        foreach ($restrictions as $restriction) {
+            $filter->addFilter(Filter::where('o.object_name', $restriction));
+        }
+
+        return FilterRenderer::applyToQuery($filter, $query);
+    }
+
     public function prepareQuery()
     {
         $type = $this->type;
@@ -129,6 +149,6 @@ class ApplyRulesTable extends ZfQueryBasedTable
             $query->where('service_set_id IS NULL');
         }
 
-        return $query;
+        return $this->applyRestrictions($query);
     }
 }

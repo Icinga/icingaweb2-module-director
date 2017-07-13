@@ -10,6 +10,7 @@ use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
 use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
+use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectSetTable;
 use Icinga\Module\Director\Web\Table\ObjectsTable;
 use Icinga\Module\Director\Web\Table\ServiceApplyRulesTable;
@@ -113,7 +114,10 @@ abstract class ObjectsController extends ActionController
         $this
             ->assertPermission('director/admin')
             ->addObjectsTabs()
-            ->addTitle($this->translate('All your Service Apply Rules'));
+            ->addTitle(
+                $this->translate('All your %s Apply Rules'),
+                $this->translate(ucfirst($this->getType()))
+            );
         $this->actions()/*->add(
             $this->getBackToDashboardLink()
         )*/->add(
@@ -129,7 +133,9 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        ServiceApplyRulesTable::show($this, $this->db());
+        $table = new ApplyRulesTable($this->db());
+        $table->setType($this->getType());
+        $table->renderTo($this);
     }
 
     public function setsAction()

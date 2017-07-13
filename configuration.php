@@ -26,6 +26,20 @@ $this->provideRestriction(
     )
 );
 
+$this->provideRestriction(
+    'director/service/apply/filter-by-name',
+    $this->translate(
+        'Filter available service apply rules'
+    )
+);
+
+$this->provideRestriction(
+    'director/notification/apply/filter-by-name',
+    $this->translate(
+        'Filter available notification apply rules'
+    )
+);
+
 $this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
 
 /*
