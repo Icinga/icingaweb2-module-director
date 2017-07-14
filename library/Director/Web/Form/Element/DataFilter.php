@@ -3,6 +3,9 @@
 namespace Icinga\Module\Director\Web\Form\Element;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterChain;
+use Icinga\Data\Filter\FilterExpression;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Web\Form\IconHelper;
 use Exception;
 
@@ -23,6 +26,7 @@ class DataFilter extends FormElement
 
     private $stripFilter;
 
+    /** @var FilterChain */
     private $filter;
 
     public function getValue()
@@ -40,14 +44,15 @@ class DataFilter extends FormElement
         return $filter->isEmpty() || $this->isEmptyExpression($filter);
     }
 
-    protected function isEmptyExpression($filter)
+    protected function isEmptyExpression(Filter $filter)
     {
-        return $filter->isExpression() &&
+        return $filter instanceof FilterExpression &&
             $filter->getColumn() === '' &&
             $filter->getExpression() === '""'; // -> json_encode('')
     }
 
     /**
+     * @inheritdoc
      * @codingStandardsIgnoreStart
      */
     protected function _filterValue(&$value, &$key)
@@ -58,8 +63,12 @@ class DataFilter extends FormElement
                 // OK
             } elseif (is_string($value)) {
                 $value = Filter::fromQueryString($value);
-            } else {
+            } elseif (is_array($value) || is_null($value)) {
                 $value = $this->arrayToFilter($value);
+            } else {
+                throw new ProgrammingError(
+                    'Value to be filtered has to be Filter, string, array or null'
+                );
             }
         } catch (Exception $e) {
             $value = null;
@@ -73,12 +82,15 @@ class DataFilter extends FormElement
     /**
      * This method transforms filter form data into a filter
      * and reacts on pressed buttons
+     *
+     * @param  array|null $array
+     *
+     * @return FilterChain|null
      */
     protected function arrayToFilter($array)
     {
         if ($array === null) {
             return null;
-            return Filter::matchAll();
         }
 
         $this->filter = null;
@@ -123,9 +135,9 @@ class DataFilter extends FormElement
             $strip = $this->stripFilter;
             $subId = $strip . '-1';
             if ($this->filter->getId() === $strip) {
-                $this->filter = $this->filter->getById($strip . '-1');
+                $this->filter = $this->filter->getById($subId);
             } else {
-                $this->filter->replaceById($strip, $this->filter->getById($strip . '-1'));
+                $this->filter->replaceById($strip, $this->filter->getById($subId));
             }
         }
 
@@ -137,13 +149,13 @@ class DataFilter extends FormElement
         if ($this->addTo !== null) {
             $parent = $this->filter->getById($this->addTo);
 
-            if ($parent->isChain()) {
+            if ($parent instanceof FilterChain) {
                 if ($parent->isEmpty()) {
                     $parent->addFilter($this->emptyExpression());
                 } else {
                     $parent->addFilter($this->emptyExpression());
                 }
-            } else {
+            } elseif ($parent instanceof FilterExpression) {
                 $replacement = Filter::matchAll(clone($parent));
                 if ($parent->isRootNode()) {
                     $this->filter = $replacement;
@@ -156,7 +168,7 @@ class DataFilter extends FormElement
         return $this;
     }
 
-    protected function fixNotsWithMultipleChildren(Filter $filter = null)
+    protected function fixNotsWithMultipleChildren()
     {
         $this->filter = $this->fixNotsWithMultipleChildrenForFilter($this->filter);
         return $this;
@@ -164,12 +176,13 @@ class DataFilter extends FormElement
 
     protected function fixNotsWithMultipleChildrenForFilter(Filter $filter)
     {
-        if ($filter->isChain()) {
+        if ($filter instanceof FilterChain) {
             if ($filter->getOperatorName() === 'NOT') {
                 if ($filter->count() > 1) {
                     $filter = $this->notToNotAnd($filter);
                 }
             }
+            /** @var Filter $sub */
             foreach ($filter->filters() as $sub) {
                 $filter->replaceById(
                     $sub->getId(),
@@ -181,7 +194,7 @@ class DataFilter extends FormElement
         return $filter;
     }
 
-    protected function notToNotAnd(Filter $not)
+    protected function notToNotAnd(FilterChain $not)
     {
         $and = Filter::matchAll();
         foreach ($not->filters() as $sub) {
@@ -236,7 +249,7 @@ class DataFilter extends FormElement
      * Transforms a single submitted form component from an array
      * into a Filter object
      *
-     * @param Array $entry The array as submitted through the form
+     * @param array $entry The array as submitted through the form
      *
      * @return Filter
      */
@@ -304,13 +317,16 @@ class DataFilter extends FormElement
 
     protected function hasIncompleteExpressions(Filter $filter)
     {
-        if ($filter->isChain()) {
+        if ($filter instanceof FilterChain) {
             foreach ($filter->filters() as $sub) {
                 if ($this->hasIncompleteExpressions($sub)) {
                     return true;
                 }
             }
+
+            return false;
         } else {
+            /** @var FilterExpression $filter */
             if ($filter->isRootNode() && $this->isEmptyExpression($filter)) {
                 return false;
             }
@@ -325,6 +341,8 @@ class DataFilter extends FormElement
             // TODO: try, return false on E
             $filter = $this->arrayToFilter($value);
             $this->setValue($filter);
+        } else {
+            $filter = $value;
         }
 
         if ($this->hasIncompleteExpressions($filter)) {
