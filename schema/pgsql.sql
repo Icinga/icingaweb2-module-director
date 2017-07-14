@@ -170,6 +170,7 @@ CREATE TABLE director_datalist_entry (
   entry_name character varying(255) NOT NULL,
   entry_value text DEFAULT NULL,
   format enum_property_format,
+  allowed_roles varying(255) DEFAULT NULL,
   PRIMARY KEY (list_id, entry_name),
   CONSTRAINT director_datalist_entry_datalist
   FOREIGN KEY (list_id)
@@ -1835,4 +1836,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (135, NOW());
+  VALUES (136, NOW());

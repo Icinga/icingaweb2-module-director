@@ -110,6 +110,7 @@ CREATE TABLE director_datalist_entry (
   entry_name VARCHAR(255) COLLATE utf8_bin NOT NULL,
   entry_value TEXT DEFAULT NULL,
   format enum ('string', 'expression', 'json'),
+  allowed_roles VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (list_id, entry_name),
   CONSTRAINT director_datalist_value_datalist
     FOREIGN KEY datalist (list_id)
@@ -1558,4 +1559,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (135, NOW());
+  VALUES (136, NOW());
