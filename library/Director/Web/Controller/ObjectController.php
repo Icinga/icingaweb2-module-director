@@ -207,7 +207,7 @@ abstract class ObjectController extends ActionController
                 ucfirst($ltype)
             );
         } else {
-            $this->assertPermission('director/' . $ltype);
+            $this->assertPermission("director/${ltype}s");
             $this->addTitle(
                 $this->translate('Add new Icinga %s'),
                 ucfirst($ltype)
