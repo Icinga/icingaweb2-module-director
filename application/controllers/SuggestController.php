@@ -113,6 +113,16 @@ class SuggestController extends ActionController
         return $db->fetchCol($query);
     }
 
+    protected function suggestNotificationtemplates()
+    {
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_notification', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'");
+        return $db->fetchCol($query);
+    }
+
     protected function suggestCommandtemplates()
     {
         $db = $this->db()->getDbAdapter();
