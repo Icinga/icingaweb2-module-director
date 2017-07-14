@@ -6,6 +6,7 @@ use Icinga\Module\Director\Forms\DirectorDatalistEntryForm;
 use Icinga\Module\Director\Forms\DirectorDatalistForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Table\CustomvarTable;
 use Icinga\Module\Director\Web\Table\DatafieldTable;
 use Icinga\Module\Director\Web\Table\DatalistEntryTable;
 use Icinga\Module\Director\Web\Table\DatalistTable;
@@ -28,8 +29,7 @@ class DataController extends ActionController
         ));
 
         $this->tabs(new DataTabs())->activate('datalist');
-        $table = new DatalistTable($this->db());
-        $table->renderTo($this);
+        (new DatalistTable($this->db()))->renderTo($this);
     }
 
     public function listAction()
@@ -72,43 +72,6 @@ class DataController extends ActionController
         $form->handleRequest();
     }
 
-    public function indexAction()
-    {
-        $edit = false;
-
-        if ($id = $this->params->get('id')) {
-            $edit = true;
-        }
-
-        if ($edit) {
-            $this->addTitle($title = $this->translate('Edit list'));
-
-            $this->getTabs()->add('editlist', array(
-                'url'       => 'director/datalist/edit' . '?id=' . $id,
-                'label'     => $title,
-            ))->add('entries', array(
-                'url'       => 'director/data/listentry' . '?list_id=' . $id,
-                'label'     => $this->translate('List entries'),
-            ))->activate('editlist');
-        } else {
-            $this->addTitle($title = $this->translate('Add list'));
-            $this->getTabs()->add('addlist', array(
-                'url'       => 'director/datalist/add',
-                'label'     => $title,
-            ))->activate('addlist');
-        }
-
-        $form = DirectorDatalistForm::load()
-            ->setSuccessUrl('director/data/lists')
-            ->setDb($this->db());
-
-        if ($edit) {
-            $form->loadObject($id);
-        }
-
-        $form->handleRequest();
-    }
-
     public function fieldsAction()
     {
         $this->tabs(new DataTabs())->activate('datafield');
@@ -120,7 +83,14 @@ class DataController extends ActionController
             ['class' => 'icon-plus']
         ));
 
-        $this->content()->add(new DatafieldTable($this->db()));
+        (new DatafieldTable($this->db()))->renderTo($this);
+    }
+
+    public function varsAction()
+    {
+        $this->tabs(new DataTabs())->activate('customvars');
+        $this->addTitle($this->translate('Custom Vars - Overview'));
+        (new CustomvarTable($this->db()))->renderTo($this);
     }
 
     public function listentryAction()
