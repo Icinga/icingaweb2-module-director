@@ -111,7 +111,7 @@ class InspectController extends ActionController
             if ($name = $this->params->get('endpoint')) {
                 $this->endpoint = IcingaEndpoint::load($name, $this->db());
             } else {
-                $this->endpoint = $this->db()->getDeploymentEndpointName();
+                $this->endpoint = $this->db()->getDeploymentEndpoint();
             }
         }
 
