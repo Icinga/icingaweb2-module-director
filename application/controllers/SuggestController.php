@@ -16,6 +16,10 @@ class SuggestController extends ActionController
     }
     */
 
+    protected function checkDirectorPermissions()
+    {
+    }
+
     public function indexAction()
     {
         // TODO: Using some temporarily hardcoded methods, should use DataViews later on
@@ -73,6 +77,7 @@ class SuggestController extends ActionController
      */
     protected function suggestLocations()
     {
+        $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->distinct()
@@ -84,6 +89,7 @@ class SuggestController extends ActionController
 
     protected function suggestHostnames()
     {
+        $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_host', 'object_name')
@@ -94,6 +100,7 @@ class SuggestController extends ActionController
 
     protected function suggestHosttemplates()
     {
+        $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_host', 'object_name')
@@ -105,6 +112,7 @@ class SuggestController extends ActionController
 
     protected function suggestServicetemplates()
     {
+        $this->assertPermission('director/services');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_service', 'object_name')
@@ -115,6 +123,7 @@ class SuggestController extends ActionController
 
     protected function suggestNotificationtemplates()
     {
+        $this->assertPermission('director/notifications');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_notification', 'object_name')
@@ -125,6 +134,7 @@ class SuggestController extends ActionController
 
     protected function suggestCommandtemplates()
     {
+        $this->assertPermission('director/commands');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_command', 'object_name')
