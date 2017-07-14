@@ -131,7 +131,7 @@ abstract class ObjectsController extends ActionController
             Link::create(
                 $this->translate('Add'),
                 "director/$type/add",
-                ['type' => 'apply_rule'],
+                ['type' => 'apply'],
                 [
                     'title' => sprintf(
                         $this->translate('Create a new %s Apply Rule'),
