@@ -7,7 +7,7 @@ class DataDashboard extends Dashboard
     protected $dashletNames = array(
         'Datafield',
         'Datalist',
-        // 'CustomVars'
+        'Customvar'
     );
 
     public function getTitle()
