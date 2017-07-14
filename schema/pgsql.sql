@@ -1406,6 +1406,7 @@ CREATE TABLE import_row_modifier (
   target_property character varying(255) DEFAULT NULL,
   provider_class character varying(72) NOT NULL,
   priority integer NOT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT row_modifier_import_source
     FOREIGN KEY (source_id)

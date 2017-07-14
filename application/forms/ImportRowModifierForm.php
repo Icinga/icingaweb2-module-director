@@ -41,6 +41,15 @@ class ImportRowModifierForm extends DirectorObjectForm
             ),
         ));
 
+        $this->addElement('textarea', 'description', array(
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate(
+                'An extended description for this Import Row Modifier. This should explain'
+                . " it's purpose and why it has been put in place at all."
+            ),
+            'rows'        => '3',
+        ));
+
         $error = false;
         try {
             $mods = $this->enumModifiers();

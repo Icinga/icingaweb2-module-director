@@ -1270,6 +1270,7 @@ CREATE TABLE import_row_modifier (
   target_property VARCHAR(255) DEFAULT NULL,
   provider_class VARCHAR(72) NOT NULL,
   priority SMALLINT UNSIGNED NOT NULL,
+  description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   KEY search_idx (property_name),
   CONSTRAINT row_modifier_import_source
