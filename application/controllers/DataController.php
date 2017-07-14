@@ -9,6 +9,7 @@ use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Table\DatafieldTable;
 use Icinga\Module\Director\Web\Table\DatalistEntryTable;
 use Icinga\Module\Director\Web\Table\DatalistTable;
+use Icinga\Module\Director\Web\Tabs\DataTabs;
 use ipl\Html\Link;
 
 class DataController extends ActionController
@@ -26,7 +27,7 @@ class DataController extends ActionController
             ]
         ));
 
-        $this->setDataTabs()->activate('datalist');
+        $this->tabs(new DataTabs())->activate('datalist');
         $table = new DatalistTable($this->db());
         $table->renderTo($this);
     }
@@ -110,7 +111,7 @@ class DataController extends ActionController
 
     public function fieldsAction()
     {
-        $this->setDataTabs()->activate('datafield');
+        $this->tabs(new DataTabs())->activate('datafield');
         $this->addTitle($this->translate('Data fields'));
         $this->actions()->add(Link::create(
             $this->translate('Add'),
@@ -163,16 +164,5 @@ class DataController extends ActionController
         $table->attributes()->set('data-base-target', '_self');
         $table->setList($list);
         $this->content()->add([$form, $table]);
-    }
-
-    protected function setDataTabs()
-    {
-        return $this->tabs()->add('datafield', [
-            'label' => $this->translate('Data fields'),
-            'url'   => 'director/data/fields'
-        ])->add('datalist', [
-            'label' => $this->translate('Data lists'),
-            'url'   => 'director/data/lists'
-        ]);
     }
 }
