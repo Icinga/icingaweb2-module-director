@@ -26,25 +26,31 @@ class ObjectsTabs extends Tabs
         if ($auth->hasPermission('director/admin')) {
             if ($object->supportsImports()) {
                 $this->add('templates', array(
-                    'url'   => sprintf('director/%ss/templates', strtolower($type)),
+                    'url' => sprintf('director/%ss/templates', strtolower($type)),
                     'label' => $this->translate('Templates'),
                 ));
             }
 
             if ($object->supportsGroups()) {
                 $this->add('groups', array(
-                    'url'   => sprintf('director/%sgroups', $type),
+                    'url' => sprintf('director/%sgroups', $type),
                     'label' => $this->translate('Groups')
                 ));
             }
+        }
 
+        if ($auth->hasPermission('director/admin') || (
+            $object->getShortTableName() && $auth->hasPermission('director/notifications')
+        )) {
             if ($object->supportsApplyRules()) {
                 $this->add('applyrules', array(
-                    'url'    => sprintf('director/%ss/applyrules', $type),
+                    'url' => sprintf('director/%ss/applyrules', $type),
                     'label' => $this->translate('Apply')
                 ));
             }
+        }
 
+        if ($auth->hasPermission('director/admin')) {
             if ($object->supportsChoices()) {
                 $this->add('choices', array(
                     'url'    => sprintf('director/templatechoices/%s', $type),
