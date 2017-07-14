@@ -95,6 +95,28 @@ abstract class QuickForm extends QuickBaseForm
         return $this;
     }
 
+    protected function addSubmitButton($label)
+    {
+        $el = $this->createElement('submit', $label)
+            ->setLabel($label)
+            ->setDecorators(array('ViewHelper'));
+        $this->submitButtonName = $el->getName();
+        $this->setSubmitLabel($label);
+        $this->addElement($el);
+    }
+
+    protected function addStandaloneSubmitButton($label)
+    {
+        $this->addSubmitButton($label);
+        $this->addDisplayGroup([$this->submitButtonName], 'buttons', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'p')),
+            ),
+            'order' => 1000,
+        ));
+    }
+
     protected function addSubmitButtonIfSet()
     {
         if (false === ($label = $this->getSubmitLabel())) {
@@ -105,11 +127,7 @@ abstract class QuickForm extends QuickBaseForm
             return;
         }
 
-        $el = $this->createElement('submit', $label)
-            ->setLabel($label)
-            ->setDecorators(array('ViewHelper'));
-        $this->submitButtonName = $el->getName();
-        $this->addElement($el);
+        $this->addSubmitButton($label);
 
         $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT', array(
             'role' => 'none',
@@ -129,6 +147,11 @@ abstract class QuickForm extends QuickBaseForm
             )
         );
 
+        $this->addButtonDisplayGroup();
+    }
+
+    protected function addButtonDisplayGroup()
+    {
         $grp = array(
             $this->submitButtonName,
             $this->deleteButtonName
