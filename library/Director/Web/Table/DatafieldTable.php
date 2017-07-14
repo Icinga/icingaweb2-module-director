@@ -10,8 +10,8 @@ use Zend_Db_Select as ZfDbSelect;
 class DatafieldTable extends ZfQueryBasedTable
 {
     protected $searchColumns = array(
-        'varname',
-        'caption',
+        'df.varname',
+        'df.caption',
     );
 
     public function getColumns()
