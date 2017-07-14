@@ -564,7 +564,6 @@ ul.main-actions {
   }
 }
 
-#layout.minimal-layout ul.main-actions,
 #layout.twocols ul.main-actions {
   max-width: 50em;
   li {
@@ -575,6 +574,22 @@ ul.main-actions {
     }
   }
 }
+
+#layout.minimal-layout ul.main-actions {
+  max-width: unset;
+  li {
+    a { height: auto; }
+    width: 100%;
+    > a > i {
+      font-size: 1.8em;
+    }
+
+    > a > p {
+      padding-left: 3em;
+    }
+  }
+}
+
 
 #layout.compact-layout.twocols table.Differences,
 #layout.default-layout.twocols table.Differences {
