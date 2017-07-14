@@ -70,7 +70,11 @@ class IcingaObjectFilterHelper
                 $ids[] = $template->getAutoincId();
             }
 
-            $sub->where("$i.parent_${type}_id IN (?)", $ids);
+            if (empty($ids)) {
+                $sub->where('(1 = 0)');
+            } else {
+                $sub->where("$i.parent_${type}_id IN (?)", $ids);
+            }
         } else {
             throw new ProgrammingError(
                 'Unable to understand "%s" inheritance',
