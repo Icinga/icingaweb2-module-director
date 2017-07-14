@@ -116,22 +116,27 @@ abstract class ObjectsController extends ActionController
 
     public function applyrulesAction()
     {
+        $type = $this->getType();
+        $tType = $this->translate(ucfirst($type));
         $this
             ->assertApplyRulePermission()
             ->addObjectsTabs()
             ->addTitle(
                 $this->translate('All your %s Apply Rules'),
-                $this->translate(ucfirst($this->getType()))
+                $tType
             );
         $this->actions()/*->add(
             $this->getBackToDashboardLink()
         )*/->add(
             Link::create(
                 $this->translate('Add'),
-                'director/service/add',
+                "director/$type/add",
                 ['type' => 'apply_rule'],
                 [
-                    'title' => $this->translate('Create a new Service Apply Rule'),
+                    'title' => sprintf(
+                        $this->translate('Create a new %s Apply Rule'),
+                        $tType
+                    ),
                     'class' => 'icon-plus',
                     'data-base-target' => '_next'
                 ]
