@@ -170,7 +170,7 @@ CREATE TABLE director_datalist_entry (
   entry_name character varying(255) NOT NULL,
   entry_value text DEFAULT NULL,
   format enum_property_format,
-  allowed_roles varying(255) DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
   PRIMARY KEY (list_id, entry_name),
   CONSTRAINT director_datalist_entry_datalist
   FOREIGN KEY (list_id)
