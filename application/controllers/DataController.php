@@ -108,9 +108,10 @@ class DataController extends ActionController
         $form->handleRequest();
     }
 
-
     public function fieldsAction()
     {
+        $this->setDataTabs()->activate('datafield');
+        $this->addTitle($this->translate('Data fields'));
         $this->actions()->add(Link::create(
             $this->translate('Add'),
             'director/datafield/add',
@@ -118,8 +119,6 @@ class DataController extends ActionController
             ['class' => 'icon-plus']
         ));
 
-        $this->setDataTabs()->activate('datafield');
-        $this->addTitle($this->translate('Data fields'));
         $this->content()->add(new DatafieldTable($this->db()));
     }
 
