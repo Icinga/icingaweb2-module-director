@@ -123,7 +123,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
     {
         $auth = Auth::getInstance();
         $type = $this->type;
-        $restrictions = $auth->getRestrictions("director/$type/applyrule/filter-by-name");
+        $restrictions = $auth->getRestrictions("director/$type/apply/filter-by-name");
         if (empty($restrictions)) {
             return $query;
         }
