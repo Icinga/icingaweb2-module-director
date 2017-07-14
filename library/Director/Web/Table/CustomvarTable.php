@@ -26,11 +26,11 @@ class CustomvarTable extends ZfQueryBasedTable
         );
 
         foreach ($this->getObjectTypes() as $type) {
-            $tr->add($this::td(sprintf(
+            $tr->add($this::td($this::nobr(sprintf(
                 $this->translate('%d (variants: %d)'),
                 $row->{"cnt_$type"},
                 $row->{"distinct_$type"}
-            )));
+            ))));
         }
 
         return $tr;
