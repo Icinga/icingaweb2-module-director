@@ -28,16 +28,17 @@ class DataTypeDirectorObject extends DataTypeHook
 
         $enum = $db->fetchPairs($query);
 
-        $params = array(
-            'multiOptions' => array(
-                null => $form->translate('- please choose -'),
-            ) + $enum,
-        );
 
         if ($this->getSetting('data_type') === 'array') {
             $type = 'extensibleSet';
             $params['sorted'] = true;
+            $params = ['multiOptions' => $enum];
         } else {
+            $params = array(
+                'multiOptions' => array(
+                        null => $form->translate('- please choose -'),
+                    ) + $enum,
+            );
             $type = 'select';
         }
 
