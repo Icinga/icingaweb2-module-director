@@ -17,8 +17,9 @@ class DashboardController extends ActionController
             $this->setAutorefreshInterval(10);
         }
 
-        $this->setTitle($this->translate('Icinga Director'));
-        $names = $this->params->getValues('name', array('Objects', 'Deployment', 'Data'));
+        $mainDashlets = ['Objects', 'Alerts', 'Automation', 'Deployment', 'Data'];
+        $this->setTitle($this->translate('Icinga Director - Main Dashboard'));
+        $names = $this->params->getValues('name', $mainDashlets);
         if (count($names) === 1) {
             // TODO: Find a better way for this
             $this->addSingleTab($this->translate(ucfirst($names[0])));

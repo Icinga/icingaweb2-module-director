@@ -7,8 +7,6 @@ class NotificationsDashboard extends Dashboard
     protected $dashletNames = [
         'NotificationTemplate',
         'NotificationApply',
-        'UserObject',
-        'TimeperiodObject'
     ];
 
     public function getTitle()
