@@ -19,6 +19,11 @@ class NotificationsController extends ObjectsController
         throw new NotFoundError('Not found');
     }
 
+    protected function assertApplyRulePermission()
+    {
+        return $this->assertPermission('director/notifications');
+    }
+
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/notifications');

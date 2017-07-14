@@ -109,10 +109,15 @@ abstract class ObjectsController extends ActionController
             : TemplatesTable::create($type, $this->db())->renderTo($this);
     }
 
+    protected function assertApplyRulePermission()
+    {
+        return $this->assertPermission('director/admin');
+    }
+
     public function applyrulesAction()
     {
         $this
-            ->assertPermission('director/admin')
+            ->assertApplyRulePermission()
             ->addObjectsTabs()
             ->addTitle(
                 $this->translate('All your %s Apply Rules'),
