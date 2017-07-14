@@ -374,7 +374,7 @@ class HostController extends ObjectController
             ['name' => $host->object_name],
             ['class' => 'icon-left-big']
         ));
-        $this->getTabs()->activate('services');
+        $this->tabs()->activate('services');
     }
 
     public function agentAction()
@@ -489,7 +489,7 @@ class HostController extends ObjectController
             return;
         }
 
-        return parent::handleApiRequest();
+        parent::handleApiRequest();
     }
 
     public function ticketAction()
