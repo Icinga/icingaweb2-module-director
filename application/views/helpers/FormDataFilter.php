@@ -3,6 +3,7 @@
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
+use Icinga\Data\FilterColumns;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
@@ -360,7 +361,6 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 'data-suggestion-context' => 'HostFilterColumns',
             ]
         );
-
 
         $cols = $this->getColumnList();
         if ($active && !isset($cols[$active])) {
