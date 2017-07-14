@@ -4,6 +4,7 @@
 </div>
 
 <div class="content">
+<p><?= $this->escape($rule->description) ?></p>
 <?php if (! $rule->hasSyncProperties()): ?>
 <p class="warning">
 <?= sprintf(

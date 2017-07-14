@@ -1246,6 +1246,7 @@ CREATE TABLE import_source (
   ) NOT NULL DEFAULT 'unknown',
   last_error_message TEXT DEFAULT NULL,
   last_attempt DATETIME DEFAULT NULL,
+  description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   INDEX search_idx (key_column)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1390,6 +1391,7 @@ CREATE TABLE sync_rule (
   ) NOT NULL DEFAULT 'unknown',
   last_error_message TEXT DEFAULT NULL,
   last_attempt DATETIME DEFAULT NULL,
+  description TEXT DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1559,4 +1561,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (136, NOW());
+  VALUES (137, NOW());

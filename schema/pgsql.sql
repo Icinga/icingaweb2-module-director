@@ -1377,6 +1377,7 @@ CREATE TABLE import_source (
   import_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1529,6 +1530,7 @@ CREATE TABLE sync_rule (
   sync_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1836,4 +1838,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (136, NOW());
+  VALUES (137, NOW());

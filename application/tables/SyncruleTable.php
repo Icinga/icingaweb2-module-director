@@ -20,6 +20,8 @@ class SyncruleTable extends QuickTable
             'purge_existing'     => 's.purge_existing',
             'filter_expression'  => 's.filter_expression',
             'last_error_message' => 's.last_error_message',
+            'description'        => 'CASE WHEN s.description IS NULL THEN s.rule_name'
+                . " ELSE s.rule_name || ': ' || s.description END",
         );
     }
 
@@ -46,7 +48,7 @@ class SyncruleTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'rule_name' => $view->translate('Rule name'),
+            'description' => $view->translate('Rule name'),
             'object_type'  => $view->translate('Object type'),
         );
     }
