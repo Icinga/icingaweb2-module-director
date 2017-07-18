@@ -373,7 +373,7 @@ class IcingaService extends IcingaObject
         return '';
     }
 
-    protected function renderTempelate_choice_id()
+    protected function renderTemplate_choice_id()
     {
         return '';
     }

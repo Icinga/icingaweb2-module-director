@@ -384,7 +384,7 @@ class IcingaHost extends IcingaObject
      *
      * @return string
      */
-    protected function renderTempelate_choice_id()
+    protected function renderTemplate_choice_id()
     {
         return '';
     }
