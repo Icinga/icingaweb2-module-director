@@ -29,12 +29,14 @@ class ObjectsTableHost extends ObjectsTable
         'address'     => 'Address'
     ];
 
-    protected function assemble()
+    public function assemble()
     {
         $this->enableMultiSelect(
             'director/hosts/edit',
             'director/hosts',
             ['name']
         );
+
+        parent::assemble();
     }
 }

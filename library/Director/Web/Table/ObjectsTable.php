@@ -123,6 +123,12 @@ class ObjectsTable extends ZfQueryBasedTable
         return $cols;
     }
 
+    public function assemble()
+    {
+        $this->generateHeader();
+        parent::assemble();
+    }
+
     public function renderRow($row)
     {
         $tr = static::tr([

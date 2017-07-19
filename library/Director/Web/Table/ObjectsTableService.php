@@ -29,13 +29,15 @@ class ObjectsTableService extends ObjectsTable
             'id'            => 'o.id',
         ];
     }
-    protected function assemble()
+
+    public function assemble()
     {
         $this->enableMultiSelect(
             'director/services/edit',
             'director/services',
             ['id']
         );
+        parent::assemble();
     }
 
     public function getColumnsToBeRendered()

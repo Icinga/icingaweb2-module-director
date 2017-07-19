@@ -24,6 +24,12 @@ class ObjectSetTable extends ZfQueryBasedTable
         return $table;
     }
 
+    public function assemble()
+    {
+        $this->generateHeader();
+        return parent::assemble();
+    }
+
     public function getType()
     {
         return $this->type;
