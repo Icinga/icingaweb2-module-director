@@ -8,15 +8,13 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 // use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
-class DeployConfigForm extends QuickForm
+class DeployConfigForm extends DirectorForm
 {
     /** @var DeploymentApiInterface */
     private $api;
-
-    /** @var Db */
-    private $db;
 
     /** @var string */
     private $checksum;
@@ -117,12 +115,6 @@ class DeployConfigForm extends QuickForm
     public function setApi(DeploymentApiInterface $api)
     {
         $this->api = $api;
-        return $this;
-    }
-
-    public function setDb(Db $db)
-    {
-        $this->db = $db;
         return $this;
     }
 }
