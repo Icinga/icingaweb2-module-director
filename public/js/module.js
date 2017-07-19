@@ -31,8 +31,32 @@
             this.module.on('focus', '.director-suggest', this.enterSuggestionField);
             this.module.on('focusout', '.director-suggest', this.leaveSuggestionField);
             this.module.on('click', '.director-suggestions li', this.clickSuggestion);
+            this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
             this.module.icinga.logger.debug('Director module initialized');
+        },
+
+        tabWantsFullscreen: function(ev) {
+            var icinga = this.module.icinga;
+            var $a, $container, id;
+
+            if (icinga.ui.isOneColLayout()) {
+                return;
+            }
+
+            $a = $(ev.currentTarget);
+            $container = $a.closest('.container');
+            id = $container.attr('id');
+
+            icinga.loader.stopPendingRequestsFor($container);
+            if (id === 'col2') {
+                icinga.ui.moveToLeft();
+            }
+
+            icinga.ui.layout1col();
+            icinga.history.pushCurrentState();
+            ev.preventDefault();
+            ev.stopPropagation();
         },
 
         /**
