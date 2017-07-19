@@ -38,11 +38,18 @@ class SimpleViewRenderer extends Helper implements ValidHtml
         if (null === $name) {
             $name = null; // $this->getResponseSegment();
         }
+        $html = '';
 
-        $this->getResponse()->appendBody(
-            $this->view->controls . $this->view->content,
-            $name
-        );
+        if (null !== $this->view->controls) {
+            $html .= $this->view->controls->__toString();
+        }
+        if (null !== $this->view->content) {
+            $html .= $this->view->content->__toString();
+        }
+
+        if ($html !== '') {
+            $this->getResponse()->appendBody($html, $name);
+        }
 
         // $this->setNoRender();
         $this->rendered = true;
