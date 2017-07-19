@@ -1,6 +1,34 @@
 div.action-bar a {
   color: @icinga-blue;
+}
+
+div.action-bar > a {
   margin-right: 1em;
+}
+
+div.action-bar {
+  .pagination-control {
+    float: none;
+    clear: none;
+    display: inline-block;
+    line-height: inherit;
+    margin: 0;
+    vertical-align: middle;
+  }
+}
+
+#layout.twocols div.action-bar .pagination-control {
+  li {
+    display: none;
+  }
+
+  li:nth-child(1), li.active, li:last-child {
+    display: list-item;
+  }
+
+  li.active a {
+    border-bottom: none;
+  }
 }
 
 .content a {
@@ -54,6 +82,14 @@ span.disabled {
     margin-right: 1em;
   }
 }
+
+.action-bar {
+  form {
+    display: inline;
+    margin-right: 1em;
+  }
+}
+
 
 pre.disabled {
   color: @gray;
