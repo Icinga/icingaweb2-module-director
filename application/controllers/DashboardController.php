@@ -17,19 +17,26 @@ class DashboardController extends ActionController
             $this->setAutorefreshInterval(10);
         }
 
-        $mainDashlets = ['Objects', 'Alerts', 'Automation', 'Deployment', 'Data'];
+        $mainDashboards = ['Objects', 'Alerts', 'Automation', 'Deployment', 'Data'];
         $this->setTitle($this->translate('Icinga Director - Main Dashboard'));
-        $names = $this->params->getValues('name', $mainDashlets);
+        $names = $this->params->getValues('name', $mainDashboards);
         if (count($names) === 1) {
             // TODO: Find a better way for this
-            $this->addSingleTab($this->translate(ucfirst($names[0])));
+            $name = $names[0];
+            $dashboard = Dashboard::loadByName($name, $this->db());
+            $this->tabs($dashboard->getTabs())->activate($name);
+            // $this->addSingleTab($this->translate(ucfirst($name)));
         } else {
             $this->addSingleTab($this->translate('Overview'));
         }
 
         $cntDashboards = 0;
         foreach ($names as $name) {
-            $dashboard = Dashboard::loadByName($name, $this->db());
+            if ($name instanceof Dashboard) {
+                $dashboard = $name;
+            } else {
+                $dashboard = Dashboard::loadByName($name, $this->db());
+            }
             if ($dashboard->isAvailable()) {
                 $cntDashboards++;
                 $this->content()->add($dashboard);

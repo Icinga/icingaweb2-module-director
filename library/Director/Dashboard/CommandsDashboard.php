@@ -25,4 +25,11 @@ class CommandsDashboard extends Dashboard
             . ' plugins on your Monitoring (or monitored) systems'
         );
     }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['hosts', 'services', 'commands']
+        );
+    }
 }

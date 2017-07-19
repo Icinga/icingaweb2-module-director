@@ -25,4 +25,11 @@ class HostsDashboard extends Dashboard
             . ' preconfigured templates.'
         );
     }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['hosts', 'services', 'commands']
+        );
+    }
 }

@@ -34,4 +34,11 @@ class NotificationsDashboard extends Dashboard
             . ' define as many custom notification commands as you want'
         );
     }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['notifications', 'users', 'timePeriods']
+        );
+    }
 }

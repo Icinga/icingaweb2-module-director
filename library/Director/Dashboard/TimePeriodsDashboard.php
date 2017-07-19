@@ -23,4 +23,11 @@ class TimePeriodsDashboard extends Dashboard
             . ' you to tackle those and similar requirements.'
         );
     }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['notifications', 'users', 'timePeriods']
+        );
+    }
 }

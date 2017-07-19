@@ -26,4 +26,11 @@ class UsersDashboard extends Dashboard
             . ' to automate all the things with Imports and related Sync Rules!'
         );
     }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['notifications', 'users', 'timePeriods']
+        );
+    }
 }

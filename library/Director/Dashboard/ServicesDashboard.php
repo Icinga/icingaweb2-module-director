@@ -29,4 +29,11 @@ class ServicesDashboard extends Dashboard
             . ' to still modify (or delete) many of them at once.'
         );
     }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['hosts', 'services', 'commands']
+        );
+    }
 }

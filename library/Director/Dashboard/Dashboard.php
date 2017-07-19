@@ -7,15 +7,14 @@ use Exception;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
-use Icinga\Web\View;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
-use ipl\Html\BaseElement;
+use Icinga\Web\Widget\Tab;
 use ipl\Html\Html;
 use ipl\Html\HtmlString;
 use ipl\Html\Util;
-use ipl\Html\ValidHtml;
 use ipl\Translation\TranslationHelper;
+use ipl\Web\Component\Tabs;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends Html implements Countable
@@ -105,6 +104,40 @@ abstract class Dashboard extends Html implements Countable
     public function getDescription()
     {
         return null;
+    }
+
+    public function getTabs()
+    {
+        $lName = $this->getName();
+        $tabs = new Tabs();
+        $tabs->add($lName, new Tab([
+            'label' => $this->translate(ucfirst($this->getName())),
+            'url'   => 'director/dashboard',
+            'urlParams' => ['name' => $lName]
+        ]));
+
+        return $tabs;
+    }
+
+    protected function createTabsForDashboards($names)
+    {
+        $tabs = new Tabs();
+        foreach ($names as $name) {
+            $dashboard = Dashboard::loadByName($name, $this->getDb());
+            $tabs->add($name, $this->createTabForDashboard($dashboard));
+        }
+
+        return $tabs;
+    }
+
+    protected function createTabForDashboard(Dashboard $dashboard)
+    {
+        $name = $dashboard->getName();
+        return new Tab([
+            'label' => $this->translate(ucfirst($name)),
+            'url'   => 'director/dashboard',
+            'urlParams' => ['name' => $name]
+        ]);
     }
 
     public function count()
