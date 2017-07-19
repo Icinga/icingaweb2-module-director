@@ -35,6 +35,12 @@ abstract class ZfQueryBasedTable extends Table
 
     private $query;
 
+    private $fetchedRows;
+
+    protected $lastDay;
+
+    private $isUsEnglish;
+
     protected $searchColumns = [];
 
     public function __construct(DbConnection $connection)
@@ -95,27 +101,71 @@ abstract class ZfQueryBasedTable extends Table
 
     abstract protected function prepareQuery();
 
-    public function renderContent()
+    public function assemble()
     {
         $this->header();
         $this->fetchRows();
+    }
 
-        return parent::renderContent();
+    protected function splitByDay($timestamp)
+    {
+        $this->renderDayIfNew((int) $timestamp);
     }
 
     protected function fetchRows()
     {
-        $body = $this->body();
         foreach ($this->fetch() as $row) {
-            $body->add($this->renderRow($row));
+            // Hint: do not fetch the body first, the row might want to replace it
+            $tr = $this->renderRow($row);
+            $this->body()->add($tr);
         }
+    }
+
+
+    protected function isUsEnglish()
+    {
+        if ($this->isUsEnglish === null) {
+            $this->isUsEnglish = in_array(setlocale(LC_ALL, 0), array('en_US.UTF-8', 'C'));
+        }
+
+        return $this->isUsEnglish;
+    }
+
+    /**
+     * @param  int $timestamp
+     * @return string
+     */
+    protected function renderDayIfNew($timestamp)
+    {
+        if ($this->isUsEnglish()) {
+            $day = date('l, jS F Y', $timestamp);
+        } else {
+            $day = strftime('%A, %e. %B, %Y', $timestamp);
+        }
+
+        if ($this->lastDay === $day) {
+            return;
+        }
+
+        $this->nextHeader()->add(
+            $this::th($day, ['colspan' => 2])->addAttributes(['class' => 'table-header-day'])
+        );
+
+        $this->lastDay = $day;
+        $this->nextBody();
+    }
+
     }
 
     public function fetch()
     {
-        return $this->db->fetchAll(
+        $rows = $this->db->fetchAll(
             $this->getQuery()
         );
+
+        $this->fetchedRows = count($rows);
+
+        return $rows;
     }
 
     public function connection()
