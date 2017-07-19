@@ -95,9 +95,9 @@ abstract class QuickForm extends QuickBaseForm
         return $this;
     }
 
-    protected function addSubmitButton($label)
+    protected function addSubmitButton($label, $options = [])
     {
-        $el = $this->createElement('submit', $label)
+        $el = $this->createElement('submit', $label, $options)
             ->setLabel($label)
             ->setDecorators(array('ViewHelper'));
         $this->submitButtonName = $el->getName();
@@ -105,9 +105,9 @@ abstract class QuickForm extends QuickBaseForm
         $this->addElement($el);
     }
 
-    protected function addStandaloneSubmitButton($label)
+    protected function addStandaloneSubmitButton($label, $options = [])
     {
-        $this->addSubmitButton($label);
+        $this->addSubmitButton($label, $options);
         $this->addDisplayGroup([$this->submitButtonName], 'buttons', array(
             'decorators' => array(
                 'FormElements',
