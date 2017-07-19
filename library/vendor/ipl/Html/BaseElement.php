@@ -13,6 +13,8 @@ abstract class BaseElement extends Html
     /** @var string */
     protected $tag;
 
+    protected $hasBeenAssembled = false;
+
     protected static $voidElements = [
         'area',
         'base',
@@ -107,13 +109,27 @@ abstract class BaseElement extends Html
     {
     }
 
+    public function add($content)
+    {
+        if (! $this->hasBeenAssembled) {
+            $this->hasBeenAssembled = true;
+            $this->assemble();
+        }
+
+        return parent::add($content);
+    }
+
     /**
      * @return string
      */
     public function render()
     {
         $tag = $this->getTag();
-        $this->assemble();
+        if (! $this->hasBeenAssembled) {
+            $this->hasBeenAssembled = true;
+            $this->assemble();
+        }
+
         $content = $this->renderContent();
         if (strlen($content) || $this->wantsClosingTag()) {
             return sprintf(
