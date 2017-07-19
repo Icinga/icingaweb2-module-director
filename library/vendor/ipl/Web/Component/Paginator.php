@@ -102,7 +102,6 @@ class Paginator extends BaseElement
     protected function setCurrentPage($page)
     {
         $page = (int) $page;
-        $this->currentPage = $page;
         $offset = $this->firstRowOnPage($page) - 1;
         if ($page > 1) {
             $query = $this->getQuery();
@@ -257,7 +256,9 @@ class Paginator extends BaseElement
         if ($perPage > 0) {
             $this->setItemsPerPage($perPage);
         } else {
-            $this->setItemsPerPage($this->getDefaultItemCountPerPage());
+            if (! $this->getQuery()->hasLimit()) {
+                $this->setItemsPerPage($this->getDefaultItemCountPerPage());
+            }
         }
         if ($page > 0) {
             $this->setCurrentPage($page);
@@ -434,14 +435,12 @@ class Paginator extends BaseElement
         );
     }
 
-    public function renderContent()
+    public function assemble()
     {
         $this->add([
             $this->renderScreenReaderHeader(),
             $this->renderList()
         ]);
-
-        return parent::renderContent();
     }
 
     protected function renderScreenReaderHeader()
