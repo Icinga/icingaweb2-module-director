@@ -92,10 +92,23 @@ class Table extends BaseElement
         return Element::create('td', $attributes, $content);
     }
 
+    public static function row($row, $attributes = null, $tag = 'td')
+    {
+        $tr = static::tr();
+        foreach ((array) $row as $value) {
+            $tr->add(Html::tag($tag, null, $value));
+        }
+
+        if ($attributes !== null) {
+            $tr->setAttributes($attributes);
+        }
+
+        return $tr;
+    }
 
     public function generateHeader()
     {
-        return Element::create('thead')->add(
+        return $this->nextHeader()->add(
             $this->addHeaderColumnsTo(static::tr())
         );
     }
@@ -111,7 +124,7 @@ class Table extends BaseElement
     {
         foreach ($this->getColumnsToBeRendered() as $column) {
             $parent->add(
-                Element::create('th')->setContent($column)
+                Html::tag('th')->setContent($column)
             );
         }
 
@@ -185,7 +198,7 @@ class Table extends BaseElement
     public function header()
     {
         if ($this->header === null) {
-            $this->header = $this->generateHeader();
+            $this->header = Element::create('thead')->setSeparator("\n");
         }
 
         return $this->header;
@@ -198,6 +211,26 @@ class Table extends BaseElement
         }
 
         return $this->footer;
+    }
+
+    public function nextBody()
+    {
+        if ($this->body !== null) {
+            $this->add($this->body);
+            $this->body = null;
+        }
+
+        return $this->body();
+    }
+
+    public function nextHeader()
+    {
+        if ($this->header !== null) {
+            $this->add($this->header);
+            $this->header = null;
+        }
+
+        return $this->header();
     }
 
     public function renderContent()
