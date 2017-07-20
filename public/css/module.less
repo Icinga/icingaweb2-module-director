@@ -584,29 +584,29 @@ ul.main-actions {
       font-weight: bold;
       display: block;
       text-decoration: none;
-      height: 12em;
+      height: 13em;
 
       overflow: hidden;
 
       &.active {
         color: inherit;
         background-color: @gray-lightest;
-        -webkit-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
-        -moz-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
-        box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        -webkit-box-shadow: inset 1px 1px 2px 0px rgba(0,0,0,0.25);
+        -moz-box-shadow: inset 1px 1px 2px 0px rgba(0,0,0,0.25);
+        box-shadow: inset 1px 1px 2px 0px rgba(0,0,0,0.25);
       }
 
       &:hover {
         background-color: #666;
         color: white;
         text-decoration: none;
-        -webkit-box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.35);
-        -moz-box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.35);
-        box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.35);
+        -webkit-box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.35);
+        -moz-box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.35);
+        box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.35);
         &.active {
-          color: inherit;
-          background-color: @gray-lightest;
-
+          -webkit-box-shadow: none;
+          -moz-box-shadow: none;
+          box-shadow: none;
         }
       }
 
@@ -640,6 +640,7 @@ ul.main-actions {
     > a > p {
       padding-left: 3em;
     }
+    margin-bottom: 0.5em;
   }
 }
 
