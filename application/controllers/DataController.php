@@ -42,7 +42,7 @@ class DataController extends ActionController
         if ($id = $this->url()->shift('id')) {
             $form->loadObject($id);
             $this->addTitle(
-                $this->translate('Data list: %s'),
+                $this->translate('Data List: %s'),
                 $form->getObject()->list_name
             );
 
@@ -75,7 +75,7 @@ class DataController extends ActionController
     public function fieldsAction()
     {
         $this->tabs(new DataTabs())->activate('datafield');
-        $this->addTitle($this->translate('Data fields'));
+        $this->addTitle($this->translate('Data Fields'));
         $this->actions()->add(Link::create(
             $this->translate('Add'),
             'director/datafield/add',
@@ -99,7 +99,7 @@ class DataController extends ActionController
         $entryName = $url->shift('entry_name');
         $list = DirectorDatalist::load($url->shift('list_id'), $this->db());
         $listId = $list->id;
-        $title = $title = $this->translate('List entries') . ': ' . $list->list_name;
+        $title = $title = $this->translate('List Entries') . ': ' . $list->list_name;
         $this->addTitle($title);
 
         /** @var DirectorDatalistEntryForm $form */

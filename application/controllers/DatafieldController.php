@@ -35,10 +35,10 @@ class DatafieldController extends ActionController
                 $this->translate('Modify %s'),
                 $form->getObject()->varname
             );
-            $this->addSingleTab($this->translate('Edit a field'));
+            $this->addSingleTab($this->translate('Edit a Field'));
         } else {
             $this->addTitle($this->translate('Add a new Data Field'));
-            $this->addSingleTab($this->translate('New field'));
+            $this->addSingleTab($this->translate('New Field'));
         }
 
         $form->handleRequest();

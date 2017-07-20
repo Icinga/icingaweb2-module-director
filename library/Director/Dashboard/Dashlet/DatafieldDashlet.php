@@ -8,7 +8,7 @@ class DatafieldDashlet extends Dashlet
 
     public function getTitle()
     {
-        return $this->translate('Define data fields');
+        return $this->translate('Define Data Fields');
     }
 
     public function getSummary()
