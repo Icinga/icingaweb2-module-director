@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\IcingaCommandArgumentForm;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Web\Controller\ObjectController;
-use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Web\Table\IcingaCommandArgumentTable;
 
 class CommandController extends ObjectController
 {
@@ -23,22 +25,17 @@ class CommandController extends ObjectController
     public function argumentsAction()
     {
         $p = $this->params;
+        /** @var IcingaCommand $o */
         $o = $this->object;
         $this->tabs()->activate('arguments');
-        $this->setTitle($this->translate('Command arguments: %s'), $o->getObjectName());
+        $this->addTitle($this->translate('Command arguments: %s'), $o->getObjectName());
 
-        /** @var \Icinga\Module\Director\Forms\IcingaCommandArgumentForm $form */
-        $form = $this->loadForm('icingaCommandArgument')->setCommandObject($o);
+        $form = IcingaCommandArgumentForm::load()->setCommandObject($o);
         if ($id = $p->shift('argument_id')) {
             $form->loadObject($id);
         }
         $form->handleRequest();
-
-        $filter = Filter::where('command', $p->get('name'));
-        $table = $this->loadTable('icingaCommandArgument')
-            ->setCommandObject($o)
-            ->setFilter($filter);
-
+        $table = IcingaCommandArgumentTable::create($o);
         $this->content()->add([$form, $table]);
     }
 }
