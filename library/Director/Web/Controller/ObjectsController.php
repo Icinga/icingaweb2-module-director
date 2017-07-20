@@ -23,6 +23,9 @@ abstract class ObjectsController extends ActionController
 {
     protected $isApified = true;
 
+    /** @var ObjectsTable */
+    protected $table;
+
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/' . $this->getPluralBaseType());
@@ -51,7 +54,7 @@ abstract class ObjectsController extends ActionController
             ->addTitle($this->translate(ucfirst(strtolower($type)) . 's'))
             ->actions(new ObjectsActionBar($type, $this->url()));
 
-        ObjectsTable::create($type, $this->db())
+        $this->table = ObjectsTable::create($type, $this->db())
             ->setAuth($this->Auth())
             ->renderTo($this);
     }
