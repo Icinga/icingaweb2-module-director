@@ -6,12 +6,16 @@ use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Table\ActivityLogTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use ipl\Html\Html;
@@ -289,20 +293,16 @@ abstract class ObjectController extends ActionController
             $this->object->object_name
         );
         $lastDeployedId = $db->getLastDeploymentActivityLogId();
-        $this->content()->add(
-            $this->applyPaginationLimits(
-                $this->loadTable('activityLog')
-                    ->setConnection($db)
-                    ->setLastDeployedId($lastDeployedId)
-                    ->filterObject('icinga_' . $type, $this->object->object_name)
-            )
-        )->addAttributes(['data-base-target' => '_next']);
+        (new ActivityLogTable($db))
+            ->setLastDeployedId($lastDeployedId)
+            ->filterObject('icinga_' . $type, $this->object->object_name)
+            ->renderTo($this);
     }
 
     public function membershipAction()
     {
         $this->requireObject();
-        if (! $this->object->isGroup()) {
+        if (! $this->object instanceof IcingaObjectGroup) {
             throw new NotFoundError('Not Found');
         }
         $type = substr($this->getType(), 0, -5);
@@ -329,6 +329,7 @@ abstract class ObjectController extends ActionController
 
     protected function loadObject()
     {
+        $info = new DeploymentInfo($this->db());
         if ($this->object === null) {
             if ($name = $this->params->get('name')) {
                 $this->object = IcingaObject::loadByType(
@@ -357,9 +358,13 @@ abstract class ObjectController extends ActionController
                 }
             }
 
-            $this->view->undeployedChanges = $this->countUndeployedChanges();
-            $this->view->totalUndeployedChanges = $this->db()
-                ->countActivitiesSinceLastDeployedConfig();
+            $info->setObject($this->object);
+        }
+
+        if (! $this->getRequest()->isApiRequest()) {
+             $this->actions()->add(
+                DeploymentLinkForm::create($info, $this->Auth())->handleRequest()
+            );
         }
 
         return $this->object;
