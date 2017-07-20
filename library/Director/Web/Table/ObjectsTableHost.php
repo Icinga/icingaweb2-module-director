@@ -36,7 +36,5 @@ class ObjectsTableHost extends ObjectsTable
             'director/hosts',
             ['name']
         );
-
-        parent::assemble();
     }
 }

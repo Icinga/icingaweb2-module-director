@@ -35,12 +35,6 @@ class ApplyRulesTable extends ZfQueryBasedTable
         return ['Name', 'assign where'/*, 'Actions'*/];
     }
 
-    public function assemble()
-    {
-        $this->generateHeader();
-        return parent::assemble();
-    }
-
     public function renderRow($row)
     {
         $url = Url::fromPath("director/{$this->type}/edit", [

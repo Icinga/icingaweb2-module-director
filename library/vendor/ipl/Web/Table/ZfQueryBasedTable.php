@@ -102,10 +102,14 @@ abstract class ZfQueryBasedTable extends Table
 
     abstract protected function prepareQuery();
 
-    public function assemble()
+    public function renderContent()
     {
-        $this->header();
+        if (count($this->getColumnsToBeRendered())) {
+            $this->generateHeader();
+        }
         $this->fetchRows();
+
+        return parent::renderContent();
     }
 
     protected function splitByDay($timestamp)

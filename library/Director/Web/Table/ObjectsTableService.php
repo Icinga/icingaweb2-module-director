@@ -37,7 +37,6 @@ class ObjectsTableService extends ObjectsTable
             'director/services',
             ['id']
         );
-        parent::assemble();
     }
 
     public function getColumnsToBeRendered()
