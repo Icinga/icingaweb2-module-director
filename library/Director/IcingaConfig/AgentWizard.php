@@ -138,17 +138,15 @@ class AgentWizard
     {
         return $this->loadPowershellModule()
             . "\n\n"
-            . '$icinga = Icinga2AgentModule `' . "\n    "
-            . $this->renderPowershellParameters(
-                array(
-                    'AgentName'       => $this->getCertName(),
-                    'Ticket'          => $this->getTicket(),
-                    'ParentZone'      => $this->getParentZone()->getObjectName(),
-                    'ParentEndpoints' => array_keys($this->getParentEndpoints()),
-                    'CAServer'        => $this->getCaServer(),
-                )
-            )
-            . "\n\n" . '$icinga.installIcinga2Agent()' . "\n";
+            . 'exit Icinga2AgentModule `' . "\n    "
+            . $this->renderPowershellParameters([
+                'AgentName'       => $this->getCertName(),
+                'Ticket'          => $this->getTicket(),
+                'ParentZone'      => $this->getParentZone()->getObjectName(),
+                'ParentEndpoints' => array_keys($this->getParentEndpoints()),
+                'CAServer'        => $this->getCaServer(),
+                'RunInstaller'
+            ]);
     }
 
     public function renderTokenBasedWindowsInstaller($token, $withModule = false)
