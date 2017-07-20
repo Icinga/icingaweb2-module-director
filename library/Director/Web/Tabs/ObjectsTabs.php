@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Web\Tabs;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\Tabs;
+use ipl\Web\Widget\Tabs;
 
 class ObjectsTabs extends Tabs
 {

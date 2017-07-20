@@ -12,10 +12,11 @@ use ipl\Html\Html;
 use ipl\Html\Link;
 use ipl\Html\Table;
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\ControlsAndContent;
-use ipl\Web\Component\Paginator;
+use ipl\Web\Widget\ControlsAndContent;
+use ipl\Web\Widget\Paginator;
 use ipl\Web\Table\Extension\QuickSearch;
 use ipl\Web\Url;
+use Zend_Db_Exception as Expr;
 
 abstract class ZfQueryBasedTable extends Table
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web\Component;
+namespace ipl\Web\Widget;
 
 use ipl\Html\Html;
 use ipl\Web\Url;

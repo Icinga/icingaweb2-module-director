@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use ipl\Html\Link;
-use ipl\Web\Component\ControlsAndContent;
+use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 

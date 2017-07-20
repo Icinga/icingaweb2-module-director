@@ -20,7 +20,7 @@ use Icinga\Web\Url as WebUrl;
 use Icinga\Web\Window;
 use ipl\Compat\Translator;
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\ControlsAndContent;
+use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Controller\Extension\ControlsAndContentHelper;
 use ipl\Zf1\SimpleViewRenderer;
 use Zend_Controller_Action;

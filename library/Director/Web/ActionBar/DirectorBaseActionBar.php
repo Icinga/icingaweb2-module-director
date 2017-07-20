@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Web\ActionBar;
 
 use ipl\Html\Link;
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\ActionBar;
+use ipl\Web\Widget\ActionBar;
 use ipl\Web\Url;
 
 class DirectorBaseActionBar extends ActionBar

@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web\Component;
+namespace ipl\Web\Widget;
 
 use Icinga\Web\Widget\Tabs as WebTabs;
 use ipl\Html\ValidHtml;

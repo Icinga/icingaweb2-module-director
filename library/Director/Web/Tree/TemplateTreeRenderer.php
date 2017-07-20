@@ -8,7 +8,7 @@ use ipl\Html\BaseElement;
 use ipl\Html\Html;
 use ipl\Html\Link;
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\ControlsAndContent;
+use ipl\Web\Widget\ControlsAndContent;
 
 class TemplateTreeRenderer extends BaseElement
 {

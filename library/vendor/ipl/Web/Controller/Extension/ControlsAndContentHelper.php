@@ -3,9 +3,9 @@
 namespace ipl\Web\Controller\Extension;
 
 use ipl\Html\Html;
-use ipl\Web\Component\Content;
-use ipl\Web\Component\Controls;
-use ipl\Web\Component\Tabs;
+use ipl\Web\Widget\Content;
+use ipl\Web\Widget\Controls;
+use ipl\Web\Widget\Tabs;
 use ipl\Web\Url;
 
 trait ControlsAndContentHelper

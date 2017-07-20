@@ -13,7 +13,7 @@ use ipl\Html\FormattedString;
 use ipl\Html\Html;
 use ipl\Html\Link;
 use ipl\Web\CompatController;
-use ipl\Web\Component\UnorderedList;
+use ipl\Web\Widget\UnorderedList;
 
 class ServicetemplateController extends CompatController
 {

@@ -14,7 +14,7 @@ use ipl\Html\Html;
 use ipl\Html\HtmlString;
 use ipl\Html\Util;
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\Tabs;
+use ipl\Web\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends Html implements Countable

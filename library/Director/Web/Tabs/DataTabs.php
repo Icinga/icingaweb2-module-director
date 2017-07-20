@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use ipl\Translation\TranslationHelper;
-use ipl\Web\Component\Tabs;
+use ipl\Web\Widget\Tabs;
 
 class DataTabs extends Tabs
 {

@@ -19,7 +19,7 @@ use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
 use Icinga\Web\Widget;
-use ipl\Web\Component\ControlsAndContent;
+use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Controller\Extension\ControlsAndContentHelper;
 use ipl\Zf1\SimpleViewRenderer;
 

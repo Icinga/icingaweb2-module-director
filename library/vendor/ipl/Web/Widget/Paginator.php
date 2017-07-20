@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web\Component;
+namespace ipl\Web\Widget;
 
 use Icinga\Exception\ProgrammingError;
 use ipl\Data\Paginatable;
