@@ -533,7 +533,7 @@ h1 {
 ul.main-actions {
   margin: 0;
   padding: 0;
-  min-width: 36em;
+  min-width: 38em;
   max-width: 64em;
 
   li {
@@ -543,7 +543,8 @@ ul.main-actions {
     display: inline-block;
     padding: 0;
     clear: both;
-    width: 19em;
+    width: 18em;
+    min-width: 16em;
     vertical-align: top;
 
     a {
@@ -600,28 +601,7 @@ ul.main-actions {
   }
 }
 
-#layout.compact-layout ul.main-actions,
-#layout.poor-layout ul.main-actions {
-  li {
-    a { height: 12em; }
-    width: 18em;
-    > a > i {
-      font-size: 2em;
-    }
-  }
-}
-
-#layout.twocols ul.main-actions {
-  max-width: 50em;
-  li {
-    a { height: 12em; }
-    width: 16em;
-    > a > i {
-      font-size: 1.8em;
-    }
-  }
-}
-
+#layout.compact-layout.twocols ul.main-actions,
 #layout.minimal-layout ul.main-actions {
   max-width: unset;
   li {
@@ -802,6 +782,13 @@ form {
       max-width: 31%;
     }
   }
+}
+
+#layout.twocols &#col1 {
+  width: 50%;
+}
+#layout.twocols &#col2 {
+  width: 50%;
 }
 
 #layout.twocols.wide-layout &#col2 {
