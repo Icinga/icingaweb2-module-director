@@ -672,33 +672,4 @@ class Db extends DbConnection
 
         return $db->fetchPairs($query);
     }
-
-    /**
-     * @return DirectorDeploymentLog[]
-     */
-    public function getUncollectedDeployments()
-    {
-        $db = $this->db();
-
-        $query = $db->select()
-            ->from('director_deployment_log')
-            ->where('stage_name IS NOT NULL')
-            ->where('stage_collected IS NULL')
-            ->where('startup_succeeded IS NULL')
-            ->order('stage_name');
-
-        return DirectorDeploymentLog::loadAll($this, $query, 'stage_name');
-    }
-
-    public function hasUncollectedDeployments()
-    {
-        $db = $this->db();
-        $query = $db->select()
-            ->from('director_deployment_log', array('cnt' => 'COUNT(*)'))
-            ->where('stage_name IS NOT NULL')
-            ->where('stage_collected IS NULL')
-            ->where('startup_succeeded IS NULL');
-
-        return $db->fetchOne($query) > 0;
-    }
 }

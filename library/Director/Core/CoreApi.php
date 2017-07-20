@@ -567,7 +567,7 @@ constants
     public function collectLogFiles(Db $db)
     {
         $existing = $this->listModuleStages('director');
-        foreach ($db->getUncollectedDeployments() as $deployment) {
+        foreach (DirectorDeploymentLog::getUncollected($db) as $deployment) {
             $stage = $deployment->get('stage_name');
             if (! in_array($stage, $existing)) {
                 continue;
@@ -603,7 +603,7 @@ constants
 
     public function wipeInactiveStages(Db $db)
     {
-        $uncollected = $db->getUncollectedDeployments();
+        $uncollected = DirectorDeploymentLog::getUncollected($db);
         $moduleName = 'director';
         foreach ($this->listModuleStages($moduleName, false) as $stage) {
             if (array_key_exists($stage, $uncollected)) {
