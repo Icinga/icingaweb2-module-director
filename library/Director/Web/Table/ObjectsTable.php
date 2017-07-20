@@ -189,7 +189,7 @@ class ObjectsTable extends ZfQueryBasedTable
                     ['o' => $table],
                     $this->getColumns()
                 )
-                ->order('o.object_name')
+                ->order('o.object_name')->limit(100)
         );
 
         return $this->applyObjectTypeFilter($query);
