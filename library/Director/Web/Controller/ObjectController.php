@@ -363,7 +363,7 @@ abstract class ObjectController extends ActionController
 
         if (! $this->getRequest()->isApiRequest()) {
              $this->actions()->add(
-                DeploymentLinkForm::create($info, $this->Auth())->handleRequest()
+                DeploymentLinkForm::create($this->db(), $info, $this->Auth(), $this->api())->handleRequest()
             );
         }
 
