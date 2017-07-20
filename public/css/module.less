@@ -548,50 +548,76 @@ ul.main-actions {
     vertical-align: top;
 
     a {
-        i {
-            height: 1.6em;
-            font-size: 3em;
-            display: block;
-            height: 100%;
-            float: left;
-            line-height: 1em;
-            margin-right: 0.3em;
-        }
-
-        &.state-critical i {
-            color: @color-critical;
-        }
-
-        &.state-warning i {
-            color: @color-warning;
-        }
-
-        &.state-ok i {
-            color: @color-ok;
-        }
-
-        &.state-unknown i {
-            color: @color-unknown;
-        }
-
-        &.state-pending i {
-            color: @color-pending;
-        }
-
-        padding: 1em;
-        color: #666;
-        font-weight: bold;
+      i {
+        height: 1.6em;
+        font-size: 3em;
         display: block;
+        height: 100%;
+        float: left;
+        line-height: 1em;
+        margin-right: 0.3em;
+      }
+
+      &.state-critical i {
+        color: @color-critical;
+      }
+
+      &.state-warning i {
+        color: @color-warning;
+      }
+
+      &.state-ok i {
+        color: @color-ok;
+      }
+
+      &.state-unknown i {
+        color: @color-unknown;
+      }
+
+      &.state-pending i {
+        color: @color-pending;
+      }
+
+      border: 1px solid transparent;
+      padding: 1em;
+      color: #666;
+      font-weight: bold;
+      display: block;
+      text-decoration: none;
+      height: 12em;
+
+      overflow: hidden;
+
+      &.active {
+        color: inherit;
+        background-color: @gray-lightest;
+        -webkit-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        -moz-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+      }
+
+      &:hover {
+        background-color: #666;
+        color: white;
         text-decoration: none;
-        height: 12em;
+        -webkit-box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.35);
+        -moz-box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.35);
+        box-shadow: 2px 2px 3px 0px rgba(0,0,0,0.35);
+        &.active {
+          color: inherit;
+          background-color: @gray-lightest;
 
-        overflow: hidden;
-
-        &:hover {
-            background-color: #666;
-            color: white;
-            text-decoration: none;
         }
+      }
+
+      &:active, &:focus {
+        background-color: inherit;
+        color: inherit;
+        -webkit-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        -moz-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        outline: none;
+      }
     }
 
     p {

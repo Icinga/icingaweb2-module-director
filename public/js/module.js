@@ -647,16 +647,42 @@
             this.highlightFormErrors($container);
             this.scrollHighlightIntoView($container);
             this.scrollActiveRowIntoView($container);
+            this.highlightActiveDashlet($container);
             this.hideInactiveFormDescriptions($container);
             if (iid = $container.data('activeExtensibleEntry')) {
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
-
             // Disabled for now
             // this.alignDetailLinks();
             if (! this.containerIsAutorefreshed($container) && ! this.containerIsAutoSubmitted($container)) {
                 this.putFocusOnFirstFormElement($container);
+            }
+        },
+
+        highlightActiveDashlet: function($container)
+        {
+            if (this.module.icinga.ui.isOneColLayout()) {
+                return;
+            }
+
+            var url, $actions, $match;
+            var id = $container.attr('id');
+            if (id === 'col1') {
+                url = $('#col2').data('icingaUrl');
+                $actions = $('.main-actions', $container);
+            } else if (id === 'col2') {
+                url = $container.data('icingaUrl');
+                $actions = $('.main-actions', $('#col1'));
+            }
+            if (! $actions.length) {
+                return;
+            }
+
+            $match = $('li a[href*="' + url + '"]', $actions);
+            if ($match.length) {
+                $('li a.active', $actions).removeClass('active');
+                $match.first().addClass('active');
             }
         },
 
