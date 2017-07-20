@@ -41,7 +41,7 @@ class TemplatesTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
-        return ['Template name'];
+        return [$this->translate('Template Name')];
     }
 
     public function renderRow($row)
