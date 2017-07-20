@@ -1,4 +1,4 @@
-div.action-bar a {
+div.action-bar a, div.action-bar form i {
   color: @icinga-blue;
 }
 
@@ -310,6 +310,7 @@ form dl {
     padding: 0;
 }
 
+// TODO: figure out whether form.editor and filter-related CSS is still required
 div.filter > form.search, div.filter > a {
     // Duplicated by quicksearch
     display: none;
@@ -327,7 +328,17 @@ div.filter form.editor {
   }
 }
 
-
+form.editor {
+  select, input[type=text] {
+    background: white;
+    max-width: unset;
+    min-width: unset;
+    width: auto;
+  }
+  .tree li a {
+    padding: 0;
+  }
+}
 
 form.quicksearch {
     float: right;
@@ -1101,11 +1112,11 @@ table.deployment-log {
     }
 }
 
-table.activity-log {
-    thead th {
-        text-align: right;
-    }
+th.table-header-day {
+  text-align: right;
+}
 
+table.activity-log {
     tr th:first-child {
         padding-left: 2em;
     }
@@ -1429,18 +1440,6 @@ div.sql-dump {
 
 div.exception {
   margin: 1em;
-}
-
-form.editor {
-  select, input[type=text] {
-    background: white;
-    max-width: auto;
-    min-width: auto;
-    width: auto;
-  }
-  .tree li a {
-    padding: 0;
-  }
 }
 
 /** php-diff **/
