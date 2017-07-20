@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
+use ipl\Html\Link;
 
 class ServiceController extends ObjectController
 {
@@ -110,19 +111,18 @@ class ServiceController extends ObjectController
 
         /** @var IcingaService $object */
         $object = $this->object;
+        $this->addTitle($object->getObjectName());
 
         if ($this->host) {
-            $this->view->actionLinks = $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('back'),
                 'director/host/services',
-                array('name' => $this->host->object_name),
-                array('class' => 'icon-left-big')
-            );
+                ['name' => $this->host->getObjectName()],
+                ['class' => 'icon-left-big']
+            ));
         }
 
-        $form = $this
-            ->loadForm('icingaService')
-            ->setDb($this->db());
+        $form = IcingaServiceForm::load()->setDb($this->db());
 
         if ($this->host && $object->usesVarOverrides()) {
             $fake = IcingaService::create(array(
@@ -142,7 +142,6 @@ class ServiceController extends ObjectController
         $form->handleRequest();
         $this->actions()->add($this->createCloneLink());
 
-        $this->view->title = $object->object_name;
         if ($this->host) {
             $this->view->subtitle = sprintf(
                 $this->translate('(on %s)'),
