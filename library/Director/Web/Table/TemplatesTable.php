@@ -46,25 +46,27 @@ class TemplatesTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
+        $name = $row->object_name;
         $type = $this->getType();
-        $caption = $row->is_used === 'y'
-            ? $row->object_name
-            : [
-                $row->object_name,
-                Html::tag(
-                    'span',
-                    ['style' => 'font-style: italic'],
-                    $this->translate(' - not in use -')
-                )
-            ];
+        $caption = $row->is_used === 'y' ? $name : [
+            $name,
+            Html::tag(
+                'span',
+                ['style' => 'font-style: italic'],
+                $this->translate(' - not in use -')
+            )
+        ];
 
         $url = Url::fromPath("director/${type}template/usage", [
-            'name' => $row->object_name
+            'name' => $name
         ]);
 
         return $this::tr([
             $this::td(new Link($caption, $url)),
-            $this::td(new Link(new Icon('plus'), $url))
+            $this::td(new Link(new Icon('plus'), "director/$type/add", [
+                'type' => 'object',
+                'import' => $name
+            ]))
         ]);
     }
 
