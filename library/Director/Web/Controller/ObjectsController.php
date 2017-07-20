@@ -36,11 +36,8 @@ abstract class ObjectsController extends ActionController
         if (substr($this->getType(), -5) === 'Group') {
             $tabName = 'groups';
         }
-        $this->tabs(
-            new ObjectsTabs($this->getBaseType(), $this->Auth())
-        )->activate(
-            $tabName
-        );
+        $this->tabs(new ObjectsTabs($this->getBaseType(), $this->Auth()))
+            ->activate($tabName);
 
         return $this;
     }
