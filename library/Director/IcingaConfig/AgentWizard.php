@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Application\Icinga;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -22,14 +23,17 @@ class AgentWizard
 
     public function __construct(IcingaHost $host)
     {
-        if ($host->getResolvedProperty('has_agent') !== 'y') {
+        $this->host = $host;
+    }
+
+    protected function assertAgent()
+    {
+        if ($this->host->getResolvedProperty('has_agent') !== 'y') {
             throw new ProgrammingError(
                 'The given host "%s" is not an Agent',
-                $host->getObjectName()
+                $this->host->getObjectName()
             );
         }
-
-        $this->host = $host;
     }
 
     protected function getCaServer()
@@ -147,13 +151,52 @@ class AgentWizard
             . "\n\n" . '$icinga.installIcinga2Agent()' . "\n";
     }
 
+    public function renderTokenBasedWindowsInstaller($token, $withModule = false)
+    {
+        if ($withModule) {
+            $script = $this->loadPowershellModule() . "\n\n";
+        } else {
+            $script = '';
+        }
+
+        $script .= 'exit Icinga2AgentModule `' . "\n    "
+            . $this->renderPowershellParameters([
+                'DirectorUrl'       => $this->getDirectorUrl(),
+                'DirectorAuthToken' => $token,
+                'RunInstaller'
+            ]);
+
+        return $script;
+    }
+
+    protected function getDirectorUrl()
+    {
+        $r = Icinga::app()->getRequest();
+        $scheme = $r->getServer('HTTP_X_FORWARDED_PROTO', $r->getScheme());
+
+        return sprintf(
+            '%s://%s%s/director/',
+            $scheme,
+            $r->getHttpHost(),
+            $r->getBaseUrl()
+        );
+    }
     protected function renderPowershellParameters($parameters)
     {
         $maxKeyLength = max(array_map('strlen', array_keys($parameters)));
+        foreach ($parameters as $key => $value) {
+            if (is_int($key)) {
+                $maxKeyLength = max($maxKeyLength, strlen($value));
+            }
+        }
         $parts = array();
 
         foreach ($parameters as $key => $value) {
-            $parts[] = $this->renderPowershellParameter($key, $value, $maxKeyLength);
+            if (is_int($key)) {
+                $parts[] = $this->renderPowershellParameter($value, null, $maxKeyLength);
+            } else {
+                $parts[] = $this->renderPowershellParameter($key, $value, $maxKeyLength);
+            }
         }
 
         return implode(' `' . "\n    ", $parts);
@@ -161,7 +204,12 @@ class AgentWizard
 
     protected function renderPowershellParameter($key, $value, $maxKeyLength = null)
     {
-        $ret = '-' . $key . ' ';
+        $ret = '-' . $key;
+        if ($value === null) {
+            return $ret;
+        }
+
+        $ret .= ' ';
 
         if ($maxKeyLength !== null) {
             $ret .= str_repeat(' ', $maxKeyLength - strlen($key));
@@ -173,7 +221,7 @@ class AgentWizard
                 $vals[] = $this->renderPowershellString($val);
             }
             $ret .= implode(', ', $vals);
-        } else {
+        } elseif ($value !== null) {
             $ret .= $this->renderPowershellString($value);
         }
 
@@ -194,6 +242,7 @@ class AgentWizard
 
         return $this->db;
     }
+
     public function renderLinuxInstaller()
     {
         return $this->loadBashModuleHead()
@@ -226,6 +275,7 @@ class AgentWizard
             . '/contrib/linux-agent-installer/Icinga2AgentHead.bash'
         );
     }
+
     protected function renderBashParameters($parameters)
     {
         $parts = array();

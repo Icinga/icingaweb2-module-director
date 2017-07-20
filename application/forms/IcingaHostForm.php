@@ -64,17 +64,6 @@ class IcingaHostForm extends DirectorObjectForm
             'class'       => 'autosubmit',
         ));
 
-        if ($this->isTemplate() && $this->object()->getShortTableName() === 'host') {
-            $this->addElement('text', 'api_key', array(
-                'label'   => $this->translate('API key'),
-                'description' => $this->translate(
-                    'This key (16-32 characters long) allows one to deploy new'
-                    . ' hosts for this template through the REST API without'
-                    . ' authentication.'
-                ),
-            ));
-        }
-
         if ($this->getSentOrResolvedObjectValue('has_agent') === 'y') {
             $this->addBoolean('master_should_connect', array(
                 'label'       => $this->translate('Establish connection'),
