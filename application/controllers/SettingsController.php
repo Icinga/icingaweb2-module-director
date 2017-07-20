@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\KickstartForm;
 use Icinga\Module\Director\Forms\SelfServiceSettingsForm;
 use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -9,6 +10,18 @@ use ipl\Html\Html;
 
 class SettingsController extends ActionController
 {
+    public function indexAction()
+    {
+        // Hint: this is for the module configuration tab, legacy code
+        $this->view->tabs = $this->Module()
+            ->getConfigTabs()
+            ->activate('config');
+
+        $this->view->form = KickstartForm::load()
+            ->setModuleConfig($this->Config())
+            ->handleRequest();
+    }
+
     public function selfServiceAction()
     {
         $form = SelfServiceSettingsForm::create($this->db(), new Settings($this->db()));
