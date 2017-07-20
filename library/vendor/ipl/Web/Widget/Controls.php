@@ -35,7 +35,7 @@ class Controls extends Container
             $this->subTitle = $subTitle;
         }
 
-        return $this->add($this->renderTitleElement());
+        return $this->prepend($this->renderTitleElement());
     }
 
     /**
