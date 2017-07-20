@@ -460,9 +460,9 @@ class HostController extends ObjectController
                     'This will invalidate the former key'
                 )),
             ]);
-
         } else {
         }
+
         $c->add([
             Html::p($this->translate(
                 ''
@@ -502,9 +502,10 @@ class HostController extends ObjectController
         $c->add([
             Html::h2('Microsoft Windows'),
             Html::pre(
-            ['class' => 'logfile'],
-            $wizard->renderTokenBasedWindowsInstaller($key)
-        )]);
+                ['class' => 'logfile'],
+                $wizard->renderTokenBasedWindowsInstaller($key)
+            )
+        ]);
     }
 
     protected function showLegacyAgentInstructions()
