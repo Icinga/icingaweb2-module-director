@@ -12,12 +12,6 @@ class EndpointController extends ObjectController
         parent::init();
         if ($this->object && $this->object->hasApiUser()) {
             $params['endpoint'] = $this->object->object_name;
-
-            $this->getTabs()->add('inspect', array(
-                'url'       => 'director/inspect/types',
-                'urlParams' => $params,
-                'label'     => $this->translate('Inspect')
-            ));
         }
     }
 }

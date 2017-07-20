@@ -4,20 +4,27 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 use DirectoryIterator;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Web\View;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Dashboard\Dashboard;
+use ipl\Html\BaseElement;
+use ipl\Html\Html;
+use ipl\Html\Icon;
+use ipl\Html\Link;
+use ipl\Translation\TranslationHelper;
 
-abstract class Dashlet
+abstract class Dashlet extends BaseElement
 {
+    use TranslationHelper;
+
+    protected $tag = 'li';
+
     protected $sectionName;
 
     protected $icon = 'help';
 
     protected $supportsLegacyConfig;
 
-    protected $view;
-
+    /** @var \Icinga\Module\Director\Db */
     protected $db;
 
     protected $stats;
@@ -26,7 +33,6 @@ abstract class Dashlet
 
     public function __construct(Dashboard $dashboard)
     {
-        $this->view = $dashboard->getView();
         $this->db = $dashboard->getDb();
     }
 
@@ -43,6 +49,11 @@ abstract class Dashlet
         $this->stats[$type] = $stats;
     }
 
+    /**
+     * @deprecated This is obsolete, should not be used
+     * @param Dashboard $dashboard
+     * @return array
+     */
     public static function loadAll(Dashboard $dashboard)
     {
         $dashlets = array();
@@ -76,6 +87,7 @@ abstract class Dashlet
         $dashlets =  array();
         foreach ($names as $name) {
             $class = $prefix . $name . 'Dashlet';
+            /** @var Dashlet $dashlet */
             $dashlet = new $class($dashboard);
 
             if ($dashlet->isAllowed()) {
@@ -121,22 +133,31 @@ abstract class Dashlet
         return $this->icon;
     }
 
-    public function render()
+    abstract public function getTitle();
+
+    abstract public function getUrl();
+
+    public function renderContent()
     {
-        return $this->view->partial(
-            'dashlets/' . $this->getViewScript() . '.phtml',
-            array('dashlet' => $this)
+        $this->add(
+            Link::create(
+                [
+                    $this->getTitle(),
+                    Icon::create($this->getIconName()),
+                    Html::tag('p', null, $this->getSummary())
+                ],
+                $this->getUrl(),
+                null,
+                ['class' => $this->listCssClasses()]
+            )
         );
+
+        return parent::renderContent();
     }
 
     public function listRequiredPermissions()
     {
         return array($this->getUrl());
-    }
-
-    public function getViewScript()
-    {
-        return 'default';
     }
 
     public function isAllowed()
@@ -166,18 +187,6 @@ abstract class Dashlet
         return $result;
     }
 
-    public function getEscapedSummary()
-    {
-        return $this->view->escape(
-            $this->getSummary()
-        );
-    }
-
-    protected function translate($msg)
-    {
-        return $this->view->translate($msg);
-    }
-
     public function getStats($type, $name = null)
     {
         if ($name === null) {
@@ -189,66 +198,61 @@ abstract class Dashlet
 
     protected function getTemplateSummaryText($type)
     {
-        $view = $this->view;
-        $stat = $this->stats[$type];
         $cnt = (int) $this->stats[$type]->cnt_template;
 
         if ($cnt === 0) {
-            return $view->translate('No template has been defined yet');
+            return $this->translate('No template has been defined yet');
         }
 
         if ($cnt === 1) {
-            return $view->translate('One template has been defined');
+            return $this->translate('One template has been defined');
         }
 
         return sprintf(
-            $view->translate('%d templates have been defined'),
+            $this->translate('%d templates have been defined'),
             $cnt
         );
     }
 
     protected function getApplySummaryText($type)
     {
-        $view = $this->view;
-        $stat = $this->stats[$type];
         $cnt = (int) $this->stats[$type]->cnt_apply;
 
         if ($cnt === 0) {
-            return $view->translate('No apply rule has been defined yet');
+            return $this->translate('No apply rule has been defined yet');
         }
 
         if ($cnt === 1) {
-            return $view->translate('One apply rule has been defined');
+            return $this->translate('One apply rule has been defined');
         }
 
         return sprintf(
-            $view->translate('%d apply rules have been defined'),
+            $this->translate('%d apply rules have been defined'),
             $cnt
         );
     }
 
     protected function statSummary($type)
     {
-        $view = $this->view;
         $stat = $this->stats[$type];
 
         if ((int) $stat->cnt_total === 0) {
-            return $view->translate('No object has been defined yet');
+            return $this->translate('No object has been defined yet');
         }
 
         if ((int) $stat->cnt_total === 1) {
             if ($stat->cnt_template > 0) {
-                $msg = $view->translate('One template has been defined');
+                $msg = $this->translate('One template has been defined');
             } elseif ($stat->cnt_external > 0) {
-                $msg = $view->translate(
+                $msg = $this->translate(
                     'One external object has been defined, it will not be deployed'
                 );
             } else {
-                $msg = $view->translate('One object has been defined');
+                $msg = $this->translate('One object has been defined');
             }
         } else {
             $msg = sprintf(
-                $view->translate('%d objects have been defined'),
+                $this->translate('%d objects have been defined'),
                 $stat->cnt_total
             );
         }
@@ -257,14 +261,14 @@ abstract class Dashlet
         if ($stat->cnt_total !== $stat->cnt_object) {
             if ($stat->cnt_template > 0) {
                 $extra[] = sprintf(
-                    $view->translate('%d of them are templates'),
+                    $this->translate('%d of them are templates'),
                     $stat->cnt_template
                 );
             }
 
             if ($stat->cnt_external > 0) {
                 $extra[] = sprintf(
-                    $view->translate(
+                    $this->translate(
                         '%d have been externally defined and will not be deployed'
                     ),
                     $stat->cnt_external
@@ -275,12 +279,12 @@ abstract class Dashlet
         if (array_key_exists($type . 'group', $this->stats)) {
             $groupstat = $this->stats[$type . 'group'];
             if ((int) $groupstat->cnt_total === 0) {
-                $extra[] = $view->translate('no related group exists');
+                $extra[] = $this->translate('no related group exists');
             } elseif ((int) $groupstat->cnt_total === 1) {
-                $extra[] = $view->translate('one related group exists');
+                $extra[] = $this->translate('one related group exists');
             } else {
                 $extra[] = sprintf(
-                    $view->translate('%s related group objects have been created'),
+                    $this->translate('%s related group objects have been created'),
                     $groupstat->cnt_total
                 );
             }

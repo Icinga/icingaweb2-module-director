@@ -16,6 +16,10 @@ class SuggestController extends ActionController
     }
     */
 
+    protected function checkDirectorPermissions()
+    {
+    }
+
     public function indexAction()
     {
         // TODO: Using some temporarily hardcoded methods, should use DataViews later on
@@ -26,12 +30,13 @@ class SuggestController extends ActionController
         } else {
             $all = array();
         }
-
+        // TODO: also get cursor position and eventually add an asterisk in the middle
+        // tODO: filter also when fetching, eventually limit somehow
         $search = $this->getRequest()->getPost('value');
         $begins = array();
         $matches = array();
         $begin = Filter::expression('value', '=', $search . '*');
-        $middle = Filter::expression('value', '=', '*' . $search . '*');
+        $middle = Filter::expression('value', '=', '*' . $search . '*')->setCaseSensitive(false);
         $prefixes = array();
         foreach ($all as $str) {
             if (false !== ($pos = strrpos($str, '.'))) {
@@ -45,6 +50,8 @@ class SuggestController extends ActionController
                 } elseif ($middle->matches($row)) {
                     $matches[] = $this->highlight($str, $search);
                 }
+            } else {
+                $matches[] = $str;
             }
         }
 
@@ -70,6 +77,7 @@ class SuggestController extends ActionController
      */
     protected function suggestLocations()
     {
+        $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->distinct()
@@ -81,8 +89,57 @@ class SuggestController extends ActionController
 
     protected function suggestHostnames()
     {
+        $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
-        $query = $db->select()->from('icinga_host', 'object_name')->order('object_name');
+        $query = $db->select()
+            ->from('icinga_host', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'object'");
+        return $db->fetchCol($query);
+    }
+
+    protected function suggestHosttemplates()
+    {
+        $this->assertPermission('director/hosts');
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_host', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'")
+            ->where('template_choice_id IS NULL');
+        return $db->fetchCol($query);
+    }
+
+    protected function suggestServicetemplates()
+    {
+        $this->assertPermission('director/services');
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_service', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'");
+        return $db->fetchCol($query);
+    }
+
+    protected function suggestNotificationtemplates()
+    {
+        $this->assertPermission('director/notifications');
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_notification', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'");
+        return $db->fetchCol($query);
+    }
+
+    protected function suggestCommandtemplates()
+    {
+        $this->assertPermission('director/commands');
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_command', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'");
         return $db->fetchCol($query);
     }
 
@@ -135,6 +192,10 @@ class SuggestController extends ActionController
     {
         $search = $this->view->escape($search);
         $val = $this->view->escape($val);
-        return str_replace($search, '<strong>' . $search . '</strong>', $val);
+        return preg_replace(
+            '/(' . preg_quote($search, '/') . ')/i',
+            '<strong>\1</strong>',
+            $val
+        );
     }
 }

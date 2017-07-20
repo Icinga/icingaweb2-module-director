@@ -20,6 +20,15 @@ class ImportSourceForm extends DirectorObjectForm
             'required'    => true,
         ));
 
+        $this->addElement('textarea', 'description', array(
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate(
+                'An extended description for this Import Source. This should explain'
+                . " what kind of data you're going to import from this source."
+            ),
+            'rows'        => '3',
+        ));
+
         $this->addElement('select', 'provider_class', array(
             'label'        => $this->translate('Source Type'),
             'required'     => true,

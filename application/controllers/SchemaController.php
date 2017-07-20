@@ -16,7 +16,7 @@ class SchemaController extends ActionController
         );
     }
 
-    protected function tabs()
+    protected function myTabs()
     {
         $tabs = $this->getTabs();
         foreach ($this->schemas as $type => $title) {
@@ -55,7 +55,7 @@ class SchemaController extends ActionController
             exit;
             // TODO: Shutdown
         } else {
-            $this->tabs()->activate($type);
+            $this->myTabs()->activate($type);
             $this->view->title = $this->schemas[$type];
             $this->view->schema = $schema;
             $this->render('schema');

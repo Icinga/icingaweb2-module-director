@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostForm extends DirectorObjectForm
@@ -17,6 +18,7 @@ class IcingaHostForm extends DirectorObjectForm
         $this->addElement('text', 'object_name', array(
             'label'       => $this->translate('Hostname'),
             'required'    => true,
+            'spellcheck'  => 'false',
             'description' => $this->translate(
                 'Icinga object name for this host. This is usually a fully qualified host name'
                 . ' but it could basically be any kind of string. To make things easier for your'
@@ -34,6 +36,7 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addGroupsElement()
              ->addImportsElement()
+             ->addChoices('host')
              ->addDisplayNameElement()
              ->addAddressElements()
              ->addDisabledElement()
@@ -103,6 +106,7 @@ class IcingaHostForm extends DirectorObjectForm
             'master_should_connect',
             'accept_config',
             'command_endpoint_id',
+            'api_key',
         );
         $this->addDisplayGroup($elements, 'clustering', array(
             'decorators' => array(
@@ -132,6 +136,11 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
+// TODO:
+        if ($this->hasHostGroupRestriction()) {
+            return $this;
+        }
+
         $groups = $this->enumHostgroups();
         if (empty($groups)) {
             return $this;
@@ -139,8 +148,8 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addElement('extensibleSet', 'groups', array(
             'label'        => $this->translate('Groups'),
-            'multiOptions' => $this->optionallyAddFromEnum($groups),
-            'positional'   => false,
+            // 'multiOptions' => $this->optionallyAddFromEnum($groups),
+            'suggest'      => 'hostgroupnames',
             'description'  => $this->translate(
                 'Hostgroups that should be directly assigned to this node. Hostgroups can be useful'
                 . ' for various reasons. You might assign service checks based on assigned hostgroup.'
@@ -151,6 +160,11 @@ class IcingaHostForm extends DirectorObjectForm
         ));
 
         return $this;
+    }
+
+    protected function hasHostGroupRestriction()
+    {
+        return $this->getAuth()->getRestrictions('director/filter/hostgroups');
     }
 
     /**
@@ -189,6 +203,7 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addElement('text', 'display_name', array(
             'label' => $this->translate('Display name'),
+            'spellcheck'  => 'false',
             'description' => $this->translate(
                 'Alternative name for this host. Might be a host alias or and kind'
                 . ' of string helping your users to identify this host'

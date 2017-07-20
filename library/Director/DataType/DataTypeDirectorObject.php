@@ -14,30 +14,36 @@ class DataTypeDirectorObject extends DataTypeHook
         /** @var DirectorObjectForm $form */
         $db = $form->getDb()->getDbAdapter();
 
-        $dummy = IcingaObject::createByType(
-            $this->getSetting('icinga_object_type')
-        );
+        $type = $this->getSetting('icinga_object_type');
+        $dummy = IcingaObject::createByType($type);
 
+        $display = $type === 'service_set'
+            ? 'object_name'
+            : 'COALESCE(display_name, object_name)';
         $query = $db->select()->from($dummy->getTableName(), array(
             'object_name'  => 'object_name',
-            'display_name' => 'COALESCE(display_name, object_name)'
-        ))->where(
-            'object_type = ?',
-            'object'
-        );
+            'display_name' => $display
+        ));
+
+        if ($type === 'service_set') {
+            $query->where('host_id IS NULL');
+        } else {
+            $query->where('object_type = ?', 'object');
+        }
 
         $enum = $db->fetchPairs($query);
 
-        $params = array(
-            'multiOptions' => array(
-                null => $form->translate('- please choose -'),
-            ) + $enum,
-        );
 
         if ($this->getSetting('data_type') === 'array') {
             $type = 'extensibleSet';
             $params['sorted'] = true;
+            $params = ['multiOptions' => $enum];
         } else {
+            $params = array(
+                'multiOptions' => array(
+                        null => $form->translate('- please choose -'),
+                    ) + $enum,
+            );
             $type = 'select';
         }
 
@@ -51,6 +57,7 @@ class DataTypeDirectorObject extends DataTypeHook
             'hostgroup'    => $form->translate('Host groups'),
             'service'      => $form->translate('Services'),
             'servicegroup' => $form->translate('Service groups'),
+            'service_set'  => $form->translate('Service Set'),
             'user'         => $form->translate('Users'),
             'usergroup'    => $form->translate('User groups'),
         );

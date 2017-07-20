@@ -44,6 +44,20 @@ class CustomVariablesTest extends BaseTestCase
         );
     }
 
+    public function testNumericKeysAreRenderedWithArraySyntax()
+    {
+        $vars = $this->newVars();
+        $vars->{'1'} = 1;
+        $expected = $this->indentVarsList(array(
+            'vars["1"] = 1'
+        ));
+
+        $this->assertEquals(
+            $expected,
+            $vars->toConfigString(true)
+        );
+    }
+
     public function testVariablesToExpression()
     {
         $vars = $this->newVars();

@@ -27,6 +27,7 @@ class SyncRule extends DbObject
         'sync_state'         => 'unknown',
         'last_error_message' => null,
         'last_attempt'       => null,
+        'description'        => null,
     );
 
     private $sync;

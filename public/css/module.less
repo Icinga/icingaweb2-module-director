@@ -1,3 +1,36 @@
+div.action-bar a, div.action-bar form i {
+  color: @icinga-blue;
+}
+
+div.action-bar > a {
+  margin-right: 1em;
+}
+
+div.action-bar {
+  .pagination-control {
+    float: none;
+    clear: none;
+    display: inline-block;
+    line-height: inherit;
+    margin: 0;
+    vertical-align: middle;
+  }
+}
+
+#layout.twocols div.action-bar .pagination-control {
+  li {
+    display: none;
+  }
+
+  li:nth-child(1), li.active, li:last-child {
+    display: list-item;
+  }
+
+  li.active a {
+    border-bottom: none;
+  }
+}
+
 .content a {
   color: @icinga-blue;
   &:hover {
@@ -49,6 +82,14 @@ span.disabled {
     margin-right: 1em;
   }
 }
+
+.action-bar {
+  form {
+    display: inline;
+    margin-right: 1em;
+  }
+}
+
 
 pre.disabled {
   color: @gray;
@@ -201,10 +242,10 @@ form p.description {
   width: 100%;
 }
 
-input, select, select option, textarea {
-   -webkit-appearance: none;
-   -moz-appearance: none;
-   appearance: none;
+input[type=text], input[type=button], select, select option, textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 form ul.form-errors {
@@ -269,6 +310,7 @@ form dl {
     padding: 0;
 }
 
+// TODO: figure out whether form.editor and filter-related CSS is still required
 div.filter > form.search, div.filter > a {
     // Duplicated by quicksearch
     display: none;
@@ -286,7 +328,17 @@ div.filter form.editor {
   }
 }
 
-
+form.editor {
+  select, input[type=text] {
+    background: white;
+    max-width: unset;
+    min-width: unset;
+    width: auto;
+  }
+  .tree li a {
+    padding: 0;
+  }
+}
 
 form.quicksearch {
     float: right;
@@ -400,7 +452,7 @@ dd.active ul.extensible-set, ul.extensible-set.sortable {
 }
 
 dd.active ul.extensible-set {
-    border: 1px solid @gray-lighter;
+    border: 1px solid @icinga-blue;
 
     input[type=submit]:first-of-type {
         border-width: 1px;
@@ -481,7 +533,8 @@ h1 {
 ul.main-actions {
   margin: 0;
   padding: 0;
-  min-width: 36em;
+  min-width: 38em;
+  max-width: 64em;
 
   li {
     list-style-type: none;
@@ -490,54 +543,76 @@ ul.main-actions {
     display: inline-block;
     padding: 0;
     clear: both;
-    width: 19em;
+    width: 18em;
+    min-width: 16em;
     vertical-align: top;
 
     a {
-        i {
-            height: 1.6em;
-            font-size: 3em;
-            display: block;
-            height: 100%;
-            float: left;
-            line-height: 1em;
-            margin-right: 0.3em;
-        }
-
-        &.state-critical i {
-            color: @color-critical;
-        }
-
-        &.state-warning i {
-            color: @color-warning;
-        }
-
-        &.state-ok i {
-            color: @color-ok;
-        }
-
-        &.state-unknown i {
-            color: @color-unknown;
-        }
-
-        &.state-pending i {
-            color: @color-pending;
-        }
-
-        padding: 1em;
-        color: #666;
-        font-weight: bold;
+      i {
+        height: 1.6em;
+        font-size: 3em;
         display: block;
+        height: 100%;
+        float: left;
+        line-height: 1em;
+        margin-right: 0.3em;
+      }
+
+      &.state-critical i {
+        color: @color-critical;
+      }
+
+      &.state-warning i {
+        color: @color-warning;
+      }
+
+      &.state-ok i {
+        color: @color-ok;
+      }
+
+      &.state-unknown i {
+        color: @color-unknown;
+      }
+
+      &.state-pending i {
+        color: @color-pending;
+      }
+
+      border: 1px solid transparent;
+      padding: 1em;
+      color: #666;
+      font-weight: bold;
+      display: block;
+      text-decoration: none;
+      height: 13em;
+
+      overflow: hidden;
+
+      &.active {
+        color: inherit;
+        background-color: @gray-lightest;
+        -webkit-box-shadow: inset 1px 1px 2px 0px rgba(0,0,0,0.25);
+        -moz-box-shadow: inset 1px 1px 2px 0px rgba(0,0,0,0.25);
+        box-shadow: inset 1px 1px 2px 0px rgba(0,0,0,0.25);
+      }
+
+      &:hover {
+        background-color: #666;
+        color: white;
         text-decoration: none;
-        height: 12em;
+        -webkit-box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.35);
+        -moz-box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.35);
+        box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.35);
+      }
 
-        overflow: hidden;
-
-        &:hover {
-            background-color: #666;
-            color: white;
-            text-decoration: none;
-        }
+      &:active, &:focus {
+        background-color: inherit;
+        color: inherit;
+        -webkit-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        -moz-box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.25);
+        outline: none;
+      }
     }
 
     p {
@@ -547,28 +622,23 @@ ul.main-actions {
   }
 }
 
-#layout.compact-layout ul.main-actions,
-#layout.poor-layout ul.main-actions {
+#layout.compact-layout.twocols ul.main-actions,
+#layout.minimal-layout ul.main-actions {
+  max-width: unset;
   li {
-    a { height: 12em; }
-    width: 18em;
+    a { height: auto; }
+    width: 100%;
     > a > i {
-      font-size: 2em;
+      font-size: 3em;
     }
+
+    > a > p {
+      padding-left: 3em;
+    }
+    margin-bottom: 0.5em;
   }
 }
 
-#layout.minimal-layout ul.main-actions,
-#layout.twocols ul.main-actions {
-  max-width: 50em;
-  li {
-    a { height: 12em; }
-    width: 16em;
-    > a > i {
-      font-size: 1.8em;
-    }
-  }
-}
 
 #layout.compact-layout.twocols table.Differences,
 #layout.default-layout.twocols table.Differences {
@@ -665,11 +735,73 @@ form dd.active li.active input.related-action[type='submit'] {
     display: inline-block;
 }
 
-form dd.active {
+form {
+  p.description {
+    color: inherit;
+    font-style: normal;
+    position: absolute;
+    bottom: 1em;
+    width: 98%;
+    max-width: 98%;
+    max-height: 12em;
+    overflow-x: auto;
+    background: @tr-active-color;
+    border: 1px solid @icinga-blue;
+    border-radius: 0.5em;
+    font-size: 1.2em;
+    margin-right: 1.5em;
+    right: 0;
+    color: @icinga-blue;
+    padding-left: 3em;
+    display: none;
+    z-index: 100;
+  }
+
+  p.description:before {
+    content: '\e881';
+    font-family: 'ifont';
+    font-size: 1.5em;
+    color: @icinga-blue;
+    position: absolute;
+    margin-left: -1.5em;
+    margin-top: -0.25em;
+  }
+}
+
+#layout.poor-layout, #layout.minimal-layout {
+  form {
     p.description {
-        color: inherit;
-        font-style: normal;
+      width: 94%;
+      max-width: 94%;
     }
+  }
+}
+
+#layout.twocols {
+  form {
+    p.description {
+      width: 46%;
+      max-width: 46%;
+    }
+  }
+}
+
+#layout.twocols &#col1 {
+  form {
+    p.description {
+      margin-right: auto;
+      right: auto;
+      margin-left: 1em;
+      left: 0;
+    }
+  }
+}
+
+#layout.twocols &#col1 {
+  width: 50%;
+}
+#layout.twocols &#col2 {
+  width: 50%;
 }
 
 form dd {
@@ -919,41 +1051,6 @@ table.icinga-objects {
 
 }
 
-table.assignment-table {
-    table.apply-rules {
-        margin: 1em 0 1em 0;
-        padding: 0;
-        width: 100%;
-
-        tr {
-            border-bottom: 1px solid @gray-lighter;
-            border-left: 5px solid transparent;
-
-            td {
-                padding: 0.5em 1em;
-            }
-
-            &:hover, &:active, &.active {
-                border-left: 5px solid @icinga-blue;
-            }
-
-            &:hover {
-                background: white;
-            }
-        }
-    }
-    a {
-        color: @icinga-blue;
-        float: right;
-
-        &:first-child {
-            float: none;
-            color: inherit;
-            font-weight: bold;
-        }
-    }
-}
-
 div.content.compact table.icinga-objects thead {
     display: none;
 }
@@ -1006,17 +1103,11 @@ table.deployment-log {
     }
 }
 
-table.endpoints {
-    tr.deployment-endpoint td:first-child::before {
-        color: @color-ok;
-    }
+th.table-header-day {
+  text-align: right;
 }
 
 table.activity-log {
-    thead th {
-        text-align: right;
-    }
-
     tr th:first-child {
         padding-left: 2em;
     }
@@ -1066,7 +1157,7 @@ table.activity-log {
         &.active {
             background-color: @gray-lighter;
         }
-        &:hover {
+        &[href]:hover {
             background-color: @gray-light;
             td, a {
                 color: @text-color;
@@ -1230,12 +1321,17 @@ div.filter-expression {
 }
 
 ul.director-suggestions {
+/*
+  min-width: 18.5em;
+  max-width: 34.65em;
+  width: 100%;
+  */
   width: 20em;
-  max-width: 30em;
   max-height: 25em;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid @gray-light;
+  border: 1px solid @icinga-blue;
+  border-top: none;
   position: absolute;
   z-index: 2000;
   padding: 0;
@@ -1259,61 +1355,40 @@ ul.director-suggestions {
       color: inherit;
     }
   }
-}
 
-.tree li a {
-  display: inline-block;
-  padding-left: 2.4em;
-  line-height: 2em;
-  text-decoration: none;
-  color: #777;
-  outline: 0;
-  background-repeat: no-repeat;
-  background-position: 0.8em 0.4em;
-}
-
-
-
-.tree a.root { background-image: url('../img/director/globe.png'); }
-.tree a.host { background-image: url('../img/director/server.png'); }
-.tree a.service { background-image: url('../img/director/service.png'); }
-.tree a.command { background-image: url('../img/director/script.png'); }
-
-.diff {
+  table.benchmark {
+    font-size: 0.8em;
     font-family: @font-family-fixed;
-    white-space: pre-wrap;
-
-
-    del, ins {
-        text-decoration: none;
-    }
-
-    del {
-        color: @colorCritical;
-        background-color: #fdd;
-    }
-
-    ins {
-        color: @colorOk;
-        background-color: #dfd;
-    }
+  }
 }
 
-div.diff {
-/*    line-height: 1.8em;
-    height: 1.8em;*/
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-}
+table.pivot {
+  width: 100%;
+  table-layout: fixed;
 
+  thead th {
+    text-align: center;
+  }
 
-.diff.old ins {
-  display: none;
-}
-
-.diff.new del {
-  display: none;
+  tbody th {
+    text-align: right;
+    width: 25%;
+  }
+  tbody td {
+    text-align: center;
+  }
+  tbody td > a {
+    display: block;
+    font-size: 2em;
+    line-height: 1.5em;
+    text-decoration: none;
+    color: @icinga-blue;
+    &:hover {
+      background: @icinga-blue;
+      color: white;
+      text-decoration: none;
+    }
+  }
 }
 
 .tree li a {
@@ -1327,20 +1402,35 @@ div.diff {
   background-position: 0.8em 0.4em;
 }
 
-.tree a.root  { background-image: url('../img/director/globe.png'); }
-.tree a.abstract  { background-image: url('../img/director/tree.png'); }
-.tree a.object { background-image: url('../img/director/leaf.gif'); }
+ul.tree li > .handle {
+  background-image: none;
+  &:before {
+    content: '\e806';
+    font-family: 'ifont';
+    position: absolute;
+    font-size: 0.6em;
+    margin-left: 0.25em;
+    margin-top: 0.9em;
+  }
+}
+ul.tree li.collapsed > .handle {
+  background-image: none;
+  &:before {
+    content: '\e805';
+  }
+}
+.tree li a {
+  padding-left: 1em;
+}
 
-form.editor {
-  select, input[type=text] {
-    background: white;
-    max-width: auto;
-    min-width: auto;
-    width: auto;
-  }
-  .tree li a {
-    padding: 0;
-  }
+div.sql-dump {
+  background-color: @gray-lightest;
+  border: 1px solid @gray-light;
+  padding: 1em;
+}
+
+div.exception {
+  margin: 1em;
 }
 
 /** php-diff **/

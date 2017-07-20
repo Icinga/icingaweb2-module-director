@@ -12,9 +12,13 @@ class IcingaObjectDatafieldTable extends QuickTable
 {
     protected $object;
 
+    /** @var int */
+    protected $objectId;
+
     public function setObject(IcingaObject $object)
     {
         $this->object = $object;
+        $this->objectId = (int) $object->id;
         $this->setConnection($object->getConnection());
         return $this;
     }
@@ -41,7 +45,7 @@ class IcingaObjectDatafieldTable extends QuickTable
 
     protected function getActionUrl($row)
     {
-        if ($row->object_id !== $this->object->id) {
+        if ((int) $row->object_id !== $this->objectId) {
             return null;
         }
 
@@ -50,7 +54,7 @@ class IcingaObjectDatafieldTable extends QuickTable
 
     protected function getRowClasses($row)
     {
-        if ($row->object_id !== $this->object->id) {
+        if ((int) $row->object_id !== $this->objectId) {
             return array('disabled');
         }
     }

@@ -4,8 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Widget\DeploymentInfo;
 
 class DeploymentController extends ActionController
 {
@@ -16,30 +15,14 @@ class DeploymentController extends ActionController
 
     public function indexAction()
     {
-        $this->view->title = $this->translate('Deployment details');
-
-        $deploymentId = $this->params->get('id');
-        $this->view->deployment = $deployment = DirectorDeploymentLog::load(
-            $deploymentId,
+        $info = new DeploymentInfo(DirectorDeploymentLog::load(
+            $this->params->get('id'),
             $this->db()
-        );
-        $this->view->config_checksum = Util::binary2hex($deployment->config_checksum);
-        $this->view->config = IcingaConfig::load($deployment->config_checksum, $this->db());
-
-        $tabs = $this->getTabs()->add('deployment', array(
-            'label' => $this->translate('Deployment'),
-            'url'   => $this->getRequest()->getUrl()
-        ))->activate('deployment');
-
-        if ($deployment->config_checksum !== null && $this->hasPermission('director/showconfig')) {
-            $tabs->add('config', array(
-                'label'     => $this->translate('Config'),
-                'url'       => 'director/config/files',
-                'urlParams' => array(
-                    'checksum'      => $this->view->config_checksum,
-                    'deployment_id' => $deploymentId
-                )
-            ));
-        }
+        ));
+        $this->addTitle($this->translate('Deployment details'));
+        $this->tabs(
+            $info->getTabs($this->getAuth(), $this->getRequest())
+        )->activate('deployment');
+        $this->content()->add($info);
     }
 }

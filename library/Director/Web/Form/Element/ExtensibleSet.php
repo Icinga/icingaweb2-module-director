@@ -13,7 +13,7 @@ class ExtensibleSet extends FormElement
      * Default form view helper to use for rendering
      * @var string
      */
-    public $helper = 'formExtensibleSet';
+    public $helper = 'formIplExtensibleSet';
 
    // private $multiOptions;
 
@@ -63,7 +63,7 @@ class ExtensibleSet extends FormElement
             $value = null;
         }
 
-        return parent::_filterValue($value, $key);
+        parent::_filterValue($value, $key);
     }
 
     public function isValid($value, $context = null)

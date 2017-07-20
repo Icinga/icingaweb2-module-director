@@ -27,6 +27,7 @@ class ImportSource extends DbObjectWithSettings
         'import_state'       => 'unknown',
         'last_error_message' => null,
         'last_attempt'       => null,
+        'description'        => null,
     );
 
     protected $settingsTable = 'import_source_setting';

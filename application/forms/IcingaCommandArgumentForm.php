@@ -53,7 +53,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             $this->addElement('text', 'argument_value', array(
                 'label'       => $this->translate('Value'),
                 'description' => $this->translate(
-                    'e.g. 5%, $hostname$, $lower$%:$upper$%'
+                    'e.g. 5%, $host.name$, $lower$%:$upper$%'
                 )
             ));
         }

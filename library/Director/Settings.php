@@ -10,25 +10,49 @@ class Settings
 
     protected $cache;
 
-    protected $defaults = array(
-        'default_global_zone'            => 'director-global',
-        'magic_apply_for'                => '_director_apply_for',
-        'config_format'                  => 'v2',
-        'override_services_varname'      => '_override_servicevars',
-        'override_services_templatename' => 'host var overrides (Director)',
-        'disable_all_jobs'               => 'n', // 'y'
-        'enable_audit_log'               => 'n',
-        'deployment_mode_v1'             => 'active-passive',
-        'deployment_path_v1'             => null,
-        'activation_script_v1'           => null,
+    protected $defaults = [
+        'default_global_zone'             => 'director-global',
+        'magic_apply_for'                 => '_director_apply_for',
+        'config_format'                   => 'v2',
+        'override_services_varname'       => '_override_servicevars',
+        'override_services_templatename'  => 'host var overrides (Director)',
+        'disable_all_jobs'                => 'n', // 'y'
+        'enable_audit_log'                => 'n',
+        'deployment_mode_v1'              => 'active-passive',
+        'deployment_path_v1'              => null,
+        'activation_script_v1'            => null,
+        'self-service/agent_name'         => 'fqdn',
+        'self-service/transform_hostname' => '0',
+        'self-service/global_zones'       => ['director-global'],
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
-    );
+    ];
+
+    protected $jsonEncode = [
+        'self-service/global_zones',
+        'self-service/installer_hashes',
+    ];
 
     public function __construct(Db $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+    }
+
+    /**
+     * @return Db
+     */
+    public function getConnection()
+    {
+        return $this->connection;
+    }
+
+    /**
+     * @return \Zend_Db_Adapter_Abstract
+     */
+    public function getDb()
+    {
+        return $this->db;
     }
 
     public function get($key, $default = null)
@@ -45,6 +69,9 @@ class Settings
         if (null === ($value = $this->getSetting($key))) {
             return $default;
         } else {
+            if (in_array($key, $this->jsonEncode)) {
+                $value = json_decode($value);
+            }
             return $value;
         }
     }
@@ -55,6 +82,16 @@ class Settings
             return $this->defaults[$key];
         } else {
             return null;
+        }
+    }
+
+    public function getStoredOrDefaultValue($key)
+    {
+        $value = $this->getStoredValue($key);
+        if ($value === null) {
+            return $this->getDefaultValue($key);
+        } else {
+            return $value;
         }
     }
 
@@ -71,6 +108,10 @@ class Settings
             unset($this->cache[$name]);
 
             return $this;
+        }
+
+        if (in_array($name, $this->jsonEncode)) {
+            $value = json_encode(array_values($value));
         }
 
         if ($this->getSetting($name) === $value) {

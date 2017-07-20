@@ -29,6 +29,15 @@ class SyncRuleForm extends DirectorObjectForm
             'required'    => true,
         ));
 
+        $this->addElement('textarea', 'description', array(
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate(
+                'An extended description for this Sync Rule. This should explain'
+                . ' what this Rule is going to accomplish.'
+            ),
+            'rows'        => '3',
+        ));
+
         $this->addElement('select', 'object_type', array(
             'label'        => $this->translate('Object Type'),
             'description'  => $this->translate('Choose an object type'),

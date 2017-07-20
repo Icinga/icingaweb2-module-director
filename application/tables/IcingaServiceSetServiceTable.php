@@ -29,6 +29,7 @@ class IcingaServiceSetServiceTable extends QuickTable
             'host_id'        => 'ss.host_id',
             'service_set'    => 'ss.object_name',
             'service'        => 's.object_name',
+            'disabled'       => 's.disabled',
             'object_type'    => 's.object_type',
         );
     }
@@ -83,6 +84,15 @@ class IcingaServiceSetServiceTable extends QuickTable
             );
 
             return $this->url('director/service', $params);
+        }
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->disabled === 'y') {
+            return ['disabled'];
+        } else {
+            return array();
         }
     }
 

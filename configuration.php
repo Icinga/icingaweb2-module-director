@@ -8,6 +8,7 @@ $this->providePermission(
 );
 $this->providePermission('director/deploy', $this->translate('Allow to deploy configuration'));
 $this->providePermission('director/hosts', $this->translate('Allow to configure hosts'));
+$this->providePermission('director/services', $this->translate('Allow to configure services'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
 $this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
 $this->providePermission(
@@ -17,6 +18,27 @@ $this->providePermission(
     )
 );
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
+
+$this->provideRestriction(
+    'director/filter/hostgroups',
+    $this->translate(
+        'Limit access to the given comma-separated list of hostgroups'
+    )
+);
+
+$this->provideRestriction(
+    'director/service/apply/filter-by-name',
+    $this->translate(
+        'Filter available service apply rules'
+    )
+);
+
+$this->provideRestriction(
+    'director/notification/apply/filter-by-name',
+    $this->translate(
+        'Filter available notification apply rules'
+    )
+);
 
 $this->provideSearchUrl($this->translate('Host configs'), 'director/hosts?limit=10', 60);
 
@@ -48,20 +70,20 @@ $section = $this->menuSection(
 ));
 
 $section->add(N_('Hosts'))
-    ->setUrl('director/hosts')
+    ->setUrl('director/dashboard?name=hosts')
     ->setPermission('director/hosts')
     ->setPriority(30);
 $section->add(N_('Services'))
-    ->setUrl('director/services/templates')
-    ->setPermission('director/admin')
+    ->setUrl('director/dashboard?name=services')
+    ->setPermission('director/services')
     ->setPriority(40);
 $section->add(N_('Commands'))
-    ->setUrl('director/commands')
+    ->setUrl('director/dashboard?name=commands')
     ->setPermission('director/admin')
     ->setPriority(50);
-$section->add(N_('Users'))
-    ->setUrl('director/users')
-    ->setPermission('director/users')
+$section->add(N_('Notifications'))
+    ->setUrl('director/dashboard?name=notifications')
+    ->setPermission('director/notifications')
     ->setPriority(70);
 $section->add(N_('Automation'))
     ->setUrl('director/list/importsource')

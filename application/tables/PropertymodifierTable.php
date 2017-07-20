@@ -12,11 +12,19 @@ class PropertymodifierTable extends QuickTable
             'id'                => 'm.id',
             'source_id'         => 'm.source_id',
             'source_name'       => 's.source_name',
-            'property'          => 'CASE WHEN m.target_property IS NULL'
+            'property'          => 'CASE WHEN m.description IS NULL THEN'
+                                 . ' CASE WHEN m.target_property IS NULL'
                                  . ' THEN m.property_name'
-                                 . " ELSE m.target_property || ' <- ' || m.property_name END",
+                                 . " ELSE m.target_property || ' <- ' || m.property_name END"
+                                 . ' ELSE'
+                                 . ' CASE WHEN m.target_property IS NULL'
+                                 . ' THEN m.property_name'
+                                 . " ELSE m.target_property || ' <- ' || m.property_name END"
+                                 . " || ': ' || m.description END",
             'provider_class'    => 'm.provider_class',
             'priority'          => 'm.priority',
+            'description'        => 'CASE WHEN s.description IS NULL THEN s.source_name'
+                . " ELSE s.source_name || ': ' || s.description END",
         );
     }
 

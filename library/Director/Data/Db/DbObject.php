@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Exception\IcingaException as IE;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Util;
 use Exception;
@@ -243,10 +244,23 @@ abstract class DbObject
             return $this->$func();
         }
 
-        if (! array_key_exists($property, $this->properties)) {
-            throw new IE('Trying to get invalid property "%s"', $property);
-        }
+        $this->assertPropertyExists($property);
         return $this->properties[$property];
+    }
+
+    public function getProperty($key)
+    {
+        $this->assertPropertyExists($key);
+        return $this->properties[$key];
+    }
+
+    protected function assertPropertyExists($key)
+    {
+        if (! array_key_exists($key, $this->properties)) {
+            throw new IE('Trying to get invalid property "%s"', $key);
+        }
+
+        return $this;
     }
 
     public function hasProperty($key)
@@ -527,12 +541,12 @@ abstract class DbObject
     /**
      * Get the autoinc value if set
      *
-     * @return string
+     * @return int
      */
     public function getAutoincId()
     {
         if (isset($this->properties[$this->autoincKeyName])) {
-            return $this->properties[$this->autoincKeyName];
+            return (int) $this->properties[$this->autoincKeyName];
         }
         return null;
     }
@@ -597,6 +611,18 @@ abstract class DbObject
         return $this->setDbProperties($properties);
     }
 
+    /**
+     * @param object $row
+     * @param Db $db
+     * @return self
+     */
+    public static function fromDbRow($row, Db $db)
+    {
+        return (new static())
+            ->setConnection($db)
+            ->setDbProperties($row);
+    }
+
     protected function setDbProperties($properties)
     {
         foreach ($properties as $key => $val) {
@@ -627,6 +653,16 @@ abstract class DbObject
     public function getOriginalProperties()
     {
         return $this->loadedProperties;
+    }
+
+    public function getOriginalProperty($key)
+    {
+        $this->assertPropertyExists($key);
+        if ($this->hasBeenLoadedFromDb()) {
+            return $this->loadedProperties[$key];
+        }
+
+        return null;
     }
 
     public function hasBeenLoadedFromDb()
@@ -1011,6 +1047,14 @@ abstract class DbObject
 
     public static function loadWithAutoIncId($id, DbConnection $connection)
     {
+        /* Need to cast to int, otherwise the id will be matched against
+         * object_name, which may wreak havoc if an object has a
+         * object_name matching some id. Note that DbObject::set() and
+         * DbObject::setDbProperties() will convert any property to
+         * string, including ids.
+         */
+        $id = (int) $id;
+
         if ($prefetched = static::getPrefetched($id)) {
             return $prefetched;
         }

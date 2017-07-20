@@ -9,6 +9,6 @@ class ServicegroupsController extends ObjectsController
     public function init()
     {
         parent::init();
-        $this->view->tabs->remove('objects');
+        $this->tabs()->remove('objects');
     }
 }

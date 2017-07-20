@@ -2,6 +2,9 @@
 <?= $this->tabs ?>
 <h1><?= $this->escape($this->title) ?></h1>
 <span class="action-links">
+<?php if ($this->actionLinks): ?>
+<?= implode(' ', $this->actionLinks) ?>
+<?php endif ?>
 <?= $this->render('object/deploymentLink.phtml') ?>
 </span>
 </div>

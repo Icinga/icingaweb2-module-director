@@ -27,6 +27,7 @@ class IcingaService extends IcingaObject
         'check_period_id'       => null,
         'check_interval'        => null,
         'retry_interval'        => null,
+        'check_timeout'         => null,
         'enable_notifications'  => null,
         'enable_active_checks'  => null,
         'enable_passive_checks' => null,
@@ -47,6 +48,7 @@ class IcingaService extends IcingaObject
         'apply_for'             => null,
         'use_var_overrides'     => null,
         'assign_filter'         => null,
+        'template_choice_id'    => null,
     );
 
     protected $relations = array(
@@ -57,6 +59,7 @@ class IcingaService extends IcingaObject
         'check_period'     => 'IcingaTimePeriod',
         'command_endpoint' => 'IcingaEndpoint',
         'zone'             => 'IcingaZone',
+        'template_choice'  => 'IcingaTemplateChoiceService',
     );
 
     protected $booleans = array(
@@ -73,6 +76,7 @@ class IcingaService extends IcingaObject
 
     protected $intervalProperties = array(
         'check_interval' => 'check_interval',
+        'check_timeout'  => 'check_timeout',
         'retry_interval' => 'retry_interval',
     );
 
@@ -87,6 +91,8 @@ class IcingaService extends IcingaObject
     protected $supportsApplyRules = true;
 
     protected $supportsSets = true;
+
+    protected $supportsChoices = true;
 
     protected $supportedInLegacy = true;
 
@@ -367,6 +373,11 @@ class IcingaService extends IcingaObject
         return '';
     }
 
+    protected function renderTemplate_choice_id()
+    {
+        return '';
+    }
+
     protected function renderLegacyDisplay_Name()
     {
         // @codingStandardsIgnoreEnd
@@ -426,6 +437,9 @@ class IcingaService extends IcingaObject
             }
 
             if (substr($prop, -3) === '_id') {
+                if ($prop === 'template_choice_id') {
+                    continue;
+                }
                 $prop = substr($prop, 0, -3);
             }
 

@@ -31,8 +31,32 @@
             this.module.on('focus', '.director-suggest', this.enterSuggestionField);
             this.module.on('focusout', '.director-suggest', this.leaveSuggestionField);
             this.module.on('click', '.director-suggestions li', this.clickSuggestion);
+            this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
             this.module.icinga.logger.debug('Director module initialized');
+        },
+
+        tabWantsFullscreen: function(ev) {
+            var icinga = this.module.icinga;
+            var $a, $container, id;
+
+            if (icinga.ui.isOneColLayout()) {
+                return;
+            }
+
+            $a = $(ev.currentTarget);
+            $container = $a.closest('.container');
+            id = $container.attr('id');
+
+            icinga.loader.stopPendingRequestsFor($container);
+            if (id === 'col2') {
+                icinga.ui.moveToLeft();
+            }
+
+            icinga.ui.layout1col();
+            icinga.history.pushCurrentState();
+            ev.preventDefault();
+            ev.stopPropagation();
         },
 
         /**
@@ -103,7 +127,7 @@
         suggestionDoubleClick: function (ev)
         {
             var $el = $(ev.currentTarget);
-            this.getSuggestionList($el)
+            this.getSuggestionList($el);
         },
 
         /**
@@ -234,6 +258,7 @@
             } else {
                 $ul = $('<ul class="director-suggestions"></ul>');
                 $ul.insertAfter($input);
+                $ul.css({width: $input.css('width')});
                 return this.refreshSuggestionList($ul, $input);
             }
         },
@@ -347,7 +372,7 @@
          * @param ev
          */
         leaveSuggestionField: function(ev) {
-            return;
+//            return;
             var _this = this;
             setTimeout(function() {
                 _this.removeSuggestionList($(ev.currentTarget));
@@ -533,23 +558,19 @@
             var $dt = $dd.prev();
             var $form = $dd.closest('form');
 
+            var $desc = $dd.find('p.description');
+            if ($desc.length) {
+                $form.css({ marginBottom: ($desc.height() + 48) + 'px' });
+            }
+
             $form.find('dt, dd, li').removeClass('active');
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
-            $dd.find('p.description.fading-out')
-                .stop(true)
-                .removeClass('fading-out')
-                .fadeIn('fast');
 
             $form.find('dd').not($dd)
                 .find('p.description')
-                .not('.fading-out')
-                .addClass('fading-out')
-                .delay(2000)
-                .fadeOut('slow', function() {
-                    $(this).removeClass('fading-out').hide()
-                });
+                .hide();
         },
 
         highlightFormErrors: function($container)
@@ -626,16 +647,42 @@
             this.highlightFormErrors($container);
             this.scrollHighlightIntoView($container);
             this.scrollActiveRowIntoView($container);
+            this.highlightActiveDashlet($container);
             this.hideInactiveFormDescriptions($container);
             if (iid = $container.data('activeExtensibleEntry')) {
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
-
             // Disabled for now
             // this.alignDetailLinks();
             if (! this.containerIsAutorefreshed($container) && ! this.containerIsAutoSubmitted($container)) {
                 this.putFocusOnFirstFormElement($container);
+            }
+        },
+
+        highlightActiveDashlet: function($container)
+        {
+            if (this.module.icinga.ui.isOneColLayout()) {
+                return;
+            }
+
+            var url, $actions, $match;
+            var id = $container.attr('id');
+            if (id === 'col1') {
+                url = $('#col2').data('icingaUrl');
+                $actions = $('.main-actions', $container);
+            } else if (id === 'col2') {
+                url = $container.data('icingaUrl');
+                $actions = $('.main-actions', $('#col1'));
+            }
+            if (! $actions.length) {
+                return;
+            }
+
+            $match = $('li a[href*="' + url + '"]', $actions);
+            if ($match.length) {
+                $('li a.active', $actions).removeClass('active');
+                $match.first().addClass('active');
             }
         },
 
