@@ -156,8 +156,6 @@ abstract class ZfQueryBasedTable extends Table
         $this->nextBody();
     }
 
-    }
-
     public function fetch()
     {
         $rows = $this->db->fetchAll(
