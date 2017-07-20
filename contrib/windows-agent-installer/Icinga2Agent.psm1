@@ -1866,6 +1866,32 @@ object ApiListener "api" {
     }
 
     #
+    # Check if the local host key is still valid
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'isHostAPIKeyValid' -value {
+
+        # If no API key is yet defined, we will require to fetch one
+        if (-Not $this.getProperty('director_host_token')) {
+            return $FALSE;
+        }
+
+        # Check against the powershell-parameter URL if our host API key is valid
+        # If we receive content -> everything is ok
+        # If we receive any 4xx code, propably the API Key is invalid and we require to fetch a new one
+        [string]$url = $this.config('director_url') + 'self-service/powershell-parameters?key=' + $this.getProperty('director_host_token');
+        [string]$response = $this.createHTTPRequest($url, '', 'POST', 'application/json', $TRUE, $FALSE);
+        if ($this.isHTTPResponseCode($response)) {
+            if ($response[0] -eq '4') {
+                $this.info('Target host is already present inside Icinga Director without API-Key. Re-Creating key...');
+                return $FALSE;
+            }
+        }
+
+        $this.info('Host API-Key validation successfull.');
+        return $TRUE;
+    }
+
+    #
     # This function will allow us to create a
     # host object directly inside the Icinga Director
     # with a provided JSON string
@@ -1875,32 +1901,37 @@ object ApiListener "api" {
         if ($this.config('director_url') -And $this.getProperty('local_hostname')) {
             if ($this.config('director_auth_token')) {
                 if ($this.requireIcingaDirectorAPIVersion('1.4.0', '[Function::createHostInsideIcingaDirector]')) {
-                    if ($this.getProperty('director_host_token') -eq '') {
-                        [string]$apiKey = $this.config('director_auth_token');
-                        [string]$url = $this.config('director_url') + 'self-service/register-host?name=' + $this.getProperty('local_hostname') + '&key=' + $apiKey;
-                        [string]$json = '';
-                        # If no JSON Object is defined (should be default), we shall create one
-                        if (-Not $this.config('director_host_object')) {
-                            [string]$hostname = $this.getProperty('local_hostname');
-                            $json = '{ "address": "' + $hostname + '", "display_name": "' + $hostname + '" }';
+
+                    # Check if our API Host-Key is present and valid
+                    if ($this.isHostAPIKeyValid()) {
+                        return;
+                    }
+
+                    # If not, try to create the host and fetch the API key
+                    [string]$apiKey = $this.config('director_auth_token');
+                    [string]$url = $this.config('director_url') + 'self-service/register-host?name=' + $this.getProperty('local_hostname') + '&key=' + $apiKey;
+                    [string]$json = '';
+                    # If no JSON Object is defined (should be default), we shall create one
+                    if (-Not $this.config('director_host_object')) {
+                        [string]$hostname = $this.getProperty('local_hostname');
+                        $json = '{ "address": "' + $hostname + '", "display_name": "' + $hostname + '" }';
+                    } else {
+                        # Otherwise use the specified one and replace the host object placeholders
+                        $json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
+                    }
+
+                    $this.info('Creating host ' + $this.getProperty('local_hostname') + ' over API token inside Icinga Director.');
+
+                    [string]$httpResponse = $this.createHTTPRequest($url, $json, 'POST', 'application/json', $TRUE, $TRUE);
+
+                    if ($this.isHTTPResponseCode($httpResponse) -eq $FALSE) {
+                        $this.setProperty('director_host_token', $httpResponse);
+                        $this.writeHostAPIKeyToDisk();
+                    } else {
+                        if ($httpResponse -eq '400') {
+                            $this.warn('Received response 400 from Icinga Director. Possibly you tried to re-create the host ' + $this.getProperty('local_hostname') + '. In case the host already exists, please remove the Host-Api-Key inside the Icinga Director and try again.');
                         } else {
-                            # Otherwise use the specified one and replace the host object placeholders
-                            $json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
-                        }
-
-                        $this.info('Creating host ' + $this.getProperty('local_hostname') + ' over API token inside Icinga Director.');
-
-                        [string]$httpResponse = $this.createHTTPRequest($url, $json, 'POST', 'application/json', $TRUE, $TRUE);
-
-                        if ($this.isHTTPResponseCode($httpResponse) -eq $FALSE) {
-                            $this.setProperty('director_host_token', $httpResponse);
-                            $this.writeHostAPIKeyToDisk();
-                        } else {
-                            if ($httpResponse -eq '400') {
-                                $this.warn('Received response 400 from Icinga Director. Possibly you tried to re-create the host ' + $this.getProperty('local_hostname') + '. In case the host already exists, please remove the Host-Api-Key inside the Icinga Director and try again.');
-                            } else {
-                                $this.warn('Failed to create host. Response code ' + $httpResponse);
-                            }
+                            $this.warn('Failed to create host. Response code ' + $httpResponse);
                         }
                     }
                 }
