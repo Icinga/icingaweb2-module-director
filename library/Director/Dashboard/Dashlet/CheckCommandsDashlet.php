@@ -9,14 +9,14 @@ class CheckCommandsDashlet extends Dashlet
     public function getSummary()
     {
         return $this->translate(
-            'Check Commands are executed every time a Host or Service check has'
-            . ' to be run'
+            'Manage definitions for your Commands that should be executed as'
+            . ' Check Plugins, Notifications or based on Events'
         );
     }
 
     public function getTitle()
     {
-        return $this->translate('Check Commands');
+        return $this->translate('Commands');
     }
 
     public function listRequiredPermissions()
