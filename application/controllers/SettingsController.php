@@ -21,7 +21,7 @@ class SettingsController extends ActionController
         );
 
         $this->addSingleTab($this->translate('Self Service'))
-            ->addTitle($this->translate('Self Service API - Settings'))
+            ->addTitle($this->translate('Self Service API - Global Settings'))
             ->content()->add(Html::p($hint))
             ->add($form);
     }
