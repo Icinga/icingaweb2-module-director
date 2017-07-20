@@ -232,15 +232,23 @@ abstract class ZfQueryBasedTable extends Table
         }
     }
 
+    /**
+     * @param ControlsAndContent $controller
+     * @return $this
+     */
     public function renderTo(ControlsAndContent $controller)
     {
         $url = $controller->url();
         $c = $controller->content();
+        $paginator = $this->getPaginator($url);
         $this->initializeOptionalQuickSearch($controller);
-        $c->add([$this->getPaginator($url), $this]);
+        $controller->actions()->add($paginator);
+        $c->add($this);
 
         if ($url->getParam('format') === 'sql') {
             $c->prepend($this->dumpSqlQuery($url));
         }
+
+        return $this;
     }
 }
