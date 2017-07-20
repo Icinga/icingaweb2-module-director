@@ -16,6 +16,11 @@ class CommandTemplatesDashlet extends CheckCommandsDashlet
 
     public function getTitle()
     {
-        return $this->translate('External Notification Commands');
+        return $this->translate('Command Templates');
+    }
+
+    public function getUrl()
+    {
+        return 'director/commands/templates';
     }
 }

@@ -6,10 +6,10 @@ class CommandsDashboard extends Dashboard
 {
     protected $dashletNames = array(
         'CheckCommands',
-        // 'ExternalCheckCommands',
+        'ExternalCheckCommands',
         // 'NotificationCommands',
         // 'ExternalNotificationCommands',
-        // 'CommandTemplates',
+        'CommandTemplates',
     );
 
     public function getTitle()

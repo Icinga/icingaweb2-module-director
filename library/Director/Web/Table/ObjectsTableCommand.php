@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Zend_Db_Select as ZfSelect;
+
 class ObjectsTableCommand extends ObjectsTable
 {
     // TODO: external commands? Notifications separately?
@@ -21,4 +23,17 @@ class ObjectsTableCommand extends ObjectsTable
         'object_name' => 'Command',
         'command'     => 'Command line'
     ];
+
+    private $objectType;
+
+    public function setType($type)
+    {
+        $this->getQuery()->where('object_type = ?', $type);
+        return $this;
+    }
+
+    protected function applyObjectTypeFilter(ZfSelect $query)
+    {
+        return $query;
+    }
 }

@@ -9,13 +9,18 @@ class ExternalCheckCommandsDashlet extends CheckCommandsDashlet
     public function getSummary()
     {
         return $this->translate(
-            'External Check Commands have been defined in your local Icinga 2'
-            . ' Configuration. '
+            'External Commands have been defined in your local Icinga 2'
+            . ' Configuration.'
         );
     }
 
     public function getTitle()
     {
-        return $this->translate('External Check Commands');
+        return $this->translate('External Commands');
+    }
+
+    public function getUrl()
+    {
+        return 'director/commands?type=external_object';
     }
 }
