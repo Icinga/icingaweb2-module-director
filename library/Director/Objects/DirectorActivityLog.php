@@ -57,6 +57,10 @@ class DirectorActivityLog extends DbObject
         $auth = Auth::getInstance();
         if ($auth->isAuthenticated()) {
             return $auth->getUser()->getUsername();
+        } elseif (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) {
+            return '<' . $_SERVER['HTTP_X_FORWARDED_FOR'] . '>';
+        } elseif (array_key_exists('REMOTE_ADDR', $_SERVER)) {
+            return '<' . $_SERVER['REMOTE_ADDR'] . '>';
         } else {
             return '<unknown>';
         }
