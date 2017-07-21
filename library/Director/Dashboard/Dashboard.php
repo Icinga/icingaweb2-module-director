@@ -50,6 +50,11 @@ abstract class Dashboard extends Html implements Countable
         return $dashboard;
     }
 
+    public static function exists($name)
+    {
+        return class_exists(__NAMESPACE__ . '\\' . ucfirst($name) . 'Dashboard');
+    }
+
     /**
      * @param $description
      * @return $this

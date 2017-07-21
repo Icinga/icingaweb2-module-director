@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\ActionBar;
 
+use Icinga\Module\Director\Dashboard\Dashboard;
 use ipl\Html\Link;
 use ipl\Translation\TranslationHelper;
 use ipl\Web\Widget\ActionBar;
@@ -25,10 +26,15 @@ class DirectorBaseActionBar extends ActionBar
 
     protected function getBackToDashboardLink()
     {
+        $name = $this->getPluralBaseType();
+        if (! Dashboard::exists($name)) {
+            return null;
+        }
+
         return Link::create(
             $this->translate('back'),
             'director/dashboard',
-            ['name' => $this->getPluralBaseType()],
+            ['name' => $name],
             [
                 'title' => sprintf(
                     $this->translate('Go back to "%s" Dashboard'),
