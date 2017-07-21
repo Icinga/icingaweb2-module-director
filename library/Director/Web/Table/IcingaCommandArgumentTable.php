@@ -12,7 +12,8 @@ class IcingaCommandArgumentTable extends ZfQueryBasedTable
     protected $command;
 
     protected $searchColumns = array(
-        'command',
+        'ca.argument_name',
+        'ca.argument_value',
     );
 
     public static function create(IcingaCommand $command)
@@ -67,6 +68,6 @@ class IcingaCommandArgumentTable extends ZfQueryBasedTable
         )->where(
             'ca.command_id = ?',
             $this->command->get('id')
-        )->order('ca.sort_order')->order('ca.argument_name');
+        )->order('ca.sort_order')->order('ca.argument_name')->limit(100);
     }
 }
