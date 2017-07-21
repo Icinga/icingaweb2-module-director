@@ -69,12 +69,13 @@ abstract class ObjectsController extends ActionController
 
         $objects = $this->loadMultiObjectsFromParams();
         $formName = 'icinga' . $type;
-        /** @var IcingaMultiEditForm $form */
-        $form = $this->loadForm('IcingaMultiEdit')
+        $form = IcingaMultiEditForm::load()
             ->setObjects($objects)
             ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
         if ($type === 'Service') {
-            $form->setListUrl('director/servicetemplate/hosts');
+            $form->setListUrl('director/services');
+        } elseif ($type === 'Host') {
+            $form->setListUrl('director/hosts');
         }
 
         $form->handleRequest();
