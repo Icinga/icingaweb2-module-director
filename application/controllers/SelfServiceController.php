@@ -213,7 +213,7 @@ class SelfServiceController extends ActionController
 
         if ($transform === '2') {
             $transformMethod = '.upperCase';
-        } elseif ($transform === '2') {
+        } elseif ($transform === '1') {
             $transformMethod = '.lowerCase';
         } else {
             $transformMethod = '';
