@@ -71,6 +71,13 @@ class IcingaHostSelfServiceForm extends DirectorForm
             throw new NotFoundError('Got invalid API key "%s"', $key);
         }
 
+        if ($this->template->getResolvedProperty('has_agent') !== 'y') {
+            throw new NotFoundError(
+                'Got valid API key "%s", but template is not for Agents',
+                $key
+            );
+        }
+
         $this->removeElement('key');
 
         return $this->template;
