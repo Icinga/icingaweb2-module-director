@@ -36,7 +36,11 @@ class SelfServiceController extends ActionController
 
     public function apiVersionAction()
     {
-        $this->sendPowerShellResponse('1.4.0');
+        if ($this->getRequest()->isApiRequest()) {
+            $this->sendPowerShellResponse('1.4.0');
+        } else {
+            throw new NotFoundError('Not found');
+        }
     }
 
     public function registerHostAction()
@@ -213,7 +217,7 @@ class SelfServiceController extends ActionController
 
         if ($transform === '2') {
             $transformMethod = '.upperCase';
-        } elseif ($transform === '2') {
+        } elseif ($transform === '1') {
             $transformMethod = '.lowerCase';
         } else {
             $transformMethod = '';

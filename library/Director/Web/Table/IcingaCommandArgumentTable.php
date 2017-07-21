@@ -12,7 +12,8 @@ class IcingaCommandArgumentTable extends ZfQueryBasedTable
     protected $command;
 
     protected $searchColumns = array(
-        'command',
+        'ca.argument_name',
+        'ca.argument_value',
     );
 
     public static function create(IcingaCommand $command)
@@ -30,14 +31,10 @@ class IcingaCommandArgumentTable extends ZfQueryBasedTable
     public function renderRow($row)
     {
         return $this::row([
-            Link::create(
-                $row->argument_name,
-                'director/command/arguments',
-                [
-                    'argument_id' => $row->id,
-                    'name'        => $this->command->getObjectName()
-                ]
-            ),
+            Link::create($row->argument_name, 'director/command/arguments', [
+                'argument_id' => $row->id,
+                'name'        => $this->command->getObjectName()
+            ]),
             $row->argument_value
         ]);
     }
@@ -50,23 +47,18 @@ class IcingaCommandArgumentTable extends ZfQueryBasedTable
         ];
     }
 
-    public function getColumns()
-    {
-        return array(
-            'id'             => 'ca.id',
-            'argument_name'  => "COALESCE(ca.argument_name, '(none)')",
-            'argument_value' => 'ca.argument_value',
-        );
-    }
-
     public function prepareQuery()
     {
         return $this->db()->select()->from(
             ['ca' => 'icinga_command_argument'],
-            $this->getColumns()
+            [
+                'id'             => 'ca.id',
+                'argument_name'  => "COALESCE(ca.argument_name, '(none)')",
+                'argument_value' => 'ca.argument_value',
+            ]
         )->where(
             'ca.command_id = ?',
             $this->command->get('id')
-        )->order('ca.sort_order')->order('ca.argument_name');
+        )->order('ca.sort_order')->order('ca.argument_name')->limit(100);
     }
 }

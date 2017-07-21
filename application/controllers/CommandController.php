@@ -35,7 +35,7 @@ class CommandController extends ObjectController
             $form->loadObject($id);
         }
         $form->handleRequest();
-        $table = IcingaCommandArgumentTable::create($o);
-        $this->content()->add([$form, $table]);
+        $this->content()->add([$form]);
+        IcingaCommandArgumentTable::create($o)->renderTo($this);
     }
 }
