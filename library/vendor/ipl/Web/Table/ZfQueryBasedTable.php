@@ -16,7 +16,6 @@ use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Widget\Paginator;
 use ipl\Web\Table\Extension\QuickSearch;
 use ipl\Web\Url;
-use Zend_Db_Exception as Expr;
 
 abstract class ZfQueryBasedTable extends Table
 {
@@ -138,7 +137,6 @@ abstract class ZfQueryBasedTable extends Table
 
     /**
      * @param  int $timestamp
-     * @return string
      */
     protected function renderDayIfNew($timestamp)
     {
@@ -148,16 +146,17 @@ abstract class ZfQueryBasedTable extends Table
             $day = strftime('%A, %e. %B, %Y', $timestamp);
         }
 
-        if ($this->lastDay === $day) {
-            return;
+        if ($this->lastDay !== $day) {
+            $this->nextHeader()->add(
+                $this::th($day, [
+                    'colspan' => 2,
+                    'class'   => 'table-header-day'
+                ])
+            );
+
+            $this->lastDay = $day;
+            $this->nextBody();
         }
-
-        $this->nextHeader()->add(
-            $this::th($day, ['colspan' => 2])->addAttributes(['class' => 'table-header-day'])
-        );
-
-        $this->lastDay = $day;
-        $this->nextBody();
     }
 
     public function fetch()
