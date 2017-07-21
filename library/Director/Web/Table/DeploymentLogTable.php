@@ -7,6 +7,8 @@ use ipl\Web\Table\ZfQueryBasedTable;
 
 class DeploymentLogTable extends ZfQueryBasedTable
 {
+    use DbHelper;
+
     protected $activeStageName;
 
     public function setActiveStageName($name)
@@ -18,14 +20,13 @@ class DeploymentLogTable extends ZfQueryBasedTable
     public function assemble()
     {
         $this->attributes()->add('class', 'deployment-log');
-        parent::assemble();
     }
 
     public function renderRow($row)
     {
         $this->splitByDay($row->start_time);
 
-        $shortSum = substr(bin2hex($row->config_checksum), 0, 7);
+        $shortSum = $this->getShortChecksum($row->config_checksum);
         $tr = $this::tr([
             $this::td(Link::create(
                 [$row->peer_identity, " ($shortSum)"],
@@ -36,6 +37,11 @@ class DeploymentLogTable extends ZfQueryBasedTable
         ])->addAttributes(['class' => $this->getMyRowClasses($row)]);
 
         return $tr;
+    }
+
+    protected function getShortChecksum($checksum)
+    {
+        return substr(bin2hex($this->wantBinaryValue($checksum)), 0, 7);
     }
 
     protected function getMyRowClasses($row)
