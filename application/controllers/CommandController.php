@@ -2,44 +2,40 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\IcingaCommandArgumentForm;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Web\Controller\ObjectController;
-use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Web\Table\IcingaCommandArgumentTable;
 
 class CommandController extends ObjectController
 {
     public function init()
     {
         parent::init();
-        if ($this->object && ! $this->object->isExternal()) {
-            $this->getTabs()->add('arguments', array(
+        $o = $this->object;
+        if ($o && ! $o->isExternal()) {
+            $this->tabs()->add('arguments', [
                 'url'       => 'director/command/arguments',
-                'urlParams' => array('name' => $this->object->object_name),
+                'urlParams' => ['name' => $o->getObjectName()],
                 'label'     => 'Arguments'
-            ));
+            ]);
         }
     }
 
     public function argumentsAction()
     {
-        $this->gracefullyActivateTab('arguments');
-        $this->view->title = sprintf(
-            $this->translate('Command arguments: %s'),
-            $this->object->object_name
-        );
+        $p = $this->params;
+        /** @var IcingaCommand $o */
+        $o = $this->object;
+        $this->tabs()->activate('arguments');
+        $this->addTitle($this->translate('Command arguments: %s'), $o->getObjectName());
 
-        $this->view->table = $this
-            ->loadTable('icingaCommandArgument')
-            ->setCommandObject($this->object)
-            ->setFilter(Filter::where('command', $this->params->get('name')));
-
-        $form = $this->view->form = $this
-            ->loadForm('icingaCommandArgument')
-            ->setCommandObject($this->object);
-
-        if ($id = $this->params->shift('argument_id')) {
+        $form = IcingaCommandArgumentForm::load()->setCommandObject($o);
+        if ($id = $p->shift('argument_id')) {
             $form->loadObject($id);
         }
-
         $form->handleRequest();
+        $table = IcingaCommandArgumentTable::create($o);
+        $this->content()->add([$form, $table]);
     }
 }

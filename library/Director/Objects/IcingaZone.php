@@ -63,7 +63,7 @@ class IcingaZone extends IcingaObject
     }
 
     // TODO: Move this away, should be prefetchable:
-    protected function listEndpoints()
+    public function listEndpoints()
     {
         if ($this->id && $this->endpointList === null) {
             $db = $this->getDb();

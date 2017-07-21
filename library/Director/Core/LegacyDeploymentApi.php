@@ -35,7 +35,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     {
         $existing = $this->listModuleStages('director');
 
-        foreach ($db->getUncollectedDeployments() as $deployment) {
+        foreach (DirectorDeploymentLog::getUncollected($db) as $deployment) {
             $stage = $deployment->get('stage_name');
             if (! in_array($stage, $existing)) {
                 continue;
@@ -77,7 +77,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
      */
     public function wipeInactiveStages(Db $db)
     {
-        $uncollected = $db->getUncollectedDeployments();
+        $uncollected = DirectorDeploymentLog::getUncollected($db);
         $moduleName = 'director';
         $currentStage = $this->getActiveStageName();
 

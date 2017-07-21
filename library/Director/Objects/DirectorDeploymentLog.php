@@ -44,7 +44,7 @@ class DirectorDeploymentLog extends DbObject
     public function getConfig()
     {
         if ($this->config === null) {
-            $this->config = IcingaConfig::load($this->config_checksum);
+            $this->config = IcingaConfig::load($this->config_checksum, $this->connection);
         }
 
         return $this->config;
@@ -102,5 +102,33 @@ class DirectorDeploymentLog extends DbObject
         );
 
         return static::load($db->fetchOne($query), $connection);
+    }
+
+    /**
+     * @return static[]
+     */
+    public static function getUncollected(Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()
+            ->from('director_deployment_log')
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL')
+            ->order('stage_name');
+
+        return static::loadAll($connection, $query, 'stage_name');
+    }
+
+    public static function hasUncollected(Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()
+            ->from('director_deployment_log', ['cnt' => 'COUNT(*)'])
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL');
+
+        return $db->fetchOne($query) > 0;
     }
 }

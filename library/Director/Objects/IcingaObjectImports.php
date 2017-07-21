@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Countable;
 use Exception;
+use Icinga\Exception\ProgrammingError;
 use Iterator;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
@@ -289,7 +290,15 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             return true;
         }
 
-        $objectId = (int) $this->object->get('id');
+        $objectId = $this->object->get('id');
+        if ($objectId === null) {
+            throw new ProgrammingError(
+                'Cannot store imports for unstored object with no ID'
+            );
+        } else {
+            $objectId = (int) $objectId;
+        }
+
         $type = $this->getType();
 
         $objectCol = $type . '_id';

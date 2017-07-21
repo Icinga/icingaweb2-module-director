@@ -11,7 +11,7 @@ class InfrastructureDashlet extends Dashlet
         return $this->translate('Icinga Infrastructure');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Manage your Icinga 2 infrastructure: Masters, Zones, Satellites and more'

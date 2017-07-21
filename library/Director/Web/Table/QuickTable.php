@@ -15,14 +15,15 @@ use Icinga\Exception\QueryException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Web\Request;
-use Icinga\Web\Url;
+use ipl\Web\Url;
 use Icinga\Web\View;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
+use ipl\Html\ValidHtml;
 use stdClass;
 use Zend_Db_Select as ZfDbSelect;
 
-abstract class QuickTable implements Paginatable
+abstract class QuickTable implements Paginatable, ValidHtml
 {
     protected $view;
 

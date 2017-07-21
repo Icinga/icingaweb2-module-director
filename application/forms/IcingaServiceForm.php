@@ -127,6 +127,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addNameElement()
              ->addHostObjectElement()
              ->addImportsElement()
+             ->addChoices('service')
              ->addGroupsElement()
              ->addDisabledElement()
              ->addApplyForElement()

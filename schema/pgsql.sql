@@ -170,6 +170,7 @@ CREATE TABLE director_datalist_entry (
   entry_name character varying(255) NOT NULL,
   entry_value text DEFAULT NULL,
   format enum_property_format,
+  allowed_roles character varying(255) DEFAULT NULL,
   PRIMARY KEY (list_id, entry_name),
   CONSTRAINT director_datalist_entry_datalist
   FOREIGN KEY (list_id)
@@ -544,6 +545,17 @@ CREATE INDEX endpoint_inheritance_endpoint ON icinga_endpoint_inheritance (endpo
 CREATE INDEX endpoint_inheritance_endpoint_parent ON icinga_endpoint_inheritance (parent_endpoint_id);
 
 
+CREATE TABLE icinga_host_template_choice (
+  id serial,
+  object_name character varying(64) NOT NULL,
+  description text DEFAULT NULL,
+  min_required smallint NOT NULL DEFAULT 0,
+  max_allowed smallint NOT NULL DEFAULT 1,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX host_template_choice_object_name ON icinga_host_template_choice (object_name);
+
 CREATE TABLE icinga_host (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -557,6 +569,7 @@ CREATE TABLE icinga_host (
   check_period_id integer DEFAULT NULL,
   check_interval character varying(8) DEFAULT NULL,
   retry_interval character varying(8) DEFAULT NULL,
+  check_timeout smallint DEFAULT NULL,
   enable_notifications enum_boolean DEFAULT NULL,
   enable_active_checks enum_boolean DEFAULT NULL,
   enable_passive_checks enum_boolean DEFAULT NULL,
@@ -577,6 +590,7 @@ CREATE TABLE icinga_host (
   master_should_connect enum_boolean DEFAULT NULL,
   accept_config enum_boolean DEFAULT NULL,
   api_key character varying(40) DEFAULT NULL,
+  template_choice_id int DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_host_zone
   FOREIGN KEY (zone_id)
@@ -602,8 +616,14 @@ CREATE TABLE icinga_host (
   FOREIGN KEY (command_endpoint_id)
     REFERENCES icinga_endpoint (id)
     ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_template_choice
+    FOREIGN KEY (template_choice_id)
+    REFERENCES icinga_host_template_choice (id)
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
+
 
 CREATE UNIQUE INDEX object_name_host ON icinga_host (object_name, zone_id);
 CREATE UNIQUE INDEX host_api_key ON icinga_host (api_key);
@@ -612,6 +632,7 @@ CREATE INDEX host_timeperiod ON icinga_host (check_period_id);
 CREATE INDEX host_check_command ON icinga_host (check_command_id);
 CREATE INDEX host_event_command ON icinga_host (event_command_id);
 CREATE INDEX host_command_endpoint ON icinga_host (command_endpoint_id);
+CREATE INDEX host_template_choice ON icinga_host (template_choice_id);
 
 
 CREATE TABLE icinga_host_inheritance (
@@ -698,6 +719,18 @@ CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id
 CREATE INDEX service_set_host ON icinga_service_set (host_id);
 
 
+CREATE TABLE icinga_service_template_choice (
+  id serial,
+  object_name character varying(64) NOT NULL,
+  description text DEFAULT NULL,
+  min_required smallint NOT NULL DEFAULT 0,
+  max_allowed smallint NOT NULL DEFAULT 1,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX service_template_choice_object_name ON icinga_service_template_choice (object_name);
+
+
 CREATE TABLE icinga_service (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -711,6 +744,7 @@ CREATE TABLE icinga_service (
   check_period_id integer DEFAULT NULL,
   check_interval character varying(8) DEFAULT NULL,
   retry_interval character varying(8) DEFAULT NULL,
+  check_timeout smallint DEFAULT NULL,
   enable_notifications enum_boolean DEFAULT NULL,
   enable_active_checks enum_boolean DEFAULT NULL,
   enable_passive_checks enum_boolean DEFAULT NULL,
@@ -731,6 +765,7 @@ CREATE TABLE icinga_service (
   apply_for character varying(255) DEFAULT NULL,
   use_var_overrides enum_boolean DEFAULT NULL,
   assign_filter text DEFAULT NULL,
+  template_choice_id int DEFAULT NULL,
   PRIMARY KEY (id),
 -- UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_service_host
@@ -767,6 +802,11 @@ CREATE TABLE icinga_service (
     FOREIGN KEY (service_set_id)
     REFERENCES icinga_service_set (id)
     ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_template_choice
+    FOREIGN KEY (template_choice_id)
+    REFERENCES icinga_service_template_choice (id)
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
 
@@ -775,6 +815,7 @@ CREATE INDEX service_timeperiod ON icinga_service (check_period_id);
 CREATE INDEX service_check_command ON icinga_service (check_command_id);
 CREATE INDEX service_event_command ON icinga_service (event_command_id);
 CREATE INDEX service_command_endpoint ON icinga_service (command_endpoint_id);
+CREATE INDEX service_template_choice ON icinga_service (template_choice_id);
 
 
 CREATE TABLE icinga_service_inheritance (
@@ -1014,6 +1055,26 @@ CREATE TABLE icinga_hostgroup_host (
 
 CREATE INDEX hostgroup_host_host ON icinga_hostgroup_host (host_id);
 CREATE INDEX hostgroup_host_hostgroup ON icinga_hostgroup_host (hostgroup_id);
+
+
+CREATE TABLE icinga_hostgroup_host_resolved (
+  hostgroup_id integer NOT NULL,
+  host_id integer NOT NULL,
+  PRIMARY KEY (hostgroup_id, host_id),
+  CONSTRAINT icinga_hostgroup_host_resolved_host
+  FOREIGN KEY (host_id)
+    REFERENCES icinga_host (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_hostgroup_host_resolved_hostgroup
+  FOREIGN KEY (hostgroup_id)
+    REFERENCES icinga_hostgroup (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX hostgroup_host_resolved_host ON icinga_hostgroup_host_resolved (host_id);
+CREATE INDEX hostgroup_host_resolved_hostgroup ON icinga_hostgroup_host_resolved (hostgroup_id);
 
 
 CREATE TABLE icinga_hostgroup_parent (
@@ -1316,6 +1377,7 @@ CREATE TABLE import_source (
   import_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1344,6 +1406,7 @@ CREATE TABLE import_row_modifier (
   target_property character varying(255) DEFAULT NULL,
   provider_class character varying(72) NOT NULL,
   priority integer NOT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT row_modifier_import_source
     FOREIGN KEY (source_id)
@@ -1468,6 +1531,7 @@ CREATE TABLE sync_rule (
   sync_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
@@ -1775,4 +1839,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (128, NOW());
+  VALUES (138, NOW());

@@ -4,6 +4,7 @@
 </div>
 
 <div class="content">
+<p><?= $this->escape($source->description) ?></p>
 <?php if ($source->import_state === 'unknown'): ?>
 <p><?= $this->translate(
     "It's currently unknown whether we are in sync with this Import Source."

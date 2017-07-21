@@ -3,13 +3,20 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\ConfigDiff;
+use Icinga\Module\Director\Forms\DeployConfigForm;
+use Icinga\Module\Director\Forms\SettingsForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Settings;
+use Icinga\Module\Director\Web\Table\ActivityLogTable;
+use Icinga\Module\Director\Web\Table\DeploymentLogTable;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Tabs\InfraTabs;
 use Icinga\Web\Notification;
 use Icinga\Web\Url;
 use Exception;
+use ipl\Html\Link;
 
 class ConfigController extends ActionController
 {
@@ -22,8 +29,9 @@ class ConfigController extends ActionController
     public function deploymentsAction()
     {
         $this->assertPermission('director/deploy');
+        $this->addTitle($this->translate('Deployments'));
         try {
-            if ($this->db()->hasUncollectedDeployments()) {
+            if (DirectorDeploymentLog::hasUncollected($this->db())) {
                 $this->setAutorefreshInterval(5);
                 $this->api()->collectLogFiles($this->db());
             } else {
@@ -32,26 +40,25 @@ class ConfigController extends ActionController
         } catch (Exception $e) {
             // No problem, Icinga might be reloading
         }
-        $this->view->addLink = $this->view->qlink(
+        $this->actions()->add(Link::create(
             $this->translate('Render config'),
             'director/config/store',
             null,
-            array('class' => 'icon-wrench')
-        );
+            ['class' => 'icon-wrench']
+        ));
 
-        $this->overviewTabs()->activate('deploymentlog');
-        $this->view->title = $this->translate('Deployments');
-        $this->prepareTable('deploymentLog');
+        $this->tabs(new InfraTabs($this->Auth()))->activate('deploymentlog');
+        $table = new DeploymentLogTable($this->db());
         try {
             // Move elsewhere
-            $this->view->table->setActiveStageName(
+            $table->setActiveStageName(
                 $this->api()->getActiveStageName()
             );
         } catch (Exception $e) {
             // Don't care
         }
 
-        $this->render('objects/table', null, 'objects');
+        $table->renderTo($this);
     }
 
     public function deployAction()
@@ -83,7 +90,8 @@ class ConfigController extends ActionController
     protected function deploymentSucceeded($checksum)
     {
         if ($this->getRequest()->isApiRequest()) {
-            return $this->sendJson((object) array('checksum' => $checksum));
+            $this->sendJson($this->getResponse(), (object) array('checksum' => $checksum));
+            return;
         } else {
             $url = Url::fromPath('director/config/deployments');
             Notification::success(
@@ -98,7 +106,8 @@ class ConfigController extends ActionController
         $extra = $error ? ': ' . $error: '';
 
         if ($this->getRequest()->isApiRequest()) {
-            return $this->sendJsonError('Config deployment failed' . $extra);
+            $this->sendJsonError($this->getResponse(), 'Config deployment failed' . $extra);
+            return;
         } else {
             $url = Url::fromPath('director/config/files', array('checksum' => $checksum));
             Notification::error(
@@ -113,43 +122,40 @@ class ConfigController extends ActionController
         $this->assertPermission('director/audit');
 
         $this->setAutorefreshInterval(10);
-        $this->overviewTabs()->activate('activitylog');
-        $this->view->title = $this->translate('Activity Log');
+        $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');
+        $this->addTitle($this->translate('Activity Log'));
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
-        $this->prepareTable('activityLog');
-        $this->view->table->setLastDeployedId($lastDeployedId);
-        $this->view->addLink = $this->view->qlink(
+        $table = new ActivityLogTable($this->db());
+        $table->setLastDeployedId($lastDeployedId);
+        $this->actions()->add(Link::create(
             $this->translate('My changes'),
-            $this->getRequest()->getUrl()
+            $this->url()
                 ->with('author', $this->Auth()->getUser()->getUsername())
                 ->without('page'),
             null,
             array('class' => 'icon-user', 'data-base-target' => '_self')
-        );
+        ));
         if ($this->hasPermission('director/deploy')) {
-            $this->view->addLink .= $this
-                ->loadForm('DeployConfig')
+            $this->actions()->add(DeployConfigForm::load()
                 ->setDb($this->db())
                 ->setApi($this->api())
-                ->handleRequest();
+                ->handleRequest());
         }
-        $this->provideFilterEditorForTable($this->view->table);
 
-        $this->setViewScript('list/table');
+        $table->renderTo($this);
     }
 
     public function settingsAction()
     {
         $this->assertPermission('director/admin');
 
-        $this->overviewTabs()->activate('settings');
-        $this->view->title = $this->translate('Settings');
-        $this->view->form = $this
-            ->loadForm('Settings')
+        $this->addSingleTab($this->translate('Settings'))
+            ->addTitle($this->translate('Global Director Settings'));
+        $this->content()->add(
+            SettingsForm::load()
             ->setSettings(new Settings($this->db()))
-            ->handleRequest();
-
-        $this->setViewScript('object/form');
+            ->handleRequest()
+        );
     }
 
     // Show all files for a given config
@@ -319,41 +325,6 @@ class ConfigController extends ActionController
         );
 
         $this->view->output = $d->renderHtml();
-    }
-
-    protected function overviewTabs()
-    {
-        $this->view->tabs = $tabs = $this->getTabs();
-
-        if ($this->hasPermission('director/audit')) {
-            $tabs->add(
-                'activitylog',
-                array(
-                    'label' => $this->translate('Activity Log'),
-                    'url'   => 'director/config/activities'
-                )
-            );
-        }
-
-        if ($this->hasPermission('director/deploy')) {
-            $tabs->add(
-                'deploymentlog',
-                array(
-                    'label' => $this->translate('Deployments'),
-                    'url' => 'director/config/deployments'
-                )
-            );
-        }
-        if ($this->hasPermission('director/admin')) {
-            $tabs->add(
-                'settings',
-                array(
-                    'label' => $this->translate('Settings'),
-                    'url' => 'director/config/settings'
-                )
-            );
-        }
-        return $this->view->tabs;
     }
 
     protected function configTabs()

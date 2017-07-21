@@ -4,7 +4,7 @@
 <span class="action-links" data-base-target="_next">
 <?= $this->addLink ?>
 </span>
-<?php if (count($table) || ! $this->filterEditor->getFilter()->isEmpty()): ?>
+<?php if (count($table) || ($this->filterEditor && ! $this->filterEditor->getFilter()->isEmpty())): ?>
 <?= $this->filterEditor ?>
 <?php endif ?>
 <?= $this->table->getPaginator() ?>

@@ -98,6 +98,19 @@ class IcingaEndpoint extends IcingaObject
     }
 
     /**
+     * @return int
+     */
+    public function getResolvedPort()
+    {
+        $port = $this->getSingleResolvedProperty('port');
+        if (null === $port) {
+            return 5665;
+        } else {
+            return (int) $port;
+        }
+    }
+
+    /**
      * Use duration time renderer helper
      *
      * Avoid complaints for method names with underscore:

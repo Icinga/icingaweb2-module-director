@@ -49,7 +49,7 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return DbConnection
+     * @return Db
      * @throws ConfigurationError
      */
     protected function getDb()

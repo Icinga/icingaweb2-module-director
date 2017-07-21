@@ -10,7 +10,7 @@ class ApiUserObjectDashlet extends Dashlet
 
     public function getTitle()
     {
-        return $this->translate('Api users');
+        return $this->translate('Icinga Api users');
     }
 
     public function getUrl()

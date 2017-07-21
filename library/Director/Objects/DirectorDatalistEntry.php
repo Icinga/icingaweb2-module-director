@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\IcingaException;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObject;
 
 class DirectorDatalistEntry extends DbObject
@@ -17,7 +19,44 @@ class DirectorDatalistEntry extends DbObject
         'entry_name'    => null,
         'entry_value'   => null,
         'format'        => null,
+        'allowed_roles' => null,
     );
+
+    /**
+     * @param $roles
+     * @throws IcingaException
+     * @codingStandardsIgnoreStart
+     */
+    public function setAllowed_roles($roles)
+    {
+        // @codingStandardsIgnoreEnd
+        $key = 'allowed_roles';
+        if (is_array($roles)) {
+            $this->reallySet($key, json_encode($roles));
+        } elseif (null === $roles) {
+            $this->reallySet($key, null);
+        } else {
+            throw new ProgrammingError(
+                'Expected array or null for allowed_roles, got %s',
+                var_export($roles, 1)
+            );
+        }
+    }
+
+    /**
+     * @return array|null
+     * @codingStandardsIgnoreStart
+     */
+    public function getAllowed_roles()
+    {
+        // @codingStandardsIgnoreEnd
+        $roles = $this->getProperty('allowed_roles');
+        if (is_string($roles)) {
+            return json_decode($roles);
+        } else {
+            return $roles;
+        }
+    }
 
     public function replaceWith(DirectorDatalistEntry $object)
     {

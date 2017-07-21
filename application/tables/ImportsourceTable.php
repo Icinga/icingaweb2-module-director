@@ -21,6 +21,8 @@ class ImportsourceTable extends QuickTable
             'provider_class'     => 's.provider_class',
             'import_state'       => 's.import_state',
             'last_error_message' => 's.last_error_message',
+            'description'        => 'CASE WHEN s.description IS NULL THEN s.source_name'
+                                  . " ELSE s.source_name || ': ' || s.description END",
         );
     }
 
@@ -33,7 +35,7 @@ class ImportsourceTable extends QuickTable
     {
         $view = $this->view();
         return array(
-            'source_name' => $view->translate('Source name'),
+            'description' => $view->translate('Source name'),
         );
     }
 

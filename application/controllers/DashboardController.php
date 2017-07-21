@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Dashboard\Dashboard;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
@@ -19,22 +17,37 @@ class DashboardController extends ActionController
             $this->setAutorefreshInterval(10);
         }
 
-        $this->view->title = $this->translate('Icinga Director');
-        $names = $this->params->getValues('name', array('Objects', 'Deployment', 'Data'));
+        $mainDashboards = ['Objects', 'Alerts', 'Automation', 'Deployment', 'Data'];
+        $this->setTitle($this->translate('Icinga Director - Main Dashboard'));
+        $names = $this->params->getValues('name', $mainDashboards);
         if (count($names) === 1) {
             // TODO: Find a better way for this
-            $this->singleTab($this->translate(ucfirst($names[0])));
+            $name = $names[0];
+            $dashboard = Dashboard::loadByName($name, $this->db());
+            $this->tabs($dashboard->getTabs())->activate($name);
+            // $this->addSingleTab($this->translate(ucfirst($name)));
         } else {
-            $this->singleTab($this->translate('Overview'));
+            $this->addSingleTab($this->translate('Overview'));
         }
-        $dashboards = array();
+
+        $cntDashboards = 0;
         foreach ($names as $name) {
-            $dashboard = Dashboard::loadByName($name, $this->db(), $this->view);
+            if ($name instanceof Dashboard) {
+                $dashboard = $name;
+            } else {
+                $dashboard = Dashboard::loadByName($name, $this->db());
+            }
             if ($dashboard->isAvailable()) {
-                $dashboards[$name] = $dashboard;
+                $cntDashboards++;
+                $this->content()->add($dashboard);
             }
         }
 
-        $this->view->dashboards = $dashboards;
+        if ($cntDashboards === 0) {
+            $msg = $this->translate(
+                'No dashboard available, you might have not enough permissions'
+            );
+            $this->content()->add($msg);
+        }
     }
 }

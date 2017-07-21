@@ -2,10 +2,21 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Objects\IcingaEndpoint;
+use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Table\CoreApiFieldsTable;
+use Icinga\Module\Director\Web\Table\CoreApiObjectsTable;
+use Icinga\Module\Director\Web\Table\CoreApiPrototypesTable;
+use Icinga\Module\Director\Web\Tabs\ObjectTabs;
+use Icinga\Module\Director\Web\Tree\InspectTreeRenderer;
+use ipl\Html\Html;
+use ipl\Html\Link;
 
 class InspectController extends ActionController
 {
+    private $endpoint;
+
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/inspect');
@@ -13,118 +24,97 @@ class InspectController extends ActionController
 
     public function typesAction()
     {
-        $api = $this->api();
-        $params = array('name' => $this->view->endpoint);
-        $this->getTabs()->add('modify', array(
-            'url'       => 'director/endpoint',
-            'urlParams' => $params,
-            'label'     => $this->translate('Endpoint')
-        ))->add('render', array(
-            'url'       => 'director/endpoint/render',
-            'urlParams' => $params,
-            'label'     => $this->translate('Preview'),
-        ))->add('history', array(
-            'url'       => 'director/endpoint/history',
-            'urlParams' => $params,
-            'label'     => $this->translate('History')
-        ))->add('inspect', array(
-            'url'       => $this->getRequest()->getUrl(),
-            'label'     => $this->translate('Inspect')
-        ))->activate('inspect');
+        $object = $this->endpoint();
+        $name = $object->getObjectName();
+        $this->tabs(
+            new ObjectTabs('endpoint', $this->Auth(), $object)
+        )->activate('inspect');
 
-        $this->view->title = sprintf(
-            $this->translate('Icinga2 Objects: %s'),
-            $this->view->endpoint
+        $this->addTitle($this->translate('Icinga 2 - Objects: %s'), $name);
+
+        $this->actions()->add(
+            Link::create(
+                $this->translate('Status'),
+                'director/inspect/status',
+                ['endpoint' => $name],
+                [
+                    'class'            => 'icon-eye',
+                    'data-base-target' => '_next'
+                ]
+            )
         );
-        $types = $api->getTypes();
-        $rootNodes = array();
-        foreach ($types as $name => $type) {
-            if (property_exists($type, 'base')) {
-                $base = $type->base;
-                if (! property_exists($types[$base], 'children')) {
-                    $types[$base]->children = array();
-                }
-
-                $types[$base]->children[$name] = $type;
-            } else {
-                $rootNodes[$name] = $type;
-            }
-        }
-        $this->view->types = $rootNodes;
+        $this->content()->add(
+            new InspectTreeRenderer($object)
+        );
     }
 
     public function typeAction()
     {
-        $typeName = $this->params->get('name');
-        $this->singleTab($this->translate('Inspect - object list'));
-        $this->view->title = sprintf(
+        $api = $this->endpoint()->api();
+        $typeName = $this->params->get('type');
+        $this->addSingleTab($this->translate('Inspect - object list'));
+        $this->addTitle(
             $this->translate('Object type "%s"'),
             $typeName
         );
-        $this->view->type = $type = $this->api()->getType($typeName);
+        $c = $this->content();
+        $type = $api->getType($typeName);
         if ($type->abstract) {
-            return;
+            $c->add($this->translate('This is an abstract object type.'));
         }
 
-        if (! empty($type->fields)) {
-            $this->view->objects = $this->api()->listObjects(
-                $typeName,
-                $type->plural_name
-            );
+        if (! $type->abstract) {
+            $objects = $api->listObjects($typeName, $type->plural_name);
+            $c->add(Html::p(sprintf($this->translate('%d objects found'), count($objects))));
+            $c->add(new CoreApiObjectsTable($objects, $this->endpoint(), $type));
+        }
+
+        if (count((array) $type->fields)) {
+            $c->add([
+                Html::h2($this->translate('Type attributes')),
+                new CoreApiFieldsTable($type->fields, $this->url())
+            ]);
+        }
+
+        if (count($type->prototype_keys)) {
+            $c->add([
+                Html::h2($this->translate('Prototypes (methods)')),
+                new CoreApiPrototypesTable($type->prototype_keys, $type->name)
+            ]);
         }
     }
 
     public function objectAction()
     {
-        $this->singleTab($this->translate('Object Inspection'));
-        $this->view->object = $this->api()->getObject(
-            $this->params->get('name'),
-            $this->params->get('plural')
-        );
-    }
-
-    public function commandsAction()
-    {
-        $db = $this->db();
-        echo '<pre>';
-        foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
-            if (! $object::exists($object->object_name, $db)) {
-                // var_dump($object->store());
-                echo $object;
-            }
-        }
-        echo '</pre>';
-        exit;
-    }
-
-    public function zonesAction()
-    {
-        $db = $this->db();
-        echo '<pre>';
-        foreach ($this->api()->setDb($db)->getZoneObjects() as $zone) {
-            if (! $zone::exists($zone->object_name, $db)) {
-                // var_dump($zone->store());
-                echo $zone;
-            }
-        }
-        echo '</pre>';
-        exit;
+        $name = $this->params->get('name');
+        $pType = $this->params->get('plural');
+        $this->addSingleTab($this->translate('Object Inspection'));
+        $object = $this->endpoint()->api()->getObject($name, $pType);
+        $this->addTitle('%s "%s"', $pType, $name);
+        $this->content()->add(Html::pre(
+            PlainObjectRenderer::render($object)
+        ));
     }
 
     public function statusAction()
     {
-        $this->view->status = $status = $this->api()->getStatus();
-        print_r($status);
-        exit;
+        $this->addSingleTab($this->translate('Status'));
+        $this->addTitle($this->translate('Icinga 2 API - Status'));
+        $this->content()->add(
+            Html::pre(PlainObjectRenderer::render($this->endpoint()->api()->getStatus()))
+        );
     }
 
-    protected function api($endpointName = null)
+    protected function endpoint()
     {
-        $this->view->endpoint = $this->params->get('endpoint');
-        if ($this->view->endpoint === null) {
-            $this->view->endpoint = $this->db()->getDeploymentEndpointName();
+        if ($this->endpoint === null) {
+            if ($name = $this->params->get('endpoint')) {
+                $this->endpoint = IcingaEndpoint::load($name, $this->db());
+            } else {
+                $this->endpoint = $this->db()->getDeploymentEndpoint();
+            }
         }
 
-        return parent::api($this->view->endpoint);
+        return $this->endpoint;
     }
 }

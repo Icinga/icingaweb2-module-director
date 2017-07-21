@@ -4,6 +4,68 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.3.2
+-----
+
+### Fixed issues and related features
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/10?closed=1)
+
+### Apply Rules
+* Slashes in Apply Rules have not been correctly escaped
+* Services applied based on Arrays (contains) did not show up in the Hosts
+  Services list, and therefor it was not possible to override their vars
+* Some magic has been introduced to detect numbers in apply rules - not perfect
+  yet
+
+### Host Groups
+* It has not been possible to modify Host Groups without defining an apply rule
+* Hostgroups have not been sorted
+* It is now legal to have `external` HostGroup objects
+
+### Rendered Config
+* Custom Endpoint objects are now rendered to their parent zone
+* (Rendering) issues with the `in` operator have been fixed
+* You are now allowed to put Notifications into specific Zones
+
+### Usability and UI
+* Selecting multiple hosts at once and deleting them had no effect
+* Documentation got some little improvements
+* German translation has been refreshed
+* Header alignment has been improved
+* Escaping issues with the Inspect feture have been addressed
+
+### Kickstart
+
+* Kickstart is more robust and now able to deal with renamed Icinga Masters and
+  more
+
+### CLI
+* It is not possible to list and show Service Sets on the CLI
+
+### Import and Sync
+* Synchronizing Data List entries caused problems
+* A new Import Modifier has been added to deal with LConf specialities
+* Issues with special characters like spaces used in column names shipped by
+  Import Sources have been addressed
+* A new Property Modifier allows to filter Arrays based on wildcards or regular
+  expressions
+* A new Property Modifier allowing to "Combine multiple properties" has been
+  introduced. It's main purpose is to provide reliable unique keys when importing
+  single service objects.
+* A new warning hint informs you in case you created a Sync Rule without related
+  properties
+* Synchronization filters failed when built with columns not used in any property
+  mapping
+
+### Auditing
+* The audit log now also carries IP address and username
+
+### Generic bug fixes
+* Fixed erraneous loop detection under certain (rare) conditions
+* Various issues with PHP 5.3 have been fixed
+* Combination of multiple table filters might have failed (in very rare conditions)
+
 1.3.1
 -----
 

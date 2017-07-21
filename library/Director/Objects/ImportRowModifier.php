@@ -19,6 +19,7 @@ class ImportRowModifier extends DbObjectWithSettings
         'provider_class'  => null,
         'target_property' => null,
         'priority'        => null,
+        'description'     => null,
     );
 
     protected $settingsTable = 'import_row_modifier_setting';

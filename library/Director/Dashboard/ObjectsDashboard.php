@@ -8,7 +8,7 @@ class ObjectsDashboard extends Dashboard
         'HostObject',
         'ServiceObject',
         'CommandObject',
-        'Notifications',
+        // 'Notifications',
     );
 
     public function getTitle()

@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Core;
 
 use Exception;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -180,6 +181,40 @@ class CoreApi implements DeploymentApiInterface
         return false;
     }
 
+    public function checkServiceAndWaitForResult($host, $service, $timeout = 10)
+    {
+        $now = microtime(true);
+        $this->checkServiceNow($host, $service);
+
+        while (true) {
+            try {
+                $object = $this->getObject("$host!$service", 'services');
+                if (isset($object->attrs->last_check_result)) {
+                    $res = $object->attrs->last_check_result;
+                    if ($res->execution_start > $now) {
+                        return $res;
+                    }
+                } else {
+                    // no check result available
+                }
+            } catch (Exception $e) {
+                // Unable to fetch the requested object
+                throw new IcingaException(
+                    'Unable to fetch the requested service "%s" on "%s"',
+                    $service,
+                    $host
+                );
+            }
+            if (microtime(true) > ($now + $timeout)) {
+                break;
+            }
+
+            usleep(150000);
+        }
+
+        return false;
+    }
+
     public function getServiceOutput($host, $service)
     {
         try {
@@ -288,12 +323,16 @@ constants
     {
         // TODO: more abstraction needed
         // TODO: autofetch and cache pluraltypes
-        $result = $this->client->get(
-            'objects/' . $pluralType,
-            array(
-                'attrs' => array('__name')
-            )
-        )->getResult('name');
+        try {
+            $result = $this->client->get(
+                'objects/' . $pluralType,
+                array(
+                    'attrs' => array('__name')
+                )
+            )->getResult('name');
+        } catch (NotFoundError $e) {
+            $result = [];
+        }
 
         return array_keys($result);
     }
@@ -528,7 +567,7 @@ constants
     public function collectLogFiles(Db $db)
     {
         $existing = $this->listModuleStages('director');
-        foreach ($db->getUncollectedDeployments() as $deployment) {
+        foreach (DirectorDeploymentLog::getUncollected($db) as $deployment) {
             $stage = $deployment->get('stage_name');
             if (! in_array($stage, $existing)) {
                 continue;
@@ -564,7 +603,7 @@ constants
 
     public function wipeInactiveStages(Db $db)
     {
-        $uncollected = $db->getUncollectedDeployments();
+        $uncollected = DirectorDeploymentLog::getUncollected($db);
         $moduleName = 'director';
         foreach ($this->listModuleStages($moduleName, false) as $stage) {
             if (array_key_exists($stage, $uncollected)) {

@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
+use ipl\Html\Link;
 
 class ServiceController extends ObjectController
 {
@@ -104,32 +105,24 @@ class ServiceController extends ObjectController
         }
     }
 
-    public function futureoverviewIndexAction()
-    {
-        $object = $this->loadObject();
-        $title = $this->view->title = $object->object_name;
-        $this->singleTab($this->translate('Icinga Service Template'));
-    }
-
     public function editAction()
     {
-        $this->getTabs()->activate('modify');
+        $this->tabs()->activate('modify');
 
         /** @var IcingaService $object */
         $object = $this->object;
+        $this->addTitle($object->getObjectName());
 
         if ($this->host) {
-            $this->view->actionLinks = $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('back'),
                 'director/host/services',
-                array('name' => $this->host->object_name),
-                array('class' => 'icon-left-big')
-            );
+                ['name' => $this->host->getObjectName()],
+                ['class' => 'icon-left-big']
+            ));
         }
 
-        $this->view->form = $form = $this
-            ->loadForm('icingaService')
-            ->setDb($this->db());
+        $form = IcingaServiceForm::load()->setDb($this->db());
 
         if ($this->host && $object->usesVarOverrides()) {
             $fake = IcingaService::create(array(
@@ -146,10 +139,9 @@ class ServiceController extends ObjectController
             $form->setObject($object);
         }
 
-        $this->view->form->handleRequest();
-        $this->view->actionLinks .= $this->createCloneLink();
+        $form->handleRequest();
+        $this->actions()->add($this->createCloneLink());
 
-        $this->view->title = $object->object_name;
         if ($this->host) {
             $this->view->subtitle = sprintf(
                 $this->translate('(on %s)'),
@@ -172,7 +164,8 @@ class ServiceController extends ObjectController
             // ignore the error, show no apply link
         }
 
-        $this->setViewScript('object/form');
+        $this->content()->add($form);
+        // $this->setViewScript('object/form');
     }
 
     public function assignAction()

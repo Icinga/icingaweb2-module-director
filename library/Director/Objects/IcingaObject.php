@@ -51,6 +51,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether Sets of object can be defined */
     protected $supportsSets = false;
 
+    /** @var bool Whether this Object supports template-based Choices */
+    protected $supportsChoices = false;
+
     /** @var bool If the object is rendered in legacy config */
     protected $supportedInLegacy = false;
 
@@ -318,6 +321,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return null;
     }
 
+    public function prefetchAllRelatedTypes()
+    {
+        foreach (array_unique(array_values($this->relations)) as $relClass) {
+            /** @var static $class */
+            $class = __NAMESPACE__ . '\\' . $relClass;
+            $class::prefetchAll($this->getConnection());
+        }
+    }
+
+    public static function prefetchAllRelationsByType($type, Db $db)
+    {
+        /** @var static $class */
+        $class = self::classByType($type);
+        /** @var static $dummy */
+        $dummy = $class::create(array(), $db);
+        $dummy->prefetchAllRelatedTypes();
+    }
+
+
     /**
      * Whether this Object supports custom variables
      *
@@ -406,6 +428,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function supportsSets()
     {
         return $this->supportsSets;
+    }
+
+    /**
+     * Whether this object supports template-based Choices
+     *
+     * @return bool
+     */
+    public function supportsChoices()
+    {
+        return $this->supportsChoices;
     }
 
     public function setAssignments($value)
@@ -1093,6 +1125,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     continue;
                 }
 
+                if (! property_exists($origins, $key)) {
+                    // TODO:  Introduced with group membership resolver or
+                    //        choices - this should not be required. Check this!
+                    continue;
+                }
+
                 // $vals[$name]->$key = $value;
                 $vals['_MERGED_']->$key = $value;
                 $vals['_INHERITED_']->$key = $value;
@@ -1298,6 +1336,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $this->storeRelatedObjects();
     }
 
+    public function onStore()
+    {
+        $this->notifyResolvers();
+    }
+
     /**
      * @return self
      */
@@ -1356,6 +1399,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this;
+    }
+
+    protected function notifyResolvers()
+    {
     }
 
     /**

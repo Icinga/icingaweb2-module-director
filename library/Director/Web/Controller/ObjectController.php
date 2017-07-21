@@ -6,12 +6,25 @@ use Exception;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Deployment\DeploymentInfo;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaObjectGroup;
+use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Table\ActivityLogTable;
+use Icinga\Module\Director\Web\Table\GroupMemberTable;
+use Icinga\Module\Director\Web\Tabs\ObjectTabs;
+use ipl\Html\Html;
+use ipl\Html\Link;
 
 abstract class ObjectController extends ActionController
 {
+    use ObjectRestrictions;
+
     /** @var IcingaObject */
     protected $object;
 
@@ -30,68 +43,27 @@ abstract class ObjectController extends ActionController
             $response = $this->getResponse();
             try {
                 $this->loadObject();
-                return $this->handleApiRequest();
+                $this->handleApiRequest();
             } catch (NotFoundError $e) {
                 $response->setHttpResponseCode(404);
-                return $this->sendJson((object) array('error' => $e->getMessage()));
+                $this->sendJson($response, (object) array('error' => $e->getMessage()));
+            } catch (DuplicateKeyException $e) {
+                $response->setHttpResponseCode(422);
+                $this->sendJson($response, (object) array('error' => $e->getMessage()));
             } catch (Exception $e) {
                 if ($response->getHttpResponseCode() === 200) {
                     $response->setHttpResponseCode(500);
                 }
 
-                return $this->sendJson((object) array('error' => $e->getMessage()));
+                $this->sendJson($response, (object) array('error' => $e->getMessage()));
             }
         }
 
         $type = strtolower($this->getType());
-
-        if ($object = $this->loadObject()) {
-            $this->beforeTabs();
-            $params = $object->getUrlParams();
-
-            if ($object->isExternal()
-                && ! in_array($object->getShortTableName(), $this->allowedExternals)
-            ) {
-                $tabs = $this->getTabs();
-            } else {
-                $tabs = $this->getTabs()->add('modify', array(
-                    'url'       => sprintf('director/%s', $type),
-                    'urlParams' => $params,
-                    'label'     => $this->translate(ucfirst($type))
-                ));
-            }
-
-            if ($this->hasPermission('director/showconfig')) {
-                $tabs->add('render', array(
-                    'url'       => sprintf('director/%s/render', $type),
-                    'urlParams' => $params,
-                    'label'     => $this->translate('Preview'),
-                ));
-            }
-
-            if ($this->hasPermission('director/audit')) {
-                $tabs->add('history', array(
-                    'url'       => sprintf('director/%s/history', $type),
-                    'urlParams' => $params,
-                    'label'     => $this->translate('History')
-                ));
-            }
-
-
-            if ($this->hasPermission('director/admin') && $this->hasFields()) {
-                $tabs->add('fields', array(
-                    'url'       => sprintf('director/%s/fields', $type),
-                    'urlParams' => $params,
-                    'label'     => $this->translate('Fields')
-                ));
-            }
-        } else {
-            $this->beforeTabs();
-            $this->getTabs()->add('add', array(
-                'url'       => sprintf('director/%s/add', $type),
-                'label'     => sprintf($this->translate('Add %s'), ucfirst($type)),
-            ));
+        if ($this->params->get('name') || $this->params->get('id')) {
+            $this->loadObject();
         }
+        $this->tabs(new ObjectTabs($type, $this->getAuth(), $this->object));
     }
 
     public function indexAction()
@@ -109,16 +81,18 @@ abstract class ObjectController extends ActionController
             );
         }
 
-        return $this->editAction();
+        $this->editAction();
     }
 
     public function renderAction()
     {
         $this->assertPermission('director/showconfig');
-        $type = $this->getType();
-        $this->getTabs()->activate('render');
+        $this->tabs()->activate('render');
         $object = $this->object;
-        $this->view->isExternal = $object->isExternal();
+        $this->addTitle(
+            $this->translate('Config preview: %s'),
+            $object->object_name
+        );
 
         if ($this->params->shift('resolved')) {
             $object = $object::fromPlainObject(
@@ -126,60 +100,84 @@ abstract class ObjectController extends ActionController
                 $object->getConnection()
             );
 
-            $this->view->actionLinks = $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('Show normal'),
                 $this->getRequest()->getUrl()->without('resolved'),
                 null,
-                array('class' => 'icon-resize-small state-warning')
-            );
+                ['class' => 'icon-resize-small state-warning']
+            ));
         } else {
             try {
                 if ($object->supportsImports() && $object->imports()->count() > 0) {
-                    $this->view->actionLinks = $this->view->qlink(
+                    $this->actions()->add(Link::create(
                         $this->translate('Show resolved'),
                         $this->getRequest()->getUrl()->with('resolved', true),
                         null,
-                        array('class' => 'icon-resize-full')
-                    );
+                        ['class' => 'icon-resize-full']
+                    ));
                 }
             } catch (NestingError $e) {
                 // No resolve link with nesting errors
             }
         }
 
-        $this->view->object = $object;
-        $this->view->config = $object->toSingleIcingaConfig();
+        $content = $this->content();
+        if ($object->isDisabled()) {
+            $content->add(Html::p(
+                ['class' => 'error'],
+                $this->translate('This object will not be deployed as it has been disabled')
+            ));
+        }
+        if ($object->isExternal()) {
+            $content->add(Html::p($this->translate((
+                'This is an external object. It has been imported from Icinga 2 through the'
+                . ' Core API and cannot be managed with the Icinga Director. It is however'
+                . ' perfectly valid to create objects using this or referring to this object.'
+                . ' You might also want to define related Fields to make work based on this'
+                . ' object more enjoyable.'
+            ))));
+        }
+        $config = $object->toSingleIcingaConfig();
 
-        $this->view->title = sprintf(
-            $this->translate('Config preview: %s'),
-            $object->object_name
-        );
-        $this->setViewScript('object/show');
+        foreach ($config->getFiles() as $filename => $file) {
+            if (! $object->isExternal()) {
+                $content->add(Html::h2($filename));
+            }
+
+            $classes = array();
+            if ($object->isDisabled()) {
+                $classes[] = 'disabled';
+            } elseif ($object->isExternal()) {
+                $classes[] = 'logfile';
+            }
+
+            $content->add(Html::pre(['class' => $classes], $file->getContent()));
+        }
     }
 
     public function editAction()
     {
         $object = $this->object;
-        $this->getTabs()->activate('modify');
-        $ltype = $this->getType();
-        $type = ucfirst($ltype);
+        $this->addTitle($object->object_name);
+        $this->tabs()->activate('modify');
 
-        $formName = 'icinga' . $type;
-        $this->view->form = $form = $this->loadForm($formName)
-            ->setDb($this->db())
-            ->setApi($this->getApiIfAvailable());
-        $form->setObject($object);
+        $formName = 'icinga' . ucfirst($this->getType());
+        $this->content()->add(
+            $form = $this->loadForm($formName)
+                ->setDb($this->db())
+                ->setAuth($this->Auth())
+                ->setApi($this->getApiIfAvailable())
+                ->setObject($object)
+                ->setAuth($this->Auth())
+                ->handleRequest()
+        );
 
-        $this->view->title = $object->object_name;
-        $this->view->form->handleRequest();
-
-        $this->view->actionLinks = $this->createCloneLink();
-        $this->setViewScript('object/form');
+        $this->actions()->add($this->createCloneLink());
     }
 
     protected function createCloneLink()
     {
-        return $this->view->qlink(
+        return Link::create(
             $this->translate('Clone'),
             'director/' . $this->getType() .'/clone',
             $this->object->getUrlParams(),
@@ -189,7 +187,7 @@ abstract class ObjectController extends ActionController
 
     public function addAction()
     {
-        $this->getTabs()->activate('add');
+        $this->tabs()->activate('add');
         $type = $this->getType();
         $ltype = strtolower($type);
 
@@ -197,30 +195,32 @@ abstract class ObjectController extends ActionController
         /** @var DirectorObjectForm $form */
         $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
+            ->setAuth($this->Auth())
             ->presetImports($this->params->shift('imports'))
             ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
-        if ($type = $this->params->shift('type')) {
-            $form->setPreferredObjectType($type);
+        if ($oType = $this->params->shift('type')) {
+            $form->setPreferredObjectType($oType);
         }
 
-        if ($type === 'template') {
-            $this->view->title = sprintf(
+        if ($oType === 'template') {
+            $this->assertPermission('director/admin');
+            $this->addTitle(
                 $this->translate('Add new Icinga %s template'),
                 ucfirst($ltype)
             );
         } else {
-            $this->view->title = sprintf(
+            $this->assertPermission("director/${ltype}s");
+            $this->addTitle(
                 $this->translate('Add new Icinga %s'),
                 ucfirst($ltype)
             );
         }
 
         $this->beforeHandlingAddRequest($form);
-
         $form->handleRequest();
-        $this->setViewScript('object/form');
+        $this->content()->add($form);
     }
 
     protected function beforeHandlingAddRequest($form)
@@ -231,44 +231,35 @@ abstract class ObjectController extends ActionController
     {
         $type = $this->getType();
         $ltype = strtolower($type);
-        $this->getTabs()->activate('modify');
-
-        $this->view->form = $form = $this->loadForm(
-            'icingaCloneObject'
-        )->setObject($this->object);
-
-        $this->view->title = sprintf(
-            $this->translate('Clone Icinga %s'),
-            ucfirst($type)
-        );
-        $this->view->form->handleRequest();
-
-        $this->view->actionLinks = $this->view->qlink(
+        $this->assertPermission('director/' . $ltype);
+        $this->tabs()->activate('modify');
+        $this->addTitle($this->translate('Clone Icinga %s'), ucfirst($type));
+        $form = $this->loadForm('icingaCloneObject')->setObject($this->object);
+        $form->handleRequest();
+        $this->content()->add($form);
+        $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/' . $ltype,
             array('name'  => $this->object->object_name),
             array('class' => 'icon-left-big')
-        );
-
-        $this->setViewScript('object/form');
+        ));
     }
 
     public function fieldsAction()
     {
-        $this->hasPermission('director/admin');
+        $this->assertPermission('director/admin');
         $object = $this->object;
         $type = $this->getType();
 
-        $this->getTabs()->activate('fields');
+        $this->tabs()->activate('fields');
 
-        $this->view->title = sprintf(
+        $this->addTitle(
             $this->translate('Custom fields: %s'),
             $object->object_name
         );
 
-        $form = $this->view->form = $this
-            ->loadForm('icingaObjectField')
-            ->setDb($this->db)
+        $form = IcingaObjectFieldForm::load()
+            ->setDb($this->db())
             ->setIcingaObject($object);
 
         if ($id = $this->params->get('field_id')) {
@@ -277,42 +268,53 @@ abstract class ObjectController extends ActionController
                 'datafield_id' => $id
             ));
 
-            $this->view->actionLinks = $this->view->qlink(
+            $this->actions()->add(Link::create(
                 $this->translate('back'),
-                $this->getRequest()->getUrl()->without('field_id'),
+                $this->url()->without('field_id'),
                 null,
-                array('class' => 'icon-left-big')
-            );
+                ['class' => 'icon-left-big']
+            ));
         }
-
         $form->handleRequest();
 
-        $this->view->table = $this
-            ->loadTable('icingaObjectDatafield')
-            ->setObject($object);
-
-        $this->setViewScript('object/fields');
+        $table = $this->loadTable('icingaObjectDatafield')->setObject($object);
+        $this->content()->add([$form, $table]);
     }
 
     public function historyAction()
     {
-        $this->hasPermission('director/audit');
+        $this->assertPermission('director/audit');
         $this->setAutorefreshInterval(10);
         $db = $this->db();
         $type = $this->getType();
-        $this->getTabs()->activate('history');
-        $this->view->title = sprintf(
+        $this->tabs()->activate('history');
+        $this->addTitle(
             $this->translate('Activity Log: %s'),
             $this->object->object_name
         );
         $lastDeployedId = $db->getLastDeploymentActivityLogId();
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('activityLog')
-                ->setConnection($db)
-                ->setLastDeployedId($lastDeployedId)
-                ->filterObject('icinga_' . $type, $this->object->object_name)
+        (new ActivityLogTable($db))
+            ->setLastDeployedId($lastDeployedId)
+            ->filterObject('icinga_' . $type, $this->object->object_name)
+            ->renderTo($this);
+    }
+
+    public function membershipAction()
+    {
+        $this->requireObject();
+        if (! $this->object instanceof IcingaObjectGroup) {
+            throw new NotFoundError('Not Found');
+        }
+        $type = substr($this->getType(), 0, -5);
+
+        $this->setAutorefreshInterval(15);
+        $this->tabs()->activate('membership');
+        $this->addTitle(
+            $this->translate('Group membership: %s'),
+            $this->object->getObjectName()
         );
-        $this->setViewScript('object/history');
+
+        GroupMemberTable::create($type, $this->db())->setGroup($this->object)->renderTo($this);
     }
 
     protected function getType()
@@ -327,6 +329,7 @@ abstract class ObjectController extends ActionController
 
     protected function loadObject()
     {
+        $info = new DeploymentInfo($this->db());
         if ($this->object === null) {
             if ($name = $this->params->get('name')) {
                 $this->object = IcingaObject::loadByType(
@@ -334,6 +337,11 @@ abstract class ObjectController extends ActionController
                     $name,
                     $this->db()
                 );
+
+                if (! $this->allowsObject($this->object)) {
+                    $this->object = null;
+                    throw new NotFoundError('No such object available');
+                }
             } elseif ($id = $this->params->get('id')) {
                 $this->object = IcingaObject::loadByType(
                     $this->getType(),
@@ -350,9 +358,13 @@ abstract class ObjectController extends ActionController
                 }
             }
 
-            $this->view->undeployedChanges = $this->countUndeployedChanges();
-            $this->view->totalUndeployedChanges = $this->db()
-                ->countActivitiesSinceLastDeployedConfig();
+            $info->setObject($this->object);
+        }
+
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->actions()->add(
+                DeploymentLinkForm::create($this->db(), $info, $this->Auth(), $this->api())->handleRequest()
+            );
         }
 
         return $this->object;
@@ -377,13 +389,13 @@ abstract class ObjectController extends ActionController
         switch ($request->getMethod()) {
             case 'DELETE':
                 $this->requireObject();
-                $name = $this->object->object_name;
                 $obj = $this->object->toPlainObject(false, true);
-                $form = $this->loadForm(
+                $this->loadForm(
                     'icingaDeleteObject'
                 )->setObject($this->object)->setRequest($request)->onSuccess();
 
-                return $this->sendJson($obj);
+                $this->sendJson($this->getResponse(), $obj);
+                break;
 
             case 'POST':
             case 'PUT':
@@ -427,17 +439,20 @@ abstract class ObjectController extends ActionController
                     $response->setHttpResponseCode(304);
                 }
 
-                return $this->sendJson($object->toPlainObject(false, true));
+                $this->sendJson($response, $object->toPlainObject(false, true));
+                break;
 
             case 'GET':
                 $this->requireObject();
-                return $this->sendJson(
+                $this->sendJson(
+                    $this->getResponse(),
                     $this->object->toPlainObject(
                         $this->params->shift('resolved'),
                         ! $this->params->shift('withNull'),
                         $this->params->shift('properties')
                     )
                 );
+                break;
 
             default:
                 $request->getResponse()->setHttpResponseCode(400);

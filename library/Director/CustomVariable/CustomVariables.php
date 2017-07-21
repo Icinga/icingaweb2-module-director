@@ -61,6 +61,15 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
     }
 
+    public static function renameAll($oldname, $newname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $where = $db->quoteInto('varname = ?', $oldname);
+        foreach (static::$allTables as $table) {
+            $db->update($table, ['varname' => $newname], $where);
+        }
+    }
+
     public function count()
     {
         $count = 0;
@@ -359,7 +368,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     protected function renderKeyName($key)
     {
-        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+        if (preg_match('/^[a-z][a-z0-9_]*$/i', $key)) {
             return 'vars.' . c::escapeIfReserved($key);
         } else {
             return 'vars[' . c::renderString($key) . ']';

@@ -11,7 +11,7 @@ class ActivityLogDashlet extends Dashlet
         return $this->translate('Activity Log');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'Wondering about what changed why? Track your changes!'

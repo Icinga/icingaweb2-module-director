@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Controller\ObjectController;
+use ipl\Html\Link;
 
 class ServicesetController extends ObjectController
 {
@@ -18,7 +19,7 @@ class ServicesetController extends ObjectController
 
         parent::init();
         if ($this->object) {
-            $tabs = $this->getTabs();
+            $tabs = $this->tabs();
             $tabs->add('services', array(
                 'url'       => 'director/serviceset/services',
                 'urlParams' => array('name' => $this->object->object_name),
@@ -46,7 +47,7 @@ class ServicesetController extends ObjectController
     {
         parent::addAction();
         if ($this->host) {
-            $this->view->title = sprintf(
+            $this->addTitle(
                 $this->translate('Add a service set to "%s"'),
                 $this->host->object_name
             );
@@ -57,43 +58,44 @@ class ServicesetController extends ObjectController
     {
         $db = $this->db();
         $set = $this->object;
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add service'),
-            'director/service/add',
-            array('set' => $set->object_name),
-            array('class' => 'icon-plus')
-        );
-        $this->view->stayHere = true;
-
-        $this->getTabs()->activate('services');
-        $this->view->title = sprintf(
+        $this->tabs()->activate('services');
+        $this->addTitle(
             $this->translate('Services in this set: %s'),
             $set->object_name
         );
+        $this->actions()->add(Link::create(
+            $this->translate('Add service'),
+            'director/service/add',
+            ['set' => $set->object_name],
+            ['class' => 'icon-plus']
+        ));
 
-        $this->view->table = $this->loadTable('IcingaServiceSetService')
-            ->setServiceSet($set)
-            ->setConnection($db);
+        // TODO!!
+        $this->view->stayHere = true;
 
-        $this->setViewScript('objects/table');
+
+        $this->content()->add(
+            $this->loadTable('IcingaServiceSetService')
+                ->setServiceSet($set)
+                ->setConnection($db)
+        );
     }
 
     public function hostsAction()
     {
         $db = $this->db();
         $set = $this->object;
-        $this->getTabs()->activate('hosts');
-        $this->view->title = sprintf(
+        $this->tabs()->activate('hosts');
+        $this->addTitle(
             $this->translate('Hosts using this set: %s'),
             $set->object_name
         );
 
-        $this->view->table = $table = $this->loadTable('IcingaServiceSetHost')
+        $this->content()->add(
+            $this->loadTable('IcingaServiceSetHost')
             ->setServiceSet($set)
-            ->setConnection($db);
-
-        $this->setViewScript('objects/table');
+            ->setConnection($db)
+        );
     }
 
     protected function loadObject()

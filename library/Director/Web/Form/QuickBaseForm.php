@@ -4,9 +4,10 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
+use ipl\Html\ValidHtml;
 use Zend_Form;
 
-abstract class QuickBaseForm extends Zend_Form
+abstract class QuickBaseForm extends Zend_Form implements ValidHtml
 {
     /**
      * The Icinga module this form belongs to. Usually only set if the
@@ -58,13 +59,11 @@ abstract class QuickBaseForm extends Zend_Form
             ucfirst($module->getName())
         );
 
-        $this->addPrefixPaths(array(
-            array(
-                'prefix'    => __NAMESPACE__ . '\\Element\\',
-                'path'      => $basedir . '/Element',
-                'type'      => static::ELEMENT
-            )
-        ));
+        $this->addPrefixPath(
+            __NAMESPACE__ . '\\Element\\',
+            $basedir . '/Element',
+            static::ELEMENT
+        );
 
         return $this;
     }

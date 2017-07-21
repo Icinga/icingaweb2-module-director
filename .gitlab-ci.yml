@@ -42,20 +42,20 @@ CentOS 7/PostgreSQL:
   script:
   - phpunit
 
-CentOS 6/MySQL:
-  stage: Unit-Tests with DB
-  tags:
-  - centos6
-  - director
-  variables:
-    DIRECTOR_TESTDB: "director_test_${CI_BUILD_ID}_${CI_RUNNER_ID}"
-    DIRECTOR_TESTDB_RES: "Director MySQL TestDB"
-  before_script:
-  - mysql -u root -e "CREATE DATABASE $DIRECTOR_TESTDB"
-  after_script:
-  - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
-  script:
-  - phpunit
+#CentOS 6/MySQL:
+#  stage: Unit-Tests with DB
+#  tags:
+#  - centos6
+#  - director
+#  variables:
+#    DIRECTOR_TESTDB: "director_test_${CI_BUILD_ID}_${CI_RUNNER_ID}"
+#    DIRECTOR_TESTDB_RES: "Director MySQL TestDB"
+#  before_script:
+#  - mysql -u root -e "CREATE DATABASE $DIRECTOR_TESTDB"
+#  after_script:
+#  - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
+#  script:
+#  - phpunit
 
 Jessie/MySQL:
   stage: Unit-Tests with DB
