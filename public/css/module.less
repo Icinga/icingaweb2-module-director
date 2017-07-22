@@ -47,6 +47,8 @@ p {
 }
 
 table.common-table {
+  max-width: 68em;
+
   a {
     color: inherit;
     text-decoration: none;
@@ -249,7 +251,6 @@ form p.description {
 input[type=text], input[type=button], select, select option, textarea {
     -webkit-appearance: none;
     -moz-appearance: none;
-    appearance: none;
 }
 
 form ul.form-errors {
@@ -327,7 +328,7 @@ div.filter form.editor > ul.tree ul li.active {
 div.filter form.editor {
   padding-top: 1em;
   select, input[type=text] {
-    line-height:auto;
+    line-height: unset;
     height: auto;
   }
 }
