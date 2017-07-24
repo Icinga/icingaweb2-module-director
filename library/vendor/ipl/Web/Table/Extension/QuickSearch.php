@@ -5,6 +5,7 @@ namespace ipl\Web\Table\Extension;
 use ipl\Html\BaseElement;
 use ipl\Html\Html;
 use ipl\Web\Url;
+use ipl\Web\Widget\Controls;
 
 trait QuickSearch
 {
@@ -31,7 +32,7 @@ trait QuickSearch
 
         $form = Html::tag('form', [
             'action' => $url->without(array('q', 'page', 'modifyFilter'))->getAbsoluteUrl(),
-            'class'  => ['quicksearch', 'inline'],
+            'class'  => ['quicksearch'],
             'method' => 'GET'
         ]);
 
@@ -45,8 +46,24 @@ trait QuickSearch
             ])
         );
 
-        $parent->prepend($form);
+        $this->addQuickSearchToControls($parent, $form);
 
         return $form;
+    }
+
+    protected function addQuickSearchToControls(Controls $parent, BaseElement $form)
+    {
+        $title = $parent->getTitleElement();
+        if ($title === null) {
+            $parent->prepend($form);
+        } else {
+            $input = $form->getFirst('input');
+            $form->remove($input);
+            $title->add($input);
+            $form->add($title);
+            $parent->setTitleElement($form);
+        }
+
+        return $this;
     }
 }

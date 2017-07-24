@@ -47,6 +47,8 @@ p {
 }
 
 table.common-table {
+  max-width: 68em;
+
   a {
     color: inherit;
     text-decoration: none;
@@ -249,7 +251,6 @@ form p.description {
 input[type=text], input[type=button], select, select option, textarea {
     -webkit-appearance: none;
     -moz-appearance: none;
-    appearance: none;
 }
 
 form ul.form-errors {
@@ -327,7 +328,7 @@ div.filter form.editor > ul.tree ul li.active {
 div.filter form.editor {
   padding-top: 1em;
   select, input[type=text] {
-    line-height:auto;
+    line-height: unset;
     height: auto;
   }
 }
@@ -345,31 +346,26 @@ form.editor {
 }
 
 form.quicksearch {
-    float: right;
-
-    input.search {
-        width: 8em;
-        min-width: auto;
-        border: none;
-        background-size: 0.75em auto;
-        background-position: 0.5em 0.75em;
-        padding-left: 1.5em;
-        &:focus {
-            width: 16em;
-            .transition(width 0.5s ease);
-            border: none;
-        }
-    }
-}
-
-h1 form.quicksearch {
+  display: block;
+  input.search {
+    width: 8em;
+    min-width: unset;
+    border: none;
+    background-size: 0.75em auto;
+    background-position: 0.5em 0.9em;
+    padding-left: 1.5em;
+    margin-left: 1.5em;
     font-size: 0.75em;
     font-weight: normal;
-    padding-left: 1em;
-    float: none;
+    &:focus {
+      width: 16em;
+      .transition(width 0.5s ease);
+      border: none;
+    }
+  }
 }
 
-#layout.twocols h1 form.quicksearch {
+#layout.twocols form.quicksearch input.search {
     float: right;
 }
 
@@ -530,10 +526,6 @@ a:hover::before {
   text-decoration: none;
 }
 
-h1 {
-    min-width: 27em;
-}
-
 ul.main-actions {
   margin: 0;
   padding: 0;
@@ -621,6 +613,7 @@ ul.main-actions {
 #layout.compact-layout.twocols ul.main-actions,
 #layout.minimal-layout ul.main-actions {
   max-width: unset;
+  min-width: unset;
   li {
     a { height: auto; }
     width: 100%;
@@ -629,12 +622,36 @@ ul.main-actions {
     }
 
     > a > p {
-      padding-left: 3em;
+      padding-left: 4.5em;
     }
     margin-bottom: 0.5em;
   }
 }
 
+
+#layout.minimal-layout div.content form {
+  dt, dd {
+    display: block;
+    width: auto;
+  }
+  dt label {
+    color: @text-color;
+  }
+  fieldset {
+    min-width: unset;
+  }
+
+  input[type=text], input[type=password], textarea, select {
+    max-width: unset;
+    min-width: unset;
+    border-color: @gray-light;
+  }
+  dd.active {
+    input[type=text], input[type=password], textarea, select {
+      border-color: @icinga-blue;
+    }
+  }
+}
 
 #layout.compact-layout.twocols table.Differences,
 #layout.default-layout.twocols table.Differences {
@@ -764,7 +781,24 @@ form {
   }
 }
 
-#layout.poor-layout, #layout.minimal-layout {
+#layout.minimal-layout {
+  form p.description {
+    margin: 0;
+    border-radius: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 8em;
+    font-size: 0.835em;
+    max-width: unset;
+    width: auto;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+}
+
+#layout.poor-layout {
   form {
     p.description {
       width: 94%;

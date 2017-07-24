@@ -33,6 +33,25 @@ class Html implements ValidHtml
     }
 
     /**
+     * @param $tag
+     * @return BaseElement
+     * @throws ProgrammingError
+     */
+    public function getFirst($tag)
+    {
+        foreach ($this->content as $c) {
+            if ($c instanceof BaseElement && $c->getTag() === $tag) {
+                return $c;
+            }
+        }
+
+        throw new ProgrammingError(
+            'Trying to get first %s, but there is no such',
+            $tag
+        );
+    }
+
+    /**
      * @param $content
      * @return $this
      */
@@ -81,7 +100,7 @@ class Html implements ValidHtml
 
     /**
      * @param Html|array|string $content
-     * @return self
+     * @return $this
      */
     public function setContent($content)
     {
@@ -146,7 +165,7 @@ class Html implements ValidHtml
      * @param $tag
      * @param null $attributes
      * @param null $content
-     * @return Element
+     * @return BaseElement
      */
     public static function tag($tag, $attributes = null, $content = null)
     {

@@ -2,6 +2,7 @@
 
 namespace ipl\Web\Widget;
 
+use ipl\Html\BaseElement;
 use ipl\Html\Container;
 use ipl\Html\Html;
 
@@ -23,6 +24,9 @@ class Controls extends Container
     /** @var string */
     private $subTitle;
 
+    /** @var BaseElement */
+    private $titleElement;
+
     /**
      * @param $title
      * @param null $subTitle
@@ -35,7 +39,24 @@ class Controls extends Container
             $this->subTitle = $subTitle;
         }
 
-        return $this->prepend($this->renderTitleElement());
+        return $this->setTitleElement($this->renderTitleElement());
+    }
+
+    public function setTitleElement(BaseElement $element)
+    {
+        if ($this->titleElement !== null) {
+            $this->remove($this->titleElement);
+        }
+
+        $this->titleElement = $element;
+        $this->prepend($element);
+
+        return $this;
+    }
+
+    public function getTitleElement()
+    {
+        return $this->titleElement;
     }
 
     /**
@@ -84,6 +105,9 @@ class Controls extends Container
         return $this;
     }
 
+    /**
+     * @return BaseElement
+     */
     protected function renderTitleElement()
     {
         $h1 = Html::tag('h1')->setContent($this->title);

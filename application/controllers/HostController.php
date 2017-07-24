@@ -8,6 +8,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Forms\IcingaForgetApiKeyForm;
 use Icinga\Module\Director\Forms\IcingaGenerateApiKeyForm;
+use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -28,17 +29,15 @@ class HostController extends ObjectController
         if ($this->object) {
             $tabs = $this->tabs();
             $name = $this->object->getObjectName();
-            $tabs->add('services', array(
+            $tabs->add('services', [
                 'url'       => 'director/host/services',
-                'urlParams' => array('name' => $name),
+                'urlParams' => ['name' => $name],
                 'label'     => 'Services'
-            ));
-
-            $tabs->add('agent', array(
+            ])->add('agent', [
                 'url'       => 'director/host/agent',
-                'urlParams' => array('name' => $name),
+                'urlParams' => ['name' => $name],
                 'label'     => 'Agent'
-            ));
+            ]);
         }
     }
 
@@ -49,9 +48,7 @@ class HostController extends ObjectController
 
     protected function loadRestrictions()
     {
-        return array(
-            $this->getHostgroupRestriction()
-        );
+        return [$this->getHostgroupRestriction()];
     }
 
     protected function getHostgroupRestriction()
@@ -59,15 +56,6 @@ class HostController extends ObjectController
         return new HostgroupRestriction($this->db(), $this->Auth());
     }
 
-    /**
-     * @param IcingaHost $object
-     * @return bool
-     */
-/*    protected function allowsObject(IcingaObject $object)
-    {
-        return $this->getHostgroupRestriction()->allowsHost($object);
-    }
-*/
     public function editAction()
     {
         parent::editAction();
@@ -78,11 +66,11 @@ class HostController extends ObjectController
                 $this->actions()->add(Link::create(
                     $this->translate('Show'),
                     'monitoring/host/show',
-                    array('host' => $host->object_name),
-                    array(
+                    ['host' => $host->getObjectName()],
+                    [
                         'class'            => 'icon-globe critical',
                         'data-base-target' => '_next'
-                    )
+                    ]
                 ));
             }
         } catch (Exception $e) {
@@ -93,20 +81,21 @@ class HostController extends ObjectController
     public function servicesAction()
     {
         $db = $this->db();
-        $host = $this->object;
+        $host = $this->getHostObject();
+        $hostname = $host->getObjectName();
 
         $this->tabs()->activate('services');
-        $this->addTitle($this->translate('Services: %s'), $host->object_name);
+        $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
 
         $this->actions()->add(Link::create(
             $this->translate('Add service'),
             'director/service/add',
-            ['host' => $host->object_name],
+            ['host' => $hostname],
             ['class' => 'icon-plus']
         ))->add(Link::create(
             $this->translate('Add service set'),
             'director/serviceset/add',
-            ['host' => $host->object_name],
+            ['host' => $hostname],
             ['class' => 'icon-plus']
         ));
 
@@ -225,19 +214,18 @@ class HostController extends ObjectController
     public function appliedserviceAction()
     {
         $db = $this->db();
-        /** @var IcingaHost $host */
-        $host = $this->object;
+        $host = $this->getHostObject();
         $serviceId = $this->params->get('service_id');
         $parent = IcingaService::loadWithAutoIncId($serviceId, $db);
-        $serviceName = $parent->object_name;
+        $serviceName = $parent->getObjectName();
 
-        $service = IcingaService::create(array(
+        $service = IcingaService::create([
             'imports'     => $parent,
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->id,
             'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ), $db);
+        ], $db);
 
         $this->addTitle(
             $this->translate('Applied service: %s'),
@@ -245,11 +233,12 @@ class HostController extends ObjectController
         );
 
         $this->content()->add(
-            $this->loadForm('IcingaService')
+            IcingaServiceForm::load()
                 ->setDb($db)
                 ->setHost($host)
                 ->setApplyGenerated($parent)
                 ->setObject($service)
+                ->handleRequest()
         );
 
         $this->commonForServices();
@@ -258,41 +247,37 @@ class HostController extends ObjectController
     public function inheritedserviceAction()
     {
         $db = $this->db();
-        $host = $this->object;
+        $host = $this->getHostObject();
         $serviceName = $this->params->get('service');
         $from = IcingaHost::load($this->params->get('inheritedFrom'), $this->db());
 
-        $parent = IcingaService::load(
-            array(
-                'object_name' => $serviceName,
-                'host_id'     => $from->id
-            ),
-            $this->db()
-        );
+        $parent = IcingaService::load([
+            'object_name' => $serviceName,
+            'host_id'     => $from->id
+        ], $this->db());
 
         // TODO: we want to eventually show the host template name, doesn't work
         //       as template resolution would break.
         // $parent->object_name = $from->object_name;
 
-        $service = IcingaService::create(array(
+        $service = IcingaService::create([
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->id,
-            'imports'     => array($parent),
+            'imports'     => [$parent],
             'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ), $db);
+        ], $db);
 
         $this->addTitle($this->translate('Inherited service: %s'), $serviceName);
-        $form = $this->loadForm('IcingaService')
+
+        $form = IcingaServiceForm::load()
             ->setDb($db)
             ->setHost($host)
             ->setInheritedFrom($from->object_name)
-            ->setObject($service);
-        $form->handleRequest();
+            ->setObject($service)
+            ->handleRequest();
         $this->content()->add($form);
         $this->commonForServices();
-        // TODO: figure out whether this has any effect
-        // $form->setResolvedImports();
     }
 
     public function removesetAction()
@@ -322,25 +307,21 @@ class HostController extends ObjectController
     public function servicesetserviceAction()
     {
         $db = $this->db();
-        /** @var IcingaHost $host */
-        $host = $this->object;
+        $host = $this->getHostObject();
         $serviceName = $this->params->get('service');
         $set = IcingaServiceSet::load($this->params->get('set'), $db);
 
-        $service = IcingaService::load(
-            array(
-                'object_name'    => $serviceName,
-                'service_set_id' => $set->get('id')
-            ),
-            $this->db()
-        );
-        $service = IcingaService::create(array(
+        $service = IcingaService::load([
+            'object_name'    => $serviceName,
+            'service_set_id' => $set->get('id')
+        ], $this->db());
+        $service = IcingaService::create([
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->id,
-            'imports'     => array($service),
+            'imports'     => [$service],
             'vars'        => $host->getOverriddenServiceVars($serviceName),
-        ), $db);
+        ], $db);
 
         // $set->copyVarsToService($service);
         $this->addTitle(
@@ -350,15 +331,14 @@ class HostController extends ObjectController
             $set->getObjectName()
         );
 
-        $form = $this->loadForm('IcingaService')
+        $form = IcingaServiceForm::load()
             ->setDb($db)
             ->setHost($host)
             ->setServiceSet($set)
-            ->setObject($service);
-        $form->handleRequest();
-        $this->getTabs()->activate('services');
+            ->setObject($service)
+            ->handleRequest();
+        $this->tabs()->activate('services');
         $this->content()->add($form);
-        // $form->setResolvedImports();
         $this->commonForServices();
     }
 
@@ -368,7 +348,7 @@ class HostController extends ObjectController
         $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/host/services',
-            ['name' => $host->object_name],
+            ['name' => $host->getObjectName()],
             ['class' => 'icon-left-big']
         ));
         $this->tabs()->activate('services');
@@ -460,7 +440,6 @@ class HostController extends ObjectController
                     'This will invalidate the former key'
                 )),
             ]);
-        } else {
         }
 
         $c->add([
@@ -510,6 +489,7 @@ class HostController extends ObjectController
 
     protected function showLegacyAgentInstructions()
     {
+        $host = $this->getHostObject();
         $c = $this->content();
         $docBaseUrl = 'https://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring';
         $sectionSetup = 'distributed-monitoring-setup-satellite-client';
@@ -528,11 +508,11 @@ class HostController extends ObjectController
         ));
 
         $this->addTitle('Agent deployment instructions');
-        $certname = $this->object->getObjectName();
+        $certname = $host->getObjectName();
 
         try {
             $ticket = Util::getIcingaTicket($certname, $this->api()->getTicketSalt());
-            $wizard = new AgentWizard($this->object);
+            $wizard = new AgentWizard($host);
             $wizard->setTicketSalt($this->api()->getTicketSalt());
         } catch (Exception $e) {
             $c->add(Html::p(['class' => 'error'], sprintf(
@@ -607,20 +587,19 @@ class HostController extends ObjectController
             $host = $this->object;
 
             if ($host->getResolvedProperty('has_agent') !== 'y') {
-                throw new NotFoundError('The host "%s" is not an agent', $host->object_name);
+                throw new NotFoundError('The host "%s" is not an agent', $host->getObjectName());
             }
 
             $this->sendJson(
                 $this->getResponse(),
                 Util::getIcingaTicket(
-                    $host->object_name,
+                    $host->getObjectName(),
                     $this->api()->getTicketSalt()
                 )
             );
-            return;
+        } else {
+            parent::handleApiRequest();
         }
-
-        parent::handleApiRequest();
     }
 
     public function ticketAction()
@@ -628,5 +607,13 @@ class HostController extends ObjectController
         if (! $this->getRequest()->isApiRequest()) {
             throw new NotFoundError('Not found');
         }
+    }
+
+    /**
+     * @return IcingaHost
+     */
+    protected function getHostObject()
+    {
+        return $this->object;
     }
 }
