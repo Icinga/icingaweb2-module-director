@@ -613,6 +613,7 @@ ul.main-actions {
 #layout.compact-layout.twocols ul.main-actions,
 #layout.minimal-layout ul.main-actions {
   max-width: unset;
+  min-width: unset;
   li {
     a { height: auto; }
     width: 100%;
@@ -621,12 +622,36 @@ ul.main-actions {
     }
 
     > a > p {
-      padding-left: 3em;
+      padding-left: 4.5em;
     }
     margin-bottom: 0.5em;
   }
 }
 
+
+#layout.minimal-layout div.content form {
+  dt, dd {
+    display: block;
+    width: auto;
+  }
+  dt label {
+    color: @text-color;
+  }
+  fieldset {
+    min-width: unset;
+  }
+
+  input[type=text], input[type=password], textarea, select {
+    max-width: unset;
+    min-width: unset;
+    border-color: @gray-light;
+  }
+  dd.active {
+    input[type=text], input[type=password], textarea, select {
+      border-color: @icinga-blue;
+    }
+  }
+}
 
 #layout.compact-layout.twocols table.Differences,
 #layout.default-layout.twocols table.Differences {
@@ -756,7 +781,24 @@ form {
   }
 }
 
-#layout.poor-layout, #layout.minimal-layout {
+#layout.minimal-layout {
+  form p.description {
+    margin: 0;
+    border-radius: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 8em;
+    font-size: 0.835em;
+    max-width: unset;
+    width: auto;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+}
+
+#layout.poor-layout {
   form {
     p.description {
       width: 94%;
