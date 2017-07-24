@@ -909,6 +909,10 @@ abstract class DirectorObjectForm extends DirectorForm
         ));
     }
 
+    /**
+     * @param Db $db
+     * @return $this
+     */
     public function setDb(Db $db)
     {
         if ($this->object !== null) {
