@@ -346,31 +346,26 @@ form.editor {
 }
 
 form.quicksearch {
-    float: right;
-
-    input.search {
-        width: 8em;
-        min-width: auto;
-        border: none;
-        background-size: 0.75em auto;
-        background-position: 0.5em 0.75em;
-        padding-left: 1.5em;
-        &:focus {
-            width: 16em;
-            .transition(width 0.5s ease);
-            border: none;
-        }
-    }
-}
-
-h1 form.quicksearch {
+  display: block;
+  input.search {
+    width: 8em;
+    min-width: unset;
+    border: none;
+    background-size: 0.75em auto;
+    background-position: 0.5em 0.9em;
+    padding-left: 1.5em;
+    margin-left: 1.5em;
     font-size: 0.75em;
     font-weight: normal;
-    padding-left: 1em;
-    float: none;
+    &:focus {
+      width: 16em;
+      .transition(width 0.5s ease);
+      border: none;
+    }
+  }
 }
 
-#layout.twocols h1 form.quicksearch {
+#layout.twocols form.quicksearch input.search {
     float: right;
 }
 
@@ -529,10 +524,6 @@ a {
 
 a:hover::before {
   text-decoration: none;
-}
-
-h1 {
-    min-width: 27em;
 }
 
 ul.main-actions {
