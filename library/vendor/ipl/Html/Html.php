@@ -248,6 +248,14 @@ class Html implements ValidHtml
             return $this->renderError($e);
         }
     }
+
+    public static function sprintf($string)
+    {
+        $args = func_get_args();
+        array_shift($args);
+        return new FormattedString($string, $args);
+    }
+
     private function reIndexContent()
     {
         $this->contentIndex = [];
