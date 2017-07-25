@@ -10,6 +10,7 @@ use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
@@ -234,14 +235,15 @@ abstract class ObjectController extends ActionController
         $this->assertPermission('director/' . $ltype);
         $this->tabs()->activate('modify');
         $this->addTitle($this->translate('Clone Icinga %s'), ucfirst($type));
-        $form = $this->loadForm('icingaCloneObject')->setObject($this->object);
-        $form->handleRequest();
+        $form = IcingaCloneObjectForm::load()
+            ->setObject($this->object)
+            ->handleRequest();
         $this->content()->add($form);
         $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/' . $ltype,
-            array('name'  => $this->object->object_name),
-            array('class' => 'icon-left-big')
+            ['name'  => $this->object->getObjectName()],
+            ['class' => 'icon-left-big']
         ));
     }
 
