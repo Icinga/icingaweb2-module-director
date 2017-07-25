@@ -10,15 +10,15 @@ class SyncRuleForm extends DirectorObjectForm
     {
         $availableTypes = array(
             'host'             => $this->translate('Host'),
-            'hostgroup'        => $this->translate('Host group'),
+            'hostgroup'        => $this->translate('Host Group'),
             'service'          => $this->translate('Service'),
-            'servicegroup'     => $this->translate('Service group'),
+            'servicegroup'     => $this->translate('Service Group'),
             'serviceSet'       => $this->translate('Service Set'),
             'user'             => $this->translate('User'),
-            'usergroup'        => $this->translate('User group'),
-            'datalistEntry'    => $this->translate('Datalist entry'),
+            'usergroup'        => $this->translate('User Group'),
+            'datalistEntry'    => $this->translate('Data List Entry'),
             'command'          => $this->translate('Command'),
-            'timePeriod'       => $this->translate('Time period'),
+            'timePeriod'       => $this->translate('Time Period'),
             'endpoint'         => $this->translate('Endpoint'),
             'zone'             => $this->translate('Zone'),
         );

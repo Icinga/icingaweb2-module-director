@@ -2,41 +2,117 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\SyncCheckForm;
+use Icinga\Module\Director\Forms\SyncPropertyForm;
+use Icinga\Module\Director\Forms\SyncRuleForm;
+use Icinga\Module\Director\Forms\SyncRunForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
-use Icinga\Module\Director\Import\Sync;
-use Icinga\Data\Filter\Filter;
-use Icinga\Web\Notification;
-use Icinga\Web\Url;
+use Icinga\Module\Director\Web\Table\SyncpropertyTable;
+use Icinga\Module\Director\Web\Table\SyncRunTable;
+use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
+use Icinga\Module\Director\Web\Widget\SyncRunDetails;
+use ipl\Html\Html;
+use ipl\Html\Link;
 
 class SyncruleController extends ActionController
 {
     public function indexAction()
     {
         $this->setAutoRefreshInterval(10);
-        $id = $this->params->get('id');
-        $this->prepareRuleTabs($id)->activate('show');
-        $rule = $this->view->rule = SyncRule::load($id, $this->db());
-        $this->view->title = sprintf(
-            $this->translate('Sync rule: %s'),
-            $rule->rule_name
-        );
+        $rule = $this->requireSyncRule();
+        $this->tabs(new SyncRuleTabs($rule))->activate('show');
+        $ruleName = $rule->get('rule_name');
+        $this->addTitle($this->translate('Sync rule: %s'), $ruleName);
 
         if ($lastRunId = $rule->getLastSyncRunId()) {
-            $this->loadSyncRun($lastRunId);
+            $run = SyncRun::load($lastRunId, $this->db());
         } else {
-            $this->view->run = null;
+            $run = null;
         }
-        $this->view->checkForm = $this
-            ->loadForm('syncCheck')
-            ->setSyncRule($rule)
-            ->handleRequest();
 
-        $this->view->runForm = $this
-            ->loadForm('syncRun')
-            ->setSyncRule($rule)
-            ->handleRequest();
+        $c = $this->content();
+        $c->add(Html::p($rule->get('description')));
+        if (! $rule->hasSyncProperties()) {
+            $this->addPropertyHint($rule);
+            return;
+        }
+
+        if (! $run) {
+            $this->warning($this->translate('This Sync Rule has never been run before.'));
+        }
+
+        switch ($rule->get('sync_state')) {
+            case 'unknown':
+                $c->add(Html::p($this->translate(
+                    "It's currently unknown whether we are in sync with this rule."
+                    . ' You should either check for changes or trigger a new Sync Run.'
+                )));
+                break;
+            case 'in-sync':
+                $c->add(Html::p(sprintf(
+                    $this->translate('This Sync Rule was last found to by in Sync at %s.'),
+                    $rule->get('last_attempt')
+                )));
+                /*
+                TODO: check whether...
+                      - there have been imports since then, differing from former ones
+                      - there have been activities since then
+                */
+                break;
+            case 'pending-changes':
+                $this->warning($this->translate(
+                    'There are pending changes for this Sync Rule. You should trigger a new'
+                    . ' Sync Run.'
+                ));
+                break;
+            case 'failing':
+                $this->error(sprintf(
+                    $this->translate(
+                        'This Sync Rule failed when last checked at %s: %s'
+                    ),
+                    $rule->get('last_attempt'),
+                    $rule->get('last_error_message')
+                ));
+                break;
+        }
+
+        $c->add(SyncCheckForm::load()->setSyncRule($rule)->handleRequest());
+        $c->add(SyncRunForm::load()->setSyncRule($rule)->handleRequest());
+
+        if ($run) {
+            $c->add(Html::h3($this->translate('Last sync run details')));
+            $c->add(new SyncRunDetails($run));
+            if ($run->get('rule_name') !== $ruleName) {
+                $c->add(Html::p(sprintf(
+                    $this->translate("It has been renamed since then, its former name was %s"),
+                    $run->get('rule_name')
+                )));
+            }
+        }
+    }
+
+    protected function addPropertyHint(SyncRule $rule)
+    {
+        $this->warning(Html::sprintf(
+            $this->translate('You must define some %s before you can run this Sync Rule'),
+            new Link(
+                $this->translate('Sync Properties'),
+                'director/syncrule/property',
+                ['rule_id' => $rule->get('id')]
+            )
+        ));
+    }
+
+    protected function warning($msg)
+    {
+        $this->content()->add(Html::p(['class' => 'warning'], $msg));
+    }
+
+    protected function error($msg)
+    {
+        $this->content()->add(Html::p(['class' => 'error'], $msg));
     }
 
     public function addAction()
@@ -46,75 +122,46 @@ class SyncruleController extends ActionController
 
     public function editAction()
     {
-        $form = $this->view->form = $this->loadForm('syncRule')
-            ->setSuccessUrl('director/list/syncrule')
+        $form = SyncRuleForm::load()
+            ->setListUrl('director/list/syncrule')
             ->setDb($this->db());
 
         if ($id = $this->params->get('id')) {
-            $this->prepareRuleTabs($id)->activate('edit');
             $form->loadObject($id);
-            $this->view->title = sprintf(
+            /** @var SyncRule $rule */
+            $rule = $form->getObject();
+            $this->tabs(new SyncRuleTabs($rule))->activate('edit');
+            $this->addTitle(sprintf(
                 $this->translate('Sync rule: %s'),
-                $form->getObject()->rule_name
-            );
+                $rule->rule_name
+            ));
+
+            if (! $rule->hasSyncProperties()) {
+                $this->addPropertyHint($rule);
+            }
         } else {
-            $this->view->title = $this->translate('Add sync rule');
-            $this->prepareRuleTabs()->activate('add');
+            $this->addTitle($this->translate('Add sync rule'));
+            $this->tabs(new SyncRuleTabs())->activate('add');
         }
 
         $form->handleRequest();
-        $this->setViewScript('object/form');
-    }
-
-    public function runAction()
-    {
-        $id = $this->params->get('id');
-        $rule = SyncRule::load($id, $this->db());
-        $changed = $rule->applyChanges();
-
-        if ($changed) {
-            $runId = $rule->getCurrentSyncRunId();
-            Notification::success('Source has successfully been synchronized');
-            $this->redirectNow(
-                Url::fromPath(
-                    'director/syncrule/history',
-                    array(
-                        'id'     => $id,
-                        'run_id' => $runId
-                    )
-                )
-            );
-        } elseif ($rule->sync_state === 'in-sync') {
-            Notification::success('Nothing changed, rule is in sync');
-        } else {
-            Notification::error('Synchronization failed');
-        }
-
-        $this->redirectNow('director/syncrule?id=' . $id);
+        $this->content()->add($form);
     }
 
     public function propertyAction()
     {
-        $this->view->stayHere = true;
+        $rule = $this->requireSyncRule('rule_id');
+        $this->tabs(new SyncRuleTabs($rule))->activate('property');
 
-        $db = $this->db();
-        $id = $this->params->get('rule_id');
-        $rule = SyncRule::load($id, $db);
-
-        $this->prepareRuleTabs($id)->activate('property');
-
-        $this->view->addLink = $this->view->qlink(
+        $this->actions()->add(Link::create(
             $this->translate('Add sync property rule'),
             'director/syncrule/addproperty',
-            array('rule_id' => $id),
-            array('class' => 'icon-plus')
-        );
+            ['rule_id' => $rule->get('id')],
+            ['class' => 'icon-plus']
+        ));
 
-        $this->view->title = $this->translate('Sync properties') . ': ' . $rule->rule_name;
-        $this->view->table = $this->loadTable('syncproperty')
-            ->enforceFilter(Filter::where('rule_id', $id))
-            ->setConnection($this->db());
-        $this->setViewScript('list/table');
+        $this->addTitle($this->translate('Sync properties') . ': ' . $rule->get('rule_name'));
+        SyncpropertyTable::create($rule)->renderTo($this);
     }
 
     public function editpropertyAction()
@@ -124,121 +171,56 @@ class SyncruleController extends ActionController
 
     public function addpropertyAction()
     {
-        $this->view->stayHere = true;
-        $edit = false;
-
         $db = $this->db();
-        $ruleId = $this->params->get('rule_id');
-        $rule = SyncRule::load($ruleId, $db);
+        $rule = $this->requireSyncRule('rule_id');
+        $ruleId = (int) $rule->get('id');
 
+        $form = SyncPropertyForm::load()->setDb($db);
         if ($id = $this->params->get('id')) {
-            $edit = true;
-        }
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('back'),
-            'director/syncrule/property',
-            array('rule_id' => $ruleId),
-            array('class' => 'icon-left-big')
-        );
-
-        $form = $this->view->form = $this->loadForm('syncProperty')->setDb($db);
-
-        if ($edit) {
             $form->loadObject($id);
-            $rule_id = $form->getObject()->rule_id;
-            $form->setRule(SyncRule::load($rule_id, $db));
-        } elseif ($rule_id = $this->params->get('rule_id')) {
-            $form->setRule(SyncRule::load($rule_id, $db));
-        }
-
-        $form->setSuccessUrl('director/syncrule/property', array('rule_id' => $rule_id));
-        $form->handleRequest();
-
-        $this->prepareRuleTabs($rule_id)->activate('property');
-
-        if ($edit) {
-            $this->view->title = sprintf(
+            $this->addTitle(
                 $this->translate('Sync "%s": %s'),
-                $form->getObject()->destination_field,
-                $rule->rule_name
+                $form->getObject()->get('destination_field'),
+                $rule->get('rule_name')
             );
         } else {
-            $this->view->title = sprintf(
+            $this->addTitle(
                 $this->translate('Add sync property: %s'),
-                $rule->rule_name
+                $rule->get('rule_name')
             );
         }
+        $form->setRule($rule);
+        $form->setSuccessUrl('director/syncrule/property', ['rule_id' => $ruleId]);
 
-        $this->view->table = $this->loadTable('syncproperty')
-            ->enforceFilter(Filter::where('rule_id', $rule_id))
-            ->setConnection($this->db());
-        $this->setViewScript('list/table');
+        $this->actions()->add(new Link(
+            $this->translate('back'),
+            'director/syncrule/property',
+            ['rule_id' => $ruleId],
+            ['class' => 'icon-left-big']
+        ));
+
+        $this->content()->add($form->handleRequest());
+        $this->tabs(new SyncRuleTabs($rule))->activate('property');
+        SyncpropertyTable::create($rule)->renderTo($this);
     }
 
     public function historyAction()
     {
-        $this->view->stayHere = true;
-
-        $db = $this->db();
-        $id = $this->params->get('id');
-        $rule = SyncRule::load($id, $db);
-
-        $this->prepareRuleTabs($id)->activate('history');
-        $this->view->title = $this->translate('Sync history') . ': ' . $rule->rule_name;
-        $this->view->table = $this->loadTable('syncRun')
-            ->enforceFilter(Filter::where('rule_id', $id))
-            ->setConnection($this->db());
+        $this->setAutoRefreshInterval(30);
+        $rule = $this->requireSyncRule();
+        $this->tabs(new SyncRuleTabs($rule))->activate('history');
+        $this->addTitle($this->translate('Sync history') . ': ' . $rule->rule_name);
 
         if ($runId = $this->params->get('run_id')) {
-            $this->loadSyncRun($runId);
+            $run = SyncRun::load($runId, $this->db());
+            $this->content()->add(new SyncRunDetails($run));
         }
+        SyncRunTable::create($rule)->renderTo($this);
     }
 
-    protected function loadSyncRun($id)
+    protected function requireSyncRule($key = 'id')
     {
-        $db = $this->db();
-        $this->view->run = SyncRun::load($id, $db);
-        if ($this->view->run->last_former_activity !== null) {
-            $this->view->formerId = $db->fetchActivityLogIdByChecksum(
-                $this->view->run->last_former_activity
-            );
-
-            $this->view->lastId = $db->fetchActivityLogIdByChecksum(
-                $this->view->run->last_related_activity
-            );
-        }
-    }
-
-    protected function prepareRuleTabs($ruleId = null)
-    {
-        if ($ruleId) {
-            $tabs = $this->getTabs()->add('show', array(
-                'url'       => 'director/syncrule',
-                'urlParams' => array('id' => $ruleId),
-                'label'     => $this->translate('Sync rule'),
-            ))->add('edit', array(
-                'url'       => 'director/syncrule/edit',
-                'urlParams' => array('id' => $ruleId),
-                'label'     => $this->translate('Modify'),
-            ))->add('property', array(
-                'label' => $this->translate('Properties'),
-                'url'   => 'director/syncrule/property',
-                'urlParams' => array('rule_id' => $ruleId)
-            ));
-
-            $tabs->add('history', array(
-                'label' => $this->translate('History'),
-                'url'   => 'director/syncrule/history',
-                'urlParams' => array('id' => $ruleId)
-            ));
-
-            return $tabs;
-        } else {
-            return $this->getTabs()->add('add', array(
-                'url'       => 'director/syncrule/add',
-                'label'     => $this->translate('Sync rule'),
-            ));
-        }
+        $id = $this->params->get($key);
+        return SyncRule::load($id, $this->db());
     }
 }
