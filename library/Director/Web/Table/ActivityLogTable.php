@@ -17,6 +17,8 @@ class ActivityLogTable extends ZfQueryBasedTable
 
     protected $columnCount;
 
+    protected $hasObjectFilter = false;
+
     /** @var BaseElement */
     protected $currentHead;
 
@@ -68,7 +70,7 @@ class ActivityLogTable extends ZfQueryBasedTable
             }
 
             // multi column key :(
-            if ($type === 'service') {
+            if ($type === 'service' || $this->hasObjectFilter) {
                 $object = "\"$name\"";
             } else {
                 $object = Link::create(
@@ -97,6 +99,7 @@ class ActivityLogTable extends ZfQueryBasedTable
 
     public function filterObject($type, $name)
     {
+        $this->hasObjectFilter = true;
         $this->filters[] = ['l.object_type = ?', $type];
         $this->filters[] = ['l.object_name = ?', $name];
         $this->extraParams = [

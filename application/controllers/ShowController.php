@@ -24,7 +24,7 @@ class ShowController extends ActionController
         $info->setChecksum($p->get('checksum'))
              ->setId($p->get('id'));
 
-        $this->tabs($info->getTabs());
+        $this->tabs($info->getTabs($this->url()));
         $info->showTab($this->params->get('show'));
 
         $this->addTitle($info->getTitle());
