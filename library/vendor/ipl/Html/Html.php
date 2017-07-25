@@ -2,10 +2,15 @@
 
 namespace ipl\Html;
 
+use Countable;
 use Exception;
 use Icinga\Exception\ProgrammingError;
 
-class Html implements ValidHtml
+/**
+ * Class Html
+ * @package ipl\Html
+ */
+class Html implements ValidHtml, Countable
 {
     protected $contentSeparator = '';
 
@@ -132,6 +137,14 @@ class Html implements ValidHtml
     public function hasContent()
     {
         return ! empty($this->content);
+    }
+
+    /**
+     * @return int
+     */
+    public function count()
+    {
+        return count($this->content);
     }
 
     /**
