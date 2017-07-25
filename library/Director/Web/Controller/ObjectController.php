@@ -166,8 +166,7 @@ abstract class ObjectController extends ActionController
         $form = $this->loadForm($formName)
             ->setDb($this->db())
             ->setAuth($this->Auth())
-            ->setObject($object)
-            ->setAuth($this->Auth());
+            ->setObject($object);
         $this->beforeHandlingEditRequest($form);
         $form->handleRequest();
         $this->content()->add($form);

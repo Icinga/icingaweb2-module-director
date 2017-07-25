@@ -152,14 +152,33 @@ abstract class ObjectsController extends ActionController
     public function setsAction()
     {
         $type = $this->getType();
+        $tType = $this->translate(ucfirst($type));
         $this
             ->assertPermission('director/admin')
             ->addObjectsTabs()
             ->requireSupportFor('Sets')
             ->addTitle(
                 $this->translate('Icinga %s Sets'),
-                $this->translate(ucfirst($type))
+                $tType
             );
+
+        $this->actions()/*->add(
+            $this->getBackToDashboardLink()
+        )*/->add(
+            Link::create(
+                $this->translate('Add'),
+                "director/${type}set/add",
+                null,
+                [
+                    'title' => sprintf(
+                        $this->translate('Create a new %s Set'),
+                        $tType
+                    ),
+                    'class' => 'icon-plus',
+                    'data-base-target' => '_next'
+                ]
+            )
+        );
 
         ObjectSetTable::create($type, $this->db())->renderTo($this);
     }
