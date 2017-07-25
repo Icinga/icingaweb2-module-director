@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
 use Icinga\Authentication\Auth;
-use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
@@ -47,9 +46,6 @@ abstract class DirectorObjectForm extends DirectorForm
     protected $fieldLoader;
 
     private $allowsExperimental;
-
-    /** @var  CoreApi */
-    private $api;
 
     private $presetImports;
 
@@ -919,7 +915,8 @@ abstract class DirectorObjectForm extends DirectorForm
             $this->object->setConnection($db);
         }
 
-        return parent::setDb($db);
+        parent::setDb($db);
+        return $this;
     }
 
     public function optionallyAddFromEnum($enum)
@@ -1028,7 +1025,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function addChoiceElement(IcingaTemplateChoice $choice)
     {
-        $imports = $this->object()->imports;
+        $imports = $this->object()->get('imports');
         $element = $choice->createFormElement($this, $imports);
         $this->addElement($element);
         $this->choiceElements[$element->getName()] = $element;
@@ -1503,17 +1500,6 @@ abstract class DirectorObjectForm extends DirectorForm
     {
         $set = new TypeFilterSet();
         return $set->enumAllowedValues();
-    }
-
-    public function setApi($api)
-    {
-        $this->api = $api;
-        return $this;
-    }
-
-    protected function api()
-    {
-        return $this->api;
     }
 
     private function dummyForTranslation()

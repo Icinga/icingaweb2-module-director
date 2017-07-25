@@ -163,16 +163,14 @@ abstract class ObjectController extends ActionController
         $this->tabs()->activate('modify');
 
         $formName = 'icinga' . ucfirst($this->getType());
-        $this->content()->add(
-            $form = $this->loadForm($formName)
-                ->setDb($this->db())
-                ->setAuth($this->Auth())
-                ->setApi($this->getApiIfAvailable())
-                ->setObject($object)
-                ->setAuth($this->Auth())
-                ->handleRequest()
-        );
-
+        $form = $this->loadForm($formName)
+            ->setDb($this->db())
+            ->setAuth($this->Auth())
+            ->setObject($object)
+            ->setAuth($this->Auth());
+        $this->beforeHandlingEditRequest($form);
+        $form->handleRequest();
+        $this->content()->add($form);
         $this->actions()->add($this->createCloneLink());
     }
 
@@ -194,11 +192,10 @@ abstract class ObjectController extends ActionController
 
         $url = sprintf('director/%ss', $ltype);
         /** @var DirectorObjectForm $form */
-        $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
+        $form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
             ->setAuth($this->Auth())
             ->presetImports($this->params->shift('imports'))
-            ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
         if ($oType = $this->params->shift('type')) {
@@ -225,6 +222,10 @@ abstract class ObjectController extends ActionController
     }
 
     protected function beforeHandlingAddRequest($form)
+    {
+    }
+
+    protected function beforeHandlingEditRequest($form)
     {
     }
 

@@ -273,6 +273,10 @@ class IcingaServiceForm extends DirectorObjectForm
         }
     }
 
+    /**
+     * @param IcingaHost $host
+     * @return $this
+     */
     public function setHost(IcingaHost $host)
     {
         $this->host = $host;
