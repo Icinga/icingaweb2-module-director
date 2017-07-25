@@ -602,8 +602,9 @@ ul.main-actions {
     }
 
     p {
-        font-weight: normal;
-        margin-bottom: 0.5em;
+      font-weight: normal;
+      margin-bottom: 0.5em;
+      padding-left: 4.5em;
     }
   }
 }
@@ -613,8 +614,11 @@ ul.main-actions {
   max-width: unset;
   min-width: unset;
   li {
-    a { height: auto; }
     width: 100%;
+    a {
+      height: auto;
+      min-height: unset;
+    }
     > a > i {
       font-size: 3em;
     }
@@ -752,16 +756,16 @@ form {
     font-style: normal;
     position: absolute;
     bottom: 1em;
-    width: 98%;
-    max-width: 98%;
+    width: 96%;
+    max-width: unset;
+    margin-left: 13em;
     max-height: 12em;
     overflow-x: auto;
     background: @tr-active-color;
     border: 1px solid @icinga-blue;
     border-radius: 0.5em;
     font-size: 1.2em;
-    margin-right: 1.5em;
-    right: 0;
+    right: 2%;
     color: @icinga-blue;
     padding-left: 3em;
     display: none;
@@ -796,15 +800,6 @@ form {
   }
 }
 
-#layout.poor-layout {
-  form {
-    p.description {
-      width: 94%;
-      max-width: 94%;
-    }
-  }
-}
-
 #layout.twocols {
   form {
     p.description {
@@ -819,7 +814,7 @@ form {
     p.description {
       margin-right: auto;
       right: auto;
-      margin-left: 1em;
+      margin-left: 2%;
       left: 0;
     }
   }
