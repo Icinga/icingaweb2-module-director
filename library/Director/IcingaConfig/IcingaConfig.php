@@ -161,7 +161,7 @@ class IcingaConfig
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function getFileNames()
     {

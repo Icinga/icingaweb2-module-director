@@ -7,9 +7,9 @@ use Diff_Renderer_Html_Inline;
 use Diff_Renderer_Html_SideBySide;
 use Diff_Renderer_Text_Context;
 use Diff_Renderer_Text_Unified;
-use Icinga\Application\Benchmark;
+use ipl\Html\ValidHtml;
 
-class ConfigDiff
+class ConfigDiff implements ValidHtml
 {
     protected $a;
 
@@ -42,6 +42,14 @@ class ConfigDiff
         $this->diff = new Diff($this->a, $this->b, $options);
     }
 
+    public function render()
+    {
+        return $this->renderHtml();
+    }
+
+    /**
+     * @return string
+     */
     public function renderHtml()
     {
         return $this->renderHtmlSideBySide();
@@ -71,7 +79,7 @@ class ConfigDiff
     public function renderTextUnified()
     {
         require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Text/Context.php';
-        $renderer = new Diff_Renderer_Text_Context;
+        $renderer = new Diff_Renderer_Text_Unified;
         return $this->diff->Render($renderer);
     }
 
