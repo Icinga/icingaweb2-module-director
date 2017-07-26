@@ -26,10 +26,10 @@ class ActivityLogTable extends ZfQueryBasedTable
     protected $currentBody;
 
     protected $searchColumns = array(
-        'l.author',
-        'l.object_name',
-        'l.object_type',
-        'l.action_name',
+        'author',
+        'object_name',
+        'object_type',
+        'action_name',
     );
 
     public function assemble()
@@ -61,13 +61,14 @@ class ActivityLogTable extends ZfQueryBasedTable
 
     protected function makeLink($row)
     {
+        $type = $row->object_type;
+        $name = $row->object_name;
+        if (substr($type, 0, 7) === 'icinga_') {
+            $type = substr($type, 7);
+        }
+
         if (Util::hasPermission('director/showconfig')) {
             // Later on replacing, service_set -> serviceset
-            $type = $row->object_type;
-            $name = $row->object_name;
-            if (substr($type, 0, 7) === 'icinga_') {
-                $type = substr($type, 7);
-            }
 
             // multi column key :(
             if ($type === 'service' || $this->hasObjectFilter) {
@@ -93,7 +94,13 @@ class ActivityLogTable extends ZfQueryBasedTable
                 $object
             ];
         } else {
-            return $row->log_message;
+            return sprintf(
+                '[%s] %s %s "%s"',
+                $row->author,
+                $row->action,
+                $type,
+                $name
+            );
         }
     }
 
@@ -102,10 +109,6 @@ class ActivityLogTable extends ZfQueryBasedTable
         $this->hasObjectFilter = true;
         $this->filters[] = ['l.object_type = ?', $type];
         $this->filters[] = ['l.object_name = ?', $name];
-        $this->extraParams = [
-            'type' => $type,
-            'name' => $name,
-        ];
 
         return $this;
     }
@@ -113,9 +116,6 @@ class ActivityLogTable extends ZfQueryBasedTable
     public function getColumns()
     {
         return [
-            'log_message'     => "'[' || l.author || '] ' || l.action_name || ' '"
-                . " || REPLACE(l.object_type, 'icinga_', '')"
-                . " || ' \"' || l.object_name || '\"'",
             'author'          => 'l.author',
             'action'          => 'l.action_name',
             'object_name'     => 'l.object_name',
