@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
@@ -127,14 +128,28 @@ class ConfigController extends ActionController
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
         $table = new ActivityLogTable($this->db());
         $table->setLastDeployedId($lastDeployedId);
-        $this->actions()->add(Link::create(
-            $this->translate('My changes'),
-            $this->url()
-                ->with('author', $this->Auth()->getUser()->getUsername())
-                ->without('page'),
-            null,
-            array('class' => 'icon-user', 'data-base-target' => '_self')
-        ));
+        $filter = Filter::fromQueryString(
+            $this->url()->without(['page', 'limit', 'q'])->getQueryString()
+        );
+        $table->applyFilter($filter);
+        if ($this->url()->hasParam('author')) {
+            $this->actions()->add(Link::create(
+                $this->translate('All changes'),
+                $this->url()
+                    ->without(['author', 'page']),
+                null,
+                ['class' => 'icon-users', 'data-base-target' => '_self']
+            ));
+        } else {
+            $this->actions()->add(Link::create(
+                $this->translate('My changes'),
+                $this->url()
+                    ->with('author', $this->Auth()->getUser()->getUsername())
+                    ->without('page'),
+                null,
+                ['class' => 'icon-user', 'data-base-target' => '_self']
+            ));
+        }
         if ($this->hasPermission('director/deploy')) {
             $this->actions()->add(DeployConfigForm::load()
                 ->setDb($this->db())

@@ -3,19 +3,20 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class IcingaCloneObjectForm extends QuickForm
+class IcingaCloneObjectForm extends DirectorForm
 {
     /** @var IcingaObject */
     protected $object;
 
     public function setup()
     {
+        $name = $this->object->getObjectName();
         $this->addElement('text', 'new_object_name', array(
             'label'    => $this->translate('New name'),
             'required' => true,
-            'value'    => $this->object->getObjectName(),
+            'value'    => $name,
         ));
 
         $this->addElement('select', 'clone_type', array(
@@ -29,7 +30,7 @@ class IcingaCloneObjectForm extends QuickForm
 
         $this->submitLabel = sprintf(
             $this->translate('Clone "%s"'),
-            $this->object->getObjectName()
+            $name
         );
     }
 

@@ -10,6 +10,7 @@ use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
+use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
@@ -162,16 +163,13 @@ abstract class ObjectController extends ActionController
         $this->tabs()->activate('modify');
 
         $formName = 'icinga' . ucfirst($this->getType());
-        $this->content()->add(
-            $form = $this->loadForm($formName)
-                ->setDb($this->db())
-                ->setAuth($this->Auth())
-                ->setApi($this->getApiIfAvailable())
-                ->setObject($object)
-                ->setAuth($this->Auth())
-                ->handleRequest()
-        );
-
+        $form = $this->loadForm($formName)
+            ->setDb($this->db())
+            ->setAuth($this->Auth())
+            ->setObject($object);
+        $this->beforeHandlingEditRequest($form);
+        $form->handleRequest();
+        $this->content()->add($form);
         $this->actions()->add($this->createCloneLink());
     }
 
@@ -193,11 +191,10 @@ abstract class ObjectController extends ActionController
 
         $url = sprintf('director/%ss', $ltype);
         /** @var DirectorObjectForm $form */
-        $form = $this->view->form = $this->loadForm('icinga' . ucfirst($type))
+        $form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
             ->setAuth($this->Auth())
             ->presetImports($this->params->shift('imports'))
-            ->setApi($this->getApiIfAvailable())
             ->setSuccessUrl($url);
 
         if ($oType = $this->params->shift('type')) {
@@ -227,6 +224,10 @@ abstract class ObjectController extends ActionController
     {
     }
 
+    protected function beforeHandlingEditRequest($form)
+    {
+    }
+
     public function cloneAction()
     {
         $type = $this->getType();
@@ -234,14 +235,15 @@ abstract class ObjectController extends ActionController
         $this->assertPermission('director/' . $ltype);
         $this->tabs()->activate('modify');
         $this->addTitle($this->translate('Clone Icinga %s'), ucfirst($type));
-        $form = $this->loadForm('icingaCloneObject')->setObject($this->object);
-        $form->handleRequest();
+        $form = IcingaCloneObjectForm::load()
+            ->setObject($this->object)
+            ->handleRequest();
         $this->content()->add($form);
         $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/' . $ltype,
-            array('name'  => $this->object->object_name),
-            array('class' => 'icon-left-big')
+            ['name'  => $this->object->getObjectName()],
+            ['class' => 'icon-left-big']
         ));
     }
 

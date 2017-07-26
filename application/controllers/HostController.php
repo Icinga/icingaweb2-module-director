@@ -8,6 +8,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Forms\IcingaForgetApiKeyForm;
 use Icinga\Module\Director\Forms\IcingaGenerateApiKeyForm;
+use Icinga\Module\Director\Forms\IcingaHostForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -54,6 +55,22 @@ class HostController extends ObjectController
     protected function getHostgroupRestriction()
     {
         return new HostgroupRestriction($this->db(), $this->Auth());
+    }
+
+    /**
+     * @param IcingaHostForm $form
+     */
+    protected function beforeHandlingAddRequest($form)
+    {
+        $form->setApi($this->getApiIfAvailable());
+    }
+
+    /**
+     * @param IcingaHostForm $form
+     */
+    protected function beforeHandlingEditRequest($form)
+    {
+        $form->setApi($this->getApiIfAvailable());
     }
 
     public function editAction()

@@ -67,6 +67,12 @@ abstract class ZfQueryBasedTable extends Table
         );
     }
 
+    public function applyFilter(Filter $filter)
+    {
+        FilterRenderer::applyToQuery($filter, $this->getQuery());
+        return $this;
+    }
+
     protected function getSearchColumns()
     {
         return $this->searchColumns;

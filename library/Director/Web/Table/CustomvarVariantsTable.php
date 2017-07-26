@@ -2,33 +2,49 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\PlainObjectRenderer;
 use ipl\Html\Link;
 use ipl\Web\Table\ZfQueryBasedTable;
 use Zend_Db_Adapter_Abstract as ZfDbAdapter;
 use Zend_Db_Select as ZfDbSelect;
 
-class CustomvarTable extends ZfQueryBasedTable
+class CustomvarVariantsTable extends ZfQueryBasedTable
 {
-    protected $searchColumns = array(
-        'varname',
-    );
+    protected $searchColumns = ['varvalue'];
+
+    protected $varName;
+
+    public static function create(Db $db, $varName)
+    {
+        $table = new static($db);
+        $table->varName = $varName;
+        $table->attributes()->set('class', 'common-table');
+        return $table;
+    }
 
     public function renderRow($row)
     {
+        if ($row->format === 'json') {
+            $value = PlainObjectRenderer::render(json_decode($row->varvalue));
+        } else {
+            $value = $row->varvalue;
+        }
         $tr = $this::row([
-            new Link(
-                $row->varname,
-                'director/customvar/variants',
-                ['name' => $row->varname]
-            )
+            /* new Link(
+                $value,
+                'director/customvar/value',
+                ['name' => $row->varvalue]
+            )*/
+            $value
         ]);
 
         foreach ($this->getObjectTypes() as $type) {
-            $tr->add($this::td($this::nobr(sprintf(
-                $this->translate('%d / %d'),
-                $row->{"cnt_$type"},
-                $row->{"distinct_$type"}
-            ))));
+            $cnt = (int) $row->{"cnt_$type"};
+            if ($cnt === 0) {
+                $cnt = '-';
+            }
+            $tr->add($this::td($cnt));
         }
 
         return $tr;
@@ -37,8 +53,8 @@ class CustomvarTable extends ZfQueryBasedTable
     public function getColumnsToBeRendered()
     {
         return array(
-            $this->translate('Variable name'),
-            $this->translate('Distinct Commands'),
+            $this->translate('Variable Value'),
+            $this->translate('Commands'),
             $this->translate('Hosts'),
             $this->translate('Services'),
             $this->translate('Service Sets'),
@@ -55,11 +71,10 @@ class CustomvarTable extends ZfQueryBasedTable
     public function prepareQuery()
     {
         $db = $this->db();
-        $varsColumns = ['varname' => 'v.varname'];
+        $varsColumns = ['varvalue' => 'v.varvalue'];
         $varsTypes = $this->getObjectTypes();
         foreach ($varsTypes as $type) {
             $varsColumns["cnt_$type"] = '(0)';
-            $varsColumns["distinct_$type"] = '(0)';
         }
         $varsQueries = [];
         foreach ($varsTypes as $type) {
@@ -68,15 +83,18 @@ class CustomvarTable extends ZfQueryBasedTable
 
         $union = $db->select()->union($varsQueries, ZfDbSelect::SQL_UNION_ALL);
 
-        $columns = ['varname' => 'u.varname'];
+        $columns = [
+            'varvalue' => 'u.varvalue',
+            'format'   => 'u.format',
+        ];
         foreach ($varsTypes as $column) {
             $columns["cnt_$column"] = "SUM(u.cnt_$column)";
-            $columns["distinct_$column"] = "SUM(u.distinct_$column)";
         }
-        return $db->select()->from(
-            array('u' => $union),
-            $columns
-        )->group('u.varname')->order('u.varname ASC')->limit(100);
+        return $db->select()->from(['u' => $union], $columns)
+            ->group('u.varvalue')->group('u.format')
+            ->order('u.varvalue ASC')
+            ->order('u.format ASC')
+            ->limit(100);
     }
 
     /**
@@ -88,7 +106,7 @@ class CustomvarTable extends ZfQueryBasedTable
     protected function makeVarSub($type, array $columns, ZfDbAdapter $db)
     {
         $columns["cnt_$type"] = 'COUNT(*)';
-        $columns["distinct_$type"] = 'COUNT(DISTINCT varvalue)';
+        $columns['format'] = 'v.format';
         return $db->select()->from(
             ['v' => "icinga_${type}_var"],
             $columns
@@ -96,6 +114,12 @@ class CustomvarTable extends ZfQueryBasedTable
             ['o' => "icinga_${type}"],
             "o.id = v.${type}_id",
             []
-        )->where('o.object_type != ?', 'external_object')->group('varname');
+        )->where(
+            'v.varname = ?',
+            $this->varName
+        )->where(
+            'o.object_type != ?',
+            'external_object'
+        )->group('varvalue')->group('v.format');
     }
 }

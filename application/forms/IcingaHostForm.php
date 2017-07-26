@@ -2,11 +2,14 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Restriction\HostgroupRestriction;
+use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostForm extends DirectorObjectForm
 {
+    /** @var  CoreApi */
+    private $api;
+
     public function setup()
     {
         $this->addObjectTypeElement();
@@ -245,5 +248,16 @@ class IcingaHostForm extends DirectorObjectForm
         )->order('display');
 
         return $db->fetchPairs($select);
+    }
+
+    public function setApi($api)
+    {
+        $this->api = $api;
+        return $this;
+    }
+
+    protected function api()
+    {
+        return $this->api;
     }
 }
