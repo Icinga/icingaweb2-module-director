@@ -31,11 +31,12 @@ class CustomvarVariantsTable extends ZfQueryBasedTable
             $value = $row->varvalue;
         }
         $tr = $this::row([
-            new Link(
+            /* new Link(
                 $value,
                 'director/customvar/value',
                 ['name' => $row->varvalue]
-            )
+            )*/
+            $value
         ]);
 
         foreach ($this->getObjectTypes() as $type) {
