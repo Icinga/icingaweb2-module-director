@@ -8,6 +8,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Web\Table\IcingaAppliedServiceTable;
 use ipl\Html\Link;
 
 class ServiceController extends ObjectController
@@ -165,31 +166,30 @@ class ServiceController extends ObjectController
         }
 
         $this->content()->add($form);
-        // $this->setViewScript('object/form');
     }
 
     public function assignAction()
     {
+        // TODO: figure out whether and where we link to this
+        /** @var IcingaService $service */
         $service = $this->object;
-        $this->view->stayHere = true;
-
-        $this->view->actionLinks = $this->view->qlink(
+        $this->actions()->add(new Link(
             $this->translate('back'),
             $this->getRequest()->getUrl()->without('rule_id'),
             null,
             array('class' => 'icon-left-big')
-        );
+        ));
 
-        $this->getTabs()->activate('applied');
-        $this->view->title = sprintf(
+        $this->tabs()->activate('applied');
+        $this->addTitle(
             $this->translate('Apply: %s'),
-            $service->object_name
+            $service->getObjectName()
         );
-        $this->view->table = $this->loadTable('IcingaAppliedService')
-            ->setService($service)
-            ->setConnection($this->db());
+        $table = (new IcingaAppliedServiceTable($this->db()))
+            ->setService($service);
+        $table->attributes()->set('data-base-target', '_self');
 
-        $this->setViewScript('objects/table');
+        $this->content()->add($table);
     }
 
     public function loadForm($name)
