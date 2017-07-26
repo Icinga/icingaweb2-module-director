@@ -1,10 +1,16 @@
 <?php
 
-use Icinga\Application\Icinga;
+use Icinga\Application\Modules\Module;
 use ipl\Loader\CompatLoader;
+
+if (version_compare(PHP_VERSION, '5.4.0') < 0) {
+    include __DIR__ . '/run-php5.3.php';
+    return;
+}
 
 $prefix = '\\Icinga\\Module\\Director\\';
 
+/** @var Module $this */
 $this->provideHook('monitoring/HostActions');
 $this->provideHook('monitoring/ServiceActions');
 
@@ -51,7 +57,6 @@ $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
 $this->provideHook('cube/Actions', 'CubeLinks');
 
 // ipl compat, unless it is released:
-
 if (class_exists('ipl\\Html\\ValidHtml')) {
     return;
 }
