@@ -21,6 +21,9 @@ class FilterRenderer
     /** @var Filter */
     private $filter;
 
+    /** @var array */
+    private $columnMap;
+
     /**
      * FilterRenderer constructor.
      * @param Filter $filter
@@ -42,9 +45,36 @@ class FilterRenderer
 
     public static function applyToQuery(Filter $filter, DbSelect $query)
     {
-        $renderer = new static($filter, $query->getAdapter());
-        $query->where($renderer->toDbExpression());
+        if (! $filter->isEmpty()) {
+            $renderer = new static($filter, $query->getAdapter());
+            $renderer->extractColumnMap($query);
+            $query->where($renderer->toDbExpression());
+        }
+
         return $query;
+    }
+
+    protected function lookupColumnAlias($column)
+    {
+        if (array_key_exists($column, $this->columnMap)) {
+            return $this->columnMap[$column];
+        } else {
+            return $column;
+        }
+    }
+
+    protected function extractColumnMap(DbSelect $query)
+    {
+        $map = [];
+        foreach ($query->getPart(DbSelect::COLUMNS) as $col) {
+            if ($col[1] instanceof DbExpr) {
+                $map[$col[2]] = (string) $col[1];
+            } else {
+                $map[$col[2]] = $col[0] . '.' . $col[1];
+            }
+        }
+
+        $this->columnMap = $map;
     }
 
     /**
@@ -93,7 +123,7 @@ class FilterRenderer
 
     protected function renderFilterExpression(FilterExpression $filter)
     {
-        $col = $filter->getColumn();
+        $col = $this->lookupColumnAlias($filter->getColumn());
         $sign = $filter->getSign();
         $expression = $filter->getExpression();
 
