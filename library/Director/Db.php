@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director;
 
 use Icinga\Module\Director\Data\Db\DbConnection;
-use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Exception\ConfigurationError;
