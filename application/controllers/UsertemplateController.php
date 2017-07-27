@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\IcingaUser;
 use Icinga\Module\Director\Web\Controller\TemplateController;
 
-class TimeperiodtemplateController extends TemplateController
+class UsertemplateController extends TemplateController
 {
     protected function requireTemplate()
     {
-        return IcingaTimePeriod::load([
+        return IcingaUser::load([
             'object_name' => $this->params->get('name')
         ], $this->db());
     }
