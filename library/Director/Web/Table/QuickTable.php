@@ -134,7 +134,7 @@ abstract class QuickTable implements Paginatable, ValidHtml
             if ($value === null) {
                 if ($val === null) {
                     $value = '-';
-                } elseif (is_array($val) || $val instanceof stdClass) {
+                } elseif (is_array($val) || $val instanceof stdClass || is_bool($val)) {
                     $value = '<pre>'
                            . $this->view()->escape(PlainObjectRenderer::render($val))
                            . '</pre>';
