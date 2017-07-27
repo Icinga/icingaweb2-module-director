@@ -15,7 +15,7 @@ class TimeperiodsDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/dashboard?name=timePeriods';
+        return 'director/dashboard?name=timeperiods';
     }
 
     public function listRequiredPermissions()

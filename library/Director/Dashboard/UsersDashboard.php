@@ -30,7 +30,7 @@ class UsersDashboard extends Dashboard
     public function getTabs()
     {
         return $this->createTabsForDashboards(
-            ['notifications', 'users', 'timePeriods']
+            ['notifications', 'users', 'timeperiods']
         );
     }
 }

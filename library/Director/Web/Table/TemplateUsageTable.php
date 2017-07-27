@@ -9,7 +9,7 @@ use ipl\Html\Link;
 use ipl\Html\Table;
 use ipl\Translation\TranslationHelper;
 
-abstract class TemplateUsageTable extends Table
+class TemplateUsageTable extends Table
 {
     use TranslationHelper;
 
@@ -17,7 +17,21 @@ abstract class TemplateUsageTable extends Table
 
     protected $objectType;
 
-    abstract public function getTypes();
+    public function getTypes()
+    {
+        return [
+            'templates'  => $this->translate('Templates'),
+            'objects'    => $this->translate('Objects'),
+        ];
+    }
+
+    protected function getTypeSummaryDefinitions()
+    {
+        return [
+            'templates'  => $this->getSummaryLine('template'),
+            'objects'    => $this->getSummaryLine('object'),
+        ];
+    }
 
     /**
      * @param IcingaObject $template
@@ -27,7 +41,11 @@ abstract class TemplateUsageTable extends Table
     {
         $type = ucfirst($template->getShortTableName());
         $class = __NAMESPACE__ . "\\${type}TemplateUsageTable";
-        return new $class($template);
+        if (class_exists($class)) {
+            return new $class($template);
+        } else {
+            return new static($template);
+        }
     }
 
     protected function __construct(IcingaObject $template)
@@ -82,8 +100,6 @@ abstract class TemplateUsageTable extends Table
             $this->body()->add($this->translate('This template is not in use'));
         }
     }
-
-    abstract protected function getTypeSummaryDefinitions();
 
     protected function getUsageSummary(IcingaObject $template)
     {

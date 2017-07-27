@@ -96,6 +96,8 @@ abstract class ObjectsController extends ActionController
     public function templatesAction()
     {
         $type = $this->getType();
+
+        $shortType = IcingaObject::createByType($type)->getShortTableName();
         $this
             ->assertPermission('director/admin')
             ->addObjectsTabs()
@@ -103,11 +105,11 @@ abstract class ObjectsController extends ActionController
                 $this->translate('All your %s Templates'),
                 $this->translate(ucfirst($type))
             )
-            ->actions(new TemplateActionBar($type, $this->url()));
+            ->actions(new TemplateActionBar($shortType, $this->url()));
 
         $this->params->get('render') === 'tree'
-            ? TemplateTreeRenderer::showType($type, $this, $this->db())
-            : TemplatesTable::create($type, $this->db())->renderTo($this);
+            ? TemplateTreeRenderer::showType($shortType, $this, $this->db())
+            : TemplatesTable::create($shortType, $this->db())->renderTo($this);
     }
 
     protected function assertApplyRulePermission()
