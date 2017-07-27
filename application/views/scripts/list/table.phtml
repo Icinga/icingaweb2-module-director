@@ -6,9 +6,6 @@
 <span class="action-links"<?php if (! $this->stayHere): ?> data-base-target="_next"<?php endif ?>>
 <?= $this->addLink ?>
 </span>
-<?php if ($this->filterEditor): ?>
-<?= $this->filterEditor ?>
-<?php endif ?>
 <?= $this->table->getPaginator() ?>
 </div>
 <?php endif ?>
