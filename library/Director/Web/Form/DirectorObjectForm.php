@@ -579,7 +579,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 $object->getUrlParams()
             );
         } elseif ($object->hasProperty('id')) {
-            $this->setSuccessUrl($this->getSuccessUrl()->with('id', $object->get('id')));
+            $this->setSuccessUrl($this->getSuccessUrl()->with('id', $object->getProperty('id')));
         }
     }
 

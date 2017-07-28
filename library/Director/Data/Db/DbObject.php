@@ -267,6 +267,9 @@ abstract class DbObject
     {
         if (array_key_exists($key, $this->properties)) {
             return true;
+        } elseif ($key === 'id') {
+            // There is getId, would give false positive
+            return false;
         }
         $func = 'get' . ucfirst($key);
         if (substr($func, -2) === '[]') {
