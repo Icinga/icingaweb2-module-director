@@ -89,10 +89,10 @@ abstract class ObjectController extends ActionController
     {
         $this->assertPermission('director/showconfig');
         $this->tabs()->activate('render');
-        $object = $this->object;
+        $object = $this->requireObject();
         $this->addTitle(
             $this->translate('Config preview: %s'),
-            $object->object_name
+            $object->getObjectName()
         );
 
         if ($this->params->shift('resolved')) {
@@ -159,7 +159,7 @@ abstract class ObjectController extends ActionController
     public function editAction()
     {
         $type = $this->getType();
-        $object = $this->object;
+        $object = $this->requireObject();
         $name = $object->getObjectName();
         $this->addTitle($this->translate('Template: %s'), $name);
         $this->tabs()->activate('modify');
@@ -176,10 +176,14 @@ abstract class ObjectController extends ActionController
         }
 
         $formName = 'icinga' . ucfirst($type);
-        $form = $this->loadForm($formName)
+
+        /** @var DirectorObjectForm $form */
+        $form = $this->loadForm($formName);
+        $form
             ->setDb($this->db())
             ->setAuth($this->Auth())
             ->setObject($object);
+
         $this->beforeHandlingEditRequest($form);
         $form->handleRequest();
         $this->content()->add($form);
@@ -272,15 +276,14 @@ abstract class ObjectController extends ActionController
     public function fieldsAction()
     {
         $this->assertPermission('director/admin');
-        $object = $this->object;
+        $object = $this->requireObject();
         $type = $this->getType();
-
-        $this->tabs()->activate('fields');
 
         $this->addTitle(
             $this->translate('Custom fields: %s'),
-            $object->object_name
+            $object->getObjectName()
         );
+        $this->tabs()->activate('fields');
 
         $form = IcingaObjectFieldForm::load()
             ->setDb($this->db())
@@ -307,38 +310,37 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
-        $this->assertPermission('director/audit');
-        $this->setAutorefreshInterval(10);
+        $this->assertPermission('director/audit')
+            ->setAutorefreshInterval(10)
+            ->tabs()->activate('history');
+
+        $name = $this->requireObject()->getObjectName();
+        $this->addTitle($this->translate('Activity Log: %s'), $name);
+
         $db = $this->db();
         $type = $this->getType();
-        $this->tabs()->activate('history');
-        $this->addTitle(
-            $this->translate('Activity Log: %s'),
-            $this->object->object_name
-        );
-        $lastDeployedId = $db->getLastDeploymentActivityLogId();
         (new ActivityLogTable($db))
-            ->setLastDeployedId($lastDeployedId)
-            ->filterObject('icinga_' . $type, $this->object->object_name)
+            ->setLastDeployedId($db->getLastDeploymentActivityLogId())
+            ->filterObject('icinga_' . $type, $name)
             ->renderTo($this);
     }
 
     public function membershipAction()
     {
-        $this->requireObject();
-        if (! $this->object instanceof IcingaObjectGroup) {
+        $object = $this->requireObject();
+        if (! $object instanceof IcingaObjectGroup) {
             throw new NotFoundError('Not Found');
         }
+
+        $this
+            ->addTitle($this->translate('Group membership: %s'), $object->getObjectName())
+            ->setAutorefreshInterval(15)
+            ->tabs()->activate('membership');
+
         $type = substr($this->getType(), 0, -5);
-
-        $this->setAutorefreshInterval(15);
-        $this->tabs()->activate('membership');
-        $this->addTitle(
-            $this->translate('Group membership: %s'),
-            $this->object->getObjectName()
-        );
-
-        GroupMemberTable::create($type, $this->db())->setGroup($this->object)->renderTo($this);
+        GroupMemberTable::create($type, $this->db())
+            ->setGroup($object)
+            ->renderTo($this);
     }
 
     protected function getType()
@@ -392,17 +394,6 @@ abstract class ObjectController extends ActionController
         }
 
         return $this->object;
-    }
-
-    protected function hasFields()
-    {
-        if (! ($object = $this->object)) {
-            return false;
-        }
-
-        return $object->hasBeenLoadedFromDb()
-            && $object->supportsFields()
-            && ($object->isTemplate() || $this->getType() === 'command');
     }
 
     protected function handleApiRequest()
@@ -503,23 +494,7 @@ abstract class ObjectController extends ActionController
                 throw new NotFoundError('No such object available');
             }
         }
-    }
 
-    protected function gracefullyActivateTab($name)
-    {
-        $tabs = $this->getTabs();
-
-        if ($tabs->has($name)) {
-            return $tabs->activate($name);
-        }
-
-        $req = $this->getRequest();
-        $this->redirectNow(
-            $req->getUrl()->setPath('director/' . $req->getControllerName())
-        );
-    }
-
-    protected function beforeTabs()
-    {
+        return $this->object;
     }
 }
