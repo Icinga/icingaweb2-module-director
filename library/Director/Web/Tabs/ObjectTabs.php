@@ -68,6 +68,13 @@ class ObjectTabs extends Tabs
                 'label'     => $this->translate(ucfirst($type))
             ));
         }
+        if ($object->getShortTableName() === 'host') {
+            $this->add('services', [
+                'url' => 'director/host/services',
+                'urlParams' => $params,
+                'label' => $this->translate('Services')
+            ]);
+        }
 
         if ($auth->hasPermission('director/showconfig')) {
             $this->add('render', array(
@@ -119,11 +126,7 @@ class ObjectTabs extends Tabs
         }
 
         if ($object->getShortTableName() === 'host') {
-            $this->add('services', [
-                'url' => 'director/host/services',
-                'urlParams' => $params,
-                'label' => $this->translate('Services')
-            ])->add('agent', [
+            $this->add('agent', [
                 'url' => 'director/host/agent',
                 'urlParams' => $params,
                 'label' => $this->translate('Agent')

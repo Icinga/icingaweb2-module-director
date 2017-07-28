@@ -10,6 +10,7 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Table\IcingaAppliedServiceTable;
 use ipl\Html\Link;
+use ipl\Web\Widget\Tabs;
 
 class ServiceController extends ObjectController
 {
@@ -19,17 +20,6 @@ class ServiceController extends ObjectController
     protected $set;
 
     protected $apply;
-
-    protected function beforeTabs()
-    {
-        if ($this->host) {
-            $this->getTabs()->add('host', array(
-                'url'       => 'director/host',
-                'urlParams' => array('name' => $this->host->object_name),
-                'label'     => $this->translate('Host'),
-            ));
-        }
-    }
 
     protected function checkDirectorPermissions()
     {
@@ -41,41 +31,63 @@ class ServiceController extends ObjectController
         if ($host = $this->params->get('host')) {
             $this->host = IcingaHost::load($host, $this->db());
         } elseif ($set = $this->params->get('set')) {
-            $this->set = IcingaServiceSet::load(array('object_name' => $set), $this->db());
+            $this->set = IcingaServiceSet::load(['object_name' => $set], $this->db());
         } elseif ($apply = $this->params->get('apply')) {
             $this->apply = IcingaService::load(
-                array('object_name' => $apply, 'object_type' => 'template'),
+                ['object_name' => $apply, 'object_type' => 'template'],
                 $this->db()
             );
         }
-
         parent::init();
 
-        if ($this->object) {
-            if ($this->host) {
-                foreach ($this->getTabs()->getTabs() as $tab) {
-                    $tab->getUrl()->setParam('host', $this->host->object_name);
-                }
-            }
+        if ($this->host) {
+            $hostname = $this->host->getObjectName();
+            $tabs = new Tabs();
+            $tabs->add('host', [
+                'url' => 'director/host',
+                'urlParams' => ['name' => $hostname],
+                'label' => $this->translate('Host'),
+            ])->add('services', [
+                'url'       => 'director/host/services',
+                'urlParams' => ['name' => $hostname],
+                'label'     => $this->translate('Services'),
+            ]);
 
-            if (! $this->set && $this->object->service_set_id) {
+            $this->addParamToTabs('host', $hostname);
+            $this->controls()->prependTabs($tabs);
+        }
+
+        if ($this->object) {
+            if (! $this->set && $this->object->get('service_set_id')) {
                 $this->set = $this->object->getRelated('service_set');
             }
         }
 
-        if ($this->host) {
-            $this->getTabs()->add('services', array(
-                'url'       => 'director/host/services',
-                'urlParams' => array('name' => $this->host->object_name),
-                'label'     => $this->translate('Services'),
-            ));
-        } elseif ($this->set) {
-            $this->getTabs()->add('services', array(
+        if ($this->set) {
+            $setName = $this->set->getObjectName();
+            $tabs = new Tabs();
+            $tabs->add('set', [
+                'url'       => 'director/serviceset',
+                'urlParams' => ['name' => $setName],
+                'label'     => $this->translate('Serviceset'),
+            ])->add('services', [
                 'url'       => 'director/serviceset/services',
-                'urlParams' => array('name' => $this->set->object_name),
+                'urlParams' => ['name' => $setName],
                 'label'     => $this->translate('Services'),
-            ));
+            ]);
+
+            $this->addParamToTabs('serviceset', $setName);
+            $this->controls()->prependTabs($tabs);
         }
+    }
+
+    protected function addParamToTabs($name, $value)
+    {
+        foreach ($this->tabs()->getTabs() as $tab) {
+            $tab->getUrl()->setParam($name, $value);
+        }
+
+        return $this;
     }
 
     public function addAction()
