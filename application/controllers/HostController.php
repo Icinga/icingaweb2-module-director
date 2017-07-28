@@ -442,9 +442,7 @@ class HostController extends ObjectController
         }
 
         $c->add([
-            Html::p($this->translate(
-                ''
-            )),
+            // Html::p($this->translate('..')),
             IcingaGenerateApiKeyForm::load()->setHost($host)->handleRequest()
         ]);
         if ($hasKey) {
