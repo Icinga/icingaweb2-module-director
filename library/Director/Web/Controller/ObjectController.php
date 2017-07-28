@@ -158,11 +158,24 @@ abstract class ObjectController extends ActionController
 
     public function editAction()
     {
+        $type = $this->getType();
         $object = $this->object;
-        $this->addTitle($object->object_name);
+        $name = $object->getObjectName();
+        $this->addTitle($this->translate('Template: %s'), $name);
         $this->tabs()->activate('modify');
 
-        $formName = 'icinga' . ucfirst($this->getType());
+        if ($object->isTemplate()) {
+            $this->actions()->add([
+                Link::create(
+                    $this->translate('Usage'),
+                    "director/${type}template/usage",
+                    ['name' => $name],
+                    ['class' => 'icon-sitemap']
+                )
+            ]);
+        }
+
+        $formName = 'icinga' . ucfirst($type);
         $form = $this->loadForm($formName)
             ->setDb($this->db())
             ->setAuth($this->Auth())
