@@ -101,6 +101,7 @@ abstract class ObjectsController extends ActionController
         $this
             ->assertPermission('director/admin')
             ->addObjectsTabs()
+            ->setAutorefreshInterval(10)
             ->addTitle(
                 $this->translate('All your %s Templates'),
                 $this->translate(ucfirst($type))
@@ -124,6 +125,7 @@ abstract class ObjectsController extends ActionController
         $this
             ->assertApplyRulePermission()
             ->addObjectsTabs()
+            ->setAutorefreshInterval(10)
             ->addTitle(
                 $this->translate('All your %s Apply Rules'),
                 $tType
@@ -159,6 +161,7 @@ abstract class ObjectsController extends ActionController
             ->assertPermission('director/admin')
             ->addObjectsTabs()
             ->requireSupportFor('Sets')
+            ->setAutorefreshInterval(10)
             ->addTitle(
                 $this->translate('Icinga %s Sets'),
                 $tType
