@@ -6,9 +6,9 @@ class ServicesDashboard extends Dashboard
 {
     protected $dashletNames = array(
         'SingleServices',
+        'ServiceApplyRules',
         'ServiceTemplates',
         'ServiceGroups',
-        'ServiceApplyRules',
         'ServiceChoices',
         'ServiceSets'
     );

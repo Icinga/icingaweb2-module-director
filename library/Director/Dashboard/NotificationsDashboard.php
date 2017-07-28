@@ -5,8 +5,8 @@ namespace Icinga\Module\Director\Dashboard;
 class NotificationsDashboard extends Dashboard
 {
     protected $dashletNames = [
-        'NotificationTemplate',
         'NotificationApply',
+        'NotificationTemplate',
     ];
 
     public function getTitle()

@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 class ExternalCheckCommandsDashlet extends CheckCommandsDashlet
 {
-    protected $icon = 'wrench';
+    protected $icon = 'download';
 
     public function getSummary()
     {

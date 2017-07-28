@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 class NotificationTemplateDashlet extends Dashlet
 {
-    protected $icon = 'paste';
+    protected $icon = 'cubes';
 
     protected $requiredStats = array('notification');
 

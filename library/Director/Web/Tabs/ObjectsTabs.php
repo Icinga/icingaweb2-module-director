@@ -23,6 +23,17 @@ class ObjectsTabs extends Tabs
             'label' => $this->translate(ucfirst($type) . 's'),
         ));
 
+        if ($auth->hasPermission('director/admin') || (
+                $object->getShortTableName() && $auth->hasPermission('director/notifications')
+            )) {
+            if ($object->supportsApplyRules()) {
+                $this->add('applyrules', array(
+                    'url' => sprintf('director/%ss/applyrules', $type),
+                    'label' => $this->translate('Apply')
+                ));
+            }
+        }
+
         if ($auth->hasPermission('director/admin')) {
             if ($object->supportsImports()) {
                 $this->add('templates', array(
@@ -35,17 +46,6 @@ class ObjectsTabs extends Tabs
                 $this->add('groups', array(
                     'url' => sprintf('director/%sgroups', $type),
                     'label' => $this->translate('Groups')
-                ));
-            }
-        }
-
-        if ($auth->hasPermission('director/admin') || (
-            $object->getShortTableName() && $auth->hasPermission('director/notifications')
-        )) {
-            if ($object->supportsApplyRules()) {
-                $this->add('applyrules', array(
-                    'url' => sprintf('director/%ss/applyrules', $type),
-                    'label' => $this->translate('Apply')
                 ));
             }
         }

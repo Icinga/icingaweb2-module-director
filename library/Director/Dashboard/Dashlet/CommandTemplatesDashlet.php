@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 class CommandTemplatesDashlet extends CheckCommandsDashlet
 {
-    protected $icon = 'wrench';
+    protected $icon = 'cubes';
 
     public function getSummary()
     {

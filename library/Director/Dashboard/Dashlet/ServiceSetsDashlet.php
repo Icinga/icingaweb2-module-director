@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 class ServiceSetsDashlet extends Dashlet
 {
-    protected $icon = 'pin';
+    protected $icon = 'services';
 
     public function getTitle()
     {
