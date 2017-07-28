@@ -82,6 +82,25 @@ class Controls extends Container
     }
 
     /**
+     * @param Tabs $tabs
+     * @return $this
+     */
+    public function prependTabs(Tabs $tabs)
+    {
+        if ($this->tabs === null) {
+            $this->tabs = $tabs;
+        } else {
+            $current = $this->tabs->getTabs();
+            $this->tabs = $tabs;
+            foreach ($current as $name => $tab) {
+                $this->tabs->add($name, $tab);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * @return Html
      */
     public function getActionBar()
