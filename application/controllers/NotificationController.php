@@ -6,6 +6,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaNotification;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class NotificationController extends ObjectController
 {
@@ -30,6 +31,18 @@ class NotificationController extends ObjectController
                     $tab->getUrl()->setParam('service', $service);
                 }
             }
+        }
+    }
+
+    /**
+     * @param DirectorObjectForm $form
+     */
+    protected function beforeHandlingEditRequest($form)
+    {
+        if ($this->object->isTemplate()) {
+            $form->setListUrl('director/notifications/templates');
+        } else {
+            $form->setListUrl('director/notifications/applyrules');
         }
     }
 
