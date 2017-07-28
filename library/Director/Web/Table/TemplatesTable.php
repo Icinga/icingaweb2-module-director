@@ -55,12 +55,17 @@ class TemplatesTable extends ZfQueryBasedTable
             'name' => $name
         ]);
 
-        return $this::tr([
-            $this::td(new Link($caption, $url)),
-            $this::td(new Link(new Icon('plus'), "director/$type/add", [
-                'type' => 'object',
-                'imports' => $name
-            ]))
+        return $this::row([
+            new Link($caption, $url),
+            [
+                new Link(new Icon('plus'), "director/$type/add", [
+                    'type' => 'object',
+                    'imports' => $name
+                ]),
+                new Link(new Icon('history'), "director/$type/history", [
+                    'name' => $name
+                ])
+            ]
         ]);
     }
 

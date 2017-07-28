@@ -135,11 +135,10 @@ abstract class TemplateController extends CompatController
             $list->addItem(new FormattedString(
                 $this->translate('Create a new %s inheriting from this one'),
                 [Link::create(
-                        $this->translate('Template'),
-                        "director/$type/add",
-                        ['imports' => $templateName, 'type' => 'template']
-                    )
-                ]
+                    $this->translate('Template'),
+                    "director/$type/add",
+                    ['imports' => $templateName, 'type' => 'template']
+                )]
             ));
         }
         if ($template->supportsApplyRules()) {

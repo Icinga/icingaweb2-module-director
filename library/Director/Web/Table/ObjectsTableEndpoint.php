@@ -68,6 +68,7 @@ class ObjectsTableEndpoint extends ObjectsTable
     public function prepareQuery()
     {
         if ($this->deploymentEndpoint === null) {
+            /** @var \Icinga\Module\Director\Db $c */
             $c = $this->connection();
             if ($c->hasDeploymentEndpoint()) {
                 $this->deploymentEndpoint = $c->getDeploymentEndpointName();

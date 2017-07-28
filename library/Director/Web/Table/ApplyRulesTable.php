@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -23,6 +24,13 @@ class ApplyRulesTable extends ZfQueryBasedTable
     ];
 
     private $type;
+
+    public static function create($type, Db $db)
+    {
+        $table = new static($db);
+        $table->setType($type);
+        return $table;
+    }
 
     public function setType($type)
     {
