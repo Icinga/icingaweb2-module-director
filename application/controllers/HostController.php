@@ -24,24 +24,6 @@ use ipl\Web\Widget\ActionBar;
 
 class HostController extends ObjectController
 {
-    public function init()
-    {
-        parent::init();
-        if ($this->object) {
-            $tabs = $this->tabs();
-            $name = $this->object->getObjectName();
-            $tabs->add('services', [
-                'url'       => 'director/host/services',
-                'urlParams' => ['name' => $name],
-                'label'     => 'Services'
-            ])->add('agent', [
-                'url'       => 'director/host/agent',
-                'urlParams' => ['name' => $name],
-                'label'     => 'Agent'
-            ]);
-        }
-    }
-
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/hosts');

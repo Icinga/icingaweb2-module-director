@@ -105,7 +105,7 @@ class ObjectTabs extends Tabs
         if ($object->supportsRanges()) {
             $this->add('ranges', [
                 'url'       => 'director/timeperiod/ranges',
-                'urlParams' => $object->getUrlParams(),
+                'urlParams' => $params,
                 'label'     => $this->translate('Ranges')
             ]);
         }
@@ -115,6 +115,18 @@ class ObjectTabs extends Tabs
                 'url'       => 'director/inspect/types',
                 'urlParams' => ['endpoint' => $object->getObjectName()],
                 'label'     => $this->translate('Inspect')
+            ]);
+        }
+
+        if ($object->getShortTableName() === 'host') {
+            $this->add('services', [
+                'url' => 'director/host/services',
+                'urlParams' => $params,
+                'label' => $this->translate('Services')
+            ])->add('agent', [
+                'url' => 'director/host/agent',
+                'urlParams' => $params,
+                'label' => $this->translate('Agent')
             ]);
         }
     }
