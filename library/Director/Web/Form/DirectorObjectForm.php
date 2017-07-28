@@ -105,6 +105,9 @@ abstract class DirectorObjectForm extends DirectorForm
             if ($this->preferredObjectType) {
                 $values['object_type'] = $this->preferredObjectType;
             }
+            if ($this->presetImports) {
+                $values['imports'] = $this->presetImports;
+            }
 
             $this->object = $class::create($values, $this->db);
             foreach ($this->getValues() as $key => $value) {
@@ -679,9 +682,10 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function onRequest()
     {
-        $object = $this->object();
-        $this->setDefaultsFromObject($object);
-        $this->prepareFields($object);
+        if ($this->object !== null) {
+            $this->setDefaultsFromObject($this->object);
+        }
+        $this->prepareFields($this->object());
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
@@ -727,7 +731,7 @@ abstract class DirectorObjectForm extends DirectorForm
                     }
                 }
 
-                if ($value !== null) {
+                if ($value !== null && $value !== []) {
                     $element->setValue($value);
                 }
             }
@@ -835,6 +839,12 @@ abstract class DirectorObjectForm extends DirectorForm
             if ($this->hasBeenSent()) {
                 return $this->getSentValue($name, $default);
             } else {
+                if ($name === 'object_type' && $this->preferredObjectType) {
+                    return $this->preferredObjectType;
+                }
+                if ($name === 'imports' && $this->presetImports) {
+                    return $this->presetImports;
+                }
                 if ($this->valueIsEmpty($val = $this->getValue($name))) {
                     return $default;
                 } else {
@@ -1040,6 +1050,10 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function addImportsElement($required = null)
     {
+        if ($this->presetImports) {
+            return $this;
+        }
+
         if (in_array($this->getObjectShortClassName(), ['TimePeriod'])) {
             $required = false;
         } else {

@@ -120,6 +120,8 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         if ($this->object) {
             $this->addHidden('object_type', $this->object->object_type);
+        } elseif ($this->preferredObjectType) {
+            $this->addHidden('object_type', $this->preferredObjectType);
         } else {
             $this->addHidden('object_type', 'template');
         }

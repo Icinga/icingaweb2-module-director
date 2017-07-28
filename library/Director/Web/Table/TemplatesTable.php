@@ -59,7 +59,7 @@ class TemplatesTable extends ZfQueryBasedTable
             $this::td(new Link($caption, $url)),
             $this::td(new Link(new Icon('plus'), "director/$type/add", [
                 'type' => 'object',
-                'import' => $name
+                'imports' => $name
             ]))
         ]);
     }

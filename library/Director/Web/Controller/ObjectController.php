@@ -185,6 +185,7 @@ abstract class ObjectController extends ActionController
 
     public function addAction()
     {
+        $imports = $this->params->shift('imports');
         $this->tabs()->activate('add');
         $type = $this->getType();
         $ltype = strtolower($type);
@@ -194,7 +195,7 @@ abstract class ObjectController extends ActionController
         $form = $this->loadForm('icinga' . ucfirst($type))
             ->setDb($this->db())
             ->setAuth($this->Auth())
-            ->presetImports($this->params->shift('imports'))
+            ->presetImports($imports)
             ->setSuccessUrl($url);
 
         if ($oType = $this->params->shift('type')) {
@@ -209,10 +210,18 @@ abstract class ObjectController extends ActionController
             );
         } else {
             $this->assertPermission("director/${ltype}s");
-            $this->addTitle(
-                $this->translate('Add new Icinga %s'),
-                ucfirst($ltype)
-            );
+            if (is_string($imports) && strlen($imports)) {
+                $this->addTitle(
+                    $this->translate('Add %s: %s'),
+                    $this->translate(ucfirst($ltype)),
+                    $imports
+                );
+            } else {
+                $this->addTitle(
+                    $this->translate('Add new Icinga %s'),
+                    ucfirst($ltype)
+                );
+            }
         }
 
         $this->beforeHandlingAddRequest($form);
