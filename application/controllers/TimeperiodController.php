@@ -2,47 +2,40 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\IcingaTimePeriodRangeForm;
+use Icinga\Module\Director\Objects\IcingaTimePeriod;
 use Icinga\Module\Director\Web\Controller\ObjectController;
+use ipl\Html\Link;
 
 class TimeperiodController extends ObjectController
 {
-    public function init()
-    {
-        parent::init();
-        if ($this->object && $this->object->hasBeenLoadedFromDb()) {
-            $this->getTabs()->add('ranges', array(
-                'url'       => 'director/timeperiod/ranges',
-                'urlParams' => $this->object->getUrlParams(),
-                'label'     => $this->translate('Ranges')
-            ));
-        }
-    }
-
     public function rangesAction()
     {
-        $this->getTabs()->activate('ranges');
-        $this->view->form = $form = $this->loadForm('icingaTimePeriodRange');
-        $form
-            ->setTimePeriod($this->object)
+        /** @var IcingaTimePeriod $object */
+        $object = $this->object;
+        $this->tabs()->activate('ranges');
+        $this->addTitle($this->translate('Time period ranges'));
+        $form = IcingaTimePeriodRangeForm::load()
+            ->setTimePeriod($object)
             ->setDb($this->db());
+
         if ($name = $this->params->get('range')) {
-            $this->view->actionLinks = $this->view->qlink(
+            $this->actions()->add(new Link(
                 $this->translate('back'),
-                $this->getRequest()->getUrl()->without('range_id'),
+                $this->getRequest()->getUrl()->without('range'),
                 null,
-                array('class' => 'icon-left-big')
-            );
-            $form->loadObject(array(
+                ['class' => 'icon-left-big']
+            ));
+            $form->loadObject([
                 'timeperiod_id' => $this->object->id,
                 'range_key'     => $name,
                 'range_type'    => $this->params->get('range_type')
-            ));
+            ]);
         }
         $form->handleRequest();
 
-        $this->view->table = $this->loadTable('icingaTimePeriodRange')
+        $table = $this->loadTable('icingaTimePeriodRange')
             ->setTimePeriod($this->object);
-        $this->view->title = $this->translate('Time period ranges');
-        $this->render('object/fields', null, true); // TODO: render table
+        $this->content()->add([$form, $table]);
     }
 }

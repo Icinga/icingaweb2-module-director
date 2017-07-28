@@ -102,6 +102,14 @@ class ObjectTabs extends Tabs
             ]);
         }
 
+        if ($object->supportsRanges()) {
+            $this->add('ranges', [
+                'url'       => 'director/timeperiod/ranges',
+                'urlParams' => $object->getUrlParams(),
+                'label'     => $this->translate('Ranges')
+            ]);
+        }
+
         if ($object->getShortTableName() === 'endpoint') {
             $this->add('inspect', [
                 'url'       => 'director/inspect/types',
