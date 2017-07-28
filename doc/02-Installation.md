@@ -9,11 +9,15 @@ to the latest version, please [read on here](05-Upgrading.md).
 Requirements
 ------------
 
-* Icinga 2 (&gt;= 2.4.3)
-* Icinga Web 2 (&gt;= 2.2.0 - but &gt;= 2.4.1 is strongly suggested)
-* A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1) database (MariaDB and
-  other forks are also fine)
-* php5-curl
+* Icinga 2 (&gt;= 2.6.0). All versions sinve 2.4.3 should also work fine, but
+  we do no longer test and support them.
+* Icinga Web 2 (&gt;= 2.4.1). All versions since 2.2 should also work fine, but
+  might show smaller UI bugs and are not actively tested
+* A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
+  MySQL forks are also fine. Mentioned versions are the required minimum,
+  for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
+* PHP (>= 5.4). For best performance please consider use 7.x
+* php-curl
 
 Database
 --------
