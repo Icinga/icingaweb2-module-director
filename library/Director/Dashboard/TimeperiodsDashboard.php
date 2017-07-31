@@ -5,8 +5,8 @@ namespace Icinga\Module\Director\Dashboard;
 class TimeperiodsDashboard extends Dashboard
 {
     protected $dashletNames = [
-        'TimeperiodObject'
-        // 'TimeperiodTemplate',
+        'TimeperiodObject',
+        'TimeperiodTemplate',
     ];
 
     public function getTitle()

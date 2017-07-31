@@ -6,8 +6,8 @@ class UsersDashboard extends Dashboard
 {
     protected $dashletNames = [
         'UserObject',
-        // 'UserTemplate',
-        // 'UserGroup',
+        'UserTemplate',
+        'UserGroups',
     ];
 
     public function getTitle()
