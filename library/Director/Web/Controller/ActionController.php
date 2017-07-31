@@ -2,12 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
-use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Monitoring;
-use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
@@ -137,30 +133,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
         )->activate('tab');
     }
 
-    protected function setConfigTabs()
-    {
-        $this->view->tabs = Widget::create('tabs')->add(
-            'deploymentlog',
-            array(
-                'label' => $this->translate('Deployments'),
-                'url'   => 'director/list/deploymentlog'
-            )
-        )->add(
-            'generatedconfig',
-            array(
-                'label' => $this->translate('Configs'),
-                'url'   => 'director/list/generatedconfig'
-            )
-        )->add(
-            'activitylog',
-            array(
-                'label' => $this->translate('Activity Log'),
-                'url'   => 'director/list/activitylog'
-            )
-        );
-        return $this->view->tabs;
-    }
-
     /**
      * @param string $permission
      * @return $this
@@ -195,29 +167,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $this->view->tabs;
     }
 
-    protected function provideQuickSearch()
-    {
-        $htm = '<form action="%s" class="quicksearch inline" method="post">'
-             . '<input type="text" name="q" value="" placeholder="%s" class="search" />'
-             . '</form>';
-
-        $this->view->quickSearch = sprintf(
-            $htm,
-            $this->getRequest()->getUrl()->without(array('q', 'page', 'modifyFilter')),
-            $this->translate('Search...')
-        );
-
-        return $this;
-    }
-
-    protected function shorten($string, $length)
-    {
-        if (strlen($string) > $length) {
-            return substr($string, 0, $length) . '...';
-        }
-        return $string;
-    }
-
     protected function setViewScript($name)
     {
         $this->_helper->viewRenderer->setNoController(true);
@@ -235,102 +184,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
     protected function prepareAndRenderTable($name)
     {
         $this->prepareTable($name)->setViewScript('list/table');
-    }
-
-    protected function provideFilterEditorForTable(QuickTable $table, IcingaObject $dummy = null)
-    {
-        $filterEditor = $table->getFilterEditor($this->getRequest());
-        $filter = $filterEditor->getFilter();
-
-        if ($filter->isEmpty()) {
-            if ($this->params->get('modifyFilter')) {
-                $this->view->addLink .= ' ' . $this->view->qlink(
-                    $this->translate('Show unfiltered'),
-                    $this->getRequest()->getUrl()->setParams(array()),
-                    null,
-                    array(
-                        'class' => 'icon-cancel',
-                        'data-base-target' => '_self',
-                    )
-                );
-            } else {
-                $this->view->addLink .= ' ' . $this->view->qlink(
-                    $this->translate('Filter'),
-                    $this->getRequest()->getUrl()->with('modifyFilter', true),
-                    null,
-                    array(
-                        'class' => 'icon-search',
-                        'data-base-target' => '_self',
-                    )
-                );
-            }
-        } else {
-            $this->view->addLink .= ' ' . $this->view->qlink(
-                $this->shorten($filter, 32),
-                $this->getRequest()->getUrl()->with('modifyFilter', true),
-                null,
-                array(
-                    'class' => 'icon-search',
-                    'data-base-target' => '_self',
-                )
-            );
-
-            $this->view->addLink .= ' ' . $this->view->qlink(
-                $this->translate('Show unfiltered'),
-                $this->getRequest()->getUrl()->setParams(array()),
-                null,
-                array(
-                    'class' => 'icon-cancel',
-                    'data-base-target' => '_self',
-                )
-            );
-        }
-
-        if ($this->params->get('modifyFilter')) {
-            $this->view->filterEditor = $filterEditor;
-        }
-
-        if ($this->getRequest()->isApiRequest()) {
-            if ($dummy === null) {
-                throw new NotFoundError('Not accessible via API');
-            }
-
-            $this->getResponse()->setHeader('Content-Type', 'application/json', true);
-            $this->_helper->layout()->disableLayout();
-            $this->_helper->viewRenderer->setNoRender(true);
-
-            echo '{ "objects": [' . "\n";
-            $objects = array();
-            Db\Cache\PrefetchCache::initialize($this->db());
-
-            $out = '';
-            $cnt = 0;
-            foreach ($dummy::prefetchAll($this->db) as $object) {
-                // $objects[] = $object->toPlainObject(false, true);
-                // continue;
-                $out .= json_encode($object->toPlainObject(false, true), JSON_PRETTY_PRINT) . "\n";
-                $cnt++;
-                if ($cnt > 50) {
-                    echo $out;
-                    flush();
-                    $cnt = 0;
-                    $out = '';
-                }
-            }
-
-            if ($cnt > 0) {
-                echo $out;
-            }
-
-            echo "] }\n";
-            Benchmark::measure('All done');
-            // $this->sendJson((object) array('objects' => $objects));
-            echo Benchmark::dump();
-            return;
-        }
-
-        $this->view->table = $this->applyPaginationLimits($table);
-        $this->provideQuickSearch();
     }
 
     public function postDispatch()
