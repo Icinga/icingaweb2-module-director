@@ -108,7 +108,7 @@ class DataController extends ActionController
             ->setDb($this->db())
             ->setList($list);
 
-        if ($entryName) {
+        if (null !== $entryName) {
             $form->loadObject([
                 'list_id'    => $listId,
                 'entry_name' => $entryName
