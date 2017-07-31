@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Db\Cache;
 
+use Icinga\Application\Benchmark;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -16,6 +17,7 @@ class CustomVariableCache
 
     public function __construct(IcingaObject $object)
     {
+        Benchmark::measure('Initializing CustomVariableCache');
         $connection = $object->getConnection();
         $db = $connection->getDbAdapter();
 
@@ -54,6 +56,8 @@ class CustomVariableCache
                 $this->rowsById[$id] = array($row);
             }
         }
+
+        Benchmark::measure('Filled CustomVariableCache');
     }
 
     public function getVarsForObject(IcingaObject $object)

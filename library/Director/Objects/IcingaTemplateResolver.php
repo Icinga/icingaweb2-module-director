@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Application\Benchmark;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\NestingError;
@@ -379,6 +380,7 @@ class IcingaTemplateResolver
     {
         $type = $this->type;
 
+        Benchmark::measure('Preparing TemplateResolver lookup tables');
         $templates = $this->fetchTemplates();
 
         $ids = array();
@@ -423,6 +425,7 @@ class IcingaTemplateResolver
         self::$templates[$type] = $templates; // TODO: this is unused, isn't it?
         self::$idToName[$type]  = $idToName;
         self::$nameToId[$type]  = $nameToId;
+        Benchmark::measure('Preparing TemplateResolver lookup tables');
     }
 
     protected function fetchTemplates()
