@@ -41,30 +41,14 @@ abstract class ObjectController extends ActionController
         parent::init();
 
         if ($this->getRequest()->isApiRequest()) {
-            $response = $this->getResponse();
-            try {
+            $this->handleApiRequest();
+        } else {
+            $type = strtolower($this->getType());
+            if (null !== $this->params->get('name') || $this->params->get('id')) {
                 $this->loadObject();
-                $this->handleApiRequest();
-            } catch (NotFoundError $e) {
-                $response->setHttpResponseCode(404);
-                $this->sendJson($response, (object) array('error' => $e->getMessage()));
-            } catch (DuplicateKeyException $e) {
-                $response->setHttpResponseCode(422);
-                $this->sendJson($response, (object) array('error' => $e->getMessage()));
-            } catch (Exception $e) {
-                if ($response->getHttpResponseCode() === 200) {
-                    $response->setHttpResponseCode(500);
-                }
-
-                $this->sendJson($response, (object) array('error' => $e->getMessage()));
             }
+            $this->tabs(new ObjectTabs($type, $this->getAuth(), $this->object));
         }
-
-        $type = strtolower($this->getType());
-        if ($this->params->get('name') || $this->params->get('id')) {
-            $this->loadObject();
-        }
-        $this->tabs(new ObjectTabs($type, $this->getAuth(), $this->object));
     }
 
     public function indexAction()
@@ -355,9 +339,8 @@ abstract class ObjectController extends ActionController
 
     protected function loadObject()
     {
-        $info = new DeploymentInfo($this->db());
         if ($this->object === null) {
-            if ($name = $this->params->get('name')) {
+            if (null !== ($name = $this->params->get('name'))) {
                 $this->object = IcingaObject::loadByType(
                     $this->getType(),
                     $name,
@@ -384,19 +367,49 @@ abstract class ObjectController extends ActionController
                 }
             }
 
-            $info->setObject($this->object);
-        }
+            if ($this->object !== null) {
+                $info = new DeploymentInfo($this->db());
+                $info->setObject($this->object);
 
-        if (! $this->getRequest()->isApiRequest()) {
-            $this->actions()->add(
-                DeploymentLinkForm::create($this->db(), $info, $this->Auth(), $this->api())->handleRequest()
-            );
+                if (! $this->getRequest()->isApiRequest()) {
+                    $this->actions()->add(
+                        DeploymentLinkForm::create($this->db(), $info, $this->Auth(), $this->api())->handleRequest()
+                    );
+                }
+            }
         }
 
         return $this->object;
     }
 
     protected function handleApiRequest()
+    {
+        $response = $this->getResponse();
+        try {
+            $this->loadObject();
+            $this->processApiRequest();
+        } catch (NotFoundError $e) {
+            $response->setHttpResponseCode(404);
+            $this->sendJson($response, (object) ['error' => $e->getMessage()]);
+            return;
+        } catch (DuplicateKeyException $e) {
+            $response->setHttpResponseCode(422);
+            $this->sendJson($response, (object) ['error' => $e->getMessage()]);
+            return;
+        } catch (Exception $e) {
+            if ($response->getHttpResponseCode() === 200) {
+                $response->setHttpResponseCode(500);
+            }
+
+            $this->sendJson($response, (object) ['error' => $e->getMessage()]);
+        }
+
+        if ($this->getRequest()->getActionName() !== 'index') {
+            throw new NotFoundError('Not found');
+        }
+    }
+
+    protected function processApiRequest()
     {
         $request = $this->getRequest();
         $db = $this->db();
@@ -488,7 +501,7 @@ abstract class ObjectController extends ActionController
     {
         if (! $this->object) {
             $this->getResponse()->setHttpResponseCode(404);
-            if (! $this->params->get('name')) {
+            if (null === $this->params->get('name')) {
                 throw new NotFoundError('You need to pass a "name" parameter to access a specific object');
             } else {
                 throw new NotFoundError('No such object available');
