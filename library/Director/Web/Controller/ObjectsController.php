@@ -54,6 +54,10 @@ abstract class ObjectsController extends ActionController
             ->addTitle($this->translate(ucfirst(strtolower($type)) . 's'))
             ->actions(new ObjectsActionBar($type, $this->url()));
 
+        if ($type === 'command' && $this->params->get('type') === 'external_object') {
+            $this->tabs()->activate('external');
+        }
+
         $this->table = ObjectsTable::create($type, $this->db())
             ->setAuth($this->Auth())
             ->renderTo($this);

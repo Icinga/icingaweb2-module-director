@@ -23,6 +23,14 @@ class ObjectsTabs extends Tabs
             'label' => $this->translate(ucfirst($type) . 's'),
         ));
 
+        if ($object->getShortTableName() === 'command') {
+            $this->add('external', array(
+                'url'   => sprintf('director/%ss', strtolower($type)),
+                'urlParams' => ['type' => 'external_object'],
+                'label' => $this->translate('External'),
+            ));
+        }
+
         if ($auth->hasPermission('director/admin') || (
                 $object->getShortTableName() && $auth->hasPermission('director/notifications')
             )) {
