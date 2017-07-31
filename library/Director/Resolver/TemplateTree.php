@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Resolver;
 
+use Icinga\Application\Benchmark;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -20,6 +21,12 @@ class TemplateTree
 
     protected $tree;
 
+    protected $type;
+
+    protected $objectMaps;
+
+    protected $names;
+
     public function __construct($type, Db $connection)
     {
         $this->type = $type;
@@ -30,6 +37,51 @@ class TemplateTree
     public function getType()
     {
         return $this->type;
+    }
+
+    public function listParentNamesForObject(IcingaObject $object)
+    {
+        if ($this->objectMaps === null) {
+            $this->loadObjectMaps();
+        }
+
+        $id = $object->getProperty('id');
+        $parents = [];
+        if (array_key_exists($id, $this->objectMaps)) {
+            foreach ($this->objectMaps[$id] as $pid) {
+                $parents[] = $this->names[$pid];
+            }
+        }
+
+        return $parents;
+    }
+
+    protected function loadObjectMaps()
+    {
+        $this->requireTree();
+
+        $map = [];
+        $db    = $this->db;
+        $type  = $this->type;
+        $table = "icinga_${type}_inheritance";
+
+        $query = $db->select()->from(
+            ['i' => $table],
+            [
+                'object' => "i.${type}_id",
+                'parent' => "i.parent_${type}_id",
+            ]
+        )->order('i.weight');
+
+        foreach ($db->fetchAll($query) as $row) {
+            $id = $row->object;
+            if (! array_key_exists($id, $map)) {
+                $map[$id] = [];
+            }
+            $map[$id][] = $row->parent;
+        }
+
+        $this->objectMaps = $map;
     }
 
     public function listParentIdsFor(IcingaObject $object)
@@ -176,13 +228,16 @@ class TemplateTree
 
     protected function prepareTree()
     {
+        Benchmark::measure(sprintf('Prepare "%s" Template Tree', $this->type));
         $templates = $this->fetchTemplates();
         $parents = [];
         $rootNodes = [];
         $children = [];
+        $names = [];
         foreach ($templates as $row) {
             $id = (int) $row->id;
             $pid = (int) $row->parent_id;
+            $names[$id] = $row->name;
             if (! array_key_exists($id, $parents)) {
                 $parents[$id] = [];
             }
@@ -195,6 +250,7 @@ class TemplateTree
                 continue;
             }
 
+            $names[$pid] = $row->parent_name;
             $parents[$id][$pid] = $row->parent_name;
 
             if (! array_key_exists($pid, $children)) {
@@ -207,6 +263,8 @@ class TemplateTree
         $this->parents   = $parents;
         $this->children  = $children;
         $this->rootNodes = $rootNodes;
+        $this->names = $names;
+        Benchmark::measure(sprintf('"%s" Template Tree ready', $this->type));
     }
 
     public function fetchObjects()
