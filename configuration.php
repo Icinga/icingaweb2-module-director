@@ -61,7 +61,7 @@ $this->provideConfigTab('config', array(
 ));
 
 $section = $this->menuSection(
-    N_('Icinga Director')
+    N_('Director')
 )->setUrl('director')->setPriority(60)->setIcon(
     'cubes'
 )->setRenderer(array(
