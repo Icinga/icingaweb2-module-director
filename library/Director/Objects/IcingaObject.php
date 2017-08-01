@@ -18,6 +18,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Icinga\Module\Director\Resolver\TemplateTree;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
@@ -129,6 +130,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     private $cachedPlainUnmodified;
 
     private $templateResolver;
+
+    protected static $tree;
 
     /**
      * @return Db
@@ -2526,9 +2529,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->supportsImports()) {
             if ($resolved) {
-                $props['imports'] = array();
+                $props['imports'] = [];
             } else {
-                $props['imports'] = $this->imports()->listImportNames();
+                $props['imports'] = $this->listImportNames();
             }
         }
 
@@ -2585,6 +2588,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ksort($props);
 
         return (object) $props;
+    }
+
+    public function listImportNames()
+    {
+        if (PrefetchCache::shouldBeUsed()) {
+            return PrefetchCache::instance()->listImportNames($this);
+        } else {
+            return $this->imports()->listImportNames();
+        }
     }
 
     protected function differsFromDefaultValue($key, $value)

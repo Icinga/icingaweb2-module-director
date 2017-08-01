@@ -7,6 +7,7 @@ use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaTemplateResolver;
+use Icinga\Module\Director\Resolver\TemplateTree;
 
 /**
  * Central prefetch cache
@@ -28,6 +29,8 @@ class PrefetchCache
     protected $templateResolvers = array();
 
     protected $renderedVars = array();
+
+    protected $templateTrees = array();
 
     public static function initialize(Db $db)
     {
@@ -76,6 +79,11 @@ class PrefetchCache
     public function imports(IcingaObject $object)
     {
         return $this->templateResolver($object)->setObject($object)->fetchParents();
+    }
+
+    public function listImportNames(IcingaObject $object)
+    {
+        return $this->templateTree($object)->listParentNamesForObject($object);
     }
 
     /* Hint: not implemented, this happens in DbObject right now
@@ -134,6 +142,19 @@ class PrefetchCache
         }
 
         return $this->groupsCaches[$key];
+    }
+
+    protected function templateTree(IcingaObject $object)
+    {
+        $key = $object->getShortTableName();
+        if (! array_key_exists($key, $this->templateTrees)) {
+            $this->templateTrees[$key] = new TemplateTree(
+                $key,
+                $object->getConnection()
+            );
+        }
+
+        return $this->templateTrees[$key];
     }
 
     public function __destruct()
