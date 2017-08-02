@@ -138,12 +138,16 @@ class SettingsForm extends DirectorForm
 
     protected function eventuallyConfiguredEnum($name, $enum)
     {
-        return array(
-            null => sprintf(
+        if (array_key_exists($name, $enum)) {
+            $default = sprintf(
                 $this->translate('%s (default)'),
                 $enum[$this->settings->getDefaultValue($name)]
-            )
-        ) + $enum;
+            );
+        } else {
+            $default = $this->translate('- please choose -');
+        }
+
+        return [null => $default] + $enum;
     }
 
     public function setSettings(Settings $settings)
