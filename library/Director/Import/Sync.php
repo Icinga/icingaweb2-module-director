@@ -51,7 +51,7 @@ class Sync
     /**
      * Objects to work with
      *
-     * @var array
+     * @var IcingaObject[]
      */
     protected $objects;
 
@@ -71,6 +71,8 @@ class Sync
     protected $errors = array();
 
     protected $syncProperties;
+
+    protected $replaceVars = false;
 
     /**
      * @var SyncRun
@@ -181,6 +183,10 @@ class Sync
     {
         $this->syncProperties = $this->rule->fetchSyncProperties();
         foreach ($this->syncProperties as $key => $prop) {
+            if ($prop->destination_field === 'vars' && $prop->merge_policy === 'override') {
+                $this->replaceVars = true;
+            }
+
             if (! strlen($prop->filter_expression)) {
                 continue;
             }
@@ -247,8 +253,8 @@ class Sync
 
     /**
      * Fetch latest imported data rows from all involved import sources
-     *
-     * @return self
+     * @return Sync
+     * @throws IcingaException
      */
     protected function fetchImportedData()
     {
@@ -395,7 +401,7 @@ class Sync
 
         // TODO: should be obsoleted by a better "loadFiltered" method
         if ($this->rule->object_type === 'datalistEntry') {
-            $this->removeForeignListEntries($this->objects);
+            $this->removeForeignListEntries();
         }
 
         return $this;
@@ -500,13 +506,16 @@ class Sync
         return $this;
     }
 
+    /**
+     * @param IcingaObject $object
+     * @return $this
+     */
     protected function setResolver($object)
     {
-        if (! ($object instanceof IcingaObject)) {
+        if (! ($object instanceof IcingaHost || $object instanceof IcingaHostGroup)) {
             return $this;
         }
         if ($resolver = $this->gethostGroupMembershipResolver()) {
-            /** @var IcingaHost|IcingaHostGroup $object */
             $object->setHostGroupMembershipResolver($resolver);
         }
 
@@ -522,6 +531,9 @@ class Sync
         return $this;
     }
 
+    /**
+     * @return bool|HostGroupMembershipResolver
+     */
     protected function gethostGroupMembershipResolver()
     {
         if ($this->hostGroupMembershipResolver === null) {
@@ -577,7 +589,7 @@ class Sync
                     case 'merge':
                         // TODO: re-evaluate merge settings. vars.x instead of
                         //       just "vars" might suffice.
-                        $this->objects[$key]->merge($object);
+                        $this->objects[$key]->merge($object, $this->replaceVars);
                         break;
 
                     default:
@@ -620,8 +632,9 @@ class Sync
 
     /**
      * Runs a SyncRule and applies all resulting changes
-     *
      * @return int
+     * @throws Exception
+     * @throws IcingaException
      */
     public function apply()
     {

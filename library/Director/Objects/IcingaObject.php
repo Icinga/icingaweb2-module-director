@@ -2412,7 +2412,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     // TODO: with rules? What if I want to override vars? Drop in favour of vars.x?
-    public function merge(IcingaObject $object)
+    public function merge(IcingaObject $object, $replaceVars = false)
     {
         $object = clone($object);
 
@@ -2425,9 +2425,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($object->supportsCustomVars()) {
             $myVars = $this->vars();
-            /** @var CustomVariables $vars */
-            foreach ($vars as $key => $var) {
-                $myVars->set($key, $var);
+            if ($replaceVars) {
+                $this->set('vars', $vars);
+            } else {
+                /** @var CustomVariables $vars */
+                foreach ($vars as $key => $var) {
+                    $myVars->set($key, $var);
+                }
             }
         }
 
