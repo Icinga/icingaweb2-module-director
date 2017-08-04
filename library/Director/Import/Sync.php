@@ -156,7 +156,9 @@ class Sync
      */
     protected function raiseLimits()
     {
-        ini_set('memory_limit', '768M');
+        if ((string) ini_get('memory_limit') !== '-1') {
+            ini_set('memory_limit', '1024M');
+        }
         ini_set('max_execution_time', 0);
 
         return $this;

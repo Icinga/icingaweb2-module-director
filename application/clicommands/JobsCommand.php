@@ -20,6 +20,7 @@ class JobsCommand extends Command
 
         $jobId = $this->params->shift();
         if ($jobId) {
+            $this->raiseLimits();
             $job = DirectorJob::load($jobId, $this->db());
             $job->run();
             exit(0);
