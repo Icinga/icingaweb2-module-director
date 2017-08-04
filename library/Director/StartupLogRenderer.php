@@ -4,7 +4,7 @@ namespace Icinga\Module\Director;
 
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use ipl\Html\Link;
-use ipl\Html\Util;
+use ipl\Html\Util as iplUtil;
 use ipl\Html\ValidHtml;
 
 class StartupLogRenderer implements ValidHtml
@@ -20,7 +20,7 @@ class StartupLogRenderer implements ValidHtml
     public function render()
     {
         $deployment = $this->deployment;
-        $log = Util::escapeForHtml($deployment->get('startup_log'));
+        $log = iplUtil::escapeForHtml($deployment->get('startup_log'));
         $lines = array();
         $severity = 'information';
         $sevPattern = '/^(debug|notice|information|warning|critical)\/(\w+)/';
