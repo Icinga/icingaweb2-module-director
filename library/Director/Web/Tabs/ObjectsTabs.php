@@ -18,10 +18,13 @@ class ObjectsTabs extends Tabs
             $object = IcingaObject::createByType(substr($type, 0, -5));
         }
 
-        $this->add('index', array(
-            'url'   => sprintf('director/%ss', strtolower($type)),
-            'label' => $this->translate(ucfirst($type) . 's'),
-        ));
+        // TODO: plural?
+        if ($auth->hasPermission("director/${type}s")) {
+            $this->add('index', array(
+                'url'   => sprintf('director/%ss', strtolower($type)),
+                'label' => $this->translate(ucfirst($type) . 's'),
+            ));
+        }
 
         if ($object->getShortTableName() === 'command') {
             $this->add('external', array(
@@ -32,7 +35,7 @@ class ObjectsTabs extends Tabs
         }
 
         if ($auth->hasPermission('director/admin') || (
-                $object->getShortTableName() && $auth->hasPermission('director/notifications')
+                $object->getShortTableName() === 'notifications' && $auth->hasPermission('director/notifications')
             )) {
             if ($object->supportsApplyRules()) {
                 $this->add('applyrules', array(
@@ -61,17 +64,16 @@ class ObjectsTabs extends Tabs
         if ($auth->hasPermission('director/admin')) {
             if ($object->supportsChoices()) {
                 $this->add('choices', array(
-                    'url'    => sprintf('director/templatechoices/%s', $type),
+                    'url' => sprintf('director/templatechoices/%s', $type),
                     'label' => $this->translate('Choices')
                 ));
             }
-
-            if ($object->supportsSets()) {
-                $this->add('sets', array(
-                    'url'    => sprintf('director/%ss/sets', $type),
-                    'label' => $this->translate('Sets')
-                ));
-            }
+        }
+        if ($object->supportsSets() && $auth->hasPermission("director/${type}_sets")) {
+            $this->add('sets', array(
+                'url'    => sprintf('director/%ss/sets', $type),
+                'label' => $this->translate('Sets')
+            ));
         }
     }
 }

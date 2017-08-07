@@ -129,7 +129,9 @@ abstract class Dashboard extends Html implements Countable
         $tabs = new Tabs();
         foreach ($names as $name) {
             $dashboard = Dashboard::loadByName($name, $this->getDb());
-            $tabs->add($name, $this->createTabForDashboard($dashboard));
+            if ($dashboard->isAvailable()) {
+                $tabs->add($name, $this->createTabForDashboard($dashboard));
+            }
         }
 
         return $tabs;
