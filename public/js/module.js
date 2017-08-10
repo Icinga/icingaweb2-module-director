@@ -360,6 +360,7 @@
          * @param ev
          */
         enterSuggestionField: function(ev) {
+            return;
             var $el = $(ev.currentTarget);
             if ($el.val() === '' || $el.val().match(/\.$/)) {
                 this.getSuggestionList($el)
@@ -549,6 +550,14 @@
             if ($input.closest('form.editor').length) {
                return;
             }
+            var $set = $input.closest('.extensible-set');
+            if ($set.length) {
+                var $textInputs = $('input[type=text]', $set);
+                if ($textInputs.length > 1) {
+                    $textInputs.not(':first').attr('tabIndex', '-1');
+                }
+            }
+
             var $dd = $input.closest('dd');
             $dd.find('p.description').show();
             if ($dd.attr('id') && $dd.attr('id').match(/button/)) {
