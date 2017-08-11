@@ -380,7 +380,7 @@ class IcingaTemplateResolver
     {
         $type = $this->type;
 
-        Benchmark::measure('Preparing TemplateResolver lookup tables');
+        Benchmark::measure("Preparing '$type' TemplateResolver lookup tables");
         $templates = $this->fetchTemplates();
 
         $ids = array();
