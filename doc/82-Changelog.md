@@ -147,9 +147,9 @@ before switching to a new version.
   expect anyways.
 
 ### Testing
-* [Testing instructions](Testing.md) have been improved
+* [Testing instructions](93-Testing.md) have been improved
 * Running the test suite has been simplified
-* While we keep running our own [tests](Testing.md) on software platforms, tests
+* While we keep running our own [tests](93-Testing.md) on software platforms, tests
   are now also visible on Travis-CI and triggered for all pull requests
 
 ### Compatibility
