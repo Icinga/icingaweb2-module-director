@@ -40,6 +40,7 @@ trait QuickSearch
             Html::tag('input', [
                 'type' => 'text',
                 'name' => 'q',
+                'title' => $this->translate('Search is simple! Try to combine multiple words'),
                 'value' => $search,
                 'placeholder' => $this->translate('Search...'),
                 'class' => 'search'
