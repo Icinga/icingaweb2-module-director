@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaService;
+use ipl\Html\Html;
 use ipl\Web\Table\Extension\MultiSelect;
 use ipl\Html\Link;
 use ipl\Web\Url;
@@ -55,8 +56,13 @@ class ObjectsTableService extends ObjectsTable
             'id'   => $row->id,
         ]);
 
+        $hostField = static::td(
+            Link::create($row->host === null ? Html::span(['class' => 'error'], '- none -') : $row->host, $url));
+        if ($row->host === null) {
+            $hostField->attributes()->add('class', 'error');
+        }
         $tr = static::tr([
-            static::td(Link::create($row->host, $url)),
+            $hostField,
             static::td($row->object_name)
         ]);
 
@@ -68,7 +74,7 @@ class ObjectsTableService extends ObjectsTable
 
     public function prepareQuery()
     {
-        return parent::prepareQuery()->join(
+        return parent::prepareQuery()->joinLeft(
             ['h' => 'icinga_host'],
             "o.host_id = h.id AND h.object_type = 'object'",
             []
