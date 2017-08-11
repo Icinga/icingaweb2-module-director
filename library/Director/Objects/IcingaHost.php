@@ -221,7 +221,7 @@ class IcingaHost extends IcingaObject
 
         $props['zone_id'] = $this->getSingleResolvedProperty('zone_id');
 
-        $endpoint = IcingaEndpoint::create($props);
+        $endpoint = IcingaEndpoint::create($props, $this->connection);
 
         $zone = IcingaZone::create(array(
             'object_name' => $name,
