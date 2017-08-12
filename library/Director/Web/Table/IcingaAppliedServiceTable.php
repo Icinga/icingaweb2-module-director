@@ -22,9 +22,9 @@ class IcingaAppliedServiceTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
-        return $this::row(
+        return $this::row([
             new Link($row->service, 'director/service', ['id' => $row->id])
-        );
+        ]);
     }
 
     public function getColumnsToBeRendered()
