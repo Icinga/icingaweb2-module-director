@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db;
 use ipl\Html\Link;
-use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 
@@ -32,20 +31,6 @@ class ChoicesTable extends ZfQueryBasedTable
         return $table;
     }
 
-    public function renderTo(ControlsAndContent $controller)
-    {
-        $url = $controller->url();
-        $this->initializeOptionalQuickSearch($controller);
-        $controller->content()->add([
-            $this->getPaginator($url),
-            $this
-        ]);
-
-        if ($url->getParam('format') === 'sql') {
-            $controller->content()->prepend($this->dumpSqlQuery($url));
-        }
-    }
-
     public function getType()
     {
         return $this->type;
@@ -63,9 +48,9 @@ class ChoicesTable extends ZfQueryBasedTable
             'name' => $row->object_name
         ]);
 
-        return $this::tr(
-            $this::td(Link::create($row->object_name, $url))
-        );
+        return $this::row([
+            Link::create($row->object_name, $url)
+        ]);
     }
 
     protected function prepareQuery()
