@@ -10,23 +10,11 @@ use ipl\Html\Container;
 use ipl\Html\DeferredText;
 use ipl\Html\Html;
 use ipl\Html\Link;
-use ipl\Html\Table;
-use ipl\Translation\TranslationHelper;
 use ipl\Web\Widget\ControlsAndContent;
-use ipl\Web\Widget\Paginator;
-use ipl\Web\Table\Extension\QuickSearch;
 use ipl\Web\Url;
 
-abstract class ZfQueryBasedTable extends Table
+abstract class ZfQueryBasedTable extends QueryBasedTable
 {
-    use TranslationHelper;
-    use QuickSearch;
-
-    protected $defaultAttributes = [
-        'class' => ['common-table', 'table-row-selectable'],
-        'data-base-target' => '_next',
-    ];
-
     /** @var DbConnection */
     private $connection;
 
@@ -35,18 +23,16 @@ abstract class ZfQueryBasedTable extends Table
 
     private $query;
 
-    private $fetchedRows;
-
-    protected $lastDay;
-
-    private $isUsEnglish;
-
-    protected $searchColumns = [];
-
     public function __construct(DbConnection $connection)
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+    }
+
+    public static function show(ControlsAndContent $controller, DbConnection $db)
+    {
+        $table = new static($db);
+        $table->renderTo($controller);
     }
 
     public function getCountQuery()
@@ -59,23 +45,10 @@ abstract class ZfQueryBasedTable extends Table
         return new SelectPaginationAdapter($this->getQuery());
     }
 
-    public function getPaginator(Url $url)
-    {
-        return new Paginator(
-            $this->getPaginationAdapter(),
-            $url
-        );
-    }
-
     public function applyFilter(Filter $filter)
     {
         FilterRenderer::applyToQuery($filter, $this->getQuery());
         return $this;
-    }
-
-    protected function getSearchColumns()
-    {
-        return $this->searchColumns;
     }
 
     protected function search($search)
@@ -105,75 +78,9 @@ abstract class ZfQueryBasedTable extends Table
         return $this;
     }
 
-    abstract protected function prepareQuery();
-
-    public function renderContent()
+    protected function fetchQueryRows()
     {
-        if (count($this->getColumnsToBeRendered())) {
-            $this->generateHeader();
-        }
-        $this->fetchRows();
-
-        return parent::renderContent();
-    }
-
-    protected function splitByDay($timestamp)
-    {
-        $this->renderDayIfNew((int) $timestamp);
-    }
-
-    protected function fetchRows()
-    {
-        foreach ($this->fetch() as $row) {
-            // Hint: do not fetch the body first, the row might want to replace it
-            $tr = $this->renderRow($row);
-            $this->body()->add($tr);
-        }
-    }
-
-
-    protected function isUsEnglish()
-    {
-        if ($this->isUsEnglish === null) {
-            $this->isUsEnglish = in_array(setlocale(LC_ALL, 0), array('en_US.UTF-8', 'C'));
-        }
-
-        return $this->isUsEnglish;
-    }
-
-    /**
-     * @param  int $timestamp
-     */
-    protected function renderDayIfNew($timestamp)
-    {
-        if ($this->isUsEnglish()) {
-            $day = date('l, jS F Y', $timestamp);
-        } else {
-            $day = strftime('%A, %e. %B, %Y', $timestamp);
-        }
-
-        if ($this->lastDay !== $day) {
-            $this->nextHeader()->add(
-                $this::th($day, [
-                    'colspan' => 2,
-                    'class'   => 'table-header-day'
-                ])
-            );
-
-            $this->lastDay = $day;
-            $this->nextBody();
-        }
-    }
-
-    public function fetch()
-    {
-        $rows = $this->db->fetchAll(
-            $this->getQuery()
-        );
-
-        $this->fetchedRows = count($rows);
-
-        return $rows;
+        return $this->db->fetchAll($this->getQuery());
     }
 
     public function connection()
@@ -216,44 +123,5 @@ abstract class ZfQueryBasedTable extends Table
                 }
             )),
         ]);
-    }
-
-    public static function show(ControlsAndContent $controller, DbConnection $db)
-    {
-        $table = new static($db);
-        $table->renderTo($controller);
-    }
-
-    protected function initializeOptionalQuickSearch(ControlsAndContent $controller)
-    {
-        $columns = $this->getSearchColumns();
-        if (! empty($columns)) {
-            $this->search(
-                $this->getQuickSearch(
-                    $controller->controls(),
-                    $controller->url()
-                )
-            );
-        }
-    }
-
-    /**
-     * @param ControlsAndContent $controller
-     * @return $this
-     */
-    public function renderTo(ControlsAndContent $controller)
-    {
-        $url = $controller->url();
-        $c = $controller->content();
-        $paginator = $this->getPaginator($url);
-        $this->initializeOptionalQuickSearch($controller);
-        $controller->actions()->add($paginator);
-        $c->add($this);
-
-        if ($url->getParam('format') === 'sql') {
-            $c->prepend($this->dumpSqlQuery($url));
-        }
-
-        return $this;
     }
 }
