@@ -39,13 +39,17 @@ class TemplateTree
         return $this->type;
     }
 
-    public function listParentNamesForObject(IcingaObject $object)
+    public function listParentNamesFor(IcingaObject $object)
     {
-        if ($this->objectMaps === null) {
-            $this->loadObjectMaps();
+        $id = (int) $object->getProperty('id');
+        $this->requireTree();
+
+        if (array_key_exists($id, $this->parents)) {
+            return array_values($this->parents[$id]);
         }
 
-        $id = $object->getProperty('id');
+        $this->requireObjectMaps();
+
         $parents = [];
         if (array_key_exists($id, $this->objectMaps)) {
             foreach ($this->objectMaps[$id] as $pid) {
@@ -74,11 +78,11 @@ class TemplateTree
         )->order('i.weight');
 
         foreach ($db->fetchAll($query) as $row) {
-            $id = $row->object;
+            $id = (int) $row->object;
             if (! array_key_exists($id, $map)) {
                 $map[$id] = [];
             }
-            $map[$id][] = $row->parent;
+            $map[$id][] = (int) $row->parent;
         }
 
         $this->objectMaps = $map;
@@ -124,12 +128,29 @@ class TemplateTree
         }
     }
 
+    protected function requireObjectMaps()
+    {
+        if ($this->objectMaps === null) {
+            $this->loadObjectMaps();
+        }
+    }
+
     public function getParentsById($id)
     {
         $this->requireTree();
 
         if (array_key_exists($id, $this->parents)) {
             return $this->parents[$id];
+        }
+
+        $this->requireObjectMaps();
+        if (array_key_exists($id, $this->objectMaps)) {
+            $parents = [];
+            foreach ($this->objectMaps[$id] as $pid) {
+                $parents[$pid] = $this->names[$pid];
+            }
+
+            return $parents;
         } else {
             return [];
         }
@@ -144,7 +165,6 @@ class TemplateTree
             if (false !== ($key = array_search($name, $ancestors))) {
                 unset($ancestors[$key]);
             }
-
             $ancestors[$pid] = $name;
         }
 
