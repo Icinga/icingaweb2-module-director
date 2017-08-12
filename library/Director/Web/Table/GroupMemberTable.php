@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use ipl\Html\Link;
-use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Table\ZfQueryBasedTable;
 use ipl\Web\Url;
 
@@ -43,20 +42,6 @@ class GroupMemberTable extends ZfQueryBasedTable
     {
         $this->group = $group;
         return $this;
-    }
-
-    public function renderTo(ControlsAndContent $controller)
-    {
-        $url = $controller->url();
-        $this->initializeOptionalQuickSearch($controller);
-        $controller->content()->add([
-            $this->getPaginator($url),
-            $this
-        ]);
-
-        if ($url->getParam('format') === 'sql') {
-            $controller->content()->prepend($this->dumpSqlQuery($url));
-        }
     }
 
     public function getType()
@@ -103,11 +88,11 @@ class GroupMemberTable extends ZfQueryBasedTable
 
     protected function prepareQuery()
     {
-// select h.object_name, hg.object_name,
-// CASE WHEN hgh.host_id IS NULL THEN 'apply' ELSE 'direct' END AS assi
-// from icinga_hostgroup_host_resolved hgr join icinga_host h on h.id = hgr.host_id
-// join icinga_hostgroup hg on hgr.hostgroup_id = hg.id
-// left join icinga_hostgroup_host hgh on hgh.host_id = h.id and hgh.hostgroup_id = hg.id;
+        // select h.object_name, hg.object_name,
+        // CASE WHEN hgh.host_id IS NULL THEN 'apply' ELSE 'direct' END AS assi
+        // from icinga_hostgroup_host_resolved hgr join icinga_host h on h.id = hgr.host_id
+        // join icinga_hostgroup hg on hgr.hostgroup_id = hg.id
+        // left join icinga_hostgroup_host hgh on hgh.host_id = h.id and hgh.hostgroup_id = hg.id;
 
         $type = $this->getType();
         $columns = [
