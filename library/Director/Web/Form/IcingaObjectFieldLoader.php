@@ -448,10 +448,9 @@ class IcingaObjectFieldLoader
             //return array();
         }
 
-        $pathIds = $object->templateResolver()->listInheritancePathIds();
-        return $this->fetchFieldDetailsForIds(
-            array_unique($pathIds)
-        );
+        $ids = $object->listAncestorIds();
+        $ids[] = $object->getProperty('id');
+        return $this->fetchFieldDetailsForIds($ids);
     }
 
     /***
