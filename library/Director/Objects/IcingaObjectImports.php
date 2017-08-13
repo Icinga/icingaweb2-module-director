@@ -9,6 +9,7 @@ use Iterator;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 
 class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -169,7 +170,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     protected function refreshIndex()
     {
         $this->idx = array_keys($this->imports);
-        $this->object->templateResolver()->refreshObject($this->object);
+        // $this->object->templateResolver()->refreshObject($this->object);
         return $this;
     }
 
@@ -271,8 +272,9 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
 
     protected function loadFromDb()
     {
-        $resolver = $this->object->templateResolver();
-        $this->objects = $resolver->fetchParents();
+        // $resolver = $this->object->templateResolver();
+        // $this->objects = $resolver->fetchParents();
+        $this->objects = IcingaTemplateRepository::instanceByObject($this->object)->getTemplatesFor($this->object);
         if (empty($this->objects)) {
             $this->imports = array();
         } else {
