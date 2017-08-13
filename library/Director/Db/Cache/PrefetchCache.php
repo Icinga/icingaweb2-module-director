@@ -6,7 +6,6 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaTemplateResolver;
 use Icinga\Module\Director\Resolver\TemplateTree;
 
 /**
@@ -76,16 +75,6 @@ class PrefetchCache
         return $this->groupsCache($object)->getGroupsForObject($object);
     }
 
-    public function imports(IcingaObject $object)
-    {
-        return $this->templateResolver($object)->setObject($object)->fetchParents();
-    }
-
-    public function listImportNames(IcingaObject $object)
-    {
-        return $this->templateTree($object)->listParentNamesForObject($object);
-    }
-
     /* Hint: not implemented, this happens in DbObject right now
     public function byObjectType($type)
     {
@@ -120,17 +109,6 @@ class PrefetchCache
         }
 
         return $this->varsCaches[$key];
-    }
-
-    protected function templateResolver(IcingaObject $object)
-    {
-        $key = $object->getShortTableName();
-
-        if (! array_key_exists($key, $this->templateResolvers)) {
-            $this->templateResolvers[$key] = new IcingaTemplateResolver($object);
-        }
-
-        return $this->templateResolvers[$key];
     }
 
     protected function groupsCache(IcingaObject $object)
