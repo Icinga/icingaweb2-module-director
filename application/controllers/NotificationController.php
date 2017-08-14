@@ -37,7 +37,7 @@ class NotificationController extends ObjectController
     /**
      * @param DirectorObjectForm $form
      */
-    protected function beforeHandlingEditRequest($form)
+    protected function onObjectFormLoaded($form)
     {
         if ($this->object->isTemplate()) {
             $form->setListUrl('director/notifications/templates');
