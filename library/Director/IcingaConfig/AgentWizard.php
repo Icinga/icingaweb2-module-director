@@ -179,6 +179,7 @@ class AgentWizard
             $r->getBaseUrl()
         );
     }
+
     protected function renderPowershellParameters($parameters)
     {
         $maxKeyLength = max(array_map('strlen', array_keys($parameters)));
