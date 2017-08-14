@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Web\Controller\Extension;
 
 use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Controllers\ServicetemplatesController;
 use Icinga\Web\Response;
 
 trait RestApi
