@@ -31,7 +31,9 @@ abstract class ObjectsController extends ActionController
 
     protected function checkDirectorPermissions()
     {
-        $this->assertPermission('director/' . $this->getPluralBaseType());
+        if ($this->getRequest()->getActionName() !== 'sets') {
+            $this->assertPermission('director/' . $this->getPluralBaseType());
+        }
     }
     /**
      * @return $this
@@ -259,7 +261,7 @@ abstract class ObjectsController extends ActionController
         $type = $this->getType();
         $tType = $this->translate(ucfirst($type));
         $this
-            ->assertPermission('director/admin')
+            ->assertPermission('director/' . $this->getBaseType() . '_sets')
             ->addObjectsTabs()
             ->requireSupportFor('Sets')
             ->setAutorefreshInterval(10)
@@ -268,9 +270,7 @@ abstract class ObjectsController extends ActionController
                 $tType
             );
 
-        $this->actions()/*->add(
-            $this->getBackToDashboardLink()
-        )*/->add(
+        $this->actions()->add(
             Link::create(
                 $this->translate('Add'),
                 "director/${type}set/add",
