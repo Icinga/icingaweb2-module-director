@@ -21,11 +21,9 @@ class DashboardController extends ActionController
         $this->setTitle($this->translate('Icinga Director - Main Dashboard'));
         $names = $this->params->getValues('name', $mainDashboards);
         if (count($names) === 1) {
-            // TODO: Find a better way for this
             $name = $names[0];
             $dashboard = Dashboard::loadByName($name, $this->db());
             $this->tabs($dashboard->getTabs())->activate($name);
-            // $this->addSingleTab($this->translate(ucfirst($name)));
         } else {
             $this->addSingleTab($this->translate('Overview'));
         }
