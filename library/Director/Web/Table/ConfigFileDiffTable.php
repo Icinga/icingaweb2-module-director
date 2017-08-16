@@ -1,33 +1,46 @@
 <?php
 
-namespace Icinga\Module\Director\Tables;
+namespace Icinga\Module\Director\Web\Table;
 
-use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\Web\Table\QuickTable;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Util;
+use ipl\Html\Link;
+use ipl\Web\Table\ZfQueryBasedTable;
 
-class ConfigFileDiffTable extends QuickTable
+class ConfigFileDiffTable extends ZfQueryBasedTable
 {
+    use DbHelper;
+
     protected $leftChecksum;
 
     protected $rightChecksum;
 
-    public function getColumns()
+    /**
+     * @param $leftSum
+     * @param $rightSum
+     * @param Db $connection
+     * @return static
+     */
+    public static function load($leftSum, $rightSum, Db $connection)
     {
-        throw new ProgrammingError('Accessing getColumns() is not supported');
+        $table = new static($connection);
+        $table->attributes()->add('class', 'config-diff');
+        return $table->setLeftChecksum($leftSum)
+            ->setRightChecksum($rightSum);
     }
 
-    protected function listTableClasses()
+    public function renderRow($row)
     {
-        return array_merge(array('config-diff'), parent::listTableClasses());
+        $tr = $this::row([
+            $this->getFileFiffLink($row),
+            $row->file_path,
+        ]);
+
+        $tr->attributes()->add('class', 'file-' . $row->file_action);
+        return $tr;
     }
 
-    protected function getRowClasses($row)
-    {
-        return 'file-' . $row->file_action;
-    }
-
-    protected function getActionUrl($row)
+    protected function getFileFiffLink($row)
     {
         $params = array('file_path' => $row->file_path);
 
@@ -40,10 +53,14 @@ class ConfigFileDiffTable extends QuickTable
         } else {
             $params['left']  = $row->config_checksum_left;
             $params['right'] = $row->config_checksum_right;
-            return $this->url('director/config/filediff', $params);
+            return Link::create(
+                $row->file_action,
+                'director/config/filediff',
+                $params
+            );
         }
 
-        return $this->url('director/config/file', $params);
+        return Link::create($row->file_action, 'director/config/file', $params);
     }
 
     public function setLeftChecksum($checksum)
@@ -60,42 +77,14 @@ class ConfigFileDiffTable extends QuickTable
 
     public function getTitles()
     {
-        $view = $this->view();
         return array(
-            'file_action' => $view->translate('Action'),
-            'file_path'   => $view->translate('File'),
+            $this->translate('Action'),
+            $this->translate('File'),
         );
     }
 
-    public function count()
+    public function prepareQuery()
     {
-        $db = $this->connection()->getConnection();
-        $query = clone($this->getBaseQuery());
-        $query->reset('order');
-        $this->applyFiltersToQuery($query);
-        return $db->fetchOne($db->select()->from(
-            array('cntsub' => $query),
-            array('cnt' => 'COUNT(*)')
-        ));
-    }
-
-    public function fetchData()
-    {
-        $db = $this->connection()->getConnection();
-        $query = $this->getBaseQuery();
-
-        if ($this->hasLimit() || $this->hasOffset()) {
-            $query->limit($this->getLimit(), $this->getOffset());
-        }
-
-        $this->applyFiltersToQuery($query);
-
-        return $db->fetchAll($query);
-    }
-
-    public function getBaseQuery()
-    {
-        $conn = $this->connection();
         $db = $this->db();
 
         $left = $db->select()
@@ -103,10 +92,10 @@ class ConfigFileDiffTable extends QuickTable
                 array('cfl' => 'director_generated_config_file'),
                 array(
                     'file_path' => 'COALESCE(cfl.file_path, cfr.file_path)',
-                    'config_checksum_left'  => $conn->dbHexFunc('cfl.config_checksum'),
-                    'config_checksum_right' => $conn->dbHexFunc('cfr.config_checksum'),
-                    'file_checksum_left'    => $conn->dbHexFunc('cfl.file_checksum'),
-                    'file_checksum_right'   => $conn->dbHexFunc('cfr.file_checksum'),
+                    'config_checksum_left'  => $this->dbHexFunc('cfl.config_checksum'),
+                    'config_checksum_right' => $this->dbHexFunc('cfr.config_checksum'),
+                    'file_checksum_left'    => $this->dbHexFunc('cfl.file_checksum'),
+                    'file_checksum_right'   => $this->dbHexFunc('cfr.file_checksum'),
                     'file_action'           => '(CASE WHEN cfr.config_checksum IS NULL'
                         . " THEN 'removed' WHEN cfl.file_checksum = cfr.file_checksum"
                         . " THEN 'unmodified' ELSE 'modified' END)",
@@ -115,12 +104,12 @@ class ConfigFileDiffTable extends QuickTable
                 array('cfr' => 'director_generated_config_file'),
                 $db->quoteInto(
                     'cfl.file_path = cfr.file_path AND cfr.config_checksum = ?',
-                    $conn->quoteBinary(Util::hex2binary($this->rightChecksum))
+                    $this->quoteBinary(Util::hex2binary($this->rightChecksum))
                 ),
                 array()
             )->where(
                 'cfl.config_checksum = ?',
-                $conn->quoteBinary(Util::hex2binary($this->leftChecksum))
+                $this->quoteBinary(Util::hex2binary($this->leftChecksum))
             );
 
         $right = $db->select()
@@ -128,22 +117,22 @@ class ConfigFileDiffTable extends QuickTable
                 array('cfl' => 'director_generated_config_file'),
                 array(
                     'file_path' => 'COALESCE(cfr.file_path, cfl.file_path)',
-                    'config_checksum_left'  => $conn->dbHexFunc('cfl.config_checksum'),
-                    'config_checksum_right' => $conn->dbHexFunc('cfr.config_checksum'),
-                    'file_checksum_left'    => $conn->dbHexFunc('cfl.file_checksum'),
-                    'file_checksum_right'   => $conn->dbHexFunc('cfr.file_checksum'),
+                    'config_checksum_left'  => $this->dbHexFunc('cfl.config_checksum'),
+                    'config_checksum_right' => $this->dbHexFunc('cfr.config_checksum'),
+                    'file_checksum_left'    => $this->dbHexFunc('cfl.file_checksum'),
+                    'file_checksum_right'   => $this->dbHexFunc('cfr.file_checksum'),
                     'file_action'           => "('created')",
                 )
             )->joinRight(
                 array('cfr' => 'director_generated_config_file'),
                 $db->quoteInto(
                     'cfl.file_path = cfr.file_path AND cfl.config_checksum = ?',
-                    $conn->quoteBinary(Util::hex2binary($this->leftChecksum))
+                    $this->quoteBinary(Util::hex2binary($this->leftChecksum))
                 ),
                 array()
             )->where(
                 'cfr.config_checksum = ?',
-                $conn->quoteBinary(Util::hex2binary($this->rightChecksum))
+                $this->quoteBinary(Util::hex2binary($this->rightChecksum))
             )->where('cfl.file_checksum IS NULL');
 
         return $db->select()->union(array($left, $right))->order('file_path');
