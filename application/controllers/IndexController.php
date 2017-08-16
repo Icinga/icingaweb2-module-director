@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Module\Director\Db\Migrations;
+use Icinga\Module\Director\Forms\ApplyMigrationsForm;
 
 class IndexController extends DashboardController
 {
@@ -25,10 +26,9 @@ class IndexController extends DashboardController
 
             if ($migrations->hasPendingMigrations()) {
                 $this->content()->prepend(
-                    $this
-                    ->loadForm('applyMigrations')
-                    ->setMigrations($migrations)
-                    ->handleRequest()
+                    ApplyMigrationsForm::load()
+                        ->setMigrations($migrations)
+                        ->handleRequest()
                 );
             }
 
