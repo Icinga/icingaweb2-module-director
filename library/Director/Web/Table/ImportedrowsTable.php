@@ -1,17 +1,24 @@
 <?php
 
-namespace Icinga\Module\Director\Tables;
+namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Data\DataArray\ArrayDatasource;
-use Icinga\Module\Director\Objects\ImportRun;
-use Icinga\Module\Director\Web\Table\QuickTable;
+    use Icinga\Module\Director\Objects\ImportRun;
+use ipl\Web\Table\SimpleQueryBasedTable;
 
-class ImportedrowsTable extends QuickTable
+class ImportedrowsTable extends SimpleQueryBasedTable
 {
     protected $columns;
 
     /** @var ImportRun */
     protected $importRun;
+
+    public static function load(ImportRun $run)
+    {
+        $table = new static();
+        $table->setImportRun($run);
+        return $table;
+    }
 
     public function setImportRun(ImportRun $run)
     {
@@ -42,35 +49,15 @@ class ImportedrowsTable extends QuickTable
         return array_combine($cols, $cols);
     }
 
-    public function getTitles()
+    public function getColumnsToBeRendered()
     {
-        $cols = $this->getColumns();
-        // TODO: replace key column with object name!?
-        //       $view = $this->view();
-        //       'object_name' => $view->translate('Object name')
-        return array_combine($cols, $cols);
+        return $this->getColumns();
     }
 
-    public function fetchData()
-    {
-        $query = $this->getBaseQuery()->columns($this->getColumns());
-
-        if ($this->hasLimit() || $this->hasOffset()) {
-            $query->limit($this->getLimit(), $this->getOffset());
-        }
-
-        return $query->fetchAll();
-    }
-
-    public function count()
-    {
-        return $this->getBaseQuery()->count();
-    }
-
-    public function getBaseQuery()
+    public function prepareQuery()
     {
         $ds = new ArrayDatasource(
-            $this->importRun->fetchRows($this->columns, $this->filter)
+            $this->importRun->fetchRows($this->columns)
         );
 
         return $ds->select()->order('object_name');
