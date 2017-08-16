@@ -2,15 +2,13 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Icinga\Application\Benchmark;
-use Icinga\Application\Icinga;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
 use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
 use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
@@ -20,7 +18,6 @@ use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use ipl\Html\Link;
-use Zend_Db_Select as ZfSelect;
 
 abstract class ObjectsController extends ActionController
 {
@@ -50,15 +47,19 @@ abstract class ObjectsController extends ActionController
         return $this;
     }
 
+    protected function apiRequestHandler()
+    {
+        return (new IcingaObjectsHandler(
+            $this->getRequest(),
+            $this->getResponse(),
+            $this->db()
+        ))->setTable($this->getTable());
+    }
+
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
-            try {
-                $this->streamJsonResult();
-            } catch (\Exception $e) {
-                echo $e->getTraceAsString();
-                exit;
-            }
+            $this->apiRequestHandler()->dispatch();
             return;
         }
         $type = $this->getType();
@@ -75,85 +76,6 @@ abstract class ObjectsController extends ActionController
         // Hint: might be used in controllers extending this
         $this->table = $this->getTable();
         $this->table->renderTo($this);
-    }
-
-    protected function streamJsonResult()
-    {
-        $connection = $this->db();
-        Benchmark::measure('aha');
-        $db = $connection->getDbAdapter();
-        $query = $this->getTable()
-            ->getQuery()
-            ->reset(ZfSelect::COLUMNS)
-            ->columns('*')
-            ->reset(ZfSelect::LIMIT_COUNT)
-            ->reset(ZfSelect::LIMIT_OFFSET);
-
-        echo '{ "objects": [ ';
-        $cnt = 0;
-        $objects = [];
-
-        $dummy = IcingaObject::createByType($this->getType(), [], $connection);
-        $dummy->prefetchAllRelatedTypes();
-
-        Benchmark::measure('Prefetching');
-        PrefetchCache::initialize($this->db());
-        Benchmark::measure('Ready to query');
-        $stmt = $db->query($query);
-        $this->getResponse()->sendHeaders();
-        if (! ob_get_level()) {
-            ob_start();
-        }
-        $resolved = (bool) $this->params->get('resolved', false);
-        $first = true;
-        $flushes = 0;
-        while ($row = $stmt->fetch()) {
-            /** @var IcingaObject $object */
-            if ($first) {
-                Benchmark::measure('First row');
-            }
-            $object = $dummy::fromDbRow($row, $connection);
-            $objects[] = json_encode($object->toPlainObject($resolved, true), JSON_PRETTY_PRINT);
-            if ($first) {
-                Benchmark::measure('Got first row');
-                $first = false;
-            }
-            $cnt++;
-            if ($cnt === 100) {
-                if ($flushes > 0) {
-                    echo ', ';
-                }
-                echo implode(', ', $objects);
-                $cnt = 0;
-                $objects = [];
-                $flushes++;
-                ob_end_flush();
-                ob_start();
-            }
-        }
-
-        if ($cnt > 0) {
-            if ($flushes > 0) {
-                echo ', ';
-            }
-            echo implode(', ', $objects);
-        }
-
-        if ($this->params->get('benchmark')) {
-            echo "],\n";
-            Benchmark::measure('All done');
-            echo '"benchmark_string": ' . json_encode(Benchmark::renderToText());
-        } else {
-            echo '] ';
-        }
-
-        echo "}\n";
-        if (ob_get_level()) {
-            ob_end_flush();
-        }
-
-        // TODO: can we improve this?
-        exit;
     }
 
     protected function getTable()
