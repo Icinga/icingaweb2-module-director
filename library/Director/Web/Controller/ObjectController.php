@@ -29,8 +29,10 @@ abstract class ObjectController extends ActionController
     /** @var IcingaObject */
     protected $object;
 
+    /** @var bool This controller handles REST API requests */
     protected $isApified = true;
 
+    /** @var array Allowed object types we are allowed to edit anyways */
     protected $allowedExternals = array(
         'apiuser',
         'endpoint'
@@ -40,30 +42,24 @@ abstract class ObjectController extends ActionController
     {
         parent::init();
 
+        $this->eventuallyLoadObject();
         if ($this->getRequest()->isApiRequest()) {
-            $this->handleApiRequest();
-        } else {
-            $type = strtolower($this->getType());
-            if (null !== $this->params->get('name') || $this->params->get('id')) {
-                $this->loadObject();
+            $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
+            $handler->setApi($this->api());
+            if ($this->object) {
+                $handler->setObject($this->object);
             }
-            $this->tabs(new ObjectTabs($type, $this->getAuth(), $this->object));
+            $handler->dispatch();
+        } else {
+            $this->tabs(new ObjectTabs($this->getType(), $this->getAuth(), $this->object));
         }
     }
 
     public function indexAction()
     {
-        if ($this->getRequest()->isApiRequest()) {
-            return;
-        }
-
-        if ($this->object
-            && $this->object->isExternal()
-            && ! in_array($this->object->getShortTableName(), $this->allowedExternals)
-        ) {
-            $this->redirectNow(
-                $this->getRequest()->getUrl()->setPath(sprintf('director/%s/render', $this->getType()))
-            );
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->redirectToPreviewForExternals()
+                ->editAction();
         }
 
         $this->editAction();
@@ -266,10 +262,23 @@ abstract class ObjectController extends ActionController
         );
     }
 
+    protected function eventuallyLoadObject()
+    {
+        if (null !== $this->params->get('name') || $this->params->get('id')) {
+            $this->loadObject();
+        }
+    }
+
     protected function loadObject()
     {
         if ($this->object === null) {
-            if (null !== ($name = $this->params->get('name'))) {
+            if ($id = $this->params->get('id')) {
+                $this->object = IcingaObject::loadByType(
+                    $this->getType(),
+                    (int) $id,
+                    $this->db()
+                );
+            } elseif (null !== ($name = $this->params->get('name'))) {
                 $this->object = IcingaObject::loadByType(
                     $this->getType(),
                     $name,
@@ -280,12 +289,6 @@ abstract class ObjectController extends ActionController
                     $this->object = null;
                     throw new NotFoundError('No such object available');
                 }
-            } elseif ($id = $this->params->get('id')) {
-                $this->object = IcingaObject::loadByType(
-                    $this->getType(),
-                    (int) $id,
-                    $this->db()
-                );
             } elseif ($this->getRequest()->isApiRequest()) {
                 if ($this->getRequest()->isGet()) {
                     $this->getResponse()->setHttpResponseCode(422);
