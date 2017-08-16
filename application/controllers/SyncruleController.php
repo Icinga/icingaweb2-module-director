@@ -123,7 +123,7 @@ class SyncruleController extends ActionController
     public function editAction()
     {
         $form = SyncRuleForm::load()
-            ->setListUrl('director/list/syncrule')
+            ->setListUrl('director/syncrules')
             ->setDb($this->db());
 
         if ($id = $this->params->get('id')) {

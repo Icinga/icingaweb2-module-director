@@ -86,7 +86,7 @@ $section->add(N_('Notifications'))
     ->setPermission('director/notifications')
     ->setPriority(70);
 $section->add(N_('Automation'))
-    ->setUrl('director/list/importsource')
+    ->setUrl('director/importsources')
     ->setPermission('director/admin')
     ->setPriority(901);
 $section->add(N_('Activity log'))
