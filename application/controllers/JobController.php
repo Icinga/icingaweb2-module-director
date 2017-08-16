@@ -2,90 +2,72 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\DirectorJobForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\DirectorJob;
-use Icinga\Data\Filter\Filter;
-use Icinga\Web\Notification;
-use Icinga\Web\Url;
+use Icinga\Module\Director\Web\Widget\JobDetails;
 
 class JobController extends ActionController
 {
-    public function addAction()
-    {
-        $this->indexAction();
-    }
-
     public function indexAction()
     {
-        if (! ($id = $this->params->get('id'))) {
-            return $this->editAction();
-        }
-
-        $this->prepareTabs($id)->activate('show');
-        $this->view->job = DirectorJob::load($id, $this->db());
-        $this->view->title = sprintf(
-            $this->translate('Job: %s'),
-            $this->view->job->job_name
-        );
+        $job = $this->requireJob();
+        $this
+            ->addJobTabs($job, 'show')
+            ->addTitle($this->translate('Job: %s'), $job->get('job_name'))
+            ->content()->add(new JobDetails($job));
     }
 
-    public function runAction()
+    public function addAction()
     {
-        // TODO: Form, POST
-        $id = $this->params->get('id');
-        $job = DirectorJob::load($id, $this->db());
-        if ($job->run()) {
-            Notification::success('Job has successfully been completed');
-            $this->redirectNow(
-                Url::fromPath(
-                    'director/job',
-                    array('id' => $id)
-                )
+        $this
+            ->addSingleTab($this->translate('New Job'))
+            ->addTitle($this->translate('Add a new Job'))
+            ->content()->add(
+                DirectorJobForm::load()
+                    ->setSuccessUrl('director/job')
+                    ->setDb($this->db())
+                    ->handleRequest()
             );
-        } else {
-            Notification::success('Job run failed');
-        }
     }
 
     public function editAction()
     {
-        $form = $this->view->form = $this->loadForm('directorJob')
-            ->setSuccessUrl('director/job')
-            ->setDb($this->db());
+        $job = $this->requireJob();
+        $form = DirectorJobForm::load()
+            ->setListUrl('director/jobs')
+            ->setObject($job)
+            ->loadObject($this->params->getRequired('id'))
+            ->handleRequest();
 
-        if ($id = $this->params->get('id')) {
-            $this->prepareTabs($id)->activate('edit');
-            $form->loadObject($id);
-            $this->view->title = sprintf(
-                $this->translate('Job %s'),
-                $form->getObject()->job_name
-            );
-        } else {
-            $this->view->title = $this->translate('Add job');
-            $this->prepareTabs()->activate('add');
-        }
-
-        $form->handleRequest();
-        $this->setViewScript('object/form');
+        $this
+            ->addJobTabs($job, 'edit')
+            ->addTitle($this->translate('Job: %s'), $job->get('job_name'))
+            ->content()->add($form);
     }
 
-    protected function prepareTabs($id = null)
+    /**
+     * @return DirectorJob
+     */
+    protected function requireJob()
     {
-        if ($id) {
-            return $this->getTabs()->add('show', array(
-                'url'       => 'director/job',
-                'urlParams' => array('id' => $id),
-                'label'     => $this->translate('Job'),
-            ))->add('edit', array(
-                'url'       => 'director/job/edit',
-                'urlParams' => array('id' => $id),
-                'label'     => $this->translate('Config'),
-            ));
-        } else {
-            return $this->getTabs()->add('add', array(
-                'url'       => 'director/job/add',
-                'label'     => $this->translate('Add a job'),
-            ));
-        }
+        return DirectorJob::load($this->params->getRequired('id'), $this->db());
+    }
+
+    protected function addJobTabs(DirectorJob $job, $active)
+    {
+        $id = $job->getId();
+
+        $this->tabs()->add('show', [
+            'url'       => 'director/job',
+            'urlParams' => ['id' => $id],
+            'label'     => $this->translate('Job'),
+        ])->add('edit', [
+            'url'       => 'director/job/edit',
+            'urlParams' => ['id' => $id],
+            'label'     => $this->translate('Config'),
+        ])->activate($active);
+
+        return $this;
     }
 }
