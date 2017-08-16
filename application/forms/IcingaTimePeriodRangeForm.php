@@ -36,6 +36,7 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
     public function setTimePeriod(IcingaTimePeriod $period)
     {
         $this->period = $period;
+        $this->setDb($period->getConnection());
         return $this;
     }
 
