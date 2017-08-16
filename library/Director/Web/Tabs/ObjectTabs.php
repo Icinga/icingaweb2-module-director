@@ -20,10 +20,10 @@ class ObjectTabs extends Tabs
     /** @var IcingaObject $object */
     private $object;
 
-    private $allowedExternals = array(
+    private $allowedExternals = [
         'apiuser',
         'endpoint'
-    );
+    ];
 
     public function __construct($type, Auth $auth, IcingaObject $object = null)
     {
