@@ -2,13 +2,14 @@
 
 namespace Icinga\Module\Director\Hook;
 
+use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Module\Director\Db;
 use Icinga\Exception\ConfigurationError;
 
 abstract class ImportSourceHook
 {
-    protected $settings = array();
+    protected $settings = [];
 
     public function getName()
     {
@@ -26,6 +27,30 @@ abstract class ImportSourceHook
         }
 
         return $class;
+    }
+
+    public static function forImportSource(ImportSource $source)
+    {
+        $db = $source->getDb();
+        $settings = $db->fetchPairs(
+            $db->select()->from(
+                'import_source_setting',
+                ['setting_name', 'setting_value']
+            )->where('source_id = ?', $source->getId())
+        );
+
+        $className = $source->get('provider_class');
+        if (! class_exists($className)) {
+            throw new ConfigurationError(
+                'Cannot load import provider class %s',
+                $className
+            );
+        }
+
+        /** @var ImportSourceHook $obj */
+        $obj = new $className;
+        $obj->setSettings($settings);
+        return $obj;
     }
 
     public static function loadByName($name, Db $db)

@@ -140,9 +140,9 @@ class Import
     }
 
     /**
-     * Checksum of all available rows
+     * All rows
      *
-     * @return string
+     * @return array
      */
     protected function & checksummedRows()
     {
@@ -161,9 +161,8 @@ class Import
     protected function & rawData()
     {
         if ($this->data === null) {
-            $this->data = ImportSourceHook::loadByName(
-                $this->source->get('source_name'),
-                $this->connection
+            $this->data = ImportSourceHook::forImportSource(
+                $this->source
             )->fetchData();
         }
 
