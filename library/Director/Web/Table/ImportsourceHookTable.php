@@ -1,14 +1,13 @@
 <?php
 
-namespace Icinga\Module\Director\Tables;
+namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Data\DataArray\ArrayDatasource;
-use Icinga\Data\Paginatable;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Web\Table\QuickTable;
+use ipl\Web\Table\SimpleQueryBasedTable;
 
-class ImportsourceHookTable extends QuickTable
+class ImportsourceHookTable extends SimpleQueryBasedTable
 {
     /** @var  ImportSource */
     protected $source;
@@ -46,47 +45,33 @@ class ImportsourceHookTable extends QuickTable
         return $this;
     }
 
-    public function getTitles()
+    public function getColumnsToBeRendered()
     {
-        $cols = $this->getColumns();
-        return array_combine($cols, $cols);
-    }
-
-    public function count()
-    {
-        $q = clone($this->getBaseQuery());
-        return $q->count();
+        return $this->getColumns();
     }
 
     protected function sourceHook()
     {
         if ($this->sourceHook === null) {
-            $this->sourceHook = ImportSourceHook::loadByName(
-                $this->source->source_name,
-                $this->connection()
+            $this->sourceHook = ImportSourceHook::forImportSource(
+                $this->source
             );
         }
 
         return $this->sourceHook;
     }
 
-    public function fetchData()
+    public function fetchQueryRows()
     {
         if ($this->dataCache === null) {
-            $query = $this->getBaseQuery()->columns($this->getColumns());
-
-            if ($this->hasLimit() || $this->hasOffset()) {
-                $query->limit($this->getLimit(), $this->getOffset());
-            }
-
-            $this->dataCache = $query->fetchAll();
+            $this->dataCache = parent::fetchQueryRows();
             $this->source->applyModifiers($this->dataCache);
         }
 
         return $this->dataCache;
     }
 
-    public function getBaseQuery()
+    public function prepareQuery()
     {
         $ds = new ArrayDatasource($this->sourceHook()->fetchData());
         return $ds->select();
