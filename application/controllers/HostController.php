@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -12,6 +13,10 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\SelfService;
+use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
+use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
+use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
+use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Web\Url;
 use ipl\Html\Link;
 
@@ -22,153 +27,115 @@ class HostController extends ObjectController
         $this->assertPermission('director/hosts');
     }
 
-    protected function loadRestrictions()
-    {
-        return [$this->getHostgroupRestriction()];
-    }
-
     protected function getHostgroupRestriction()
     {
         return new HostgroupRestriction($this->db(), $this->Auth());
     }
 
-    /**
-     * @param IcingaHostForm $form
-     */
-    protected function beforeHandlingAddRequest($form)
-    {
-        $form->setApi($this->getApiIfAvailable());
-    }
-
-    /**
-     * @param IcingaHostForm $form
-     */
-    protected function beforeHandlingEditRequest($form)
-    {
-        $form->setApi($this->getApiIfAvailable());
-    }
-
     public function editAction()
     {
         parent::editAction();
-        $host = $this->object;
-        try {
-            $mon = $this->monitoring();
-            if ($host->isObject() && $mon->isAvailable() && $mon->hasHost($host->object_name)) {
-                $this->actions()->add(Link::create(
-                    $this->translate('Show'),
-                    'monitoring/host/show',
-                    ['host' => $host->getObjectName()],
-                    [
-                        'class'            => 'icon-globe critical',
-                        'data-base-target' => '_next'
-                    ]
-                ));
-            }
-        } catch (Exception $e) {
-            // Silently ignore errors in the monitoring module
-        }
+        $this->addOptionalMonitoringLink();
+    }
+
+    public function serviceAction()
+    {
+        $host = $this->getHostObject();
+        $this->addServicesHeader();
+        $this->addTitle($this->translate('Add Service: %s'), $host->getObjectName());
+    }
+
+    public function servicesetAction()
+    {
+        $host = $this->getHostObject();
+        $this->addServicesHeader();
+        $this->addTitle($this->translate('Add Service Set: %s'), $host->getObjectName());
+    }
+
+    protected function addServicesHeader()
+    {
+        $host = $this->getHostObject();
+        $hostname = $host->getObjectName();
+        $this->tabs()->activate('services');
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add service'),
+            'director/host/service',
+            ['name' => $hostname],
+            ['class' => 'icon-plus']
+        ))->add(Link::create(
+            $this->translate('Add service set'),
+            'director/serviceset',
+            ['host' => $hostname],
+            ['class' => 'icon-plus']
+        ));
     }
 
     public function servicesAction()
     {
+        $this->addServicesHeader();
         $db = $this->db();
         $host = $this->getHostObject();
-        $hostname = $host->getObjectName();
-
-        $this->tabs()->activate('services');
         $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
-
-        $this->actions()->add(Link::create(
-            $this->translate('Add service'),
-            'director/service/add',
-            ['host' => $hostname],
-            ['class' => 'icon-plus']
-        ))->add(Link::create(
-            $this->translate('Add service set'),
-            'director/serviceset/add',
-            ['host' => $hostname],
-            ['class' => 'icon-plus']
-        ));
-
-        $resolver = $this->object->templateResolver();
-
-        $tables = array();
-        $table = $this->loadTable('IcingaHostService')
-            ->setHost($host)
-            ->setTitle($this->translate('Individual Service objects'))
-            ->enforceFilter('host_id', $host->id)
-            ->setConnection($db);
+        $content = $this->content();
+        $table = IcingaHostServiceTable::load($host)
+            ->setTitle($this->translate('Individual Service objects'));
 
         if (count($table)) {
-            $tables[0] = $table;
+            $content->add($table);
         }
 
         if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
-            $table = $this->loadTable('IcingaHostAppliedForService')
-                ->setHost($host)
-                ->setDictionary($applied)
-                ->setTitle($this->translate('Generated from host vars'));
+            if ($applied instanceof CustomVariableDictionary) {
+                $table = IcingaHostAppliedForServiceTable::load($host, $applied)
+                    ->setTitle($this->translate('Generated from host vars'));
+                if (count($table)) {
+                    $content->add($table);
+                }
+            }
+        }
 
+        /** @var IcingaHost[] $parents */
+        $parents = IcingaTemplateRepository::instanceByObject($this->object)
+            ->getTemplatesFor($this->object);
+        foreach ($parents as $parent) {
+            $table = IcingaHostServiceTable::load($parent)->setInheritedBy($host);
             if (count($table)) {
-                $tables[1] = $table;
+                $content->add(
+                    $table->setTitle(sprintf(
+                        'Inherited from %s',
+                        $parent->getObjectName()
+                    ))
+                );
             }
         }
 
-        $parents = $resolver->fetchResolvedParents();
+        $this->addHostServiceSetTables($host);
         foreach ($parents as $parent) {
-            $table = $this->loadTable('IcingaHostService')
-                ->setHost($parent)
-                ->setInheritedBy($host)
-                ->enforceFilter('host_id', $parent->id)
-                ->setConnection($db);
-            if (! count($table)) {
-                continue;
-            }
-
-            // dup dup
-            $title = sprintf(
-                'Inherited from %s',
-                $parent->object_name
-            );
-
-            $tables[$title] = $table->setTitle($title);
-        }
-
-        $this->addHostServiceSetTables($host, $tables);
-        foreach ($parents as $parent) {
-            $this->addHostServiceSetTables($parent, $tables, $host);
+            $this->addHostServiceSetTables($parent, $host);
         }
 
         $appliedSets = AppliedServiceSetLoader::fetchForHost($host);
         foreach ($appliedSets as $set) {
             $title = sprintf($this->translate('%s (Applied Service set)'), $set->getObjectName());
-            $table = $this->loadTable('IcingaServiceSetService')
-                ->setServiceSet($set)
-                // ->setHost($host)
-                ->setAffectedHost($host)
-                ->setTitle($title)
-                ->setConnection($db);
 
-            $tables[$title] = $table;
+            $content->add(
+                IcingaServiceSetServiceTable::load($set)
+                    // ->setHost($host)
+                    ->setAffectedHost($host)
+                    ->setTitle($title)
+            );
         }
 
-        $title = $this->translate('Applied services');
-        $table = $this->loadTable('IcingaHostAppliedServices')
-            ->setHost($host)
-            ->setTitle($title)
-            ->setConnection($db);
+        $table = IcingaHostAppliedServicesTable::load($host)
+            ->setTitle($this->translate('Applied services'));
 
         if (count($table)) {
-            $tables[$title] = $table;
-        }
-
-        foreach ($tables as $table) {
-            $this->content()->add($table);
+            $content->add($table);
         }
     }
 
-    protected function addHostServiceSetTables(IcingaHost $host, & $tables, IcingaHost $affectedHost = null)
+    protected function addHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null)
     {
         $db = $this->db();
         if ($affectedHost === null) {
@@ -190,16 +157,15 @@ class HostController extends ObjectController
             )->where('hs.host_id = ?', $host->id);
 
         $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
+        /** @var IcingaServiceSet $set*/
         foreach ($sets as $name => $set) {
             $title = sprintf($this->translate('%s (Service set)'), $name);
-            $table = $this->loadTable('IcingaServiceSetService')
-                ->setServiceSet($set)
-                ->setHost($host)
-                ->setAffectedHost($affectedHost)
-                ->setTitle($title)
-                ->setConnection($db);
-
-            $tables[$title] = $table;
+            $this->content()->add(
+                IcingaServiceSetServiceTable::load($set)
+                    ->setHost($host)
+                    ->setAffectedHost($affectedHost)
+                    ->setTitle($title)
+            );
         }
     }
 
