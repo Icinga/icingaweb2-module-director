@@ -37,39 +37,20 @@ class DataController extends ActionController
         $form = DirectorDatalistForm::load()
             ->setSuccessUrl('director/data/lists')
             ->setDb($this->db());
-        $this->content()->add($form);
 
-        if ($id = $this->url()->shift('id')) {
+        if ($id = $this->params->get('id')) {
             $form->loadObject($id);
             $this->addTitle(
                 $this->translate('Data List: %s'),
                 $form->getObject()->list_name
-            );
-
-            $this->actions()->add(Link::create(
-                $this->translate('Entries'),
-                'director/data/listentry',
-                ['list_id' => $id],
-                ['class' => 'icon-doc-text']
-            ));
-
-            $this->tabs()->add('editlist', array(
-                'url'       => 'director/data/list' . '?id=' . $id,
-                'label'     => $this->translate('Edit list'),
-            ))->add('entries', array(
-                'url'       => 'director/data/listentry' . '?list_id=' . $id,
-                'label'     => $this->translate('List entries'),
-            ))->activate('editlist');
+            )->addListTabs($id, 'list');
         } else {
-            $this->addTitle($title = $this->translate('Add'));
-
-            $this->tabs()->add('addlist', array(
-                'url'       => 'director/data/list',
-                'label'     => $title,
-            ))->activate('addlist');
+            $this
+                ->addTitle($this->translate('Add a new Data List'))
+                ->addSingleTab($this->translate('Data List'));
         }
 
-        $form->handleRequest();
+        $this->content()->add($form->handleRequest());
     }
 
     public function fieldsAction()
@@ -102,10 +83,8 @@ class DataController extends ActionController
         $title = $title = $this->translate('List Entries') . ': ' . $list->list_name;
         $this->addTitle($title);
 
-        /** @var DirectorDatalistEntryForm $form */
         $form = DirectorDatalistEntryForm::load()
-            ->setSuccessUrl('director/data/listentry?list_id=' . $listId)
-            ->setDb($this->db())
+            ->setSuccessUrl('director/data/listentry', ['list_id' => $listId])
             ->setList($list);
 
         if (null !== $entryName) {
@@ -122,17 +101,26 @@ class DataController extends ActionController
         }
         $form->handleRequest();
 
-        $this->tabs()->add('editlist', [
-            'url'       => 'director/data/list' . '?id=' . $listId,
-            'label'     => $this->translate('Edit list'),
-        ])->add('datalistentry', [
-            'url'       => 'director/data/listentry' . '?list_id=' . $listId,
-            'label'     => $title,
-        ])->activate('datalistentry');
+        $this->addListTabs($listId, 'entries');
 
         $table = new DatalistEntryTable($this->db());
         $table->attributes()->set('data-base-target', '_self');
         $table->setList($list);
         $this->content()->add([$form, $table]);
+    }
+
+    protected function addListTabs($id, $activate)
+    {
+        $this->tabs()->add('list', [
+            'url'       => 'director/data/list',
+            'urlParams' => ['id' => $id],
+            'label'     => $this->translate('Edit list'),
+        ])->add('entries', [
+            'url'       => 'director/data/listentry',
+            'urlParams' => ['list_id' => $id],
+            'label'     => $this->translate('List entries'),
+        ])->activate($activate);
+
+        return $this;
     }
 }

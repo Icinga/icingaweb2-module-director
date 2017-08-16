@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Application\Config;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
@@ -67,6 +68,9 @@ class DirectorDatalistEntryForm extends DirectorObjectForm
     public function setList(DirectorDatalist $list)
     {
         $this->datalist = $list;
+        /** @var Db $db */
+        $db = $list->getConnection();
+        $this->setDb($db);
         return $this;
     }
 }
