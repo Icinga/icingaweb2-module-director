@@ -18,6 +18,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Resolver\TemplateTree;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
@@ -861,7 +862,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getImports()
     {
-        return $this->imports()->listImportNames();
+        return $this->listImportNames();
     }
 
     public function templateResolver()
@@ -1071,7 +1072,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function triggerLoopDetection()
     {
-        $this->templateResolver()->listResolvedParentIds();
+        // $this->templateResolver()->listResolvedParentIds();
     }
 
     public function getSingleResolvedProperty($key, $default = null)
@@ -1113,7 +1114,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $vals['_MERGED_']    = (object) array();
         $vals['_INHERITED_'] = (object) array();
         $vals['_ORIGINS_']   = (object) array();
-        $objects = $this->imports()->getObjects();
+        // $objects = $this->imports()->getObjects();
+        $objects = IcingaTemplateRepository::instanceByObject($this)->getTemplatesFor($this);
 
         $get          = 'get'         . $what;
         $getInherited = 'getInherited' . $what;
@@ -1598,6 +1600,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderImports()
     {
+        $ret = '';
+        foreach ($this->getImports() as $name) {
+            $ret .= '    import ' . c::renderString($name) . "\n";
+        }
+
+        if ($ret !== '') {
+            $ret .= "\n";
+        }
+        return $ret;
+
+
         // TODO: parent_host ORDERed by weigth...
         if ($this->supportsImports()) {
             return $this->imports()->toConfigString();
@@ -2482,12 +2495,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 }
             }
 
-            if ($chosenProperties !== null) {
-                if (! in_array($v, $chosenProperties)) {
-                    continue;
-                }
-            }
-
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
@@ -2589,6 +2596,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($chosenProperties !== null) {
+            $chosen = [];
+            foreach ($chosenProperties as $k) {
+                if (array_key_exists($k, $props)) {
+                    $chosen[$k] = $props[$k];
+                }
+            }
+
+            $props = $chosen;
+        }
         ksort($props);
 
         return (object) $props;
@@ -2596,11 +2613,27 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function listImportNames()
     {
-        if (PrefetchCache::shouldBeUsed()) {
-            return PrefetchCache::instance()->listImportNames($this);
-        } else {
-            return $this->imports()->listImportNames();
-        }
+        return $this->templateTree()->listParentNamesFor($this);
+    }
+
+    public function listImportIds()
+    {
+        return $this->templateTree()->listParentIdsFor($this);
+    }
+
+    public function listAncestorIds()
+    {
+        return $this->templateTree()->listAncestorIdsFor($this);
+    }
+
+    protected function templateTree()
+    {
+        return $this->templates()->tree();
+    }
+
+    protected function templates()
+    {
+        return IcingaTemplateRepository::instanceByObject($this, $this->getConnection());
     }
 
     protected function differsFromDefaultValue($key, $value)
