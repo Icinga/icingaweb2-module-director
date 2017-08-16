@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
@@ -15,6 +16,7 @@ use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
 use Icinga\Web\Widget;
+use ipl\Html\Link;
 use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Controller\Extension\ControlsAndContentHelper;
 use ipl\Zf1\SimpleViewRenderer;
@@ -36,6 +38,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
 
     public function init()
     {
+        Benchmark::measure('Director base Controller init()');
         $this->checkForRestApiRequest();
         $this->checkDirectorPermissions();
     }
@@ -96,6 +99,34 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $paginatable;
     }
 
+    protected function addAddLink($title, $url, $urlParams = null, $target = '_next')
+    {
+        $this->actions()->add(Link::create(
+            $this->translate('Add'),
+            $url,
+            $urlParams,
+            [
+                'class' => 'icon-plus',
+                'title' => $title,
+                'data-base-target' => $target
+            ]
+        ));
+
+        return $this;
+    }
+
+    protected function addBackLink($url, $urlParams = null)
+    {
+        $this->actions()->add(new Link(
+            $this->translate('back'),
+            $url,
+            $urlParams,
+            ['class' => 'icon-left-big']
+        ));
+
+        return $this;
+    }
+
     /**
      * @param string $name
      *
@@ -122,17 +153,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return TableLoader::load($name, $this->Module());
     }
 
-    protected function singleTab($label)
-    {
-        return $this->view->tabs = Widget::create('tabs')->add(
-            'tab',
-            array(
-                'label' => $label,
-                'url'   => $this->getRequest()->getUrl()
-            )
-        )->activate('tab');
-    }
-
     /**
      * @param string $permission
      * @return $this
@@ -141,30 +161,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
     {
         parent::assertPermission($permission);
         return $this;
-    }
-
-    protected function setImportTabs()
-    {
-        $this->view->tabs = Widget::create('tabs')->add(
-            'importsource',
-            array(
-                'label' => $this->translate('Import source'),
-                'url'   => 'director/list/importsource'
-            )
-        )->add(
-            'syncrule',
-            array(
-                'label' => $this->translate('Sync rule'),
-                'url'   => 'director/list/syncrule'
-            )
-        )->add(
-            'jobs',
-            array(
-                'label' => $this->translate('Jobs'),
-                'url'   => 'director/jobs'
-            )
-        );
-        return $this->view->tabs;
     }
 
     protected function setViewScript($name)
@@ -181,13 +177,9 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $this;
     }
 
-    protected function prepareAndRenderTable($name)
-    {
-        $this->prepareTable($name)->setViewScript('list/table');
-    }
-
     public function postDispatch()
     {
+        Benchmark::measure('Director postDispatch');
         if ($this->view->content || $this->view->controls) {
             $viewRenderer = new SimpleViewRenderer();
             $viewRenderer->replaceZendViewRenderer();
