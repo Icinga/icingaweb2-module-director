@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Zend_Db_Expr as Expr;
+
 trait DbHelper
 {
     public function dbHexFunc($column)
@@ -24,12 +26,12 @@ trait DbHelper
 
     public function isPgsql()
     {
-        return $this->db->getConfig() instanceof \Zend_Db_Adapter_Pdo_Pgsql;
+        return $this->db() instanceof \Zend_Db_Adapter_Pdo_Pgsql;
     }
 
     public function isMysql()
     {
-        return $this->db->getConfig() instanceof \Zend_Db_Adapter_Pdo_Mysql;
+        return $this->db() instanceof \Zend_Db_Adapter_Pdo_Mysql;
     }
 
     public function wantBinaryValue($value)
