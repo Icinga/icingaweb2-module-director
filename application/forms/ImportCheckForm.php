@@ -1,12 +1,11 @@
 <?php
 
-// TODO: Check whether this can be removed
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class ImportCheckForm extends QuickForm
+class ImportCheckForm extends DirectorForm
 {
     /** @var  ImportSource */
     protected $source;
@@ -20,10 +19,10 @@ class ImportCheckForm extends QuickForm
     public function setup()
     {
         $this->submitLabel = false;
-        $this->addElement('submit', 'submit', array(
+        $this->addElement('submit', 'submit', [
             'label' => $this->translate('Check for changes'),
-            'decorators' => array('ViewHelper')
-        ));
+            'decorators' => ['ViewHelper']
+        ]);
     }
 
     public function onSuccess()
