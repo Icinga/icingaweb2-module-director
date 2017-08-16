@@ -175,7 +175,7 @@ abstract class DirectorObjectForm extends DirectorForm
         }
 
         try {
-            $object->templateResolver()->listResolvedParentIds();
+            $object->listAncestorIds();
         } catch (NestingError $e) {
             $this->addUniqueErrorMessage($e->getMessage());
             return $this->resolvedImports = false;
@@ -602,11 +602,13 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->object !== null;
     }
 
-    public function setObject(IcingaObject $object)
+    public function setObject(DbObject $object)
     {
         $this->object = $object;
         if ($this->db === null) {
-            $this->setDb($object->getConnection());
+            /** @var Db $connection */
+            $connection = $object->getConnection();
+            $this->setDb($connection);
         }
 
         return $this;
@@ -1037,7 +1039,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function addChoiceElement(IcingaTemplateChoice $choice)
     {
-        $imports = $this->object()->get('imports');
+        $imports = $this->object()->listImportNames();
         $element = $choice->createFormElement($this, $imports);
         $this->addElement($element);
         $this->choiceElements[$element->getName()] = $element;
