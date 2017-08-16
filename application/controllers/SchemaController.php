@@ -3,29 +3,19 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
+use ipl\Html\Html;
+use ipl\Html\Link;
 
 class SchemaController extends ActionController
 {
-    protected $schema;
+    protected $schemas;
 
     public function init()
     {
-        $this->schemas = array(
+        $this->schemas = [
             'mysql' => $this->translate('MySQL schema'),
             'pgsql' => $this->translate('PostgreSQL schema'),
-        );
-    }
-
-    protected function myTabs()
-    {
-        $tabs = $this->getTabs();
-        foreach ($this->schemas as $type => $title) {
-            $tabs->add($type, array(
-                'url'   => 'director/schema/' . $type,
-                'label' => $title,
-            ));
-        }
-        return $tabs;
+        ];
     }
 
     public function mysqlAction()
@@ -40,13 +30,7 @@ class SchemaController extends ActionController
 
     protected function serveSchema($type)
     {
-        $schema = file_get_contents(
-            sprintf(
-                '%s/schema/%s.sql',
-                $this->Module()->getBasedir(),
-                $type
-            )
-        );
+        $schema = $this->loadSchema($type);
 
         if ($this->params->get('format') === 'sql') {
             header('Content-type: application/octet-stream');
@@ -54,11 +38,55 @@ class SchemaController extends ActionController
             echo $schema;
             exit;
             // TODO: Shutdown
-        } else {
-            $this->myTabs()->activate($type);
-            $this->view->title = $this->schemas[$type];
-            $this->view->schema = $schema;
-            $this->render('schema');
         }
+
+        $this
+            ->addSchemaTabs($type)
+            ->addTitle($this->schemas[$type])
+            ->addDownloadAction()
+            ->content()->add(Html::pre($schema));
+    }
+
+    protected function loadSchema($type)
+    {
+        return file_get_contents(
+            sprintf(
+                '%s/schema/%s.sql',
+                $this->Module()->getBasedir(),
+                $type
+            )
+        );
+    }
+
+    protected function addDownloadAction()
+    {
+        $this->actions()->add(
+            Link::create(
+                $this->translate('Download'),
+                $this->url()->with('format', 'sql'),
+                null,
+                [
+                    'target' => '_blank',
+                    'class'  => 'icon-download',
+                ]
+            )
+        );
+
+        return $this;
+    }
+
+    protected function addSchemaTabs($active)
+    {
+        $tabs = $this->tabs();
+        foreach ($this->schemas as $type => $title) {
+            $tabs->add($type, [
+                'url'   => 'director/schema/' . $type,
+                'label' => $title,
+            ]);
+        }
+
+        $tabs->activate($active);
+
+        return $this;
     }
 }
