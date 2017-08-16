@@ -8,7 +8,9 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Table\IcingaAppliedServiceTable;
+use Icinga\Web\Widget\Tab;
 use ipl\Html\Link;
 use ipl\Web\Widget\Tabs;
 
@@ -84,6 +86,7 @@ class ServiceController extends ObjectController
     protected function addParamToTabs($name, $value)
     {
         foreach ($this->tabs()->getTabs() as $tab) {
+            /** @var Tab $tab */
             $tab->getUrl()->setParam($name, $value);
         }
 
@@ -108,12 +111,9 @@ class ServiceController extends ObjectController
         }
     }
 
-    /**
-     * @param IcingaServiceForm $form
-     */
-    protected function beforeHandlingAddRequest($form)
+    protected function onObjectFormLoaded(DirectorObjectForm $form)
     {
-        if ($this->apply) {
+        if ($this->object === null && $this->apply) {
             $form->createApplyRuleFor($this->apply);
         }
     }
@@ -153,7 +153,7 @@ class ServiceController extends ObjectController
         }
 
         $form->handleRequest();
-        $this->actions()->add($this->createCloneLink());
+        $this->addActionClone();
 
         if ($this->host) {
             $this->view->subtitle = sprintf(
@@ -229,12 +229,12 @@ class ServiceController extends ObjectController
                 $db = $this->db();
 
                 if ($this->host) {
-                    $this->view->host = $this->host;
+                    // $this->view->host = $this->host;
                     $params['host_id'] = $this->host->id;
                 }
 
                 if ($this->set) {
-                    $this->view->set = $this->set;
+                    // $this->view->set = $this->set;
                     $params['service_set_id'] = $this->set->id;
                 }
                 $this->object = IcingaService::load($params, $db);
@@ -242,9 +242,6 @@ class ServiceController extends ObjectController
                 parent::loadObject();
             }
         }
-        $this->view->undeployedChanges = $this->countUndeployedChanges();
-        $this->view->totalUndeployedChanges = $this->db()
-            ->countActivitiesSinceLastDeployedConfig();
 
         return $this->object;
     }
