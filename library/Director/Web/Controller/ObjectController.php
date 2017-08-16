@@ -2,24 +2,22 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use Exception;
-use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
-use Icinga\Module\Director\Exception\DuplicateKeyException;
-use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
+use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\ObjectPreview;
 use Icinga\Module\Director\Web\Table\ActivityLogTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
+use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
-use ipl\Html\Html;
 use ipl\Html\Link;
 
 abstract class ObjectController extends ActionController
@@ -37,6 +35,8 @@ abstract class ObjectController extends ActionController
         'apiuser',
         'endpoint'
     );
+
+    protected $type;
 
     public function init()
     {
@@ -61,125 +61,62 @@ abstract class ObjectController extends ActionController
             $this->redirectToPreviewForExternals()
                 ->editAction();
         }
-
-        $this->editAction();
-    }
-
-    public function editAction()
-    {
-        $type = $this->getType();
-        $object = $this->requireObject();
-        $name = $object->getObjectName();
-        $this->addTitle($this->translate('Template: %s'), $name);
-        $this->tabs()->activate('modify');
-
-        if ($object->isTemplate()) {
-            $this->actions()->add([
-                Link::create(
-                    $this->translate('Usage'),
-                    "director/${type}template/usage",
-                    ['name' => $name],
-                    ['class' => 'icon-sitemap']
-                )
-            ]);
-        }
-
-        $formName = 'icinga' . ucfirst($type);
-
-        /** @var DirectorObjectForm $form */
-        $form = $this->loadForm($formName);
-        $form
-            ->setDb($this->db())
-            ->setAuth($this->Auth())
-            ->setObject($object);
-
-        $this->beforeHandlingEditRequest($form);
-        $form->handleRequest();
-        $this->content()->add($form);
-        $this->actions()->add($this->createCloneLink());
-    }
-
-    protected function createCloneLink()
-    {
-        return Link::create(
-            $this->translate('Clone'),
-            'director/' . $this->getType() .'/clone',
-            $this->object->getUrlParams(),
-            array('class' => 'icon-paste')
-        );
     }
 
     public function addAction()
     {
-        $imports = $this->params->shift('imports');
         $this->tabs()->activate('add');
-        $type = $this->getType();
-        $ltype = strtolower($type);
+        $url = sprintf('director/%ss', $this->getPluralType());
 
-        $url = sprintf('director/%ss', $ltype);
-        /** @var DirectorObjectForm $form */
-        $form = $this->loadForm('icinga' . ucfirst($type))
-            ->setDb($this->db())
-            ->setAuth($this->Auth())
+        $imports = $this->params->shift('imports');
+        $form = $this->loadObjectForm()
             ->presetImports($imports)
             ->setSuccessUrl($url);
 
-        if ($oType = $this->params->shift('type')) {
+        if ($oType = $this->params->shift('type', 'object')) {
             $form->setPreferredObjectType($oType);
         }
 
         if ($oType === 'template') {
-            $this->assertPermission('director/admin');
-            $this->addTitle(
-                $this->translate('Add new Icinga %s template'),
-                ucfirst($ltype)
-            );
+            $this->addTemplate();
         } else {
-            $this->assertPermission("director/${ltype}s");
-            if (is_string($imports) && strlen($imports)) {
-                $this->addTitle(
-                    $this->translate('Add %s: %s'),
-                    $this->translate(ucfirst($ltype)),
-                    $imports
-                );
-            } else {
-                $this->addTitle(
-                    $this->translate('Add new Icinga %s'),
-                    ucfirst($ltype)
-                );
-            }
+            $this->addObject();
         }
 
-        $this->beforeHandlingAddRequest($form);
         $form->handleRequest();
         $this->content()->add($form);
     }
 
-    protected function beforeHandlingAddRequest($form)
+    public function editAction()
     {
+        $object = $this->requireObject();
+        $this->tabs()->activate('modify');
+        $this->addObjectTitle()
+             ->addObjectForm($object)
+             ->addActionClone()
+             ->addActionUsage();
     }
 
-    protected function beforeHandlingEditRequest($form)
+    public function renderAction()
     {
+        $this->assertPermission('director/showconfig');
+        $this->tabs()->activate('render');
+        $preview = new ObjectPreview($this->requireObject(), $this->getRequest());
+        $preview->renderTo($this);
     }
 
     public function cloneAction()
     {
-        $type = $this->getType();
-        $ltype = strtolower($type);
-        $this->assertPermission('director/' . $ltype);
-        $this->tabs()->activate('modify');
-        $this->addTitle($this->translate('Clone Icinga %s'), ucfirst($type));
+        $this->assertPermission('director/' . strtolower($this->getPluralType()));
+        $object = $this->requireObject();
         $form = IcingaCloneObjectForm::load()
-            ->setObject($this->object)
+            ->setObject($object)
             ->handleRequest();
-        $this->content()->add($form);
-        $this->actions()->add(Link::create(
-            $this->translate('back'),
-            'director/' . $ltype,
-            ['name'  => $this->object->getObjectName()],
-            ['class' => 'icon-left-big']
-        ));
+
+        $this->tabs()->activate('modify');
+        $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
+            ->addBackToObjectLink()
+            ->content()->add($form);
     }
 
     public function fieldsAction()
@@ -199,10 +136,10 @@ abstract class ObjectController extends ActionController
             ->setIcingaObject($object);
 
         if ($id = $this->params->get('field_id')) {
-            $form->loadObject(array(
-                $type . '_id' => $object->id,
+            $form->loadObject([
+                "${type}_id"   => $object->id,
                 'datafield_id' => $id
-            ));
+            ]);
 
             $this->actions()->add(Link::create(
                 $this->translate('back'),
@@ -212,9 +149,10 @@ abstract class ObjectController extends ActionController
             ));
         }
         $form->handleRequest();
-
-        $table = $this->loadTable('icingaObjectDatafield')->setObject($object);
-        $this->content()->add([$form, $table]);
+        $this->content()->add($form);
+        $table = new IcingaObjectDatafieldTable($object);
+        $table->attributes()->set('data-base-target', '_self');
+        $table->renderTo($this);
     }
 
     public function historyAction()
@@ -252,14 +190,112 @@ abstract class ObjectController extends ActionController
             ->renderTo($this);
     }
 
+    protected function addObjectTitle()
+    {
+        $object = $this->requireObject();
+        $name = $object->getObjectName();
+        if ($object->isTemplate()) {
+            $this->addTitle($this->translate('Template: %s'), $name);
+        } else {
+            $this->addTitle($name);
+        }
+
+        return $this;
+    }
+
+    protected function addActionUsage()
+    {
+        $type = $this->getType();
+        $object = $this->requireObject();
+        if ($object->isTemplate() && ! $type === 'serviceSet') {
+            $this->actions()->add([
+                Link::create(
+                    $this->translate('Usage'),
+                    "director/${type}template/usage",
+                    ['name'  => $object->getObjectName()],
+                    ['class' => 'icon-sitemap']
+                )
+            ]);
+        }
+
+        return $this;
+    }
+
+    protected function addActionClone()
+    {
+        $this->actions()->add(Link::create(
+            $this->translate('Clone'),
+            'director/' . $this->getType() .'/clone',
+            $this->object->getUrlParams(),
+            array('class' => 'icon-paste')
+        ));
+
+        return $this;
+    }
+
+    protected function addTemplate()
+    {
+        $this->assertPermission('director/admin');
+        $this->addTitle(
+            $this->translate('Add new Icinga %s template'),
+            $this->getTranslatedType()
+        );
+    }
+
+    protected function addObject()
+    {
+        $this->assertPermission('director/' . $this->getPluralType());
+        $imports = $this->params->get('imports');
+        if (is_string($imports) && strlen($imports)) {
+            $this->addTitle(
+                $this->translate('Add %s: %s'),
+                $this->getTranslatedType(),
+                $imports
+            );
+        } else {
+            $this->addTitle(
+                $this->translate('Add new Icinga %s'),
+                $this->getTranslatedType()
+            );
+        }
+    }
+
+    protected function redirectToPreviewForExternals()
+    {
+        if ($this->object
+            && $this->object->isExternal()
+            && ! in_array($this->object->getShortTableName(), $this->allowedExternals)
+        ) {
+            $this->redirectNow(
+                $this->getRequest()->getUrl()->setPath(sprintf('director/%s/render', $this->getType()))
+            );
+        }
+
+        return $this;
+    }
+
     protected function getType()
     {
-        // Strip final 's' and upcase an eventual 'group'
-        return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/set$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser', 'Set'),
-            $this->getRequest()->getControllerName()
-        );
+        if ($this->type === null) {
+            // Strip final 's' and upcase an eventual 'group'
+            $this->type = preg_replace(
+                array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/set$/'),
+                array('Group', 'Period', 'Argument', 'ApiUser', 'Set'),
+                $this->getRequest()->getControllerName()
+            );
+        }
+
+        return $this->type;
+    }
+
+    protected function getPluralType()
+    {
+        return $this->getType() . 's';
+    }
+
+    protected function getTranslatedType()
+    {
+        return $this->translate(ucfirst($this->getType()));
     }
 
     protected function eventuallyLoadObject()
@@ -300,133 +336,73 @@ abstract class ObjectController extends ActionController
             }
 
             if ($this->object !== null) {
-                $info = new DeploymentInfo($this->db());
-                $info->setObject($this->object);
-
-                if (! $this->getRequest()->isApiRequest()) {
-                    $this->actions()->add(
-                        DeploymentLinkForm::create($this->db(), $info, $this->Auth(), $this->api())->handleRequest()
-                    );
-                }
+                $this->addDeploymentLink();
             }
         }
 
         return $this->object;
     }
 
-    protected function handleApiRequest()
+    protected function addDeploymentLink()
     {
-        $response = $this->getResponse();
-        try {
-            $this->loadObject();
-            $this->processApiRequest();
-        } catch (NotFoundError $e) {
-            $response->setHttpResponseCode(404);
-            $this->sendJson($response, (object) ['error' => $e->getMessage()]);
-            return;
-        } catch (DuplicateKeyException $e) {
-            $response->setHttpResponseCode(422);
-            $this->sendJson($response, (object) ['error' => $e->getMessage()]);
-            return;
-        } catch (Exception $e) {
-            if ($response->getHttpResponseCode() === 200) {
-                $response->setHttpResponseCode(500);
-            }
+        $info = new DeploymentInfo($this->db());
+        $info->setObject($this->object);
 
-            $this->sendJson($response, (object) ['error' => $e->getMessage()]);
-        }
-
-        if ($this->getRequest()->getActionName() !== 'index') {
-            throw new NotFoundError('Not found');
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->actions()->add(
+                DeploymentLinkForm::create(
+                    $this->db(),
+                    $info,
+                    $this->Auth(),
+                    $this->api()
+                )->handleRequest()
+            );
         }
     }
 
-    protected function processApiRequest()
+    protected function addBackToObjectLink()
     {
-        $request = $this->getRequest();
-        $db = $this->db();
+        $this->actions()->add(Link::create(
+            $this->translate('back'),
+            'director/' . strtolower($this->getType()),
+            ['name'  => $this->object->getObjectName()],
+            ['class' => 'icon-left-big']
+        ));
 
-        switch ($request->getMethod()) {
-            case 'DELETE':
-                $this->requireObject();
-                $obj = $this->object->toPlainObject(false, true);
-                $this->loadForm(
-                    'icingaDeleteObject'
-                )->setObject($this->object)->setRequest($request)->onSuccess();
-
-                $this->sendJson($this->getResponse(), $obj);
-                break;
-
-            case 'POST':
-            case 'PUT':
-                $type = $this->getType();
-                $data = json_decode($request->getRawBody());
-
-                if ($data === null) {
-                    $this->getResponse()->setHttpResponseCode(400);
-                    throw new IcingaException(
-                        'Invalid JSON: %s' . $request->getRawBody(),
-                        $this->getLastJsonError()
-                    );
-                } else {
-                    $data = (array) $data;
-                }
-                if ($object = $this->object) {
-                    if ($request->getMethod() === 'POST') {
-                        $object->setProperties($data);
-                    } else {
-                        $data = array_merge(
-                            array(
-                                'object_type' => $object->object_type,
-                                'object_name' => $object->object_name
-                            ),
-                            $data
-                        );
-                        $object->replaceWith(
-                            IcingaObject::createByType($type, $data, $db)
-                        );
-                    }
-                } else {
-                    $object = IcingaObject::createByType($type, $data, $db);
-                }
-
-                $response = $this->getResponse();
-                if ($object->hasBeenModified()) {
-                    $status = $object->hasBeenLoadedFromDb() ? 200 : 201;
-                    $object->store();
-                    $response->setHttpResponseCode($status);
-                } else {
-                    $response->setHttpResponseCode(304);
-                }
-
-                $this->sendJson($response, $object->toPlainObject(false, true));
-                break;
-
-            case 'GET':
-                $this->requireObject();
-                $this->sendJson(
-                    $this->getResponse(),
-                    $this->object->toPlainObject(
-                        $this->params->shift('resolved'),
-                        ! $this->params->shift('withNull'),
-                        $this->params->shift('properties')
-                    )
-                );
-                break;
-
-            default:
-                $request->getResponse()->setHttpResponseCode(400);
-                throw new Exception('Unsupported method ' . $request->getMethod());
-        }
+        return $this;
     }
 
-    protected function countUndeployedChanges()
+    protected function addObjectForm(IcingaObject $object = null)
     {
-        if ($this->object === null) {
-            return 0;
+        $form = $this->loadObjectForm($object);
+        $this->content()->add($form);
+        $form->handleRequest();
+        return $this;
+    }
+
+    protected function loadObjectForm(IcingaObject $object = null)
+    {
+        /** @var DirectorObjectForm $class */
+        $class = sprintf(
+            'Icinga\\Module\\Director\\Forms\\Icinga%sForm',
+            ucfirst($this->getType())
+        );
+
+        $form = $class::load()
+            ->setDb($this->db())
+            ->setAuth($this->Auth());
+
+        if ($object !== null) {
+            $form->setObject($object);
         }
 
-        return $this->db()->countActivitiesSinceLastDeployedConfig($this->object);
+        $this->onObjectFormLoaded($form);
+
+        return $form;
+    }
+
+    protected function onObjectFormLoaded(DirectorObjectForm $form)
+    {
     }
 
     protected function requireObject()
