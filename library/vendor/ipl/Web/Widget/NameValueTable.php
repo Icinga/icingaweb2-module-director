@@ -15,7 +15,8 @@ class NameValueTable extends Table
 
     public function addNameValueRow($name, $value)
     {
-        return $this->body()->add($this->createNameValueRow($name, $value));
+        $this->body()->add($this->createNameValueRow($name, $value));
+        return $this;
     }
 
     public function addNameValuePairs($pairs)
