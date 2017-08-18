@@ -154,7 +154,7 @@ class HostController extends ObjectController
                 array('hs' => 'icinga_service_set'),
                 'hs.id = hsi.service_set_id',
                 array()
-            )->where('hs.host_id = ?', $host->id);
+            )->where('hs.host_id = ?', $host->get('id'));
 
         $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
         /** @var IcingaServiceSet $set*/
@@ -181,7 +181,7 @@ class HostController extends ObjectController
             'imports'     => $parent,
             'object_type' => 'apply',
             'object_name' => $serviceName,
-            'host_id'     => $host->id,
+            'host_id'     => $host->get('id'),
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ], $db);
 
@@ -211,7 +211,7 @@ class HostController extends ObjectController
 
         $parent = IcingaService::load([
             'object_name' => $serviceName,
-            'host_id'     => $from->id
+            'host_id'     => $from->get('id')
         ], $this->db());
 
         // TODO: we want to eventually show the host template name, doesn't work
@@ -221,7 +221,7 @@ class HostController extends ObjectController
         $service = IcingaService::create([
             'object_type' => 'apply',
             'object_name' => $serviceName,
-            'host_id'     => $host->id,
+            'host_id'     => $host->get('id'),
             'imports'     => [$parent],
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ], $db);
@@ -231,7 +231,7 @@ class HostController extends ObjectController
         $form = IcingaServiceForm::load()
             ->setDb($db)
             ->setHost($host)
-            ->setInheritedFrom($from->object_name)
+            ->setInheritedFrom($from->getObjectName())
             ->setObject($service)
             ->handleRequest();
         $this->content()->add($form);
@@ -252,7 +252,7 @@ class HostController extends ObjectController
         )->where(
             'si.parent_service_set_id = ?',
             $this->params->get('setId')
-        )->where('ss.host_id = ?', $this->object->id);
+        )->where('ss.host_id = ?', $this->object->get('id'));
 
         IcingaServiceSet::loadWithAutoIncId($db->fetchOne($query), $this->db())->delete();
         $this->redirectNow(
@@ -276,7 +276,7 @@ class HostController extends ObjectController
         $service = IcingaService::create([
             'object_type' => 'apply',
             'object_name' => $serviceName,
-            'host_id'     => $host->id,
+            'host_id'     => $host->get('id'),
             'imports'     => [$service],
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ], $db);
@@ -334,7 +334,10 @@ class HostController extends ObjectController
         $host = $this->object;
         try {
             $mon = $this->monitoring();
-            if ($host->isObject() && $mon->isAvailable() && $mon->hasHost($host->object_name)) {
+            if ($host->isObject()
+                && $mon->isAvailable()
+                && $mon->hasHost($host->getObjectName())
+            ) {
                 $this->actions()->add(Link::create(
                     $this->translate('Show'),
                     'monitoring/host/show',
@@ -355,6 +358,7 @@ class HostController extends ObjectController
      */
     protected function getHostObject()
     {
+        /** @var IcingaHost $this->object */
         return $this->object;
     }
 }
