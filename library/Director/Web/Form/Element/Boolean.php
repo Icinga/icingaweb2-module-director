@@ -31,6 +31,7 @@ class Boolean extends ZfSelect
     public function isValid($value, $context = null)
     {
         if ($value === 'y' || $value === 'n') {
+            $this->setValue($value);
             return true;
         }
 
