@@ -233,7 +233,8 @@ class ExtensibleSetElement extends BaseElement
             }
             $field = Html::tag('select', ['class' => 'autosubmit']);
             $field->add(Html::tag('option', [
-                'value' => ''
+                'value' => '',
+                'tabindex' => '-1'
             ], $this->translate('- add more -')));
 
             foreach ($this->multiOptions as $key => $label) {
