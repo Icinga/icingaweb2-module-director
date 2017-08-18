@@ -33,7 +33,7 @@ before switching to a new version.
 * Documentation got some little improvements
 * German translation has been refreshed
 * Header alignment has been improved
-* Escaping issues with the Inspect feture have been addressed
+* Escaping issues with the Inspect feature have been addressed
 
 ### Kickstart
 
