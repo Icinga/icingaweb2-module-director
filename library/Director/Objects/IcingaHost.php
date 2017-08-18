@@ -422,6 +422,42 @@ class IcingaHost extends IcingaObject
     }
 
     /**
+     * @return IcingaService[]
+     */
+    public function fetchServices()
+    {
+        $connection = $this->getConnection();
+        $db = $connection->getDbAdapter();
+
+        /** @var IcingaService[] $services */
+        $services = IcingaService::loadAll(
+            $connection,
+            $db->select()->from('icinga_service')
+                ->where('host_id = ?', $this->get('id'))
+        );
+
+        return $services;
+    }
+
+    /**
+     * @return IcingaServiceSet[]
+     */
+    public function fetchServiceSets()
+    {
+        $connection = $this->getConnection();
+        $db = $connection->getDbAdapter();
+
+        /** @var IcingaServiceSet[] $sets */
+        $sets = IcingaServiceSet::loadAll(
+            $connection,
+            $db->select()->from('icinga_service_set')
+                ->where('host_id = ?', $this->get('id'))
+        );
+
+        return $sets;
+    }
+
+    /**
      * @return string
      */
     public function generateApiKey()
