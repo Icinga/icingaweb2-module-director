@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Resolver;
 
 use Icinga\Application\Benchmark;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -53,7 +54,16 @@ class TemplateTree
         $parents = [];
         if (array_key_exists($id, $this->objectMaps)) {
             foreach ($this->objectMaps[$id] as $pid) {
-                $parents[] = $this->names[$pid];
+                if (array_key_exists($pid, $this->names)) {
+                    $parents[] = $this->names[$pid];
+                } else {
+                    throw new ConfigurationError(
+                        'Got invalid parent id %d for %s "%s"',
+                        $pid,
+                        $this->type,
+                        $object->getObjectName()
+                    );
+                }
             }
         }
 
@@ -255,6 +265,11 @@ class TemplateTree
         $children = [];
         $names = [];
         foreach ($templates as $row) {
+            if ($row->object_type === 'object') {
+                $row->id = $row->parent_id;
+                $row->object_name = $row->parent_name;
+                $row->parent_name = $row->parent_id = null;
+            }
             $id = (int) $row->id;
             $pid = (int) $row->parent_id;
             $names[$id] = $row->name;
@@ -305,6 +320,18 @@ class TemplateTree
         $type  = $this->type;
         $table = "icinga_$type";
 
+        if ($type === 'command') {
+            $joinCondition = $db->quoteInto(
+                "p.id = i.parent_${type}_id",
+                'template'
+            );
+        } else {
+            $joinCondition = $db->quoteInto(
+                "p.id = i.parent_${type}_id AND p.object_type = ?",
+                'template'
+            );
+        }
+
         $query = $db->select()->from(
             ['o' => $table],
             [
@@ -320,19 +347,22 @@ class TemplateTree
             []
         )->joinLeft(
             ['p' => $table],
-            $db->quoteInto(
-                'p.id = i.parent_' . $type . '_id AND p.object_type = ?',
-                'template'
-            ),
+            $joinCondition,
             []
-        )/*->where(
-            'p.object_type = ?',
-            'template'
-        )*/->where(
-            'o.object_type = ?',
-            'template'
         )->order('o.id')->order('i.weight');
-// echo '<pre style="padding-top: 6em">' . $query . '</pre>';
+
+        if ($type === 'command') {
+            $query->where(
+                'o.object_type = ? OR p.id IS NOT NULL',
+                'template'
+            );
+        } else {
+            $query->where(
+                'o.object_type = ?',
+                'template'
+            );
+        }
+        // echo '<pre style="padding-top: 6em">' . $query . '</pre>';
 
         return $db->fetchAll($query);
     }
