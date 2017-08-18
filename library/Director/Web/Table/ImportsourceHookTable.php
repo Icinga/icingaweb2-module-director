@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\PlainObjectRenderer;
 use ipl\Web\Table\SimpleQueryBasedTable;
 
 class ImportsourceHookTable extends SimpleQueryBasedTable
@@ -48,6 +49,21 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
     public function getColumnsToBeRendered()
     {
         return $this->getColumns();
+    }
+
+    public function renderRow($row)
+    {
+        $tr = $this::tr();
+
+        foreach ($this->getColumnsToBeRendered() as $column) {
+            $td = $this::td();
+            if (property_exists($row, $column)) {
+                $td->setContent(PlainObjectRenderer::render($row->$column));
+            }
+            $tr->add($td);
+        }
+
+        return $tr;
     }
 
     protected function sourceHook()
