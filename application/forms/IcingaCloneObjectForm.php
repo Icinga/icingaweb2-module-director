@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 
@@ -52,6 +53,10 @@ class IcingaCloneObjectForm extends DirectorForm
             $object->toPlainObject($resolve),
             $object->getConnection()
         )->set('object_name', $newname);
+
+        if ($new instanceof IcingaHost) {
+            $new->set('api_key', null);
+        }
 
         if ($new->store()) {
             $this->setSuccessUrl(
