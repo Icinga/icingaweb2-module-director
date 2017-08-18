@@ -16,6 +16,7 @@ use Icinga\Module\Director\Web\Table\GeneratedConfigFileTable;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Tabs\InfraTabs;
+use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
 use Icinga\Module\Director\Web\Widget\DeployedConfigInfoHeader;
 use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
@@ -137,6 +138,27 @@ class ConfigController extends ActionController
         }
 
         $table->renderTo($this);
+    }
+
+    public function activityAction()
+    {
+        $this->assertPermission('director/showconfig');
+        $p = $this->params;
+        $info = new ActivityLogInfo(
+            $this->db(),
+            $p->get('type'),
+            $p->get('name')
+        );
+
+        $info->setChecksum($p->get('checksum'))
+            ->setId($p->get('id'));
+
+        $this->tabs($info->getTabs($this->url()));
+        $info->showTab($this->params->get('show'));
+
+        $this->addTitle($info->getTitle());
+        $this->controls()->prepend($info->getPagination($this->url()));
+        $this->content()->add($info);
     }
 
     public function settingsAction()

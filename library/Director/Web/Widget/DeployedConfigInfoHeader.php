@@ -62,7 +62,7 @@ class DeployedConfigInfoHeader extends Html
                 Html::br(),
                 Link::create(
                     $this->translate('Last related activity'),
-                    'director/show/activitylog',
+                    'director/config/activity',
                     ['checksum' => $config->getLastActivityHexChecksum()],
                     ['class' => 'icon-clock', 'data-base-target' => '_next']
                 ),

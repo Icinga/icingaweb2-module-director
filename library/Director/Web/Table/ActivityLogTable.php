@@ -86,7 +86,7 @@ class ActivityLogTable extends ZfQueryBasedTable
                 '[' . $row->author . ']',
                 Link::create(
                     $row->action,
-                    'director/show/activitylog',
+                    'director/config/activity',
                     array_merge(['id' => $row->id], $this->extraParams),
                     ['title' => $this->translate('Show details related to this change')]
                 ),
