@@ -36,11 +36,20 @@ class ImportSource extends DbObjectWithSettings
 
     private $rowModifiers;
 
+    /**
+     * @param bool $required
+     * @return ImportRun|null
+     */
     public function fetchLastRun($required = false)
     {
         return $this->fetchLastRunBefore(time() + 1, $required);
     }
 
+    /**
+     * @param $timestamp
+     * @param bool $required
+     * @return ImportRun|null
+     */
     public function fetchLastRunBefore($timestamp, $required = false)
     {
         if (! $this->hasBeenLoadedFromDb()) {
