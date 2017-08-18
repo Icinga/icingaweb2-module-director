@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Repository;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 
@@ -37,7 +38,9 @@ trait RepositoryByObjectHelper
 
     /**
      * @param IcingaObject $object
+     * @param Db|null $connection
      * @return static
+     * @throws ProgrammingError
      */
     public static function instanceByObject(IcingaObject $object, Db $connection = null)
     {
@@ -46,12 +49,13 @@ trait RepositoryByObjectHelper
         }
 
         if (! $connection) {
-            var_dump($object->hasBeenLoadedFromDb()); exit;
-            echo '<pre>';
-            debug_print_backtrace();
-            echo '</pre>';
-            throw new \Exception('SDFA');
+            throw new ProgrammingError(
+                'Cannot use repository for %s "%s" as it has no DB connection',
+                $object->getShortTableName(),
+                $object->getObjectName()
+            );
         }
+
         return static::instanceByType(
             $object->getShortTableName(),
             $connection
