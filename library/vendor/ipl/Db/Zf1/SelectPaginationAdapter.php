@@ -2,6 +2,7 @@
 
 namespace ipl\Db\Zf1;
 
+use Icinga\Application\Benchmark;
 use ipl\Data\Paginatable;
 use Zend_Db_Select as ZfSelect;
 
@@ -27,9 +28,13 @@ class SelectPaginationAdapter implements Paginatable
 
     public function count()
     {
-        return $this->query->getAdapter()->fetchOne(
+        Benchmark::measure('Running count() for pagination');
+        $count = $this->query->getAdapter()->fetchOne(
             $this->getCountQuery()
         );
+        Benchmark::measure("Counted $count rows");
+
+        return $count;
     }
 
     public function limit($count = null, $offset = null)
