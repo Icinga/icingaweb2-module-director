@@ -170,8 +170,14 @@ class CompatController extends Zend_Controller_Action implements ControlsAndCont
         return $this->moduleName;
     }
 
+    /**
+     * @param null $file
+     * @return Config
+     * @codingStandardsIgnoreStart
+     */
     public function Config($file = null)
     {
+        // @codingStandardsIgnoreEnd
         if ($this->moduleName === null) {
             if ($file === null) {
                 return Config::app();
@@ -202,9 +208,11 @@ class CompatController extends Zend_Controller_Action implements ControlsAndCont
      * Return this controller's module
      *
      * @return  Module
+     * @codingStandardsIgnoreStart
      */
     public function Module()
     {
+        // @codingStandardsIgnoreEnd
         if ($this->module === null) {
             $this->module = Icinga::app()->getModuleManager()->getModule($this->getModuleName());
         }
@@ -212,9 +220,13 @@ class CompatController extends Zend_Controller_Action implements ControlsAndCont
         return $this->module;
     }
 
-
+    /**
+     * @return Window
+     * @codingStandardsIgnoreStart
+     */
     public function Window()
     {
+        // @codingStandardsIgnoreEnd
         if ($this->window === null) {
             $this->window = new Window(
                 $this->_request->getHeader('X-Icinga-WindowId', Window::UNDEFINED)
@@ -252,9 +264,11 @@ class CompatController extends Zend_Controller_Action implements ControlsAndCont
      * Get the authentication manager
      *
      * @return Auth
+     * @codingStandardsIgnoreStart
      */
     public function Auth()
     {
+        // @codingStandardsIgnoreEnd
         if ($this->auth === null) {
             $this->auth = Auth::getInstance();
         }
