@@ -7,7 +7,7 @@ PSR2 CS Test:
   tags:
   - xenial
   script:
-  - phpcs --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ application/ configuration.php run.php test
+  - phpcs --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ library/vendor/ipl/ application/ *.php test
 
 CentOS 7/MySQL:
   stage: Unit-Tests with DB
