@@ -17,9 +17,10 @@ class ImportSourceDetails extends Html
     public function __construct(ImportSource $source)
     {
         $this->source = $source;
+        $this->prepareContent();
     }
 
-    protected function assemble()
+    protected function prepareContent()
     {
         $source = $this->source;
         $description = $source->get('description');
