@@ -75,6 +75,10 @@ class IcingaCloneObjectForm extends DirectorForm
             $connection
         )->set('object_name', $newname);
 
+        if ($new->isExternal()) {
+            $new->set('object_type', 'object');
+        }
+
         if ($object instanceof IcingaHost) {
             $new->set('api_key', null);
             if ($this->getValue('clone_services') === 'y') {

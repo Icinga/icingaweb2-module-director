@@ -102,6 +102,9 @@ abstract class ObjectController extends ActionController
         $this->assertPermission('director/showconfig');
         $this->tabs()->activate('render');
         $preview = new ObjectPreview($this->requireObject(), $this->getRequest());
+        if ($this->object->isExternal()) {
+            $this->addActionClone();
+        }
         $preview->renderTo($this);
     }
 
@@ -113,7 +116,11 @@ abstract class ObjectController extends ActionController
             ->setObject($object)
             ->handleRequest();
 
-        $this->tabs()->activate('modify');
+        if ($object->isExternal()) {
+            $this->tabs()->activate('render');
+        } else {
+            $this->tabs()->activate('modify');
+        }
         $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
             ->addBackToObjectLink()
             ->content()->add($form);
