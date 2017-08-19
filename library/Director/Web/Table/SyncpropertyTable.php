@@ -4,12 +4,24 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\SyncRule;
 use ipl\Html\Link;
+use ipl\Web\Table\Extension\ZfSortablePriority;
 use ipl\Web\Table\ZfQueryBasedTable;
 
 class SyncpropertyTable extends ZfQueryBasedTable
 {
+    use ZfSortablePriority;
+
     /** @var SyncRule */
     protected $rule;
+
+    protected $searchColumns = [
+        'source_expression',
+        'destination_field',
+    ];
+
+    protected $keyColumn = 'id';
+
+    protected $priorityColumn = 'priority';
 
     public static function create(SyncRule $rule)
     {
@@ -19,20 +31,28 @@ class SyncpropertyTable extends ZfQueryBasedTable
         return $table;
     }
 
+    public function render()
+    {
+        return $this->renderWithSortableForm();
+    }
+
     public function renderRow($row)
     {
-        return $this::tr([
-            $this::td($row->source_name),
-            $this::td($row->source_expression),
-            $this::td(new Link(
-                $row->destination_field,
-                'director/syncrule/editproperty',
-                [
-                    'id'      => $row->id,
-                    'rule_id' => $row->rule_id,
-                ]
-            )),
-        ]);
+        return $this->addSortPriorityButtons(
+            $this::row([
+                $row->source_name,
+                $row->source_expression,
+                new Link(
+                    $row->destination_field,
+                    'director/syncrule/editproperty',
+                    [
+                        'id'      => $row->id,
+                        'rule_id' => $row->rule_id,
+                    ]
+                ),
+            ]),
+            $row
+        );
     }
 
     public function getColumnsToBeRendered()
@@ -40,14 +60,15 @@ class SyncpropertyTable extends ZfQueryBasedTable
         return [
             $this->translate('Source name'),
             $this->translate('Source field'),
-            $this->translate('Destination')
+            $this->translate('Destination'),
+            $this->getSortPriorityTitle()
         ];
     }
 
     public function prepareQuery()
     {
         return $this->db()->select()->from(
-            ['r' => 'sync_rule'],
+            ['p' => 'sync_property'],
             [
                 'id'                => 'p.id',
                 'rule_id'           => 'p.rule_id',
@@ -61,7 +82,7 @@ class SyncpropertyTable extends ZfQueryBasedTable
                 'merge_policy'      => 'p.merge_policy'
             ]
         )->join(
-            ['p' => 'sync_property'],
+            ['r' => 'sync_rule'],
             'r.id = p.rule_id',
             []
         )->join(
@@ -69,7 +90,7 @@ class SyncpropertyTable extends ZfQueryBasedTable
             's.id = p.source_id',
             []
         )->where(
-            'r.id = ?',
+            'p.rule_id = ?',
             $this->rule->get('id')
         )->order('p.priority');
     }

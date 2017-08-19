@@ -159,9 +159,11 @@ class SyncruleController extends ActionController
             ['rule_id' => $rule->get('id')],
             ['class' => 'icon-plus']
         ));
-
         $this->addTitle($this->translate('Sync properties') . ': ' . $rule->get('rule_name'));
-        SyncpropertyTable::create($rule)->renderTo($this);
+
+        SyncpropertyTable::create($rule)
+            ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
+            ->renderTo($this);
     }
 
     public function editpropertyAction()
@@ -201,7 +203,9 @@ class SyncruleController extends ActionController
 
         $this->content()->add($form->handleRequest());
         $this->tabs(new SyncRuleTabs($rule))->activate('property');
-        SyncpropertyTable::create($rule)->renderTo($this);
+        SyncpropertyTable::create($rule)
+            ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
+            ->renderTo($this);
     }
 
     public function historyAction()
