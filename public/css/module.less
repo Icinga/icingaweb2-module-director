@@ -1249,6 +1249,25 @@ table.config-diff {
     }
 }
 
+input[type=submit].icon-button {
+  font-family: 'ifont';
+  font-weight: normal;
+  background: none;
+  border: none;
+  padding: 0.2em 0.4em 0.2em 0.4em;
+  margin: 0 0 0 0.2em;
+
+  &:hover {
+    background-color: @icinga-blue;
+  }
+
+  &:disabled {
+    background-color: unset;
+    color: @gray-light;
+    cursor: default;
+  }
+}
+
 ul.filter-root {
     margin-top: 0;
     width: 100%;
