@@ -5,6 +5,7 @@ namespace ipl\Web\Table;
 use Countable;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\ProgrammingError;
 use ipl\Data\Paginatable;
 use ipl\Db\Zf1\FilterRenderer;
 use ipl\Html\Table;
@@ -26,7 +27,22 @@ abstract class QueryBasedTable extends Table implements Countable
 
     private $fetchedRows;
 
+    private $firstRow;
+
+    private $firstRowOnPage;
+
+    private $lastRow = false;
+
+    private $lastRowOnPage = false;
+
+    private $rowNumber;
+
+    private $rowNumberOnPage;
+
     protected $lastDay;
+
+    /** @var Paginator|null Will usually be defined at rendering time */
+    protected $paginator;
 
     private $isUsEnglish;
 
@@ -107,9 +123,46 @@ abstract class QueryBasedTable extends Table implements Countable
         $this->renderDayIfNew((int) $timestamp);
     }
 
+    public function isOnFirstPage()
+    {
+        if ($this->paginator === null) {
+            throw new ProgrammingError('Unable to access my paginator');
+        }
+
+        return $this->paginator->getCurrentPage() === 1;
+    }
+
+    public function isOnFirstRow()
+    {
+        return $this->firstRow === true;
+    }
+
+    public function isOnLastRow()
+    {
+        return $this->lastRow === true;
+    }
+
     protected function fetchRows()
     {
+        $firstPage = $this->isOnFirstPage();
+        $this->rowNumberOnPage = 0;
+        $this->rowNumber = $this->getPaginationAdapter()->getOffset();
+        $lastRow = count($this);
         foreach ($this->fetch() as $row) {
+            $this->rowNumber++;
+            $this->rowNumberOnPage++;
+            if (null === $this->firstRow) {
+                if ($firstPage) {
+                    $this->firstRow = true;
+                } else {
+                    $this->firstRow = false;
+                }
+            } elseif (true === $this->firstRow) {
+                $this->firstRow = false;
+            }
+            if ($lastRow === $this->rowNumber) {
+                $this->lastRow = true;
+            }
             // Hint: do not fetch the body first, the row might want to replace it
             $tr = $this->renderRow($row);
             $this->body()->add($tr);
@@ -185,9 +238,9 @@ abstract class QueryBasedTable extends Table implements Countable
     {
         $url = $controller->url();
         $c = $controller->content();
-        $paginator = $this->getPaginator($url);
+        $this->paginator = $this->getPaginator($url);
         $this->initializeOptionalQuickSearch($controller);
-        $controller->actions()->add($paginator);
+        $controller->actions()->add($this->paginator);
         $c->add($this);
 
         // TODO: move elsewhere
