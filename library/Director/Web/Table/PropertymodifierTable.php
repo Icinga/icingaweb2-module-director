@@ -2,20 +2,44 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Exception;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 use ipl\Html\Link;
+use ipl\Web\Table\Extension\ZfSortablePriority;
 use ipl\Web\Table\ZfQueryBasedTable;
+use ipl\Web\Url;
 
 class PropertymodifierTable extends ZfQueryBasedTable
 {
+    use ZfSortablePriority;
+
+    protected $searchColumns = [
+        'property_name',
+        'target_property',
+    ];
+
     /** @var ImportSource */
     protected $source;
 
-    public static function load(ImportSource $source)
+    /** @var Url */
+    protected $url;
+
+    protected $keyColumn = 'id';
+
+    protected $priorityColumn = 'priority';
+
+    public static function load(ImportSource $source, Url $url)
     {
         $table = new static($source->getConnection());
         $table->source = $source;
+        $table->url = $url;
         return $table;
+    }
+
+    public function render()
+    {
+        return $this->renderWithSortableForm();
     }
 
     protected function assemble()
@@ -42,26 +66,39 @@ class PropertymodifierTable extends ZfQueryBasedTable
         if ($row->target_property !== null) {
             $caption .= ' -> ' . $row->target_property;
         }
-        if ($row->description !== null) {
+        if ($row->description === null) {
+            $class = $row->provider_class;
+            try {
+                /** @var ImportSourceHook $hook */
+                $hook = new $class;
+                $caption .= ': ' . $hook->getName();
+            } catch (Exception $e) {
+                $caption = [
+                    $caption,
+                    ': ',
+                    $this::tag('span', ['class' => 'error'], $e->getMessage())
+                ];
+            }
+        } else {
             $caption .= ': ' . $row->description;
         }
 
-        return $this::row([
-            Link::create(
-                $caption,
-                'director/importsource/editmodifier',
-                [
+        return $this->addSortPriorityButtons(
+            $this::row([
+                Link::create($caption, 'director/importsource/editmodifier', [
                     'id'        => $row->id,
                     'source_id' => $row->source_id,
-                ]
-            )
-        ]);
+                ]),
+            ]),
+            $row
+        );
     }
 
     public function getColumnsToBeRendered()
     {
         return [
             $this->translate('Property'),
+            $this->getSortPriorityTitle()
         ];
     }
 

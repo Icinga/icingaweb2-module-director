@@ -73,7 +73,9 @@ class ImportsourceController extends ActionController
     protected function requireImportSourceAndAddModifierTable()
     {
         $source = ImportSource::load($this->params->getRequired('source_id'), $this->db());
-        PropertymodifierTable::load($source)->renderTo($this);
+        PropertymodifierTable::load($source, $this->url())
+            ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
+            ->renderTo($this);
         return $source;
     }
 
