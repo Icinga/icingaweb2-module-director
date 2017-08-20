@@ -79,13 +79,14 @@ class ImportsourceController extends ActionController
 
     public function modifierAction()
     {
+        $this->addTitle($this->translate('Property modifiers'));
         $source = $this->requireImportSourceAndAddModifierTable();
         $this->addAddLink(
             $this->translate('Add property modifier'),
             'director/importsource/addmodifier',
             ['source_id' => $source->getId()],
             '_self'
-        )->addTitle($this->translate('Property modifiers'));
+        );
     }
 
     public function historyAction()
