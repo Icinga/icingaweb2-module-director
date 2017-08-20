@@ -1087,7 +1087,7 @@ abstract class DbObject
      * @param \Zend_Db_Select $query
      * @param string|null $keyColumn
      *
-     * @return self[]
+     * @return static[]
      */
     public static function loadAll(DbConnection $connection, $query = null, $keyColumn = null)
     {
