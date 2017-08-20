@@ -35,8 +35,9 @@ class ImportRowModifier extends DbObjectWithSettings
     public function getInstance()
     {
         if ($this->hookInstance === null) {
+            $class = $this->get('provider_class');
             /** @var PropertyModifierHook $obj */
-            $obj = new $this->get('provider_class');
+            $obj = new $class;
             $obj->setSettings($this->getSettings());
             $obj->setTargetProperty($this->get('target_property'));
             $obj->setDb($this->connection);
