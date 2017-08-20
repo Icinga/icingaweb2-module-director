@@ -314,11 +314,6 @@ class HostController extends ObjectController
 
     public function agentAction()
     {
-        $this->content()->add(
-            IcingaHostAgentForm::load()
-                ->setObject($this->requireObject())
-                ->handleRequest()
-        );
         $selfService = new SelfService($this->getHostObject(), $this->api());
         if ($os = $this->params->get('download')) {
             $selfService->handleLegacyAgentDownloads($os);
