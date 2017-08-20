@@ -132,6 +132,9 @@ class TemplateTree
     {
         if ($object->hasBeenLoadedFromDb()) {
             return $this->getAncestorsById($object->getProperty('id'));
+        } elseif ($id = $object->getProperty('id')) {
+            // Special, this is for calls from onStore()
+            return $this->getAncestorsById($id);
         } else {
             throw new NotImplementedError('Not yet');
             // return $this->getAncestorsForUnstoredObject($object);
