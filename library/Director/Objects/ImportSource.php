@@ -168,13 +168,16 @@ class ImportSource extends DbObjectWithSettings
     public function fetchRowModifiers()
     {
         $db = $this->getDb();
-        return ImportRowModifier::loadAll(
+
+        $modifiers = ImportRowModifier::loadAll(
             $this->getConnection(),
             $db->select()
                ->from('import_row_modifier')
                ->where('source_id = ?', $this->id)
-               ->order('priority DESC')
+               ->order('priority ASC')
         );
+
+        return $modifiers;
     }
 
     protected function prepareRowModifiers()
@@ -196,6 +199,7 @@ class ImportSource extends DbObjectWithSettings
     {
         $list = array();
         foreach ($this->getRowModifiers() as $rowMods) {
+            /** @var PropertyModifierHook $mod */
             foreach ($rowMods as $mod) {
                 if ($mod->hasTargetProperty()) {
                     $list[$mod->getTargetProperty()] = true;
