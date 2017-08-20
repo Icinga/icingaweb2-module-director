@@ -1416,6 +1416,8 @@ CREATE TABLE import_row_modifier (
 );
 
 CREATE INDEX import_row_modifier_search_idx ON import_row_modifier (property_name);
+CREATE UNIQUE INDEX import_row_modifier_prio
+  ON import_row_modifier (source_id, priority);
 
 
 CREATE TABLE import_row_modifier_setting (
@@ -1839,4 +1841,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (138, NOW());
+  VALUES (139, NOW());
