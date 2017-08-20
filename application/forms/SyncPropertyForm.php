@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Exception;
 use Icinga\Module\Director\Hook\ImportSourceHook;
+use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -355,6 +356,7 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function onSuccess()
     {
+        /** @var SyncProperty $object */
         $object = $this->getObject();
         $object->set('rule_id', $this->rule->get('id')); // ?!
 
@@ -363,7 +365,6 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         $sourceColumn = $this->getValue('source_column');
-        unset($this->source_column);
         $this->removeElement('source_column');
 
         if ($sourceColumn !== self::EXPRESSION) {
@@ -375,13 +376,6 @@ class SyncPropertyForm extends DirectorObjectForm
             $destination = $this->getValue('customvar');
             $object->destination_field = 'vars.' . $destination;
         }
-
-        if ($object->hasBeenModified()) {
-            if (! $object->hasBeenLoadedFromDb()) {
-                $object->priority = $this->rule->getPriorityForNextProperty();
-            }
-        }
-
 
         return parent::onSuccess();
     }
