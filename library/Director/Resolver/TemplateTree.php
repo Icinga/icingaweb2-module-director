@@ -141,6 +141,7 @@ class TemplateTree
 
     protected function getAncestorsForUnstoredObject(IcingaObject $object)
     {
+        $this->requireTree();
         $names = $object->imports()->listImportNames();
         $ancestors = [];
         foreach ($names as $name) {
