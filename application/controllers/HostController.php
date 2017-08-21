@@ -7,6 +7,7 @@ use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
+use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
@@ -57,6 +58,12 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addServicesHeader();
         $this->addTitle($this->translate('Add Service Set: %s'), $host->getObjectName());
+        $this->content()->add(
+            IcingaServiceSetForm::load()
+                ->setHost($host)
+                ->setDb($this->db())
+                ->handleRequest()
+        );
     }
 
     protected function addServicesHeader()
@@ -72,8 +79,8 @@ class HostController extends ObjectController
             ['class' => 'icon-plus']
         ))->add(Link::create(
             $this->translate('Add service set'),
-            'director/serviceset',
-            ['host' => $hostname],
+            'director/host/serviceset',
+            ['name' => $hostname],
             ['class' => 'icon-plus']
         ));
     }
