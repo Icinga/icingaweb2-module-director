@@ -103,7 +103,7 @@ class Attributes
     }
 
     /**
-     * @param Attribute|string $attribute
+     * @param Attribute|string|array $attribute
      * @param string|array $value
      * @return $this
      */
