@@ -7,6 +7,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Forms\IcingaMultiEditForm;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
 use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
@@ -49,11 +50,19 @@ abstract class ObjectsController extends ActionController
 
     protected function apiRequestHandler()
     {
+        $table = $this->getTable();
+        if ($this->getRequest()->getControllerName() === 'services'
+            && $host = $this->params->get('host')
+        ) {
+            $host = IcingaHost::load($host, $this->db());
+            $table->getQuery()->where('host_id = ?', $host->get('id'));
+        }
+
         return (new IcingaObjectsHandler(
             $this->getRequest(),
             $this->getResponse(),
             $this->db()
-        ))->setTable($this->getTable());
+        ))->setTable($table);
     }
 
     public function indexAction()
