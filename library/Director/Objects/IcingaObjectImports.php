@@ -274,7 +274,8 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         // $resolver = $this->object->templateResolver();
         // $this->objects = $resolver->fetchParents();
-        $this->objects = IcingaTemplateRepository::instanceByObject($this->object)->getTemplatesFor($this->object);
+        $this->objects = IcingaTemplateRepository::instanceByObject($this->object)
+            ->getTemplatesIndexedByNameFor($this->object);
         if (empty($this->objects)) {
             $this->imports = array();
         } else {

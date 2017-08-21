@@ -50,6 +50,20 @@ class IcingaTemplateRepository
         return $templates;
     }
 
+    /**
+     * @param IcingaObject $object
+     * @return IcingaObject[]
+     */
+    public function getTemplatesIndexedByNameFor(IcingaObject $object)
+    {
+        $templates = [];
+        foreach ($this->getTemplatesFor($object) as $template) {
+            $templates[$template->getObjectName()] = $template;
+        }
+
+        return $templates;
+    }
+
     public function persistImportNames()
     {
     }

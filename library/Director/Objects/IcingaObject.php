@@ -19,7 +19,6 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
-use Icinga\Module\Director\Resolver\TemplateTree;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
@@ -871,6 +870,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->listImportNames();
     }
 
+    /**
+     * @deprecated This should no longer be in use
+     * @return IcingaTemplateResolver
+     */
     public function templateResolver()
     {
         if ($this->templateResolver === null) {
@@ -2437,7 +2440,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($object->supportsCustomVars()) {
             $vars = $object->getVars();
-            $object->vars = array();
+            $object->set('vars', []);
         }
 
         $this->setProperties((array) $object->toPlainObject(null, true));
