@@ -28,6 +28,8 @@ class TemplateTree
 
     protected $names;
 
+    protected $templateNameToId;
+
     public function __construct($type, Db $connection)
     {
         $this->type = $type;
@@ -136,11 +138,26 @@ class TemplateTree
             // Special, this is for calls from onStore()
             return $this->getAncestorsById($id);
         } else {
-            return [];
-            // TODO: Figure out whether to implement this:
-            // throw new NotImplementedError('Not yet');
-            // return $this->getAncestorsForUnstoredObject($object);
+            return $this->getAncestorsForUnstoredObject($object);
         }
+    }
+
+    protected function getAncestorsForUnstoredObject(IcingaObject $object)
+    {
+        $names = $object->imports()->listImportNames();
+        $ancestors = [];
+        foreach ($names as $name) {
+            $pid = $this->templateNameToId[$name];
+            $this->getAncestorsById($pid, $ancestors);
+
+            // Hint: inheritance order matters
+            if (false !== ($key = array_search($name, $ancestors))) {
+                unset($ancestors[$key]);
+            }
+            $ancestors[$pid] = $name;
+        }
+
+        return $ancestors;
     }
 
     protected function requireObjectMaps()
@@ -304,6 +321,7 @@ class TemplateTree
         $this->children  = $children;
         $this->rootNodes = $rootNodes;
         $this->names = $names;
+        $this->templateNameToId = array_flip($names);
         Benchmark::measure(sprintf('"%s" Template Tree ready', $this->type));
     }
 
