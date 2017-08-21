@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\IcingaTimePeriodRange;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaTimePeriodRangeForm extends DirectorObjectForm
@@ -38,6 +39,29 @@ class IcingaTimePeriodRangeForm extends DirectorObjectForm
         $this->period = $period;
         $this->setDb($period->getConnection());
         return $this;
+    }
+
+    /**
+     * @param IcingaTimePeriodRange $object
+     */
+    protected function deleteObject($object)
+    {
+        $key = $object->get('range_key');
+        $period = $this->period;
+        $period->ranges()->remove($key);
+        $period->store();
+        $msg = sprintf(
+            'Time period range "%s" has been removed from %s',
+            $key,
+            $period->getObjectName()
+        );
+
+        $url = $this->getSuccessUrl()->without(
+            ['range', 'range_type']
+        );
+
+        $this->setSuccessUrl($url);
+        $this->redirectOnSuccess($msg);
     }
 
     public function onSuccess()

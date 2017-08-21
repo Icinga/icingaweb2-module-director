@@ -857,7 +857,7 @@ abstract class DbObject
         return $result !== false;
     }
 
-    protected function createWhere()
+    public function createWhere()
     {
         if ($id = $this->getAutoincId()) {
             return $this->db->quoteInto(
