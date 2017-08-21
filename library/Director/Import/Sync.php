@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
@@ -509,7 +510,7 @@ class Sync
     }
 
     /**
-     * @param IcingaObject $object
+     * @param DbObject $object
      * @return $this
      */
     protected function setResolver($object)
@@ -559,7 +560,7 @@ class Sync
      *
      * TODO: This needs to be splitted into smaller methods
      *
-     * @return array          List of modified IcingaObjects
+     * @return DbObject[]          List of modified IcingaObjects
      */
     protected function prepare()
     {
@@ -657,7 +658,7 @@ class Sync
             foreach ($objects as $object) {
                 $this->setResolver($object);
                 if ($object->shouldBeRemoved()) {
-                    $object->delete($db);
+                    $object->delete();
                     $deleted++;
                     continue;
                 }
