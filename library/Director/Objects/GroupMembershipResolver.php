@@ -381,7 +381,13 @@ abstract class GroupMembershipResolver
     {
         $mappings = array();
 
-        foreach ($this->getObjects() as $object) {
+        if ($this->objects === null) {
+            $objects = $this->fetchAllObjects();
+        } else {
+            $objects = & $this->objects;
+        }
+
+        foreach ($objects as $object) {
             // TODO: fix this last hard host dependency
             $resolver = HostApplyMatches::prepare($object);
             foreach ($groups as $groupId => $filter) {
@@ -449,10 +455,13 @@ abstract class GroupMembershipResolver
             array("gor" => $this->getResolvedTableName()),
             "go.${type}_id = gor.${type}_id AND go.${type}group_id = gor.${type}group_id",
             array()
-        )->where("gor.${type}_id IS NULL");
+        );
 
         $this->addMembershipWhere($query, "go.${type}_id", $this->objects);
         $this->addMembershipWhere($query, "go.${type}group_id", $this->groups);
+
+        // Order matters, this must be AND:
+        $query->where("gor.${type}_id IS NULL");
 
         return $this->db->fetchAll($query);
     }
@@ -498,10 +507,15 @@ abstract class GroupMembershipResolver
     protected function getObjects()
     {
         if ($this->objects === null) {
-            $this->objects = IcingaObject::loadAllByType($this->getType(), $this->connection);
+            $this->objects = $this->fetchAllObjects();
         }
 
         return $this->objects;
+    }
+
+    protected function fetchAllObjects()
+    {
+        return IcingaObject::loadAllByType($this->getType(), $this->connection);
     }
 
     protected function assertBeenLoadedFromDb(IcingaObject $object)
