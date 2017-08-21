@@ -51,7 +51,15 @@ abstract class ObjectController extends ActionController
             }
             $handler->dispatch();
         } else {
-            $this->tabs(new ObjectTabs($this->getType(), $this->getAuth(), $this->object));
+            if ($this->getRequest()->getActionName() === 'add') {
+                $this->addSingleTab(
+                    sprintf($this->translate('Add %s'), ucfirst($this->getType())),
+                    null,
+                    'add'
+                );
+            } else {
+                $this->tabs(new ObjectTabs($this->getType(), $this->getAuth(), $this->object));
+            }
         }
     }
 
