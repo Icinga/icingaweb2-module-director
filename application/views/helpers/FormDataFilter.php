@@ -220,7 +220,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     {
         $value = $filter === null ? '' : $filter->getExpression();
         if (is_array($value)) {
-            return $this->view->formExtensibleSet(
+            return $this->view->formIplExtensibleSet(
                 $this->elementId('value', $filter),
                 $value
             );
