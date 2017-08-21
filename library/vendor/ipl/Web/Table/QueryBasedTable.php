@@ -126,7 +126,8 @@ abstract class QueryBasedTable extends Table implements Countable
     public function isOnFirstPage()
     {
         if ($this->paginator === null) {
-            throw new ProgrammingError('Unable to access my paginator');
+            // No paginator? Then there should be only a single page
+            return true;
         }
 
         return $this->paginator->getCurrentPage() === 1;
