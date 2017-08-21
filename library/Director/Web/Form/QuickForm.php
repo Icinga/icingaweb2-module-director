@@ -398,20 +398,24 @@ abstract class QuickForm extends QuickBaseForm
 
     public function addException(Exception $e, $elementName = null)
     {
-        $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
-        $file = array_pop($file);
-        $msg = sprintf(
-            '%s (%s:%d)',
-            $e->getMessage(),
-            $file,
-            $e->getLine()
-        );
-
+        $msg = $this->getErrorMessageForException($e);
         if ($el = $this->getElement($elementName)) {
             $el->addError($msg);
         } else {
             $this->addError($msg);
         }
+    }
+
+    protected function getErrorMessageForException(Exception $e)
+    {
+        $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
+        $file = array_pop($file);
+        return sprintf(
+            '%s (%s:%d)',
+            $e->getMessage(),
+            $file,
+            $e->getLine()
+        );
     }
 
     public function onSuccess()
