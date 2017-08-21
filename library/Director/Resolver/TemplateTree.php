@@ -136,7 +136,9 @@ class TemplateTree
             // Special, this is for calls from onStore()
             return $this->getAncestorsById($id);
         } else {
-            throw new NotImplementedError('Not yet');
+            return [];
+            // TODO: Figure out whether to implement this:
+            // throw new NotImplementedError('Not yet');
             // return $this->getAncestorsForUnstoredObject($object);
         }
     }
