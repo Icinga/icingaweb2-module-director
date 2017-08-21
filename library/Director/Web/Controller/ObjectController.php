@@ -68,12 +68,12 @@ abstract class ObjectController extends ActionController
         $this->tabs()->activate('add');
         $url = sprintf('director/%ss', $this->getPluralType());
 
-        $imports = $this->params->shift('imports');
+        $imports = $this->params->get('imports');
         $form = $this->loadObjectForm()
             ->presetImports($imports)
             ->setSuccessUrl($url);
 
-        if ($oType = $this->params->shift('type', 'object')) {
+        if ($oType = $this->params->get('type', 'object')) {
             $form->setPreferredObjectType($oType);
         }
 
