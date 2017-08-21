@@ -137,6 +137,9 @@ class ServiceController extends ObjectController
 
         $form = IcingaServiceForm::load()->setDb($this->db());
 
+        if ($this->set) {
+            $form->setServiceSet($this->set);
+        }
         if ($this->host && $object->usesVarOverrides()) {
             $fake = IcingaService::create(array(
                 'object_type' => 'object',
