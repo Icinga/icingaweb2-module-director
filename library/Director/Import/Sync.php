@@ -184,7 +184,7 @@ class Sync
      */
     protected function fetchSyncProperties()
     {
-        $this->syncProperties = $this->rule->fetchSyncProperties();
+        $this->syncProperties = $this->rule->getSyncProperties();
         foreach ($this->syncProperties as $key => $prop) {
             if ($prop->destination_field === 'vars' && $prop->merge_policy === 'override') {
                 $this->replaceVars = true;
@@ -502,7 +502,7 @@ class Sync
     protected function deferResolvers()
     {
         if (in_array($this->rule->get('object_type'), array('host', 'hostgroup'))) {
-            $resolver = new HostGroupMembershipResolver($this->db);
+            $resolver = $this->getHostGroupMembershipResolver();
             $resolver->defer()->setUseTransactions(false);
         }
 
@@ -518,7 +518,7 @@ class Sync
         if (! ($object instanceof IcingaHost || $object instanceof IcingaHostGroup)) {
             return $this;
         }
-        if ($resolver = $this->gethostGroupMembershipResolver()) {
+        if ($resolver = $this->getHostGroupMembershipResolver()) {
             $object->setHostGroupMembershipResolver($resolver);
         }
 
@@ -527,8 +527,8 @@ class Sync
 
     protected function notifyResolvers()
     {
-        if ($resolver = $this->gethostGroupMembershipResolver()) {
-            $resolver->defer();
+        if ($resolver = $this->getHostGroupMembershipResolver()) {
+            $resolver->refreshDb(true);
         }
 
         return $this;
@@ -537,7 +537,7 @@ class Sync
     /**
      * @return bool|HostGroupMembershipResolver
      */
-    protected function gethostGroupMembershipResolver()
+    protected function getHostGroupMembershipResolver()
     {
         if ($this->hostGroupMembershipResolver === null) {
             if (in_array(
@@ -688,7 +688,7 @@ class Sync
             }
 
             $this->run->setProperties($runProperties)->store();
-
+            $this->notifyResolvers();
             $dba->commit();
 
             // Store duration after commit, as the commit might take some time
