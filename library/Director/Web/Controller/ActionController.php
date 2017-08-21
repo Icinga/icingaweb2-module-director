@@ -16,7 +16,9 @@ use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
 use Icinga\Web\Widget;
+use ipl\Compat\Translator;
 use ipl\Html\Link;
+use ipl\Translation\TranslationHelper;
 use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Controller\Extension\ControlsAndContentHelper;
 use ipl\Zf1\SimpleViewRenderer;
@@ -38,9 +40,15 @@ abstract class ActionController extends Controller implements ControlsAndContent
 
     public function init()
     {
+        $this->initializeTranslator();
         Benchmark::measure('Director base Controller init()');
         $this->checkForRestApiRequest();
         $this->checkDirectorPermissions();
+    }
+
+    protected function initializeTranslator()
+    {
+        TranslationHelper::setTranslator(new Translator('director'));
     }
 
     public function getAuth()
