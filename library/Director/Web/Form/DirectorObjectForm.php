@@ -99,7 +99,7 @@ abstract class DirectorObjectForm extends DirectorForm
     protected function object()
     {
         if ($this->object === null) {
-            $values = array();
+            $values = $this->getValues();
             /** @var DbObject|IcingaObject $class */
             $class = $this->getObjectClassname();
             if ($this->preferredObjectType) {
@@ -110,7 +110,7 @@ abstract class DirectorObjectForm extends DirectorForm
             }
 
             $this->object = $class::create($values, $this->db);
-            foreach ($this->getValues() as $key => $value) {
+            foreach ($values as $key => $value) {
                 $this->object->$key = $value;
             }
         } else {
