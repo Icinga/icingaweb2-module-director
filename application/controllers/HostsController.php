@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
-use Icinga\Module\Director\Forms\IcingaAddServiceToMultipleHostsForm;
+use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Controller\ObjectsController;
 use ipl\Html\Link;
@@ -62,7 +62,7 @@ class HostsController extends ObjectsController
         );
 
         $this->content()->add(
-            IcingaAddServiceToMultipleHostsForm::load()
+            IcingaAddServiceForm::load()
                 ->setHosts($objects)
                 ->setDb($this->db())
                 ->handleRequest()

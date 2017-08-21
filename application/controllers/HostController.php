@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use Exception;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
+use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -43,6 +44,12 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addServicesHeader();
         $this->addTitle($this->translate('Add Service: %s'), $host->getObjectName());
+        $this->content()->add(
+            IcingaAddServiceForm::load()
+                ->setHost($host)
+                ->setDb($this->db())
+                ->handleRequest()
+        );
     }
 
     public function servicesetAction()

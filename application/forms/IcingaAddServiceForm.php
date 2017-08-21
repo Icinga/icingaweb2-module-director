@@ -6,19 +6,24 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 
-class IcingaAddServiceToMultipleHostsForm extends DirectorObjectForm
+class IcingaAddServiceForm extends DirectorObjectForm
 {
     /** @var IcingaHost[] */
     private $hosts;
 
+    /** @var IcingaHost */
+    private $host;
+
     /** @var IcingaService */
     protected $object;
+
+    protected $objectName = 'service';
 
     public function setup()
     {
         if ($this->object === null) {
             $this->object = IcingaService::create(
-                array('object_type' => 'object'),
+                ['object_type' => 'object'],
                 $this->db
             );
         }
@@ -26,34 +31,43 @@ class IcingaAddServiceToMultipleHostsForm extends DirectorObjectForm
         $this->addSingleImportElement();
 
         if (! ($imports = $this->getSentOrObjectValue('imports'))) {
-            $this->setButtons();
+            $this->setSubmitLabel($this->translate('Next'));
+            $this->groupMainProperties();
             return;
         }
 
-        $this->addNameElement()
-             ->groupMainProperties()
+        $this->removeElement('imports');
+        $this->addHidden('imports', $imports);
+        $this->setElementValue('imports', $imports);
+        $this->addNameElement();
+        $name = $this->getSentOrObjectValue('object_name');
+        if (empty($name)) {
+            $this->setElementValue('object_name', $imports);
+        }
+        $this->groupMainProperties()
              ->setButtons();
     }
+
     /**
      * @return $this
      */
     protected function groupMainProperties()
     {
-        $elements = array(
+        $elements = [
             'object_type',
             'imports',
             'object_name',
-        );
+        ];
 
-        $this->addDisplayGroup($elements, 'object_definition', array(
-            'decorators' => array(
+        $this->addDisplayGroup($elements, 'object_definition', [
+            'decorators' => [
                 'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
+                ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
-            ),
-            'order' => 20,
+            ],
+            'order'  => 20,
             'legend' => $this->translate('Main properties')
-        ));
+        ]);
 
         return $this;
     }
@@ -82,93 +96,81 @@ class IcingaAddServiceToMultipleHostsForm extends DirectorObjectForm
             return $this;
         }
 
-        $this->addElement('select', 'imports', array(
+        $this->addElement('select', 'imports', [
             'label'        => $this->translate('Service'),
             'description'  => $this->translate(
                 'Choose a service template'
             ),
             'required'     => true,
-            'multiOptions' => $this->optionallyAddFromEnum($enum),
-            // TODO -> 'value'        => $this->presetImports,
+            'multiOptions' => $this->optionalEnum($enum),
             'class'        => 'autosubmit'
-        ));
+        ]);
 
         return $this;
     }
 
-
     protected function enumServiceTemplates()
     {
         $tpl = $this->getDb()->enumIcingaTemplates('service');
-        if (empty($tpl)) {
-            return array();
-        }
-
-        $tpl = array_combine($tpl, $tpl);
-        return $tpl;
+        return array_combine($tpl, $tpl);
     }
 
-    protected function setupHostRelatedElements()
-    {
-        $this->addHidden('host_id', $this->host->id);
-        $this->addHidden('object_type', 'object');
-        $this->addImportsElement();
-        $imports = $this->getSentOrObjectValue('imports');
-
-        if ($this->hasBeenSent()) {
-            $imports = $this->getElement('imports')->setValue($imports)->getValue();
-        }
-
-        if ($this->isNew() && empty($imports)) {
-            $this->groupMainProperties();
-            return;
-        }
-
-        if ($this->hasBeenSent()) {
-            $name = $this->getSentOrObjectValue('object_name');
-            if (!strlen($name)) {
-                $this->setElementValue('object_name', end($imports));
-                $this->object->object_name = end($imports);
-            }
-        }
-    }
-
+    /**
+     * @param IcingaHost[] $hosts
+     * @return $this
+     */
     public function setHosts(array $hosts)
     {
         $this->hosts = $hosts;
         return $this;
     }
 
+    /**
+     * @param IcingaHost $host
+     * @return $this
+     */
+    public function setHost(IcingaHost $host)
+    {
+        $this->host = $host;
+        return $this;
+    }
+
     protected function addNameElement()
     {
-        $this->addElement('text', 'object_name', array(
+        $this->addElement('text', 'object_name', [
             'label'       => $this->translate('Name'),
             'required'    => true,
             'description' => $this->translate(
                 'Name for the Icinga service you are going to create'
             )
-        ));
+        ]);
 
         return $this;
     }
 
     public function onSuccess()
     {
-        $vars = array();
-        foreach ($this->object->vars() as $key => $var) {
-            $vars[$key] = $var->getValue();
+        if ($this->host !== null) {
+            $this->object->set('host_id', $this->host->get('id'));
+            parent::onSuccess();
+            return;
         }
 
-        $o = $this->object;
+        $plain = $this->object->toPlainObject();
+        $db = $this->object->getConnection();
+
         foreach ($this->hosts as $host) {
-            $service = IcingaService::fromPlainObject(
-                $o->toPlainObject(),
-                $o->getConnection()
-            )->set('host_id', $host->get('id'));
-
-            $service->store();
+            IcingaService::fromPlainObject($plain, $db)
+                ->set('host_id', $host->get('id'))
+                ->store();
         }
 
-        $this->redirectOnSuccess('Gogogo');
+        $msg = sprintf(
+            $this->translate('The service "%s" has been added to %d hosts'),
+            $this->object->getObjectName(),
+            count($this->hosts)
+        );
+
+        $this->redirectOnSuccess($msg);
     }
 }
