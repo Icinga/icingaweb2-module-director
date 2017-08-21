@@ -138,8 +138,7 @@ class SuggestController extends ActionController
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_command', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'template'");
+            ->order('object_name');
         return $db->fetchCol($query);
     }
 
