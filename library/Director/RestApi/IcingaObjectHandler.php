@@ -112,7 +112,9 @@ class IcingaObjectHandler extends RequestHandler
                 )
             );
 
-            return;
+            // TODO: find a better way to shut down. Currently, this avoids
+            //       "not found" errors:
+            exit;
         }
 
         switch ($request->getMethod()) {
