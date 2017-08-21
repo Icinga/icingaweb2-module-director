@@ -129,9 +129,12 @@ class ImportsourceController extends ActionController
         )->addBackToModifiersLink($source);
         $this->tabs()->activate('modifier');
 
+        $listUrl = 'director/importsource/modifier?source_id='
+            . (int) $source->get('id');
         $this->content()->prepend(
             ImportRowModifierForm::load()->setDb($this->db())
                 ->loadObject($this->params->getRequired('id'))
+                ->setListUrl($listUrl)
                 ->setSource($source)
                 ->handleRequest()
         );
