@@ -165,8 +165,12 @@ abstract class DirectorObjectForm extends DirectorForm
             $key = 'imports';
             if ($el = $this->getElement($key)) {
                 if (array_key_exists($key, $post)) {
+                    $imports = $post[$key];
+                    if (! is_array($imports)) {
+                        $imports = array($imports);
+                    }
                     $imports = array_values(array_merge(
-                        $post[$key],
+                        $imports,
                         $this->extractChoicesFromPost($post)
                     ));
 
