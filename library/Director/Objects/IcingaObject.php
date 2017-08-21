@@ -497,6 +497,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->resolveUnresolvedRelatedProperty($name);
         }
 
+        if ($this->supportsImports() && $this->imports !== null
+            && $this->imports()->hasBeenModified()
+        ) {
+            $this->imports()->getObjects();
+        }
+
         return $this;
     }
 
@@ -2613,7 +2619,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function listImportNames()
     {
-        return $this->templateTree()->listParentNamesFor($this);
+        if ($this->hasBeenModified()
+            && $this->imports !== null
+            && $this->imports()->hasBeenModified()
+        ) {
+            return $this->imports()->listImportNames();
+        } else {
+            return $this->templateTree()->listParentNamesFor($this);
+        }
     }
 
     public function listImportIds()
