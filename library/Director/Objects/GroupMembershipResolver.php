@@ -124,7 +124,9 @@ abstract class GroupMembershipResolver
      */
     public function addObject(IcingaObject $object)
     {
-        if (! $object->hasBeenLoadedFromDb()) {
+        // Hint: cannot use hasBeenLoadedFromDB, as it is false in onStore()
+        //       for new objects
+        if (! $id = $object->get('id')) {
             return $this;
         }
         // Disabling for now, how should this work?
