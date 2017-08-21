@@ -142,6 +142,17 @@ class SuggestController extends ActionController
         return $db->fetchCol($query);
     }
 
+    protected function suggestUsertemplates()
+    {
+        $this->assertPermission('director/users');
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from('icinga_user', 'object_name')
+            ->order('object_name')
+            ->where("object_type = 'template'");
+        return $db->fetchCol($query);
+    }
+
     protected function suggestCheckcommandnames()
     {
         $db = $this->db()->getDbAdapter();
