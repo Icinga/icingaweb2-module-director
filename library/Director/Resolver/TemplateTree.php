@@ -144,6 +144,9 @@ class TemplateTree
         $names = $object->imports()->listImportNames();
         $ancestors = [];
         foreach ($names as $name) {
+            if (! array_key_exists($name, $this->templateNameToId)) {
+                continue;
+            }
             $pid = $this->templateNameToId[$name];
             $this->getAncestorsById($pid, $ancestors);
 
@@ -284,11 +287,6 @@ class TemplateTree
         $children = [];
         $names = [];
         foreach ($templates as $row) {
-            if ($row->object_type === 'object') {
-                $row->id = $row->parent_id;
-                $row->object_name = $row->parent_name;
-                $row->parent_name = $row->parent_id = null;
-            }
             $id = (int) $row->id;
             $pid = (int) $row->parent_id;
             $names[$id] = $row->name;
@@ -371,12 +369,7 @@ class TemplateTree
             []
         )->order('o.id')->order('i.weight');
 
-        if ($type === 'command') {
-            $query->where(
-                'o.object_type = ? OR p.id IS NOT NULL',
-                'template'
-            );
-        } else {
+        if ($type !== 'command') {
             $query->where(
                 'o.object_type = ?',
                 'template'
