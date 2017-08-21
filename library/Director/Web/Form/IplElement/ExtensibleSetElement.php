@@ -241,8 +241,18 @@ class ExtensibleSetElement extends BaseElement
                 if ($key === null) {
                     $key = '';
                 }
-                $option = Html::tag('option', ['value' => $key], $label);
-                $field->add($option);
+                if (is_array($label)) {
+                    $optGroup = Html::tag('optgroup', ['label' => $key]);
+                    foreach ($label as $grpKey => $grpLabel) {
+                        $optGroup->add(
+                            Html::tag('option', ['value' => $grpKey], $grpLabel)
+                        );
+                    }
+                    $field->add($optGroup);
+                } else {
+                    $option = Html::tag('option', ['value' => $key], $label);
+                    $field->add($option);
+                }
             }
         } else {
             $field = Html::tag('input', [
