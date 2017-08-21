@@ -132,13 +132,10 @@ class TemplateTree
 
     public function getAncestorsFor(IcingaObject $object)
     {
-        if ($object->hasBeenLoadedFromDb()) {
-            return $this->getAncestorsById($object->getProperty('id'));
-        } elseif ($id = $object->getProperty('id')) {
-            // Special, this is for calls from onStore()
-            return $this->getAncestorsById($id);
-        } else {
+        if ($object->hasBeenModified()) {
             return $this->getAncestorsForUnstoredObject($object);
+        } else {
+            return $this->getAncestorsById($object->getProperty('id'));
         }
     }
 

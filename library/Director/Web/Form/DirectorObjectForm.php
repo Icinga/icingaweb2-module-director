@@ -122,6 +122,27 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->object;
     }
 
+    protected function extractChoicesFromPost($post)
+    {
+        $imports = [];
+
+        foreach ($this->choiceElements as $other) {
+            $name = $other->getName();
+            if (array_key_exists($name, $post)) {
+                $value = $post[$name];
+                if (is_string($value)) {
+                    $imports[] = $value;
+                } elseif (is_array($value)) {
+                    foreach ($value as $chosen) {
+                        $imports[] = $chosen;
+                    }
+                }
+            }
+        }
+
+        return $imports;
+    }
+
     protected function assertResolvedImports()
     {
         if ($this->resolvedImports !== null) {
@@ -144,26 +165,26 @@ abstract class DirectorObjectForm extends DirectorForm
             $key = 'imports';
             if ($el = $this->getElement($key)) {
                 if (array_key_exists($key, $post)) {
-                    $imports = $post[$key];
+                    $imports = array_values(array_merge(
+                        $post[$key],
+                        $this->extractChoicesFromPost($post)
+                    ));
+
                     /** @var ZfElement $el */
-                    foreach ($this->choiceElements as $other) {
-                        $name = $other->getName();
-                        if (array_key_exists($name, $post)) {
-                            $value = $post[$name];
-                            if (is_string($value)) {
-                                $imports[] = $value;
-                            } elseif (is_array($value)) {
-                                foreach ($value as $chosen) {
-                                    $imports[] = $chosen;
-                                }
-                            }
-                        }
-                    }
                     $this->populate([$key => $imports]);
                     $el->setValue($imports);
                     $this->tryToSetObjectPropertyFromElement($object, $el, $key);
                 }
+            } elseif ($this->presetImports) {
+                $imports = array_values(array_merge(
+                    $this->presetImports,
+                    $this->extractChoicesFromPost($post)
+                ));
+                $this->object()->set('imports', $imports);
+            } else {
+                $this->object()->set('imports', $this->extractChoicesFromPost($post));
             }
+
             foreach ($this->earlyProperties as $key) {
                 if ($el = $this->getElement($key)) {
                     if (array_key_exists($key, $post)) {
