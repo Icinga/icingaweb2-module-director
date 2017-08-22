@@ -177,16 +177,22 @@ abstract class DirectorObjectForm extends DirectorForm
                     /** @var ZfElement $el */
                     $this->populate([$key => $imports]);
                     $el->setValue($imports);
-                    $this->tryToSetObjectPropertyFromElement($object, $el, $key);
+                    if (! $this->tryToSetObjectPropertyFromElement($object, $el, $key)) {
+                        return $this->resolvedImports = false;
+                    }
                 }
             } elseif ($this->presetImports) {
                 $imports = array_values(array_merge(
                     $this->presetImports,
                     $this->extractChoicesFromPost($post)
                 ));
-                $this->object()->set('imports', $imports);
+                if (! $this->eventuallySetImports($imports)) {
+                    return $this->resolvedImports = false;
+                }
             } else {
-                $this->object()->set('imports', $this->extractChoicesFromPost($post));
+                if (! $this->eventuallySetImports($this->extractChoicesFromPost($post))) {
+                    return $this->resolvedImports = false;
+                }
             }
 
             foreach ($this->earlyProperties as $key) {
@@ -212,6 +218,17 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->setResolvedImports();
     }
 
+    protected function eventuallySetImports($imports)
+    {
+        try {
+            $this->object()->set('imports', $imports);
+            return true;
+        } catch (Exception $e) {
+            $this->addException($e, 'imports');
+            return false;
+        }
+    }
+
     protected function tryToSetObjectPropertyFromElement(
         IcingaObject $object,
         ZfElement $element,
@@ -222,11 +239,13 @@ abstract class DirectorObjectForm extends DirectorForm
             $old = $object->get($key);
             $object->set($key, $element->getValue());
             $object->resolveUnresolvedRelatedProperties();
+            return true;
         } catch (Exception $e) {
             if ($old !== null) {
                 $object->set($key, $old);
             }
             $this->addException($e, $key);
+            return false;
         }
     }
 
@@ -348,7 +367,9 @@ abstract class DirectorObjectForm extends DirectorForm
                     }
                     $object->set($key, $value);
                     if ($object instanceof IcingaObject) {
-                        $object->resolveUnresolvedRelatedProperties();
+                        if ($this->resolvedImports !== false) {
+                            $object->resolveUnresolvedRelatedProperties();
+                        }
                     }
                 } catch (Exception $e) {
                     $this->addException($e, $key);
@@ -570,23 +591,29 @@ abstract class DirectorObjectForm extends DirectorForm
     public function onSuccess()
     {
         $object = $this->object();
-        if ($object->hasBeenModified()) {
-            if (! $object->hasBeenLoadedFromDb()) {
-                $this->setHttpResponseCode(201);
-            }
 
-            $msg = sprintf(
-                $object->hasBeenLoadedFromDb()
-                ? $this->translate('The %s has successfully been stored')
-                : $this->translate('A new %s has successfully been created'),
-                $this->translate($this->getObjectShortClassName())
-            );
-            $object->store($this->db);
-        } else {
-            if ($this->isApiRequest()) {
-                $this->setHttpResponseCode(304);
+        try {
+            if ($object->hasBeenModified()) {
+                if (! $object->hasBeenLoadedFromDb()) {
+                    $this->setHttpResponseCode(201);
+                }
+
+                $msg = sprintf(
+                    $object->hasBeenLoadedFromDb()
+                    ? $this->translate('The %s has successfully been stored')
+                    : $this->translate('A new %s has successfully been created'),
+                    $this->translate($this->getObjectShortClassName())
+                );
+                    $object->store($this->db);
+            } else {
+                if ($this->isApiRequest()) {
+                    $this->setHttpResponseCode(304);
+                }
+                $msg = $this->translate('No action taken, object has not been modified');
             }
-            $msg = $this->translate('No action taken, object has not been modified');
+        } catch (Exception $e) {
+            $this->addException($e);
+            return false;
         }
 
         $this->setObjectSuccessUrl();
@@ -716,8 +743,12 @@ abstract class DirectorObjectForm extends DirectorForm
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
-        $this->loadInheritedProperties();
-        $this->addFields();
+        try {
+            $this->loadInheritedProperties();
+            $this->addFields();
+        } catch (Exception $e) {
+            $this->addUniqueException($e);
+        }
     }
 
     protected function handlePost()
@@ -915,6 +946,17 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected function addUniqueErrorMessage($msg)
     {
+        if (! in_array($msg, $this->getErrorMessages())) {
+            $this->addErrorMessage($msg);
+        }
+
+        return $this;
+    }
+
+    protected function addUniqueException(Exception $e)
+    {
+        $msg = $this->getErrorMessageForException($e);
+
         if (! in_array($msg, $this->getErrorMessages())) {
             $this->addErrorMessage($msg);
         }
