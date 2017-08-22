@@ -77,7 +77,7 @@ class ObjectsTableService extends ObjectsTable
     {
         return parent::prepareQuery()->joinLeft(
             ['h' => 'icinga_host'],
-            "o.host_id = h.id AND h.object_type = 'object'",
+            'o.host_id = h.id',
             []
         )->order('o.object_name')->order('h.object_name');
     }
