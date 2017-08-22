@@ -16,7 +16,7 @@ class PropertyModifierCombine extends PropertyModifierHook
             'description' => $form->translate(
                 'This pattern will be evaluated, and variables like ${some_column}'
                 . ' will be filled accordingly. A typical use-case is generating'
-                . ' unique service idendifiers via ${host}!${service} in case your'
+                . ' unique service identifiers via ${host}!${service} in case your'
                 . ' data source doesn\'t allow you to ship such. The chosen "property"'
                 . ' has no effect here and will be ignored.'
             )
