@@ -69,7 +69,7 @@ class DeploymentLinkForm extends DirectorForm
             $msg = $this->translate('There has been a single change to this object, nothing else has been modified');
         } elseif ($total === $onObject) {
             $msg = sprintf(
-                $this->translate('There have be+en %d changes to this object, nothing else has been modified'),
+                $this->translate('There have been %d changes to this object, nothing else has been modified'),
                 $onObject
             );
         } else {
