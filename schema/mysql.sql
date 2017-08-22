@@ -1563,4 +1563,4 @@ CREATE TABLE icinga_user_resolved_var (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (139, NOW());
+  VALUES (140, NOW());

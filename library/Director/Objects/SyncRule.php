@@ -358,7 +358,7 @@ class SyncRule extends DbObject
             $db->select()
                ->from('sync_property')
                ->where('rule_id = ?', $this->get('id'))
-               ->order('priority DESC')
+               ->order('priority ASC')
         );
     }
 }
