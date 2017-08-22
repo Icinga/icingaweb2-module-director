@@ -32,13 +32,14 @@ abstract class RequestHandler
         $this->processApiRequest();
     }
 
-    protected function sendJson($object)
+    public function sendJson($object)
     {
         $this->response->setHeader('Content-Type', 'application/json', true);
+        $this->response->sendHeaders();
         echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
     }
 
-    protected function sendJsonError($error, $code = null)
+    public function sendJsonError($error, $code = null)
     {
         $response = $this->response;
         if ($code === null) {
@@ -55,6 +56,7 @@ abstract class RequestHandler
             $message = $error;
         }
 
+        $response->sendHeaders();
         $this->sendJson((object) ['error' => $message]);
     }
 

@@ -42,15 +42,24 @@ abstract class ObjectController extends ActionController
     {
         parent::init();
 
-        $this->eventuallyLoadObject();
         if ($this->getRequest()->isApiRequest()) {
             $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
+            try {
+                $this->eventuallyLoadObject();
+            } catch (NotFoundError $e) {
+                // Silently ignore the error, the handler will complain
+                $handler->sendJsonError($e, 404);
+                // TODO: nice shutdown
+                exit;
+            }
+
             $handler->setApi($this->api());
             if ($this->object) {
                 $handler->setObject($this->object);
             }
             $handler->dispatch();
         } else {
+            $this->eventuallyLoadObject();
             if ($this->getRequest()->getActionName() === 'add') {
                 $this->addSingleTab(
                     sprintf($this->translate('Add %s'), ucfirst($this->getType())),
