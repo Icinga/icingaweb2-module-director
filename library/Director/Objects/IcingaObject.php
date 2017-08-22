@@ -1124,7 +1124,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $vals['_INHERITED_'] = (object) array();
         $vals['_ORIGINS_']   = (object) array();
         // $objects = $this->imports()->getObjects();
-        $objects = IcingaTemplateRepository::instanceByObject($this)->getTemplatesFor($this);
+        $objects = IcingaTemplateRepository::instanceByObject($this)
+            ->getTemplatesIndexedByNameFor($this);
 
         $get          = 'get'         . $what;
         $getInherited = 'getInherited' . $what;
