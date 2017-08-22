@@ -192,7 +192,7 @@ class KickstartHelper
             }
             $unset = array();
             foreach ($objects as $key => $object) {
-                foreach ($object->getImports() as $parentName) {
+                foreach ($object->imports()->listImportNames() as $parentName) {
                     if (! array_key_exists($parentName, $sorted)) {
                         continue 2;
                     }
