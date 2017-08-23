@@ -23,7 +23,6 @@ class DependencyController extends ObjectController
                 $this->db()
             );
         }
-
     }
 
     protected function loadObject()
@@ -54,7 +53,4 @@ class DependencyController extends ObjectController
             $form->createApplyRuleFor($this->apply);
         }
     }
-
-
-
 }

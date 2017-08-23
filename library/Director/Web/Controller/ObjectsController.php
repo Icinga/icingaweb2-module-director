@@ -306,11 +306,11 @@ abstract class ObjectsController extends ActionController
 
     protected function getPluralType()
     {
-        return preg_replace("/cys$/","cies",$this->getType() . 's');
+        return preg_replace("/cys$/", "cies", $this->getType() . 's');
     }
 
     protected function getPluralBaseType()
     {
-        return preg_replace("/cys$/","cies",$this->getBaseType() . 's');
+        return preg_replace("/cys$/", "cies", $this->getBaseType() . 's');
     }
 }

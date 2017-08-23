@@ -99,7 +99,7 @@ class SuggestController extends ActionController
         $db = $this->db()->getDbAdapter();
         $for_host = $this->getRequest()->getPost('for_host');
         if (!empty($for_host)) {
-            $tmp_host = IcingaHost::load($for_host,$this->db());
+            $tmp_host = IcingaHost::load($for_host, $this->db());
         }
 
         $query = $db->select()->distinct()
@@ -107,9 +107,9 @@ class SuggestController extends ActionController
             ->order('object_name')
             ->where("object_type IN ('object','apply')");
         if (!empty($tmp_host)) {
-            $query->where('host_id = ?',$tmp_host->id);
+            $query->where('host_id = ?', $tmp_host->id);
         }
-        $r = array_merge($r,$db->fetchCol($query));
+        $r = array_merge($r, $db->fetchCol($query));
         if (!empty($tmp_host)) {
             $resolver = $tmp_host->templateResolver();
             foreach ($resolver->fetchResolvedParents() as $template_obj) {
@@ -118,7 +118,7 @@ class SuggestController extends ActionController
                     ->order('object_name')
                     ->where("object_type IN ('object','apply')")
                     ->where('host_id = ?', $template_obj->id);
-                $r = array_merge($r,$db->fetchCol($query));
+                $r = array_merge($r, $db->fetchCol($query));
             }
 
             $matcher = HostApplyMatches::prepare($tmp_host);
@@ -127,7 +127,6 @@ class SuggestController extends ActionController
                     $r[]=$rule->name;
                 }
             }
-
         }
         natcasesort($r);
         return $r;
@@ -288,8 +287,4 @@ class SuggestController extends ActionController
 
         return $db->fetchAll($query);
     }
-
-
-
-
 }

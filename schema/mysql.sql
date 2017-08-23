@@ -1591,7 +1591,7 @@ CREATE TABLE icinga_dependency (
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
-  parent_service_s VARCHAR(255) DEFAULT NULL,
+  parent_service_by_name VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY parent_host (parent_host_id)

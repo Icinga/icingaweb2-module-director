@@ -8,7 +8,6 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 
-
 class IcingaDependency extends IcingaObject
 {
     protected $table = 'icinga_dependency';
@@ -29,7 +28,7 @@ class IcingaDependency extends IcingaObject
         'period_id'             => null,
         'zone_id'               => null,
         'assign_filter'         => null,
-        'parent_service_s'      => null,
+        'parent_service_by_name'      => null,
     );
 
     protected $supportsCustomVars = false;
@@ -88,7 +87,6 @@ class IcingaDependency extends IcingaObject
                 c::renderString($this->getObjectName()),
                 ucfirst($to)
             );
-
         } else {
             return parent::renderObjectHeader();
         }
@@ -114,13 +112,13 @@ class IcingaDependency extends IcingaObject
     protected function renderAssignments()
     {
         if ($this->hasBeenAssignedToServiceApply()) {
-
             $tmpService= $this->getRelatedObject('child_service', $this->child_service_id);
             $assigns = $tmpService->assignments()->toConfigString();
 
             $filter = sprintf(
                 '%s && service.name == "%s"',
-                trim($assigns), $this->child_service
+                trim($assigns),
+                $this->child_service
             );
             return "\n    " . $filter . "\n";
         }
@@ -128,7 +126,8 @@ class IcingaDependency extends IcingaObject
         if ($this->hasBeenAssignedToHostTemplateService()) {
             $filter = sprintf(
                 'assign where "%s" in host.templates && service.name == "%s"',
-                $this->child_host, $this->child_service
+                $this->child_host,
+                $this->child_service
             );
             return "\n    " . $filter . "\n";
         }
@@ -177,7 +176,9 @@ class IcingaDependency extends IcingaObject
 
     protected function hasBeenAssignedToHostTemplateService()
     {
-        if (!$this->hasBeenAssignedToHostTemplate()) return false;
+        if (!$this->hasBeenAssignedToHostTemplate()) {
+            return false;
+        }
         try {
             return $this->child_service_id && $this->getRelatedObject(
                 'child_service',
@@ -276,9 +277,9 @@ class IcingaDependency extends IcingaObject
     }
 
     //special case for parent service set as plain string for Apply rules
-    public function renderParent_service_s()
+    public function renderParent_service_by_name()
     {
-        return "\n    parent_service_name = \"" . $this->parent_service_s ."\"\n";
+        return "\n    parent_service_name = \"" . $this->parent_service_by_name ."\"\n";
     }
 
     public function isApplyRule()
@@ -311,14 +312,14 @@ class IcingaDependency extends IcingaObject
         if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
             if ($name == "parent_service_id" && $this->object_type == 'apply' ) {  //special case , parent service can be set as simple string for Apply
                 if ($this->properties['parent_host_id']==null) {
-                    $this->reallySet('parent_service_s', $this->unresolvedRelatedProperties[$name]);
+                    $this->reallySet('parent_service_by_name', $this->unresolvedRelatedProperties[$name]);
                     $this->reallySet('parent_service_id',null);
                     unset($this->unresolvedRelatedProperties[$name]);
                     return;
                 }
             }
 
-            $this->reallySet('parent_service_s',null);
+            $this->reallySet('parent_service_by_name',null);
             $host_id_prop=str_replace("service","host",$name);
             if (isset($this->properties[$host_id_prop])) {
                 $obj_key=array("host_id" => $this->properties[$host_id_prop], "object_name" => $this->unresolvedRelatedProperties[$name]);
@@ -410,8 +411,8 @@ class IcingaDependency extends IcingaObject
             return $object->get('object_name');
         } else {
             // handle special case for plain string parent service on Dependency Apply rules
-            if ($key == 'parent_service' && $this->get('parent_service_s') != null) {
-                return $this->get('parent_service_s');
+            if ($key == 'parent_service' && $this->get('parent_service_by_name') != null) {
+                return $this->get('parent_service_by_name');
             }
         }
 

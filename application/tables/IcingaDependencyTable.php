@@ -50,7 +50,6 @@ class IcingaDependencyTable extends IcingaObjectTable
                 array('apply' => $row->dependency, 'type' => 'apply'),
                 array('class'    => 'icon-plus')
             );
-
         } else {
             $htm .= '. Related apply rules: <ul class="apply-rules">';
             foreach ($extra as $id => $dependency) {
