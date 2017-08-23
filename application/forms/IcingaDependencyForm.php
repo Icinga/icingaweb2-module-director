@@ -14,8 +14,8 @@ class IcingaDependencyForm extends DirectorObjectForm
         $this->setupDependencyElements();
     }
 
-    protected function setupDependencyElements() {
-
+    protected function setupDependencyElements()
+    {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
             $this->groupMainProperties();
@@ -112,7 +112,8 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function addBooleanElements() {
+    protected function addBooleanElements()
+    {
 
         $this->addBoolean(
             'disable_checks',
@@ -157,6 +158,7 @@ class IcingaDependencyForm extends DirectorObjectForm
                 'class' => "autosubmit director-suggest",
                 'data-suggestion-context' => 'hostnames',
                 'order' => 10,
+                'required' => $this->isObject(),
                 'value' => $this->getObject()->get('parent_host')
 
             )
@@ -177,10 +179,8 @@ class IcingaDependencyForm extends DirectorObjectForm
                     'data-suggestion-for-host' => $sent_parent,
                     'order' => 20,
                     'value' => $this->getObject()->get('parent_service')
-
                 )
             );
-
         }
 
         // If configuring Object, allow selection of child host and/or service, otherwise apply rules will determine child object.
@@ -196,12 +196,13 @@ class IcingaDependencyForm extends DirectorObjectForm
                     'class' => "autosubmit director-suggest",
                     'data-suggestion-context' => 'hostnames',
                     'order' => 30,
+                    'required' => $this->isObject(),
                     'value' => $this->getObject()->get('child_host')
                 )
             );
-	
+
             $sent_child=$this->getSentOrObjectValue("child_host");
-    
+
             if (!empty($sent_child)) {
                 $this->addElement(
                     'text',
@@ -216,11 +217,8 @@ class IcingaDependencyForm extends DirectorObjectForm
                         'data-suggestion-for-host' => $sent_child,
                         'order' => 40,
                         'value' => $this->getObject()->get('child_service')
-    
                     )
                 );
-
-
             }
         }
 
@@ -247,6 +245,4 @@ class IcingaDependencyForm extends DirectorObjectForm
         $object->object_name = $dependency->object_name;
         return $this;
     }
-
-
 }

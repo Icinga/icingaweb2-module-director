@@ -18,7 +18,7 @@ class ObjectsTabs extends Tabs
             $object = IcingaObject::createByType(substr($type, 0, -5));
         }
 
-        $pltype=strtolower(preg_replace('/cys$/','cies',$type . 's'));
+        $pltype=strtolower(preg_replace('/cys$/', 'cies', $type . 's'));
         if ($auth->hasPermission("director/${pltype}")) {
             $this->add('index', array(
                 'url'   => sprintf('director/%s', $pltype),
