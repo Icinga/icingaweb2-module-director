@@ -113,6 +113,10 @@ class ServiceController extends ObjectController
 
     protected function onObjectFormLoaded(DirectorObjectForm $form)
     {
+        if ($this->set) {
+            /** @var IcingaServiceForm$form */
+            $form->setServiceSet($this->set);
+        }
         if ($this->object === null && $this->apply) {
             $form->createApplyRuleFor($this->apply);
         }
