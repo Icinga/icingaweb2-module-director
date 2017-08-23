@@ -169,10 +169,10 @@ abstract class DirectorObjectForm extends DirectorForm
                     if (! is_array($imports)) {
                         $imports = array($imports);
                     }
-                    $imports = array_values(array_merge(
+                    $imports = array_filter(array_values(array_merge(
                         $imports,
                         $this->extractChoicesFromPost($post)
-                    ));
+                    )), 'strlen');
 
                     /** @var ZfElement $el */
                     $this->populate([$key => $imports]);
@@ -354,6 +354,9 @@ abstract class DirectorObjectForm extends DirectorForm
             foreach ($values as $key => $value) {
                 try {
                     if ($key === 'imports' && ! empty($this->choiceElements)) {
+                        if (! is_array($value)) {
+                            $value = [$value];
+                        }
                         foreach ($this->choiceElements as $element) {
                             $chosen = $element->getValue();
                             if (is_string($chosen)) {
@@ -482,9 +485,9 @@ abstract class DirectorObjectForm extends DirectorForm
     protected function groupMainProperties()
     {
         $elements = array(
+            'imports',
             'object_type',
             'object_name',
-            'imports',
             'display_name',
             'host_id',
             'address',
@@ -1372,7 +1375,7 @@ abstract class DirectorObjectForm extends DirectorForm
         $object = $this->object();
         $tpl = $this->db->enumIcingaTemplates($object->getShortTableName());
         if (empty($tpl)) {
-            return array();
+            return [];
         }
 
         $id = $object->get('id');
@@ -1381,12 +1384,7 @@ abstract class DirectorObjectForm extends DirectorForm
             unset($tpl[$id]);
         }
 
-        if (empty($tpl)) {
-            return array();
-        }
-
-        $tpl = array_combine($tpl, $tpl);
-        return $tpl;
+        return array_combine($tpl, $tpl);
     }
 
     protected function addExtraInfoElements()
