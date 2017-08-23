@@ -71,4 +71,25 @@ class IcingaTemplateRepository
     public function storeChances(Db $db)
     {
     }
+
+    public function listAllowedTemplateNames()
+    {
+        $type = $this->type;
+        $db = $this->connection->getDbAdapter();
+        $table = 'icinga_' . $this->type;
+
+        $query = $db->select()
+            ->from($table, 'object_name')
+            ->order('object_name');
+
+        if ($type !== 'command') {
+            $query->where('object_type = ?', 'template');
+        }
+
+        if (in_array($type, ['host', 'service'])) {
+            $query->where('template_choice_id IS NULL');
+        }
+
+        return $db->fetchCol($query);
+    }
 }
