@@ -86,10 +86,10 @@
                     this.removeSuggestionList($el);
                     $el.trigger('change');
                 }
-            } else if (ev.keyCode == 27) {
+            } else if (ev.keyCode === 27) {
                 // ESC key pressed. Remove suggestions if any
                 this.removeSuggestionList($el);
-            } else if (ev.keyCode == 39) {
+            } else if (ev.keyCode === 39) {
                 /**
                  * RIGHT ARROW key pressed. In case there are any suggestions:
                  * - let's choose the active one (if set)
@@ -103,7 +103,7 @@
                         ev.preventDefault();
                     }
                 }
-            } else if (ev.keyCode == 38 ) {
+            } else if (ev.keyCode === 38 ) {
                 /**
                  * UP ARROW key pressed. In any case:
                  * - stop the event
@@ -112,7 +112,7 @@
                 ev.stopPropagation();
                 ev.preventDefault();
                 this.activatePrevSuggestion($el);
-            } else if (ev.keyCode == 40 ) { // down
+            } else if (ev.keyCode === 40 ) { // down
                 /**
                  * DOWN ARROW key pressed. In any case:
                  * - stop the event
@@ -140,17 +140,17 @@
         autoSuggest: function(ev)
         {
             // Ignore special keys, most of them have already been handled on 'keydown'
-            if (ev.keyCode == 9 || // TAB
-                ev.keyCode == 13 || // RETURN
-                ev.keyCode == 27 || // ESC
-                ev.keyCode == 37 || // LEFT ARROW
-                ev.keyCode == 38 || // UP ARROW
-                ev.keyCode == 39 ) { // RIGHT ARROW
+            if (ev.keyCode === 9 || // TAB
+                ev.keyCode === 13 || // RETURN
+                ev.keyCode === 27 || // ESC
+                ev.keyCode === 37 || // LEFT ARROW
+                ev.keyCode === 38 || // UP ARROW
+                ev.keyCode === 39 ) { // RIGHT ARROW
                 return;
             }
 
             var $el = $(ev.currentTarget);
-            if (ev.keyCode == 40) { // DOWN ARROW
+            if (ev.keyCode === 40) { // DOWN ARROW
                 this.getSuggestionList($el);
             } else {
                 this.getSuggestionList($el, true);
@@ -355,7 +355,7 @@
         },
 
         /**
-         * Show suggestions when arriving to an empte autocompletion field
+         * Show suggestions when arriving to an empty auto-completion field
          *
          * @param ev
          */
