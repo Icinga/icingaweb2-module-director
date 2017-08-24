@@ -2,20 +2,27 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostForm extends DirectorObjectForm
 {
-    /** @var  CoreApi */
-    private $api;
-
     public function setup()
     {
         $this->addObjectTypeElement();
         if (! $this->hasObjectType()) {
             $this->groupMainProperties();
             return;
+        }
+
+        if ($this->isNew()) {
+            $this->addSingleImportElement(true);
+
+            if (! ($imports = $this->getSentOrObjectValue('imports'))) {
+                $this->setSubmitLabel($this->translate('Next'));
+                $this->groupMainProperties();
+                return;
+            }
         }
 
         $this->addElement('text', 'object_name', array(
@@ -30,25 +37,20 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
-        if ($this->isNew() && $this->isObject() && $this->allowsExperimental()) {
-            $this->addBoolean('create_live', array(
-                'label'  => $this->translate('Create immediately'),
-                'ignore' => true,
-            ), 'n');
+        if (! $this->isNew()) {
+            $this->addImportsElement();
         }
 
-        $this->addGroupsElement()
-             ->addImportsElement()
-             ->addChoices('host')
+        $this->addChoices('host')
              ->addDisplayNameElement()
              ->addAddressElements()
+             ->addGroupsElement()
              ->addDisabledElement()
              ->groupMainProperties()
-             ->addClusteringElements();
-
-        $this->addCheckCommandElements()
+             ->addCheckCommandElements()
              ->addCheckExecutionElements()
              ->addExtraInfoElements()
+             ->addClusteringElements()
              ->setButtons();
     }
 
@@ -57,35 +59,33 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addClusteringElements()
     {
-        $this->addZoneElement();
-
-        $this->addBoolean('has_agent', array(
+        $this->addBoolean('has_agent', [
             'label'       => $this->translate('Icinga2 Agent'),
             'description' => $this->translate(
                 'Whether this host has the Icinga 2 Agent installed'
             ),
-            'class'       => 'autosubmit',
-        ));
+            'class' => 'autosubmit',
+        ]);
 
         if ($this->getSentOrResolvedObjectValue('has_agent') === 'y') {
-            $this->addBoolean('master_should_connect', array(
+            $this->addBoolean('master_should_connect', [
                 'label'       => $this->translate('Establish connection'),
                 'description' => $this->translate(
                     'Whether the parent (master) node should actively try to connect to this agent'
                 ),
                 'required'    => true
-            ));
-            $this->addBoolean('accept_config', array(
+            ]);
+            $this->addBoolean('accept_config', [
                 'label'       => $this->translate('Accepts config'),
                 'description' => $this->translate('Whether the agent is configured to accept config'),
                 'required'    => true
-            ));
+            ]);
 
             $this->addHidden('command_endpoint_id', null);
             $this->setSentValue('command_endpoint_id', null);
         } else {
             if ($this->isTemplate()) {
-                $this->addElement('select', 'command_endpoint_id', array(
+                $this->addElement('select', 'command_endpoint_id', [
                     'label' => $this->translate('Command endpoint'),
                     'description' => $this->translate(
                         'Setting a command endpoint allows you to force host checks'
@@ -94,44 +94,78 @@ class IcingaHostForm extends DirectorObjectForm
                         . ' feature'
                     ),
                     'multiOptions' => $this->optionalEnum($this->enumEndpoints())
-                ));
+                ]);
             }
 
-            foreach (array('master_should_connect', 'accept_config') as $key) {
+            foreach (['master_should_connect', 'accept_config'] as $key) {
                 $this->addHidden($key, null);
                 $this->setSentValue($key, null);
             }
         }
 
-        $elements = array(
+        $elements = [
             'zone_id',
             'has_agent',
             'master_should_connect',
             'accept_config',
             'command_endpoint_id',
             'api_key',
-        );
-        $this->addDisplayGroup($elements, 'clustering', array(
-            'decorators' => array(
+        ];
+        $this->addDisplayGroup($elements, 'clustering', [
+            'decorators' => [
                 'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
+                ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
-            ),
-            'order' => 80,
+            ],
+            'order'  => 80,
             'legend' => $this->translate('Icinga Agent and zone settings')
-        ));
+        ]);
 
         return $this;
     }
 
-    protected function beforeSuccessfulRedirect()
+    /**
+     * @param bool $required
+     * @return $this
+     */
+    protected function addSingleImportElement($required = null)
     {
-        if ($this->allowsExperimental() && $this->getSentValue('create_live') === 'y') {
-            $host = $this->getObject();
-            if ($this->api()->createObjectAtRuntime($host)) {
-                $this->api()->checkHostNow($host->object_name);
+        $enum = $this->enumHostTemplates();
+        if (empty($enum)) {
+            if ($required) {
+                if ($this->hasBeenSent()) {
+                    $this->addError($this->translate('No Host template has been chosen'));
+                } else {
+                    if ($this->hasPermission('director/admin')) {
+                        $html = $this->translate('Please define a Host Template first');
+                    } else {
+                        $html = $this->translate('No Host Template has been provided yet');
+                    }
+                    $this->addHtml('<p class="warning">' . $html . '</p>');
+                }
             }
+
+            return $this;
         }
+
+        $this->addElement('select', 'imports', [
+            'label'        => $this->translate('Host Template'),
+            'description'  => $this->translate(
+                'Choose a Host Template'
+            ),
+            'required'     => true,
+            'multiOptions' => $this->optionalEnum($enum),
+            'class'        => 'autosubmit'
+        ]);
+
+        return $this;
+    }
+
+    protected function enumHostTemplates()
+    {
+        $tpl = IcingaTemplateRepository::instanceByType('host', $this->getDb())
+            ->listAllowedTemplateNames();
+        return array_combine($tpl, $tpl);
     }
 
     /**
@@ -139,19 +173,12 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
-// TODO:
         if ($this->hasHostGroupRestriction()) {
-            return $this;
-        }
-
-        $groups = $this->enumHostgroups();
-        if (empty($groups)) {
             return $this;
         }
 
         $this->addElement('extensibleSet', 'groups', array(
             'label'        => $this->translate('Groups'),
-            // 'multiOptions' => $this->optionallyAddFromEnum($groups),
             'suggest'      => 'hostgroupnames',
             'description'  => $this->translate(
                 'Hostgroups that should be directly assigned to this node. Hostgroups can be useful'
@@ -219,45 +246,14 @@ class IcingaHostForm extends DirectorObjectForm
     protected function enumEndpoints()
     {
         $db = $this->db->getDbAdapter();
-        $select = $db->select()->from(
-            'icinga_endpoint',
-            array(
-                'id',
-                'object_name'
-            )
-        )->where(
+        $select = $db->select()->from('icinga_endpoint', [
+            'id',
+            'object_name'
+        ])->where(
             'object_type IN (?)',
-            array('object', 'external_object')
+            ['object', 'external_object']
         )->order('object_name');
 
         return $db->fetchPairs($select);
-    }
-
-    protected function enumHostgroups()
-    {
-        $db = $this->db->getDbAdapter();
-        $select = $db->select()->from(
-            'icinga_hostgroup',
-            array(
-                'name'    => 'object_name',
-                'display' => 'COALESCE(display_name, object_name)'
-            )
-        )->where(
-            'object_type IN (?)',
-            array('object', 'external_object')
-        )->order('display');
-
-        return $db->fetchPairs($select);
-    }
-
-    public function setApi($api)
-    {
-        $this->api = $api;
-        return $this;
-    }
-
-    protected function api()
-    {
-        return $this->api;
     }
 }
