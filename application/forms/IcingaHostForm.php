@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use ipl\Html\Link;
 
 class IcingaHostForm extends DirectorObjectForm
 {
@@ -15,8 +16,12 @@ class IcingaHostForm extends DirectorObjectForm
             return;
         }
 
-        if ($this->isNew()) {
-            $this->addSingleImportElement(true);
+        $simpleImports = $this->isNew() && ! $this->isTemplate();
+        if ($simpleImports) {
+            if (!$this->addSingleImportElement(true)) {
+                $this->setSubmitLabel(false);
+                return;
+            }
 
             if (! ($imports = $this->getSentOrObjectValue('imports'))) {
                 $this->setSubmitLabel($this->translate('Next'));
@@ -37,7 +42,7 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
-        if (! $this->isNew()) {
+        if (! $simpleImports) {
             $this->addImportsElement();
         }
 
@@ -46,7 +51,7 @@ class IcingaHostForm extends DirectorObjectForm
              ->addAddressElements()
              ->addGroupsElement()
              ->addDisabledElement()
-             ->groupMainProperties()
+             ->groupMainProperties($simpleImports)
              ->addCheckCommandElements()
              ->addCheckExecutionElements()
              ->addExtraInfoElements()
@@ -126,7 +131,7 @@ class IcingaHostForm extends DirectorObjectForm
 
     /**
      * @param bool $required
-     * @return $this
+     * @return bool
      */
     protected function addSingleImportElement($required = null)
     {
@@ -137,15 +142,23 @@ class IcingaHostForm extends DirectorObjectForm
                     $this->addError($this->translate('No Host template has been chosen'));
                 } else {
                     if ($this->hasPermission('director/admin')) {
-                        $html = $this->translate('Please define a Host Template first');
+                        $html = sprintf(
+                            $this->translate('Please define a %s first'),
+                            Link::create(
+                                $this->translate('Host Template'),
+                                'director/host/add',
+                                ['type' => 'template']
+                            )
+                        );
                     } else {
                         $html = $this->translate('No Host Template has been provided yet');
                     }
+
                     $this->addHtml('<p class="warning">' . $html . '</p>');
                 }
             }
 
-            return $this;
+            return false;
         }
 
         $this->addElement('select', 'imports', [
@@ -158,7 +171,7 @@ class IcingaHostForm extends DirectorObjectForm
             'class'        => 'autosubmit'
         ]);
 
-        return $this;
+        return true;
     }
 
     protected function enumHostTemplates()

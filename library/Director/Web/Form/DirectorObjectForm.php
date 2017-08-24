@@ -482,12 +482,22 @@ abstract class DirectorObjectForm extends DirectorForm
     /**
      * @return $this
      */
-    protected function groupMainProperties()
+    protected function groupMainProperties($importsFirst = false)
     {
-        $elements = array(
-            'imports',
-            'object_type',
-            'object_name',
+        if ($importsFirst) {
+            $elements = [
+                'imports',
+                'object_type',
+                'object_name',
+            ];
+        } else {
+            $elements = [
+                'object_type',
+                'object_name',
+                'imports',
+            ];
+        }
+        $elements = array_merge($elements, [
             'display_name',
             'host_id',
             'address',
@@ -507,7 +517,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'apply_for',
             'create_live',
             'disabled',
-        );
+        ]);
 
         // Add template choices to the main section
         /** @var \Zend_Form_Element $el */
