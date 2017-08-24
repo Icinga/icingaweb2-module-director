@@ -2371,7 +2371,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $object->vars = array();
         }
 
-        $this->setProperties((array) $object->toPlainObject(null, true));
+        $plain = (array) $object->toPlainObject(null, false);
+        unset($plain['vars']);
+        foreach ($plain as $p => $v) {
+            if ($v === null) {
+                // We want default values, but no null values
+                continue;
+            }
+
+            $this->set($p, $v);
+        }
 
         if ($object->supportsCustomVars()) {
             $myVars = $this->vars();
