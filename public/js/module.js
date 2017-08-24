@@ -30,7 +30,7 @@
             this.module.on('dblclick', '.director-suggest', this.suggestionDoubleClick);
             this.module.on('focus', '.director-suggest', this.enterSuggestionField);
             this.module.on('focusout', '.director-suggest', this.leaveSuggestionField);
-            this.module.on('click', '.director-suggestions li', this.clickSuggestion);
+            this.module.on('mousedown', '.director-suggestions li', this.clickSuggestion);
             this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
             this.module.icinga.logger.debug('Director module initialized');
