@@ -641,6 +641,11 @@ ul.main-actions {
     display: block;
     width: auto;
   }
+  fieldset.collapsed {
+    dd, dt, ul, div {
+      display: none;
+    }
+  }
   dt label {
     color: @text-color;
   }
@@ -658,6 +663,31 @@ ul.main-actions {
       border-color: @icinga-blue;
     }
   }
+  ul.extensible-set {
+    max-width: unset;
+  }
+  dd ul.extensible-set {
+    border: 1px solid @gray-light;
+  }
+  dd.active ul.extensible-set {
+    border: 1px solid @icinga-blue;
+
+    input[type=submit]:first-of-type {
+      border-width: 1px;
+    }
+  }
+
+  dd.active ul.extensible-set, ul.extensible-set.sortable {
+    input[type=text], select {
+      width: 100%;
+    }
+
+    input[type=text] {
+      background-color: white;
+      border: 1px solid white;
+    }
+  }
+
 }
 
 #layout.compact-layout.twocols table.Differences,
