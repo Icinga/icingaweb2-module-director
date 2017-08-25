@@ -36,11 +36,11 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function addNameElement()
     {
-        $this->addElement('text', 'object_name', array(
+        $this->addElement('text', 'object_name', [
             'label'       => $this->translate('Name'),
             'required'    => true,
             'description' => $this->translate('Name for the Icinga dependency you are going to create')
-        ));
+        ]);
 
         return $this;
     }
@@ -52,20 +52,18 @@ class IcingaDependencyForm extends DirectorObjectForm
             return $this;
         }
 
-        $this->addElement('select', 'apply_to', array(
+        $this->addElement('select', 'apply_to', [
             'label'        => $this->translate('Apply to'),
             'description'  => $this->translate(
                 'Whether this dependency should affect hosts or services'
             ),
             'required'     => true,
             'class'        => 'autosubmit',
-            'multiOptions' => $this->optionalEnum(
-                array(
-                    'host'    => $this->translate('Hosts'),
-                    'service' => $this->translate('Services'),
-                )
-            )
-        ));
+            'multiOptions' => $this->optionalEnum([
+                'host'    => $this->translate('Hosts'),
+                'service' => $this->translate('Services'),
+            ])
+        ]);
 
         $applyTo = $this->getSentOrObjectValue('apply_to');
 
@@ -114,33 +112,29 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function addBooleanElements()
     {
+        $this->addBoolean('disable_checks', [
+            'label'       => $this->translate('Disable Checks'),
+            'description' => $this->translate(
+                'Whether to disable checks when this dependency fails.'
+                . ' Defaults to false.'
+            )
+        ], null);
 
-        $this->addBoolean(
-            'disable_checks',
-            array(
-                'label'       => $this->translate('Disable Checks'),
-                'description' => $this->translate('Whether to disable checks when this dependency fails. Defaults to false.')
-            ),
-            null
-        );
+        $this->addBoolean('disable_notifications', [
+            'label'       => $this->translate('Disable Notificiations'),
+            'description' => $this->translate(
+                'Whether to disable notifications when this dependency fails.'
+                . ' Defaults to true.'
+            )
+        ], null);
 
-        $this->addBoolean(
-            'disable_notifications',
-            array(
-                'label'       => $this->translate('Disable Notificiations'),
-                'description' => $this->translate('Whether to disable notifications when this dependency fails. Defaults to true.')
-            ),
-            null
-        );
-
-        $this->addBoolean(
-            'ignore_soft_states',
-            array(
-                'label'       => $this->translate('Ignore Soft States'),
-                'description' => $this->translate('Whether to ignore soft states for the reachability calculation. Defaults to true.')
-            ),
-            null
-        );
+        $this->addBoolean('ignore_soft_states', [
+            'label'       => $this->translate('Ignore Soft States'),
+            'description' => $this->translate(
+                'Whether to ignore soft states for the reachability calculation.'
+                . ' Defaults to true.'
+            )
+        ], null);
 
         return $this;
     }
@@ -183,7 +177,8 @@ class IcingaDependencyForm extends DirectorObjectForm
             );
         }
 
-        // If configuring Object, allow selection of child host and/or service, otherwise apply rules will determine child object.
+        // If configuring Object, allow selection of child host and/or service,
+        // otherwise apply rules will determine child object.
         if ($this->isObject()) {
             $this->addElement(
                 'text',
@@ -193,46 +188,42 @@ class IcingaDependencyForm extends DirectorObjectForm
                     'description' => $this->translate(
                         'The child host.'
                     ),
-                    'class' => "autosubmit director-suggest",
-                    'data-suggestion-context' => 'hostnames',
+                    'value' => $this->getObject()->get('child_host'),
                     'order' => 30,
+                    'class'    => "autosubmit director-suggest",
                     'required' => $this->isObject(),
-                    'value' => $this->getObject()->get('child_host')
+                    'data-suggestion-context' => 'hostnames',
                 )
             );
 
             $sent_child=$this->getSentOrObjectValue("child_host");
 
             if (!empty($sent_child)) {
-                $this->addElement(
-                    'text',
-                    'child_service',
-                    array(
-                        'label' => $this->translate('Child Service'),
-                        'description' => $this->translate(
-                            'Optional. The child service. If omitted this dependency object is treated as host dependency.'
-                        ),
-                        'class' => "autosubmit director-suggest",
-                        'data-suggestion-context' => 'servicenames',
-                        'data-suggestion-for-host' => $sent_child,
-                        'order' => 40,
-                        'value' => $this->getObject()->get('child_service')
-                    )
-                );
+                $this->addElement('text', 'child_service', [
+                    'label' => $this->translate('Child Service'),
+                    'description' => $this->translate(
+                        'Optional. The child service. If omitted this dependency'
+                        . ' object is treated as host dependency.'
+                    ),
+                    'class' => "autosubmit director-suggest",
+                    'order' => 40,
+                    'value' => $this->getObject()->get('child_service'),
+                    'data-suggestion-context'  => 'servicenames',
+                    'data-suggestion-for-host' => $sent_child,
+                ]);
             }
         }
 
-        $elements=array('parent_host','child_host','parent_service','child_service');
-        $this->addDisplayGroup($elements, 'related_objects', array(
-            'decorators' => array(
+        $elements = ['parent_host', 'child_host', 'parent_service', 'child_service'];
+        $this->addDisplayGroup($elements, 'related_objects', [
+            'decorators' => [
                 'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
+                ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
-            ),
+            ],
             'order' => 25,
             'legend' => $this->translate('Related Objects')
-        ));
-
+        ]);
 
         return $this;
     }
@@ -240,9 +231,10 @@ class IcingaDependencyForm extends DirectorObjectForm
     public function createApplyRuleFor(IcingaDependency $dependency)
     {
         $object = $this->object();
-        $object->imports = $dependency->object_name;
-        $object->object_type = 'apply';
-        $object->object_name = $dependency->object_name;
+        $object->setImports($dependency->getObjectName());
+        $object->set('object_type', 'apply');
+        $object->set('object_name', $dependency->getObjectName());
+
         return $this;
     }
 }

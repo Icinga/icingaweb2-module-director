@@ -4,18 +4,18 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 class DependencyObjectDashlet extends Dashlet
 {
-    protected $icon = '';
+    protected $icon = 'sitemap';
 
     protected $requiredStats = array('dependency');
 
     public function getTitle()
     {
-        return $this->translate('Dependencies.');
+        return $this->translate('Dependencies');
     }
 
     public function getSummary()
     {
-        return $this->translate('Define object dependency relationships.')
+        return $this->translate('Object dependency relationships.')
             . ' ' . parent::getSummary();
     }
 

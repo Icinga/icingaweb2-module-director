@@ -9,7 +9,7 @@ class TemplateActionBar extends DirectorBaseActionBar
     protected function assemble()
     {
         $type = $this->type;
-        $pltype = preg_replace('/cys$/', 'cies', $type . 's');
+        $plType = preg_replace('/cys$/', 'cies', $type . 's');
         $renderTree = $this->url->getParam('render') === 'tree';
         $renderParams = $renderTree ? null : ['render' => 'tree'];
         $this->add(
@@ -28,7 +28,7 @@ class TemplateActionBar extends DirectorBaseActionBar
         )->add(
             Link::create(
                 $renderTree ? $this->translate('Table') : $this->translate('Tree'),
-                "director/$pltype/templates",
+                "director/$plType/templates",
                 $renderParams,
                 [
                     'class' => 'icon-' . ($renderTree ? 'doc-text' : 'sitemap'),

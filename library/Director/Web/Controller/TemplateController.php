@@ -177,7 +177,11 @@ abstract class TemplateController extends CompatController
 
     protected function getPluralType()
     {
-        return preg_replace('/cys$/', 'cies', $this->template()->getShortTableName() . 's');
+        return preg_replace(
+            '/cys$/',
+            'cies',
+            $this->template()->getShortTableName() . 's'
+        );
     }
 
     protected function getTranslatedType()

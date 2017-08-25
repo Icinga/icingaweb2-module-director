@@ -6,30 +6,29 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
-use Icinga\Module\Director\Objects\HostApplyMatches;
 
 class IcingaDependency extends IcingaObject
 {
     protected $table = 'icinga_dependency';
 
-    protected $defaultProperties = array(
-        'id'                    => null,
-        'object_name'           => null,
-        'object_type'           => null,
-        'disabled'              => 'n',
-        'apply_to'              => null,
-        'parent_host_id'               => null,
-        'parent_service_id'            => null,
-        'child_host_id'               => null,
-        'child_service_id'            => null,
-        'disable_checks'              => null,
-        'disable_notifications'       => null,
-        'ignore_soft_states'          => null,
-        'period_id'             => null,
-        'zone_id'               => null,
-        'assign_filter'         => null,
-        'parent_service_by_name'      => null,
-    );
+    protected $defaultProperties = [
+        'id'                     => null,
+        'object_name'            => null,
+        'object_type'            => null,
+        'disabled'               => 'n',
+        'apply_to'               => null,
+        'parent_host_id'         => null,
+        'parent_service_id'      => null,
+        'child_host_id'          => null,
+        'child_service_id'       => null,
+        'disable_checks'         => null,
+        'disable_notifications'  => null,
+        'ignore_soft_states'     => null,
+        'period_id'              => null,
+        'zone_id'                => null,
+        'assign_filter'          => null,
+        'parent_service_by_name' => null,
+    ];
 
     protected $supportsCustomVars = false;
 
@@ -37,24 +36,24 @@ class IcingaDependency extends IcingaObject
 
     protected $supportsApplyRules = true;
 
-    protected $relatedSets = array(
+    protected $relatedSets = [
         'states' => 'StateFilterSet',
-    );
+    ];
 
-    protected $relations = array(
-        'zone'    => 'IcingaZone',
+    protected $relations = [
+        'zone'           => 'IcingaZone',
         'parent_host'    => 'IcingaHost',
         'parent_service' => 'IcingaService',
-        'child_host'    => 'IcingaHost',
-        'child_service' => 'IcingaService',
-        'period'  => 'IcingaTimePeriod',
-    );
+        'child_host'     => 'IcingaHost',
+        'child_service'  => 'IcingaService',
+        'period'         => 'IcingaTimePeriod',
+    ];
 
-    protected $booleans = array(
-        'disable_checks' => 'disable_checks',
+    protected $booleans = [
+        'disable_checks'        => 'disable_checks',
         'disable_notifications' => 'disable_notifications',
-        'ignore_soft_states' => 'ignore_soft_states'
-    );
+        'ignore_soft_states'    => 'ignore_soft_states'
+    ];
 
     /**
      * Do not render internal property apply_to
@@ -94,10 +93,20 @@ class IcingaDependency extends IcingaObject
 
     protected function setKey($key)
     {
+        // TODO: Check if this method can be removed
         if (is_int($key)) {
             $this->id = $key;
         } elseif (is_array($key)) {
-            foreach (array('id', 'parent_host_id', 'parent_service_id', 'child_host_id', 'child_service_id', 'object_name') as $k) {
+            $keys = [
+                'id',
+                'parent_host_id',
+                'parent_service_id',
+                'child_host_id',
+                'child_service_id',
+                'object_name'
+            ];
+
+            foreach ($keys as $k) {
                 if (array_key_exists($k, $key)) {
                     $this->set($k, $key[$k]);
                 }
@@ -111,14 +120,20 @@ class IcingaDependency extends IcingaObject
 
     protected function renderAssignments()
     {
+        // TODO: this will never be reached
         if ($this->hasBeenAssignedToServiceApply()) {
-            $tmpService= $this->getRelatedObject('child_service', $this->child_service_id);
+            /** @var IcingaService $tmpService */
+            $tmpService = $this->getRelatedObject(
+                'child_service',
+                $this->get('child_service_id')
+            );
+            // TODO: fix this, will crash:
             $assigns = $tmpService->assignments()->toConfigString();
 
             $filter = sprintf(
                 '%s && service.name == "%s"',
                 trim($assigns),
-                $this->child_service
+                $this->get('child_service')
             );
             return "\n    " . $filter . "\n";
         }
@@ -126,15 +141,15 @@ class IcingaDependency extends IcingaObject
         if ($this->hasBeenAssignedToHostTemplateService()) {
             $filter = sprintf(
                 'assign where "%s" in host.templates && service.name == "%s"',
-                $this->child_host,
-                $this->child_service
+                $this->get('child_host'),
+                $this->get('child_service')
             );
             return "\n    " . $filter . "\n";
         }
         if ($this->hasBeenAssignedToHostTemplate()) {
             $filter = sprintf(
                 'assign where "%s" in host.templates',
-                $this->child_host
+                $this->get('child_host')
             );
             return "\n    " . $filter . "\n";
         }
@@ -142,7 +157,7 @@ class IcingaDependency extends IcingaObject
         if ($this->hasBeenAssignedToServiceTemplate()) {
             $filter = sprintf(
                 'assign where "%s" in service.templates',
-                $this->child_service
+                $this->get('child_service')
             );
             return "\n    " . $filter . "\n";
         }
@@ -153,10 +168,11 @@ class IcingaDependency extends IcingaObject
     protected function hasBeenAssignedToHostTemplate()
     {
         try {
-            return $this->child_host_id && $this->getRelatedObject(
+            $id = $this->get('child_host_id');
+            return $id && $this->getRelatedObject(
                 'child_host',
-                $this->child_host_id
-            )->object_type === 'template';
+                $id
+            )->isTemplate();
         } catch (NotFoundError $e) {
             return false;
         }
@@ -165,10 +181,11 @@ class IcingaDependency extends IcingaObject
     protected function hasBeenAssignedToServiceTemplate()
     {
         try {
-            return $this->child_service_id && $this->getRelatedObject(
+            $id = $this->get('child_service_id');
+            return $id && $this->getRelatedObject(
                 'child_service',
-                $this->child_service_id
-            )->object_type === 'template';
+                $id
+            )->isTemplate();
         } catch (NotFoundError $e) {
             return false;
         }
@@ -180,10 +197,11 @@ class IcingaDependency extends IcingaObject
             return false;
         }
         try {
-            return $this->child_service_id && $this->getRelatedObject(
+            $id = $this->get('child_service_id');
+            return $id && $this->getRelatedObject(
                 'child_service',
-                $this->child_service_id
-            )->object_type === 'object';
+                $id
+            )->isObject();
         } catch (NotFoundError $e) {
             return false;
         }
@@ -192,15 +210,15 @@ class IcingaDependency extends IcingaObject
     protected function hasBeenAssignedToServiceApply()
     {
         try {
-            return $this->child_service_id && $this->getRelatedObject(
+            $id = $this->get('child_service_id');
+            return $id && $this->getRelatedObject(
                 'child_service',
-                $this->child_service_id
-            )->object_type === 'apply';
+                $id
+            )->isApplyRule();
         } catch (NotFoundError $e) {
             return false;
         }
     }
-
 
     /**
      * Render child_host_id as host_name
@@ -218,7 +236,11 @@ class IcingaDependency extends IcingaObject
             return '';
         }
 
-        return $this->renderRelationProperty('child_host', $this->child_host_id, 'child_host_name');
+        return $this->renderRelationProperty(
+            'child_host',
+            $this->get('child_host_id'),
+            'child_host_name'
+        );
     }
 
     /**
@@ -233,9 +255,12 @@ class IcingaDependency extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
 
-        return $this->renderRelationProperty('parent_host', $this->parent_host_id, 'parent_host_name');
+        return $this->renderRelationProperty(
+            'parent_host',
+            $this->get('parent_host_id'),
+            'parent_host_name'
+        );
     }
-
 
     /**
      * Render child_service_id as host_name
@@ -248,19 +273,18 @@ class IcingaDependency extends IcingaObject
     public function renderChild_service_id()
     {
         // @codingStandardsIgnoreEnd
-        if ($this->hasBeenAssignedToServiceTemplate()) {
+        if ($this->hasBeenAssignedToServiceTemplate()
+            || $this->hasBeenAssignedToHostTemplateService()
+            || $this->hasBeenAssignedToServiceApply()
+        ) {
             return '';
         }
 
-        if ($this->hasBeenAssignedToHostTemplateService()) {
-            return '';
-        }
-
-        if ($this->hasBeenAssignedToServiceApply()) {
-            return '';
-        }
-
-        return $this->renderRelationProperty('child_service', $this->child_service_id, 'child_service_name');
+        return $this->renderRelationProperty(
+            'child_service',
+            $this->get('child_service_id'),
+            'child_service_name'
+        );
     }
 
     /**
@@ -273,84 +297,107 @@ class IcingaDependency extends IcingaObject
      */
     public function renderParent_service_id()
     {
-            return $this->renderRelationProperty('parent_service', $this->parent_service_id, 'parent_service_name');
+        return $this->renderRelationProperty(
+            'parent_service',
+            $this->get('parent_service_id'),
+            'parent_service_name'
+        );
     }
 
     //special case for parent service set as plain string for Apply rules
     public function renderParent_service_by_name()
     {
-        return "\n    parent_service_name = \"" . $this->parent_service_by_name ."\"\n";
+        // TODO:
+        return c::renderKeyValue(
+            'parent_service_name',
+            $this->get('parent_service_by_name')
+        );
     }
 
     public function isApplyRule()
     {
-        if ($this->hasBeenAssignedToHostTemplate()) {
+        if ($this->hasBeenAssignedToHostTemplate()
+            || $this->hasBeenAssignedToServiceTemplate()
+            || $this->hasBeenAssignedToServiceApply()
+        ) {
             return true;
         }
 
-        if ($this->hasBeenAssignedToServiceTemplate()) {
-            return true;
-        }
-
-        if ($this->hasBeenAssignedToServiceApply()) {
-            return true;
-        }
-
-        return $this->hasProperty('object_type')
-            && $this->object_type === 'apply';
+        return parent::isApplyRule();
     }
 
     protected function resolveUnresolvedRelatedProperty($name)
     {
-
         $short = substr($name, 0, -3);
         /** @var IcingaObject $class */
         $class = $this->getRelationClass($short);
-        $obj_key = $this->unresolvedRelatedProperties[$name];
+        $objKey = $this->unresolvedRelatedProperties[$name];
 
         # related services need array key
         if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
-            if ($name == "parent_service_id" && $this->object_type == 'apply' ) {  //special case , parent service can be set as simple string for Apply
-                if ($this->properties['parent_host_id']==null) {
-                    $this->reallySet('parent_service_by_name', $this->unresolvedRelatedProperties[$name]);
-                    $this->reallySet('parent_service_id',null);
+            if ($name === 'parent_service_id' && $this->object_type === 'apply' ) {
+                //special case , parent service can be set as simple string for Apply
+                if ($this->properties['parent_host_id'] === null) {
+                    $this->reallySet(
+                        'parent_service_by_name',
+                        $this->unresolvedRelatedProperties[$name]
+                    );
+                    $this->reallySet('parent_service_id', null);
                     unset($this->unresolvedRelatedProperties[$name]);
                     return;
                 }
             }
 
-            $this->reallySet('parent_service_by_name',null);
-            $host_id_prop=str_replace("service","host",$name);
-            if (isset($this->properties[$host_id_prop])) {
-                $obj_key=array("host_id" => $this->properties[$host_id_prop], "object_name" => $this->unresolvedRelatedProperties[$name]);
+            $this->reallySet('parent_service_by_name', null);
+            $hostIdProperty = str_replace('service', 'host', $name);
+            if (isset($this->properties[$hostIdProperty])) {
+                $objKey = [
+                    'host_id'     => $this->properties[$hostIdProperty],
+                    'object_name' => $this->unresolvedRelatedProperties[$name]
+                ];
             } else {
-                $obj_key=array("host_id" => null, "object_name" => $this->unresolvedRelatedProperties[$name]);
+                $objKey = [
+                    'host_id'     => null,
+                    'object_name' => $this->unresolvedRelatedProperties[$name]
+                ];
             }
 
             try {
-                $object = $class::load( $obj_key, $this->connection);
+                $class::load( $objKey, $this->connection);
             } catch (NotFoundError $e) {
                 // Not a simple service on host
-                // Hunt through inherited services, use service assigned to template if found
-                $tmp_host=IcingaHost::loadWithAutoIncId($this->properties[$host_id_prop], $this->connection);
+                // Hunt through inherited services, use service assigned to
+                // template if found
+                $tmpHost = IcingaHost::loadWithAutoIncId(
+                    $this->properties[$hostIdProperty],
+                    $this->connection
+                );
 
-                //services for applicable templates
-                $resolver = $tmp_host->templateResolver();
+                //services for applicable templates 
+                $resolver = $tmpHost->templateResolver();
                 foreach ($resolver->fetchResolvedParents() as $template_obj) {
-                    $obj_key=array("host_id" => $template_obj->id, "object_name" => $this->unresolvedRelatedProperties[$name]);
-                    try {
-                        $object = $class::load( $obj_key, $this->connection);
+                    $objKey = [
+                        'host_id'     => $template_obj->id,
+                        'object_name' => $this->unresolvedRelatedProperties[$name]
+                    ];
+                    try {    
+                        $object = $class::load( $objKey, $this->connection);
                     } catch (NotFoundError $e) {
                         continue;
                     }
                     break;
                 }
-                if (!isset($object))  { //Not an inherited service, now try apply rules
-                    $matcher = HostApplyMatches::prepare($tmp_host);
+
+                if (!isset($object)) {
+                    // Not an inherited service, now try apply rules
+                    $matcher = HostApplyMatches::prepare($tmpHost);
                     foreach ($this->getAllApplyRules() as $rule) {
                         if ($matcher->matchesFilter($rule->filter)) {
-                            if ($rule->name == $this->unresolvedRelatedProperties[$name]) {
-                                $object=IcingaService::loadWithAutoIncId($rule->id, $this->connection);
+                            if ($rule->name === $this->unresolvedRelatedProperties[$name]) {
+                                $object = IcingaService::loadWithAutoIncId(
+                                    $rule->get('id'),
+                                    $this->connection
+                                );
                                 break;
                             }
                         }
@@ -358,10 +405,7 @@ class IcingaDependency extends IcingaObject
                 }
             }
         } else {
-            $object = $class::load(
-                $obj_key,
-                $this->connection
-            );
+            $object = $class::load($objKey, $this->connection);
         }
 
         if (isset($object)) {
@@ -374,7 +418,7 @@ class IcingaDependency extends IcingaObject
 
     protected function getAllApplyRules()
     {
-        $allApplyRules=$this->fetchAllApplyRules();
+        $allApplyRules = $this->fetchAllApplyRules();
         foreach ($allApplyRules as $rule) {
             $rule->filter = Filter::fromQueryString($rule->assign_filter);
         }
@@ -408,15 +452,18 @@ class IcingaDependency extends IcingaObject
             /** @var IcingaObject $class */
             $class = $this->getRelationClass($key);
             $object = $class::loadWithAutoIncId($id, $this->connection);
-            return $object->get('object_name');
+
+            return $object->getObjectName();
         } else {
-            // handle special case for plain string parent service on Dependency Apply rules
-            if ($key == 'parent_service' && $this->get('parent_service_by_name') != null) {
+            // handle special case for plain string parent service on Dependency
+            // Apply rules
+            if ($key === 'parent_service'
+                && null !== $this->get('parent_service_by_name')
+            ) {
                 return $this->get('parent_service_by_name');
             }
         }
 
         return null;
     }
-
 }

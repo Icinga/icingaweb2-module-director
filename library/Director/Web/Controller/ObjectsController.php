@@ -33,6 +33,7 @@ abstract class ObjectsController extends ActionController
             $this->assertPermission('director/' . $this->getPluralBaseType());
         }
     }
+
     /**
      * @return $this
      */
@@ -126,7 +127,6 @@ abstract class ObjectsController extends ActionController
                 count($objects)
             )->content()->add($form);
     }
-
 
     /**
      * Loads the TemplatesTable or the TemplateTreeRenderer
@@ -306,11 +306,11 @@ abstract class ObjectsController extends ActionController
 
     protected function getPluralType()
     {
-        return preg_replace("/cys$/", "cies", $this->getType() . 's');
+        return preg_replace('/cys$/', 'cies', $this->getType() . 's');
     }
 
     protected function getPluralBaseType()
     {
-        return preg_replace("/cys$/", "cies", $this->getBaseType() . 's');
+        return preg_replace('/cys$/', 'cies', $this->getBaseType() . 's');
     }
 }

@@ -18,28 +18,29 @@ class ObjectsTabs extends Tabs
             $object = IcingaObject::createByType(substr($type, 0, -5));
         }
 
-        $pltype=strtolower(preg_replace('/cys$/', 'cies', $type . 's'));
-        if ($auth->hasPermission("director/${pltype}")) {
+        $plType = strtolower(preg_replace('/cys$/', 'cies', $type . 's'));
+        if ($auth->hasPermission("director/${plType}")) {
             $this->add('index', array(
-                'url'   => sprintf('director/%s', $pltype),
-                'label' => $this->translate(ucfirst($pltype)),
+                'url'   => sprintf('director/%s', $plType),
+                'label' => $this->translate(ucfirst($plType)),
             ));
         }
 
         if ($object->getShortTableName() === 'command') {
             $this->add('external', array(
-                'url'   => sprintf('director/%s', strtolower($pltype)),
+                'url'   => sprintf('director/%s', strtolower($plType)),
                 'urlParams' => ['type' => 'external_object'],
                 'label' => $this->translate('External'),
             ));
         }
 
         if ($auth->hasPermission('director/admin') || (
-                $object->getShortTableName() === 'notification' && $auth->hasPermission('director/notifications')
-            )) {
+            $object->getShortTableName() === 'notification'
+            && $auth->hasPermission('director/notifications')
+        )) {
             if ($object->supportsApplyRules()) {
                 $this->add('applyrules', array(
-                    'url' => sprintf('director/%s/applyrules', $pltype),
+                    'url' => sprintf('director/%s/applyrules', $plType),
                     'label' => $this->translate('Apply')
                 ));
             }
@@ -48,7 +49,7 @@ class ObjectsTabs extends Tabs
         if ($auth->hasPermission('director/admin') && $type !== 'zone') {
             if ($object->supportsImports()) {
                 $this->add('templates', array(
-                    'url' => sprintf('director/%s/templates', $pltype),
+                    'url' => sprintf('director/%s/templates', $plType),
                     'label' => $this->translate('Templates'),
                 ));
             }
@@ -71,7 +72,7 @@ class ObjectsTabs extends Tabs
         }
         if ($object->supportsSets() && $auth->hasPermission("director/${type}_sets")) {
             $this->add('sets', array(
-                'url'    => sprintf('director/%s/sets', $pltype),
+                'url'    => sprintf('director/%s/sets', $plType),
                 'label' => $this->translate('Sets')
             ));
         }

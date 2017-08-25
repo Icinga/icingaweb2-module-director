@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\IcingaDependencyForm;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaDependency;
 
@@ -49,6 +50,7 @@ class DependencyController extends ObjectController
 
     protected function beforeHandlingAddRequest($form)
     {
+        /** @var IcingaDependencyForm $form */
         if ($this->apply) {
             $form->createApplyRuleFor($this->apply);
         }
