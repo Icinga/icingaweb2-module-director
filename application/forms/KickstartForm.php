@@ -90,7 +90,8 @@ class KickstartForm extends DirectorForm
                     . ' after an Icinga 2 Core upgrade.'
                 ),
                 array('name' => 'HINT_kickstart')
-            // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
+                // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/
+                // ... object-types#objecttype-apilistener
             );
         } else {
             $this->addHtmlHint(
@@ -100,7 +101,8 @@ class KickstartForm extends DirectorForm
                     . ' up the connection to your Icinga 2 server.'
                 ),
                 array('name' => 'HINT_kickstart')
-            // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
+                // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/
+                // ... object-types#objecttype-apilistener
             );
         }
 
