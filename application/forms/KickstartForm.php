@@ -79,15 +79,28 @@ class KickstartForm extends DirectorForm
 
         $this->addResourceDisplayGroup();
 
-        $this->addHtmlHint(
-            $this->translate(
-                'Your installation of Icinga Director has not yet been prepared for'
-                . ' deployments. This kickstart wizard will assist you with setting'
-                . ' up the connection to your Icinga 2 server.'
-            ),
-            array('name' => 'HINT_kickstart')
+        if ($this->getDb()->hasDeploymentEndpoint()) {
+            $this->addHtmlHint(
+                $this->translate(
+                    'Your configuration looks good. Still, you might want to re-run'
+                    . ' this kickstart wizard to (re-)import modified or new manually'
+                    . ' defined Command definitions or to get fresh new ITL commands'
+                    . ' after an Icinga 2 Core upgrade.'
+                ),
+                array('name' => 'HINT_kickstart')
             // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
-        );
+            );
+        } else {
+            $this->addHtmlHint(
+                $this->translate(
+                    'Your installation of Icinga Director has not yet been prepared for'
+                    . ' deployments. This kickstart wizard will assist you with setting'
+                    . ' up the connection to your Icinga 2 server.'
+                ),
+                array('name' => 'HINT_kickstart')
+            // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
+            );
+        }
 
         $this->addElement('text', 'endpoint', array(
             'label'       => $this->translate('Endpoint Name'),
