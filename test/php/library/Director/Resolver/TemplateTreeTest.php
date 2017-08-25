@@ -10,6 +10,8 @@ use Icinga\Module\Director\Test\BaseTestCase;
 
 class TemplateTreeTest extends BaseTestCase
 {
+    protected $applyId;
+
     protected function prepareHosts(Db $db)
     {
         $o1 = IcingaHost::create([
@@ -195,6 +197,7 @@ class TemplateTreeTest extends BaseTestCase
         $o5->store();
         $o6->store();
         $o7->store();
+        $this->applyId = (int) $o7->get('id');
 
         $tree = new TemplateTree('service', $db);
         $this->assertEquals([
@@ -226,12 +229,11 @@ class TemplateTreeTest extends BaseTestCase
 
     protected function removeServices(Db $db)
     {
-        $key = [
-            'object_name' => 'o7',
-            'object_type' => 'apply',
-        ];
-        if (IcingaService::exists($key, $db)) {
-            IcingaService::load($key, $db)->delete();
+        if ($this->applyId) {
+            $key = ['id' => $this->applyId];
+            if (IcingaService::exists($key, $db)) {
+                IcingaService::load($key, $db)->delete();
+            }
         }
 
         $kill = array('o6', 'o5', 'o4', 'o3', 'o2', 'o1');

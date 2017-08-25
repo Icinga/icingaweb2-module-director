@@ -34,7 +34,7 @@ class AssignRendererTest extends BaseTestCase
             . '&host.vars.is_clustered=true)';
 
         $expected = 'assign where match("*internal", host.name) ||'
-            . ' (service.vars.priority < 2 && host.vars.is_clustered == true)';
+            . ' (service.vars.priority < 2 && host.vars.is_clustered)';
 
         $this->assertEquals(
             $expected,

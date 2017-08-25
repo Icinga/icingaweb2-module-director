@@ -196,7 +196,8 @@ class IcingaCommandTest extends BaseTestCase
             array(
                 'object_name' => $this->testCommandName,
                 'object_type' => 'object'
-            )
+            ),
+            $this->getDb()
         );
     }
 

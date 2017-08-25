@@ -30,7 +30,8 @@ class IcingaHostTest extends BaseTestCase
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
-            array('display_name' => 'Replaced display')
+            array('display_name' => 'Replaced display'),
+            $this->getDb()
         );
 
         $this->assertEquals(
@@ -62,7 +63,8 @@ class IcingaHostTest extends BaseTestCase
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
-            array('display_name' => 'Replaced display')
+            array('display_name' => 'Replaced display'),
+            $this->getDb()
         );
 
         $this->assertEquals(
@@ -108,7 +110,8 @@ class IcingaHostTest extends BaseTestCase
                     'test2'     => 18,
                     'initially' => 'set and then preserved',
                 )
-            )
+            ),
+            $this->getDb()
         );
 
         $preserve = array('address', 'vars.test1', 'vars.initially');
@@ -649,7 +652,7 @@ class IcingaHostTest extends BaseTestCase
                     )
                 )
             )
-        ));
+        ), $this->getDb());
     }
 
     protected function getDefaultHostProperties($prefix = '')
