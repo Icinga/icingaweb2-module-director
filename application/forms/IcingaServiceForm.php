@@ -9,12 +9,15 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use ipl\Html\Html;
+use ipl\Html\Link;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
     /** @var IcingaHost */
     private $host;
 
+    /** @var IcingaServiceSet */
     private $set;
 
     private $apply;
@@ -80,10 +83,7 @@ class IcingaServiceForm extends DirectorObjectForm
             return;
         }
 
-        $this->addHtmlHint(
-            $this->getOverrideHint(),
-            array('name' => 'inheritance_hint')
-        );
+        $this->addOverrideHint();
 
         $group = $this->getDisplayGroup('custom_fields');
 
@@ -142,91 +142,78 @@ class IcingaServiceForm extends DirectorObjectForm
              ->setButtons();
     }
 
-    protected function getOverrideHint()
+    protected function addOverrideHint()
     {
-        $view = $this->getView();
-
         if ($this->object && $this->object->usesVarOverrides()) {
-            return $this->translate(
+            $hint = $this->translate(
                 'This service has been generated in an automated way, but still'
                 . ' allows you to override the following properties in a safe way.'
             );
-        }
-
-        if ($this->applyGenerated) {
-            return $view->escape(sprintf(
+        } elseif ($this->applyGenerated) {
+            $hint = Html::sprintf(
                 $this->translate(
                     'This service has been generated using an apply rule, assigned where %s'
                 ),
-                Filter::fromQueryString($this->applyGenerated->assign_filter)
-            ));
-        }
-
-        if ($this->host && $this->set) {
-            return $this->translate(
+                (string) Filter::fromQueryString($this->applyGenerated->assign_filter)
+            );
+        } elseif ($this->host && $this->set) {
+            $hint = $this->translate(
                 'This service belongs to a Service Set. Still, you might want'
                 . ' to override the following properties for this host only.'
             );
-        }
-
-        if ($this->inheritedFrom) {
-            $msg = $view->escape($this->translate(
+        } elseif ($this->inheritedFrom) {
+            $msg = $this->translate(
                 'This service has been inherited from %s. Still, you might want'
                 . ' to change the following properties for this host only.'
-            ));
-
-            $name = $this->inheritedFrom;
-            $link = $view->qlink(
-                $name,
-                'director/service',
-                array(
-                    'host' => $name,
-                    'name' => $this->object->object_name,
-                ),
-                array('data-base-target' => '_next')
             );
 
-            return sprintf($msg, $link);
+            $name = $this->inheritedFrom;
+            $link = Link::create(
+                $name,
+                'director/service',
+                [
+                    'host' => $name,
+                    'name' => $this->object->getObjectName(),
+                ],
+                ['data-base-target' => '_next']
+            );
+
+            $hint = Html::sprintf($msg, $link);
         }
 
-        $this->setSubmitLabel(
-            $this->translate('Override vars')
-        );
+        $this->setSubmitLabel($this->translate('Override vars'));
+
+        $this->addHtmlHint($hint, ['name' => 'inheritance_hint']);
     }
 
     protected function setupOnHostForSet()
     {
-        $view = $this->getView();
-        $msg = $view->escape($this->translate(
+        $msg = $this->translate(
             'This service belongs to the service set "%s". Still, you might want'
             . ' to change the following properties for this host only.'
-        ));
+        );
 
         $name = $this->set->getObjectName();
-        $link = $view->qlink(
+        $link = Link::create(
             $name,
             'director/serviceset',
-            array(
-                'name' => $name,
-            ),
-            array('data-base-target' => '_next')
+            ['name' => $name],
+            ['data-base-target' => '_next']
         );
 
         $this->addHtmlHint(
-            sprintf($msg, $link),
-            array('name' => 'inheritance_hint')
+            Html::sprintf($msg, $link),
+            ['name' => 'inheritance_hint']
         );
 
         $this->addElementsToGroup(
-            array('inheritance_hint'),
+            ['inheritance_hint'],
             'custom_fields',
             50,
             $this->translate('Custom properties')
         );
 
-        $this->setSubmitLabel(
-            $this->translate('Override vars')
-        );
+        $this->setSubmitLabel($this->translate('Override vars'));
     }
 
     protected function addAssignmentElements()

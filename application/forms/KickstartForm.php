@@ -10,7 +10,8 @@ use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\DirectorForm;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use ipl\Html\Html;
+use ipl\Html\Link;
 
 class KickstartForm extends DirectorForm
 {
@@ -60,16 +61,17 @@ class KickstartForm extends DirectorForm
         }
 
         if (! $this->endpoint && $this->getDb()->hasDeploymentEndpoint()) {
-            $hint = sprintf($this->translate(
-                'Your database looks good, you are ready to %s'
-            ), $this->getView()->qlink(
-                'start working with the Icinga Director',
-                'director',
-                null,
-                array('data-base-target' => '_main')
-            ));
+            $hint = Html::sprintf(
+                $this->translate('Your database looks good, you are ready to %s'),
+                Link::create(
+                    'start working with the Icinga Director',
+                    'director',
+                    null,
+                    ['data-base-target' => '_main']
+                )
+            );
 
-            $this->addHtmlHint($hint, array('name' => 'HINT_ready'));
+            $this->addHtmlHint($hint, ['name' => 'HINT_ready']);
             $this->getDisplayGroup('config')->addElements(
                 array($this->getElement('HINT_ready'))
             );
@@ -233,14 +235,15 @@ class KickstartForm extends DirectorForm
                 $this->translate('This has to be a MySQL or PostgreSQL database')
             );
 
-            $hint = $this->translate('Please click %s to create new DB resources');
-            $link = $this->getView()->qlink(
-                $this->translate('here'),
-                'config/resource',
-                null,
-                array('data-base-target' => '_main')
-            );
-            $this->addHtmlHint(sprintf($hint, $link));
+            $this->addHtmlHint(Html::sprintf(
+                $this->translate('Please click %s to create new DB resources'),
+                Link::create(
+                    $this->translate('here'),
+                    'config/resource',
+                    null,
+                    ['data-base-target' => '_main']
+                )
+            ));
         }
 
         $this->setSubmitLabel($this->storeConfigLabel);
@@ -308,7 +311,7 @@ class KickstartForm extends DirectorForm
                 )
             );
             $this->addHtmlHint(
-                '<pre>' . $config . '</pre>',
+                Html::tag('pre', null, $config),
                 array('name' => 'HINT_config_store')
             );
 

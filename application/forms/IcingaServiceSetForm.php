@@ -86,9 +86,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
         if (count($object->get('imports'))) {
             $this->addHtmlHint(
-                $this->getView()->escape(
-                    $object->getResolvedProperty('description')
-                )
+                $object->getResolvedProperty('description')
             );
         }
 
