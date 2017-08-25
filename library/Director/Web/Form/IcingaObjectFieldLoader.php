@@ -449,7 +449,9 @@ class IcingaObjectFieldLoader
         }
 
         $ids = $object->listAncestorIds();
-        $ids[] = $object->getProperty('id');
+        if ($id = $object->getProperty('id')) {
+            $ids[] = $id;
+        }
         return $this->fetchFieldDetailsForIds($ids);
     }
 
