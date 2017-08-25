@@ -1610,6 +1610,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderImports()
     {
+        if (! $this->supportsImports()) {
+            return '';
+        }
+
         $ret = '';
         foreach ($this->getImports() as $name) {
             $ret .= '    import ' . c::renderString($name) . "\n";
