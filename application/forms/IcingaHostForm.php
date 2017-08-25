@@ -64,6 +64,7 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addClusteringElements()
     {
+        $this->addZoneElement();
         $this->addBoolean('has_agent', [
             'label'       => $this->translate('Icinga2 Agent'),
             'description' => $this->translate(
