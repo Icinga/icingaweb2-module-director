@@ -111,7 +111,7 @@ class HostController extends ObjectController
 
         /** @var IcingaHost[] $parents */
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
-            ->getTemplatesFor($this->object);
+            ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
             $table = IcingaHostServiceTable::load($parent)->setInheritedBy($host);
             if (count($table)) {

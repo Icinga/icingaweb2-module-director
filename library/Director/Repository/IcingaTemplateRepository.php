@@ -29,11 +29,27 @@ class IcingaTemplateRepository
 
     /**
      * @param IcingaObject $object
+     * @param bool $recursive
      * @return IcingaObject[]
      */
-    public function getTemplatesFor(IcingaObject $object)
+    public function getTemplatesFor(IcingaObject $object, $recursive = false)
     {
-        $ids = $this->tree()->listAncestorIdsFor($object);
+        if ($recursive) {
+            $ids = $this->tree()->listAncestorIdsFor($object);
+        } else {
+            $ids = $this->tree()->listParentIdsFor($object);
+        }
+
+        return $this->getTemplatesForIds($ids, $object);
+    }
+
+    /**
+     * @param array $ids
+     * @param IcingaObject $object
+     * @return IcingaObject[]
+     */
+    public function getTemplatesForIds(array $ids, IcingaObject $object)
+    {
         $templates = [];
         foreach ($ids as $id) {
             if (! array_key_exists($id, $this->loadedById)) {
@@ -52,12 +68,15 @@ class IcingaTemplateRepository
 
     /**
      * @param IcingaObject $object
+     * @param bool $recursive
      * @return IcingaObject[]
      */
-    public function getTemplatesIndexedByNameFor(IcingaObject $object)
-    {
+    public function getTemplatesIndexedByNameFor(
+        IcingaObject $object,
+        $recursive = false
+    ) {
         $templates = [];
-        foreach ($this->getTemplatesFor($object) as $template) {
+        foreach ($this->getTemplatesFor($object, $recursive) as $template) {
             $templates[$template->getObjectName()] = $template;
         }
 
