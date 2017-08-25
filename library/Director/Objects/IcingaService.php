@@ -415,6 +415,21 @@ class IcingaService extends IcingaObject
         return $zone;
     }
 
+    public function createWhere()
+    {
+        $where = parent::createWhere();
+        if (! $this->hasBeenLoadedFromDb()) {
+            if (null === $this->get('service_set_id')
+                && null === $this->get('host_id')
+                && null === $this->get('id')
+            ) {
+                $where .= " AND object_type = 'template'";
+            }
+        }
+
+        return $where;
+    }
+
     // TODO: Duplicate code, clean this up, split it into multiple methods
     public static function enumProperties(
         Db $connection = null,
