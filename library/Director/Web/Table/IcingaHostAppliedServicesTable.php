@@ -27,7 +27,9 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
      */
     public static function load(IcingaHost $host)
     {
-        return (new static())->setHost($host);
+        $table = (new static())->setHost($host);
+        $table->attributes()->set('data-base-target', '_self');
+        return $table;
     }
 
     public function setTitle($title)

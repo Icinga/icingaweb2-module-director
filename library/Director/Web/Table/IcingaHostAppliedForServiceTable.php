@@ -28,7 +28,9 @@ class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
      */
     public static function load(IcingaHost $host, CustomVariableDictionary $dict)
     {
-        return (new static())->setHost($host)->setDictionary($dict);
+        $table = (new static())->setHost($host)->setDictionary($dict);
+        $table->attributes()->set('data-base-target', '_self');
+        return $table;
     }
 
     public function setDictionary(CustomVariableDictionary $dict)
