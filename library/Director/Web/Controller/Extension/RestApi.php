@@ -17,6 +17,16 @@ trait RestApi
         }
     }
 
+    protected function sendNotFoundForRestApi()
+    {
+        if ($this->getRequest()->isApiRequest()) {
+            $this->sendJsonError($this->getResponse(), 'Not found', 404);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     protected function assertApiPermission()
     {
         if (! $this->hasPermission('director/api')) {
