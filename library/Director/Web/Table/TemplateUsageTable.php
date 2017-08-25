@@ -48,14 +48,18 @@ class TemplateUsageTable extends Table
         }
     }
 
-    protected function __construct(IcingaObject $template)
+    public function getColumnsToBeRendered()
     {
-        $this->setColumnsToBeRendered([
+        return [
             '',
             $this->translate('Direct'),
             $this->translate('Indirect'),
             $this->translate('Total')
-        ]);
+        ];
+    }
+
+    protected function __construct(IcingaObject $template)
+    {
 
         if ($template->get('object_type') !== 'template') {
             throw new ProgrammingError(
@@ -94,7 +98,7 @@ class TemplateUsageTable extends Table
         }
 
         if ($used) {
-            $this->header();
+            $this->generateHeader();
             $this->body()->add($rows);
         } else {
             $this->body()->add($this->translate('This template is not in use'));
