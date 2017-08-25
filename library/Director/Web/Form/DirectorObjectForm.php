@@ -706,7 +706,6 @@ abstract class DirectorObjectForm extends DirectorForm
     protected function removeFromSet(& $set, $key)
     {
         unset($set[$key]);
-        sort($set);
     }
 
     protected function moveUpInSet(& $set, $key)
