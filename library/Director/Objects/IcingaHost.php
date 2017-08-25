@@ -125,7 +125,7 @@ class IcingaHost extends IcingaObject
 
         $hostVars = array();
 
-        if ($connection !== null) {
+        if ($connection instanceof Db) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
                 if ($filter->match(PropertiesFilter::$CUSTOM_PROPERTY, $var->varname, $var)) {
                     if ($var->datatype) {
