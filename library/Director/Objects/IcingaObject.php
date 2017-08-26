@@ -496,12 +496,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->resolveUnresolvedRelatedProperty($name);
         }
 
-        if ($this->supportsImports() && $this->imports !== null
-            && $this->imports()->hasBeenModified()
-        ) {
-            $this->imports()->getObjects();
-        }
-
         return $this;
     }
 
@@ -1337,6 +1331,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function beforeStore()
     {
         $this->resolveUnresolvedRelatedProperties();
+        if ($this->gotImports()) {
+            $this->imports()->getObjects();
+        }
     }
 
     public function onInsert()

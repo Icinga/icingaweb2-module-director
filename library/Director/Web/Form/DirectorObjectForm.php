@@ -239,6 +239,10 @@ abstract class DirectorObjectForm extends DirectorForm
             $old = $object->get($key);
             $object->set($key, $element->getValue());
             $object->resolveUnresolvedRelatedProperties();
+
+            if ($key === 'imports') {
+                $object->imports()->getObjects();
+            }
             return true;
         } catch (Exception $e) {
             if ($old !== null) {
@@ -371,7 +375,7 @@ abstract class DirectorObjectForm extends DirectorForm
                     $object->set($key, $value);
                     if ($object instanceof IcingaObject) {
                         if ($this->resolvedImports !== false) {
-                            $object->resolveUnresolvedRelatedProperties();
+                            $object->imports()->getObjects();
                         }
                     }
                 } catch (Exception $e) {
