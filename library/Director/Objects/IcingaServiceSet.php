@@ -276,7 +276,11 @@ class IcingaServiceSet extends IcingaObject
         // checking if template object_name is unique
         // TODO: Move to IcingaObject
         if (! $this->hasBeenLoadedFromDb() && $this->isTemplate() && static::exists($name, $this->connection)) {
-            throw new DuplicateKeyException('%s template "%s" already existing in database!', $this->getType(), $name);
+            throw new DuplicateKeyException(
+                '%s template "%s" already existing in database!',
+                $this->getType(),
+                $name
+            );
         }
     }
 }
