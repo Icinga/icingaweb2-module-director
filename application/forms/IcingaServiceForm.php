@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -25,6 +26,7 @@ class IcingaServiceForm extends DirectorObjectForm
     /** @var IcingaService */
     protected $object;
 
+    /** @var IcingaService */
     private $applyGenerated;
 
     private $inheritedFrom;
@@ -89,7 +91,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
         if ($group) {
             $elements = $group->getElements();
-            $group->setElements(array($this->getElement('inheritance_hint')));
+            $group->setElements([$this->getElement('inheritance_hint')]);
             $group->addElements($elements);
             $this->setSubmitLabel(
                 $this->translate('Override vars')
@@ -149,17 +151,31 @@ class IcingaServiceForm extends DirectorObjectForm
                 'This service has been generated in an automated way, but still'
                 . ' allows you to override the following properties in a safe way.'
             );
-        } elseif ($this->applyGenerated) {
+        } elseif ($apply = $this->applyGenerated) {
             $hint = Html::sprintf(
                 $this->translate(
-                    'This service has been generated using an apply rule, assigned where %s'
+                    'This service has been generated using the %s apply rule, assigned where %s'
                 ),
-                (string) Filter::fromQueryString($this->applyGenerated->assign_filter)
+                Link::create(
+                    $apply->getObjectName(),
+                    'director/service',
+                    ['id' => $apply->get('id')],
+                    ['data-base-target' => '_next']
+                ),
+                (string) Filter::fromQueryString($apply->assign_filter)
             );
         } elseif ($this->host && $this->set) {
-            $hint = $this->translate(
-                'This service belongs to a Service Set. Still, you might want'
-                . ' to override the following properties for this host only.'
+            $hint = Html::sprintf(
+                $this->translate(
+                    'This service belongs to the %s Service Set. Still, you might want'
+                    . ' to override the following properties for this host only.'
+                ),
+                Link::create(
+                    $this->set->getObjectName(),
+                    'director/serviceset',
+                    ['id' => $this->set->get('id')],
+                    ['data-base-target' => '_next']
+                )
             );
         } elseif ($this->inheritedFrom) {
             $msg = $this->translate(
@@ -179,6 +195,8 @@ class IcingaServiceForm extends DirectorObjectForm
             );
 
             $hint = Html::sprintf($msg, $link);
+        } else {
+            throw new ProgrammingError('Got no override hint for your situation');
         }
 
         $this->setSubmitLabel($this->translate('Override vars'));
