@@ -64,7 +64,10 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
 
     public function testDeletingHostWithSet()
     {
-        $this->testAddingSetToHost();
+        $this->createObject('for_set', 'icinga_host', array(
+            'object_type' => 'object',
+            'address'     => '1.2.3.4',
+        ));
 
         $host = $this->loadObject('for_set', 'icinga_host');
         $host->delete();
