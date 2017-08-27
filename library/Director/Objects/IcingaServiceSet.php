@@ -249,6 +249,18 @@ class IcingaServiceSet extends IcingaObject
         }
     }
 
+    public function createWhere()
+    {
+        $where = parent::createWhere();
+        if (! $this->hasBeenLoadedFromDb()) {
+            if (null === $this->get('host_id') && null === $this->get('id')) {
+                $where .= " AND object_type = 'template'";
+            }
+        }
+
+        return $where;
+    }
+
     protected function beforeStore()
     {
         parent::beforeStore();
