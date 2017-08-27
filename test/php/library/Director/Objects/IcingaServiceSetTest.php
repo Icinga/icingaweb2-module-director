@@ -64,8 +64,6 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
 
     public function testDeletingHostWithSet()
     {
-        $this->markTestIncomplete('Host deletion fails / does not cleanup sets!');
-
         $this->testAddingSetToHost();
 
         $host = $this->loadObject('for_set', 'icinga_host');
