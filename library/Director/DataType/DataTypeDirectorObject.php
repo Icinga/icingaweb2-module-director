@@ -30,7 +30,8 @@ class DataTypeDirectorObject extends DataTypeHook
         } else {
             $query->where('object_type = ?', 'object');
         }
-
+        $query->order('display_name, object_name');
+        
         $enum = $db->fetchPairs($query);
 
 
