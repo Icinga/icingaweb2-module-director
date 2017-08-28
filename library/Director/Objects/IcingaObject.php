@@ -2633,10 +2633,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function listImportNames()
     {
-        if ($this->hasBeenModified()
-            && $this->imports !== null
-            && $this->imports()->hasBeenModified()
-        ) {
+        if ($this->gotImports()) {
             return $this->imports()->listImportNames();
         } else {
             return $this->templateTree()->listParentNamesFor($this);

@@ -22,7 +22,7 @@ CentOS 7/MySQL:
   after_script:
   - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
   script:
-  - phpunit
+  - phpunit --verbose
   
 CentOS 7/PostgreSQL:
   stage: Unit-Tests with DB
@@ -40,7 +40,7 @@ CentOS 7/PostgreSQL:
   - psql postgres -c "DROP DATABASE $DIRECTOR_TESTDB"
   - psql postgres -c "DROP USER $DIRECTOR_TESTDB_USER"
   script:
-  - phpunit
+  - phpunit --verbose
 
 #CentOS 6/MySQL:
 #  stage: Unit-Tests with DB
@@ -70,7 +70,7 @@ Jessie/MySQL:
   after_script:
   - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
   script:
-  - phpunit
+  - phpunit --verbose
   
 Jessie/PostgreSQL:
   stage: Unit-Tests with DB
@@ -88,7 +88,7 @@ Jessie/PostgreSQL:
   - psql postgres -c "DROP DATABASE $DIRECTOR_TESTDB"
   - psql postgres -c "DROP USER $DIRECTOR_TESTDB_USER"
   script:
-  - phpunit
+  - phpunit --verbose
 
 Xenial/MySQL:
   stage: Unit-Tests with DB
@@ -103,7 +103,7 @@ Xenial/MySQL:
   after_script:
   - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
   script:
-  - phpunit
+  - phpunit --verbose
   
 Xenial/PostgreSQL:
   stage: Unit-Tests with DB
@@ -121,5 +121,5 @@ Xenial/PostgreSQL:
   - psql postgres -c "DROP DATABASE $DIRECTOR_TESTDB"
   - psql postgres -c "DROP USER $DIRECTOR_TESTDB_USER"
   script:
-  - phpunit
+  - phpunit --verbose
 
