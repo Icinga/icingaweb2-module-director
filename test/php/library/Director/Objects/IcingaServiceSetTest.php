@@ -107,13 +107,10 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\ProgrammingError
+     * @expectedException \Icinga\Exception\IcingaException
      */
     public function testCreatingSetWithoutType()
     {
-        // TODO: fix error
-        $this->markTestIncomplete('Throws a database error, not a proper exception!');
-
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD',
         ));
