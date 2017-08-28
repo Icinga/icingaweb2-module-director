@@ -11,12 +11,20 @@ class DataTypeDatalist extends DataTypeHook
 {
     public function getFormElement($name, QuickForm $form)
     {
-        $element = $form->createElement('select', $name, array(
-            'multiOptions' => array(null => '- please choose -') +
-                $this->getEntries($form),
-        ));
+        $enum = $this->getEntries($form);
+        $params = [];
+        if ($this->getSetting('data_type') === 'array') {
+            $type = 'extensibleSet';
+            $params['sorted'] = true;
+            $params = ['multiOptions' => $enum];
+        } else {
+            $params = ['multiOptions' => [
+                    null => $form->translate('- please choose -'),
+                ] + $enum];
+            $type = 'select';
+        }
 
-        return $element;
+        return $form->createElement($type, $name, $params);
     }
 
     protected function getEntries(QuickForm $form)
@@ -50,6 +58,16 @@ class DataTypeDatalist extends DataTypeHook
             'multiOptions' => array(null => '- please choose -') +
                 $db->enumDatalist(),
         ));
+
+        $form->addElement('select', 'data_type', [
+            'label' => $form->translate('Target data type'),
+            'multiOptions' => $form->optionalEnum([
+                'string' => $form->translate('String'),
+                'array'  => $form->translate('Array'),
+            ]),
+            'required' => true,
+        ]);
+
         return $form;
     }
 }
