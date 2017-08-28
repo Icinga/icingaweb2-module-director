@@ -125,16 +125,12 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
      */
     public function testCreatingHostSetWithoutHost()
     {
-        $this->markTestIncomplete('Throws no error currently, but will create the object');
-
-        /* TODO: fix this, it will create an object currently
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD2',
             'object_type' => 'object',
         ));
 
         $set->store($this->getDb());
-        */
     }
 
     public function testDeletingSet()

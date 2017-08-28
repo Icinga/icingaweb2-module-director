@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
@@ -267,6 +268,11 @@ class IcingaServiceSet extends IcingaObject
 
         $name = $this->getObjectName();
 
+        if ($this->isObject() && $this->get('host_id') === null) {
+            throw new ProgrammingError(
+                'A Service Set cannot be an object with no related host'
+            );
+        }
         // checking if template object_name is unique
         // TODO: Move to IcingaObject
         if (! $this->hasBeenLoadedFromDb() && $this->isTemplate() && static::exists($name, $this->connection)) {
