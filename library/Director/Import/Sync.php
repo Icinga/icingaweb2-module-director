@@ -268,6 +268,12 @@ class Sync
                     $filterColumns[$column] = $column;
                 }
             }
+            if (($ruleFilter = $this->rule->filter()) !== null) {
+                foreach ($ruleFilter->listFilteredColumns() as $column) {
+                    $filterColumns[$column] = $column;
+                }
+            }
+
             if (! empty($filterColumns)) {
                 foreach (SyncUtils::getRootVariables($filterColumns) as $column) {
                     $usedColumns[$column] = $column;
