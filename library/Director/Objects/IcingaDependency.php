@@ -395,7 +395,7 @@ class IcingaDependency extends IcingaObject
                         if ($matcher->matchesFilter($rule->filter)) {
                             if ($rule->name === $this->unresolvedRelatedProperties[$name]) {
                                 $object = IcingaService::loadWithAutoIncId(
-                                    $rule->get('id'),
+                                    $rule->id,
                                     $this->connection
                                 );
                                 break;
