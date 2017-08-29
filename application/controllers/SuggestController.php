@@ -48,7 +48,7 @@ class SuggestController extends ActionController
             }
         }
 
-        $containing = array_slice(array_merge($begins, $matches), 0, 30);
+        $containing = array_slice(array_merge($begins, $matches), 0, 100);
         $suggestions = $containing;
 
         if ($func === 'suggestHostFilterColumns' || $func === 'suggestHostaddresses') {
