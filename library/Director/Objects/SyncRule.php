@@ -203,7 +203,10 @@ class SyncRule extends DbObject
         return $this->sync;
     }
 
-    protected function filter()
+    /**
+     * @return Filter
+     */
+    public function filter()
     {
         if ($this->filter === null) {
             $this->filter = Filter::fromQueryString($this->get('filter_expression'));
