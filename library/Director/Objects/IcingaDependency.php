@@ -307,10 +307,9 @@ class IcingaDependency extends IcingaObject
     //special case for parent service set as plain string for Apply rules
     public function renderParent_service_by_name()
     {
-        // TODO:
         return c::renderKeyValue(
             'parent_service_name',
-            $this->get('parent_service_by_name')
+            c::renderString($this->get('parent_service_by_name'))
         );
     }
 
