@@ -26,15 +26,9 @@ env:
     DIRECTOR_TESTDB_USER="director_test"
 
 before_script:
-  # TODO: Re-enable after dropping 5.3 support:
-  # - curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
-  - curl -OL https://github.com/squizlabs/PHP_CodeSniffer/releases/download/2.9.1/phpcs.phar
-  - wget https://github.com/Icinga/icingaweb2/archive/v2.4.0.tar.gz
-  - tar xfz v2.4.0.tar.gz
-  - ln -s icingaweb2-2.4.0/library/Icinga
-  - ln -s icingaweb2-2.4.0/library/vendor/Zend
+  - ./test/setup_vendor.sh
   - ./test/travis-prepare.sh
 
 script:
-  - php phpcs.phar --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ library/vendor/ipl/ application/ *.php test
-  - phpunit --testdox || phpunit --verbose
+  - php vendor/phpcs.phar --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ library/vendor/ipl/ application/ *.php test
+  - php vendor/phpunit.phar --testdox || phpunit --verbose
