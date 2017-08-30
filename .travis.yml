@@ -30,5 +30,5 @@ before_script:
   - ./test/travis-prepare.sh
 
 script:
-  - php vendor/phpcs.phar --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ library/vendor/ipl/ application/ *.php test
+  - php vendor/phpcs.phar
   - php vendor/phpunit.phar --testdox || phpunit --verbose
