@@ -24,14 +24,17 @@ class HostSyncTest extends SyncTest
         $this->setUpProperty(array(
             'source_expression' => '${host}',
             'destination_field' => 'object_name',
+            'priority'          => 10,
         ));
         $this->setUpProperty(array(
             'source_expression' => '${address}',
             'destination_field' => 'address',
+            'priority'          => 11,
         ));
         $this->setUpProperty(array(
             'source_expression' => '${os}',
             'destination_field' => 'vars.os',
+            'priority'          => 12,
         ));
 
         $this->assertTrue($this->sync->hasModifications(), 'Should have modifications pending');
@@ -46,6 +49,7 @@ class HostSyncTest extends SyncTest
         $this->setUpProperty(array(
             'source_expression' => '${host}',
             'destination_field' => 'object_name',
+            'priority'          => 10,
         ));
 
         $this->assertFalse($this->sync->hasModifications(), 'Should not have modifications pending');
@@ -57,43 +61,50 @@ class HostSyncTest extends SyncTest
             array(
                 'host'    => 'SYNCTEST_filtered_in',
                 'address' => '127.0.0.1',
-                'os'      => 'Linux'
+                'os'      => 'Linux',
+                'sync'    => 'yes'
             ),
             array(
                 'host'    => 'SYNCTEST_filtered_out',
                 'address' => '127.0.0.1',
-                'os'      => null
+                'os'      => null,
+                'sync'    => 'no'
             ),
             array(
-                'host'    => 'SYNCTEST_filtered_in_unusedfield',
-                'address' => '127.0.0.1',
-                'os'      => null,
-                'other'   => '1'
+                'host'      => 'SYNCTEST_filtered_in_unusedfield',
+                'address'   => '127.0.0.1',
+                'os'        => null,
+                'sync'      => 'no',
+                'othersync' => '1'
             ),
             array(
-                'host'    => 'SYNCTEST_filtered_in_unusedfield_propfilter',
-                'address' => '127.0.0.1',
-                'os'      => null,
-                'other'   => '1',
-                'magic'   => '2',
+                'host'      => 'SYNCTEST_filtered_in_unusedfield_propfilter',
+                'address'   => '127.0.0.1',
+                'os'        => null,
+                'magic'     => '2',
+                'sync'      => 'no',
+                'othersync' => '1'
             )
         ));
 
-        $this->rule->set('filter_expression', 'other!=|os=Linux');
+        $this->rule->set('filter_expression', 'sync=yes|othersync=1');
         $this->rule->store();
 
         $this->setUpProperty(array(
             'source_expression' => '${host}',
             'destination_field' => 'object_name',
+            'priority'          => 10,
         ));
         $this->setUpProperty(array(
             'source_expression' => '${address}',
             'destination_field' => 'address',
+            'priority'          => 11,
         ));
         $this->setUpProperty(array(
-            'source_expression' => 'test-${other}',
-            'destination_field' => 'vars.other',
-            'filter_expression' => 'magic!='
+            'source_expression' => 'test',
+            'destination_field' => 'vars.magic',
+            'filter_expression' => 'magic!=',
+            'priority'          => 12,
         ));
 
         $modifications = array();
@@ -111,12 +122,12 @@ class HostSyncTest extends SyncTest
 
             if ($name === 'SYNCTEST_filtered_in_unusedfield_propfilter') {
                 $this->assertEquals(
-                    'test-1',
-                    $mod->get('vars.other'),
-                    $name . ': vars.other should not be synced'
+                    'test',
+                    $mod->get('vars.magic'),
+                    $name . ': vars.magic should not be synced'
                 );
             } else {
-                $this->assertNull($mod->get('vars.other'), $name . ': vars.other should not be synced');
+                $this->assertNull($mod->get('vars.magic'), $name . ': vars.magic should not be synced');
             }
         }
 
