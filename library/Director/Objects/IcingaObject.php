@@ -2445,8 +2445,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $object->set('vars', []);
         }
 
+        if ($object->supportsGroups()) {
+            $groups = $object->getGroups();
+            $object->set('groups', []);
+        }
+
         $plain = (array) $object->toPlainObject(null, false);
         unset($plain['vars']);
+        unset($plain['groups']);
         foreach ($plain as $p => $v) {
             if ($v === null) {
                 // We want default values, but no null values
@@ -2465,6 +2471,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 foreach ($vars as $key => $var) {
                     $myVars->set($key, $var);
                 }
+            }
+        }
+
+        if ($object->supportsGroups()) {
+            if (! empty($groups)) {
+                $this->set('groups', $groups);
             }
         }
 
