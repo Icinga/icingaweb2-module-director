@@ -2450,7 +2450,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $object->set('groups', []);
         }
 
-        $plain = (array) $object->toPlainObject(null, false);
+        $plain = (array) $object->toPlainObject(false, false);
         unset($plain['vars']);
         unset($plain['groups']);
         foreach ($plain as $p => $v) {
