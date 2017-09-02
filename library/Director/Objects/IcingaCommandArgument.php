@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
 class IcingaCommandArgument extends IcingaObject
@@ -10,6 +10,8 @@ class IcingaCommandArgument extends IcingaObject
     protected $keyName = 'id';
 
     protected $table = 'icinga_command_argument';
+
+    protected $supportsImports = false;
 
     protected $booleans = array(
         'skip_key'   => 'skip_key',
@@ -65,67 +67,108 @@ class IcingaCommandArgument extends IcingaObject
         return $this;
     }
 
+    protected function makePlainArgumentValue($value, $format)
+    {
+        if ($format === 'expression') {
+            return (object) [
+                'type' => 'Function',
+                // TODO: Not for dummy comment
+                'body' => $value
+            ];
+        } else {
+            // json or string
+            return $value;
+        }
+    }
+
+    protected function extractValueFromPlain($plain)
+    {
+        if ($plain->argument_value) {
+            return $this->makePlainArgumentValue(
+                $plain->argument_value,
+                $plain->argument_format
+            );
+        } else {
+            return null;
+        }
+    }
+
+    protected function transformPlainArgumentValue($plain)
+    {
+        if (property_exists($plain, 'argument_value')) {
+            $plain->value = $this->makePlainArgumentValue(
+                $plain->argument_value,
+                $plain->argument_format
+            );
+            unset($plain->argument_value);
+            unset($plain->argument_format);
+        }
+    }
+
+    public function toCompatPlainObject($skipDefaults = false)
+    {
+        $plain = parent::toPlainObject(
+            false,
+            $skipDefaults,
+            null,
+            false
+        );
+
+        unset($plain->id);
+
+        $this->transformPlainArgumentValue($plain);
+
+        // Will happen only combined with $skipDefaults
+        if (array_keys((array) $plain) === ['value']) {
+            return $plain->value;
+        } else {
+            if (property_exists($plain, 'sort_order') && $plain->sort_order !== null) {
+                $plain->order = $plain->sort_order;
+                unset($plain->sort_order);
+            }
+
+            return $plain;
+        }
+    }
+
+    public function toFullPlainObject($skipDefaults = false)
+    {
+        $plain = parent::toPlainObject(
+            false,
+            $skipDefaults,
+            null,
+            false
+        );
+
+        unset($plain->id);
+        unset($plain->argument_format);
+
+        return $plain;
+    }
+
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
         array $chosenProperties = null,
         $resolveIds = true
     ) {
-        // TODO: skipDefaults?
-
-        $data = array();
-        if ($this->argument_value) {
-            switch ($this->argument_format) {
-                case 'string':
-                case 'json':
-                    $data['value'] = $this->argument_value;
-                    break;
-                case 'expression':
-                    $data['value'] = (object) array(
-                        'type' => 'Function',
-                        // TODO: Not for dummy comment
-                        'body' => $this->argument_value
-                    );
-                    break;
-            }
+        if ($resolved) {
+            throw new ProgrammingError(
+                'A single CommandArgument cannot be resolved'
+            );
         }
 
-        if ($this->sort_order !== null) {
-            $data['order'] = $this->sort_order;
+        if ($chosenProperties) {
+            throw new ProgrammingError(
+                'IcingaCommandArgument does not support chosenProperties[]'
+            );
         }
 
-        if ($this->set_if) {
-            $data['set_if'] = $this->set_if;
-        }
-
-        if ($this->required !== null) {
-            $data['required'] = $this->required === 'y';
-        }
-
-        if ($this->repeat_key !== null) {
-            $data['repeat_key'] = $this->repeat_key === 'y';
-        }
-
-        if ($this->description) {
-            $data['description'] = $this->description;
-        }
-
+        // $resolveIds is misused here
         if ($resolveIds) {
-            if (array_keys($data) === array('value')) {
-                return $data['value'];
-            } else {
-                return (object) $data;
-            }
+            return $this->toCompatPlainObject($skipDefaults);
         } else {
-            unset($data['value']);
-            unset($data['order']);
-            $data['sort_order'] = $this->sort_order;
-            $data['command_id']    = $this->command_id;
-            $data['argument_name'] = $this->argument_name;
-            $data['argument_value'] = $this->argument_value;
-            $data['argument_format'] = $this->argument_format;
-            $data['set_if_format'] = $this->set_if_format;
-            return (object) $data;
+            return $this->toFullPlainObject($skipDefaults);
         }
     }
 

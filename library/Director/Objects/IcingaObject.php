@@ -37,9 +37,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether this Object makes use of (time) ranges */
     protected $supportsRanges = false;
 
-    /** @var bool Whether this object supports (command) Arguments */
-    protected $supportsArguments = false;
-
     /** @var bool Whether inheritance via "imports" property is supported */
     protected $supportsImports = false;
 
@@ -120,8 +117,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     /** @var  IcingaTimePeriodRanges - TODO: generic ranges */
     private $ranges;
-
-    private $arguments;
 
     private $shouldBeRemoved = false;
 
@@ -342,7 +337,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $dummy->prefetchAllRelatedTypes();
     }
 
-
     /**
      * Whether this Object supports custom variables
      *
@@ -380,7 +374,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function supportsArguments()
     {
-        return $this->supportsArguments;
+        return $this instanceof ObjectWithArguments;
     }
 
     /**
@@ -515,6 +509,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function hasBeenModified()
     {
+        if (parent::hasBeenModified()) {
+            return true;
+        }
         $this->resolveUnresolvedRelatedProperties();
 
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
@@ -533,7 +530,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
-        if ($this->supportsArguments() && $this->arguments !== null && $this->arguments()->hasBeenModified()) {
+        if ($this instanceof ObjectWithArguments
+            && $this->gotArguments()
+            && $this->arguments()->hasBeenModified()
+        ) {
             return true;
         }
 
@@ -549,7 +549,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        return parent::hasBeenModified();
+        return false;
     }
 
     protected function hasUnresolvedRelatedProperty($name)
@@ -648,7 +648,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             //TODO: allow for deep keys
             $this->vars()->set(substr($key, 5), $value);
             return $this;
-        } elseif (substr($key, 0, 10) === 'arguments.') {
+        } elseif ($this instanceof ObjectWithArguments
+            && substr($key, 0, 10) === 'arguments.'
+        ) {
             $this->arguments()->set(substr($key, 10), $value);
             return $this;
         }
@@ -707,17 +709,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->ranges()->set((array) $ranges);
         return $this;
-    }
-
-    protected function setArguments($value)
-    {
-        $this->arguments()->setArguments($value);
-        return $this;
-    }
-
-    protected function getArguments()
-    {
-        return $this->arguments()->toPlainObject();
     }
 
     protected function getRanges()
@@ -802,20 +793,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->rangeClass;
-    }
-
-    public function arguments()
-    {
-        $this->assertArgumentsSupport();
-        if ($this->arguments === null) {
-            if ($this->hasBeenLoadedFromDb()) {
-                $this->arguments = IcingaArguments::loadForStoredObject($this);
-            } else {
-                $this->arguments = new IcingaArguments($this);
-            }
-        }
-
-        return $this->arguments;
     }
 
     /**
@@ -1218,18 +1195,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    protected function assertArgumentsSupport()
-    {
-        if (! $this->supportsArguments()) {
-            throw new ProgrammingError(
-                'Objects of type "%s" have no arguments',
-                $this->getType()
-            );
-        }
-
-        return $this;
-    }
-
     protected function assertImportsSupport()
     {
         if (! $this->supportsImports()) {
@@ -1406,8 +1371,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function storeArguments()
     {
-        if ($this->supportsArguments()) {
-            $this->arguments !== null && $this->arguments()->store();
+        if ($this instanceof ObjectWithArguments) {
+            $this->gotArguments() && $this->arguments()->store();
         }
 
         return $this;
@@ -1999,11 +1964,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function renderArguments()
     {
-        if ($this->supportsArguments()) {
-            return $this->arguments()->toConfigString();
-        } else {
-            return '';
-        }
+        return '';
     }
 
     protected function renderRelatedSets()
@@ -2554,8 +2515,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsArguments()) {
-            // TODO: resolve
+        if ($this instanceof ObjectWithArguments) {
             $props['arguments'] = $this->arguments()->toPlainObject(
                 $resolved,
                 $skipDefaults
@@ -2766,7 +2726,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsArguments()) {
+        if ($this instanceof ObjectWithArguments) {
             $args = $this->arguments()->toUnmodifiedPlainObject();
             if (! empty($args)) {
                 $props['arguments'] = $args;
@@ -2825,7 +2785,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         unset($this->groups);
         unset($this->imports);
         unset($this->ranges);
-        unset($this->arguments);
+        if ($this instanceof ObjectWithArguments) {
+            $this->unsetArguments();
+        }
 
         parent::__destruct();
     }
