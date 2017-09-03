@@ -171,20 +171,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $this;
     }
 
-    protected function setViewScript($name)
-    {
-        $this->_helper->viewRenderer->setNoController(true);
-        $this->_helper->viewRenderer->setScriptAction($name);
-    }
-
-    protected function prepareTable($name)
-    {
-        $table = $this->loadTable($name)->setConnection($this->db());
-        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
-        $this->view->table = $this->applyPaginationLimits($table);
-        return $this;
-    }
-
     public function postDispatch()
     {
         Benchmark::measure('Director postDispatch');
@@ -192,6 +178,11 @@ abstract class ActionController extends Controller implements ControlsAndContent
             $viewRenderer = new SimpleViewRenderer();
             $viewRenderer->replaceZendViewRenderer();
             $this->view = $viewRenderer->view;
+            if ($this->getOriginalUrl()->getParam('view') === 'compact') {
+                if ($this->view->controls) {
+                    $this->controls()->attributes()->add('style', 'display: none;');
+                }
+            }
         } else {
             $viewRenderer = null;
         }
