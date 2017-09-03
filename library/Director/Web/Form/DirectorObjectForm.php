@@ -190,8 +190,10 @@ abstract class DirectorObjectForm extends DirectorForm
                     return $this->resolvedImports = false;
                 }
             } else {
-                if (! $this->eventuallySetImports($this->extractChoicesFromPost($post))) {
-                    return $this->resolvedImports = false;
+                if (! empty($this->choiceElements)) {
+                    if (! $this->eventuallySetImports($this->extractChoicesFromPost($post))) {
+                        return $this->resolvedImports = false;
+                    }
                 }
             }
 
