@@ -162,7 +162,10 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         }
         $this->setSuccessUrl(
             'director/command/arguments',
-            array('name' => $cmd->getObjectName())
+            [
+                'argument_id' => $object->get('id'),
+                'name' => $cmd->getObjectName()
+            ]
         );
 
         $this->redirectOnSuccess($msg);
