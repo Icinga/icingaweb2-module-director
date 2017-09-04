@@ -105,16 +105,17 @@ class IcingaCommandArgument extends IcingaObject
         }
     }
 
-    public function toCompatPlainObject($skipDefaults = false)
+    public function toCompatPlainObject()
     {
         $plain = parent::toPlainObject(
             false,
-            $skipDefaults,
+            true,
             null,
             false
         );
 
         unset($plain->id);
+        unset($plain->argument_name);
 
         $this->transformPlainArgumentValue($plain);
 
@@ -166,7 +167,7 @@ class IcingaCommandArgument extends IcingaObject
 
         // $resolveIds is misused here
         if ($resolveIds) {
-            return $this->toCompatPlainObject($skipDefaults);
+            return $this->toCompatPlainObject();
         } else {
             return $this->toFullPlainObject($skipDefaults);
         }
