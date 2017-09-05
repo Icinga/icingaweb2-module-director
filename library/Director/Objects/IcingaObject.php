@@ -2411,6 +2411,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $object->set('groups', []);
         }
 
+        if ($object->supportsImports()) {
+            $imports = $object->listImportNames();
+            $object->set('imports', []);
+        }
+
         $plain = (array) $object->toPlainObject(false, false);
         unset($plain['vars']);
         unset($plain['groups']);
@@ -2438,6 +2443,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($object->supportsGroups()) {
             if (! empty($groups)) {
                 $this->set('groups', $groups);
+            }
+        }
+
+        if ($object->supportsImports()) {
+            if (! empty($imports)) {
+                $this->set('imports', $imports);
             }
         }
 
