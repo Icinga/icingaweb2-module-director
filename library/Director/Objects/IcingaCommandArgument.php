@@ -96,9 +96,14 @@ class IcingaCommandArgument extends IcingaObject
     protected function transformPlainArgumentValue($plain)
     {
         if (property_exists($plain, 'argument_value')) {
+            if (property_exists($plain, 'argument_format')) {
+                $format = $plain->argument_format;
+            } else {
+                $format = 'string';
+            }
             $plain->value = $this->makePlainArgumentValue(
                 $plain->argument_value,
-                $plain->argument_format
+                $format
             );
             unset($plain->argument_value);
             unset($plain->argument_format);
