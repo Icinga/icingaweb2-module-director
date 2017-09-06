@@ -2419,6 +2419,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $plain = (array) $object->toPlainObject(false, false);
         unset($plain['vars']);
         unset($plain['groups']);
+        unset($plain['imports']);
         foreach ($plain as $p => $v) {
             if ($v === null) {
                 // We want default values, but no null values
