@@ -24,8 +24,7 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
     public function getColumns()
     {
         if ($this->columnCache === null) {
-            $this->columnCache = SyncUtils::getRootVariables(
-                array_merge(
+            $this->columnCache = SyncUtils::getRootVariables(array_merge(
                 $this->sourceHook()->listColumns(),
                 $this->source->listModifierTargetProperties()
             ));
