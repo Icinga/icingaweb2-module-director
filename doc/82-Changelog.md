@@ -4,6 +4,107 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.4.0
+-----
+### New requirements
+* Icinga Director now requires PHP 5.4, support for 5.3 has been dropped
+* For best performance we strongly suggest PHP 7
+* When using MySQL, please consider slowly moving to at least version 5.5. One
+  of our next versions will introduce official Emoji support 😱😱😱! That's not
+  possible with older MySQL versions. However, 1.4.x still supports 5.1.x
+
+### Dashboard and Dashlets
+* Multiple new Dashboards have been introduced, their layout has been optimized
+* Dashboards are made aware of newly introduced permissions and try to provide
+  useful hints
+
+### GUI, UX and Responsiveness
+* Many little improvements related to mobile devices have been applied to
+  Dashboards, Forms and Tables
+* Search has been both improved and simplified. On most tables search spawns
+  multiple columns, visible and invisible ones. Multiple search terms are
+  combined in an intuitive way.
+* Pagination (and search) has been added to those tables where it was still
+  missing
+* Some form fields referencing related objects are no longer static drop-down
+  selection elements but offer suggestions as you type. This makes forms faster,
+  especially in larger environments
+* Navigation has been simplified, redirects after form submissions have been
+  improved, more possibilities to jump to related objects have been added
+* Form field description has been moved to the bottom of the screen. Might be
+  easier to overlook this way, but while the former implementation was great
+  for people navigating forms with their Keyboard, it was annoying for Mouse
+  lovers
+* Double-Click a Tab to enlarge it to full width
+* Action Link bar has been unified, all links should now respect permissions
+* All tables showing historic data are now grouped by day
+* Property Modifiers, Sync Rules, Import Sources and more objects now offer
+  description fields. This allows you to explain your colleagues all the magic
+  going on behind the scenes
+
+### Object Types
+* Service Sets got quite some tweaking and bug fixing
+* Groups of all kinds are now able to list their members, even when being
+  applied based on filters
+* Command Argument handling has been improved
+* Cloning Hosts now allows to also optionally clone their Services and Service
+  Sets
+
+### Templates
+* The template resolver has been rewritten, is now easier to test, strict and
+  faster
+* Template Tree has been re-written and now also immediately shows whether a
+  template is in use
+* When navigating to a Template you'll notice a new usage summary page showing
+  you where and how that specific template is being used. Therefor, many tables
+  are now internally able to filter by inheritance
+
+### Template Choices
+* While Host- and Service-Templates are powerful building blocks, having to choose
+  from a single long list might become unintuitive as this list starts growing.
+  That's where Template Choices jump in. They allow you to bundle related Templates
+  together and offer your users to choose amongst them in a meaningful way.
+
+### Apply rules
+* Various related issues have been addressed
+* A new virtual "is true / is set" operator is now available
+
+### Permissions and Restrictions
+* It is now possible to limit access to Hosts belonging to a a list of Hostgroups.
+  This works also for Hostgroups assigned through Apply Rules.
+* Data List entries can be made available based on Roles
+
+### Data Types
+* SQL Query and Data List based Data Fields can now both be offered as Array fields,
+  so that you can choose among specific options when filling such
+* New overview tables give admins a deep look into used Custom Variables, their
+  distinct values and usage
+* Various issues related to Boolean values have been fixed
+
+### Import and Synchronization
+* Many issues have been addressed. Merge behavior, handling of special fields and
+  data types
+* Problems with Import Source deletion on PostgreSQL have been addressed
+* New Property Modifiers are available. When importing single Services you might
+  love the "Combine" modifier
+* It is now possible to re-arrange execution order of Property Modifiers and
+  Sync Properties
+* Preview rendering got some improvements
+* "Replace" policy on Custom Vars is now always respected
+* Using VMware/vSphere/ESX? There is now a new powerful module providing a
+  dedicated Import Source
+
+### REST API
+* A new Self Service API now allows to completely automate your Icinga Agent
+  roll-out, especially (but not only) for Microsoft Windows
+* List views are now officially available. They are very fast and stream the
+  result in a memory-efficient way
+* Documentation better explains how to deal with various objects, especially
+  with different types of Services (!!!!!)
+
+### Internal architecture
+* Many base components have been completely replaced and re-written
+
 1.3.2
 -----
 
