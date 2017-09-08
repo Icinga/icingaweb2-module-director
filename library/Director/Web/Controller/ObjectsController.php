@@ -133,7 +133,7 @@ abstract class ObjectsController extends ActionController
 
         $shortType = IcingaObject::createByType($type)->getShortTableName();
         $this
-            ->assertPermission('director/admin')
+            ->assertPermission('director/' . $type . '_templates')
             ->addObjectsTabs()
             ->setAutorefreshInterval(10)
             ->addTitle(
@@ -149,7 +149,7 @@ abstract class ObjectsController extends ActionController
 
     protected function assertApplyRulePermission()
     {
-        return $this->assertPermission('director/admin');
+        return $this->assertPermission('director/service_templates');
     }
 
     public function applyrulesAction()
