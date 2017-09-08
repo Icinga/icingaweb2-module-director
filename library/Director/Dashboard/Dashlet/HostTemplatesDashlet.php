@@ -26,6 +26,6 @@ class HostTemplatesDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return array('director/host_templates');
     }
 }
