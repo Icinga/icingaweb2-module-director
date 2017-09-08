@@ -10,7 +10,7 @@ $this->providePermission('director/deploy', $this->translate('Allow to deploy co
 $this->providePermission('director/hosts', $this->translate('Allow to configure hosts'));
 $this->providePermission('director/host_templates', $this->translate('Allow to configure host templates'));
 $this->providePermission('director/services', $this->translate('Allow to configure services'));
-$this->providePermission('director/service_tempaltes', $this->translate('Allow to configure service templates'));
+$this->providePermission('director/service_templates', $this->translate('Allow to configure service templates'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
 $this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
 $this->providePermission(
