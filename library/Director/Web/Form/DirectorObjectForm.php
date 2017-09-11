@@ -962,26 +962,6 @@ abstract class DirectorObjectForm extends DirectorForm
         return $default;
     }
 
-    protected function addUniqueErrorMessage($msg)
-    {
-        if (! in_array($msg, $this->getErrorMessages())) {
-            $this->addErrorMessage($msg);
-        }
-
-        return $this;
-    }
-
-    protected function addUniqueException(Exception $e)
-    {
-        $msg = $this->getErrorMessageForException($e);
-
-        if (! in_array($msg, $this->getErrorMessages())) {
-            $this->addErrorMessage($msg);
-        }
-
-        return $this;
-    }
-
     public function loadObject($id)
     {
         /** @var DbObject $class */
