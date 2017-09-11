@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form\Filter;
 
 use Exception;
+use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Zend_Filter_Interface;
 
@@ -36,8 +37,12 @@ class QueryColumnsFromSql implements Zend_Filter_Interface
 
     protected function getQueryColumns($query)
     {
-        return array_keys((array) current(
-            $this->form->getDb()->getDbAdapter()->fetchAll($query)
-        ));
+        $resourceName = $this->form->getSentOrObjectSetting('resource');
+        if (! $resourceName) {
+            return [];
+        }
+        $db = DbConnection::fromResourceName($resourceName)->getDbAdapter();
+
+        return array_keys((array) current($db->fetchAll($query)));
     }
 }
