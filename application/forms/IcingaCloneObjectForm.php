@@ -34,13 +34,18 @@ class IcingaCloneObjectForm extends DirectorForm
             ));
         }
 
-        if ($this->object instanceof IcingaHost) {
+        if ($this->object instanceof IcingaHost
+            || $this->object instanceof IcingaServiceSet
+        ) {
             $this->addBoolean('clone_services', [
-                'label'       => $this->translate('Clone Services'),
+                'label' => $this->translate('Clone Services'),
                 'description' => $this->translate(
                     'Also clone single Services defined for this Host'
                 )
             ], 'y');
+        }
+
+        if ($this->object instanceof IcingaHost) {
             $this->addBoolean('clone_service_sets', [
                 'label'       => $this->translate('Clone Service Sets'),
                 'description' => $this->translate(
@@ -91,6 +96,13 @@ class IcingaCloneObjectForm extends DirectorForm
             } else {
                 $sets = [];
             }
+        } elseif ($object instanceof IcingaServiceSet) {
+            if ($this->getValue('clone_services') === 'y') {
+                $services = $object->fetchServices();
+            } else {
+                $services = [];
+            }
+            $sets = [];
         } else {
             $services = [];
             $sets = [];
@@ -98,21 +110,37 @@ class IcingaCloneObjectForm extends DirectorForm
 
         if ($new->store()) {
             foreach ($services as $service) {
-                IcingaService::fromPlainObject(
+                $clone = IcingaService::fromPlainObject(
                     $service->toPlainObject(),
                     $connection
-                )->set('host_id', $new->get('id'))->store();
+                );
+
+                if ($new instanceof IcingaHost) {
+                    $clone->set('host_id', $new->get('id'));
+                } elseif ($new instanceof IcingaServiceSet) {
+                    $clone->set('service_set_id', $new->get('id'));
+                }
+                $clone->store();
             }
+
             foreach ($sets as $set) {
                 IcingaServiceSet::fromPlainObject(
                     $set->toPlainObject(),
                     $connection
                 )->set('host_id', $new->get('id'))->store();
             }
-            $this->setSuccessUrl(
-                'director/' . strtolower($object->getShortTableName()),
-                $new->getUrlParams()
-            );
+
+            if ($new instanceof IcingaServiceSet) {
+                $this->setSuccessUrl(
+                    'director/serviceset',
+                    $new->getUrlParams()
+                );
+            } else {
+                $this->setSuccessUrl(
+                    'director/' . strtolower($object->getShortTableName()),
+                    $new->getUrlParams()
+                );
+            }
 
             $this->redirectOnSuccess($msg);
         }

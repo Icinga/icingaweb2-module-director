@@ -262,6 +262,24 @@ class IcingaServiceSet extends IcingaObject
         return $where;
     }
 
+    /**
+     * @return IcingaService[]
+     */
+    public function fetchServices()
+    {
+        $connection = $this->getConnection();
+        $db = $connection->getDbAdapter();
+
+        /** @var IcingaService[] $services */
+        $services = IcingaService::loadAll(
+            $connection,
+            $db->select()->from('icinga_service')
+                ->where('service_set_id = ?', $this->get('id'))
+        );
+
+        return $services;
+    }
+
     protected function beforeStore()
     {
         parent::beforeStore();
