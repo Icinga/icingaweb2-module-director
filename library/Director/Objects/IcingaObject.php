@@ -2279,6 +2279,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'serviceSet';
         } elseif ($type === 'apiuser') {
             $type = 'apiUser';
+        } elseif ($type === 'host_template_choice') {
+            $type = 'templateChoiceHost';
+        } elseif ($type === 'service_template_choice') {
+            $type = 'TemplateChoiceService';
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
