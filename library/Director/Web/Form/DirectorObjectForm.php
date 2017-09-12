@@ -592,7 +592,7 @@ abstract class DirectorObjectForm extends DirectorForm
             }
             $el->setMultiOptions($multi);
         } else {
-            if (is_string($inherited)) {
+            if (is_string($inherited) || is_int($inherited)) {
                 $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
             }
         }
