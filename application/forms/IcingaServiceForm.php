@@ -265,6 +265,7 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         $this->addNameElement()
+             ->addChoices('service')
              ->addDisabledElement()
              ->groupMainProperties()
              ->addCheckCommandElements()
