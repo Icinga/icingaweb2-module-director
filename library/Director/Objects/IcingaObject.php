@@ -1220,6 +1220,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 } else {
                     $this->vars = CustomVariables::loadForStoredObject($this);
                 }
+
+                if ($this->getShortTableName() === 'host') {
+                    $this->vars->setOverrideKeyName(
+                        $this->getConnection()->settings()->override_services_varname
+                    );
+                }
             } else {
                 $this->vars = new CustomVariables();
             }
