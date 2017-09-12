@@ -231,7 +231,12 @@ class ServiceController extends ObjectController
     protected function loadObject()
     {
         if ($this->object === null) {
-            if ($name = $this->params->get('name')) {
+            if ($id = $this->params->get('id')) {
+                $this->object = IcingaService::loadWithAutoIncId(
+                    (int) $id,
+                    $this->db()
+                );
+            } elseif ($name = $this->params->get('name')) {
                 $params = array('object_name' => $name);
                 $db = $this->db();
 
