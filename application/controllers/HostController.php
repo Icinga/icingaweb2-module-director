@@ -291,7 +291,7 @@ class HostController extends ObjectController
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->get('id'),
-            'imports'     => [$service],
+            'imports'     => $service->listImportNames(),
             'vars'        => $host->getOverriddenServiceVars($serviceName),
         ], $db);
 
