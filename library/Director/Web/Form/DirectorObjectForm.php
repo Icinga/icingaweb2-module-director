@@ -1573,14 +1573,4 @@ abstract class DirectorObjectForm extends DirectorForm
         $set = new TypeFilterSet();
         return $set->enumAllowedValues();
     }
-
-    private function dummyForTranslation()
-    {
-        $this->translate('Host');
-        $this->translate('Service');
-        $this->translate('Zone');
-        $this->translate('Command');
-        $this->translate('User');
-        // ... TBC
-    }
 }
