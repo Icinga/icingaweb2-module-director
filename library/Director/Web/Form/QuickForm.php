@@ -389,8 +389,6 @@ abstract class QuickForm extends QuickBaseForm
             } else {
                 $this->setDefaults($post);
             }
-        } else {
-            // Well...
         }
 
         return $this;

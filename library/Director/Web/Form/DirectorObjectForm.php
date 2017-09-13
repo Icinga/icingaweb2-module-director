@@ -610,29 +610,23 @@ abstract class DirectorObjectForm extends DirectorForm
     public function onSuccess()
     {
         $object = $this->object();
-
-        try {
-            if ($object->hasBeenModified()) {
-                if (! $object->hasBeenLoadedFromDb()) {
-                    $this->setHttpResponseCode(201);
-                }
-
-                $msg = sprintf(
-                    $object->hasBeenLoadedFromDb()
-                    ? $this->translate('The %s has successfully been stored')
-                    : $this->translate('A new %s has successfully been created'),
-                    $this->translate($this->getObjectShortClassName())
-                );
-                    $object->store($this->db);
-            } else {
-                if ($this->isApiRequest()) {
-                    $this->setHttpResponseCode(304);
-                }
-                $msg = $this->translate('No action taken, object has not been modified');
+        if ($object->hasBeenModified()) {
+            if (! $object->hasBeenLoadedFromDb()) {
+                $this->setHttpResponseCode(201);
             }
-        } catch (Exception $e) {
-            $this->addException($e);
-            return false;
+
+            $msg = sprintf(
+                $object->hasBeenLoadedFromDb()
+                ? $this->translate('The %s has successfully been stored')
+                : $this->translate('A new %s has successfully been created'),
+                $this->translate($this->getObjectShortClassName())
+            );
+                $object->store($this->db);
+        } else {
+            if ($this->isApiRequest()) {
+                $this->setHttpResponseCode(304);
+            }
+            $msg = $this->translate('No action taken, object has not been modified');
         }
 
         $this->setObjectSuccessUrl();
