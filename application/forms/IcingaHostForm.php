@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use ipl\Html\BaseElement;
 use ipl\Html\Html;
 use ipl\Html\Link;
 
@@ -206,10 +208,6 @@ class IcingaHostForm extends DirectorObjectForm
 
         $applied = $this->getAppliedGroups();
         if (! empty($applied)) {
-            $this->addHtmlHint(
-                $this->createHostgroupLinks($applied),
-                ['name' => 'applied_groups']
-            );
             $this->addElement('simpleNote', 'applied_groups', [
                 'label'  => $this->translate('Applied groups'),
                 'value'  => $this->createHostgroupLinks($applied),
@@ -217,7 +215,57 @@ class IcingaHostForm extends DirectorObjectForm
             ]);
         }
 
+        $inherited = $this->getInheritedGroups();
+        if (! empty($inherited)) {
+            /** @var BaseElement $links */
+            $links = $this->createHostgroupLinks($inherited);
+            if (count($this->object()->getGroups())) {
+                $links->addAttributes(['class' => 'strike-links']);
+                /** @var BaseElement $link */
+                foreach ($links->getContent() as $link) {
+                    $link->addAttributes([
+                        'title' => $this->translate(
+                            'Group has been inherited, but will be overridden'
+                            . ' by locally assigned group(s)'
+                        )
+                    ]);
+                }
+            }
+            $this->addElement('simpleNote', 'inherited_groups', [
+                'label'  => $this->translate('Inherited groups'),
+                'value'  => $links,
+                'ignore' => true,
+            ]);
+        }
+
         return $this;
+    }
+
+    protected function strikeGroupLinks(BaseElement $links)
+    {
+        /** @var BaseElement $link */
+        foreach ($links->getContent() as $link) {
+            $link->attributes()->add('style', 'text-decoration: strike');
+        }
+        $links->add('aha');
+    }
+
+    protected function getInheritedGroups()
+    {
+        if ($this->hasObject()) {
+            $parents = $this->object->imports()->getObjects();
+            /** @var IcingaHost $parent */
+            foreach (array_reverse($parents) as $parent) {
+                $inherited = $parent->getGroups();
+                if (! empty($inherited)) {
+                    return $inherited;
+                }
+            }
+
+            return [];
+        } else {
+            return [];
+        }
     }
 
     protected function createHostgroupLinks($groups)
