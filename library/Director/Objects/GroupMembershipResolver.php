@@ -388,6 +388,9 @@ abstract class GroupMembershipResolver
         }
 
         foreach ($objects as $object) {
+            if ($object->isTemplate()) {
+                continue;
+            }
             // TODO: fix this last hard host dependency
             $resolver = HostApplyMatches::prepare($object);
             foreach ($groups as $groupId => $filter) {
