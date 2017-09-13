@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use ipl\Html\Html;
 use ipl\Html\Link;
 
 class IcingaHostForm extends DirectorObjectForm
@@ -203,7 +204,63 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
+        $applied = $this->getAppliedGroups();
+        if (! empty($applied)) {
+            $this->addHtmlHint(
+                $this->createHostgroupLinks($applied),
+                ['name' => 'applied_groups']
+            );
+            $this->addElement('simpleNote', 'applied_groups', [
+                'label'  => $this->translate('Applied groups'),
+                'value'  => $this->createHostgroupLinks($applied),
+                'ignore' => true,
+            ]);
+        }
+
         return $this;
+    }
+
+    protected function createHostgroupLinks($groups)
+    {
+        $links = [];
+        foreach ($groups as $name) {
+            $links[] = Link::create(
+                $name,
+                'director/hostgroup',
+                ['name' => $name],
+                ['data-base-target' => '_next']
+            );
+        }
+
+        return Html::tag('span', [
+            'style' => 'line-height: 2.5em; padding-left: 0.5em'
+        ], $links)->setSeparator(', ');
+    }
+
+    protected function getAppliedGroups()
+    {
+        if ($this->isNew()) {
+            return [];
+        }
+
+        $db = $this->getDb()->getDbAdapter();
+        $query = $db->select()->from(
+            ['hghr' => 'icinga_hostgroup_host_resolved'],
+            ['hg.object_name']
+        )->join(
+            ['hg' => 'icinga_hostgroup'],
+            'hg.id = hghr.hostgroup_id',
+            []
+        )->joinLeft(
+            ['hgh' => 'icinga_hostgroup_host'],
+            'hgh.hostgroup_id = hghr.hostgroup_id',
+            []
+        )->where(
+            'hghr.host_id = ?',
+            $this->object()->get('id')
+        )->where('hgh.host_id IS NULL')->order('hg.object_name');
+
+        return $db->fetchCol($query);
     }
 
     protected function hasHostGroupRestriction()

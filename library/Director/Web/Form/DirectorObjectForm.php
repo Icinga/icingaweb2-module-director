@@ -509,6 +509,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'address',
             'address6',
             'groups',
+            'applied_groups',
             'users',
             'user_groups',
             'apply_to',
