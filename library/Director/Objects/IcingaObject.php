@@ -753,6 +753,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->shouldBeRemoved;
     }
 
+    public function shouldBeRenamed()
+    {
+        return $this->hasBeenLoadedFromDb()
+            && $this->getOriginalProperty('object_name') !== $this->getObjectName();
+    }
+
+    /**
+     * @return IcingaObjectGroups[]
+     */
     public function groups()
     {
         $this->assertGroupsSupport();
