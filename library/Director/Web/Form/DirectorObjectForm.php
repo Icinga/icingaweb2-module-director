@@ -486,6 +486,7 @@ abstract class DirectorObjectForm extends DirectorForm
     }
 
     /**
+     * @param bool $importsFirst
      * @return $this
      */
     protected function groupMainProperties($importsFirst = false)
@@ -509,6 +510,7 @@ abstract class DirectorObjectForm extends DirectorForm
             'address',
             'address6',
             'groups',
+            'inherited_groups',
             'applied_groups',
             'users',
             'user_groups',
