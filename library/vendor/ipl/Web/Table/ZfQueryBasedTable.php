@@ -4,6 +4,7 @@ namespace ipl\Web\Table;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\ProgrammingError;
 use ipl\Db\Zf1\FilterRenderer;
 use ipl\Db\Zf1\SelectPaginationAdapter;
 use ipl\Html\Container;
@@ -12,21 +13,31 @@ use ipl\Html\Html;
 use ipl\Html\Link;
 use ipl\Web\Widget\ControlsAndContent;
 use ipl\Web\Url;
+use Zend_Db_Adapter_Abstract as DbAdapter;
 
 abstract class ZfQueryBasedTable extends QueryBasedTable
 {
     /** @var DbConnection */
     private $connection;
 
-    /** @var \Zend_Db_Adapter_Abstract */
+    /** @var DbAdapter */
     private $db;
 
     private $query;
 
-    public function __construct(DbConnection $connection)
+    public function __construct($db)
     {
-        $this->connection = $connection;
-        $this->db = $connection->getDbAdapter();
+        if ($db instanceof DbAdapter) {
+            $this->db = $db;
+        } elseif ($db instanceof DbConnection) {
+            $this->connection = $db;
+            $this->db = $db->getDbAdapter();
+        } else {
+            throw new ProgrammingError(
+                'Unable to deal with %s db class',
+                get_class($db)
+            );
+        }
     }
 
     public static function show(ControlsAndContent $controller, DbConnection $db)
