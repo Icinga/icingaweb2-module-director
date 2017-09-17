@@ -44,7 +44,7 @@ class SuggestController extends ActionController
                     $matches[] = $this->highlight($str, $search);
                 }
             } else {
-                $matches[] = $str;
+                $matches[] = Util::escapeForHtml($str);
             }
         }
 
