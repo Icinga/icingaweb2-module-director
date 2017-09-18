@@ -28,6 +28,8 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected $showColumns = ['object_name' => 'Name'];
 
+    protected $filterObjectType = 'object';
+
     protected $type;
 
     private $auth;
@@ -63,6 +65,12 @@ class ObjectsTable extends ZfQueryBasedTable
     public function setAuth(Auth $auth)
     {
         $this->auth = $auth;
+        return $this;
+    }
+
+    public function filterObjectType($type)
+    {
+        $this->filterObjectType = $type;
         return $this;
     }
 
@@ -143,7 +151,10 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function applyObjectTypeFilter(ZfSelect $query)
     {
-        return $query->where("o.object_type = 'object'");
+        return $query->where(
+            'o.object_type = ?',
+            $this->filterObjectType
+        );
     }
 
     protected function applyRestrictions(ZfSelect $query)

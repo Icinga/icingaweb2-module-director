@@ -50,16 +50,21 @@ abstract class ObjectsController extends ActionController
 
     protected function apiRequestHandler()
     {
+        $request = $this->getRequest();
         $table = $this->getTable();
-        if ($this->getRequest()->getControllerName() === 'services'
+        if ($request->getControllerName() === 'services'
             && $host = $this->params->get('host')
         ) {
             $host = IcingaHost::load($host, $this->db());
             $table->getQuery()->where('host_id = ?', $host->get('id'));
         }
 
+        if ($request->getActionName() === 'templates') {
+            $table->filterObjectType('template');
+        }
+
         return (new IcingaObjectsHandler(
-            $this->getRequest(),
+            $request,
             $this->getResponse(),
             $this->db()
         ))->setTable($table);
@@ -129,6 +134,10 @@ abstract class ObjectsController extends ActionController
      */
     public function templatesAction()
     {
+        if ($this->getRequest()->isApiRequest()) {
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
         $type = $this->getType();
 
         $shortType = IcingaObject::createByType($type)->getShortTableName();
