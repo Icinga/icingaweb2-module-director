@@ -91,6 +91,10 @@ class PropertyModifierArrayFilter extends PropertyModifierHook
             return $this->emptyValue();
         }
 
+        if (is_string($value)) {
+            $value = [$value];
+        }
+
         if (! is_array($value)) {
             throw new InvalidPropertyException(
                 'The ArrayFilter property modifier be applied to arrays only'
