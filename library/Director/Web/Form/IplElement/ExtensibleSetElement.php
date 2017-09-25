@@ -315,6 +315,12 @@ class ExtensibleSetElement extends BaseElement
                 'id' => $this->id . $this->suffix($this->chosenOptionCount),
                 'value' => $val
             ]);
+            $text->attributes()->set([
+                'autocomplete'   => 'off',
+                'autocorrect'    => 'off',
+                'autocapitalize' => 'off',
+                'spellcheck'     => 'false',
+            ]);
 
             $this->addRemainingAttributes($this->eventuallyDisable($text));
             $this->add(Html::tag('li', null, [

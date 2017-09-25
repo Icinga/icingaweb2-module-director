@@ -7,6 +7,7 @@ use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Exception\IcingaException;
@@ -30,7 +31,8 @@ class IcingaHostTest extends BaseTestCase
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
-            array('display_name' => 'Replaced display')
+            array('display_name' => 'Replaced display'),
+            $this->getDb()
         );
 
         $this->assertEquals(
@@ -62,7 +64,8 @@ class IcingaHostTest extends BaseTestCase
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
-            array('display_name' => 'Replaced display')
+            array('display_name' => 'Replaced display'),
+            $this->getDb()
         );
 
         $this->assertEquals(
@@ -108,7 +111,8 @@ class IcingaHostTest extends BaseTestCase
                     'test2'     => 18,
                     'initially' => 'set and then preserved',
                 )
-            )
+            ),
+            $this->getDb()
         );
 
         $preserve = array('address', 'vars.test1', 'vars.initially');
@@ -618,6 +622,41 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testMergingObjectKeepsGroupsIfNotGiven()
+    {
+        $one = IcingaHostGroup::create([
+            'object_name' => 'one',
+            'object_type' => 'object',
+        ]);
+        $two = IcingaHostGroup::create([
+            'object_name' => 'two',
+            'object_type' => 'object',
+        ]);
+        $a = IcingaHost::create([
+            'object_name' => 'one',
+            'object_type' => 'object',
+            'imports'     => [],
+            'address'     => '127.0.0.2',
+            'groups'      => [$one, $two]
+        ]);
+
+        $b = IcingaHost::create([
+            'object_name' => 'one',
+            'object_type' => 'object',
+            'imports'     => [],
+            'address'     => '127.0.0.42',
+        ]);
+
+        $a->merge($b);
+        $this->assertEquals(
+            '127.0.0.42',
+            $a->get('address')
+        );
+        $this->assertEquals(
+            ['one', 'two'],
+            $a->getGroups()
+        );
+    }
 
     protected function getDummyRelatedProperties()
     {
@@ -649,7 +688,7 @@ class IcingaHostTest extends BaseTestCase
                     )
                 )
             )
-        ));
+        ), $this->getDb());
     }
 
     protected function getDefaultHostProperties($prefix = '')

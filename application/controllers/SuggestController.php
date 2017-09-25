@@ -2,21 +2,14 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
+use ipl\Html\Util;
 
 class SuggestController extends ActionController
 {
-    /*
-    // TODO: Allow any once applying restrictions here
-    protected function checkDirectorPermissions()
-    {
-    }
-    */
-
     protected function checkDirectorPermissions()
     {
     }
@@ -56,7 +49,7 @@ class SuggestController extends ActionController
             }
         }
 
-        $containing = array_slice(array_merge($begins, $matches), 0, 30);
+        $containing = array_slice(array_merge($begins, $matches), 0, 100);
         $suggestions = $containing;
 
         if ($func === 'suggestHostFilterColumns' || $func === 'suggestHostaddresses') {
@@ -218,26 +211,34 @@ class SuggestController extends ActionController
 
     protected function suggestHostFilterColumns()
     {
-        $all = IcingaHost::enumProperties($this->db(), 'host.');
-        $all = array_merge(
-            array_keys($all[$this->translate('Host properties')]),
-            array_keys($all[$this->translate('Custom variables')])
-        );
-        natsort($all);
-        return $all;
+        return $this->getFilterColumns('host.', [
+            $this->translate('Host properties'),
+            $this->translate('Custom variables')
+        ]);
     }
 
     protected function suggestServiceFilterColumns()
     {
-        $all = IcingaService::enumProperties($this->db(), 'service.');
-        $all = array_merge(
-            array_keys($all[$this->translate('Service properties')]),
-            array_keys($all[$this->translate('Host properties')]),
-            array_keys($all[$this->translate('Host Custom variables')]),
-            array_keys($all[$this->translate('Custom variables')])
-        );
-        // natsort($all);
-        return $all;
+        return $this->getFilterColumns('host.', [
+            $this->translate('Service properties'),
+            $this->translate('Host properties'),
+            $this->translate('Host Custom variables'),
+            $this->translate('Custom variables')
+        ]);
+    }
+
+    protected function getFilterColumns($prefix, $keys)
+    {
+        $all = IcingaService::enumProperties($this->db(), $prefix);
+        $res = [];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $all)) {
+                $res = array_merge($res, array_keys($all[$key]));
+            }
+        }
+
+        natsort($res);
+        return $res;
     }
 
     protected function suggestDependencytemplates()
@@ -253,8 +254,8 @@ class SuggestController extends ActionController
 
     protected function highlight($val, $search)
     {
-        $search = $this->view->escape($search);
-        $val = $this->view->escape($val);
+        $search = ($search);
+        $val = Util::escapeForHtml($val);
         return preg_replace(
             '/(' . preg_quote($search, '/') . ')/i',
             '<strong>\1</strong>',

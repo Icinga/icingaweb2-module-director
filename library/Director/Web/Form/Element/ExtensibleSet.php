@@ -80,6 +80,10 @@ class ExtensibleSet extends FormElement
             return false;
         }
 
+        if ($this->hasErrors()) {
+            return false;
+        }
+
         return true;
     }
 }

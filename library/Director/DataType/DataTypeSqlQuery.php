@@ -27,9 +27,19 @@ class DataTypeSqlQuery extends DataTypeHook
             $error = sprintf($form->translate('Unable to fetch data: %s'), $e->getMessage());
         }
 
-        $element = $form->createElement('select', $name, array(
-            'multiOptions' => $form->optionalEnum($data),
-        ));
+        $params = [];
+        if ($this->getSetting('data_type') === 'array') {
+            $type = 'extensibleSet';
+            $params['sorted'] = true;
+            $params = ['multiOptions' => $data];
+        } else {
+            $params = ['multiOptions' => [
+                    null => $form->translate('- please choose -'),
+                ] + $data];
+            $type = 'select';
+        }
+
+        $element = $form->createElement($type, $name, $params);
 
         if ($error) {
             $element->addError($error);
@@ -59,6 +69,16 @@ class DataTypeSqlQuery extends DataTypeHook
             'required'    => true,
             'rows'        => 10,
         ));
+
+        $form->addElement('select', 'data_type', [
+            'label' => $form->translate('Target data type'),
+            'multiOptions' => $form->optionalEnum([
+                'string' => $form->translate('String'),
+                'array'  => $form->translate('Array'),
+            ]),
+            'value'    => 'string',
+            'required' => true,
+        ]);
 
         return $form;
     }

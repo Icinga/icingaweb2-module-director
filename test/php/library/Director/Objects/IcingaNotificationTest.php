@@ -90,7 +90,7 @@ class IcingaNotificationTest extends BaseTestCase
                     $user2->object_name
                 )
             ),
-            $n->toPlainObject(null, true)
+            $n->toPlainObject(false, true)
         );
 
         $n = IcingaNotification::load($n->object_name, $db);
@@ -103,7 +103,7 @@ class IcingaNotificationTest extends BaseTestCase
                     $user2->object_name
                 )
             ),
-            $n->toPlainObject(null, true)
+            $n->toPlainObject(false, true)
         );
         $this->assertEquals(
             array(),

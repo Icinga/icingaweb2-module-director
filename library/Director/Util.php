@@ -7,7 +7,8 @@ use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Web\Url;
+use ipl\Html\Html;
+use ipl\Html\Link;
 use Zend_Db_Expr;
 
 class Util
@@ -173,14 +174,17 @@ class Util
             'required'     => true,
         ));
 
-        if (true && empty($list)) {
+        if (empty($list)) {
             if (self::hasPermission('config/application/resources')) {
-                $hint = $form->translate('Please click %s to create new resources');
-                $link = sprintf(
-                    '<a href="' . Url::fromPath('config/resource') . '" data-base-target="_main">%s</a>',
-                    $form->translate('here')
-                );
-                $form->addHtmlHint(sprintf($hint, $link));
+                $form->addHtmlHint(Html::sprintf(
+                    $form->translate('Please click %s to create new resources'),
+                    Link::create(
+                        $form->translate('here'),
+                        'config/resource',
+                        null,
+                        ['data-base-target' => '_main']
+                    )
+                ));
                 $msg = sprintf($form->translate('No %s resource available'), $type);
             } else {
                 $msg = $form->translate('Please ask an administrator to grant you access to resources');

@@ -48,10 +48,7 @@ class IcingaAddServiceForm extends DirectorObjectForm
              ->setButtons();
     }
 
-    /**
-     * @return $this
-     */
-    protected function groupMainProperties()
+    protected function groupMainProperties($importsFirst = false)
     {
         $elements = [
             'object_type',

@@ -29,9 +29,11 @@ class CommandController extends ObjectController
         $o = $this->object;
         $this->tabs()->activate('arguments');
         $this->addTitle($this->translate('Command arguments: %s'), $o->getObjectName());
-
         $form = IcingaCommandArgumentForm::load()->setCommandObject($o);
         if ($id = $p->shift('argument_id')) {
+            $this->addBackLink('director/command/arguments', [
+                'name' => $p->get('name')
+            ]);
             $form->loadObject($id);
         }
         $form->handleRequest();

@@ -164,16 +164,20 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
-        if (array_key_exists($group, $this->groups)) {
-            return $this;
-        }
-
         /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 
         if ($group instanceof $class) {
+            if (array_key_exists($group->getObjectName(), $this->groups)) {
+                return $this;
+            }
+
             $this->groups[$group->object_name] = $group;
         } elseif (is_string($group)) {
+            if (array_key_exists($group, $this->groups)) {
+                return $this;
+            }
+
             $connection = $this->object->getConnection();
 
             try {

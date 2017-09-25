@@ -346,13 +346,13 @@ class IcingaService extends IcingaObject
             return $output;
         }
 
-        // In case use_agent isn't defined, do nothing
-        // TODO: what if we inherit use_agent and override it with 'n'?
-        if ($this->use_agent !== 'y') {
+        if ($this->use_agent === 'y') {
+            return $output . c::renderKeyValue('command_endpoint', 'host_name');
+        } elseif ($this->use_agent === 'n') {
+            return $output . c::renderKeyValue('command_endpoint', c::renderPhpValue(null));
+        } else {
             return $output;
         }
-
-        return $output . c::renderKeyValue('command_endpoint', 'host_name');
     }
 
     /**
@@ -413,6 +413,21 @@ class IcingaService extends IcingaObject
             return $host->getRenderingZone($config);
         }
         return $zone;
+    }
+
+    public function createWhere()
+    {
+        $where = parent::createWhere();
+        if (! $this->hasBeenLoadedFromDb()) {
+            if (null === $this->get('service_set_id')
+                && null === $this->get('host_id')
+                && null === $this->get('id')
+            ) {
+                $where .= " AND object_type = 'template'";
+            }
+        }
+
+        return $where;
     }
 
     // TODO: Duplicate code, clean this up, split it into multiple methods

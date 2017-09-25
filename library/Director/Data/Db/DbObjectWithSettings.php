@@ -56,6 +56,16 @@ abstract class DbObjectWithSettings extends DbObject
         return $default;
     }
 
+    public function getStoredSetting($name, $default = null)
+    {
+        $stored = $this->fetchSettingsFromDb();
+        if (array_key_exists($name, $stored)) {
+            return $stored[$name];
+        }
+
+        return $default;
+    }
+
     public function __unset($key)
     {
         if ($this->hasProperty($key)) {

@@ -33,7 +33,7 @@ class DataTypeDirectorObject extends DataTypeHook
 
         $enum = $db->fetchPairs($query);
 
-
+        $params = [];
         if ($this->getSetting('data_type') === 'array') {
             $type = 'extensibleSet';
             $params['sorted'] = true;

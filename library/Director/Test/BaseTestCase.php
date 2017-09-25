@@ -89,7 +89,7 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
         }
         $properties['object_name'] = $name;
 
-        return IcingaObject::createByType($type, $properties);
+        return IcingaObject::createByType($type, $properties, $this->getDb());
     }
 
     protected function app()

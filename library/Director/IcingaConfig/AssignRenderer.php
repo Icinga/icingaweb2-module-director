@@ -75,6 +75,23 @@ class AssignRenderer
         }
     }
 
+    protected function renderNotEquals($column, $expression)
+    {
+        if (substr($column, -7) === '.groups') {
+            return sprintf(
+                '!(%s in %s)',
+                $expression,
+                $column
+            );
+        } else {
+            return sprintf(
+                '%s != %s',
+                $column,
+                $expression
+            );
+        }
+    }
+
     protected function renderInArray($column, $expression)
     {
         return sprintf(
@@ -133,6 +150,9 @@ class AssignRenderer
                 );
             }
         } elseif ($filter instanceof FilterMatch) {
+            if ($rawExpression === true) {
+                return $column;
+            }
             if (strpos($expression, '*') === false) {
                 return $this->renderEquals($column, $expression);
             } else {
@@ -144,11 +164,7 @@ class AssignRenderer
             }
         } elseif ($filter instanceof FilterMatchNot) {
             if (strpos($expression, '*') === false) {
-                return sprintf(
-                    '%s != %s',
-                    $column,
-                    $expression
-                );
+                return $this->renderNotEquals($column, $expression);
             } else {
                 return sprintf(
                     '! match(%s, %s)',

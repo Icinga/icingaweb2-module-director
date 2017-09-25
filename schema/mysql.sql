@@ -1651,4 +1651,4 @@ CREATE TABLE icinga_dependency_states_set (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (140, NOW());
+  VALUES (141, NOW());

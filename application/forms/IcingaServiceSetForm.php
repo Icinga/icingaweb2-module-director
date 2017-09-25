@@ -20,29 +20,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
             $this->setupHost();
         }
 
-        $this->setupFields()
-             ->setButtons();
-    }
-
-    protected function setupFields()
-    {
-        /** @var IcingaServiceSet $object */
-        $object = $this->object();
-
-        $this->assertResolvedImports();
-
-        if ($this->hasBeenSent() && $services = $this->getSentValue('service')) {
-            $object->service = $services;
-        }
-
-        // TODO: disabled for now. Sets have no fields, so somehow the resolver
-        //       fails here
-        if (false && $this->assertResolvedImports()) {
-            $this->fieldLoader($object)
-                ->loadFieldsForMultipleObjects($object->getServiceObjects());
-        }
-
-        return $this;
+        $this->setButtons();
     }
 
     protected function setupTemplate()
@@ -86,9 +64,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
         if (count($object->get('imports'))) {
             $this->addHtmlHint(
-                $this->getView()->escape(
-                    $object->getResolvedProperty('description')
-                )
+                $object->getResolvedProperty('description')
             );
         }
 

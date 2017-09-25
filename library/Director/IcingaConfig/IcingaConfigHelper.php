@@ -318,6 +318,17 @@ class IcingaConfigHelper
             static::renderString($string)
         );
 
+        // TODO: this is an exemption for special variables. It would
+        //       never make any sense to evaluate them at parse time.
+        //       Another issue remains: there might be other reasons
+        //       for "late evaluation". But how to distinguish those
+        //       use cases?
+        $string = preg_replace(
+            '/" \+ ((?:user|notification)\.[\w\.]+) \+ "/',
+            '\$${1}\$',
+            $string
+        );
+
         if (substr($string, 0, 5) === '"" + ') {
             $string = substr($string, 5);
         }

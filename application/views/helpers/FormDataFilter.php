@@ -167,6 +167,9 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $filter->setExpression(json_decode($filter->getExpression()));
             }
 
+            if ($filter->getExpression() === true) {
+                return '';
+            }
             $dummy = IcingaObject::createByType($type);
             $col = $filter->getColumn();
             if ($dummy->hasProperty($col)) {
@@ -224,8 +227,6 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $this->elementId('value', $filter),
                 $value
             );
-
-            $value = '(' . implode('|', $value) . ')';
         }
 
         return $this->view->formText(
@@ -298,7 +299,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             '<=' => '<=',
             'in' => 'in',
             'contains' => 'contains',
-            // 'true' => 'is true (or set)',
+            'true' => 'is true (or set)',
         );
 
         if ($filter === null) {

@@ -23,6 +23,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     private $position = 0;
 
+    private $overrideKeyName;
+
     protected $idx = array();
 
     protected static $allTables = array(
@@ -110,7 +112,6 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         return array_key_exists($this->position, $this->idx);
     }
-
 
     /**
      * Generic setter
@@ -302,6 +303,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return sha1(implode('|', $sums), true);
     }
 
+    public function setOverrideKeyName($name)
+    {
+        $this->overrideKeyName = $name;
+        return $this;
+    }
+
     public function toConfigString($renderExpressions = false)
     {
         $out = '';
@@ -360,10 +367,18 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      */
     protected function renderSingleVar($key, $var, $renderExpressions = false)
     {
-        return c::renderKeyValue(
-            $this->renderKeyName($key),
-            $var->toConfigStringPrefetchable($renderExpressions)
-        );
+        if ($key === $this->overrideKeyName) {
+            return c::renderKeyOperatorValue(
+                $this->renderKeyName($key),
+                '+=',
+                $var->toConfigStringPrefetchable($renderExpressions)
+            );
+        } else {
+            return c::renderKeyValue(
+                $this->renderKeyName($key),
+                $var->toConfigStringPrefetchable($renderExpressions)
+            );
+        }
     }
 
     protected function renderKeyName($key)

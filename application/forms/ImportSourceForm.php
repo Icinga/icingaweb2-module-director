@@ -63,6 +63,18 @@ class ImportSourceForm extends DirectorObjectForm
         }
     }
 
+    public function hasChangedSetting($name)
+    {
+        if ($this->hasBeenSent() && $this->hasObject()) {
+            /** @var ImportSource $object */
+            $object = $this->getObject();
+            return $object->getStoredSetting($name)
+                !== $this->getSentValue($name);
+        } else {
+            return false;
+        }
+    }
+
     protected function addSettings()
     {
         if (! ($class = $this->getProviderClass())) {

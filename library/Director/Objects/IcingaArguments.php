@@ -7,12 +7,12 @@ use Iterator;
 use Countable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
-use Icinga\Module\Director\Objects\IcingaCommandArgument;
 
 class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 {
     protected $storedArguments = array();
 
+    /** @var IcingaCommandArgument[] */
     protected $arguments = array();
 
     protected $modified = false;
@@ -291,6 +291,12 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         array $chosenProperties = null,
         $resolveIds = true
     ) {
+        if ($chosenProperties !== null) {
+            throw new ProgrammingError(
+                'IcingaArguments does not support chosenProperties[]'
+            );
+        }
+
         $args = array();
         foreach ($this->arguments as $arg) {
             if ($arg->shouldBeRemoved()) {

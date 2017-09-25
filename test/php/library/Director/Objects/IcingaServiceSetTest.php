@@ -64,9 +64,10 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
 
     public function testDeletingHostWithSet()
     {
-        $this->markTestIncomplete('Host deletion fails / does not cleanup sets!');
-
-        $this->testAddingSetToHost();
+        $this->createObject('for_set', 'icinga_host', array(
+            'object_type' => 'object',
+            'address'     => '1.2.3.4',
+        ), false)->store();
 
         $host = $this->loadObject('for_set', 'icinga_host');
         $host->delete();
@@ -106,13 +107,10 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\ProgrammingError
+     * @expectedException \Icinga\Exception\IcingaException
      */
     public function testCreatingSetWithoutType()
     {
-        // TODO: fix error
-        $this->markTestIncomplete('Throws a database error, not a proper exception!');
-
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD',
         ));
@@ -124,16 +122,12 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
      */
     public function testCreatingHostSetWithoutHost()
     {
-        $this->markTestIncomplete('Throws no error currently, but will create the object');
-
-        /* TODO: fix this, it will create an object currently
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD2',
             'object_type' => 'object',
         ));
 
         $set->store($this->getDb());
-        */
     }
 
     public function testDeletingSet()

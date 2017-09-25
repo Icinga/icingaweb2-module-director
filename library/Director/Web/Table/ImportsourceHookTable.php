@@ -4,8 +4,10 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Hook\ImportSourceHook;
+use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\PlainObjectRenderer;
+use ipl\Html\Html;
 use ipl\Web\Table\SimpleQueryBasedTable;
 
 class ImportsourceHookTable extends SimpleQueryBasedTable
@@ -22,10 +24,10 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
     public function getColumns()
     {
         if ($this->columnCache === null) {
-            $this->columnCache = array_merge(
+            $this->columnCache = SyncUtils::getRootVariables(array_merge(
                 $this->sourceHook()->listColumns(),
                 $this->source->listModifierTargetProperties()
-            );
+            ));
 
             sort($this->columnCache);
 
@@ -58,7 +60,12 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
         foreach ($this->getColumnsToBeRendered() as $column) {
             $td = $this::td();
             if (property_exists($row, $column)) {
-                $td->setContent(PlainObjectRenderer::render($row->$column));
+                if (is_string($row->$column)) {
+                    $td->setContent($row->$column);
+                } else {
+                    $html = Html::tag('pre', null, PlainObjectRenderer::render($row->$column));
+                    $td->setContent($html);
+                }
             }
             $tr->add($td);
         }

@@ -4,9 +4,12 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Icinga\Module\Director\Objects\Extension\Arguments;
 
-class IcingaCommand extends IcingaObject
+class IcingaCommand extends IcingaObject implements ObjectWithArguments
 {
+    use Arguments;
+
     protected $table = 'icinga_command';
 
     protected $type = 'CheckCommand';
@@ -27,8 +30,6 @@ class IcingaCommand extends IcingaObject
     protected $supportsFields = true;
 
     protected $supportsImports = true;
-
-    protected $supportsArguments = true;
 
     protected $supportedInLegacy = true;
 

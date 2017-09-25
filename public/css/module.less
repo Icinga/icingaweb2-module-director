@@ -64,9 +64,11 @@ table.common-table {
   pre {
     margin: 0;
     padding: 0.2em;
-    overflow: hidden;
-    max-height: 12em;
+    max-height: 18em;
     background: @gray-lightest;
+    overflow: auto;
+    word-break: keep-all;
+    white-space: pre;
     display: inline-block;
   }
 }
@@ -641,6 +643,11 @@ ul.main-actions {
     display: block;
     width: auto;
   }
+  fieldset.collapsed {
+    dd, dt, ul, div {
+      display: none;
+    }
+  }
   dt label {
     color: @text-color;
   }
@@ -658,6 +665,31 @@ ul.main-actions {
       border-color: @icinga-blue;
     }
   }
+  ul.extensible-set {
+    max-width: unset;
+  }
+  dd ul.extensible-set {
+    border: 1px solid @gray-light;
+  }
+  dd.active ul.extensible-set {
+    border: 1px solid @icinga-blue;
+
+    input[type=submit]:first-of-type {
+      border-width: 1px;
+    }
+  }
+
+  dd.active ul.extensible-set, ul.extensible-set.sortable {
+    input[type=text], select {
+      width: 100%;
+    }
+
+    input[type=text] {
+      background-color: white;
+      border: 1px solid white;
+    }
+  }
+
 }
 
 #layout.compact-layout.twocols table.Differences,
@@ -829,6 +861,9 @@ form {
   width: 50%;
 }
 #layout.twocols &#col2 {
+  width: 50%;
+}
+#layout.twocols &#col1 + #col2 {
   width: 50%;
 }
 
@@ -1356,8 +1391,8 @@ div.filter-expression {
         margin: 0 0.3em;
         &.wide {
             min-width: 6em;
-            max-width: 6em;
-            width: 6em;
+            max-width: 8em;
+            width: 8em;
         }
     }
 

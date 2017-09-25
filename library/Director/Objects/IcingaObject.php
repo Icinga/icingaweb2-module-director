@@ -37,9 +37,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether this Object makes use of (time) ranges */
     protected $supportsRanges = false;
 
-    /** @var bool Whether this object supports (command) Arguments */
-    protected $supportsArguments = false;
-
     /** @var bool Whether inheritance via "imports" property is supported */
     protected $supportsImports = false;
 
@@ -120,8 +117,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     /** @var  IcingaTimePeriodRanges - TODO: generic ranges */
     private $ranges;
-
-    private $arguments;
 
     private $shouldBeRemoved = false;
 
@@ -342,7 +337,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $dummy->prefetchAllRelatedTypes();
     }
 
-
     /**
      * Whether this Object supports custom variables
      *
@@ -380,7 +374,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function supportsArguments()
     {
-        return $this->supportsArguments;
+        return $this instanceof ObjectWithArguments;
     }
 
     /**
@@ -496,12 +490,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->resolveUnresolvedRelatedProperty($name);
         }
 
-        if ($this->supportsImports() && $this->imports !== null
-            && $this->imports()->hasBeenModified()
-        ) {
-            $this->imports()->getObjects();
-        }
-
         return $this;
     }
 
@@ -521,6 +509,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function hasBeenModified()
     {
+        if (parent::hasBeenModified()) {
+            return true;
+        }
         $this->resolveUnresolvedRelatedProperties();
 
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
@@ -539,7 +530,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
-        if ($this->supportsArguments() && $this->arguments !== null && $this->arguments()->hasBeenModified()) {
+        if ($this instanceof ObjectWithArguments
+            && $this->gotArguments()
+            && $this->arguments()->hasBeenModified()
+        ) {
             return true;
         }
 
@@ -555,7 +549,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        return parent::hasBeenModified();
+        return false;
     }
 
     protected function hasUnresolvedRelatedProperty($name)
@@ -654,7 +648,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             //TODO: allow for deep keys
             $this->vars()->set(substr($key, 5), $value);
             return $this;
-        } elseif (substr($key, 0, 10) === 'arguments.') {
+        } elseif ($this instanceof ObjectWithArguments
+            && substr($key, 0, 10) === 'arguments.'
+        ) {
             $this->arguments()->set(substr($key, 10), $value);
             return $this;
         }
@@ -713,17 +709,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->ranges()->set((array) $ranges);
         return $this;
-    }
-
-    protected function setArguments($value)
-    {
-        $this->arguments()->setArguments($value);
-        return $this;
-    }
-
-    protected function getArguments()
-    {
-        return $this->arguments()->toPlainObject();
     }
 
     protected function getRanges()
@@ -808,20 +793,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->rangeClass;
-    }
-
-    public function arguments()
-    {
-        $this->assertArgumentsSupport();
-        if ($this->arguments === null) {
-            if ($this->hasBeenLoadedFromDb()) {
-                $this->arguments = IcingaArguments::loadForStoredObject($this);
-            } else {
-                $this->arguments = new IcingaArguments($this);
-            }
-        }
-
-        return $this->arguments;
     }
 
     /**
@@ -1124,7 +1095,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $vals['_INHERITED_'] = (object) array();
         $vals['_ORIGINS_']   = (object) array();
         // $objects = $this->imports()->getObjects();
-        $objects = IcingaTemplateRepository::instanceByObject($this)->getTemplatesFor($this);
+        $objects = IcingaTemplateRepository::instanceByObject($this)
+            ->getTemplatesIndexedByNameFor($this, true);
 
         $get          = 'get'         . $what;
         $getInherited = 'getInherited' . $what;
@@ -1223,18 +1195,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    protected function assertArgumentsSupport()
-    {
-        if (! $this->supportsArguments()) {
-            throw new ProgrammingError(
-                'Objects of type "%s" have no arguments',
-                $this->getType()
-            );
-        }
-
-        return $this;
-    }
-
     protected function assertImportsSupport()
     {
         if (! $this->supportsImports()) {
@@ -1259,6 +1219,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     $this->vars = PrefetchCache::instance()->vars($this);
                 } else {
                     $this->vars = CustomVariables::loadForStoredObject($this);
+                }
+
+                if ($this->getShortTableName() === 'host') {
+                    $this->vars->setOverrideKeyName(
+                        $this->getConnection()->settings()->override_services_varname
+                    );
                 }
             } else {
                 $this->vars = new CustomVariables();
@@ -1336,6 +1302,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function beforeStore()
     {
         $this->resolveUnresolvedRelatedProperties();
+        if ($this->gotImports()) {
+            $this->imports()->getObjects();
+        }
     }
 
     public function onInsert()
@@ -1408,8 +1377,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function storeArguments()
     {
-        if ($this->supportsArguments()) {
-            $this->arguments !== null && $this->arguments()->store();
+        if ($this instanceof ObjectWithArguments) {
+            $this->gotArguments() && $this->arguments()->store();
         }
 
         return $this;
@@ -1609,6 +1578,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderImports()
     {
+        if (! $this->supportsImports()) {
+            return '';
+        }
+
         $ret = '';
         foreach ($this->getImports() as $name) {
             $ret .= '    import ' . c::renderString($name) . "\n";
@@ -1997,11 +1970,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function renderArguments()
     {
-        if ($this->supportsArguments()) {
-            return $this->arguments()->toConfigString();
-        } else {
-            return '';
-        }
+        return '';
     }
 
     protected function renderRelatedSets()
@@ -2310,6 +2279,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'serviceSet';
         } elseif ($type === 'apiuser') {
             $type = 'apiUser';
+        } elseif ($type === 'host_template_choice') {
+            $type = 'templateChoiceHost';
+        } elseif ($type === 'service_template_choice') {
+            $type = 'TemplateChoiceService';
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
@@ -2443,7 +2416,28 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $object->set('vars', []);
         }
 
-        $this->setProperties((array) $object->toPlainObject(null, true));
+        if ($object->supportsGroups()) {
+            $groups = $object->getGroups();
+            $object->set('groups', []);
+        }
+
+        if ($object->supportsImports()) {
+            $imports = $object->listImportNames();
+            $object->set('imports', []);
+        }
+
+        $plain = (array) $object->toPlainObject(false, false);
+        unset($plain['vars']);
+        unset($plain['groups']);
+        unset($plain['imports']);
+        foreach ($plain as $p => $v) {
+            if ($v === null) {
+                // We want default values, but no null values
+                continue;
+            }
+
+            $this->set($p, $v);
+        }
 
         if ($object->supportsCustomVars()) {
             $myVars = $this->vars();
@@ -2454,6 +2448,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 foreach ($vars as $key => $var) {
                     $myVars->set($key, $var);
                 }
+            }
+        }
+
+        if ($object->supportsGroups()) {
+            if (! empty($groups)) {
+                $this->set('groups', $groups);
+            }
+        }
+
+        if ($object->supportsImports()) {
+            if (! empty($imports)) {
+                $this->set('imports', $imports);
             }
         }
 
@@ -2531,8 +2537,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsArguments()) {
-            // TODO: resolve
+        if ($this instanceof ObjectWithArguments) {
             $props['arguments'] = $this->arguments()->toPlainObject(
                 $resolved,
                 $skipDefaults
@@ -2622,10 +2627,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function listImportNames()
     {
-        if ($this->hasBeenModified()
-            && $this->imports !== null
-            && $this->imports()->hasBeenModified()
-        ) {
+        if ($this->gotImports()) {
             return $this->imports()->listImportNames();
         } else {
             return $this->templateTree()->listParentNamesFor($this);
@@ -2747,7 +2749,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsArguments()) {
+        if ($this instanceof ObjectWithArguments) {
             $args = $this->arguments()->toUnmodifiedPlainObject();
             if (! empty($args)) {
                 $props['arguments'] = $args;
@@ -2806,7 +2808,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         unset($this->groups);
         unset($this->imports);
         unset($this->ranges);
-        unset($this->arguments);
+        if ($this instanceof ObjectWithArguments) {
+            $this->unsetArguments();
+        }
 
         parent::__destruct();
     }

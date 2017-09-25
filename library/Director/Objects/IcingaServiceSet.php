@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
@@ -249,16 +250,55 @@ class IcingaServiceSet extends IcingaObject
         }
     }
 
+    public function createWhere()
+    {
+        $where = parent::createWhere();
+        if (! $this->hasBeenLoadedFromDb()) {
+            if (null === $this->get('host_id') && null === $this->get('id')) {
+                $where .= " AND object_type = 'template'";
+            }
+        }
+
+        return $where;
+    }
+
+    /**
+     * @return IcingaService[]
+     */
+    public function fetchServices()
+    {
+        $connection = $this->getConnection();
+        $db = $connection->getDbAdapter();
+
+        /** @var IcingaService[] $services */
+        $services = IcingaService::loadAll(
+            $connection,
+            $db->select()->from('icinga_service')
+                ->where('service_set_id = ?', $this->get('id'))
+        );
+
+        return $services;
+    }
+
     protected function beforeStore()
     {
         parent::beforeStore();
 
         $name = $this->getObjectName();
 
+        if ($this->isObject() && $this->get('host_id') === null) {
+            throw new ProgrammingError(
+                'A Service Set cannot be an object with no related host'
+            );
+        }
         // checking if template object_name is unique
         // TODO: Move to IcingaObject
         if (! $this->hasBeenLoadedFromDb() && $this->isTemplate() && static::exists($name, $this->connection)) {
-            throw new DuplicateKeyException('%s template "%s" already existing in database!', $this->getType(), $name);
+            throw new DuplicateKeyException(
+                '%s template "%s" already existing in database!',
+                $this->getType(),
+                $name
+            );
         }
     }
 }

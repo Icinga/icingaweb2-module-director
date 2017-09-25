@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -44,7 +45,7 @@ class IcingaObjectFieldLoader
         $this->db = $this->connection->getDbAdapter();
     }
 
-    public function addFieldsToForm(QuickForm $form)
+    public function addFieldsToForm(DirectorObjectForm $form)
     {
         if ($this->fields || $this->object->supportsFields()) {
             $this->attachFieldsToForm($form);
@@ -166,11 +167,11 @@ class IcingaObjectFieldLoader
     /**
      * Get the form elements for our fields
      *
-     * @param QuickForm $form Optional
+     * @param DirectorObjectForm $form Optional
      *
      * @return ZfElement[]
      */
-    public function getElements(QuickForm $form = null)
+    public function getElements(DirectorObjectForm $form = null)
     {
         if ($this->elements === null) {
             $this->elements = $this->createElements($form);
@@ -183,11 +184,11 @@ class IcingaObjectFieldLoader
     /**
      * Prepare the form elements for our fields
      *
-     * @param QuickForm $form Optional
+     * @param DirectorObjectForm $form Optional
      *
      * @return self
      */
-    public function prepareElements(QuickForm $form = null)
+    public function prepareElements(DirectorObjectForm $form = null)
     {
         if ($this->object->supportsFields()) {
             $this->getElements($form);
@@ -322,11 +323,11 @@ class IcingaObjectFieldLoader
     /**
      * Get the form elements based on the given form
      *
-     * @param QuickForm $form
+     * @param DirectorObjectForm $form
      *
      * @return ZfElement[]
      */
-    protected function createElements(QuickForm $form)
+    protected function createElements(DirectorObjectForm $form)
     {
         $elements = array();
 
@@ -385,7 +386,7 @@ class IcingaObjectFieldLoader
 
             if ($command) {
                 $cmdLoader = new static($command);
-                $cmdFields = $cmdLoader->getFields($command);
+                $cmdFields = $cmdLoader->getFields();
                 foreach ($cmdFields as $varname => $field) {
                     if (! array_key_exists($varname, $fields)) {
                         $fields[$varname] = $field;
@@ -432,7 +433,7 @@ class IcingaObjectFieldLoader
      */
     protected function getIdsForObjectList($objectList)
     {
-        $ids = array();
+        $ids = [];
         foreach ($objectList as $object) {
             if ($object->hasBeenLoadedFromDb()) {
                 $ids[] = $object->get('id');
@@ -444,12 +445,10 @@ class IcingaObjectFieldLoader
 
     public function fetchFieldDetailsForObject(IcingaObject $object)
     {
-        if (! $object->hasBeenLoadedFromDb()) {
-            //return array();
-        }
-
         $ids = $object->listAncestorIds();
-        $ids[] = $object->getProperty('id');
+        if ($id = $object->getProperty('id')) {
+            $ids[] = $id;
+        }
         return $this->fetchFieldDetailsForIds($ids);
     }
 
@@ -461,7 +460,7 @@ class IcingaObjectFieldLoader
     protected function fetchFieldDetailsForIds($objectIds)
     {
         if (empty($objectIds)) {
-            return array();
+            return [];
         }
 
         $query = $this->prepareSelectForIds($objectIds);
@@ -505,12 +504,12 @@ class IcingaObjectFieldLoader
     }
 
     /**
-     * Fetches fields for a given List of objects from the database
+     * Fetches fields for a given object
      *
      * Gives a list indexed by object id, with each entry being a list of that
      * objects DirectorDatafield instances indexed by variable name
      *
-     * @param IcingaObject[] $objectList List of objects
+     * @param IcingaObject $object
      *
      * @return array
      */

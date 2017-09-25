@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
@@ -37,6 +39,9 @@ class ConfigController extends ActionController
 
     public function deploymentsAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/deploy');
         $this->addTitle($this->translate('Deployments'));
         try {
@@ -74,6 +79,17 @@ class ConfigController extends ActionController
 
     public function deployAction()
     {
+        $request = $this->getRequest();
+        if (! $request->isApiRequest()) {
+            throw new NotFoundError('Not found');
+        }
+
+        if (! $request->isPost()) {
+            throw new IcingaException(
+                'Unsupported method: %s',
+                $request->getMethod()
+            );
+        }
         $this->assertPermission('director/deploy');
 
         // TODO: require POST
@@ -100,6 +116,9 @@ class ConfigController extends ActionController
 
     public function activitiesAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/audit');
 
         $this->setAutorefreshInterval(10);
@@ -142,6 +161,9 @@ class ConfigController extends ActionController
 
     public function activityAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/showconfig');
         $p = $this->params;
         $info = new ActivityLogInfo(
@@ -163,6 +185,9 @@ class ConfigController extends ActionController
 
     public function settingsAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/admin');
 
         $this->addSingleTab($this->translate('Settings'))
@@ -179,6 +204,9 @@ class ConfigController extends ActionController
      */
     public function filesAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/showconfig');
         $config = IcingaConfig::load(
             Util::hex2binary($this->params->getRequired('checksum')),
@@ -219,6 +247,9 @@ class ConfigController extends ActionController
      */
     public function fileAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/showconfig');
         $filename = $this->params->getRequired('file_path');
         $this->configTabs()->add('file', array(
@@ -258,6 +289,9 @@ class ConfigController extends ActionController
 
     public function diffAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/showconfig');
 
         $db = $this->db();
@@ -302,6 +336,9 @@ class ConfigController extends ActionController
 
     public function filediffAction()
     {
+        if ($this->sendNotFoundForRestApi()) {
+            return;
+        }
         $this->assertPermission('director/showconfig');
 
         $p = $this->params;

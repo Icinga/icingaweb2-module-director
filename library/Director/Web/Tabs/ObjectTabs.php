@@ -77,11 +77,15 @@ class ObjectTabs extends Tabs
         }
 
         if ($auth->hasPermission('director/showconfig')) {
-            $this->add('render', array(
-                'url'       => sprintf('director/%s/render', $type),
-                'urlParams' => $params,
-                'label'     => $this->translate('Preview'),
-            ));
+            if ($object->getShortTableName() !== 'service'
+                || $object->get('service_set_id') === null
+            ) {
+                $this->add('render', array(
+                    'url'       => sprintf('director/%s/render', $type),
+                    'urlParams' => $params,
+                    'label'     => $this->translate('Preview'),
+                ));
+            }
         }
 
         if ($auth->hasPermission('director/audit')) {

@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
+use ipl\Html\Html;
 use ipl\Html\ValidHtml;
 use Zend_Form;
 
@@ -82,13 +83,20 @@ abstract class QuickBaseForm extends Zend_Form implements ValidHtml
     }
 
     // TODO: Should be an element
-    public function addHtmlHint($html, $options = array())
+    public function addHtmlHint($html, $options = [])
     {
-        return $this->addHtml('<div class="hint">' . $html . '</div>', $options);
+        return $this->addHtml(
+            Html::tag('div', ['class' => 'hint'], $html),
+            $options
+        );
     }
 
-    public function addHtml($html, $options = array())
+    public function addHtml($html, $options = [])
     {
+        if ($html instanceof ValidHtml) {
+            $html = $html->render();
+        }
+
         if (array_key_exists('name', $options)) {
             $name = $options['name'];
             unset($options['name']);
