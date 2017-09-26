@@ -47,7 +47,7 @@ class IcingaObjectsHandler extends RequestHandler
     protected function streamJsonResult()
     {
         $connection = $this->db;
-        Benchmark::measure('aha');
+        Benchmark::measure('Ready to stream JSON result');
         $db = $connection->getDbAdapter();
         $table = $this->getTable();
         $query = $table
@@ -64,7 +64,7 @@ class IcingaObjectsHandler extends RequestHandler
         $dummy = IcingaObject::createByType($table->getType(), [], $connection);
         $dummy->prefetchAllRelatedTypes();
 
-        Benchmark::measure('Prefetching');
+        Benchmark::measure('Pre-fetching related objects');
         PrefetchCache::initialize($this->db);
         Benchmark::measure('Ready to query');
         $stmt = $db->query($query);
@@ -87,7 +87,7 @@ class IcingaObjectsHandler extends RequestHandler
         while ($row = $stmt->fetch()) {
             /** @var IcingaObject $object */
             if ($first) {
-                Benchmark::measure('First row');
+                Benchmark::measure('Fetching first row');
             }
             $object = $dummy::fromDbRow($row, $connection);
             $objects[] = json_encode($object->toPlainObject(
