@@ -372,14 +372,14 @@ class IcingaDependency extends IcingaObject
                     $this->connection
                 );
 
-                //services for applicable templates 
+                // services for applicable templates
                 $resolver = $tmpHost->templateResolver();
                 foreach ($resolver->fetchResolvedParents() as $template_obj) {
                     $objKey = [
                         'host_id'     => $template_obj->id,
                         'object_name' => $this->unresolvedRelatedProperties[$name]
                     ];
-                    try {    
+                    try {
                         $object = $class::load( $objKey, $this->connection);
                     } catch (NotFoundError $e) {
                         continue;
