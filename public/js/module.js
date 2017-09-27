@@ -514,6 +514,12 @@
                 ev.stopPropagation();
                 return false;
                 */
+            } else if (el.name.match(/__DROP_DOWN$/)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                var $el = $(ev.currentTarget).closest('li').find('input[type=text]');
+                this.getSuggestionList($el);
+                return false;
             }
         },
 
@@ -785,4 +791,3 @@
     Icinga.availableModules.director = Director;
 
 }(Icinga));
-
