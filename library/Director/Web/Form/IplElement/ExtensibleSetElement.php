@@ -273,10 +273,19 @@ class ExtensibleSetElement extends BaseElement
             $field->attributes()->add('class', 'extend-set');
         }
 
-        $this->add(Html::tag('li', null, [
-            $this->createAddNewButton(),
-            $field
-        ]));
+        if ($this->suggestionContext === null) {
+            $this->add(Html::tag('li', null, [
+                $this->createAddNewButton(),
+                $field
+            ]));
+        } else {
+            $this->add(Html::tag('li', null, [
+                $this->newInlineButtons(
+                    $this->renderDropDownButton()
+                ),
+                $field
+            ]));
+        }
     }
 
     private function createAddNewButton()
@@ -442,6 +451,16 @@ class ExtensibleSetElement extends BaseElement
         } else {
             return '_' . $cnt;
         }
+    }
+
+    private function renderDropDownButton()
+    {
+        return $this->createRelatedAction(
+            'drop-down',
+            $this->name,
+            $this->translate('Show available options'),
+            'down-open'
+        );
     }
 
     private function renderAddButton()

@@ -30,6 +30,7 @@ class IconHelper
         'angle-double-right' => 'e87b',
         'up-big'             => 'e825',
         'down-big'           => 'e828',
+        'down-open'          => 'e821',
     );
 
     private $mappedUtf8Icons;
