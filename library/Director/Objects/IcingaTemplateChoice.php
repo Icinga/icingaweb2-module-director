@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class IcingaTemplateChoice extends IcingaObject
@@ -25,6 +26,12 @@ class IcingaTemplateChoice extends IcingaObject
     public function getObjectShortTableName()
     {
         return substr(substr($this->table, 0, -16), 7);
+    }
+
+    public function isMainChoice()
+    {
+        return $this->hasBeenLoadedFromDb()
+            && $this->connection->settings()->get('main_host_choice');
     }
 
     public function getObjectTableName()
@@ -178,6 +185,48 @@ class IcingaTemplateChoice extends IcingaObject
                 ['template_choice_id' => $id],
                 $db->quoteInto('id IN (?)', $ids)
             );
+        }
+    }
+
+    /**
+     * @param $roles
+     * @throws ProgrammingError
+     * @codingStandardsIgnoreStart
+     */
+    public function setAllowed_roles($roles)
+    {
+        // @codingStandardsIgnoreEnd
+        $key = 'allowed_roles';
+        if (is_array($roles)) {
+            $this->reallySet($key, json_encode($roles));
+        } elseif (null === $roles) {
+            $this->reallySet($key, null);
+        } else {
+            throw new ProgrammingError(
+                'Expected array or null for allowed_roles, got %s',
+                var_export($roles, 1)
+            );
+        }
+    }
+
+    /**
+     * @return array|null
+     * @codingStandardsIgnoreStart
+     */
+    public function getAllowed_roles()
+    {
+        // @codingStandardsIgnoreEnd
+
+        // Might be removed once all choice types have allowed_roles
+        if (! array_key_exists('allowed_roles', $this->properties)) {
+            return null;
+        }
+
+        $roles = $this->getProperty('allowed_roles');
+        if (is_string($roles)) {
+            return json_decode($roles);
+        } else {
+            return $roles;
         }
     }
 
