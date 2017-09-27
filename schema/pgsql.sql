@@ -551,10 +551,18 @@ CREATE TABLE icinga_host_template_choice (
   description text DEFAULT NULL,
   min_required smallint NOT NULL DEFAULT 0,
   max_allowed smallint NOT NULL DEFAULT 1,
+  required_template_id integer DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
+  CONSTRAINT host_template_choice_required_template
+  FOREIGN KEY (required_template_id)
+  REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
   PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX host_template_choice_object_name ON icinga_host_template_choice (object_name);
+CREATE INDEX host_template_choice_required_template ON icinga_host_template_choice (required_template_id);
 
 CREATE TABLE icinga_host (
   id serial,
@@ -725,10 +733,18 @@ CREATE TABLE icinga_service_template_choice (
   description text DEFAULT NULL,
   min_required smallint NOT NULL DEFAULT 0,
   max_allowed smallint NOT NULL DEFAULT 1,
+  required_template_id integer DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
+  CONSTRAINT service_template_choice_required_template
+  FOREIGN KEY (required_template_id)
+  REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
   PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX service_template_choice_object_name ON icinga_service_template_choice (object_name);
+CREATE INDEX service_template_choice_required_template ON icinga_service_template_choice (required_template_id);
 
 
 CREATE TABLE icinga_service (
@@ -1841,4 +1857,4 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (142, NOW());
+  VALUES (143, NOW());

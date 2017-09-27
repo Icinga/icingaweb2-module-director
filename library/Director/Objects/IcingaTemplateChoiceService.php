@@ -7,4 +7,8 @@ class IcingaTemplateChoiceService extends IcingaTemplateChoice
     protected $table = 'icinga_service_template_choice';
 
     protected $objectTable = 'icinga_service';
+
+    protected $relations = array(
+        'required_template' => 'IcingaService',
+    );
 }

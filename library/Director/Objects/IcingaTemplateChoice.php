@@ -14,6 +14,8 @@ class IcingaTemplateChoice extends IcingaObject
         'description'  => null,
         'min_required' => 0,
         'max_allowed'  => 1,
+        'required_template_id' => null,
+        'allowed_roles'        => null,
     ];
 
     private $choices;
