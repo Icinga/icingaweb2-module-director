@@ -150,10 +150,12 @@ class ConfigController extends ActionController
             ));
         }
         if ($this->hasPermission('director/deploy')) {
-            $this->actions()->add(DeployConfigForm::load()
-                ->setDb($this->db())
-                ->setApi($this->api())
-                ->handleRequest());
+            if ($this->db()->hasDeploymentEndpoint()) {
+                $this->actions()->add(DeployConfigForm::load()
+                    ->setDb($this->db())
+                    ->setApi($this->api())
+                    ->handleRequest());
+            }
         }
 
         $table->renderTo($this);
