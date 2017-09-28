@@ -1287,7 +1287,6 @@ CREATE TABLE import_row_modifier (
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   KEY search_idx (property_name),
-  UNIQUE INDEX idx_prio (source_id, priority),
   CONSTRAINT row_modifier_import_source
     FOREIGN KEY source (source_id)
     REFERENCES import_source (id)
@@ -1665,4 +1664,4 @@ CREATE TABLE icinga_dependency_states_set (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (144, NOW());
+  VALUES (145, NOW());
