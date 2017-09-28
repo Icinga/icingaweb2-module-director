@@ -553,11 +553,6 @@ CREATE TABLE icinga_host_template_choice (
   max_allowed smallint NOT NULL DEFAULT 1,
   required_template_id integer DEFAULT NULL,
   allowed_roles character varying(255) DEFAULT NULL,
-  CONSTRAINT host_template_choice_required_template
-  FOREIGN KEY (required_template_id)
-  REFERENCES icinga_host (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
   PRIMARY KEY (id)
 );
 
@@ -708,6 +703,14 @@ CREATE INDEX host_var_host ON icinga_host_var (host_id);
 CREATE INDEX host_var_checksum ON icinga_host_var (checksum);
 
 
+ALTER TABLE icinga_host_template_choice
+  ADD CONSTRAINT host_template_choice_required_template
+    FOREIGN KEY (required_template_id)
+    REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE;
+
+
 CREATE TABLE icinga_service_set (
   id serial,
   host_id integer DEFAULT NULL,
@@ -735,11 +738,6 @@ CREATE TABLE icinga_service_template_choice (
   max_allowed smallint NOT NULL DEFAULT 1,
   required_template_id integer DEFAULT NULL,
   allowed_roles character varying(255) DEFAULT NULL,
-  CONSTRAINT service_template_choice_required_template
-  FOREIGN KEY (required_template_id)
-  REFERENCES icinga_service (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
   PRIMARY KEY (id)
 );
 
@@ -897,6 +895,14 @@ CREATE UNIQUE INDEX service_field_key ON icinga_service_field (service_id, dataf
 CREATE INDEX service_field_service ON icinga_service_field (service_id);
 CREATE INDEX service_field_datafield ON icinga_service_field (datafield_id);
 COMMENT ON COLUMN icinga_service_field.service_id IS 'Makes only sense for templates';
+
+
+ALTER TABLE icinga_service_template_choice
+  ADD CONSTRAINT service_template_choice_required_template
+    FOREIGN KEY (required_template_id)
+    REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE;
 
 
 CREATE TABLE icinga_host_service (
@@ -1894,12 +1900,12 @@ CREATE TABLE icinga_dependency (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_period
-    FOREIGN KEY period (period_id)
+    FOREIGN KEY (period_id)
     REFERENCES icinga_timeperiod (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_zone
-    FOREIGN KEY zone (zone_id)
+    FOREIGN KEY (zone_id)
     REFERENCES icinga_zone (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
@@ -1936,7 +1942,7 @@ CREATE INDEX dependency_inheritance_dependency_parent ON icinga_dependency_inher
 
 
 CREATE TABLE icinga_dependency_states_set (
-  icinga_dependency integer NOT NULL,
+  dependency_id integer NOT NULL,
   property enum_state_name NOT NULL,
   merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
   PRIMARY KEY (dependency_id, property, merge_behaviour),
@@ -1947,7 +1953,7 @@ CREATE TABLE icinga_dependency_states_set (
     ON UPDATE CASCADE
 );
 
-CREATE INDEX dependency_states_set_dependency ON icinga_dependency_states_set (user_id);
+CREATE INDEX dependency_states_set_dependency ON icinga_dependency_states_set (dependency_id);
 COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [], extend: += [], blacklist: -= []';
 
 
