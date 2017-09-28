@@ -1585,9 +1585,9 @@ CREATE TABLE icinga_dependency (
   parent_service_id INT(10) UNSIGNED DEFAULT NULL,
   child_host_id INT(10) UNSIGNED DEFAULT NULL,
   child_service_id INT(10) UNSIGNED DEFAULT NULL,
-  disable_checks ENUM('y', 'n'),
-  disable_notifications ENUM('y', 'n'),
-  ignore_soft_states ENUM('y', 'n'),
+  disable_checks ENUM('y', 'n') DEFAULT NULL,
+  disable_notifications ENUM('y', 'n') DEFAULT NULL,
+  ignore_soft_states ENUM('y', 'n') DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
@@ -1596,12 +1596,12 @@ CREATE TABLE icinga_dependency (
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY parent_host (parent_host_id)
     REFERENCES icinga_host (id)
-    ON DELETE CASCADE
+    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_parent_service
     FOREIGN KEY parent_service (parent_service_id)
     REFERENCES icinga_service (id)
-    ON DELETE CASCADE
+    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_child_host
     FOREIGN KEY child_host (child_host_id)
@@ -1632,13 +1632,13 @@ CREATE TABLE icinga_dependency_inheritance (
   PRIMARY KEY (dependency_id, parent_dependency_id),
   UNIQUE KEY unique_order (dependency_id, weight),
   CONSTRAINT icinga_dependency_inheritance_dependency
-  FOREIGN KEY dependency (dependency_id)
-  REFERENCES icinga_dependency (id)
+    FOREIGN KEY dependency (dependency_id)
+    REFERENCES icinga_dependency (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_inheritance_parent_dependency
-  FOREIGN KEY parent_dependency (parent_dependency_id)
-  REFERENCES icinga_dependency (id)
+    FOREIGN KEY parent_dependency (parent_dependency_id)
+    REFERENCES icinga_dependency (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1661,8 +1661,8 @@ CREATE TABLE icinga_dependency_states_set (
     REFERENCES icinga_dependency (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
-)  ENGINE=InnoDB;
+) ENGINE=InnoDB;
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (143, NOW());
+  VALUES (144, NOW());

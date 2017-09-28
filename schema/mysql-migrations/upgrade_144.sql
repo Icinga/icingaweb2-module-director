@@ -1,4 +1,3 @@
-
 CREATE TABLE icinga_dependency (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
@@ -9,22 +8,23 @@ CREATE TABLE icinga_dependency (
   parent_service_id INT(10) UNSIGNED DEFAULT NULL,
   child_host_id INT(10) UNSIGNED DEFAULT NULL,
   child_service_id INT(10) UNSIGNED DEFAULT NULL,
-  disable_checks ENUM('y', 'n'),
-  disable_notifications ENUM('y', 'n'),
-  ignore_soft_states ENUM('y', 'n'),
+  disable_checks ENUM('y', 'n') DEFAULT NULL,
+  disable_notifications ENUM('y', 'n') DEFAULT NULL,
+  ignore_soft_states ENUM('y', 'n') DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
+  parent_service_by_name VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY parent_host (parent_host_id)
     REFERENCES icinga_host (id)
-    ON DELETE CASCADE
+    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_parent_service
     FOREIGN KEY parent_service (parent_service_id)
     REFERENCES icinga_service (id)
-    ON DELETE CASCADE
+    ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT icinga_dependency_child_host
     FOREIGN KEY child_host (child_host_id)
@@ -86,3 +86,6 @@ CREATE TABLE icinga_dependency_states_set (
     ON UPDATE CASCADE
 )  ENGINE=InnoDB;
 
+INSERT INTO director_schema_migration
+  (schema_version, migration_time)
+  VALUES (144, NOW());
