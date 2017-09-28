@@ -21,6 +21,6 @@ class DependencyObjectDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/dependencies';
+        return 'director/dependencies/applyrules';
     }
 }
