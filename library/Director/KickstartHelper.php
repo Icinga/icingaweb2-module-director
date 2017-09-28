@@ -180,7 +180,7 @@ class KickstartHelper
      * @param IcingaObject[] $objects
      * @return IcingaObject[]
      */
-    protected function sortByInheritance(array $objects)
+    protected function sortByParent(array $objects)
     {
         $sorted = array();
 
@@ -190,16 +190,14 @@ class KickstartHelper
             if ($cnt > 20) {
                 $this->throwObjectLoop($objects);
             }
+
             $unset = array();
             foreach ($objects as $key => $object) {
-                foreach ($object->imports()->listImportNames() as $parentName) {
-                    if (! array_key_exists($parentName, $sorted)) {
-                        continue 2;
-                    }
+                $parentName = $object->get('parent');
+                if ($parentName === null || array_key_exists($parentName, $sorted)) {
+                    $sorted[$object->getObjectName()] = $object;
+                    $unset[] = $key;
                 }
-
-                $sorted[$object->getObjectName()] = $object;
-                $unset[] = $key;
             }
 
             foreach ($unset as $key) {
@@ -241,7 +239,7 @@ class KickstartHelper
     protected function fetchZones()
     {
         $db = $this->db;
-        $this->loadedZones = $this->sortByInheritance(
+        $this->loadedZones = $this->sortByParent(
             $this->api()->setDb($db)->getZoneObjects()
         );
 
@@ -288,9 +286,7 @@ class KickstartHelper
     protected function fetchEndpoints()
     {
         $db = $this->db;
-        $this->loadedEndpoints = $this->sortByInheritance(
-            $this->api()->setDb($db)->getEndpointObjects()
-        );
+        $this->loadedEndpoints = $this->api()->setDb($db)->getEndpointObjects();
 
         $master = $this->getValue('endpoint');
         if (array_key_exists($master, $this->loadedEndpoints)) {
@@ -395,9 +391,10 @@ class KickstartHelper
         $db = $this->db;
         $zdb = $db->getDbAdapter();
         $zdb->beginTransaction();
+        /** @var IcingaObject $object */
         foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
             if ($object::exists($object->object_name, $db)) {
-                $new = $object::load($object->object_name, $db)->replaceWith($object);
+                $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
             } else {
                 $new = $object;
             }
@@ -407,7 +404,7 @@ class KickstartHelper
 
         foreach ($this->api()->setDb($db)->getNotificationCommandObjects() as $object) {
             if ($object::exists($object->object_name, $db)) {
-                $new = $object::load($object->object_name, $db)->replaceWith($object);
+                $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
             } else {
                 $new = $object;
             }
