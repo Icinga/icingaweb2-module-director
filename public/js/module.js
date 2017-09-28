@@ -275,7 +275,8 @@
         {
             $suggestions.load(this.module.icinga.config.baseUrl + '/director/suggest', {
                 value: $el.val(),
-                context: $el.data('suggestion-context')
+                context: $el.data('suggestion-context'),
+                for_host: $el.data('suggestion-for-host')
             }, function (responseText, textStatus, jqXHR) {
                 var $li = $suggestions.find('li');
                 if ($li.length) {
