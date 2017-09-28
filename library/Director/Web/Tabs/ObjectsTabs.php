@@ -35,7 +35,7 @@ class ObjectsTabs extends Tabs
         }
 
         if ($auth->hasPermission('director/admin') || (
-                $object->getShortTableName() === 'notifications' && $auth->hasPermission('director/notifications')
+                $object->getShortTableName() === 'notification' && $auth->hasPermission('director/notifications')
             )) {
             if ($object->supportsApplyRules()) {
                 $this->add('applyrules', array(
