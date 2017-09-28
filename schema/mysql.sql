@@ -422,6 +422,23 @@ CREATE TABLE icinga_endpoint_inheritance (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE icinga_host_template_choice (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  object_name VARCHAR(64) NOT NULL,
+  description TEXT DEFAULT NULL,
+  min_required SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  max_allowed SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  required_template_id INT(10) UNSIGNED DEFAULT NULL,
+  allowed_roles VARCHAR(255) DEFAULT NULL,
+  CONSTRAINT host_template_choice_required_template
+  FOREIGN KEY required_template (required_template_id)
+  REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  PRIMARY KEY (id),
+  UNIQUE KEY (object_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE icinga_host (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(255) NOT NULL,
@@ -545,23 +562,6 @@ CREATE TABLE icinga_host_var (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE icinga_host_template_choice (
-  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-  object_name VARCHAR(64) NOT NULL,
-  description TEXT DEFAULT NULL,
-  min_required SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  max_allowed SMALLINT UNSIGNED NOT NULL DEFAULT 1,
-  required_template_id INT(10) UNSIGNED DEFAULT NULL,
-  allowed_roles VARCHAR(255) DEFAULT NULL,
-  CONSTRAINT host_template_choice_required_template
-  FOREIGN KEY required_template (required_template_id)
-  REFERENCES icinga_host (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  PRIMARY KEY (id),
-  UNIQUE KEY (object_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE icinga_service_set (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   object_name VARCHAR(128) NOT NULL,
@@ -576,6 +576,23 @@ CREATE TABLE icinga_service_set (
     REFERENCES icinga_host (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE icinga_service_template_choice (
+  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  object_name VARCHAR(64) NOT NULL,
+  description TEXT DEFAULT NULL,
+  min_required SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  max_allowed SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  required_template_id INT(10) UNSIGNED DEFAULT NULL,
+  allowed_roles VARCHAR(255) DEFAULT NULL,
+  CONSTRAINT service_template_choice_required_template
+  FOREIGN KEY required_template (required_template_id)
+  REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  PRIMARY KEY (id),
+  UNIQUE KEY (object_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_service (
@@ -707,23 +724,6 @@ CREATE TABLE icinga_service_field (
   REFERENCES director_datafield (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE icinga_service_template_choice (
-  id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
-  object_name VARCHAR(64) NOT NULL,
-  description TEXT DEFAULT NULL,
-  min_required SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  max_allowed SMALLINT UNSIGNED NOT NULL DEFAULT 1,
-  required_template_id INT(10) UNSIGNED DEFAULT NULL,
-  allowed_roles VARCHAR(255) DEFAULT NULL,
-  CONSTRAINT service_template_choice_required_template
-  FOREIGN KEY required_template (required_template_id)
-  REFERENCES icinga_service (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  PRIMARY KEY (id),
-  UNIQUE KEY (object_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_host_service (
