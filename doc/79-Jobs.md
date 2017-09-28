@@ -76,6 +76,15 @@ systemctl enable director-jobs.service
 systemctl start director-jobs.service
 ```
 
+If you are still using a system without systemd there is also an [initscript](../contrib/sysvinit/director-jobs.init)
+which you can simply store as `/etc/init.d/director-jobs`. To enable and start the job afterwards run:
+
+```sh
+chkconfig director-jobs on
+service director-jobs start
+```
+
+
 Time periods
 ------------
 
