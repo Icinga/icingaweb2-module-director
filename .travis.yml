@@ -25,14 +25,6 @@ env:
   - DB=pgsql DIRECTOR_TESTDB_RES="Director PostgreSQL TestDB" DIRECTOR_TESTDB="director_test"
     DIRECTOR_TESTDB_USER="director_test"
 
-# Consider when migrating to PRs
-#branches:
-#  only:
-#  - master
-#  - next
-#  - /^support\//
-#  - /^v\d/
-
 before_script:
   - ./test/setup_vendor.sh
   - ./test/travis-prepare.sh
