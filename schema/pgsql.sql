@@ -545,25 +545,6 @@ CREATE INDEX endpoint_inheritance_endpoint ON icinga_endpoint_inheritance (endpo
 CREATE INDEX endpoint_inheritance_endpoint_parent ON icinga_endpoint_inheritance (parent_endpoint_id);
 
 
-CREATE TABLE icinga_host_template_choice (
-  id serial,
-  object_name character varying(64) NOT NULL,
-  description text DEFAULT NULL,
-  min_required smallint NOT NULL DEFAULT 0,
-  max_allowed smallint NOT NULL DEFAULT 1,
-  required_template_id integer DEFAULT NULL,
-  allowed_roles character varying(255) DEFAULT NULL,
-  CONSTRAINT host_template_choice_required_template
-  FOREIGN KEY (required_template_id)
-  REFERENCES icinga_host (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  PRIMARY KEY (id)
-);
-
-CREATE UNIQUE INDEX host_template_choice_object_name ON icinga_host_template_choice (object_name);
-CREATE INDEX host_template_choice_required_template ON icinga_host_template_choice (required_template_id);
-
 CREATE TABLE icinga_host (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -708,6 +689,26 @@ CREATE INDEX host_var_host ON icinga_host_var (host_id);
 CREATE INDEX host_var_checksum ON icinga_host_var (checksum);
 
 
+CREATE TABLE icinga_host_template_choice (
+  id serial,
+  object_name character varying(64) NOT NULL,
+  description text DEFAULT NULL,
+  min_required smallint NOT NULL DEFAULT 0,
+  max_allowed smallint NOT NULL DEFAULT 1,
+  required_template_id integer DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
+  CONSTRAINT host_template_choice_required_template
+  FOREIGN KEY (required_template_id)
+  REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX host_template_choice_object_name ON icinga_host_template_choice (object_name);
+CREATE INDEX host_template_choice_required_template ON icinga_host_template_choice (required_template_id);
+
+
 CREATE TABLE icinga_service_set (
   id serial,
   host_id integer DEFAULT NULL,
@@ -725,26 +726,6 @@ CREATE TABLE icinga_service_set (
 
 CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id);
 CREATE INDEX service_set_host ON icinga_service_set (host_id);
-
-
-CREATE TABLE icinga_service_template_choice (
-  id serial,
-  object_name character varying(64) NOT NULL,
-  description text DEFAULT NULL,
-  min_required smallint NOT NULL DEFAULT 0,
-  max_allowed smallint NOT NULL DEFAULT 1,
-  required_template_id integer DEFAULT NULL,
-  allowed_roles character varying(255) DEFAULT NULL,
-  CONSTRAINT service_template_choice_required_template
-  FOREIGN KEY (required_template_id)
-  REFERENCES icinga_service (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  PRIMARY KEY (id)
-);
-
-CREATE UNIQUE INDEX service_template_choice_object_name ON icinga_service_template_choice (object_name);
-CREATE INDEX service_template_choice_required_template ON icinga_service_template_choice (required_template_id);
 
 
 CREATE TABLE icinga_service (
@@ -897,6 +878,26 @@ CREATE UNIQUE INDEX service_field_key ON icinga_service_field (service_id, dataf
 CREATE INDEX service_field_service ON icinga_service_field (service_id);
 CREATE INDEX service_field_datafield ON icinga_service_field (datafield_id);
 COMMENT ON COLUMN icinga_service_field.service_id IS 'Makes only sense for templates';
+
+
+CREATE TABLE icinga_service_template_choice (
+  id serial,
+  object_name character varying(64) NOT NULL,
+  description text DEFAULT NULL,
+  min_required smallint NOT NULL DEFAULT 0,
+  max_allowed smallint NOT NULL DEFAULT 1,
+  required_template_id integer DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
+  CONSTRAINT service_template_choice_required_template
+  FOREIGN KEY (required_template_id)
+  REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX service_template_choice_object_name ON icinga_service_template_choice (object_name);
+CREATE INDEX service_template_choice_required_template ON icinga_service_template_choice (required_template_id);
 
 
 CREATE TABLE icinga_host_service (
