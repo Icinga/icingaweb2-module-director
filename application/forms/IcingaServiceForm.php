@@ -10,6 +10,7 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use ipl\Html\Html;
 use ipl\Html\Link;
 
@@ -73,7 +74,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function providesOverrides()
     {
-        return  $this->applyGenerated
+        return $this->applyGenerated
             || $this->inheritedFrom
             || ($this->host && $this->set)
             || ($this->object && $this->object->usesVarOverrides());
@@ -339,6 +340,15 @@ class IcingaServiceForm extends DirectorObjectForm
                 'Name for the Icinga service you are going to create'
             )
         ));
+
+        if ($this->object()->isApplyRule()) {
+            $rName = 'director/service/apply/filter-by-name';
+            foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
+                $this->getElement('object_name')->addValidator(
+                    new NamePattern($restriction)
+                );
+            }
+        }
 
         return $this;
     }
