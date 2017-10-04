@@ -16,6 +16,7 @@ class SyncRuleForm extends DirectorObjectForm
             'serviceSet'       => $this->translate('Service Set'),
             'user'             => $this->translate('User'),
             'usergroup'        => $this->translate('User Group'),
+            'notification'     => $this->translate('Notification'),
             'datalistEntry'    => $this->translate('Data List Entry'),
             'command'          => $this->translate('Command'),
             'timePeriod'       => $this->translate('Time Period'),
