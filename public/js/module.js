@@ -505,16 +505,18 @@
                 ev.preventDefault();
                 ev.stopPropagation();
                 return false;
-            } else if (el.name.match(/__MOVE_REMOVE$/)) {
-                // TODO: skipping for now, wasn't able to prevent web2 form
-                //       submission once removed
-                /*
-                var $li = $(el).closest('li').remove();
+            } else if (el.name.match(/__REMOVE$/)) {
+                $li = $(el).closest('li');
+                if ($li.find('.autosubmit').length) {
+                    // Autosubmit element, let the server handle this
+                    return true;
+                }
+
+                $li.remove();
                 this.fixRelatedActions($li.closest('ul'));
                 ev.preventDefault();
                 ev.stopPropagation();
                 return false;
-                */
             } else if (el.name.match(/__DROP_DOWN$/)) {
                 ev.preventDefault();
                 ev.stopPropagation();

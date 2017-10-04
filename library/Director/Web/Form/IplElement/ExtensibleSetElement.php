@@ -467,7 +467,10 @@ class ExtensibleSetElement extends BaseElement
     {
         return $this->createRelatedAction(
             'add',
-            $this->name,
+            // This would interfere with how PHP resolves _POST arrays. So we
+            // use a fake name for now, that way the button will be ignored and
+            // behave similar to an auto-submission
+            'X_' . $this->name,
             $this->translate('Add a new entry'),
             'plus'
         );
