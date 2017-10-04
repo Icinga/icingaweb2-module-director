@@ -20,7 +20,8 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
             'templates'  => $this->getSummaryLine('template'),
             'objects'    => $this->getSummaryLine('object'),
             'applyrules' => $this->getSummaryLine('apply', 'o.service_set_id IS NULL'),
-            'setmembers' => $this->getSummaryLine('apply', 'o.service_set_id IS NOT NULL'),
+            // TODO: re-enable
+            // 'setmembers' => $this->getSummaryLine('apply', 'o.service_set_id IS NOT NULL'),
         ];
     }
 }
