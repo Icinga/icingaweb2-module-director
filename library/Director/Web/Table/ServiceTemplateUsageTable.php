@@ -10,7 +10,7 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
             'templates'  => $this->translate('Templates'),
             'objects'    => $this->translate('Objects'),
             'applyrules' => $this->translate('Apply Rules'),
-            'setmembers' => $this->translate('Set Members'),
+            // 'setmembers' => $this->translate('Set Members'),
         ];
     }
 
