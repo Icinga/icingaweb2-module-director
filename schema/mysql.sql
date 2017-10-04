@@ -1397,7 +1397,8 @@ CREATE TABLE sync_rule (
     'endpoint',
     'zone',
     'timePeriod',
-    'serviceSet'
+    'serviceSet',
+    'dependency'
   ) NOT NULL,
   update_policy ENUM('merge', 'override', 'ignore') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
