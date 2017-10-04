@@ -388,6 +388,9 @@ abstract class GroupMembershipResolver
         }
 
         foreach ($objects as $object) {
+            if ($object->shouldBeRemoved()) {
+                continue;
+            }
             if ($object->isTemplate()) {
                 continue;
             }
