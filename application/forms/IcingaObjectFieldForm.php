@@ -58,7 +58,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
                     $val = $arg->argument_value;
                     // TODO: create var::extractMacros or so
 
-                    if (preg_match_all('/(\$[a-z0-9_]+\$)/', $val, $m, PREG_PATTERN_ORDER)) {
+                    if (preg_match_all('/(\$[a-z0-9_]+\$)/i', $val, $m, PREG_PATTERN_ORDER)) {
                         foreach ($m[1] as $val) {
                             if (array_key_exists($val, $blacklistedVars)) {
                                 $id = $blacklistedVars[$val];
