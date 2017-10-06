@@ -60,6 +60,7 @@ function Icinga2AgentModule {
         #Internal handling
         [switch]$RunInstaller             = $FALSE,
         [switch]$RunUninstaller           = $FALSE,
+        [switch]$IgnoreSSLErrors          = $FALSE,
         [bool]$DebugMode                  = $FALSE,
         [string]$ModuleLogFile
     );
@@ -110,6 +111,7 @@ function Icinga2AgentModule {
         nsclient_installer_path = $NSClientInstallerPath;
         full_uninstallation     = $FullUninstallation;
         remove_nsclient         = $RemoveNSClient;
+        ignore_ssl_errors       = $IgnoreSSLErrors;
         debug_mode              = $DebugMode;
         module_log_file         = $ModuleLogFile;
     }
@@ -199,7 +201,16 @@ function Icinga2AgentModule {
     # purposes
     #
     $installer | Add-Member -membertype ScriptMethod -name 'dumpProperties' -value {
-        Write-Output $this.properties;
+        [string]$dumpData = $this.properties | Out-String;
+        write-host $dumpData;
+    }
+
+    #
+    # Dump all configured arguments for easier debugging
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'dumpConfig' -value {
+        [string]$dumpData = $this.cfg | Out-String;
+        write-host $dumpData;
     }
 
     #
@@ -286,13 +297,7 @@ function Icinga2AgentModule {
     # from the stack
     #
     $installer | Add-Member -membertype ScriptMethod -name 'printLastException' -value {
-        # Todo: Improve this entire handling
-        #       for writing exception messages
-        #       in general we should only see
-        #       the actual thrown error instead of
-        #       an stack trace where the error occured
-        #Write-Host $this.error($error[$error.count - 1].FullyQualifiedErrorId) -ForegroundColor red;
-        Write-Host $_.Exception.Message -ForegroundColor red;
+        $this.exception($_.Exception.Message);
     }
 
     #
@@ -520,6 +525,13 @@ function Icinga2AgentModule {
         }
         $httpRequest.TimeOut = 6000;
 
+        # If we are using self-signed certificates for example, the HTTP request will
+        # fail caused by the SSL certificate. With this we can allow even faulty
+        # certificates. This should be used with caution
+        if ($this.config('ignore_ssl_errors')) {
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+        }
+
         if ($this.config('director_user') -And $this.config('director_password')) {
             [string]$credentials = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($this.config('director_user') + ':' + $this.config('director_password')));
             $httpRequest.Headers.add('Authorization: Basic ' + $credentials);
@@ -550,8 +562,11 @@ function Icinga2AgentModule {
             }
 
             $exceptionMessage = $_.Exception.Response;
-            $httpErrorCode = [int][system.net.httpstatuscode]$exceptionMessage.StatusCode;
-            return $httpErrorCode;
+            if ($exceptionMessage.StatusCode) {
+                return [int][System.Net.HttpStatusCode]$exceptionMessage.StatusCode;
+            } else {
+                return 900;
+            }
         }
 
         return '';
@@ -562,13 +577,19 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'readResponseStream' -value {
         param([System.Object]$response);
-        $responseStream = $response.getResponseStream();
-        $streamReader = New-Object IO.StreamReader($responseStream);
-        $result = $streamReader.ReadToEnd();
-        $response.close()
-        $streamReader.close()
 
-        return $result;
+        if ($response) {
+            $responseStream = $response.getResponseStream();
+            $streamReader = New-Object IO.StreamReader($responseStream);
+            $result = $streamReader.ReadToEnd();
+            $response.close()
+            $streamReader.close()
+
+            return $result;
+        }
+
+        $this.exception('Could not retreive response from remote server. Response is null');
+        return 'No response from remote server';
     }
 
     #
@@ -725,7 +746,14 @@ function Icinga2AgentModule {
         # By default, install the Icinga 2 Agent again in the pre-installed directory
         # before the update. Will only apply during updates / downgrades of the Agent
         if ($this.getProperty('cur_install_dir')) {
-            $installerLocation = [string]::Format(' INSTALL_ROOT="{0}"', $this.getProperty('cur_install_dir'));
+            # In case we perform an architecture change, we should use the new default location as source in case
+            # we have installed the Agent into Program Files (x86) for example but are now using a x64 Agent
+            # which should be installed into Program Files instead
+            if ($this.getProperty('agent_architecture_change') -And $this.getProperty('agent_migration_target')) {
+                $installerLocation = [string]::Format(' INSTALL_ROOT="{0}"', $this.getProperty('agent_migration_target'));
+            } else {
+                $installerLocation = [string]::Format(' INSTALL_ROOT="{0}"', $this.getProperty('cur_install_dir'));
+            }
         }
 
         # However, if we specified a custom directory over the argument, always use that
@@ -738,6 +766,54 @@ function Icinga2AgentModule {
         $arguments += $installerLocation;
 
         return $arguments;
+    }
+
+    #
+    # Do we require to migrate data from previous Icinga 2 Agent Directory
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'checkForIcingaMigrationRequirement' -value {
+        if ($this.getProperty('cur_install_dir')) {
+            [string]$installDir = $this.getProperty('cur_install_dir');
+            # Just in case we installed an x86 Agent on the System, we will require to migrate to x64 on a x64 system.
+            if (${Env:ProgramFiles(x86)} -And $installDir.contains(${Env:ProgramFiles(x86)}) -And $this.getProperty('system_architecture') -eq 'x86_64') {
+                [string]$migrationPath = $installDir.Replace(${Env:ProgramFiles(x86)}, ${Env:ProgramFiles});
+                $this.setProperty('agent_architecture_change', $TRUE);
+                $this.setProperty('require_migration', $TRUE);
+                $this.setProperty('agent_migration_source', $installDir);
+                $this.setProperty('agent_migration_target', $migrationPath);
+                $this.setProperty('cur_install_dir', $migrationPath);
+                $this.warn('Detected architecture change. Current installed Agent version is x86, while new installed version will be x64. Possible data will be migrated.');
+            } else {
+                $this.setProperty('agent_migration_source', $this.getProperty('cur_install_dir'));
+            }
+        }
+
+        if ($this.config('agent_install_directory')) {
+            [string]$currentInstallDir = $this.cutLastSlashFromDirectoryPath($this.getProperty('cur_install_dir'));
+            [string]$intendedInstallDir = $this.cutLastSlashFromDirectoryPath($this.config('agent_install_directory'));
+
+            if ($currentInstallDir -ne $intendedInstallDir) {
+                $this.setProperty('agent_migration_target', $this.config('agent_install_directory'));
+                $this.setProperty('require_migration', $TRUE);
+            }
+        }
+    }
+
+    #
+    # To ensure we handle path strings correctly, we always require to cut the last \
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'cutLastSlashFromDirectoryPath' -value {
+        param([string]$path);
+
+        if (-Not $path -Or $path -eq '') {
+            return $path;
+        }
+
+        if ($path[$path.Length - 1] -eq '\') {
+            $path = $path.Substring(0, $path.Length - 1);
+        }
+
+        return $path;
     }
 
     #
@@ -794,6 +870,9 @@ function Icinga2AgentModule {
             $this.info('Icinga 2 Agent successfully removed.');
         }
 
+        $this.checkForIcingaMigrationRequirement();
+        $this.applyPossibleAgentMigration();
+
         $this.info('Installing new Icinga 2 Agent version...');
         # Start the installer process
         $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
@@ -807,6 +886,62 @@ function Icinga2AgentModule {
         }
 
         $this.setProperty('require_restart', 'true');
+    }
+
+    #
+    # Migrate a folder and it's content from a previous Agent installation to
+    # a new target destination
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'doMigrateIcingaDirectory' -value {
+        param([string]$sourcePath, [string]$targetPath, [string]$directory);
+
+        if (Test-Path (Join-Path -Path $sourcePath -ChildPath $directory)) {
+            [string]$source = Join-Path -Path $sourcePath -ChildPath $directory;
+            [string]$target = Join-Path -Path $targetPath -ChildPath $directory;
+            $this.info([string]::Format('Migrating content from "{0}" to "{1}"', $source, $target));
+            $result = Copy-Item $source $target -Recurse;
+        }
+    }
+
+    #
+    # Copy a single file from it's source location to our target location
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'doMigrateIcingaFile' -value {
+        param([string]$sourcePath, [string]$targetPath, [string]$file);
+        $this.info([string]::Format('Migrating file from "{0}" to "{1}\{2}"', $sourcePath, $targetPath, $_));
+        Copy-Item $sourcePath $targetPath;
+    }
+
+    #
+    # This function will determine if we require to migrate content from a previous
+    # Icinga 2 Agent installation to the new location
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'applyPossibleAgentMigration' -value {
+        if (-Not $this.getProperty('require_migration') -Or $this.getProperty('require_migration') -eq $FALSE) {
+            $this.info('No migration of Icinga 2 Agent data required.')
+            return;
+        }
+
+        $this.info([string]::Format('Icinga 2 Agent installation location changed from {0} to {1}. Migrating possible content...', $this.getProperty('agent_migration_source'), $this.getProperty('agent_migration_target')));
+
+        if ($this.getProperty('agent_migration_source') -And (Test-Path ($this.getProperty('agent_migration_source')))) {
+            # Load Directories and Remove \ at the end of the path if present to ensure we have the same path base
+            [string]$sourcePath = $this.cutLastSlashFromDirectoryPath($this.getProperty('agent_migration_source'));
+            [string]$targetPath = $this.cutLastSlashFromDirectoryPath($this.getProperty('agent_migration_target'));
+
+            # Get all objects within our source root and copy it to our target destination
+            $result = Get-ChildItem -Path $sourcePath |
+                ForEach-Object {
+                    if ($_.PSIsContainer) {
+                        $this.doMigrateIcingaDirectory($sourcePath, $targetPath, $_);
+                    } else {
+                        $this.doMigrateIcingaFile($_.FullName, $targetPath, $_);
+                    }
+                }
+            $this.info([string]::Format('Migration of source folder applied. Please remove content from previous directory {0} if no longer required.', $sourcePath));
+        } else {
+            $this.info('No data for migration found. Setup is clean.');
+        }
     }
 
     #
@@ -844,6 +979,7 @@ function Icinga2AgentModule {
         $this.setProperty('cur_install_dir', $localData.InstallLocation);
         $this.setProperty('agent_version', $localData.DisplayVersion);
         $this.setProperty('install_msi_package', 'Icinga2-v' + $this.config('agent_version') + '-' + $architecture + '.msi');
+        $this.setProperty('system_architecture', $architecture);
 
         if ($localData.InstallLocation) {
             $this.info('Found Icinga 2 Agent version ' + $localData.DisplayVersion + ' installed at ' + $localData.InstallLocation);
@@ -994,11 +1130,10 @@ function Icinga2AgentModule {
     # Api directory, but keep the folder structure
     #
     $installer | Add-Member -membertype ScriptMethod -name 'flushIcingaApiDirectory' -value {
-        if (Test-Path $this.getApiDirectory()) {
+        if ((Test-Path $this.getApiDirectory()) -And $this.shouldFlushIcingaApiDirectory()) {
             $this.info('Flushing content of ' + $this.getApiDirectory());
             [System.Object]$folder = New-Object -ComObject Scripting.FileSystemObject;
             $folder.DeleteFolder($this.getApiDirectory());
-            $this.setProperty('require_restart', 'true');
         }
     }
 
@@ -1434,9 +1569,17 @@ object ApiListener "api" {
             $this.info("Requesting Icinga 2 certificates");
             $result = $this.startProcess($icingaBinary, $FALSE, 'pki request --host ' + $this.config('ca_server') + ' --port ' + $this.config('ca_port') + ' --ticket ' + $this.getProperty('icinga_ticket') + ' --key ' + $icingaPkiDir + $agentName + '.key --cert ' + $icingaPkiDir + $agentName + '.crt --trustedcert ' + $icingaPkiDir + 'trusted-master.crt --ca ' + $icingaPkiDir + 'ca.crt');
             if ($result.Get_Item('exitcode') -ne 0) {
+                if ($this.getProperty('agent_name_change')) {
+                    $this.exception('You have changed the naming of the Agent (upper / lower case) and therefor your certificates are no longer valid. Certificate generation failed because of a possible wrong ticket. Please ensure to set the "hostname" within the Icinga 2 configuration correctly and re-run this script.');
+                }
                 throw $result.Get_Item('message');
             }
             $this.info($result.Get_Item('message'));
+
+            # Rename the certificates to apply possible upper / lower case naming chanes
+            # which is not done by Windows by default
+            Move-Item (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.key')) (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.key'))
+            Move-Item (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.crt')) (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.crt'))
 
             $this.setProperty('require_restart', 'true');
         } else  {
@@ -1476,14 +1619,38 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'hasCertificates' -value {
         [string]$icingaPkiDir = Join-Path -Path $this.getProperty('config_dir') -ChildPath 'pki';
         [string]$agentName = $this.getProperty('local_hostname');
+        [bool]$filesExist = $FALSE;
+        # First check if the files in generell exist
         if (
             ((Test-Path ((Join-Path -Path $icingaPkiDir -ChildPath $agentName) + '.key'))) `
             -And (Test-Path ((Join-Path -Path $icingaPkiDir -ChildPath $agentName) + '.crt')) `
             -And (Test-Path (Join-Path -Path $icingaPkiDir -ChildPath 'ca.crt'))
         ) {
-            return $TRUE;
+            $filesExist = $TRUE;
         }
-        return $FALSE;
+
+        # In case they do, check if the characters (upper / lowercase) are matching as well
+        if ($filesExist -eq $TRUE) {
+
+            [string]$hostCRT = $agentName + '.crt';
+            [string]$hostKEY = $agentName + '.key';
+
+            # Get all files inside your PKIU directory
+            $certificates = Get-ChildItem -Path $icingaPkiDir;
+            # Now loop each file and match their name with our hostname
+            foreach ($cert in $certificates) {
+                if($cert.Name.toLower() -eq $hostCRT.toLower() -Or $cert.Name.toLower() -eq $hostKEY.toLower()) {
+                    $file = $cert.Name.Replace('.key', '').Replace('.crt', '');
+                    if (-Not ($file -clike $agentName)) {
+                        $this.warn([string]::Format('Certificate file {0} is not matching the hostname {1}. Certificate generation is required.', $cert.Name, $agentName));
+                        $this.setProperty('agent_name_change', $true);
+                        return $FALSE;
+                    }
+                }
+            }
+        }
+
+        return $filesExist;
     }
 
     #
@@ -1604,6 +1771,8 @@ object ApiListener "api" {
             $this.backupDefaultConfig();
             $this.writeConfig($this.getProperty('new_icinga_config'));
 
+            $this.flushIcingaApiDirectory();
+
             # Check if the config is valid and rollback otherwise
             if (-Not $this.isIcingaConfigValid()) {
                 $this.error('Icinga 2 config validation failed. Rolling back to previous version.');
@@ -1720,6 +1889,62 @@ object ApiListener "api" {
         if ($this.doLookupIPAddressesForHostname("")) {
             return;
         }
+
+        $this.exception('Failed to lookup any IP-Address for this host');
+    }
+
+    #
+    # This function will try to locate the IPv4 address used
+    # for communicating with the network
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'lookupPrimaryIPv4Address' -value {
+        # First execute nslookup for your FQDN and hostname to check if this
+        # host is registered and receive it's IP address
+        [System.Collections.Hashtable]$fqdnLookup = $this.startProcess('nslookup.exe', $TRUE, $this.getProperty('fqdn'));
+        [System.Collections.Hashtable]$hostnameLookup = $this.startProcess('nslookup.exe', $TRUE, $this.getProperty('hostname'));
+
+        # Now get the message of our result we should work with (nslookup output)
+        [string]$fqdnLookup = $fqdnLookup.Get_Item('message');
+        [string]$hostnameLookup = $hostnameLookup.Get_Item('message');
+        # Get our basic IP first
+        [string]$usedIP = $this.getProperty('ipaddress');
+
+        # First try to lookup the basic address. If it is not contained, look further
+        if ($this.isIPv4AddressInsideLookup($fqdnLookup, $hostnameLookup, $usedIP) -eq $FALSE) {
+            [int]$ipCount = $this.getProperty('ipv4_count');
+            [bool]$found = $FALSE;
+            # Loop through all found IPv4 IP's and try to locate the correct one
+            for ($index = 0; $index -lt $ipCount; $index++) {
+                $usedIP = $this.getProperty('ipaddress[' + $index + ']');
+                if ($this.isIPv4AddressInsideLookup($fqdnLookup, $hostnameLookup, $usedIP)) {
+                    # Swap IP values once we found a match and exit this loop
+                    $this.setProperty('ipaddress[' + $index + ']', $this.getProperty('ipaddress'));
+                    $this.setProperty('ipaddress', $usedIP);
+                    $found = $TRUE;
+                    break;
+                }
+            }
+
+            if ($found -eq $FALSE) {
+                $this.warn([string]::Format('Failed to lookup primary IP for this host. Unable to match nslookup against any IPv4 addresses on this system. Using {0} as default now. Access it with &ipaddress& for all JSON requests.', $this.getProperty('ipaddress')));
+                return;
+            }
+        }
+
+        $this.info([string]::Format('Setting IP {0} as primary IP for this host for all requests. Access it with &ipaddress& for all JSON requests.', $usedIP));
+    }
+
+    #
+    # Check if inside our lookup the IP-Address is found
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'isIPv4AddressInsideLookup' -value {
+        param([string]$fqdnLookup, [string]$hostnameLookup, [string]$ipv4Address);
+
+        if ($fqdnLookup.Contains($ipv4Address) -Or $hostnameLookup.Contains($ipv4Address)) {
+            return $TRUE;
+        }
+
+        return $FALSE;
     }
 
     #
@@ -1735,7 +1960,7 @@ object ApiListener "api" {
             return $TRUE;
         } catch {
             # Write an error in case something went wrong
-            $this.error('Failed to lookup IP-Address with DNS-Lookup for ' + $hostname + ': ' + $_.Exception.Message);
+            $this.warn('Failed to lookup IP-Address with DNS-Lookup for ' + $hostname + ': ' + $_.Exception.Message);
         }
         return $FALSE;
     }
@@ -1769,6 +1994,8 @@ object ApiListener "api" {
                 $ipV6Index += 1;
             }
         }
+        $this.setProperty('ipv4_count', $ipV4Index);
+        $this.setProperty('ipv6_count', $ipV6Index);
     }
 
     #
@@ -2106,7 +2333,7 @@ object ApiListener "api" {
         [string]$key = $this.getProperty('director_host_token');
 
         # In case we are not having the Host-Api-Key already, use the value from the argument
-        if($globalConfig -eq $TRUE) {
+        if ($globalConfig -eq $TRUE) {
              $key = $this.config('director_auth_token');
         }
 
@@ -2122,7 +2349,6 @@ object ApiListener "api" {
             if ($this.isHTTPResponseCode($argumentString) -eq $FALSE) {
                 # First split the entire result based in new-lines into an array
                 [array]$arguments = $argumentString.Split("`n");
-                $config = @{};
 
                 # Now loop all elements and construct a dictionary for all values
                 foreach ($item in $arguments) {
@@ -2198,6 +2424,22 @@ object ApiListener "api" {
     }
 
     #
+    # Check if NSClient is installed on the system
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'isNSClientInstalled' -value {
+        $nsclient = Get-WmiObject -Class Win32_Product |
+                Where-Object {
+                    $_.Name -match 'NSClient*';
+                }
+
+        if ($nsclient -eq $null) {
+            return $FALSE;
+        }
+
+        return $TRUE;
+    }
+
+    #
     # Shall we install the NSClient as well on the system?
     # All possible actions are handeled here
     #
@@ -2206,23 +2448,31 @@ object ApiListener "api" {
         if ($this.config('install_nsclient')) {
 
             [string]$installerPath = $this.getNSClientInstallerPath();
-            $this.info('Trying to install NSClient++ from ' + $installerPath);
+            $this.info('Trying to install and configure NSClient++ from ' + $installerPath);
 
             # First check if the package does exist
             if (Test-Path ($installerPath)) {
 
-                # Get all required arguments for installing the NSClient unattended
-                [string]$NSClientArguments = $this.getNSClientInstallerArguments();
+                if ($this.isNSClientInstalled() -eq $FALSE) {
+                    # Get all required arguments for installing the NSClient unattended
+                    [string]$NSClientArguments = $this.getNSClientInstallerArguments();
 
-                # Start the installer process
-                $result = $this.startProcess('MsiExec.exe', $TRUE, '/quiet /i "' + $installerPath + '" ' + $NSClientArguments);
+                    # Start the installer process
+                    $result = $this.startProcess('MsiExec.exe', $TRUE, '/quiet /i "' + $installerPath + '" ' + $NSClientArguments);
 
-                # Exit Code 0 means the NSClient was installed successfully
-                # Otherwise we require to throw an error
-                if ($result.Get_Item('exitcode') -ne 0) {
-                    $this.exception('Failed to install NSClient++. ' + $result.Get_Item('message'));
+                    # Exit Code 0 means the NSClient was installed successfully
+                    # Otherwise we require to throw an error
+                    if ($result.Get_Item('exitcode') -ne 0) {
+                        $this.exception('Failed to install NSClient++. ' + $result.Get_Item('message'));
+                    } else {
+                        $this.info('NSClient++ successfully installed.');
+
+                        # To tell Icinga 2 we installed the NSClient and to make
+                        # the NSCPPath variable available, we require to restart Icinga 2
+                        $this.setProperty('require_restart', 'true');
+                    }
                 } else {
-                    $this.info('NSClient++ successfully installed.');
+                    $this.info('NSClient++ is already installed on the system.');
                 }
 
                 # If defined remove the Firewall Rule to secure the system
@@ -2232,9 +2482,6 @@ object ApiListener "api" {
                 $this.removeNSClientService();
                 # Add the default NSClient config if we want to do more
                 $this.addNSClientDefaultConfig();
-                # To tell Icinga 2 we installed the NSClient and to make
-                # the NSCPPath variable available, we require to restart Icinga 2
-                $this.setProperty('require_restart', 'true');
             } else {
                 $this.error('Failed to locate NSClient++ Installer at ' + $installerPath);
             }
@@ -2402,6 +2649,8 @@ object ApiListener "api" {
             $this.fetchHostnameOrFQDN();
             # Get IP-Address of host
             $this.fetchHostIPAddress();
+            # Try to locate the primary IP Address
+            $this.lookupPrimaryIPv4Address();
             # Transform the hostname if required
             $this.doTransformHostname();
             # Try to create a host object inside the Icinga Director
@@ -2439,10 +2688,6 @@ object ApiListener "api" {
                 $this.generateCertificates();
             } else {
                 $this.info('Icinga 2 certificates already exist. Nothing to do.');
-            }
-
-            if ($this.shouldFlushIcingaApiDirectory()) {
-                $this.flushIcingaApiDirectory();
             }
 
             $this.generateIcingaConfiguration();
