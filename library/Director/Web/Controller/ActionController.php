@@ -64,8 +64,9 @@ abstract class ActionController extends Controller implements ControlsAndContent
     /**
      * Assert that the current user has one of the given permission
      *
-     * @param   array $permissions      Permission name list
+     * @param   array $permissions Permission name list
      *
+     * @return $this
      * @throws  SecurityException       If the current user lacks the given permission
      */
     protected function assertOneOfPermissions($permissions)
@@ -74,7 +75,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
 
         foreach ($permissions as $permission) {
             if ($auth->hasPermission($permission)) {
-                return;
+                return $this;
             }
         }
 
