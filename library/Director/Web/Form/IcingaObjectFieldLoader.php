@@ -12,6 +12,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\ObjectApplyMatches;
 use stdClass;
 use Zend_Db_Select as ZfSelect;
 use Zend_Form_Element as ZfElement;
@@ -253,7 +254,7 @@ class IcingaObjectFieldLoader
         $vars = $object::fromPlainObject(
             $object->toPlainObject(true),
             $object->getConnection()
-        )->vars()->flatten();
+        )->getVars();
 
         $prefixedVars = (object) array();
         foreach ($vars as $k => $v) {
@@ -261,6 +262,7 @@ class IcingaObjectFieldLoader
         }
 
         foreach ($filters as $key => $filter) {
+            ObjectApplyMatches::fixFilterColumns($filter);
             /** @var $filter FilterChain|FilterExpression */
             foreach ($filter->listFilteredColumns() as $column) {
                 $column = substr($column, strlen($prefix));

@@ -123,7 +123,7 @@ abstract class ObjectApplyMatches
         return $objects;
     }
 
-    protected static function fixFilterColumns(Filter $filter)
+    public static function fixFilterColumns(Filter $filter)
     {
         if ($filter->isExpression()) {
             static::fixFilterExpressionColumn($filter);
