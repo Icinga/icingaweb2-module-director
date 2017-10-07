@@ -69,6 +69,28 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
             'multiOptions' => $this->fetchUnboundTemplates()
         ));
 
+        $this->addElement('text', 'min_required', array(
+            'label'       => $this->translate('Minimum required'),
+            'description' => $this->translate(
+                'Choosing this many options will be mandatory for this Choice.'
+                . ' Setting this to zero will leave this Choice optional, setting'
+                . ' it to one results in a "required" Choice. You can use higher'
+                . ' numbers to enforce multiple options, this Choice will then turn'
+                . ' into a multi-selection element.'
+            ),
+            'value' => 0,
+        ));
+
+        $this->addElement('text', 'max_allowed', array(
+            'label'       => $this->translate('Allowed maximum'),
+            'description' => $this->translate(
+                'It will not be allowed to choose more than this many options.'
+                . ' Setting it to one (1) will result in a drop-down box, a'
+                . ' higher number will turn this into a multi-selection element.'
+            ),
+            'value' => 1,
+        ));
+
         $this->setButtons();
     }
 
