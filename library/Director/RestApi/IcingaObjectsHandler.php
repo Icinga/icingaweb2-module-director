@@ -46,6 +46,8 @@ class IcingaObjectsHandler extends RequestHandler
 
     protected function streamJsonResult()
     {
+        $this->response->setHeader('Content-Type', 'application/json', true);
+        $this->response->sendHeaders();
         $connection = $this->db;
         Benchmark::measure('Ready to stream JSON result');
         $db = $connection->getDbAdapter();
