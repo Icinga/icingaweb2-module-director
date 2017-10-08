@@ -54,6 +54,15 @@ class IcingaCloneObjectForm extends DirectorForm
             ], 'y');
         }
 
+        if ($this->object->isTemplate() && $this->object->supportsFields()) {
+            $this->addBoolean('clone_fields', [
+                'label'       => $this->translate('Clone Template Fields'),
+                'description' => $this->translate(
+                    'Also clone fields provided by this Template'
+                )
+            ], 'y');
+        }
+
         $this->submitLabel = sprintf(
             $this->translate('Clone "%s"'),
             $name
@@ -63,52 +72,57 @@ class IcingaCloneObjectForm extends DirectorForm
     public function onSuccess()
     {
         $object = $this->object;
+        $table = $object->getTableName();
+        $type = $object->getShortTableName();
         $connection = $object->getConnection();
-        $newname = $this->getValue('new_object_name');
+        $db = $connection->getDbAdapter();
+        $newName = $this->getValue('new_object_name');
         $resolve = Acl::instance()->hasPermission('director/admin')
             && $this->getValue('clone_type') === 'flat';
 
         $msg = sprintf(
             'The %s "%s" has been cloned from "%s"',
-            $object->getShortTableName(),
-            $newname,
+            $type,
+            $newName,
             $object->getObjectName()
         );
 
         $new = $object::fromPlainObject(
             $object->toPlainObject($resolve),
             $connection
-        )->set('object_name', $newname);
+        )->set('object_name', $newName);
 
         if ($new->isExternal()) {
             $new->set('object_type', 'object');
         }
 
+        $services = [];
+        $sets = [];
         if ($object instanceof IcingaHost) {
             $new->set('api_key', null);
             if ($this->getValue('clone_services') === 'y') {
                 $services = $object->fetchServices();
-            } else {
-                $services = [];
             }
             if ($this->getValue('clone_service_sets') === 'y') {
                 $sets = $object->fetchServiceSets();
-            } else {
-                $sets = [];
             }
         } elseif ($object instanceof IcingaServiceSet) {
             if ($this->getValue('clone_services') === 'y') {
                 $services = $object->fetchServices();
-            } else {
-                $services = [];
             }
-            $sets = [];
+        }
+        if ($this->getValue('clone_fields') === 'y') {
+            $fields = $db->fetchAll(
+                $db->select()
+                    ->from($table . '_field')
+                    ->where("${type}_id = ?", $object->get('id'))
+            );
         } else {
-            $services = [];
-            $sets = [];
+            $fields = [];
         }
 
         if ($new->store()) {
+            $newId = $new->get('id');
             foreach ($services as $service) {
                 $clone = IcingaService::fromPlainObject(
                     $service->toPlainObject(),
@@ -116,9 +130,9 @@ class IcingaCloneObjectForm extends DirectorForm
                 );
 
                 if ($new instanceof IcingaHost) {
-                    $clone->set('host_id', $new->get('id'));
+                    $clone->set('host_id', $newId);
                 } elseif ($new instanceof IcingaServiceSet) {
-                    $clone->set('service_set_id', $new->get('id'));
+                    $clone->set('service_set_id', $newId);
                 }
                 $clone->store();
             }
@@ -127,7 +141,12 @@ class IcingaCloneObjectForm extends DirectorForm
                 IcingaServiceSet::fromPlainObject(
                     $set->toPlainObject(),
                     $connection
-                )->set('host_id', $new->get('id'))->store();
+                )->set('host_id', $newId)->store();
+            }
+
+            foreach ($fields as $row) {
+                $row->{"${type}_id"} = $newId;
+                $db->insert($table . '_field', (array) $row);
             }
 
             if ($new instanceof IcingaServiceSet) {
@@ -137,7 +156,7 @@ class IcingaCloneObjectForm extends DirectorForm
                 );
             } else {
                 $this->setSuccessUrl(
-                    'director/' . strtolower($object->getShortTableName()),
+                    'director/' . strtolower($type),
                     $new->getUrlParams()
                 );
             }
