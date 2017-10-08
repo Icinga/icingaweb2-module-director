@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -86,6 +87,12 @@ class IcingaCloneObjectForm extends DirectorForm
             $newName,
             $object->getObjectName()
         );
+
+        if ($object->isTemplate() && $object->getObjectName() === $newName) {
+            throw new IcingaException(
+                $this->translate('Name needs to be changed when cloning a Template')
+            );
+        }
 
         $new = $object::fromPlainObject(
             $object->toPlainObject($resolve),
