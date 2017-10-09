@@ -5,8 +5,8 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Objects\IcingaHost;
-use ipl\Html\Link;
-use ipl\Web\Table\SimpleQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
 {

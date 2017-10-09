@@ -18,7 +18,7 @@ use Icinga\Module\Director\Web\Table\ObjectsTable;
 use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
-use ipl\Html\Link;
+use dipl\Html\Link;
 
 abstract class ObjectsController extends ActionController
 {

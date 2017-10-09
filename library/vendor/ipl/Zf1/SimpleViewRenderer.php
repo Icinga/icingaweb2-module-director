@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Zf1;
+namespace dipl\Zf1;
 
 use Icinga\Application\Icinga;
-use ipl\Html\ValidHtml;
+use dipl\Html\ValidHtml;
 use Zend_Controller_Action_Helper_Abstract as Helper;
 use Zend_Controller_Action_HelperBroker as HelperBroker;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Html;
+namespace dipl\Html;
 
 use Countable;
 use Exception;
@@ -8,7 +8,7 @@ use Icinga\Exception\ProgrammingError;
 
 /**
  * Class Html
- * @package ipl\Html
+ * @package dipl\Html
  */
 class Html implements ValidHtml, Countable
 {

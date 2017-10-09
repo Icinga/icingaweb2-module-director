@@ -13,8 +13,8 @@ use Icinga\Module\Director\Web\Table\SyncpropertyTable;
 use Icinga\Module\Director\Web\Table\SyncRunTable;
 use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
 use Icinga\Module\Director\Web\Widget\SyncRunDetails;
-use ipl\Html\Html;
-use ipl\Html\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class SyncruleController extends ActionController
 {

@@ -7,7 +7,7 @@ use Diff_Renderer_Html_Inline;
 use Diff_Renderer_Html_SideBySide;
 use Diff_Renderer_Text_Context;
 use Diff_Renderer_Text_Unified;
-use ipl\Html\ValidHtml;
+use dipl\Html\ValidHtml;
 
 class ConfigDiff implements ValidHtml
 {

@@ -11,8 +11,8 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
-use ipl\Html\Html;
-use ipl\Html\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class IcingaServiceForm extends DirectorObjectForm
 {

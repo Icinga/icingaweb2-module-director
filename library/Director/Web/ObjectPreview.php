@@ -5,10 +5,10 @@ namespace Icinga\Module\Director\Web;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Request;
-use ipl\Html\Html;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\ControlsAndContent;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ControlsAndContent;
 
 class ObjectPreview
 {

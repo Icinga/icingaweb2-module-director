@@ -11,7 +11,7 @@ use Icinga\Module\Director\Web\Table\ImportsourceHookTable;
 use Icinga\Module\Director\Web\Table\PropertymodifierTable;
 use Icinga\Module\Director\Web\Tabs\ImportsourceTabs;
 use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
-use ipl\Html\Link;
+use dipl\Html\Link;
 
 class ImportsourceController extends ActionController
 {

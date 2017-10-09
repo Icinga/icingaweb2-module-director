@@ -1,18 +1,18 @@
 <?php
 
-namespace ipl\Web\Table;
+namespace dipl\Web\Table;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
-use ipl\Db\Zf1\FilterRenderer;
-use ipl\Db\Zf1\SelectPaginationAdapter;
-use ipl\Html\Container;
-use ipl\Html\DeferredText;
-use ipl\Html\Html;
-use ipl\Html\Link;
-use ipl\Web\Widget\ControlsAndContent;
-use ipl\Web\Url;
+use dipl\Db\Zf1\FilterRenderer;
+use dipl\Db\Zf1\SelectPaginationAdapter;
+use dipl\Html\Container;
+use dipl\Html\DeferredText;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Web\Widget\ControlsAndContent;
+use dipl\Web\Url;
 use Zend_Db_Adapter_Abstract as DbAdapter;
 
 abstract class ZfQueryBasedTable extends QueryBasedTable

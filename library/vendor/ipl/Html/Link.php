@@ -1,8 +1,8 @@
 <?php
 
-namespace ipl\Html;
+namespace dipl\Html;
 
-use ipl\Web\Url;
+use dipl\Web\Url;
 use Icinga\Web\Url as WebUrl;
 
 class Link extends BaseElement

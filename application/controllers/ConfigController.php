@@ -24,10 +24,10 @@ use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
 use Icinga\Web\Url;
 use Exception;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
-use ipl\Html\Icon;
-use ipl\Html\Link;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
+use dipl\Html\Icon;
+use dipl\Html\Link;
 
 class ConfigController extends ActionController
 {

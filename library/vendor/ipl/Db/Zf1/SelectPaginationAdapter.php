@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Db\Zf1;
+namespace dipl\Db\Zf1;
 
 use Icinga\Application\Benchmark;
-use ipl\Data\Paginatable;
+use dipl\Data\Paginatable;
 use Zend_Db_Select as ZfSelect;
 
 class SelectPaginationAdapter implements Paginatable

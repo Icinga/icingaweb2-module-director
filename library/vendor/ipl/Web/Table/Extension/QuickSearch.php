@@ -1,11 +1,11 @@
 <?php
 
-namespace ipl\Web\Table\Extension;
+namespace dipl\Web\Table\Extension;
 
-use ipl\Html\BaseElement;
-use ipl\Html\Html;
-use ipl\Web\Url;
-use ipl\Web\Widget\Controls;
+use dipl\Html\BaseElement;
+use dipl\Html\Html;
+use dipl\Web\Url;
+use dipl\Web\Widget\Controls;
 
 trait QuickSearch
 {

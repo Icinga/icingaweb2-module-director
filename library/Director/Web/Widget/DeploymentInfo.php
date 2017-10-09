@@ -8,12 +8,12 @@ use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\StartupLogRenderer;
 use Icinga\Util\Format;
 use Icinga\Web\Request;
-use ipl\Html\Html;
-use ipl\Html\Icon;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\NameValueTable;
-use ipl\Web\Widget\Tabs;
+use dipl\Html\Html;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\NameValueTable;
+use dipl\Web\Widget\Tabs;
 
 class DeploymentInfo extends Html
 {

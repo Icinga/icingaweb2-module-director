@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
 class OrderedList extends AbstractList
 {

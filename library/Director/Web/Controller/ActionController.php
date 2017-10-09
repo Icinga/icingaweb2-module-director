@@ -16,12 +16,12 @@ use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
 use Icinga\Web\Widget;
-use ipl\Compat\Translator;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\ControlsAndContent;
-use ipl\Web\Controller\Extension\ControlsAndContentHelper;
-use ipl\Zf1\SimpleViewRenderer;
+use dipl\Compat\Translator;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ControlsAndContent;
+use dipl\Web\Controller\Extension\ControlsAndContentHelper;
+use dipl\Zf1\SimpleViewRenderer;
 
 abstract class ActionController extends Controller implements ControlsAndContent
 {

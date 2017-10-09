@@ -1,10 +1,10 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
-use ipl\Html\BaseElement;
-use ipl\Html\Container;
-use ipl\Html\Html;
+use dipl\Html\BaseElement;
+use dipl\Html\Container;
+use dipl\Html\Html;
 
 class Controls extends Container
 {

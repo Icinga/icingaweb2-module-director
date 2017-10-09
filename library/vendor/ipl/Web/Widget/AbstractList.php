@@ -1,11 +1,11 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
-use ipl\Html\Attributes;
-use ipl\Html\BaseElement;
-use ipl\Html\Element;
-use ipl\Html\Html;
+use dipl\Html\Attributes;
+use dipl\Html\BaseElement;
+use dipl\Html\Element;
+use dipl\Html\Html;
 
 class AbstractList extends BaseElement
 {

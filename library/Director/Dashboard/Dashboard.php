@@ -10,11 +10,11 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Widget\Tab;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
-use ipl\Html\Util;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\Tabs;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
+use dipl\Html\Util;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends Html implements Countable

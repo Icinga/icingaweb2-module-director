@@ -4,9 +4,9 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
-use ipl\Html\Link;
-use ipl\Web\Table\ZfQueryBasedTable;
-use ipl\Web\Url;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 
 class GroupMemberTable extends ZfQueryBasedTable
 {

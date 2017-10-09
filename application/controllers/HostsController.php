@@ -8,7 +8,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Controller\ObjectsController;
-use ipl\Html\Link;
+use dipl\Html\Link;
 
 class HostsController extends ObjectsController
 {

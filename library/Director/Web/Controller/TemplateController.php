@@ -9,11 +9,11 @@ use Icinga\Module\Director\Web\Table\ObjectsTable;
 use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Table\TemplateUsageTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
-use ipl\Html\FormattedString;
-use ipl\Html\Html;
-use ipl\Html\Link;
-use ipl\Web\CompatController;
-use ipl\Web\Widget\UnorderedList;
+use dipl\Html\FormattedString;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Web\CompatController;
+use dipl\Web\Widget\UnorderedList;
 
 abstract class TemplateController extends CompatController
 {

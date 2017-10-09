@@ -1,19 +1,19 @@
 <?php
 
-namespace ipl\Web\Table;
+namespace dipl\Web\Table;
 
 use Countable;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
-use ipl\Data\Paginatable;
-use ipl\Db\Zf1\FilterRenderer;
-use ipl\Html\Table;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\ControlsAndContent;
-use ipl\Web\Widget\Paginator;
-use ipl\Web\Table\Extension\QuickSearch;
-use ipl\Web\Url;
+use dipl\Data\Paginatable;
+use dipl\Db\Zf1\FilterRenderer;
+use dipl\Html\Table;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ControlsAndContent;
+use dipl\Web\Widget\Paginator;
+use dipl\Web\Table\Extension\QuickSearch;
+use dipl\Web\Url;
 
 abstract class QueryBasedTable extends Table implements Countable
 {

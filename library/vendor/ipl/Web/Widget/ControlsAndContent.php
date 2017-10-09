@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
-use ipl\Html\Html;
-use ipl\Web\Url;
+use dipl\Html\Html;
+use dipl\Web\Url;
 
 interface ControlsAndContent
 {

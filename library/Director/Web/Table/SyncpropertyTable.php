@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\SyncRule;
-use ipl\Html\Link;
-use ipl\Web\Table\Extension\ZfSortablePriority;
-use ipl\Web\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\Extension\ZfSortablePriority;
+use dipl\Web\Table\ZfQueryBasedTable;
 
 class SyncpropertyTable extends ZfQueryBasedTable
 {

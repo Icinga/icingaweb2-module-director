@@ -7,12 +7,12 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
-use ipl\Db\Zf1\FilterRenderer;
-use ipl\Html\Html;
-use ipl\Html\Icon;
-use ipl\Html\Link;
-use ipl\Web\Table\ZfQueryBasedTable;
-use ipl\Web\Url;
+use dipl\Db\Zf1\FilterRenderer;
+use dipl\Html\Html;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 use Zend_Db_Select as ZfSelect;
 
 class TemplatesTable extends ZfQueryBasedTable

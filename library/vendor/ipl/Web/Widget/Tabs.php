@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
 use Icinga\Web\Widget\Tabs as WebTabs;
-use ipl\Html\ValidHtml;
+use dipl\Html\ValidHtml;
 
 class Tabs extends WebTabs implements ValidHtml
 {

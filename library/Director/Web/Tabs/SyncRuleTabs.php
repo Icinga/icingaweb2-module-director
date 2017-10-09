@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use Icinga\Module\Director\Objects\SyncRule;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\Tabs;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\Tabs;
 
 class SyncRuleTabs extends Tabs
 {

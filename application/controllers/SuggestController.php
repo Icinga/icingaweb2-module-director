@@ -6,7 +6,7 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Data\Filter\Filter;
-use ipl\Html\Util;
+use dipl\Html\Util;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 
 class SuggestController extends ActionController

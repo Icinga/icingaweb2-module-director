@@ -1,7 +1,7 @@
 <?php
 
 use Icinga\Application\Modules\Module;
-use ipl\Loader\CompatLoader;
+use dipl\Loader\CompatLoader;
 
 if (version_compare(PHP_VERSION, '5.4.0') < 0) {
     include __DIR__ . '/run-php5.3.php';
@@ -55,15 +55,6 @@ $this->provideHook('director/Job', $prefix . 'Job\\ImportJob');
 $this->provideHook('director/Job', $prefix . 'Job\\SyncJob');
 
 $this->provideHook('cube/Actions', 'CubeLinks');
-
-// ipl compat, unless it is released:
-if (class_exists('ipl\\Html\\ValidHtml')) {
-    return;
-}
-
-if ($this->app->getModuleManager()->hasEnabled('ipl')) {
-    return;
-}
 
 require_once __DIR__ . '/library/vendor/ipl/Loader/CompatLoader.php';
 CompatLoader::delegateLoadingToIcingaWeb($this->app);

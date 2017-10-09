@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Test;
+namespace dipl\Test;
 
 use Icinga\Application\Cli;
-use ipl\Loader\CompatLoader;
+use dipl\Loader\CompatLoader;
 
 class Bootstrap
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace ipl\Test;
+namespace dipl\Test;
 
-use ipl\Loader\CompatLoader;
+use dipl\Loader\CompatLoader;
 use Icinga\Application\Icinga;
 use PHPUnit_Framework_TestCase;
 use ReflectionClass;

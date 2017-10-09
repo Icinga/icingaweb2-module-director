@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Web\Table;
+namespace dipl\Web\Table;
 
 use Icinga\Data\SimpleQuery;
-use ipl\Data\SimpleQueryPaginationAdapter;
+use dipl\Data\SimpleQueryPaginationAdapter;
 
 abstract class SimpleQueryBasedTable extends QueryBasedTable
 {

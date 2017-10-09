@@ -11,8 +11,8 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Table\IcingaAppliedServiceTable;
 use Icinga\Web\Widget\Tab;
-use ipl\Html\Link;
-use ipl\Web\Widget\Tabs;
+use dipl\Html\Link;
+use dipl\Web\Widget\Tabs;
 
 class ServiceController extends ObjectController
 {

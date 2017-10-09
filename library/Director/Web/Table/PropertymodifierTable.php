@@ -5,10 +5,10 @@ namespace Icinga\Module\Director\Web\Table;
 use Exception;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
-use ipl\Html\Link;
-use ipl\Web\Table\Extension\ZfSortablePriority;
-use ipl\Web\Table\ZfQueryBasedTable;
-use ipl\Web\Url;
+use dipl\Html\Link;
+use dipl\Web\Table\Extension\ZfSortablePriority;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 
 class PropertymodifierTable extends ZfQueryBasedTable
 {

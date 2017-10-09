@@ -3,10 +3,10 @@
 namespace Icinga\Module\Director\Web\Tree;
 
 use Icinga\Module\Director\Objects\IcingaEndpoint;
-use ipl\Html\BaseElement;
-use ipl\Html\Html;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
+use dipl\Html\BaseElement;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
 
 class InspectTreeRenderer extends BaseElement
 {

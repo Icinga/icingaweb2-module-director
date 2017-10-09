@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\Table;
-use ipl\Translation\TranslationHelper;
+use dipl\Html\Table;
+use dipl\Translation\TranslationHelper;
 
 class CoreApiPrototypesTable extends Table
 {

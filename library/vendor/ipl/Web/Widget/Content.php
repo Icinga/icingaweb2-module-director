@@ -1,8 +1,8 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
-use ipl\Html\Container;
+use dipl\Html\Container;
 
 class Content extends Container
 {

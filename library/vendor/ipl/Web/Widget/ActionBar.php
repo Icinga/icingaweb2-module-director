@@ -1,8 +1,8 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
-use ipl\Html\BaseElement;
+use dipl\Html\BaseElement;
 
 class ActionBar extends BaseElement
 {

@@ -7,8 +7,8 @@ use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Exception\ProgrammingError;
-use ipl\Html\Html;
-use ipl\Html\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 use Zend_Db_Expr;
 
 class Util

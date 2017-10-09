@@ -1,15 +1,15 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
 use Icinga\Exception\ProgrammingError;
-use ipl\Data\Paginatable;
-use ipl\Html\BaseElement;
-use ipl\Html\Html;
-use ipl\Html\Icon;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Url;
+use dipl\Data\Paginatable;
+use dipl\Html\BaseElement;
+use dipl\Html\Html;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Url;
 
 class Paginator extends BaseElement
 {

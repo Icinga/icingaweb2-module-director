@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web;
+namespace dipl\Web;
 
 use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Request;

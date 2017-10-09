@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Data;
+namespace dipl\Data;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\SimpleQuery;

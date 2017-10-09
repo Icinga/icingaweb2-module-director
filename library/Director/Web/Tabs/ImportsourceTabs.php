@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Tabs;
 
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\Tabs;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\Tabs;
 
 class ImportsourceTabs extends Tabs
 {

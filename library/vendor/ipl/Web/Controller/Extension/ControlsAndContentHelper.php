@@ -1,12 +1,12 @@
 <?php
 
-namespace ipl\Web\Controller\Extension;
+namespace dipl\Web\Controller\Extension;
 
-use ipl\Html\Html;
-use ipl\Web\Widget\Content;
-use ipl\Web\Widget\Controls;
-use ipl\Web\Widget\Tabs;
-use ipl\Web\Url;
+use dipl\Html\Html;
+use dipl\Web\Widget\Content;
+use dipl\Web\Widget\Controls;
+use dipl\Web\Widget\Tabs;
+use dipl\Web\Url;
 
 trait ControlsAndContentHelper
 {

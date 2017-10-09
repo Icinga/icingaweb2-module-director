@@ -7,8 +7,8 @@ use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\PlainObjectRenderer;
-use ipl\Html\Html;
-use ipl\Web\Table\SimpleQueryBasedTable;
+use dipl\Html\Html;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class ImportsourceHookTable extends SimpleQueryBasedTable
 {

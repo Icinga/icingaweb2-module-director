@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web;
+namespace dipl\Web;
 
 use Icinga\Application\Icinga;
 use Icinga\Exception\ProgrammingError;
@@ -15,7 +15,7 @@ use Icinga\Web\UrlParams;
  * nor getRequest() can be extended in a meaningful way at the time of this
  * writing
  *
- * @package ipl\Web
+ * @package dipl\Web
  */
 class Url extends WebUrl
 {

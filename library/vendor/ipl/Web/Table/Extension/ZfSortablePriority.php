@@ -1,13 +1,13 @@
 <?php
 
-namespace ipl\Web\Table\Extension;
+namespace dipl\Web\Table\Extension;
 
 use Icinga\Module\Director\Web\Form\IconHelper;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
-use ipl\Html\BaseElement;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
+use dipl\Html\BaseElement;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
 use Zend_Db_Select as ZfSelect;
 
 trait ZfSortablePriority

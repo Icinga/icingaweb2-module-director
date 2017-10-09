@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\ActionBar;
 
-use ipl\Html\Link;
+use dipl\Html\Link;
 
 class ObjectsActionBar extends DirectorBaseActionBar
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Db\Zf1;
+namespace dipl\Db\Zf1;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterAnd;

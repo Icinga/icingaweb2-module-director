@@ -9,7 +9,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Web\Form\DirectorForm;
-use ipl\Html\Icon;
+use dipl\Html\Icon;
 use Zend_View_Interface;
 
 class DeploymentLinkForm extends DirectorForm

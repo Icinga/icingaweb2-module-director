@@ -6,8 +6,8 @@ use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
-use ipl\Html\Link;
-use ipl\Web\Table\SimpleQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 {

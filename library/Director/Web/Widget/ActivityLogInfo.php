@@ -8,14 +8,14 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\RestoreObjectForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
-use ipl\Html\Container;
-use ipl\Html\Html;
-use ipl\Html\Icon;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Url;
-use ipl\Web\Widget\NameValueTable;
-use ipl\Web\Widget\Tabs;
+use dipl\Html\Container;
+use dipl\Html\Html;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Url;
+use dipl\Web\Widget\NameValueTable;
+use dipl\Web\Widget\Tabs;
 
 class ActivityLogInfo extends Html
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Html;
+namespace dipl\Html;
 
 class FormattedString implements ValidHtml
 {

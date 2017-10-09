@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ObjectsController;
-use ipl\Html\Html;
+use dipl\Html\Html;
 
 class DependenciesController extends ObjectsController
 {

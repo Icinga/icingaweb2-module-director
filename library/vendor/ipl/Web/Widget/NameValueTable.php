@@ -1,8 +1,8 @@
 <?php
 
-namespace ipl\Web\Widget;
+namespace dipl\Web\Widget;
 
-use ipl\Html\Table;
+use dipl\Html\Table;
 
 class NameValueTable extends Table
 {

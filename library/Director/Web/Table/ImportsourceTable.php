@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\Link;
-use ipl\Web\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
 
 class ImportsourceTable extends ZfQueryBasedTable
 {

@@ -4,10 +4,10 @@ namespace Icinga\Module\Director\Web\Widget;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\SyncRun;
-use ipl\Html\Html;
-use ipl\Html\Link;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\NameValueTable;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\NameValueTable;
 
 class SyncRunDetails extends NameValueTable
 {

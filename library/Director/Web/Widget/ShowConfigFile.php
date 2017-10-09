@@ -3,11 +3,11 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigFile;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
-use ipl\Html\Link;
-use ipl\Html\Util;
-use ipl\Translation\TranslationHelper;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
+use dipl\Html\Link;
+use dipl\Html\Util;
+use dipl\Translation\TranslationHelper;
 
 class ShowConfigFile extends Html
 {

@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director;
 
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use ipl\Html\Link;
-use ipl\Html\Util as iplUtil;
-use ipl\Html\ValidHtml;
+use dipl\Html\Link;
+use dipl\Html\Util as iplUtil;
+use dipl\Html\ValidHtml;
 
 class StartupLogRenderer implements ValidHtml
 {

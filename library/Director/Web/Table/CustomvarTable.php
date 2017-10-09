@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\Link;
-use ipl\Web\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
 use Zend_Db_Adapter_Abstract as ZfDbAdapter;
 use Zend_Db_Select as ZfDbSelect;
 

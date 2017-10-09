@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Web;
+namespace dipl\Web;
 
 use Icinga\Application\Benchmark;
 use Icinga\Application\Config;
@@ -18,11 +18,11 @@ use Icinga\Web\Session;
 use Icinga\Web\UrlParams;
 use Icinga\Web\Url as WebUrl;
 use Icinga\Web\Window;
-use ipl\Compat\Translator;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Widget\ControlsAndContent;
-use ipl\Web\Controller\Extension\ControlsAndContentHelper;
-use ipl\Zf1\SimpleViewRenderer;
+use dipl\Compat\Translator;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ControlsAndContent;
+use dipl\Web\Controller\Extension\ControlsAndContentHelper;
+use dipl\Zf1\SimpleViewRenderer;
 use Zend_Controller_Action;
 use Zend_Controller_Action_HelperBroker as ZfHelperBroker;
 use Zend_Controller_Request_Abstract as ZfRequest;

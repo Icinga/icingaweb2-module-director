@@ -20,7 +20,7 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Web\Url;
-use ipl\Html\Link;
+use dipl\Html\Link;
 
 class HostController extends ObjectController
 {

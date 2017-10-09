@@ -8,9 +8,9 @@ use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
-use ipl\Html\Link;
-use ipl\Web\Table\ZfQueryBasedTable;
-use ipl\Web\Url;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable

@@ -1,9 +1,9 @@
 <?php
 
-namespace ipl\Compat;
+namespace dipl\Compat;
 
 use Icinga\Util\Translator as WebTranslator;
-use ipl\Translation\TranslatorInterface;
+use dipl\Translation\TranslatorInterface;
 
 class Translator implements TranslatorInterface
 {

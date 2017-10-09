@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Data\DataArray\ArrayDatasource;
     use Icinga\Module\Director\Objects\ImportRun;
-use ipl\Web\Table\SimpleQueryBasedTable;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class ImportedrowsTable extends SimpleQueryBasedTable
 {

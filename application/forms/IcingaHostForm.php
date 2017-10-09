@@ -5,9 +5,9 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use ipl\Html\BaseElement;
-use ipl\Html\Html;
-use ipl\Html\Link;
+use dipl\Html\BaseElement;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class IcingaHostForm extends DirectorObjectForm
 {

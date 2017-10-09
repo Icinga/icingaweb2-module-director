@@ -5,9 +5,9 @@ namespace Icinga\Module\Director\Web\Form\IplElement;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\ExtensibleSet as Set;
 use Icinga\Module\Director\Web\Form\IconHelper;
-use ipl\Html\BaseElement;
-use ipl\Html\Html;
-use ipl\Translation\TranslationHelper;
+use dipl\Html\BaseElement;
+use dipl\Html\Html;
+use dipl\Translation\TranslationHelper;
 
 class ExtensibleSetElement extends BaseElement
 {

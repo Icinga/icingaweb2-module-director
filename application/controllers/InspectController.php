@@ -10,8 +10,8 @@ use Icinga\Module\Director\Web\Table\CoreApiObjectsTable;
 use Icinga\Module\Director\Web\Table\CoreApiPrototypesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Tree\InspectTreeRenderer;
-use ipl\Html\Html;
-use ipl\Html\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class InspectController extends ActionController
 {

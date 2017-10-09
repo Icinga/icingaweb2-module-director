@@ -6,8 +6,8 @@ use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Web\Url;
-use ipl\Html\Link;
-use ipl\Web\Table\SimpleQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class IcingaObjectDatafieldTable extends SimpleQueryBasedTable
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace ipl\Web\Table\Extension;
+namespace dipl\Web\Table\Extension;
 
-use ipl\Web\Url;
+use dipl\Web\Url;
 
 // Could also be a static method, MultiSelect::enable($table)
 trait MultiSelect

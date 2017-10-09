@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Html;
+namespace dipl\Html;
 
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;

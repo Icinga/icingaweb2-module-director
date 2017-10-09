@@ -2,11 +2,11 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\BaseElement;
-use ipl\Html\Link;
-use ipl\Html\Table;
-use ipl\Translation\TranslationHelper;
-use ipl\Web\Url;
+use dipl\Html\BaseElement;
+use dipl\Html\Link;
+use dipl\Html\Table;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Url;
 
 class CoreApiFieldsTable extends Table
 {

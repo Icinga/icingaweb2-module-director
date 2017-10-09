@@ -1,6 +1,6 @@
 <?php
 
-namespace ipl\Translation;
+namespace dipl\Translation;
 
 class WrapTranslator implements TranslatorInterface
 {

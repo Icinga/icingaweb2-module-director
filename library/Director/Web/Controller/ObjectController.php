@@ -18,7 +18,7 @@ use Icinga\Module\Director\Web\Table\ActivityLogTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
-use ipl\Html\Link;
+use dipl\Html\Link;
 
 abstract class ObjectController extends ActionController
 {

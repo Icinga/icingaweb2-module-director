@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use Icinga\Module\Director\Objects\DirectorJob;
-use ipl\Html\Html;
-use ipl\Translation\TranslationHelper;
+use dipl\Html\Html;
+use dipl\Translation\TranslationHelper;
 
 class JobDetails extends Html
 {

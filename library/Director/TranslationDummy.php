@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director;
 
-use ipl\Translation\TranslationHelper;
+use dipl\Translation\TranslationHelper;
 
 class TranslationDummy
 {
