@@ -13,6 +13,10 @@ before switching to a new version.
   of our next versions will introduce official Emoji support 😱😱😱! That's not
   possible with older MySQL versions. However, 1.4.x still supports 5.1.x
 
+### Fixed issues and related features
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/6?closed=1)
+
 ### Dashboard and Dashlets
 * Multiple new Dashboards have been introduced, their layout has been optimized
 * Dashboards are made aware of newly introduced permissions and try to provide
@@ -47,6 +51,7 @@ before switching to a new version.
 * Groups of all kinds are now able to list their members, even when being
   applied based on filters
 * Command Argument handling has been improved
+* It is now possible to configure Dependencies through the Icinga Director
 * Cloning Hosts now allows to also optionally clone their Services and Service
   Sets
 
@@ -103,7 +108,8 @@ before switching to a new version.
   with different types of Services (!!!!!)
 
 ### Internal architecture
-* Many base components have been completely replaced and re-written
+* Many base components have been completely replaced and re-written, based on
+  and early prototype of our upcoming Icinga PHP Library (ipl)
 
 1.3.2
 -----
