@@ -33,17 +33,19 @@ class MemoryLimit
     public static function parsePhpIniByteString($string)
     {
         $val = trim($string);
-        $last = strtoupper(substr($val, -1, 1));
 
-        switch ($last) {
-            case 'G':
-                $val *= 1024;
+        if (preg_match('/^(\d+)([KMG])$/', $val, $m)) {
+            $val = $m[1];
+            switch ($m[2]) {
+                case 'G':
+                    $val *= 1024;
                 // Intentional fall-through
-            case 'M':
-                $val *= 1024;
+                case 'M':
+                    $val *= 1024;
                 // Intentional fall-through
-            case 'K':
-                $val *= 1024;
+                case 'K':
+                    $val *= 1024;
+            }
         }
 
         return intval($val);
