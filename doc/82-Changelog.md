@@ -4,6 +4,17 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.4.1
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/12?closed=1)
+
+### Large environments
+* Director tries to raise it's memory limit for certain memory-intensive tasks.
+  When granted more (but not infinite) memory however this had the effect that
+  he self-restricted himself to a lower limit. This has now been fixed.
+
 1.4.0
 -----
 ### New requirements
