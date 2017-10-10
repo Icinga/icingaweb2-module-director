@@ -10,10 +10,14 @@ before switching to a new version.
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/12?closed=1)
 
+### Automation
+* FIX: A Sync Rule with `merge` policy used to re-enable manually disabled objects,
+  even when no Sync Property `disabled` has been defined
+
 ### Large environments
-* Director tries to raise it's memory limit for certain memory-intensive tasks.
-  When granted more (but not infinite) memory however this had the effect that
-  he self-restricted himself to a lower limit. This has now been fixed.
+* FIX: Director tries to raise it's memory limit for certain memory-intensive
+  tasks. When granted more (but not infinite) memory however this had the effect
+  that he self-restricted himself to a lower limit.
 
 1.4.0
 -----
