@@ -14,6 +14,7 @@ use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Module\Director\Util;
@@ -72,6 +73,7 @@ class Sync
 
     protected $errors = array();
 
+    /** @var SyncProperty[] */
     protected $syncProperties;
 
     protected $replaceVars = false;
@@ -585,9 +587,16 @@ class Sync
         // TODO: directly work on existing objects, remember imported keys, then purge
         $newObjects = $this->prepareNewObjects();
 
+        $hasDisabled = false;
+        foreach ($this->syncProperties as $property) {
+            if ($property->get('destination_field') === 'disabled') {
+                $hasDisabled = true;
+            }
+        }
+
         foreach ($newObjects as $key => $object) {
             if (array_key_exists($key, $this->objects)) {
-                switch ($this->rule->update_policy) {
+                switch ($this->rule->get('update_policy')) {
                     case 'override':
                         $this->objects[$key]->replaceWith($object);
                         break;
@@ -596,6 +605,9 @@ class Sync
                         // TODO: re-evaluate merge settings. vars.x instead of
                         //       just "vars" might suffice.
                         $this->objects[$key]->merge($object, $this->replaceVars);
+                        if (! $hasDisabled) {
+                            $this->objects[$key]->resetProperty('disabled');
+                        }
                         break;
 
                     default:

@@ -459,6 +459,16 @@ abstract class DbObject
     }
 
     /**
+     * List all properties that changed since object creation
+     *
+     * @return array
+     */
+    public function listModifiedProperties()
+    {
+        return array_keys($this->modifiedProperties);
+    }
+
+    /**
      * Whether this object has been modified
      *
      * @return bool
@@ -666,6 +676,16 @@ abstract class DbObject
         }
 
         return null;
+    }
+
+    public function resetProperty($key)
+    {
+        $this->set($key, $this->getOriginalProperty($key));
+        if ($this->listModifiedProperties() === [$key]) {
+            $this->hasBeenModified = false;
+        }
+
+        return $this;
     }
 
     public function hasBeenLoadedFromDb()
