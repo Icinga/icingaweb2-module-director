@@ -6,6 +6,10 @@ $this->providePermission(
     'director/showconfig',
     $this->translate('Allow to show configuration (could contain sensitive information)')
 );
+$this->providePermission(
+    'director/showsql',
+    $this->translate('Allow to show the full executed SQL queries in some places')
+);
 $this->providePermission('director/deploy', $this->translate('Allow to deploy configuration'));
 $this->providePermission('director/hosts', $this->translate('Allow to configure hosts'));
 $this->providePermission('director/services', $this->translate('Allow to configure services'));

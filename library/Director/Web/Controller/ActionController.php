@@ -44,6 +44,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
         Benchmark::measure('Director base Controller init()');
         $this->checkForRestApiRequest();
         $this->checkDirectorPermissions();
+        $this->checkSpecialDirectorPermissions();
     }
 
     protected function initializeTranslator()
@@ -59,6 +60,13 @@ abstract class ActionController extends Controller implements ControlsAndContent
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/admin');
+    }
+
+    protected function checkSpecialDirectorPermissions()
+    {
+        if ($this->params->get('format') === 'sql') {
+            $this->assertPermission('director/showsql');
+        }
     }
 
     /**
