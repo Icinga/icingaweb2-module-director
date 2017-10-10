@@ -9,6 +9,7 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ShipConfigFilesHook;
@@ -447,11 +448,7 @@ class IcingaConfig
 
         $start = microtime(true);
 
-        // Raise limits. TODO: do this in a failsafe way, and only if necessary
-        if ((string) ini_get('memory_limit') !== '-1') {
-            ini_set('memory_limit', '1024M');
-        }
-
+        MemoryLimit::raiseTo('1024M');
         ini_set('max_execution_time', 0);
         // Workaround for https://bugs.php.net/bug.php?id=68606 or similar
         ini_set('zend.enable_gc', 0);

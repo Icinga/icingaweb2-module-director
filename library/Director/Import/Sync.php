@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -151,15 +152,11 @@ class Sync
     /**
      * Raise PHP resource limits
      *
-     * TODO: do this in a failsafe way, and only if necessary
-     *
      * @return self;
      */
     protected function raiseLimits()
     {
-        if ((string) ini_get('memory_limit') !== '-1') {
-            ini_set('memory_limit', '1024M');
-        }
+        MemoryLimit::raiseTo('1024M');
         ini_set('max_execution_time', 0);
 
         return $this;

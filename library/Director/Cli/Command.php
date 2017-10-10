@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Command as CliCommand;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
@@ -82,9 +83,7 @@ class Command extends CliCommand
      */
     protected function raiseLimits()
     {
-        if ((string) ini_get('memory_limit') !== '-1') {
-            ini_set('memory_limit', '1024M');
-        }
+        MemoryLimit::raiseTo('1024M');
 
         ini_set('max_execution_time', 0);
         if (version_compare(PHP_VERSION, '7.0.0') < 0) {

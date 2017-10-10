@@ -6,6 +6,7 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use stdClass;
@@ -83,11 +84,9 @@ abstract class ObjectApplyMatches
 
     protected static function raiseLimits()
     {
-        // Raise limits. TODO: do this in a failsafe way, and only if necessary
-        // Note: IcingaConfig also raises the limit for generation, **but** we need the higher limit for preview.
-        if ((string) ini_get('memory_limit') !== '-1') {
-            ini_set('memory_limit', '1024M');
-        }
+        // Note: IcingaConfig also raises the limit for generation, **but** we
+        // need the higher limit for preview.
+        MemoryLimit::raiseTo('1024M');
     }
 
     protected static function fetchFlatObjects(Db $db)
