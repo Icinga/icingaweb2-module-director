@@ -19,6 +19,7 @@ use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use dipl\Html\Link;
+use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
 
 abstract class ObjectsController extends ActionController
 {
@@ -91,6 +92,8 @@ abstract class ObjectsController extends ActionController
         // Hint: might be used in controllers extending this
         $this->table = $this->getTable();
         $this->table->renderTo($this);
+        (new AdditionalTableActions($this->getAuth(), $this->url()))
+            ->appendTo($this->actions());
     }
 
     protected function getTable()
