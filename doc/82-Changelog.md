@@ -13,6 +13,10 @@ before switching to a new version.
 ### Permissions and Restrictions
 * FEATURE: Showing the executed SQL query now requires the `showsql` permission
 
+### UI features
+* Admins have now access to JSON download links in many places
+* Users equipped with related permissions can toggle "Show SQL" in the GUI
+
 1.4.1
 -----
 ### Fixed issues

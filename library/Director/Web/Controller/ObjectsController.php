@@ -78,7 +78,18 @@ abstract class ObjectsController extends ActionController
             $this->apiRequestHandler()->dispatch();
             return;
         }
+
         $type = $this->getType();
+        if ($this->params->get('format') === 'json') {
+            $filename = sprintf(
+                "director-${type}_%s.json",
+                date('YmdHis')
+            );
+            $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
+
         $this
             ->addObjectsTabs()
             ->setAutorefreshInterval(10)

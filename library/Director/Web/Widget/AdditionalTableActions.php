@@ -28,6 +28,9 @@ class AdditionalTableActions
     public function appendTo(Html $parent)
     {
         $links = [];
+        if ($this->hasPermission('director/admin')) {
+            $links[] = $this->createDownloadJsonLink();
+        }
         if ($this->hasPermission('director/showsql')) {
             $links[] = $this->createShowSqlToggle();
         }
@@ -37,6 +40,16 @@ class AdditionalTableActions
         }
 
         return $this;
+    }
+
+    protected function createDownloadJsonLink()
+    {
+        return Link::create(
+            $this->translate('Download as JSON'),
+            $this->url->with('format', 'json'),
+            null,
+            ['target' => '_blank']
+        );
     }
 
     protected function createShowSqlToggle()
