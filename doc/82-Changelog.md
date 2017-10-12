@@ -18,6 +18,11 @@ before switching to a new version.
 * FEATURE: Admins have now access to JSON download links in many places
 * FEATURE: Users equipped with related permissions can toggle "Show SQL" in the GUI
 
+### Import and Sync
+* FIX: Sync is very powerful and allows for actions not available in the GUI. It
+  however allowed to store invalid single Service Objects with no Host. This is
+  now illegal, as it never makes any sense
+
 1.4.1
 -----
 ### Fixed issues

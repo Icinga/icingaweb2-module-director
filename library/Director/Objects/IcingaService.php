@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\PropertiesFilter;
@@ -515,5 +516,18 @@ class IcingaService extends IcingaObject
         }
 
         return $properties;
+    }
+
+    protected function beforeStore()
+    {
+        parent::beforeStore();
+        if ($this->isObject()
+            && $this->get('service_set_id') === null
+            && $this->get('host_id') === null
+        ) {
+            throw new IcingaException(
+                'Cannot store a Service object without a related host'
+            );
+        }
     }
 }
