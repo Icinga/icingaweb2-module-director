@@ -220,7 +220,7 @@ class SuggestController extends ActionController
 
     protected function suggestServiceFilterColumns()
     {
-        return $this->getFilterColumns('host.', [
+        return $this->getFilterColumns('service.', [
             $this->translate('Service properties'),
             $this->translate('Host properties'),
             $this->translate('Host Custom variables'),

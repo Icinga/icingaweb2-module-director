@@ -32,6 +32,10 @@ before switching to a new version.
   tasks. When granted more (but not infinite) memory however this had the effect
   that he self-restricted himself to a lower limit.
 
+### User Interface
+* FIX: Assignment filters suggested only Host properties, you have been required
+  to manually type Service property names
+
 1.4.0
 -----
 ### New requirements

@@ -92,23 +92,20 @@ class IcingaNotificationForm extends DirectorObjectForm
 
         $applyTo = $this->getSentOrObjectValue('apply_to');
 
-        if ($applyTo === 'host') {
-            $columns = IcingaHost::enumProperties($this->db, 'host.');
-        } elseif ($applyTo === 'service') {
-            // TODO: Also add host properties
-            $columns = IcingaService::enumProperties($this->db, 'service.');
-        } else {
+        if (! $applyTo) {
             return $this;
         }
 
-        $this->addAssignFilter(array(
-            'columns' => $columns,
+        $suggestionContext = ucfirst($applyTo) . 'FilterColumns';
+        $this->addAssignFilter([
             'required' => true,
+            'suggestionContext' => $suggestionContext,
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want'
             )
-        ));
+        ]);
+
         return $this;
     }
 
