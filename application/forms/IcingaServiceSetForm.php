@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaServiceSetForm extends DirectorObjectForm
@@ -111,15 +110,15 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        $this->addAssignFilter(array(
-            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+        $this->addAssignFilter([
+            'suggestionContext' => 'HostFilterColumns',
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want. You'
                 . ' might also want to skip this, define it later and/or just'
                 . ' add this set of services to single hosts'
             )
-        ));
+        ]);
 
         return $this;
     }
