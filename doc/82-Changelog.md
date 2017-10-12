@@ -22,6 +22,8 @@ before switching to a new version.
 ### User Interface
 * FIX: Assignment filters suggested only Host properties, you have been required
   to manually type Service property names
+* FIX: Hostgroups Dashlet has been shown to users with restricted permissions,
+  clicking it used to throw an error
 
 1.4.0
 -----
