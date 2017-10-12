@@ -26,6 +26,6 @@ class HostGroupsDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/hosts');
+        return array('director/hostgroups');
     }
 }
