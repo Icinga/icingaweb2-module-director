@@ -215,7 +215,7 @@ abstract class ObjectsController extends ActionController
         $type = $this->getType();
         $tType = $this->translate(ucfirst($type));
         $this
-            ->assertPermission('director/' . $this->getBaseType() . '_sets')
+            ->assertPermission('director/' . $this->getBaseType() . 'sets')
             ->addObjectsTabs()
             ->requireSupportFor('Sets')
             ->setAutorefreshInterval(10)
@@ -240,7 +240,7 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        ObjectSetTable::create($type, $this->db())->renderTo($this);
+        ObjectSetTable::create($type, $this->db(), $this->getAuth())->renderTo($this);
     }
 
     protected function loadMultiObjectsFromParams()
@@ -308,8 +308,8 @@ abstract class ObjectsController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/', '/set$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency', 'Set'),
             str_replace(
                 'template',
                 '',

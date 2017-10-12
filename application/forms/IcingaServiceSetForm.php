@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 
 class IcingaServiceSetForm extends DirectorObjectForm
 {
@@ -31,6 +32,13 @@ class IcingaServiceSetForm extends DirectorObjectForm
             ),
             'required'    => true,
         ));
+
+        $rName = 'director/service_set/filter-by-name';
+        foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
+            $this->getElement('object_name')->addValidator(
+                new NamePattern($restriction)
+            );
+        }
 
         $this->addHidden('object_type', 'template');
         $this->addDescriptionElement()
@@ -110,6 +118,10 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
+        if (! $this->hasPermission('director/service_set/apply')) {
+            return $this;
+        }
+
         $this->addAssignFilter([
             'suggestionContext' => 'HostFilterColumns',
             'description' => $this->translate(

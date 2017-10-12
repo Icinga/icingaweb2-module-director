@@ -26,6 +26,7 @@ class NamePattern extends Zend_Validate_Abstract
     {
         if ($this->filter === null) {
             $this->filter = new FilterMatch('prop', '=', $this->pattern);
+            $this->filter->setCaseSensitive(false);
         }
 
         return $this->filter->matches($value);

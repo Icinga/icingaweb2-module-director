@@ -2,10 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
 use dipl\Web\Url;
+use Icinga\Module\Director\Restriction\FilterByNameRestriction;
 
 class ObjectSetTable extends ZfQueryBasedTable
 {
@@ -17,10 +19,14 @@ class ObjectSetTable extends ZfQueryBasedTable
 
     private $type;
 
-    public static function create($type, Db $db)
+    /** @var Auth */
+    private $auth;
+
+    public static function create($type, Db $db, Auth $auth)
     {
         $table = new static($db);
         $table->type = $type;
+        $table->auth = $auth;
         return $table;
     }
 
@@ -79,6 +85,12 @@ class ObjectSetTable extends ZfQueryBasedTable
             []
         );
 
+        $nameFilter = new FilterByNameRestriction(
+            $this->connection(),
+            $this->auth,
+            "${type}_set"
+        );
+        $nameFilter->applyToQuery($query, 'os');
         // Disabled for now, check for correctness:
         // $query->joinLeft(
         //     ['osi' => "icinga_${type}_set_inheritance"],
@@ -97,5 +109,13 @@ class ObjectSetTable extends ZfQueryBasedTable
             ->order('os.object_name');
 
         return $query;
+    }
+
+    /**
+     * @return Db
+     */
+    public function connection()
+    {
+        return parent::connection();
     }
 }
