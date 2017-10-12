@@ -26,6 +26,6 @@ class ServiceTemplatesDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return array('director/service_templates');
     }
 }
