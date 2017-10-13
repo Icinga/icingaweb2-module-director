@@ -2,9 +2,8 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 
 class IcingaNotificationForm extends DirectorObjectForm
 {
@@ -28,6 +27,13 @@ class IcingaNotificationForm extends DirectorObjectForm
                 'required'    => true,
                 'description' => $this->translate('Name for the Icinga notification you are going to create')
             ));
+
+            $rName = 'director/notification/apply/filter-by-name';
+            foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
+                $this->getElement('object_name')->addValidator(
+                    new NamePattern($restriction)
+                );
+            }
         }
 
         $this->addDisabledElement()
