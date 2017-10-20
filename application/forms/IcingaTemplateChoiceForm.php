@@ -110,7 +110,7 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
         if ($object->hasBeenLoadedFromDb()) {
             $query->where(
                 'o.template_choice_id IS NULL OR o.template_choice_id = ?',
-                $this->object()->getId()
+                $object->get('id')
             );
         } else {
             $query->where('o.template_choice_id IS NULL');
