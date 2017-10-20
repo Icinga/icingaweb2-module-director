@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
@@ -379,18 +380,22 @@ abstract class ObjectController extends ActionController
 
     protected function addDeploymentLink()
     {
-        $info = new DeploymentInfo($this->db());
-        $info->setObject($this->object);
+        try {
+            $info = new DeploymentInfo($this->db());
+            $info->setObject($this->object);
 
-        if (! $this->getRequest()->isApiRequest()) {
-            $this->actions()->add(
-                DeploymentLinkForm::create(
-                    $this->db(),
-                    $info,
-                    $this->Auth(),
-                    $this->api()
-                )->handleRequest()
-            );
+            if (! $this->getRequest()->isApiRequest()) {
+                $this->actions()->add(
+                    DeploymentLinkForm::create(
+                        $this->db(),
+                        $info,
+                        $this->Auth(),
+                        $this->api()
+                    )->handleRequest()
+                );
+            }
+        } catch (IcingaException $e) {
+            // pass (deployment may not be set up yet)
         }
     }
 
