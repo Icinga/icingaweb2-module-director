@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.4.2
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/13?closed=1)
+
+### Configuration rendering
+* FIX: Caching had an influence on context-specific Custom Variable rendering
+  when those variables contained macros (#1257)
+
 1.4.1
 -----
 ### Fixed issues
