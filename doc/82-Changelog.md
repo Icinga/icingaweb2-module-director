@@ -23,6 +23,16 @@ before switching to a new version.
   however allowed to store invalid single Service Objects with no Host. This is
   now illegal, as it never makes any sense
 
+1.4.2
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/13?closed=1)
+
+### Configuration rendering
+* FIX: Caching had an influence on context-specific Custom Variable rendering
+  when those variables contained macros (#1257)
+
 1.4.1
 -----
 ### Fixed issues
