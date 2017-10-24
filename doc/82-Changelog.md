@@ -31,18 +31,19 @@ before switching to a new version.
 
 ### Automation
 * FIX: A Sync Rule with `merge` policy used to re-enable manually disabled objects,
-  even when no Sync Property `disabled` has been defined
+  even when no Sync Property `disabled` has been defined (#1223)
+* FIX: Fix SQL error on PostgreSQL when inspecting Template-Choice (#1242)
 
 ### Large environments
 * FIX: Director tries to raise it's memory limit for certain memory-intensive
   tasks. When granted more (but not infinite) memory however this had the effect
-  that he self-restricted himself to a lower limit.
+  that he self-restricted himself to a lower limit (#1222)
 
 ### User Interface
 * FIX: Assignment filters suggested only Host properties, you have been required
-  to manually type Service property names
+  to manually type Service property names (#1207)
 * FIX: Hostgroups Dashlet has been shown to users with restricted permissions,
-  clicking it used to throw an error
+  clicking it used to throw an error (#1237)
 
 1.4.0
 -----
