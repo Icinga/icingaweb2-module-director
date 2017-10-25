@@ -1,1 +1,4 @@
-Tutorial for adding Powershell scripts in Icinga2 Director.
+In this tutorial you see an example to add Powershell scripts using the director.
+
+This tutorial based and created on a default installation (Nsclient++ and scripts dir).
+
