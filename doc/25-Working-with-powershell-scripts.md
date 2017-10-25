@@ -26,4 +26,11 @@ And Press "Store"
  
  5. Now go to "Services", "Service Template" and create a new "Service Template"
  
- 
+ 6. Add Service Template:
+  - Name: Enter a Name
+  - Check Command: Select your command
+  Click "Store"
+
+Now you can add this service to a Windows machine and execute a the script.
+
+The output you will see directly under "Plugin Output"
