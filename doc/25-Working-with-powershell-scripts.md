@@ -12,6 +12,10 @@ Default Environment (Base for tutorial):
 
 ![Commands - Add Command](screenshot/director/25-powershell/commands_1.PNG)
 
+![Create an Agent template](screenshot/director/24-agents/2401_agent_template.png)
+
+![Create an Agent template](screenshot/director/24-agents/2401_agent_template.png)
+
 2. Now create a new "Command"
   - Command Type is: "Plugin Check Command"
   - Command Name: Enter a Name
