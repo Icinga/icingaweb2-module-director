@@ -10,7 +10,7 @@ Default Environment (Base for tutorial):
 
 1. Click in the Director Menu on "Commands" and "Commands" again.
 
-![Commands - Add Command](icingaweb2-module-director/doc/screenshot/director/25-powershell/commands_1.PNG)
+![Commands - Add Command](screenshot/director/25-powershell/commands_1.PNG)
 
 2. Now create a new "Command"
   - Command Type is: "Plugin Check Command"
