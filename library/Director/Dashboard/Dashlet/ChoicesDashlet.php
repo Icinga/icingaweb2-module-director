@@ -14,7 +14,7 @@ abstract class ChoicesDashlet extends Dashlet
     public function getSummary()
     {
         return $this->translate(
-            'Combine multiple templates into meaningful Choices, making live'
+            'Combine multiple templates into meaningful Choices, making life'
             . ' easier for your users'
         );
     }
