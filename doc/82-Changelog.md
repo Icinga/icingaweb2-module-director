@@ -14,6 +14,10 @@ before switching to a new version.
 * FIX: Caching had an influence on context-specific Custom Variable rendering
   when those variables contained macros (#1257)
 
+### Sync
+* FIX: The fix for #1223 caused a regression and broke Sync for objects without
+  a 'disabled' property (Sets, List members) (#1279)
+
 1.4.1
 -----
 ### Fixed issues
