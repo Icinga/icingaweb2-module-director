@@ -8,6 +8,7 @@ use Exception;
 
 class DirectorJob extends DbObjectWithSettings
 {
+    /** @var JobHook */
     protected $job;
 
     protected $table = 'director_job';
@@ -66,6 +67,17 @@ class DirectorJob extends DbObjectWithSettings
     public function shouldRun()
     {
         return (! $this->hasBeenDisabled()) && $this->isPending();
+    }
+
+    public function isOverdue()
+    {
+        if (! $this->shouldRun()) {
+            return false;
+        }
+
+        return (
+            strtotime($this->ts_last_attempt) + $this->run_interval * 2
+        ) < time();
     }
 
     public function hasBeenDisabled()
