@@ -212,7 +212,7 @@ class Health
     {
         $check = new CheckResults('Director Jobs');
         $jobs = DirectorJob::loadAll($this->getConnection());
-        if (empty($sources)) {
+        if (empty($jobs)) {
             $check->warn('No Jobs have been defined');
             return $check;
         }
