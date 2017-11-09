@@ -50,7 +50,7 @@ class HealthCommand extends Command
                 $output[] = $check->getOutput();
             }
 
-            if ($state === 0) {
+            if ($state->getNumeric() === 0) {
                 echo "Icinga Director: everything is fine\n\n";
             } else {
                 echo "Icinga Director: there are problems\n\n";
