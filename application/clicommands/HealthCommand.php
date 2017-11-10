@@ -25,7 +25,7 @@ class HealthCommand extends Command
      * OPTIONS
      *
      *   --check <name>  Run only a specific set of checks
-     *                   valid names: config, sync, import, job
+     *                   valid names: config, sync, import, job, deployment
      *   --db <name>     Use a specific Icinga Web DB resource
      */
     public function checkAction()

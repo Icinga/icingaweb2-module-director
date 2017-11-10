@@ -3,9 +3,11 @@
 namespace Icinga\Module\Director;
 
 use Icinga\Application\Config;
+use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\CheckPlugin\Check;
 use Icinga\Module\Director\CheckPlugin\CheckResults;
 use Icinga\Module\Director\Db\Migrations;
+use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
@@ -20,10 +22,11 @@ class Health
     protected $dbResourceName;
 
     protected $checks = [
-        'config' => 'checkConfig',
-        'sync'   => 'checkSyncRules',
-        'import' => 'checkImportSources',
-        'jobs'   => 'checkDirectorJobs',
+        'config'     => 'checkConfig',
+        'sync'       => 'checkSyncRules',
+        'import'     => 'checkImportSources',
+        'jobs'       => 'checkDirectorJobs',
+        'deployment' => 'checkDeployments',
     ];
 
     public function setDbResourceName($name)
@@ -58,6 +61,7 @@ class Health
         $checks[] = $this->checkSyncRules();
         $checks[] = $this->checkImportSources();
         $checks[] = $this->checkDirectorJobs();
+        $checks[] = $this->checkDeployments();
 
         return $checks;
     }
@@ -130,22 +134,6 @@ class Health
             } else {
                 $check->warn(sprintf(
                     'There are %s pending schema migrations',
-                    $count
-                ));
-            }
-        })->call(function () use ($check, $db) {
-            $check->succeed(sprintf(
-                "Deployment endpoint is '%s'",
-                $db->getDeploymentEndpointName()
-            ));
-        })->call(function () use ($check, $db) {
-            $count = $db->countActivitiesSinceLastDeployedConfig();
-
-            if ($count === 1) {
-                $check->succeed('There is a single un-deployed change');
-            } else {
-                $check->succeed(sprintf(
-                    'There are %d un-deployed changes',
                     $count
                 ));
             }
@@ -231,6 +219,50 @@ class Health
             } else {
                 $check->succeed("'$name' is fine");
             }
+        }
+
+        return $check;
+    }
+
+    public function checkDeployments()
+    {
+        $check = new Check('Director Deployments');
+
+        $db = $this->getConnection();
+
+        $check->call(function () use ($check, $db) {
+            $check->succeed(sprintf(
+                "Deployment endpoint is '%s'",
+                $db->getDeploymentEndpointName()
+            ));
+        })->call(function () use ($check, $db) {
+            $count = $db->countActivitiesSinceLastDeployedConfig();
+
+            if ($count === 1) {
+                $check->succeed('There is a single un-deployed change');
+            } else {
+                $check->succeed(sprintf(
+                    'There are %d un-deployed changes',
+                    $count
+                ));
+            }
+        });
+
+        if (! DirectorDeploymentLog::hasDeployments($db)) {
+            $check->warn('Configuration has never been deployed');
+            return $check;
+        }
+
+        $latest = DirectorDeploymentLog::loadLatest($db);
+
+        $ts = $latest->getDeploymentTimestamp();
+        $time = DateFormatter::timeAgo($ts);
+        if ($latest->succeeded()) {
+            $check->succeed('The last Deployment was successful ' . $time);
+        } elseif ($latest->isPending()) {
+            $check->warn('The last Deployment succeeded');
+        } else {
+            $check->error('The last Deployment failed');
         }
 
         return $check;
