@@ -103,7 +103,7 @@ class Health
         $check = new Check('Director configuration');
         $name = $this->getDbResourceName();
         if ($name) {
-            $check->succeed("Database resource '$name' has been specified'");
+            $check->succeed("Database resource '$name' has been specified");
         } else {
             return $check->fail('No database resource has been specified');
         }
