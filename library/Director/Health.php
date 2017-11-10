@@ -262,7 +262,7 @@ class Health
         } elseif ($latest->isPending()) {
             $check->warn('The last Deployment succeeded');
         } else {
-            $check->error('The last Deployment failed');
+            $check->fail('The last Deployment failed');
         }
 
         return $check;
