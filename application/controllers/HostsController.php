@@ -29,6 +29,9 @@ class HostsController extends ObjectsController
         $url = clone($this->getRequest()->getUrl());
         $url->setPath('director/hosts/addservice');
 
+        $urlSet = clone($url);
+        $urlSet->setPath('director/hosts/addserviceset');
+
         parent::editAction();
 
         $this->actions()->add(Link::create(
@@ -38,7 +41,7 @@ class HostsController extends ObjectsController
             ['class' => 'icon-plus']
         ))->add(Link::create(
             $this->translate('Add Service Set'),
-            clone($url)->setPath('director/hosts/addserviceset'),
+            $urlSet,
             null,
             ['class' => 'icon-plus']
         ));
