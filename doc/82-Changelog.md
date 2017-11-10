@@ -17,6 +17,7 @@ before switching to a new version.
 ### User Interface
 * FEATURE: Admins have now access to JSON download links in many places
 * FEATURE: Users equipped with related permissions can toggle "Show SQL" in the GUI
+* FEATURE: A Service Set can now be assigned to multiple hosts at once #1281
 
 ### CLI
 * FEATURE: Director Health Check Plugin (#1278)
