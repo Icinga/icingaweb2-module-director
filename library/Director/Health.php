@@ -260,7 +260,7 @@ class Health
         if ($latest->succeeded()) {
             $check->succeed('The last Deployment was successful ' . $time);
         } elseif ($latest->isPending()) {
-            $check->warn('The last Deployment succeeded');
+            $check->warn('The last Deployment is still pending');
         } else {
             $check->fail('The last Deployment failed');
         }
