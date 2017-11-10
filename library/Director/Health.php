@@ -258,11 +258,15 @@ class Health
         $ts = $latest->getDeploymentTimestamp();
         $time = DateFormatter::timeAgo($ts);
         if ($latest->succeeded()) {
-            $check->succeed('The last Deployment was successful ' . $time);
+            $check->succeed("The last Deployment was successful $time");
         } elseif ($latest->isPending()) {
-            $check->warn('The last Deployment is still pending');
+            if ($ts + 180 < time()) {
+                $check->warn("The last Deployment started $time and is still pending");
+            } else {
+                $check->succeed("The last Deployment started $time and is still pending");
+            }
         } else {
-            $check->fail('The last Deployment failed');
+            $check->fail("The last Deployment failed $time");
         }
 
         return $check;
