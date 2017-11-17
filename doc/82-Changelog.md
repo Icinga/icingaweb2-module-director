@@ -26,6 +26,7 @@ before switching to a new version.
 * FIX: Sync is very powerful and allows for actions not available in the GUI. It
   however allowed to store invalid single Service Objects with no Host. This is
   now illegal, as it never makes any sense
+* FEATURE: new Property Modifier for IPs formatted as number in Excel files (#1296)
 
 1.4.2
 -----
