@@ -2,22 +2,22 @@
 # Copyright (C) 2017 Icinga Development Team
 # This file is distributed under the same license as Director Module.
 # Thomas Widhalm <widhalmt@widhalm.or.at>, 2016.
-#
+# 
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Director Module (master)\n"
 "Report-Msgid-Bugs-To: dev@icinga.com\n"
-"POT-Creation-Date: 2017-10-09 15:26+0200\n"
-"PO-Revision-Date: 2017-10-09 15:42+0200\n"
+"POT-Creation-Date: 2017-11-24 10:52+0100\n"
+"PO-Revision-Date: 2017-11-24 10:49+0100\n"
 "Last-Translator: Thomas Gelf <thomas@gelf.net>\n"
 "Language: de_DE\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-Basepath: .\n"
-"Language-Team: \n"
-"X-Generator: Poedit 1.8.7.1\n"
 "X-Poedit-SearchPath-0: .\n"
 
 #: library/Director/Web/Form/DirectorObjectForm.php:588
@@ -3950,6 +3950,11 @@ msgstr "Für die Selbstbedienungs-API freigeben"
 msgid "Shared for Self Service API"
 msgstr "Für die Selbstbedienungs-API freigegeben"
 
+#: library/Director/PropertyModifier/PropertyModifierUpperCaseFirst.php:21
+msgid "Should all the other characters be lowercased first?"
+msgstr ""
+"Sollen alle anderen Zeichen zuvor in Kleinbuchstaben umgewandelt werden?"
+
 #: application/controllers/HostController.php:351
 msgid "Show"
 msgstr "Zeigen"
@@ -5180,6 +5185,10 @@ msgstr "Benutzung"
 #: application/forms/SelfServiceSettingsForm.php:56
 msgid "Use a local file or network share"
 msgstr "Benutze eine lokales Verzeichnis oder eine Netzwerkfreigabe"
+
+#: library/Director/PropertyModifier/PropertyModifierUpperCaseFirst.php:18
+msgid "Use lowercase first"
+msgstr "Erst in Kleinbuchstaben umwandeln"
 
 #: application/forms/SyncPropertyForm.php:244
 msgid "Used sources"

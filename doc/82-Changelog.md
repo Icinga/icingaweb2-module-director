@@ -27,6 +27,8 @@ before switching to a new version.
   however allowed to store invalid single Service Objects with no Host. This is
   now illegal, as it never makes any sense
 * FEATURE: new Property Modifier for IPs formatted as number in Excel files (#1296)
+* FEATURE: new Property Modifier to url-encode values
+* FEATURE: new Property Modifier: uppercase the first character of each word
 
 1.4.2
 -----
