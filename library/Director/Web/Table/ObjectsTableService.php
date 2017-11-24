@@ -79,6 +79,7 @@ class ObjectsTableService extends ObjectsTable
             ['h' => 'icinga_host'],
             'o.host_id = h.id',
             []
-        )->order('o.object_name')->order('h.object_name');
+        )->where('o.service_set_id IS NULL')
+            ->order('o.object_name')->order('h.object_name');
     }
 }

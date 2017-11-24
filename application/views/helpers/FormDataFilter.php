@@ -25,6 +25,8 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
     private $query;
 
+    private $suggestionContext;
+
     /**
      * Generates an 'extensible set' element.
      *
@@ -47,6 +49,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         if (array_key_exists('columns', $attribs)) {
             $this->setColumns($attribs['columns']);
             unset($attribs['columns']);
+        }
+
+        if (array_key_exists('suggestionContext', $attribs)) {
+            $this->setSuggestionContext($attribs['suggestionContext']);
+            unset($attribs['suggestionContext']);
         }
 
         // TODO: check for columns in attribs, preserve & remove them from the
@@ -338,6 +345,16 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return $this;
     }
 
+    protected function getSuggestionContext()
+    {
+        return $this->suggestionContext;
+    }
+
+    protected function setSuggestionContext($context)
+    {
+        $this->suggestionContext = $context;
+    }
+
     protected function selectColumn(FilterExpression $filter = null)
     {
         $active = $filter === null ? null : $filter->getColumn();
@@ -345,41 +362,41 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $active = $filter->getExpression();
         }
 
-        if (! $this->hasColumnList()) {
+        if ($context = $this->getSuggestionContext()) {
             return $this->view->formText(
                 $this->elementId('column', $filter),
                 $active,
-                array('class' => 'column autosubmit')
+                [
+                    'class' => 'column autosubmit director-suggest',
+                    'data-suggestion-context' => $context,
+                ]
             );
         }
+        if ($this->hasColumnList()) {
+            $cols = $this->getColumnList();
+            if ($active && !isset($cols[$active])) {
+                $cols[$active] = str_replace(
+                    '_',
+                    ' ',
+                    ucfirst(ltrim($active, '_'))
+                ); // ??
+            }
 
+            $cols = $this->optionalEnum($cols);
 
-        return $this->view->formText(
-            $this->elementId('column', $filter),
-            $active,
-            [
-                'class' => 'column autosubmit director-suggest',
-                'data-suggestion-context' => 'HostFilterColumns',
-            ]
-        );
-
-        $cols = $this->getColumnList();
-        if ($active && !isset($cols[$active])) {
-            $cols[$active] = str_replace(
-                '_',
-                ' ',
-                ucfirst(ltrim($active, '_'))
-            ); // ??
+            return $this->select(
+                $this->elementId('column', $filter),
+                $cols,
+                $active,
+                ['class' => 'column autosubmit']
+            );
+        } else {
+            return $this->view->formText(
+                $this->elementId('column', $filter),
+                $active,
+                ['class' => 'column autosubmit']
+            );
         }
-
-        $cols = $this->optionalEnum($cols);
-
-        return $this->select(
-            $this->elementId('column', $filter),
-            $cols,
-            $active,
-            array('class' => 'column autosubmit')
-        );
     }
 
     protected function optionalEnum($enum)

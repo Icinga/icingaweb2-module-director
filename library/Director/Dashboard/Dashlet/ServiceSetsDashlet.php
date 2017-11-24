@@ -26,6 +26,6 @@ class ServiceSetsDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/service_sets');
+        return array('director/servicesets');
     }
 }

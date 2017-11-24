@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 
 class IcingaServiceSetForm extends DirectorObjectForm
 {
@@ -32,6 +32,13 @@ class IcingaServiceSetForm extends DirectorObjectForm
             ),
             'required'    => true,
         ));
+
+        $rName = 'director/service_set/filter-by-name';
+        foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
+            $this->getElement('object_name')->addValidator(
+                new NamePattern($restriction)
+            );
+        }
 
         $this->addHidden('object_type', 'template');
         $this->addDescriptionElement()
@@ -111,15 +118,19 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        $this->addAssignFilter(array(
-            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+        if (! $this->hasPermission('director/service_set/apply')) {
+            return $this;
+        }
+
+        $this->addAssignFilter([
+            'suggestionContext' => 'HostFilterColumns',
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want. You'
                 . ' might also want to skip this, define it later and/or just'
                 . ' add this set of services to single hosts'
             )
-        ));
+        ]);
 
         return $this;
     }

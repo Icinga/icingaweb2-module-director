@@ -297,6 +297,52 @@ a good reason. The CLI allows you to issue operations that are not allowed in th
 web frontend. Do not use this unless you really understand its implications. And
 remember, with great power comes great responsibility.
 
+Health Check Plugin
+-------------------
+
+You can use the Director CLI as an Icinga CheckPlugin and monitor your Director
+Health. This will run all or just one of the following test suites:
+
+| Name         | Description                                                       |
+|--------------|-------------------------------------------------------------------|
+| `config`     | Configuration, Schema, Migrations                                 |
+| `sync`       | All configured Sync Rules (pending changes are not a problem)     |
+| `import`     | All configured Import Sources (pending changes are not a problem) |
+| `jobs`       | All configured Jobs (ignores disabled ones)                       |
+| `deployment` | Deployment Endpoint, last deployment outcome                      |
+
+#### Usage
+
+`icingacli director <type> clone <name> --from <original> [options]`
+
+#### Options
+
+| Option           | Description                           |
+|------------------|---------------------------------------|
+| `--check <name>` | Run only a specific test suite        |
+| `--<db> <name>`  | Use a specific Icinga Web DB resource |
+
+#### Examples
+
+```shell
+icingacli director health check
+```
+
+```shell
+icingacli director health check --check config
+```
+
+Sample output:
+
+```
+Director configuration: 5 tests OK
+[OK] Database resource 'Director DB' has been specified'
+[OK] Make sure the DB schema exists
+[OK] There are no pending schema migrations
+[OK] Deployment endpoint is 'icinga.example.com'
+[OK] There is a single un-deployed change
+```
+
 
 Kickstart and schema handling
 -----------------------------

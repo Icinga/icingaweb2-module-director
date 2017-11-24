@@ -92,6 +92,7 @@ class PrefetchCache
         if (null === $checksum) {
             return $var->toConfigString($renderExpressions);
         } else {
+            $checksum .= (int) $renderExpressions;
             if (! array_key_exists($checksum, $this->renderedVars)) {
                 $this->renderedVars[$checksum] = $var->toConfigString($renderExpressions);
             }
@@ -100,6 +101,10 @@ class PrefetchCache
         }
     }
 
+    /**
+     * @param IcingaObject $object
+     * @return CustomVariableCache
+     */
     protected function varsCache(IcingaObject $object)
     {
         $key = $object->getShortTableName();

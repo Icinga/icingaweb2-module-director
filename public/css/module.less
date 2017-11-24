@@ -21,6 +21,59 @@ div.action-bar {
   }
 }
 
+div.action-bar ul {
+  padding: 0;
+  margin: 0;
+
+  li {
+    list-style-type: none;
+    a { display: block; }
+  }
+}
+
+div.action-bar > ul {
+  display: inline-block;
+}
+
+div.action-bar > ul ul {
+  padding: 0.5em 0em 1em 0em;
+  min-width: 10em;
+  position: absolute;
+  display: none;
+  color: white;
+  background-color: @icinga-blue;
+
+  a {
+    display: block;
+    padding: 0.3em 2em 0.3em 2em;
+    margin: 0;
+    outline: none;
+    color: white;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  li.active a {
+    font-weight: bold;
+  }
+}
+
+div.action-bar > ul > li:hover ul {
+  display: block;
+}
+div.action-bar > ul > li > a {
+  padding: 0.2em 0.5em;
+}
+div.action-bar > ul > li:hover {
+  background-color: @icinga-blue;
+  & > a {
+    color: white;
+    text-decoration: none;
+  }
+}
+
 #layout.twocols div.action-bar .pagination-control {
   li {
     display: none;

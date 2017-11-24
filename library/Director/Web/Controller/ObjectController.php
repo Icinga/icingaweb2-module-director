@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
@@ -116,7 +117,8 @@ abstract class ObjectController extends ActionController
 
     public function renderAction()
     {
-        $this->assertPermission('director/showconfig');
+        $this->assertTypePermission()
+             ->assertPermission('director/showconfig');
         $this->tabs()->activate('render');
         $preview = new ObjectPreview($this->requireObject(), $this->getRequest());
         if ($this->object->isExternal()) {
@@ -127,7 +129,7 @@ abstract class ObjectController extends ActionController
 
     public function cloneAction()
     {
-        $this->assertPermission('director/' . strtolower($this->getPluralType()));
+        $this->assertTypePermission();
         $object = $this->requireObject();
         $form = IcingaCloneObjectForm::load()
             ->setObject($object)
@@ -181,7 +183,9 @@ abstract class ObjectController extends ActionController
 
     public function historyAction()
     {
-        $this->assertPermission('director/audit')
+        $this
+            ->assertTypePermission()
+            ->assertPermission('director/audit')
             ->setAutorefreshInterval(10)
             ->tabs()->activate('history');
 
@@ -268,7 +272,7 @@ abstract class ObjectController extends ActionController
 
     protected function addObject()
     {
-        $this->assertPermission('director/' . $this->getPluralType());
+        $this->assertTypePermission();
         $imports = $this->params->get('imports');
         if (is_string($imports) && strlen($imports)) {
             $this->addTitle(
@@ -322,6 +326,13 @@ abstract class ObjectController extends ActionController
         return $this->translate(ucfirst($this->getType()));
     }
 
+    protected function assertTypePermission()
+    {
+        return $this->assertPermission(
+            'director/' . strtolower($this->getPluralType())
+        );
+    }
+
     protected function eventuallyLoadObject()
     {
         if (null !== $this->params->get('name') || $this->params->get('id')) {
@@ -369,18 +380,22 @@ abstract class ObjectController extends ActionController
 
     protected function addDeploymentLink()
     {
-        $info = new DeploymentInfo($this->db());
-        $info->setObject($this->object);
+        try {
+            $info = new DeploymentInfo($this->db());
+            $info->setObject($this->object);
 
-        if (! $this->getRequest()->isApiRequest()) {
-            $this->actions()->add(
-                DeploymentLinkForm::create(
-                    $this->db(),
-                    $info,
-                    $this->Auth(),
-                    $this->api()
-                )->handleRequest()
-            );
+            if (! $this->getRequest()->isApiRequest()) {
+                $this->actions()->add(
+                    DeploymentLinkForm::create(
+                        $this->db(),
+                        $info,
+                        $this->Auth(),
+                        $this->api()
+                    )->handleRequest()
+                );
+            }
+        } catch (IcingaException $e) {
+            // pass (deployment may not be set up yet)
         }
     }
 

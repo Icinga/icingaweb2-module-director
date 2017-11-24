@@ -310,11 +310,14 @@ class IcingaServiceForm extends DirectorObjectForm
 
         $this->addNameElement()
              ->addDisabledElement()
-             ->groupMainProperties()
-             ->addCheckCommandElements(true)
-             ->addCheckExecutionElements(true)
-             ->addExtraInfoElements()
-             ->setButtons();
+             ->groupMainProperties();
+
+        if ($this->hasPermission('director/admin')) {
+            $this->addCheckCommandElements(true)
+                ->addCheckExecutionElements(true)
+                ->addExtraInfoElements()
+                ->setButtons();
+        }
 
         if ($this->hasBeenSent()) {
             $name = $this->getSentOrObjectValue('object_name');

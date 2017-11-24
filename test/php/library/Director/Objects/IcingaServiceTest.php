@@ -185,8 +185,12 @@ class IcingaServiceTest extends BaseTestCase
 
         $db = $this->getDb();
 
+        $host = $this->host();
+        $host->store($db);
+
         $service = $this->service('___TEST___service_$not_replaced$');
         $service->object_type = 'object';
+        $service->host_id = $host->get('id');
         $service->display_name = 'Service: $host.vars.not_replaced$';
         $service->{'vars.custom_var'} = '$host.vars.not_replaced$';
         $service->store($db);

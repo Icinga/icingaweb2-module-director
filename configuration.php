@@ -13,6 +13,8 @@ $this->providePermission(
 $this->providePermission('director/deploy', $this->translate('Allow to deploy configuration'));
 $this->providePermission('director/hosts', $this->translate('Allow to configure hosts'));
 $this->providePermission('director/services', $this->translate('Allow to configure services'));
+$this->providePermission('director/servicesets', $this->translate('Allow to configure service sets'));
+$this->providePermission('director/service_set/apply', $this->translate('Allow to define Service Set Apply Rules'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
 $this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
 $this->providePermission(
@@ -41,6 +43,14 @@ $this->provideRestriction(
     'director/notification/apply/filter-by-name',
     $this->translate(
         'Filter available notification apply rules'
+    )
+);
+
+$this->provideRestriction(
+    'director/service_set/filter-by-name',
+    $this->translate(
+        'Filter available service set templates. Use asterisks (*) as wildcards,'
+        . ' like in DB* or *net*'
     )
 );
 

@@ -2,9 +2,8 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 
 class IcingaNotificationForm extends DirectorObjectForm
 {
@@ -28,6 +27,13 @@ class IcingaNotificationForm extends DirectorObjectForm
                 'required'    => true,
                 'description' => $this->translate('Name for the Icinga notification you are going to create')
             ));
+
+            $rName = 'director/notification/apply/filter-by-name';
+            foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
+                $this->getElement('object_name')->addValidator(
+                    new NamePattern($restriction)
+                );
+            }
         }
 
         $this->addDisabledElement()
@@ -92,23 +98,20 @@ class IcingaNotificationForm extends DirectorObjectForm
 
         $applyTo = $this->getSentOrObjectValue('apply_to');
 
-        if ($applyTo === 'host') {
-            $columns = IcingaHost::enumProperties($this->db, 'host.');
-        } elseif ($applyTo === 'service') {
-            // TODO: Also add host properties
-            $columns = IcingaService::enumProperties($this->db, 'service.');
-        } else {
+        if (! $applyTo) {
             return $this;
         }
 
-        $this->addAssignFilter(array(
-            'columns' => $columns,
+        $suggestionContext = ucfirst($applyTo) . 'FilterColumns';
+        $this->addAssignFilter([
             'required' => true,
+            'suggestionContext' => $suggestionContext,
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want'
             )
-        ));
+        ]);
+
         return $this;
     }
 

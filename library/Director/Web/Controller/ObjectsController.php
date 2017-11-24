@@ -19,6 +19,7 @@ use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use dipl\Html\Link;
+use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
 
 abstract class ObjectsController extends ActionController
 {
@@ -77,7 +78,18 @@ abstract class ObjectsController extends ActionController
             $this->apiRequestHandler()->dispatch();
             return;
         }
+
         $type = $this->getType();
+        if ($this->params->get('format') === 'json') {
+            $filename = sprintf(
+                "director-${type}_%s.json",
+                date('YmdHis')
+            );
+            $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
+
         $this
             ->addObjectsTabs()
             ->setAutorefreshInterval(10)
@@ -91,6 +103,8 @@ abstract class ObjectsController extends ActionController
         // Hint: might be used in controllers extending this
         $this->table = $this->getTable();
         $this->table->renderTo($this);
+        (new AdditionalTableActions($this->getAuth(), $this->url()))
+            ->appendTo($this->actions());
     }
 
     protected function getTable()
@@ -201,7 +215,7 @@ abstract class ObjectsController extends ActionController
         $type = $this->getType();
         $tType = $this->translate(ucfirst($type));
         $this
-            ->assertPermission('director/' . $this->getBaseType() . '_sets')
+            ->assertPermission('director/' . $this->getBaseType() . 'sets')
             ->addObjectsTabs()
             ->requireSupportFor('Sets')
             ->setAutorefreshInterval(10)
@@ -226,7 +240,7 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        ObjectSetTable::create($type, $this->db())->renderTo($this);
+        ObjectSetTable::create($type, $this->db(), $this->getAuth())->renderTo($this);
     }
 
     protected function loadMultiObjectsFromParams()
@@ -294,8 +308,8 @@ abstract class ObjectsController extends ActionController
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/', '/set$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency', 'Set'),
             str_replace(
                 'template',
                 '',

@@ -12,6 +12,35 @@ before switching to a new version.
 
 ### Permissions and Restrictions
 * FEATURE: Showing the executed SQL query now requires the `showsql` permission
+* FEATURE: Grant access to Service Set in a controlled way
+
+### User Interface
+* FEATURE: Admins have now access to JSON download links in many places
+* FEATURE: Users equipped with related permissions can toggle "Show SQL" in the GUI
+* FEATURE: A Service Set can now be assigned to multiple hosts at once #1281
+
+### CLI
+* FEATURE: Director Health Check Plugin (#1278)
+
+### Import and Sync
+* FIX: Sync is very powerful and allows for actions not available in the GUI. It
+  however allowed to store invalid single Service Objects with no Host. This is
+  now illegal, as it never makes any sense
+* FEATURE: new Property Modifier for IPs formatted as number in Excel files (#1296)
+
+1.4.2
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/13?closed=1)
+
+### Configuration rendering
+* FIX: Caching had an influence on context-specific Custom Variable rendering
+  when those variables contained macros (#1257)
+
+### Sync
+* FIX: The fix for #1223 caused a regression and broke Sync for objects without
+  a 'disabled' property (Sets, List members) (#1279)
 
 1.4.1
 -----
@@ -21,12 +50,19 @@ before switching to a new version.
 
 ### Automation
 * FIX: A Sync Rule with `merge` policy used to re-enable manually disabled objects,
-  even when no Sync Property `disabled` has been defined
+  even when no Sync Property `disabled` has been defined (#1223)
+* FIX: Fix SQL error on PostgreSQL when inspecting Template-Choice (#1242)
 
 ### Large environments
 * FIX: Director tries to raise it's memory limit for certain memory-intensive
   tasks. When granted more (but not infinite) memory however this had the effect
-  that he self-restricted himself to a lower limit.
+  that he self-restricted himself to a lower limit (#1222)
+
+### User Interface
+* FIX: Assignment filters suggested only Host properties, you have been required
+  to manually type Service property names (#1207)
+* FIX: Hostgroups Dashlet has been shown to users with restricted permissions,
+  clicking it used to throw an error (#1237)
 
 1.4.0
 -----

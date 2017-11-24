@@ -594,6 +594,7 @@ class Sync
             }
         }
 
+        /** @var DbObject|IcingaObject $object */
         foreach ($newObjects as $key => $object) {
             if (array_key_exists($key, $this->objects)) {
                 switch ($this->rule->get('update_policy')) {
@@ -605,7 +606,7 @@ class Sync
                         // TODO: re-evaluate merge settings. vars.x instead of
                         //       just "vars" might suffice.
                         $this->objects[$key]->merge($object, $this->replaceVars);
-                        if (! $hasDisabled) {
+                        if (! $hasDisabled && $object->hasProperty('disabled')) {
                             $this->objects[$key]->resetProperty('disabled');
                         }
                         break;
