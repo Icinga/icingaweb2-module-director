@@ -158,6 +158,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
     {
         // TODO: only one query when adding array
         if (is_array($group)) {
+            if (strpos($group[0], ",") !== false) {
+                $groups = explode(",", $group[0]);
+                $group = array_filter(array_map('trim', $groups));
+            }
             foreach ($group as $g) {
                 $this->add($g, $onError);
             }
