@@ -1355,6 +1355,34 @@ abstract class DirectorObjectForm extends DirectorForm
         );
 
         $this->optionalBoolean(
+            'enable_flapping',
+            $this->translate('Enable flap detection'),
+            $this->translate('Whether flap detection is enabled on this object')
+        );
+
+        $this->addElement(
+            'text',
+            'flapping_threshold_high',
+            array(
+                'label' => $this->translate('Flapping threshold (high)'),
+                'description' => $this->translate(
+                    'Flapping upper bound in percent for a service to be considered flapping'
+                )
+            )
+        );
+
+        $this->addElement(
+            'text',
+            'flapping_threshold_low',
+            array(
+                'label' => $this->translate('Flapping threshold (low)'),
+                'description' => $this->translate(
+                    'Flapping lower bound in percent for a service to be considered not flapping'
+                )
+            )
+        );
+
+        $this->optionalBoolean(
             'volatile',
             $this->translate('Volatile'),
             $this->translate('Whether this check is volatile.')
@@ -1371,6 +1399,9 @@ abstract class DirectorObjectForm extends DirectorForm
             'enable_notifications',
             'enable_event_handler',
             'enable_perfdata',
+            'enable_flapping',
+            'flapping_threshold_high',
+            'flapping_threshold_low',
             'volatile'
         );
         $this->addToCheckExecutionDisplayGroup($elements);
