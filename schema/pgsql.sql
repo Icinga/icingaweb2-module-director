@@ -580,7 +580,8 @@ CREATE TABLE icinga_host (
   enable_flapping enum_boolean DEFAULT NULL,
   enable_perfdata enum_boolean DEFAULT NULL,
   event_command_id integer DEFAULT NULL,
-  flapping_threshold smallint default null,
+  flapping_threshold_high smallint default null,
+  flapping_threshold_low smallint default null,
   volatile enum_boolean DEFAULT NULL,
   zone_id integer DEFAULT NULL,
   command_endpoint_id integer DEFAULT NULL,
@@ -766,7 +767,8 @@ CREATE TABLE icinga_service (
   enable_flapping enum_boolean DEFAULT NULL,
   enable_perfdata enum_boolean DEFAULT NULL,
   event_command_id integer DEFAULT NULL,
-  flapping_threshold smallint DEFAULT NULL,
+  flapping_threshold_high smallint DEFAULT NULL,
+  flapping_threshold_low smallint DEFAULT NULL,
   volatile enum_boolean DEFAULT NULL,
   zone_id integer DEFAULT NULL,
   command_endpoint_id integer DEFAULT NULL,
@@ -1959,4 +1961,4 @@ COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (144, NOW());
+  VALUES (146, NOW());

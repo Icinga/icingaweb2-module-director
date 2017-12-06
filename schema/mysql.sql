@@ -455,7 +455,8 @@ CREATE TABLE icinga_host (
   enable_flapping ENUM('y', 'n') DEFAULT NULL,
   enable_perfdata ENUM('y', 'n') DEFAULT NULL,
   event_command_id INT(10) UNSIGNED DEFAULT NULL,
-  flapping_threshold SMALLINT UNSIGNED default null,
+  flapping_threshold_high SMALLINT UNSIGNED default null,
+  flapping_threshold_low SMALLINT UNSIGNED default null,
   volatile ENUM('y', 'n') DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   command_endpoint_id INT(10) UNSIGNED DEFAULT NULL,
@@ -613,7 +614,8 @@ CREATE TABLE icinga_service (
   enable_flapping ENUM('y', 'n') DEFAULT NULL,
   enable_perfdata ENUM('y', 'n') DEFAULT NULL,
   event_command_id INT(10) UNSIGNED DEFAULT NULL,
-  flapping_threshold SMALLINT UNSIGNED DEFAULT NULL,
+  flapping_threshold_high SMALLINT UNSIGNED DEFAULT NULL,
+  flapping_threshold_low SMALLINT UNSIGNED DEFAULT NULL,
   volatile ENUM('y', 'n') DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   command_endpoint_id INT(10) UNSIGNED DEFAULT NULL,
@@ -1668,4 +1670,4 @@ CREATE TABLE icinga_dependency_states_set (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (145, NOW());
+  VALUES (146, NOW());
