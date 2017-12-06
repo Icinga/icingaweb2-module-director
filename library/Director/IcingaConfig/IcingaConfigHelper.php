@@ -78,7 +78,7 @@ class IcingaConfigHelper
         return (string) $value;
     }
 
-    protected static function renderFloat($value)
+    public static function renderFloat($value)
     {
         // Render .0000 floats as integers, mainly because of some JSON
         // implementations:
