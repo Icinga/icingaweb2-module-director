@@ -106,6 +106,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected $intervalProperties = array();
 
+    /**
+     * Array of numeric property names
+     *
+     * Those values will be put out as raw numbers to Icinga 2's config.
+     * Array expects (propertyName => renderedKey)
+     *
+     * @var array
+     */
+    protected $numericProperties = array();
+
     /** @var  Db */
     protected $connection;
 
@@ -139,6 +149,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
+    }
+
+    public function propertyIsNumeric($property)
+    {
+        return array_key_exists($property, $this->numericProperties);
     }
 
     public function propertyIsInterval($property)
@@ -1819,6 +1834,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return c::renderKeyValue(
                 $this->intervalProperties[$key],
                 c::renderInterval($value)
+            );
+        }
+
+        if ($this->propertyIsNumeric($key)) {
+            return c::renderKeyValue(
+                $this->numericProperties[$key],
+                c::renderFloat($value)
             );
         }
 
