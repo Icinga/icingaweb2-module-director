@@ -516,11 +516,25 @@ class IcingaConfig
             )
         )->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+            . $this->renderFlappingLogHelper()
             . $this->renderHostOverridableVars()
             . $this->renderMagicApplyFor()
         );
 
         return $this;
+    }
+
+    protected function renderFlappingLogHelper()
+    {
+        return '
+globals.directorWarnedOnceForThresholds = false;
+globals.directorWarnOnceForThresholds = function() {
+    if (globals.directorWarnedOnceForThresholds == false) {
+        globals.directorWarnedOnceForThresholds = true
+        log(LogWarning, "config", "Director: flapping_threshold_high/low is not supported in this Icinga 2 version!")
+    }
+}
+';
     }
 
     protected function renderHostOverridableVars()

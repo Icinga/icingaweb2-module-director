@@ -1664,6 +1664,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @codingStandardsIgnoreStart
      */
+    protected function renderFlapping_threshold_high()
+    {
+        return $this->renderFlappingThreshold('flapping_threshold_high');
+    }
+
+    protected function renderFlapping_threshold_low()
+    {
+        return $this->renderFlappingThreshold('flapping_threshold_low');
+    }
+
+    protected function renderFlappingThreshold($key)
+    {
+        return sprintf(
+            "    try { // This setting is only available in Icinga >= 2.8.0\n"
+            . "    %s"
+            . "    } except { globals.directorWarnOnceForThresholds() }\n",
+            c::renderKeyValue($this->numericProperties[$key], c::renderFloat($this->$key))
+        );
+    }
+
     protected function renderLegacyHost_id()
     {
         return $this->renderLegacyRelationProperty(
