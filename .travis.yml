@@ -31,4 +31,4 @@ before_script:
 
 script:
   - php vendor/phpcs.phar
-  - php vendor/phpunit.phar --testdox || phpunit --verbose
+  - php vendor/phpunit.phar --testdox || php vendor/phpunit.phar --verbose

@@ -5,7 +5,7 @@ set -ex
 MODULE_HOME=${MODULE_HOME:="$(dirname "$(readlink -f $(dirname "$0"))")"}
 PHP_VERSION="$(php -r 'echo phpversion();')"
 
-ICINGAWEB_VERSION=${ICINGAWEB_VERSION:=2.4.1}
+ICINGAWEB_VERSION=${ICINGAWEB_VERSION:=2.5.0}
 ICINGAWEB_GITREF=${ICINGAWEB_GITREF:=}
 
 PHPCS_VERSION=${PHPCS_VERSION:=2.9.1}
@@ -45,6 +45,7 @@ else
     tar xf "${icingaweb_path}".tar.gz
   fi
 
+  rm -f icingaweb2
   ln -svf "${icingaweb_path}" icingaweb2
 fi
 ln -svf "${icingaweb_path}"/library/Icinga
