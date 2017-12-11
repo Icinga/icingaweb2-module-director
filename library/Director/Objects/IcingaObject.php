@@ -512,7 +512,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if (parent::hasBeenModified()) {
             return true;
         }
-        $this->resolveUnresolvedRelatedProperties();
+
+        if ($this->hasUnresolvedRelatedProperties()) {
+            $this->resolveUnresolvedRelatedProperties();
+
+            // Duplicates above code, but this makes it faster:
+            if (parent::hasBeenModified()) {
+                return true;
+            }
+        }
 
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
             return true;
@@ -550,6 +558,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return false;
+    }
+
+    protected function hasUnresolvedRelatedProperties()
+    {
+        return ! empty($this->unresolvedRelatedProperties);
     }
 
     protected function hasUnresolvedRelatedProperty($name)
