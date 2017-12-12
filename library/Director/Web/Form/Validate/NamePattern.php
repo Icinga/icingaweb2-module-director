@@ -22,9 +22,15 @@ class NamePattern extends Zend_Validate_Abstract
             $this->pattern = $pattern;
         }
 
+        if (is_array($this->pattern)) {
+            $msg = implode (' | ', $this->pattern);
+        } else {
+            $msg = $this->pattern;
+        }
+
         $this->_messageTemplates[self::INVALID] = sprintf(
             'Does not match %s',
-            $pattern
+            $msg
         );
     }
 
