@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 
 class IcingaServiceSetForm extends DirectorObjectForm
 {
@@ -25,24 +24,17 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function setupTemplate()
     {
-        $this->addElement('text', 'object_name', array(
+        $this->addElement('text', 'object_name', [
             'label'       => $this->translate('Service set name'),
             'description' => $this->translate(
                 'A short name identifying this set of services'
             ),
             'required'    => true,
-        ));
-
-        $rName = 'director/service_set/filter-by-name';
-        foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
-            $this->getElement('object_name')->addValidator(
-                new NamePattern($restriction)
-            );
-        }
-
-        $this->addHidden('object_type', 'template');
-        $this->addDescriptionElement()
-            ->addAssignmentElements();
+        ])
+        ->eventuallyAddNameRestriction('director/service_set/filter-by-name')
+        ->addHidden('object_type', 'template')
+        ->addDescriptionElement()
+        ->addAssignmentElements();
     }
 
     protected function setObjectSuccessUrl()

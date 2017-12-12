@@ -10,7 +10,6 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use dipl\Html\Html;
 use dipl\Html\Link;
 
@@ -345,12 +344,7 @@ class IcingaServiceForm extends DirectorObjectForm
         ));
 
         if ($this->object()->isApplyRule()) {
-            $rName = 'director/service/apply/filter-by-name';
-            foreach ($this->getAuth()->getRestrictions($rName) as $restriction) {
-                $this->getElement('object_name')->addValidator(
-                    new NamePattern($restriction)
-                );
-            }
+            $this->eventuallyAddNameRestriction('director/service/apply/filter-by-name');
         }
 
         return $this;

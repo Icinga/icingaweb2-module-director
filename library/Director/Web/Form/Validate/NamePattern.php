@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form\Validate;
 
 use Icinga\Data\Filter\FilterMatch;
+use Icinga\Data\Filter\FilterOr;
 use Zend_Validate_Abstract;
 
 class NamePattern extends Zend_Validate_Abstract
@@ -15,7 +16,12 @@ class NamePattern extends Zend_Validate_Abstract
 
     public function __construct($pattern)
     {
-        $this->pattern = $pattern;
+        if (is_array($pattern) && count($pattern) === 1) {
+            $this->pattern = current($pattern);
+        } else {
+            $this->pattern = $pattern;
+        }
+
         $this->_messageTemplates[self::INVALID] = sprintf(
             'Does not match %s',
             $pattern
@@ -25,8 +31,17 @@ class NamePattern extends Zend_Validate_Abstract
     protected function matches($value)
     {
         if ($this->filter === null) {
-            $this->filter = new FilterMatch('prop', '=', $this->pattern);
-            $this->filter->setCaseSensitive(false);
+            if (is_array($this->pattern)) {
+                $this->filter = new FilterOr();
+                foreach ($this->pattern as $pattern) {
+                    $filter = new FilterMatch('prop', '=', $pattern);
+                    $filter->setCaseSensitive(false);
+                    $this->filter->addFilter($filter);
+                }
+            } else {
+                $this->filter = new FilterMatch('prop', '=', $this->pattern);
+                $this->filter->setCaseSensitive(false);
+            }
         }
 
         return $this->filter->matches($value);
