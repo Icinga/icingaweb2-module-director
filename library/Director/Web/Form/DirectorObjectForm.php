@@ -13,6 +13,7 @@ use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 
@@ -78,6 +79,18 @@ abstract class DirectorObjectForm extends DirectorForm
             $this->auth = Auth::getInstance();
         }
         return $this->auth;
+    }
+
+    protected function eventuallyAddNameRestriction($restrictionName)
+    {
+        $restrictions = $this->getAuth()->getRestrictions($restrictionName);
+        if (! empty($restrictions)) {
+            $this->getElement('object_name')->addValidator(
+                new NamePattern($restrictions)
+            );
+        }
+
+        return $this;
     }
 
     public function presetImports($imports)
