@@ -23,7 +23,7 @@ class NamePattern extends Zend_Validate_Abstract
         }
 
         if (is_array($this->pattern)) {
-            $msg = implode (' | ', $this->pattern);
+            $msg = implode(' | ', $this->pattern);
         } else {
             $msg = $this->pattern;
         }
