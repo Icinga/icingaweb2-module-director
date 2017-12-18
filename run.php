@@ -48,6 +48,7 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierLConfCustomVar');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierArrayFilter');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierCombine');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierURLEncode');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierXlsNumericIp');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierURLEncode');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierUpperCaseFirst');
