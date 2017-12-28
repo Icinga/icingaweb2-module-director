@@ -261,6 +261,9 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         if (empty($this->ranges) && $this->object->object_type === 'template') {
             return '';
         }
+        if (empty($this->ranges)) {
+            return '';
+        }
 
         $string = "    ranges = {\n";
 
