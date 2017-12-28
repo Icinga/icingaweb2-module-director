@@ -11,8 +11,38 @@ class IcingaHostGroup extends IcingaObjectGroup
 {
     protected $table = 'icinga_hostgroup';
 
+    protected $relations = array(
+        'zone'             => 'IcingaZone',
+    );
+
+    protected $defaultProperties = array(
+        'id'            => null,
+        'object_name'   => null,
+        'object_type'   => null,
+        'disabled'      => 'n',
+        'display_name'  => null,
+        'assign_filter' => null,
+        'zone_id'       => null,
+    );
+
+    protected $propertiesNotForRendering = array(
+        'id',
+        'object_name',
+        'object_type',
+        'zone',
+    );
+
     /** @var HostGroupMembershipResolver */
     protected $hostgroupMembershipResolver;
+
+    public function getRenderingZone(IcingaConfig $config = null)
+    {
+        if ($this->getSingleResolvedProperty('zone_id')) {
+            return $config->getZoneName($this->get('zone_id'));
+        } else {
+            return $this->connection->getDefaultGlobalZoneName();
+        }
+    }
 
     public function supportsAssignments()
     {
