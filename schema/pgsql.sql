@@ -973,17 +973,11 @@ CREATE TABLE icinga_hostgroup (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
-  PRIMARY KEY (id),
-  CONSTRAINT icinga_hostgroup_zone
-  FOREIGN KEY (zone_id)
-    REFERENCES icinga_zone (id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
+  PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
 CREATE INDEX hostgroup_search_idx ON icinga_hostgroup (display_name);
-CREATE INDEX hostgroup_zone ON icinga_hostgroup (zone_id);
 
 
 -- -- TODO: probably useless
