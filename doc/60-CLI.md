@@ -313,7 +313,7 @@ Health. This will run all or just one of the following test suites:
 
 #### Usage
 
-`icingacli director <type> clone <name> --from <original> [options]`
+`icingacli director health check [options]`
 
 #### Options
 
@@ -327,6 +327,8 @@ Health. This will run all or just one of the following test suites:
 ```shell
 icingacli director health check
 ```
+
+Example for running a check only for the configuration:
 
 ```shell
 icingacli director health check --check config
