@@ -9,8 +9,13 @@ to the latest version, please [read on here](05-Upgrading.md).
 Requirements
 ------------
 
-* Icinga 2 (&gt;= 2.6.0). All versions sinve 2.4.3 should also work fine, but
-  we do no longer test and support them.
+* Icinga 2 (&gt;= 2.6.0)
+  * It is recommended to use the latest feature release of Icinga 2
+  * All versions since 2.4.3 should also work fine, but
+    we do no longer test and support them.
+  * Some features require newer Icinga 2 releases
+    * Flapping requires 2.8 for the thresholds to work - and at least 2.7 on all
+      nodes
 * Icinga Web 2 (&gt;= 2.4.1). All versions since 2.2 should also work fine, but
   might show smaller UI bugs and are not actively tested
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
