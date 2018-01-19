@@ -30,6 +30,17 @@ before switching to a new version.
 * FEATURE: new Property Modifier to url-encode values
 * FEATURE: new Property Modifier: uppercase the first character of each word
 
+### Icinga Configuration
+* FEATURE: support flapping settings for Icinga &gt;= 2.8.0 (#330)
+
+1.4.3
+-----
+### User Interface
+* FIX: Pagination used to be broken for some tables (#1273)
+
+### Automation
+* FIX: Updating certain properties via API fails (#1315)
+
 1.4.2
 -----
 ### Fixed issues
