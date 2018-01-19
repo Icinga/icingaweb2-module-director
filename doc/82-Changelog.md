@@ -4,6 +4,14 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.4.3
+-----
+### User Interface
+* FIX: Pagination used to be broken for some tables (#1273)
+
+### Automation
+* FIX: Updating certain properties via API fails (#1315)
+
 1.4.2
 -----
 ### Fixed issues
