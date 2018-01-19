@@ -56,7 +56,7 @@ class SimpleQueryPaginationAdapter implements Paginatable
 
     public function getOffset()
     {
-        return $this->query->hasOffset();
+        return $this->query->getOffset();
     }
 
     public function setOffset($offset)
