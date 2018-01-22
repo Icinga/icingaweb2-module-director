@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Module\Director\CheckPlugin\PluginState;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Health;
+use Icinga\Module\Director\Cli\PluginOutputBeautifier;
 
 /**
  * Check Icinga Director Health
@@ -24,9 +25,10 @@ class HealthCommand extends Command
      *
      * OPTIONS
      *
-     *   --check <name>  Run only a specific set of checks
-     *                   valid names: config, sync, import, job, deployment
-     *   --db <name>     Use a specific Icinga Web DB resource
+     *   --check <name>     Run only a specific set of checks
+     *                      valid names: config, sync, import, job, deployment
+     *   --db <name>        Use a specific Icinga Web DB resource
+     *   --watch <seconds>  Refresh every <second>. For interactive use only
      */
     public function checkAction()
     {
@@ -37,7 +39,7 @@ class HealthCommand extends Command
 
         if ($name = $this->params->get('check')) {
             $check = $health->getCheck($name);
-            echo $check->getOutput();
+            echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
 
             exit($check->getState()->getNumeric());
         } else {
@@ -55,8 +57,24 @@ class HealthCommand extends Command
             } else {
                 echo "Icinga Director: there are problems\n\n";
             }
-            echo implode("\n", $output);
-            exit($state->getNumeric());
+
+            $out = PluginOutputBeautifier::beautify(implode("\n", $output), $this->screen);
+            echo $out;
+
+            if (! $this->isBeingWatched()) {
+                exit($state->getNumeric());
+            }
         }
+    }
+
+    /**
+     * Cli should provide this information, as it shifts the parameter
+     *
+     * @return bool
+     */
+    protected function isBeingWatched()
+    {
+        global $argv;
+        return in_array('--watch', $argv);
     }
 }
