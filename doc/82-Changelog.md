@@ -30,6 +30,10 @@ before switching to a new version.
 * FEATURE: new Property Modifier to url-encode values
 * FEATURE: new Property Modifier: uppercase the first character of each word
 
+### Internals
+* FEATURE: Html/Attribute now allows boolean properties
+* FEATURE: Html/Attribute allows colons in attribute names (required for SVGs)
+
 ### Icinga Configuration
 * FEATURE: support flapping settings for Icinga &gt;= 2.8.0 (#330)
 

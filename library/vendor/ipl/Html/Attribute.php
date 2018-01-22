@@ -19,7 +19,7 @@ class Attribute
     /** @var string */
     protected $name;
 
-    /** @var string|array */
+    /** @var string|array|bool|null */
     protected $value;
 
     /**
@@ -28,7 +28,7 @@ class Attribute
      * @param $name
      * @param $value
      */
-    public function __construct($name, $value)
+    public function __construct($name, $value = null)
     {
         $this->setName($name)->setValue($value);
     }
@@ -44,28 +44,29 @@ class Attribute
     }
 
     /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
      * @param $name
      * @return $this
      * @throws ProgrammingError
      */
     public function setName($name)
     {
-        if (! preg_match('/^[a-z][a-z-]*$/i', $name)) {
+        if (! preg_match('/^[a-z][a-z:-]*$/i', $name)) {
             throw new ProgrammingError(
                 'Attribute names with special characters are not yet allowed: %s',
                 $name
             );
         }
         $this->name = $name;
-        return $this;
-    }
 
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
+        return $this;
     }
 
     /**
@@ -77,12 +78,13 @@ class Attribute
     }
 
     /**
-     * @param string|array $value
+     * @param mixed $value
      * @return $this
      */
     public function setValue($value)
     {
         $this->value = $value;
+
         return $this;
     }
 
@@ -93,7 +95,7 @@ class Attribute
     public function addValue($value)
     {
         if (! is_array($this->value)) {
-            $this->value = array($this->value);
+            $this->value = [$this->value];
         }
 
         if (is_array($value)) {
@@ -106,15 +108,27 @@ class Attribute
     }
 
     /**
+     * @return bool
+     */
+    public function isBoolean()
+    {
+        return is_bool($this->value);
+    }
+
+    /**
      * @return string
      */
     public function render()
     {
-        return sprintf(
-            '%s="%s"',
-            $this->renderName(),
-            $this->renderValue()
-        );
+        if ($this->isBoolean() && $this->value) {
+            return $this->renderName();
+        } else {
+            return sprintf(
+                '%s="%s"',
+                $this->renderName(),
+                $this->renderValue()
+            );
+        }
     }
 
     /**
