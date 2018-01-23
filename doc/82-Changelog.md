@@ -6,11 +6,16 @@ before switching to a new version.
 
 1.4.3
 -----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/13?closed=1)
+
 ### User Interface
 * FIX: Pagination used to be broken for some tables (#1273)
 
 ### Automation
-* FIX: Updating certain properties via API fails (#1315)
+* FIX: API calls changing only object relations and no "real" property resulted
+  in no change at all (#1315)
 
 1.4.2
 -----
