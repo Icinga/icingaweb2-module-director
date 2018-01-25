@@ -94,10 +94,19 @@ class ImportSource extends DbObjectWithSettings
     {
         $modifiers = $this->getRowModifiers();
 
+        $rejected = [];
+
         if (! empty($modifiers)) {
-            foreach ($data as &$row) {
+            foreach ($data as $key => &$row) {
                 $this->applyModifiersToRow($row);
+                if (null === $row) {
+                    $rejected[] = $row;
+                }
             }
+        }
+
+        foreach ($rejected as $key) {
+            unset($data[$key]);
         }
 
         return $this;
@@ -116,7 +125,7 @@ class ImportSource extends DbObjectWithSettings
             foreach ($mods as $mod) {
                 $this->applyPropertyModifierToRow($mod, $key, $row);
                 if (null === $row) {
-                    return $this;
+                    return;
                 }
             }
         }
@@ -154,6 +163,9 @@ class ImportSource extends DbObjectWithSettings
             $row->$target = $modifier->transform($value);
         }
 
+        if ($modifier->rejectsRow()) {
+            $row = null;
+        }
     }
 
     public function getRowModifiers()
