@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Error;
 use Exception;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -73,11 +74,9 @@ class PropertymodifierTable extends ZfQueryBasedTable
                 $hook = new $class;
                 $caption .= ': ' . $hook->getName();
             } catch (Exception $e) {
-                $caption = [
-                    $caption,
-                    ': ',
-                    $this::tag('span', ['class' => 'error'], $e->getMessage())
-                ];
+                $caption = $this->createErrorCaption($caption, $e);
+            } catch (Error $e) {
+                $caption = $this->createErrorCaption($caption, $e);
             }
         } else {
             $caption .= ': ' . $row->description;
@@ -92,6 +91,20 @@ class PropertymodifierTable extends ZfQueryBasedTable
             ]),
             $row
         );
+    }
+
+    /**
+     * @param $caption
+     * @param Exception|Error $e
+     * @return array
+     */
+    protected function createErrorCaption($caption, $e)
+    {
+        return [
+            $caption,
+            ': ',
+            $this::tag('span', ['class' => 'error'], $e->getMessage())
+        ];
     }
 
     public function getColumnsToBeRendered()

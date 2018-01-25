@@ -27,9 +27,14 @@ class ImportRowModifierForm extends DirectorObjectForm
         $this->addElement('select', 'property_name', array(
             'label'        => $this->translate('Property'),
             'description'  => $this->translate('This must be an import source column (property)'),
-            'multiOptions' => $this->optionalEnum($this->enumSourceColumns()),
             'required'     => true,
         ));
+        try {
+            $sourceColumns = $this->enumSourceColumns();
+            $this->getElement('property_name')->multiOptions = $this->optionalEnum($sourceColumns);
+        } catch (Exception $e) {
+            $this->getElement('property_name')->addError($e->getMessage());
+        }
 
         $this->addElement('text', 'target_property', array(
             'label'        => $this->translate('Target property'),
@@ -57,7 +62,7 @@ class ImportRowModifierForm extends DirectorObjectForm
             $error = $e->getMessage();
             $mods = $this->optionalEnum(array());
         }
-        
+
         $this->addElement('select', 'provider_class', array(
             'label'        => $this->translate('Modifier'),
             'required'     => true,

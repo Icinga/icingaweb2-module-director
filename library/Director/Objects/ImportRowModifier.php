@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Objects\Extension\PriorityColumn;
@@ -37,6 +38,9 @@ class ImportRowModifier extends DbObjectWithSettings
         if ($this->hookInstance === null) {
             $class = $this->get('provider_class');
             /** @var PropertyModifierHook $obj */
+            if (! class_exists($class)) {
+                throw new ConfigurationError('Cannot instantiate Property modifier %s', $class);
+            }
             $obj = new $class;
             $obj->setSettings($this->getSettings());
             $obj->setTargetProperty($this->get('target_property'));
