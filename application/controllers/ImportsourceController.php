@@ -122,11 +122,15 @@ class ImportsourceController extends ActionController
 
     public function editmodifierAction()
     {
-        $source = $this->requireImportSourceAndAddModifierTable();
+        // We need to load the table AFTER adding the title, otherwise search
+        // will not be placed next to the title
+        $source = ImportSource::load($this->params->getRequired('source_id'), $this->db());
+
         $this->addTitle(
             $this->translate('%s: Property Modifier'),
             $source->get('source_name')
         )->addBackToModifiersLink($source);
+        $source = $this->requireImportSourceAndAddModifierTable();
         $this->tabs()->activate('modifier');
 
         $listUrl = 'director/importsource/modifier?source_id='
