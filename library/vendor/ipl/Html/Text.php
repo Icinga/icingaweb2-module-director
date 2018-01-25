@@ -14,7 +14,7 @@ class Text implements ValidHtml
     /**
      * Text constructor.
      *
-     * @param $text
+     * @param string $string
      */
     public function __construct($string)
     {
