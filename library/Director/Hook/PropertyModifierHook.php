@@ -7,15 +7,19 @@ use Icinga\Module\Director\Db;
 
 abstract class PropertyModifierHook
 {
-    protected $settings = array();
+    /** @var array */
+    protected $settings = [];
 
+    /** @var string */
     private $targetProperty;
 
+    /** @var Db */
     private $db;
 
-    /**
-     * @var \stdClass
-     */
+    /** @var bool */
+    private $rejected = false;
+
+    /** @var \stdClass */
     private $row;
 
     /**
@@ -23,7 +27,7 @@ abstract class PropertyModifierHook
      *
      * Your custom property modifier needs to implement this method.
      *
-     * @return value
+     * @return mixed $value
      */
     abstract public function transform($value);
 
@@ -56,6 +60,21 @@ abstract class PropertyModifierHook
     }
 
     /**
+     * Reject this whole row
+     *
+     * Allows your property modifier to reject specific rows
+     *
+     * @param bool $reject
+     * @return $this
+     */
+    public function rejectRow($reject = true)
+    {
+        $this->rejected = (bool) $reject;
+
+        return $this;
+    }
+
+    /**
      * Whether this PropertyModifier wants access to the current row
      *
      * When true, the your modifier can access the current row via $this->getRow()
@@ -65,6 +84,16 @@ abstract class PropertyModifierHook
     public function requiresRow()
     {
         return false;
+    }
+
+    /**
+     * Whether this modifier wants to reject the current row
+     *
+     * @return bool
+     */
+    public function rejectsRow()
+    {
+        return $this->rejected;
     }
 
     /**
