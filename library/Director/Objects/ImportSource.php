@@ -103,6 +103,10 @@ class ImportSource extends DbObjectWithSettings
         return $this;
     }
 
+    /**
+     * @param $row
+     * @throws ConfigurationError
+     */
     public function applyModifiersToRow(& $row)
     {
         $modifiers = $this->getRowModifiers();
@@ -110,45 +114,46 @@ class ImportSource extends DbObjectWithSettings
         foreach ($modifiers as $key => $mods) {
             /** @var PropertyModifierHook $mod */
             foreach ($mods as $mod) {
-                if ($mod->requiresRow()) {
-                    $mod->setRow($row);
-                }
-                if (! property_exists($row, $key)) {
-                    // Partial support for nested keys. Must write result to
-                    // a dedicated flat key
-                    if (strpos($key, '.') !== false) {
-                        $val = SyncUtils::getSpecificValue($row, $key);
-                        if ($val !== null) {
-                            $target = $mod->getTargetProperty($key);
-                            if (strpos($target, '.') !== false) {
-                                throw new ConfigurationError(
-                                    'Cannot set value for nested key "%s"',
-                                    $target
-                                );
-                            }
-
-                            $row->$target = $mod->transform($val);
-                        }
-                    }
-
-                    continue;
-                }
-
-                $target = $mod->getTargetProperty($key);
-
-                if (is_array($row->$key) && ! $mod->hasArraySupport()) {
-                    $new = array();
-                    foreach ($row->$key as $k => $v) {
-                        $new[$k] = $mod->transform($v);
-                    }
-                    $row->$target = $new;
-                } else {
-                    $row->$target = $mod->transform($row->$key);
+                $this->applyPropertyModifierToRow($mod, $key, $row);
+                if (null === $row) {
+                    return $this;
                 }
             }
         }
+    }
 
-        return $this;
+    protected function applyPropertyModifierToRow(PropertyModifierHook $modifier, $key, & $row)
+    {
+        if ($modifier->requiresRow()) {
+            $modifier->setRow($row);
+        }
+
+        if (property_exists($row, $key)) {
+            $value = $row->$key;
+        } elseif (strpos($key, '.') !== false) {
+            $value = SyncUtils::getSpecificValue($row, $key);
+        } else {
+            $value = null;
+        }
+
+        $target = $modifier->getTargetProperty($key);
+        if (strpos($target, '.') !== false) {
+            throw new ConfigurationError(
+                'Cannot set value for nested key "%s"',
+                $target
+            );
+        }
+
+        if (is_array($value) && ! $modifier->hasArraySupport()) {
+            $new = [];
+            foreach ($value as $k => $v) {
+                $new[$k] = $modifier->transform($v);
+            }
+            $row->$target = $new;
+        } else {
+            $row->$target = $modifier->transform($value);
+        }
+
     }
 
     public function getRowModifiers()
