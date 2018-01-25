@@ -145,11 +145,12 @@ class Health
     public function checkSyncRules()
     {
         $check = new CheckResults('Sync Rules');
-        $rules = SyncRule::loadAll($this->getConnection());
+        $rules = SyncRule::loadAll($this->getConnection(), null, 'rule_name');
         if (empty($rules)) {
             $check->warn('No Sync Rules have been defined');
             return $check;
         }
+        ksort($rules);
 
         foreach ($rules as $rule) {
             $state = $rule->get('sync_state');
@@ -172,12 +173,13 @@ class Health
     public function checkImportSources()
     {
         $check = new CheckResults('Import Sources');
-        $sources = ImportSource::loadAll($this->getConnection());
+        $sources = ImportSource::loadAll($this->getConnection(), null, 'source_name');
         if (empty($sources)) {
             $check->warn('No Import Sources have been defined');
             return $check;
         }
 
+        ksort($sources);
         foreach ($sources as $src) {
             $state = $src->get('import_state');
             $name = $src->get('source_name');
@@ -199,11 +201,12 @@ class Health
     public function checkDirectorJobs()
     {
         $check = new CheckResults('Director Jobs');
-        $jobs = DirectorJob::loadAll($this->getConnection());
+        $jobs = DirectorJob::loadAll($this->getConnection(), null, 'job_name');
         if (empty($jobs)) {
             $check->warn('No Jobs have been defined');
             return $check;
         }
+        ksort($jobs);
 
         foreach ($jobs as $job) {
             $name = $job->get('job_name');
