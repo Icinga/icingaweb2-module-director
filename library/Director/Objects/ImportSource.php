@@ -125,6 +125,9 @@ class ImportSource extends DbObjectWithSettings
             foreach ($mods as $mod) {
                 $this->applyPropertyModifierToRow($mod, $key, $row);
                 if (null === $row) {
+                    // Modifier will be re-used for the next row, reset state:
+                    $mod->rejectRow(false);
+
                     return;
                 }
             }
