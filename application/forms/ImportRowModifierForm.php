@@ -31,7 +31,9 @@ class ImportRowModifierForm extends DirectorObjectForm
         ));
         try {
             $sourceColumns = $this->enumSourceColumns();
-            $this->getElement('property_name')->multiOptions = $this->optionalEnum($sourceColumns);
+            $this->getElement('property_name')->setOptions([
+                'multiOptions' => $this->optionalEnum($sourceColumns)
+            ]);
         } catch (Exception $e) {
             $this->getElement('property_name')->addError($e->getMessage());
         }
