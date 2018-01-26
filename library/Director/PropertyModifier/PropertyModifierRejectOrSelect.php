@@ -26,7 +26,9 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
             'multiOptions' => $form->optionalEnum([
                 'wildcard' => $form->translate('Simple match with wildcards (*)'),
                 'regex'    => $form->translate('Regular Expression'),
+                'is_null'  => $form->translate('Match NULL value columns'),
             ]),
+            'class' => 'autosubmit',
         ]);
 
         $form->addElement('text', 'filter_string', [
@@ -59,6 +61,11 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
         return preg_match($expression, $string);
     }
 
+    public function isNull($string, $expression)
+    {
+        return $string === null;
+    }
+
     public function matchesWildcard($string, $expression)
     {
         return $this->filterExpression->matches(
@@ -79,6 +86,9 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
                 break;
             case 'regex':
                 $func = 'matchesRegexp';
+                break;
+            case 'is_null':
+                $func = 'isNull';
                 break;
             default:
                 throw new ConfigurationError(
