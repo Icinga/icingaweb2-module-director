@@ -92,49 +92,34 @@ class ImportSource extends DbObjectWithSettings
 
     public function applyModifiers(& $data)
     {
-        $modifiers = $this->getRowModifiers();
+        $modifiers = $this->fetchFlatRowModifiers();
 
-        $rejected = [];
-
-        if (! empty($modifiers)) {
-            foreach ($data as $key => &$row) {
-                $this->applyModifiersToRow($row);
-                if (null === $row) {
-                    $rejected[] = $key;
-                }
-            }
+        if (empty($modifiers)) {
+            return $this;
         }
 
-        foreach ($rejected as $key) {
-            unset($data[$key]);
+
+        foreach ($modifiers as $modPair) {
+            /** @var PropertyModifierHook $modifier */
+            list($property, $modifier) = $modPair;
+            $rejected = [];
+            foreach ($data as $key => $row) {
+                $this->applyPropertyModifierToRow($modifier, $property, $row);
+                if ($modifier->rejectsRow()) {
+                    $rejected[] = $key;
+                    $modifier->rejectRow(false);
+                }
+            }
+
+            foreach ($rejected as $key) {
+                unset($data[$key]);
+            }
         }
 
         return $this;
     }
 
-    /**
-     * @param $row
-     * @throws ConfigurationError
-     */
-    public function applyModifiersToRow(& $row)
-    {
-        $modifiers = $this->getRowModifiers();
-
-        foreach ($modifiers as $key => $mods) {
-            /** @var PropertyModifierHook $mod */
-            foreach ($mods as $mod) {
-                $this->applyPropertyModifierToRow($mod, $key, $row);
-                if (null === $row) {
-                    // Modifier will be re-used for the next row, reset state:
-                    $mod->rejectRow(false);
-
-                    return;
-                }
-            }
-        }
-    }
-
-    protected function applyPropertyModifierToRow(PropertyModifierHook $modifier, $key, & $row)
+    protected function applyPropertyModifierToRow(PropertyModifierHook $modifier, $key, $row)
     {
         if ($modifier->requiresRow()) {
             $modifier->setRow($row);
@@ -165,10 +150,6 @@ class ImportSource extends DbObjectWithSettings
         } else {
             $row->$target = $modifier->transform($value);
         }
-
-        if ($modifier->rejectsRow()) {
-            $row = null;
-        }
     }
 
     public function getRowModifiers()
@@ -198,6 +179,16 @@ class ImportSource extends DbObjectWithSettings
         );
 
         return $modifiers;
+    }
+
+    protected function fetchFlatRowModifiers()
+    {
+        $mods = [];
+        foreach ($this->fetchRowModifiers() as $mod) {
+            $mods[] = [$mod->property_name, $mod->getInstance()];
+        }
+
+        return $mods;
     }
 
     protected function prepareRowModifiers()
