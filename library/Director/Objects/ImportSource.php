@@ -100,7 +100,7 @@ class ImportSource extends DbObjectWithSettings
             foreach ($data as $key => &$row) {
                 $this->applyModifiersToRow($row);
                 if (null === $row) {
-                    $rejected[] = $row;
+                    $rejected[] = $key;
                 }
             }
         }
