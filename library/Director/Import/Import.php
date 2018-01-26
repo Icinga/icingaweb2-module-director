@@ -164,9 +164,9 @@ class Import
             $this->data = ImportSourceHook::forImportSource(
                 $this->source
             )->fetchData();
+            $this->source->applyModifiers($this->data);
         }
 
-        $this->source->applyModifiers($this->data);
         return $this->data;
     }
 
