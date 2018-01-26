@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\ValidHtml;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Import\SyncUtils;
@@ -20,6 +21,11 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
     protected $columnCache;
 
     protected $sourceHook;
+
+    protected function assemble()
+    {
+        $this->attributes()->add('class', 'raw-data-table collapsed');
+    }
 
     public function getColumns()
     {
@@ -55,12 +61,16 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
 
     public function renderRow($row)
     {
+        // Find a better place!
+        if ($row === null) {
+            return null;
+        }
         $tr = $this::tr();
 
         foreach ($this->getColumnsToBeRendered() as $column) {
             $td = $this::td();
             if (property_exists($row, $column)) {
-                if (is_string($row->$column)) {
+                if (is_string($row->$column) || $row->$column instanceof ValidHtml) {
                     $td->setContent($row->$column);
                 } else {
                     $html = Html::tag('pre', null, PlainObjectRenderer::render($row->$column));
