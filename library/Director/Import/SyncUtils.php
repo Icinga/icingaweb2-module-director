@@ -130,7 +130,7 @@ class SyncUtils
     {
         $res = array();
         foreach ($vars as $p) {
-            if (false === ($pos = strpos($p, '.'))) {
+            if (false === ($pos = strpos($p, '.')) || $pos === strlen($p) - 1) {
                 $res[] = $p;
             } else {
                 $res[] = substr($p, 0, $pos);
