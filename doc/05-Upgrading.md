@@ -39,10 +39,11 @@ pending database migrations to an imported old database snapshot.
 <a name="upgrade-to-1.4.x"></a>Upgrading to 1.4.x
 -------------------------------------------------
 
-There is nothing special to take care of. In case you are running 1.3.x or any
-GIT master since then, all you need is to replace the Director module folder with
-the new one. Or to run `git checkout v1.4.x` in case you installed Director from
-GIT.
+Since v1.4.0 Icinga Director requires at least PHP 5.4. Apart from this, there
+is nothing special to take care of. In case you are running 1.3.x or any GIT
+master since then, all you need is to replace the Director module folder with
+the new one. Or to run `git checkout v1.4.x` in case you installed Director
+from GIT.
 
 <a name="upgrade-to-1.3.x"></a>Upgrading to 1.3.x
 -------------------------------------------------
