@@ -16,6 +16,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.4.x](#upgrade-to-1.4.x)
 * [Upgrading to 1.3.0](#upgrade-to-1.3.0)
 * [Upgrading to 1.2.0](#upgrade-to-1.2.0)
 * [Upgrading to 1.1.0](#upgrade-to-1.1.0)
@@ -35,11 +36,19 @@ use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
 
-<a name="upgrade-to-1.3.0"></a>Upgrading to 1.3.0
+<a name="upgrade-to-1.4.x"></a>Upgrading to 1.4.x
+-------------------------------------------------
+
+There is nothing special to take care of. In case you are running 1.3.x or any
+GIT master since then, all you need is to replace the Director module folder with
+the new one. Or to run `git checkout v1.4.x` in case you installed Director from
+GIT.
+
+<a name="upgrade-to-1.3.x"></a>Upgrading to 1.3.x
 -------------------------------------------------
 
 In case you are running 1.2.0 or any GIT master since then, all you need is to
-replace the Director module folder with the new one. Or to run `git checkout v1.3.0`
+replace the Director module folder with the new one. Or to run `git checkout v1.3.x`
 in case you installed Director from GIT.
 
 When running Director since 1.1.0 or earlier on PostgreSQL, you might not yet
