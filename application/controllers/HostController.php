@@ -356,10 +356,34 @@ class HostController extends ObjectController
                         'data-base-target' => '_next'
                     ]
                 ));
+
+                // Intentionally placed here, show it only for deployed Hosts
+                $this->addOptionalInspectLink();
             }
         } catch (Exception $e) {
             // Silently ignore errors in the monitoring module
         }
+    }
+
+    protected function addOptionalInspectLink()
+    {
+        if (! $this->hasPermission('director/inspect')) {
+            return;
+        }
+
+        $this->actions()->add(Link::create(
+            $this->translate('Inspect'),
+            'director/inspect/object',
+            [
+                'type'   => 'host',
+                'plural' => 'hosts',
+                'name'   => $this->object->getObjectName()
+            ],
+            [
+                'class'            => 'icon-zoom-in',
+                'data-base-target' => '_next'
+            ]
+        ));
     }
 
     /**
