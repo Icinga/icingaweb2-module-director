@@ -296,6 +296,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addHidden('service_set_id', $this->set->id);
         $this->addHidden('object_type', 'apply');
         $this->addImportsElement();
+        $this->setButtons();
         $imports = $this->getSentOrObjectValue('imports');
 
         if ($this->hasBeenSent()) {
@@ -314,8 +315,7 @@ class IcingaServiceForm extends DirectorObjectForm
         if ($this->hasPermission('director/admin')) {
             $this->addCheckCommandElements(true)
                 ->addCheckExecutionElements(true)
-                ->addExtraInfoElements()
-                ->setButtons();
+                ->addExtraInfoElements();
         }
 
         if ($this->hasBeenSent()) {
