@@ -69,10 +69,11 @@ class SyncUtils
      *
      * Supports also keys pointing to nested structures like vars.disk.sda
      *
-     * @param  object $row    stdClass object providing property values
-     * @param  string $string Variable/property name
+     * @param  object $row  stdClass object providing property values
+     * @param  string $var  Variable/property name
      *
      * @return mixed
+     * @throws IcingaException
      */
     public static function getSpecificValue($row, $var)
     {
