@@ -274,4 +274,12 @@ class Health
 
         return $check;
     }
+
+    public function __destruct()
+    {
+        if ($this->connection !== null) {
+            // We created our own connection, so let's tear it down
+            $this->connection->getDbAdapter()->closeConnection();
+        }
+    }
 }
