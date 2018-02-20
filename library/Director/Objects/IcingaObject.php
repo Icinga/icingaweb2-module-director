@@ -1586,15 +1586,30 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($this->hasProperty('zone_id')) {
             if (! $this->supportsImports()) {
                 if ($zoneId = $this->get('zone_id')) {
-                    // Config has a lookup cache, is faster:
-                    return $config->getZoneName($zoneId);
+                    // TODO: this is ugly.
+                    if ($config === null) {
+                        return IcingaZone::loadWithAutoIncId(
+                            $zoneId,
+                            $this->getConnection()
+                        )->getObjectName();
+                    } else {
+                        // Config has a lookup cache, is faster:
+                        return $config->getZoneName($zoneId);
+                    }
                 }
             }
 
             try {
                 if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
-                    // Config has a lookup cache, is faster:
-                    return $config->getZoneName($zoneId);
+                    if ($config === null) {
+                        return IcingaZone::loadWithAutoIncId(
+                            $zoneId,
+                            $this->getConnection()
+                        )->getObjectName();
+                    } else {
+                        // Config has a lookup cache, is faster:
+                        return $config->getZoneName($zoneId);
+                    }
                 }
             } catch (Exception $e) {
                 return self::RESOLVE_ERROR;
