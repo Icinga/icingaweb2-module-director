@@ -13,6 +13,9 @@ class Attributes
     /** @var callable */
     protected $callbacks = array();
 
+    /** @var string */
+    protected $prefix = '';
+
     /**
      * Attributes constructor.
      * @param Attribute[] $attributes
@@ -121,6 +124,8 @@ class Attributes
             foreach ($attribute as $name => $value) {
                 $this->set($name, $value);
             }
+
+            return $this;
         } else {
             return $this->setAttribute(new Attribute($attribute, $value));
         }
@@ -239,6 +244,20 @@ class Attributes
 
             $parts[] = $attribute->render();
         }
-        return ' ' . implode(' ', $parts);
+
+        $separator = ' ' . $this->prefix;
+
+        return $separator . implode($separator, $parts);
+    }
+
+    /**
+     * @param string $prefix
+     * @return $this
+     */
+    public function setPrefix($prefix)
+    {
+        $this->prefix = $prefix;
+
+        return $this;
     }
 }
