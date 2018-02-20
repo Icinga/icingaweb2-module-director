@@ -501,20 +501,7 @@ constants
      */
     public function getCheckCommandObjects()
     {
-        IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
-
-        $objects = $this->getDirectorObjects('Command', 'CheckCommand', 'CheckCommands', array(
-            'arguments' => 'arguments',
-            // 'env'      => 'env',
-            'timeout'   => 'timeout',
-            'command'   => 'command',
-            'vars'      => 'vars'
-        ));
-        foreach ($objects as $obj) {
-            $obj->methods_execute = 'PluginCheck';
-        }
-
-        return $objects;
+        return $this->getSpecificCommandObjects('Command');
     }
 
     /**
@@ -522,9 +509,25 @@ constants
      */
     public function getNotificationCommandObjects()
     {
+        return $this->getSpecificCommandObjects('Notification');
+    }
+
+    /**
+     * @return IcingaCommand[]
+     */
+    public function getEventCommandObjects()
+    {
+        return $this->getSpecificCommandObjects('Event');
+    }
+
+    /**
+     * @return IcingaCommand[]
+     */
+    public function getSpecificCommandObjects($type)
+    {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
 
-        $objects = $this->getDirectorObjects('Command', 'NotificationCommand', 'NotificationCommands', array(
+        $objects = $this->getDirectorObjects('Command', "${type}Command", "${type}Commands", array(
             'arguments' => 'arguments',
             // 'env'      => 'env',
             'timeout'   => 'timeout',
@@ -532,7 +535,7 @@ constants
             'vars'      => 'vars'
         ));
         foreach ($objects as $obj) {
-            $obj->methods_execute = 'PluginNotification';
+            $obj->methods_execute = "Plugin$type";
         }
 
         return $objects;

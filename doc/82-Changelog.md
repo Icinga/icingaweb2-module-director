@@ -29,6 +29,7 @@ before switching to a new version.
 * FEATURE: new Property Modifier for IPs formatted as number in Excel files (#1296)
 * FEATURE: new Property Modifier to url-encode values
 * FEATURE: new Property Modifier: uppercase the first character of each word
+* FEATURE: Kickstart Helper now also imports Event Commands (#1389)
 
 ### Internals
 * FEATURE: Html/Attribute now allows boolean properties

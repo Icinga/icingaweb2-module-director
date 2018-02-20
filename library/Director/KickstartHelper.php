@@ -392,24 +392,16 @@ class KickstartHelper
         $zdb = $db->getDbAdapter();
         $zdb->beginTransaction();
         /** @var IcingaObject $object */
-        foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
-            if ($object::exists($object->object_name, $db)) {
-                $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
-            } else {
-                $new = $object;
-            }
-    
-            $new->store();
-        }
+        foreach (['Check', 'Notification', 'Event'] as $type) {
+            foreach ($this->api()->setDb($db)->getSpecificCommandObjects($type) as $object) {
+                if ($object::exists($object->object_name, $db)) {
+                    $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
+                } else {
+                    $new = $object;
+                }
 
-        foreach ($this->api()->setDb($db)->getNotificationCommandObjects() as $object) {
-            if ($object::exists($object->object_name, $db)) {
-                $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
-            } else {
-                $new = $object;
+                $new->store();
             }
-
-            $new->store();
         }
         $zdb->commit();
 
