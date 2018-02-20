@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
 use Icinga\Module\Monitoring\Object\Service;
@@ -24,33 +23,28 @@ class ServiceActions extends ServiceActionsHook
 
     protected function getThem(Service $service)
     {
-        if (! Util::hasPermission('director/inspect')) {
-            return array();
-        }
-
+        $actions = array();
         $db = $this->db();
         if (! $db) {
             return array();
         }
 
-        if (IcingaHost::exists($service->host_name, $db)) {
-            return array(
-                'Inspect' => Url::fromPath(
-                    'director/inspect/object',
-                    array(
-                        'type'   => 'service',
-                        'plural' => 'services',
-                        'name'   => sprintf(
-                            '%s!%s',
-                            $service->host_name,
-                            $service->service_description
-                        )
+        if (Util::hasPermission('director/inspect')) {
+            $actions['Inspect'] = Url::fromPath(
+                'director/inspect/object',
+                array(
+                    'type'   => 'service',
+                    'plural' => 'services',
+                    'name'   => sprintf(
+                        '%s!%s',
+                        $service->host_name,
+                        $service->service_description
                     )
                 )
             );
-        } else {
-            return array();
         }
+
+        return $actions;
     }
 
     protected function db()
