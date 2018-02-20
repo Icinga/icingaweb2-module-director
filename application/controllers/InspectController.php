@@ -12,6 +12,7 @@ use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Tree\InspectTreeRenderer;
 use dipl\Html\Html;
 use dipl\Html\Link;
+use Icinga\Module\Director\Web\Widget\IcingaObjectInspection;
 
 class InspectController extends ActionController
 {
@@ -89,11 +90,32 @@ class InspectController extends ActionController
         $name = $this->params->get('name');
         $pType = $this->params->get('plural');
         $this->addSingleTab($this->translate('Object Inspection'));
-        $object = $this->endpoint()->api()->getObject($name, $pType);
         $this->addTitle('%s "%s"', $pType, $name);
-        $this->content()->add(Html::pre(
-            PlainObjectRenderer::render($object)
-        ));
+        $this->showEndpointInformation($this->endpoint());
+        $this->content()->add(
+            new IcingaObjectInspection(
+                $this->endpoint()->api()->getObject($name, $pType),
+                $this->db()
+            )
+        );
+    }
+
+    protected function showEndpointInformation(IcingaEndpoint $endpoint)
+    {
+        $this->content()->add(
+            Html::tag('p', null, Html::sprintf(
+                'Inspected via %s (%s)',
+                $this->linkToEndpoint($endpoint),
+                $endpoint->getDescriptiveUrl()
+            ))
+        );
+    }
+
+    protected function linkToEndpoint(IcingaEndpoint $endpoint)
+    {
+        return Link::create($endpoint->getObjectName(), 'director/endpoint', [
+            'name' => $endpoint->getObjectName()
+        ]);
     }
 
     public function statusAction()
