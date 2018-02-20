@@ -44,6 +44,7 @@ class IcingaUserForm extends DirectorObjectForm
              ->addImportsElement()
              ->addDisplayNameElement()
              ->addEnableNotificationsElement()
+             ->addPeriodElement()
              ->addDisabledElement()
              ->addZoneElements()
              ->addEventFilterElements()
@@ -118,6 +119,27 @@ class IcingaUserForm extends DirectorObjectForm
             )
         ));
 
+        return $this;
+    }
+
+    protected function addPeriodElement()
+    {
+        $periods = $this->db->enumTimeperiods();
+        if (empty($periods)) {
+            return $this;
+        }
+        $this->addElement(
+            'select',
+            'period_id',
+            array(
+                'label' => $this->translate('Time period'),
+                'description' => $this->translate(
+                    'The name of a time period which determines when this'
+                    . ' notification should be triggered. Not set by default.'
+                ),
+                'multiOptions' => $this->optionalEnum($periods),
+            )
+        );
         return $this;
     }
 
