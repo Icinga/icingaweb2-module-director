@@ -45,7 +45,12 @@ class Img extends BaseElement
             $this->url = $url;
         } else {
             if ($urlParams === null) {
-                $this->url = Url::fromPath($url);
+                if (is_string($url) && substr($url, 0, 5) === 'data:') {
+                    $this->url = $url;
+                    return;
+                } else {
+                    $this->url = Url::fromPath($url);
+                }
             } else {
                 $this->url = Url::fromPath($url, $urlParams);
             }
@@ -59,7 +64,11 @@ class Img extends BaseElement
      */
     public function getSrcAttribute()
     {
-        return new Attribute('src', $this->getUrl()->getAbsoluteUrl('&'));
+        if (is_string($this->url)) {
+            return new Attribute('src', $this->url);
+        } else {
+            return new Attribute('src', $this->getUrl()->getAbsoluteUrl('&'));
+        }
     }
 
     /**
