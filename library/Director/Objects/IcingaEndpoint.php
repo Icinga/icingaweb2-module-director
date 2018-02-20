@@ -110,6 +110,16 @@ class IcingaEndpoint extends IcingaObject
         }
     }
 
+    public function getDescriptiveUrl()
+    {
+        return sprintf(
+            'https://%s@%s:%d/v1/',
+            $this->getApiUser()->getObjectName(),
+            $this->getResolvedProperty('host', $this->getObjectName()),
+            $this->getResolvedPort()
+        );
+    }
+
     /**
      * Use duration time renderer helper
      *
