@@ -39,7 +39,7 @@ class FilterByNameRestriction extends ObjectRestriction
             return true;
         }
 
-        return $this->prepareFilter()->matches([
+        return $this->getFilter()->matches([
             (object) ['object_name' => $object->getObjectName()]
         ]);
     }
@@ -47,7 +47,11 @@ class FilterByNameRestriction extends ObjectRestriction
     public function getFilter()
     {
         if ($this->filter === null) {
-            $this->filter = $this->prepareFilter();
+            $this->filter = MatchingFilter::forUser(
+                $this->auth->getUser(),
+                $this->name,
+                'object_name'
+            );
         }
 
         return $this->filter;
@@ -56,27 +60,5 @@ class FilterByNameRestriction extends ObjectRestriction
     protected function filterQuery(ZfSelect $query, $tableAlias = 'o')
     {
         FilterRenderer::applyToQuery($this->getFilter(), $query);
-    }
-
-    protected function prepareFilter()
-    {
-        $filter = Filter::matchAll();
-        foreach ($this->auth->getRestrictions($this->name) as $restriction) {
-            $filter->addFilter(Filter::expression('object_name', '=', $restriction));
-        }
-
-        return $filter;
-    }
-
-    protected function preparePrefixedFilter($prefix)
-    {
-        $filter = Filter::matchAll();
-        foreach ($this->auth->getRestrictions($this->name) as $restriction) {
-            $filter->addFilter(
-                Filter::expression("$prefix.object_name", '=', $restriction)
-            );
-        }
-
-        return $filter;
     }
 }
