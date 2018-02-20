@@ -32,6 +32,8 @@ abstract class BaseElement extends Html
         'wbr'
     ];
 
+    protected $isVoid;
+
     /**
      * @return Attributes
      */
@@ -165,7 +167,18 @@ abstract class BaseElement extends Html
 
     public function isVoidElement()
     {
-        return in_array($this->tag, self::$voidElements);
+        if ($this->isVoid === null) {
+            $this->isVoid = in_array($this->tag, self::$voidElements);
+        }
+
+        return $this->isVoid;
+    }
+
+    public function setVoid($void = true)
+    {
+        $this->isVoid = $void;
+
+        return $this;
     }
 
     /**
