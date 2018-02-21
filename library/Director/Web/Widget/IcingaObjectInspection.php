@@ -48,10 +48,12 @@ class IcingaObjectInspection extends BaseElement
     {
         $this->add(Html::tag('h2', null, $this->translate('Last Check Result')));
         $this->renderCheckResultDetails($result);
-        $this->renderExecutedCommand($result->command);
+        if (property_exists($result, 'command') && is_array($result->command)) {
+            $this->renderExecutedCommand($result->command);
+        }
     }
 
-    protected function renderExecutedCommand($command)
+    protected function renderExecutedCommand(array $command)
     {
         $command = implode(' ', array_map('escapeshellarg', $command));
         $this->add([
