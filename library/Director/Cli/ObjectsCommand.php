@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Cli;
 
-use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\IcingaObject;
 
 class ObjectsCommand extends Command
@@ -87,6 +86,9 @@ class ObjectsCommand extends Command
         echo $this->renderJson($res, !$this->params->shift('no-pretty'));
     }
 
+    /**
+     * @return IcingaObject[]
+     */
     protected function getObjects()
     {
         if ($this->objects === null) {
