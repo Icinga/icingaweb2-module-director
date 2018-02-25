@@ -181,6 +181,7 @@ abstract class Dashlet extends BaseElement
     {
         $result = '';
         if (! empty($this->requiredStats)) {
+            reset($this->requiredStats);
             $result .= $this->statSummary(current($this->requiredStats));
         }
 
