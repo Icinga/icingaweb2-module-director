@@ -33,7 +33,7 @@ class DirectorDatafieldForm extends DirectorObjectForm
             }
         }
 
-        return parent::onRequest();
+        parent::onRequest();
     }
 
     protected function askForVariableDeletion($varname, $cnt)

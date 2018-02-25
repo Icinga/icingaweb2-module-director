@@ -42,15 +42,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $parts = array();
         $where = $db->quoteInto('varname = ?', $varname);
         foreach (static::$allTables as $table) {
-            $parts[] = sprintf(
-                'SELECT COUNT(*) as cnt FROM ' . $table . ' WHERE %s',
-                $where
-            );
+            $parts[] = "SELECT COUNT(*) as cnt FROM $table WHERE $where";
         }
 
-        $query = 'SELECT SUM(cnt) AS cnt FROM ('
-            . implode(' UNION ALL ', $parts)
-            . ') sub';
+        $sub = implode(' UNION ALL ', $parts);
+        $query = "SELECT SUM(sub.cnt) AS cnt FROM ($sub) sub";
+
         return (int) $db->fetchOne($query);
     }
 

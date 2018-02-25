@@ -87,6 +87,10 @@ abstract class CustomVariable implements IcingaConfigRenderer
         return $this->key;
     }
 
+    /**
+     * @param $value
+     * @return $this
+     */
     abstract public function setValue($value);
 
     abstract public function getValue();
