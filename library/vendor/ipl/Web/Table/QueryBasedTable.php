@@ -170,7 +170,6 @@ abstract class QueryBasedTable extends Table implements Countable
         }
     }
 
-
     protected function isUsEnglish()
     {
         if ($this->isUsEnglish === null) {
