@@ -136,6 +136,7 @@ abstract class DbObjectWithSettings extends DbObject
             $db->select()
                ->from($this->settingsTable, ['setting_name', 'setting_value'])
                ->where($this->settingsRemoteId . ' = ?', $this->get('id'))
+               ->order('setting_name')
         );
     }
 
