@@ -32,6 +32,10 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected $type;
 
+    /** @var IcingaObject */
+    protected $dummyObject;
+
+    /** @var Auth */
     private $auth;
 
     /**
@@ -57,6 +61,9 @@ class ObjectsTable extends ZfQueryBasedTable
         return $this->type;
     }
 
+    /**
+     * @return Auth
+     */
     public function getAuth()
     {
         return $this->auth;
@@ -182,11 +189,21 @@ class ObjectsTable extends ZfQueryBasedTable
         ];
     }
 
+    /**
+     * @return IcingaObject
+     */
+    protected function getDummyObject()
+    {
+        if ($this->dummyObject === null) {
+            $type = $this->getType();
+            $this->dummyObject = IcingaObject::createByType($type);
+        }
+        return $this->dummyObject;
+    }
+
     protected function prepareQuery()
     {
-        $type = $this->getType();
-        $object = IcingaObject::createByType($type);
-        $table = $object->getTableName();
+        $table = $this->getDummyObject()->getTableName();
         $query = $this->applyRestrictions(
             $this->db()
                 ->select()
