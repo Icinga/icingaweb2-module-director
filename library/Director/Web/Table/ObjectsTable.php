@@ -6,6 +6,7 @@ use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Restriction\FilterByNameRestriction;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
 use dipl\Html\Link;
@@ -184,8 +185,12 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function loadRestrictions()
     {
+        $db = $this->connection();
+        $auth = $this->getAuth();
+
         return [
-            new HostgroupRestriction($this->connection(), $this->getAuth())
+            new HostgroupRestriction($db, $auth),
+            new FilterByNameRestriction($db, $auth, $this->getDummyObject()->getShortTableName())
         ];
     }
 
