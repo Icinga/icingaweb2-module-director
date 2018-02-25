@@ -99,9 +99,13 @@ class Command extends CliCommand
     protected function db()
     {
         if ($this->db === null) {
-            // Hint: not using $this->Config() intentionally. This allows
-            // CLI commands in other modules to use this as a base class.
-            $resourceName = Config::module('director')->get('db', 'resource');
+            $resourceName = $this->params->get('dbResourceName');
+
+            if ($resourceName === null) {
+                // Hint: not using $this->Config() intentionally. This allows
+                // CLI commands in other modules to use this as a base class.
+                $resourceName = Config::module('director')->get('db', 'resource');
+            }
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
