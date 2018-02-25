@@ -72,10 +72,10 @@ class IcingaObjectHandler extends RequestHandler
         return $this->request->getControllerName();
     }
 
-    protected function handleApiRequest()
+    protected function processApiRequest()
     {
         try {
-            $this->processApiRequest();
+            $this->handleApiRequest();
         } catch (NotFoundError $e) {
             $this->sendJsonError($e, 404);
             return;
@@ -91,7 +91,7 @@ class IcingaObjectHandler extends RequestHandler
         }
     }
 
-    protected function processApiRequest()
+    protected function handleApiRequest()
     {
         $request = $this->request;
         $response = $this->response;
