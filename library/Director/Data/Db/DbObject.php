@@ -24,9 +24,6 @@ abstract class DbObject
     /** @var Zend_Db_Adapter_Abstract */
     protected $db;
 
-    /** @var  Zend_Db_Adapter_Abstract */
-    protected $r;
-
     /**
      * Default columns. MUST be set when extending this class. Each table
      * column MUST be defined with a default value. Default value may be null.
@@ -1120,7 +1117,6 @@ abstract class DbObject
         } else {
             $select = $query;
         }
-
         $rows = $db->fetchAll($select);
 
         foreach ($rows as $row) {
