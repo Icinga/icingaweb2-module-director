@@ -339,6 +339,9 @@ class SyncRule extends DbObject
         return ! empty($properties);
     }
 
+    /**
+     * @return SyncProperty[]
+     */
     public function getSyncProperties()
     {
         if (! $this->hasBeenLoadedFromDb()) {
