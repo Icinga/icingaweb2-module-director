@@ -40,6 +40,21 @@ class SelfServiceSettingsForm extends DirectorForm
             'value'  => $settings->getStoredOrDefaultValue('self-service/transform_hostname')
         ]);
 
+        $this->addElement('extensibleSet', 'global_zones', [
+            'label'       => $this->translate('Global Zones'),
+            'description' => $this->translate(
+                'To ensure downloaded packages are build by the Icinga Team'
+                . ' and not compromised by third parties, you will be able'
+                . ' to provide an array of SHA1 hashes here. In case you have'
+                . ' defined any hashses, the module will not continue with'
+                . ' updating / installing the Agent in case the SHA1 hash of'
+                . ' the downloaded MSI package is not matching one of the'
+                . ' provided hashes of this setting'
+            ),
+            'multiOptions' => $this->enumGlobalZones(),
+            'value'  => $settings->getStoredOrDefaultValue('self-service/global_zones'),
+        ]);
+
         $this->addElement('select', 'download_type', [
             'label'       => $this->translate('Installation Source'),
             'description' => $this->translate(
@@ -145,21 +160,6 @@ class SelfServiceSettingsForm extends DirectorForm
                 . ' provided hashes of this setting'
             ),
             'value'  => $hashes,
-        ]);
-
-        $this->addElement('extensibleSet', 'global_zones', [
-            'label'       => $this->translate('Global Zones'),
-            'description' => $this->translate(
-                'To ensure downloaded packages are build by the Icinga Team'
-                . ' and not compromised by third parties, you will be able'
-                . ' to provide an array of SHA1 hashes here. In case you have'
-                . ' defined any hashses, the module will not continue with'
-                . ' updating / installing the Agent in case the SHA1 hash of'
-                . ' the downloaded MSI package is not matching one of the'
-                . ' provided hashes of this setting'
-            ),
-            'multiOptions' => $this->enumGlobalZones(),
-            'value'  => $settings->getStoredOrDefaultValue('self-service/global_zones'),
         ]);
 
         $this->addElement('text', 'icinga_service_user', [
