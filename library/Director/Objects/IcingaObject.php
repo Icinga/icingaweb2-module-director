@@ -1642,15 +1642,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($ret !== '') {
             $ret .= "\n";
         }
+
         return $ret;
-
-
-        // TODO: parent_host ORDERed by weigth...
-        if ($this->supportsImports()) {
-            return $this->imports()->toConfigString();
-        } else {
-            return '';
-        }
     }
 
     protected function renderLegacyImports()
