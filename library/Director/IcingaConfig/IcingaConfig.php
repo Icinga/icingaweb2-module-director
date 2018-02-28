@@ -476,13 +476,6 @@ class IcingaConfig
             ->createFileFromDb('dependency')
             ;
 
-        if (! $this->isLegacy()) {
-            $this->configFile(sprintf(
-                'zones.d/%s/commands',
-                $this->connection->getDefaultGlobalZoneName()
-            ))->prepend("library \"methods\"\n\n");
-        }
-
         PrefetchCache::forget();
         IcingaHost::clearAllPrefetchCaches();
 
