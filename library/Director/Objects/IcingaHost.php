@@ -8,9 +8,12 @@ use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 
 class IcingaHost extends IcingaObject
 {
+    use FlappingSupport;
+
     protected $table = 'icinga_host';
 
     protected $defaultProperties = array(
@@ -77,11 +80,6 @@ class IcingaHost extends IcingaObject
         'check_interval' => 'check_interval',
         'check_timeout'  => 'check_timeout',
         'retry_interval' => 'retry_interval',
-    );
-
-    protected $numericProperties = array(
-        'flapping_threshold_high' => 'flapping_threshold_high',
-        'flapping_threshold_low'  => 'flapping_threshold_low',
     );
 
     protected $supportsCustomVars = true;

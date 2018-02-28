@@ -106,16 +106,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected $intervalProperties = array();
 
-    /**
-     * Array of numeric property names
-     *
-     * Those values will be put out as raw numbers to Icinga 2's config.
-     * Array expects (propertyName => renderedKey)
-     *
-     * @var array
-     */
-    protected $numericProperties = array();
-
     /** @var  Db */
     protected $connection;
 
@@ -149,11 +139,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function propertyIsBoolean($property)
     {
         return array_key_exists($property, $this->booleans);
-    }
-
-    public function propertyIsNumeric($property)
-    {
-        return array_key_exists($property, $this->numericProperties);
     }
 
     public function propertyIsInterval($property)
@@ -1672,26 +1657,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @codingStandardsIgnoreStart
      */
-    protected function renderFlapping_threshold_high()
-    {
-        return $this->renderFlappingThreshold('flapping_threshold_high');
-    }
-
-    protected function renderFlapping_threshold_low()
-    {
-        return $this->renderFlappingThreshold('flapping_threshold_low');
-    }
-
-    protected function renderFlappingThreshold($key)
-    {
-        return sprintf(
-            "    try { // This setting is only available in Icinga >= 2.8.0\n"
-            . "    %s"
-            . "    } except { globals.directorWarnOnceForThresholds() }\n",
-            c::renderKeyValue($this->numericProperties[$key], c::renderFloat($this->$key))
-        );
-    }
-
     protected function renderLegacyHost_id()
     {
         return $this->renderLegacyRelationProperty(
@@ -1862,13 +1827,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return c::renderKeyValue(
                 $this->intervalProperties[$key],
                 c::renderInterval($value)
-            );
-        }
-
-        if ($this->propertyIsNumeric($key)) {
-            return c::renderKeyValue(
-                $this->numericProperties[$key],
-                c::renderFloat($value)
             );
         }
 
