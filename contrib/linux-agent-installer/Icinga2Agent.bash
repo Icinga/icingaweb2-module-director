@@ -106,7 +106,7 @@ API_ICINGA2=`cat << EOF
 object ApiListener "api" {
   cert_path = SysconfDir + "/icinga2/pki/${ICINGA2_NODENAME}.crt"
   key_path = SysconfDir + "/icinga2/pki/${ICINGA2_NODENAME}.key"
-  ca_path = SysconfDir + "/icinga2/pki/ca.crt"
+  ca_path = SysconfDir + "/icinga2/pki/trusted-master.crt"
   accept_commands = true
   accept_config = true
 }
