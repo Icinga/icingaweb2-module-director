@@ -57,7 +57,6 @@ class SyncCheckForm extends DirectorForm
             $this->setSuccessMessage(
                 $this->translate('Nothing would change, this rule is still in sync')
             );
-            parent::onSuccess();
         } else {
             $this->addError($this->translate('Checking this sync rule failed'));
         }
