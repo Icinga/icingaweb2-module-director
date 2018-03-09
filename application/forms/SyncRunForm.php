@@ -41,7 +41,5 @@ class SyncRunForm extends DirectorForm
         } else {
             $this->addError($this->translate('Synchronization failed'));
         }
-
-        parent::onSuccess();
     }
 }

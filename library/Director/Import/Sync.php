@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Import;
 
 use Exception;
+use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -173,6 +174,7 @@ class Sync
     {
         $this->run = SyncRun::start($this->rule);
         $this->runStartTime = microtime(true);
+        Benchmark::measure('Starting sync');
         return $this;
     }
 
@@ -260,6 +262,8 @@ class Sync
      */
     protected function fetchImportedData()
     {
+        Benchmark::measure('Begin loading imported data');
+
         $this->imported = array();
 
         $sourceKeyPattern = $this->rule->getSourceKeyPattern();
@@ -293,8 +297,10 @@ class Sync
                     $usedColumns[$column] = $column;
                 }
             }
+            Benchmark::measure(sprintf('Done pre-processing columns for source %s', $source->source_name));
 
             $rows = $run->fetchRows($usedColumns);
+            Benchmark::measure(sprintf('Fetched source %s', $source->source_name));
 
             $this->imported[$sourceId] = array();
             foreach ($rows as $row) {
@@ -335,6 +341,8 @@ class Sync
             unset($rows);
         }
 
+        Benchmark::measure('Done loading imported data');
+
         return $this;
     }
 
@@ -368,6 +376,8 @@ class Sync
 
     protected function loadExistingObjects()
     {
+        Benchmark::measure('Begin loading existing objects');
+
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->rule->hasCombinedKey()) {
             $this->objects = array();
@@ -411,6 +421,8 @@ class Sync
         if ($this->rule->object_type === 'datalistEntry') {
             $this->removeForeignListEntries();
         }
+
+        Benchmark::measure('Done loading existing objects');
 
         return $this;
     }
@@ -594,6 +606,8 @@ class Sync
             }
         }
 
+        Benchmark::measure('Begin preparing updated objects');
+
         /** @var DbObject|IcingaObject $object */
         foreach ($newObjects as $key => $object) {
             if (array_key_exists($key, $this->objects)) {
@@ -619,6 +633,8 @@ class Sync
             }
         }
 
+        Benchmark::measure('Done preparing updated objects');
+
         $noAction = array();
         foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
             if (array_key_exists($key, $newObjects)) {
@@ -634,6 +650,8 @@ class Sync
             }
         }
 
+        Benchmark::measure('Done marking objects for purge');
+
         foreach ($this->objects as $key => $object) {
             if (! $object->hasBeenModified() && ! $object->shouldBeRemoved()) {
                 $noAction[] = $key;
@@ -646,6 +664,8 @@ class Sync
 
         $this->isPrepared = true;
 
+        Benchmark::measure('Done preparing objects');
+
         return $this->objects;
     }
 
@@ -657,6 +677,8 @@ class Sync
      */
     public function apply()
     {
+        Benchmark::measure('Begin applying objects');
+
         $objects = $this->prepare();
         $db = $this->db;
         $dba = $db->getDbAdapter();
@@ -711,6 +733,8 @@ class Sync
             $this->run->set('duration_ms', (int) round(
                 (microtime(true) - $this->runStartTime) * 1000
             ))->store();
+
+            Benchmark::measure('Done applying objects');
         } catch (Exception $e) {
             $dba->rollBack();
 
