@@ -585,9 +585,8 @@ class Sync
             return $this->objects;
         }
 
-        PrefetchCache::initialize($this->db);
-
         $this->raiseLimits()
+             ->prepareCache()
              ->startMeasurements()
              ->fetchSyncProperties()
              ->prepareRelatedImportSources()
@@ -752,5 +751,14 @@ class Sync
         }
 
         return $this->run->id;
+    }
+
+    protected function prepareCache()
+    {
+        PrefetchCache::initialize($this->db);
+
+        IcingaObject::prefetchAllRelationsByType($this->rule->object_type, $this->db);
+
+        return $this;
     }
 }
