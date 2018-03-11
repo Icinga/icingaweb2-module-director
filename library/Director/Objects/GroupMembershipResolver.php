@@ -401,7 +401,7 @@ abstract class GroupMembershipResolver
             // TODO: fix this last hard host dependency
             $resolver = HostApplyMatches::prepare($object);
             foreach ($groups as $groupId => $filter) {
-                if ($resolver->matchesFilter(Filter::fromQueryString($filter))) {
+                if ($resolver->matchesFilter($filter)) {
                     if (! array_key_exists($groupId, $mappings)) {
                         $mappings[$groupId] = array();
                     }
@@ -456,7 +456,7 @@ abstract class GroupMembershipResolver
             $list[$id] = $group->get('assign_filter');
         }
 
-        return $list;
+        return $this->parseFilters($list);
     }
 
     protected function fetchAppliedGroups()
@@ -470,7 +470,21 @@ abstract class GroupMembershipResolver
             )
         )->where('assign_filter IS NOT NULL');
 
-        return $this->db->fetchPairs($query);
+        return $this->parseFilters($this->db->fetchPairs($query));
+    }
+
+    /**
+     * Parsing a list of query strings to Filter
+     *
+     * @param string[] $list List of query strings
+     *
+     * @return Filter[]
+     */
+    protected function parseFilters($list)
+    {
+        return array_map(function ($s) {
+            return Filter::fromQueryString($s);
+        }, $list);
     }
 
     protected function fetchMissingSingleAssignments()
