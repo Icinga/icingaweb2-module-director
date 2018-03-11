@@ -42,4 +42,14 @@ trait DbHelper
 
         return $value;
     }
+
+    public function getChecksum($checksum)
+    {
+        return bin2hex($this->wantBinaryValue($checksum));
+    }
+
+    public function getShortChecksum($checksum)
+    {
+        return substr($this->getChecksum($checksum), 0, 7);
+    }
 }
