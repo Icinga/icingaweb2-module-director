@@ -39,11 +39,6 @@ class DeploymentLogTable extends ZfQueryBasedTable
         return $tr;
     }
 
-    protected function getShortChecksum($checksum)
-    {
-        return substr(bin2hex($this->wantBinaryValue($checksum)), 0, 7);
-    }
-
     protected function getMyRowClasses($row)
     {
         if ($row->startup_succeeded === 'y') {

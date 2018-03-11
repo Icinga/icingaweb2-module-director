@@ -10,10 +10,12 @@ use dipl\Web\Widget\NameValueTable;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;
+use Icinga\Module\Director\Web\Table\DbHelper;
 use stdClass;
 
 class IcingaObjectInspection extends BaseElement
 {
+    use DbHelper;
     use TranslationHelper;
 
     protected $tag = 'div';
@@ -193,7 +195,7 @@ class IcingaObjectInspection extends BaseElement
             sprintf('%s:%s', $filename, $source->first_line),
             'director/config/file',
             [
-                'config_checksum'   => bin2hex($deployment->config_checksum),
+                'config_checksum'   => $this->getChecksum($deployment->config_checksum),
                 'deployment_id'     => $deployment->id,
                 'backTo'            => 'deployment',
                 'file_path'         => $filename,
