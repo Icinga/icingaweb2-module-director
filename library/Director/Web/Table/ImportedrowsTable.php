@@ -2,9 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use Icinga\Data\DataArray\ArrayDatasource;
-    use Icinga\Module\Director\Objects\ImportRun;
+use dipl\Html\Html;
+use dipl\Html\ValidHtml;
 use dipl\Web\Table\SimpleQueryBasedTable;
+use Icinga\Data\DataArray\ArrayDatasource;
+use Icinga\Module\Director\Objects\ImportRun;
+use Icinga\Module\Director\PlainObjectRenderer;
 
 class ImportedrowsTable extends SimpleQueryBasedTable
 {
@@ -47,6 +50,30 @@ class ImportedrowsTable extends SimpleQueryBasedTable
         }
 
         return array_combine($cols, $cols);
+    }
+
+    public function renderRow($row)
+    {
+        // Find a better place!
+        if ($row === null) {
+            return null;
+        }
+        $tr = $this::tr();
+
+        foreach ($this->getColumnsToBeRendered() as $column) {
+            $td = $this::td();
+            if (property_exists($row, $column)) {
+                if (is_string($row->$column) || $row->$column instanceof ValidHtml) {
+                    $td->setContent($row->$column);
+                } else {
+                    $html = Html::tag('pre', null, PlainObjectRenderer::render($row->$column));
+                    $td->setContent($html);
+                }
+            }
+            $tr->add($td);
+        }
+
+        return $tr;
     }
 
     public function getColumnsToBeRendered()
