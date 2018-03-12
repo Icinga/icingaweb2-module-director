@@ -69,7 +69,7 @@ class PropertyModifierMakeBoolean extends PropertyModifierHook
             }
         }
 
-        switch ($this->getSetting('on_missing')) {
+        switch ($this->getSetting('on_invalid')) {
             case 'null':
                 return null;
 
