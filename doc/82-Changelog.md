@@ -15,6 +15,9 @@ before switching to a new version.
 * FEATURE: Grant access to Service Set in a controlled way
 * FIX: do not allow a user to create hosts he wouldn't be allowed to see #1451
 
+### Icinga Configuration
+* FEATURE: Add 'is false (or not set)' condition for apply rules (#1436)
+
 ### User Interface
 * FEATURE: Admins have now access to JSON download links in many places
 * FEATURE: Users equipped with related permissions can toggle "Show SQL" in the GUI

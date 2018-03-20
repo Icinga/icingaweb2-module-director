@@ -270,6 +270,12 @@ class DataFilter extends FormElement
                 '=',
                 json_encode(true)
             );
+        } elseif ($entry['sign'] === 'false') {
+            return Filter::expression(
+                $entry['column'],
+                '=',
+                json_encode(false)
+            );
         } elseif ($entry['sign'] === 'in') {
             if (array_key_exists('value', $entry)) {
                 if (is_array($entry['value'])) {

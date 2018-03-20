@@ -153,6 +153,12 @@ class AssignRenderer
             if ($rawExpression === true) {
                 return $column;
             }
+            if ($rawExpression === false) {
+                return sprintf(
+                    '! %s',
+                    $column
+                );
+            }
             if (strpos($expression, '*') === false) {
                 return $this->renderEquals($column, $expression);
             } else {
