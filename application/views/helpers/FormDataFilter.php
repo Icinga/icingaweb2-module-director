@@ -174,7 +174,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $filter->setExpression(json_decode($filter->getExpression()));
             }
 
-            if (($filter->getExpression() === true) || ($filter->getExpression() == false)) {
+            if (($filter->getExpression() === true) || ($filter->getExpression() === false)) {
                 return '';
             }
             $dummy = IcingaObject::createByType($type);
