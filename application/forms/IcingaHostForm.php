@@ -2,8 +2,9 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Exception\AuthenticationException;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use dipl\Html\BaseElement;
 use dipl\Html\Html;
@@ -365,5 +366,19 @@ class IcingaHostForm extends DirectorObjectForm
         )->order('object_name');
 
         return $db->fetchPairs($select);
+    }
+
+    public function onSuccess()
+    {
+        if ($this->hasHostGroupRestriction()) {
+            $restriction = new HostgroupRestriction($this->getDb(), $this->getAuth());
+            if (! $restriction->allowsHost($this->object())) {
+                throw new AuthenticationException($this->translate(
+                    'Unable to store a host with the given properties because of insufficient permissions'
+                ));
+            }
+        }
+
+        return parent::onSuccess();
     }
 }

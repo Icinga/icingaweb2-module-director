@@ -4,17 +4,14 @@ namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
 use Icinga\Authentication\Auth;
-use Icinga\Exception\AuthenticationException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
@@ -633,15 +630,6 @@ abstract class DirectorObjectForm extends DirectorForm
     {
         $object = $this->object();
         if ($object->hasBeenModified()) {
-            if ($object instanceof IcingaHost && $this->hasHostGroupRestriction()) {
-                $restriction = new HostgroupRestriction($this->db, $this->auth);
-                if (! $restriction->allowsHost($object)) {
-                    throw new AuthenticationException($this->translate(
-                        'Unable to store a host with the given properties because of insufficient permissions'
-                    ));
-                }
-            }
-
             if (! $object->hasBeenLoadedFromDb()) {
                 $this->setHttpResponseCode(201);
             }
