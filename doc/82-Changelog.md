@@ -13,6 +13,7 @@ before switching to a new version.
 ### Permissions and Restrictions
 * FEATURE: Showing the executed SQL query now requires the `showsql` permission
 * FEATURE: Grant access to Service Set in a controlled way
+* FIX: do not allow a user to create hosts he wouldn't be allowed to see #1451
 
 ### User Interface
 * FEATURE: Admins have now access to JSON download links in many places
