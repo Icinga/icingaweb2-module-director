@@ -7,12 +7,15 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Hook\HostFieldHook;
+use Icinga\Module\Director\Hook\ServiceFieldHook;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\ObjectApplyMatches;
+use Icinga\Web\Hook;
 use stdClass;
 use Zend_Db_Select as ZfSelect;
 use Zend_Form_Element as ZfElement;
@@ -519,7 +522,7 @@ class IcingaObjectFieldLoader
     {
         $res = $this->fetchFieldDetailsForObject($object);
 
-        $result = array();
+        $result = [];
         foreach ($res as $r) {
             $id = $r->object_id;
             unset($r->object_id);
@@ -533,6 +536,52 @@ class IcingaObjectFieldLoader
             );
         }
 
+        foreach ($this->loadHookedDataFieldForObject($object) as $id => $fields) {
+            if (array_key_exists($id, $fields)) {
+                foreach ($fields as $varName => $field) {
+                    $result[$id]->$varName = $field;
+                }
+            } else {
+                $result[$id] = $fields;
+            }
+        }
+
         return $result;
+    }
+
+    /**
+     * @param IcingaObject $object
+     * @return array
+     */
+    protected function loadHookedDataFieldForObject(IcingaObject $object)
+    {
+        $fields = [];
+        if ($object instanceof IcingaHost || $object instanceof  IcingaService) {
+            $fields = $this->addHookedFields($object);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * @param IcingaObject $object
+     * @return mixed
+     */
+    protected function addHookedFields(IcingaObject $object)
+    {
+        $fields = [];
+        /** @var HostFieldHook|ServiceFieldHook $hook */
+        $type = ucfirst($object->getShortTableName());
+        foreach (Hook::all("Director\\${type}Field") as $hook) {
+            if ($hook->wants($object)) {
+                $id = $object->get('id');
+                $spec = $hook->getFieldSpec($object);
+                if (!array_key_exists($id, $fields)) {
+                    $fields[$id] = new stdClass();
+                }
+                $fields[$id]->{$spec->getVarName()} = $spec->toDataField($object);
+            }
+        }
+        return $fields;
     }
 }
