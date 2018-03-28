@@ -773,7 +773,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
-     * @return IcingaObjectGroups[]
+     * @return IcingaObjectGroups
      */
     public function groups()
     {
@@ -1008,6 +1008,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getGroups()
     {
         return $this->groups()->listGroupNames();
+    }
+
+    public function getInheritedGroups()
+    {
+        $parents = $this->imports()->getObjects();
+        /** @var IcingaObject $parent */
+        foreach (array_reverse($parents) as $parent) {
+            $inherited = $parent->getGroups();
+            if (! empty($inherited)) {
+                return $inherited;
+            }
+        }
+
+        return [];
     }
 
     public function setGroups($groups)
@@ -2558,7 +2572,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->supportsGroups()) {
             // TODO: resolve
-            $props['groups'] = $this->groups()->listGroupNames();
+            $groups = $this->groups()->listGroupNames();
+            if ($resolved && empty($groups)) {
+                $groups = $this->getInheritedGroups();
+            }
+
+            $props['groups'] = $groups;
         }
 
         foreach ($this->loadAllMultiRelations() as $key => $rel) {

@@ -253,16 +253,7 @@ class IcingaHostForm extends DirectorObjectForm
     protected function getInheritedGroups()
     {
         if ($this->hasObject()) {
-            $parents = $this->object->imports()->getObjects();
-            /** @var IcingaHost $parent */
-            foreach (array_reverse($parents) as $parent) {
-                $inherited = $parent->getGroups();
-                if (! empty($inherited)) {
-                    return $inherited;
-                }
-            }
-
-            return [];
+            return $this->object->getInheritedGroups();
         } else {
             return [];
         }
