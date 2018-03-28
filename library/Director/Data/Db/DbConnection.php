@@ -6,6 +6,11 @@ use Icinga\Data\Db\DbConnection as IcingaDbConnection;
 
 class DbConnection extends IcingaDbConnection
 {
+    public function isMysql()
+    {
+        return $this->getDbType() === 'mysql';
+    }
+
     public function isPgsql()
     {
         return $this->getDbType() === 'pgsql';
