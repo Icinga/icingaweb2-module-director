@@ -141,7 +141,7 @@ class RestApiClient
         }
 
         if ($body !== null) {
-            $body = json_encode($body);
+            $body = Json::encode($body);
             $headers[] = 'Content-Type: application/json';
         }
 
