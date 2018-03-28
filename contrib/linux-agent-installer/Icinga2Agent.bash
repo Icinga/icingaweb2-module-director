@@ -78,6 +78,9 @@ include "features-enabled/*.conf"
 include <itl>
 include <plugins>
 include <plugins-contrib>
+include <manubulon>
+include <windows-plugins>
+include <nscp>
 EOF
 `
 ZONES_ICINGA2=`cat << EOF
