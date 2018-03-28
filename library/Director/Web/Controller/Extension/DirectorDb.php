@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller\Extension;
 
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
 
 trait DirectorDb
@@ -10,7 +11,7 @@ trait DirectorDb
     private $db;
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
+     * @throws ConfigurationError
      *
      * @return Db
      */
