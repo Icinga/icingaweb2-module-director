@@ -2,14 +2,15 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Countable;
+use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
-use Iterator;
-use Countable;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Iterator;
 
 class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 {
