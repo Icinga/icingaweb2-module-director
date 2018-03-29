@@ -111,6 +111,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $vars;
 
+    /** @var IcingaObjectGroups */
     private $groups;
 
     private $imports;
@@ -789,6 +790,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->groups;
     }
 
+    public function hasModifiedGroups()
+    {
+        $this->assertGroupsSupport();
+        if ($this->groups === null) {
+            return false;
+        }
+
+        return $this->groups->hasBeenModified();
+    }
     /**
      * @return IcingaTimePeriodRanges
      */
@@ -1005,12 +1015,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $vars;
     }
 
+    /**
+     * This is mostly for magic getters
+     * @return array
+     */
     public function getGroups()
     {
         return $this->groups()->listGroupNames();
     }
 
-    public function getInheritedGroups()
+    public function listInheritedGroupNames()
     {
         $parents = $this->imports()->getObjects();
         /** @var IcingaObject $parent */
@@ -1028,6 +1042,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->groups()->set($groups);
         return $this;
+    }
+
+    public function listResolvedGroupNames()
+    {
+        $groups = $this->groups()->listGroupNames();
+        if (empty($groups)) {
+            return $this->listInheritedGroupNames();
+        }
+
+        return $groups;
+    }
+
+    public function hasGroup($group)
+    {
+        if ($group instanceof static) {
+            $group = $group->getObjectName();
+        }
+
+        return in_array($group, $this->listResolvedGroupNames());
     }
 
     protected function getResolved($what)
@@ -2574,7 +2607,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // TODO: resolve
             $groups = $this->groups()->listGroupNames();
             if ($resolved && empty($groups)) {
-                $groups = $this->getInheritedGroups();
+                $groups = $this->listInheritedGroupNames();
             }
 
             $props['groups'] = $groups;

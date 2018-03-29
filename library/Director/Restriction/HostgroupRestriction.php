@@ -56,6 +56,18 @@ class HostgroupRestriction extends ObjectRestriction
             return true;
         }
 
+        if (! $host->hasBeenLoadedFromDb()) {
+            if ($host->hasModifiedGroups()) {
+                foreach ($this->listRestrictedHostgroups() as $group) {
+                    if ($host->hasGroup($group)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         $query = $this->db->select()->from(
             ['o' => 'icinga_host'],
             ['id']

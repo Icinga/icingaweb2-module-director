@@ -254,7 +254,7 @@ class IcingaHostForm extends DirectorObjectForm
     protected function getInheritedGroups()
     {
         if ($this->hasObject()) {
-            return $this->object->getInheritedGroups();
+            return $this->object->listInheritedGroupNames();
         } else {
             return [];
         }
@@ -379,6 +379,6 @@ class IcingaHostForm extends DirectorObjectForm
             }
         }
 
-        return parent::onSuccess();
+        parent::onSuccess();
     }
 }
