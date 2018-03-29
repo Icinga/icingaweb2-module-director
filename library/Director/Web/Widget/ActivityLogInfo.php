@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Widget;
 
 use dipl\Html\HtmlDocument;
 use dipl\Html\HtmlElement;
+use Icinga\Date\DateFormatter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db;
@@ -380,7 +381,9 @@ class ActivityLogInfo extends HtmlDocument
         $table = new NameValueTable();
         $table->addNameValuePairs([
             $this->translate('Author') => $entry->author,
-            $this->translate('Date')   => $entry->change_time,
+            $this->translate('Date')   => DateFormatter::formatDateTime(
+                $entry->change_time_ts
+            ),
 
         ]);
         if (null === $this->name) {

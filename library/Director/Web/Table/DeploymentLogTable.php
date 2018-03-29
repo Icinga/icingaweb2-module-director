@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
+use Icinga\Date\DateFormatter;
 
 class DeploymentLogTable extends ZfQueryBasedTable
 {
@@ -33,7 +34,7 @@ class DeploymentLogTable extends ZfQueryBasedTable
                 'director/deployment',
                 ['id' => $row->id]
             )),
-            $this::td(strftime('%H:%M:%S', $row->start_time))
+            $this::td(DateFormatter::formatTime($row->start_time))
         ])->addAttributes(['class' => $this->getMyRowClasses($row)]);
 
         return $tr;
