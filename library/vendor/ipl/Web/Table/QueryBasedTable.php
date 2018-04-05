@@ -110,7 +110,8 @@ abstract class QueryBasedTable extends Table implements Countable
 
     public function renderContent()
     {
-        if (count($this->getColumnsToBeRendered())) {
+        $columns = $this->getColumnsToBeRendered();
+        if (isset($columns) && count($columns)) {
             $this->generateHeader();
         }
         $this->fetchRows();
