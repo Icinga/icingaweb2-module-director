@@ -132,7 +132,7 @@ abstract class ObjectApplyMatches
             }
 
             $flat = $object->toPlainObject(true, false);
-            static::flattenVars($object);
+            static::flattenVars($flat);
             $objects[$object->getObjectName()] = $flat;
         }
         Benchmark::measure("ObjectApplyMatches: $type cache ready");
