@@ -26,6 +26,9 @@ class SyncruleController extends ActionController
         $ruleName = $rule->get('rule_name');
         $this->addTitle($this->translate('Sync rule: %s'), $ruleName);
 
+        $checkForm = SyncCheckForm::load()->setSyncRule($rule)->handleRequest();
+        $runForm = SyncRunForm::load()->setSyncRule($rule)->handleRequest();
+
         if ($lastRunId = $rule->getLastSyncRunId()) {
             $run = SyncRun::load($lastRunId, $this->db());
         } else {
@@ -78,8 +81,8 @@ class SyncruleController extends ActionController
                 break;
         }
 
-        $c->add(SyncCheckForm::load()->setSyncRule($rule)->handleRequest());
-        $c->add(SyncRunForm::load()->setSyncRule($rule)->handleRequest());
+        $c->add($checkForm);
+        $c->add($runForm);
 
         if ($run) {
             $c->add(Html::h3($this->translate('Last sync run details')));
