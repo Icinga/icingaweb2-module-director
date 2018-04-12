@@ -25,16 +25,34 @@ abstract class ObjectApplyMatches
 
     protected static $type;
 
+    protected static $preparedFilters = array();
+
     public static function prepare(IcingaObject $object)
     {
         return new static($object);
     }
 
+    /**
+     * Prepare a Filter with fixed columns, and store the result
+     *
+     * @param Filter $filter
+     *
+     * @return Filter
+     */
+    protected static function getPreparedFilter(Filter $filter)
+    {
+        $hash = spl_object_hash($filter);
+        if (! array_key_exists($hash, self::$preparedFilters)) {
+            $filter = clone($filter);
+            static::fixFilterColumns($filter);
+            self::$preparedFilters[$hash] = $filter;
+        }
+        return self::$preparedFilters[$hash];
+    }
+
     public function matchesFilter(Filter $filter)
     {
-        $filter = clone($filter);
-        static::fixFilterColumns($filter);
-        return $filter->matches($this->flatObject);
+        return static::getPreparedFilter($filter)->matches($this->flatObject);
     }
 
     /**
