@@ -414,6 +414,12 @@ class IcingaHost extends IcingaObject
         return c1::renderKeyValue('display_name', $this->display_name);
     }
 
+    protected function renderLegacyVolatile()
+    {
+        // not available for hosts in Icinga 1.x
+        return;
+    }
+
     protected function renderLegacyCustomExtensions()
     {
         $str = parent::renderLegacyCustomExtensions();
