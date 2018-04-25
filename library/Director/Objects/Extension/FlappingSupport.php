@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects\Extension;
 
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 trait FlappingSupport
 {
@@ -22,7 +23,6 @@ trait FlappingSupport
      */
     protected function renderFlapping_threshold_low($value)
     {
-        // @codingStandardsIgnoreEnd
         return $this->renderFlappingThreshold('flapping_threshold_low', $value);
     }
 
@@ -34,5 +34,21 @@ trait FlappingSupport
             . "    } except { globals.directorWarnOnceForThresholds() }\n",
             c::renderKeyValue($key, c::renderFloat($value))
         );
+    }
+
+    protected function renderLegacyEnable_flapping($value)
+    {
+        return c1::renderKeyValue('flap_detection_enabled', c1::renderBoolean($value));
+    }
+
+    protected function renderLegacyFlapping_threshold_high($value)
+    {
+        return c1::renderKeyValue('high_flap_threshold', $value);
+    }
+
+    protected function renderLegacyFlapping_threshold_low($value)
+    {
+        // @codingStandardsIgnoreEnd
+        return c1::renderKeyValue('low_flap_threshold', $value);
     }
 }
