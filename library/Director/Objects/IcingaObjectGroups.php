@@ -348,9 +348,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return c::renderKeyValue('groups', c::renderArray($groups));
     }
 
-    public function toLegacyConfigString()
+    public function toLegacyConfigString($additionalGroups = array())
     {
-        $groups = array_keys($this->groups);
+        $groups = array_merge(array_keys($this->groups), $additionalGroups);
+        $groups = array_unique($groups);
 
         if (empty($groups)) {
             return '';
