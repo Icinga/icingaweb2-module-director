@@ -2075,6 +2075,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($this->propertyIsInterval($key)) {
+            return c1::renderKeyValue(
+                $this->intervalProperties[$key],
+                c1::renderInterval($value)
+            );
+        }
+
         if (substr($key, -3) === '_id'
              && $this->hasRelation($relKey = substr($key, 0, -3))
         ) {
