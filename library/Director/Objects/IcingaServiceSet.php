@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -306,6 +307,32 @@ class IcingaServiceSet extends IcingaObject
         return $services;
     }
 
+    /**
+     * Fetch IcingaServiceSet that are based on this set and added to hosts directly
+     *
+     * @return IcingaServiceSet[]
+     */
+    public function fetchHostSets()
+    {
+        if ($this->id === null) {
+            return [];
+        }
+
+        $query = $this->db->select()
+            ->from(
+                ['o' => $this->table]
+            )->join(
+                ['ssi' => $this->table . '_inheritance'],
+                'ssi.service_set_id = o.id',
+                []
+            )->where(
+                'ssi.parent_service_set_id = ?',
+                $this->id
+            );
+
+        return static::loadAll($this->connection, $query);
+    }
+
     protected function beforeStore()
     {
         parent::beforeStore();
@@ -326,5 +353,25 @@ class IcingaServiceSet extends IcingaObject
                 $name
             );
         }
+    }
+
+    public function toSingleIcingaConfig()
+    {
+        $config = parent::toSingleIcingaConfig();
+
+        try {
+            foreach ($this->fetchHostSets() as $set) {
+                $set->renderToConfig($config);
+            }
+        } catch (Exception $e) {
+            $config->configFile(
+                'failed-to-render'
+            )->prepend(
+                "/** Failed to render this object **/\n"
+                . '/*  ' . $e->getMessage() . ' */'
+            );
+        }
+
+        return $config;
     }
 }
