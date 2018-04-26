@@ -283,24 +283,7 @@ class IcingaHostForm extends DirectorObjectForm
             return [];
         }
 
-        $db = $this->getDb()->getDbAdapter();
-        $query = $db->select()->from(
-            ['hghr' => 'icinga_hostgroup_host_resolved'],
-            ['hg.object_name']
-        )->join(
-            ['hg' => 'icinga_hostgroup'],
-            'hg.id = hghr.hostgroup_id',
-            []
-        )->joinLeft(
-            ['hgh' => 'icinga_hostgroup_host'],
-            'hgh.hostgroup_id = hghr.hostgroup_id',
-            []
-        )->where(
-            'hghr.host_id = ?',
-            $this->object()->get('id')
-        )->where('hgh.host_id IS NULL')->order('hg.object_name');
-
-        return $db->fetchCol($query);
+        return $this->object()->getAppliedGroups();
     }
 
     protected function hasHostGroupRestriction()

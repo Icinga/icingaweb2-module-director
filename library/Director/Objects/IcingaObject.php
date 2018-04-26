@@ -853,6 +853,34 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         return $this->groups->hasBeenModified();
     }
+
+    public function getAppliedGroups()
+    {
+        $this->assertGroupsSupport();
+        if (! $this instanceof IcingaHost) {
+            throw new ProgrammingError('getAppliedGroups is only available for hosts currently!');
+        }
+
+        $type = strtolower($this->type);
+        $query = $this->db->select()->from(
+            ['gr' => "icinga_${type}group_${type}_resolved"],
+            ['g.object_name']
+        )->join(
+            ['g' => "icinga_${type}group"],
+            "g.id = gr.${type}group_id",
+            []
+        )->joinLeft(
+            ['go' => "icinga_${type}group_${type}"],
+            "go.${type}group_id = gr.${type}group_id",
+            []
+        )->where(
+            "gr.${type}_id = ?",
+            $this->id
+        )->where("go.${type}_id IS NULL")->order('g.object_name');
+
+        return $this->db->fetchCol($query);
+    }
+
     /**
      * @return IcingaTimePeriodRanges
      */
