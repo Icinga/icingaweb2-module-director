@@ -461,12 +461,50 @@ fresh data. In case data didn't change, nothing is going to be stored.
 
 `icingacli director importsource run --id <id>`
 
-#### Options
+##### Options
 
 | Option        | Description                                             |
 |---------------|---------------------------------------------------------|
 | `--id <id>`   | An Import Source ID. Use the list command to figure out |
 | `--benchmark` | Show timing and memory usage details                    |
+
+### Sync Rules
+
+#### List defined Sync Rules
+
+This shows a table with your defined Sync Rules, their IDs and current
+state. As triggering a Sync requires an ID, this is where you can look
+up the desired ID.
+
+`icingacli director syncrule list`
+
+#### Check a given Sync Rule for changes
+
+This command runs a complete Sync in memory but doesn't persist eventual
+changes.
+
+`icingacli director syncrule check --id <id>`
+
+##### Options
+
+| Option        | Description                                        |
+|---------------|----------------------------------------------------|
+| `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details               |
+
+#### Trigger a Sync Run for a given Sync Rule
+
+This command builds new objects according your Sync Rule, compares them
+with existing ones and persists eventual changes.
+
+`icingacli director syncrule run --id <id>`
+
+##### Options
+
+| Option        | Description                                        |
+|---------------|----------------------------------------------------|
+| `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details               |
 
 ### Running Jobs
 The `jobs` command runs pending Import and Sync jobs. Please note that we have

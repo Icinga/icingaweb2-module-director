@@ -61,7 +61,7 @@ class ImportsourceCommand extends Command
     {
         $source = $this->getImportSource();
         $source->checkForChanges();
-        $this->showImportStateDetailsAndExit($source);
+        $this->showImportStateDetails($source);
     }
 
     /**
@@ -86,7 +86,7 @@ class ImportsourceCommand extends Command
 
         if ($source->runImport()) {
             print "New data has been imported\n";
-            $this->showImportStateDetailsAndExit($source);
+            $this->showImportStateDetails($source);
         } else {
             print "Nothing has been changed, imported data is still up to date\n";
         }
@@ -104,14 +104,9 @@ class ImportsourceCommand extends Command
      * @param ImportSource $source
      * @throws \Icinga\Exception\IcingaException
      */
-    protected function showImportStateDetailsAndExit(ImportSource $source)
+    protected function showImportStateDetails(ImportSource $source)
     {
         echo $this->getImportStateDescription($source) . "\n";
-        if ($source->get('import_state') === 'failing') {
-            exit(1);
-        } else {
-            exit(0);
-        }
     }
 
     /**
