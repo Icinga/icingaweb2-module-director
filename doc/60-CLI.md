@@ -429,6 +429,46 @@ only one
 Run sync and import jobs
 ------------------------
 
+### Import Sources
+
+#### List available Import Sources
+
+This shows a table with your defined Import Sources, their IDs and
+current state. As triggering Imports requires an ID, this is where you
+can look up the desired ID.
+
+`icingacli director importsource list`
+
+#### Check a given Import Source for changes
+
+This command fetches data from the given Import Source and compares it
+to the most recently imported data.
+
+`icingacli director importsource check --id <id>`
+
+##### Options
+
+| Option        | Description                                             |
+|---------------|---------------------------------------------------------|
+| `--id <id>`   | An Import Source ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details                    |
+
+#### Trigger an Import Run for a given Import Source
+
+This command fetches data from the given Import Source and stores it to
+the Director DB, so that the next related Sync Rule run can work with
+fresh data. In case data didn't change, nothing is going to be stored.
+
+`icingacli director importsource run --id <id>`
+
+#### Options
+
+| Option        | Description                                             |
+|---------------|---------------------------------------------------------|
+| `--id <id>`   | An Import Source ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details                    |
+
+### Running Jobs
 The `jobs` command runs pending Import and Sync jobs. Please note that we have
 planned a scheduler configurable through the Icinga Director web interface, but
 this is not available yes.

@@ -22,6 +22,7 @@ before switching to a new version.
 
 ### CLI
 * FEATURE: Director Health Check Plugin (#1278)
+* FEATURE: Show and trigger Import Sources (#1474)
 
 ### Import and Sync
 * FIX: Sync is very powerful and allows for actions not available in the GUI. It
