@@ -58,11 +58,7 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
         $query = $db->select()->from(
             array('a' => $selectA),
             'a.object_name'
-        )->joinLeft(
-            array('b' => $selectB),
-            'a.object_name = b.object_name',
-            array()
-        )->where('b.object_name IS NULL');
+        )->where('a.object_name NOT IN (?)', $selectB);
 
         $result = $db->fetchCol($query);
 

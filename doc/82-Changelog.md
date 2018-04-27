@@ -28,6 +28,7 @@ before switching to a new version.
 * FIX: Sync is very powerful and allows for actions not available in the GUI. It
   however allowed to store invalid single Service Objects with no Host. This is
   now illegal, as it never makes any sense
+* FIX: Performance boost for "purge" on older MySQL/MariaDB systems (#1475)
 * FEATURE: new Property Modifier for IPs formatted as number in Excel files (#1296)
 * FEATURE: new Property Modifier to url-encode values
 * FEATURE: new Property Modifier: uppercase the first character of each word
