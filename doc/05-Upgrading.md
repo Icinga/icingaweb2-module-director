@@ -97,7 +97,7 @@ will always be a clean upgrade path for you, no manual interaction should ever
 be required. Like every human being, we are not infallible. So, while our strict
 policy says that the master should never break, this might of course happen.
 
-In that case, please [let us know](https://dev.icinga.com/projects/icingaweb2-module-director/issues)
+In that case, please [let us know](https://github.com/Icinga/icingaweb2-module-director/issues).
 We'll try to fix your issue as soon as possible.
 
 <a name="schema-migrations"></a>Database schema migrations
