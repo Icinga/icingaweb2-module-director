@@ -30,7 +30,7 @@ class Img extends BaseElement
         /** @var Img $img */
         $img = new static();
         $img->setAttributes($attributes);
-        $img->attributes()->registerCallbackFor('src', array($img, 'getSrcAttribute'));
+        $img->getAttributes()->registerAttributeCallback('src', array($img, 'getSrcAttribute'));
         $img->setUrl($url, $urlParams);
         return $img;
     }

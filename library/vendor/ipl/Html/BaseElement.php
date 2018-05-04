@@ -37,7 +37,7 @@ abstract class BaseElement extends Html
     /**
      * @return Attributes
      */
-    public function attributes()
+    public function getAttributes()
     {
         if ($this->attributes === null) {
             $default = $this->getDefaultAttributes();
@@ -52,6 +52,14 @@ abstract class BaseElement extends Html
     }
 
     /**
+     * @deprecated
+     */
+    public function attributes()
+    {
+        return $this->getAttributes();
+    }
+
+    /**
      * @param Attributes|array|null $attributes
      * @return $this
      */
@@ -61,13 +69,19 @@ abstract class BaseElement extends Html
         return $this;
     }
 
+    public function setAttribute($key, $value)
+    {
+        $this->getAttributes()->set($key, $value);
+        return $this;
+    }
+
     /**
      * @param Attributes|array|null $attributes
      * @return $this
      */
     public function addAttributes($attributes)
     {
-        $this->attributes()->add($attributes);
+        $this->getAttributes()->add($attributes);
         return $this;
     }
 
@@ -92,6 +106,8 @@ abstract class BaseElement extends Html
      *
      * @param string $tag
      * @param Attributes|array $attributes
+     *
+     * @deprecated
      *
      * @return Element
      */
@@ -155,7 +171,7 @@ abstract class BaseElement extends Html
         if ($this->attributes === null && empty($this->defaultAttributes)) {
             return '';
         } else {
-            return $this->attributes()->render();
+            return $this->getAttributes()->render();
         }
     }
 

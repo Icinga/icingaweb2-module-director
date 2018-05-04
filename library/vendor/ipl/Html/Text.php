@@ -57,7 +57,7 @@ class Text implements ValidHtml
         if ($this->escaped) {
             return $this->string;
         } else {
-            return Util::escapeForHtml($this->string);
+            return Html::escapeForHtml($this->string);
         }
     }
 
@@ -70,7 +70,7 @@ class Text implements ValidHtml
      */
     protected function renderError($error)
     {
-        return Util::renderError($error);
+        return Html::renderError($error);
     }
 
     /**

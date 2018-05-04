@@ -4,6 +4,7 @@ namespace dipl\Html;
 
 use Countable;
 use Exception;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 
 /**
@@ -12,6 +13,15 @@ use Icinga\Exception\ProgrammingError;
  */
 class Html implements ValidHtml, Countable
 {
+    /** Charset to be used - we only support UTF-8 */
+    const CHARSET = 'UTF-8';
+
+    /** @var int The flags we use for htmlspecialchars depend on our PHP version */
+    protected static $htmlEscapeFlags;
+
+    /** @var bool */
+    protected static $showTraces = true;
+
     protected $contentSeparator = '';
 
     /** @var ValidHtml[] */
@@ -31,7 +41,7 @@ class Html implements ValidHtml, Countable
                 $this->addContent($c);
             }
         } else {
-            $this->addIndexedContent(Util::wantHtml($content));
+            $this->addIndexedContent(Html::wantHtml($content));
         }
 
         return $this;
@@ -68,7 +78,7 @@ class Html implements ValidHtml, Countable
             }
         } else {
             $pos = 0;
-            $html = Util::wantHtml($content);
+            $html = Html::wantHtml($content);
             array_unshift($this->content, $html);
             $this->incrementIndexKeys();
             $this->addObjectPosition($html, $pos);
@@ -100,6 +110,22 @@ class Html implements ValidHtml, Countable
 
         return $this->add(
             new FormattedString($string, $args)
+        );
+    }
+
+    /**
+     * Escape the given value top be safely used in view scripts
+     *
+     * @param  string $value  The output to be escaped
+     * @return string
+     */
+    public static function escapeForHtml($value)
+    {
+        return htmlspecialchars(
+            $value,
+            static::htmlEscapeFlags(),
+            self::CHARSET,
+            true
         );
     }
 
@@ -210,6 +236,51 @@ class Html implements ValidHtml, Countable
     }
 
     /**
+     * @param $any
+     * @return ValidHtml
+     * @throws IcingaException
+     */
+    public static function wantHtml($any)
+    {
+        if ($any instanceof ValidHtml) {
+            return $any;
+        } elseif (static::canBeRenderedAsString($any)) {
+            return new Text($any);
+        } elseif (is_array($any)) {
+            $html = new Html();
+            foreach ($any as $el) {
+                $html->add(static::wantHtml($el));
+            }
+
+            return $html;
+        } else {
+            // TODO: Should we add a dedicated Exception class?
+            throw new IcingaException(
+                'String, Html Element or Array of such expected, got "%s"',
+                Html::getPhpTypeName($any)
+            );
+        }
+    }
+
+    public static function canBeRenderedAsString($any)
+    {
+        return is_string($any) || is_int($any) || is_null($any) || is_float($any);
+    }
+
+    /**
+     * @param $any
+     * @return string
+     */
+    public static function getPhpTypeName($any)
+    {
+        if (is_object($any)) {
+            return get_class($any);
+        } else {
+            return gettype($any);
+        }
+    }
+
+    /**
      * @param $name
      * @param $arguments
      * @return BaseElement
@@ -230,7 +301,7 @@ class Html implements ValidHtml, Countable
             }
         }
 
-        if (! empty($arguments)) {
+        if (!empty($arguments)) {
             if (null === $content) {
                 $content = $arguments;
             } else {
@@ -245,9 +316,51 @@ class Html implements ValidHtml, Countable
      * @param Exception|string $error
      * @return string
      */
-    protected function renderError($error)
+    public static function renderError($error)
     {
-        return Util::renderError($error);
+        if ($error instanceof Exception) {
+            $file = preg_split('/[\/\\\]/', $error->getFile(), -1, PREG_SPLIT_NO_EMPTY);
+            $file = array_pop($file);
+            $msg = sprintf(
+                '%s (%s:%d)',
+                $error->getMessage(),
+                $file,
+                $error->getLine()
+            );
+        } elseif (is_string($error)) {
+            $msg = $error;
+        } else {
+            $msg = 'Got an invalid error'; // TODO: translate?
+        }
+
+        $output = sprintf(
+            // TODO: translate? Be careful when doing so, it must be failsafe!
+            "<div class=\"exception\">\n<h1><i class=\"icon-bug\">"
+            . "</i>Oops, an error occurred!</h1>\n<pre>%s</pre>\n",
+            static::escapeForHtml($msg)
+        );
+
+        if (static::showTraces()) {
+            $output .= sprintf(
+                "<pre>%s</pre>\n",
+                static::escapeForHtml($error->getTraceAsString())
+            );
+        }
+        $output .= "</div>\n";
+        return $output;
+    }
+
+    /**
+     * @param null $show
+     * @return bool|null
+     */
+    public static function showTraces($show = null)
+    {
+        if ($show !== null) {
+            self::$showTraces = $show;
+        }
+
+        return self::$showTraces;
     }
 
     /**
@@ -258,7 +371,7 @@ class Html implements ValidHtml, Countable
         try {
             return $this->render();
         } catch (Exception $e) {
-            return $this->renderError($e);
+            return static::renderError($e);
         }
     }
 
@@ -301,5 +414,28 @@ class Html implements ValidHtml, Countable
                 $pos++;
             }
         }
+    }
+
+    /**
+     * This defines the flags used when escaping for HTML
+     *
+     * - Single quotes are not escaped (ENT_COMPAT)
+     * - With PHP >= 5.4, invalid characters are replaced with � (ENT_SUBSTITUTE)
+     * - With PHP 5.3 they are ignored (ENT_IGNORE, less secure)
+     * - Uses HTML5 entities for PHP >= 5.4, disallowing &#013;
+     *
+     * @return int
+     */
+    protected static function htmlEscapeFlags()
+    {
+        if (self::$htmlEscapeFlags === null) {
+            if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+                self::$htmlEscapeFlags = ENT_COMPAT | ENT_SUBSTITUTE | ENT_HTML5;
+            } else {
+                self::$htmlEscapeFlags = ENT_COMPAT | ENT_IGNORE;
+            }
+        }
+
+        return self::$htmlEscapeFlags;
     }
 }

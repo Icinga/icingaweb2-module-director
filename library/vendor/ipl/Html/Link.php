@@ -23,7 +23,7 @@ class Link extends BaseElement
     {
         $this->setContent($content);
         $this->setAttributes($attributes);
-        $this->attributes()->registerCallbackFor('href', array($this, 'getHrefAttribute'));
+        $this->getAttributes()->registerAttributeCallback('href', array($this, 'getHrefAttribute'));
         $this->setUrl($url, $urlParams);
     }
 

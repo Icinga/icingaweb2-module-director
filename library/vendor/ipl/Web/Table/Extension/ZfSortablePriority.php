@@ -156,11 +156,11 @@ trait ZfSortablePriority
         );
 
         if ($this->isOnFirstRow()) {
-            $up->attributes()->add('disabled', 'disabled');
+            $up->getAttributes()->add('disabled', 'disabled');
         }
 
         if ($this->isOnLastRow()) {
-            $down->attributes()->add('disabled', 'disabled');
+            $down->getAttributes()->add('disabled', 'disabled');
         }
 
         return [$down, $up];

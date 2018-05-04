@@ -19,7 +19,7 @@ class ActionBar extends BaseElement
      */
     public function setBaseTarget($target)
     {
-        $this->attributes()->set('data-base-target', $target);
+        $this->getAttributes()->set('data-base-target', $target);
         return $this;
     }
 }

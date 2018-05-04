@@ -16,7 +16,7 @@ class Element extends BaseElement
         $this->tag = $tag;
 
         if ($attributes !== null) {
-            $this->attributes = $this->attributes()->add($attributes);
+            $this->attributes = $this->getAttributes()->add($attributes);
         }
 
         if ($content !== null) {

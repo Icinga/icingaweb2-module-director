@@ -8,10 +8,10 @@ use Icinga\Exception\ProgrammingError;
 class Attributes
 {
     /** @var Attribute[] */
-    protected $attributes = array();
+    protected $attributes = [];
 
     /** @var callable */
-    protected $callbacks = array();
+    protected $callbacks = [];
 
     /** @var string */
     protected $prefix = '';
@@ -19,6 +19,7 @@ class Attributes
     /**
      * Attributes constructor.
      * @param Attribute[] $attributes
+     * @throws ProgrammingError
      */
     public function __construct(array $attributes = null)
     {
@@ -40,6 +41,7 @@ class Attributes
     /**
      * @param Attribute[] $attributes
      * @return static
+     * @throws ProgrammingError
      */
     public static function create(array $attributes = null)
     {
@@ -66,7 +68,7 @@ class Attributes
             } elseif ($attributes !== null) {
                 throw new IcingaException(
                     'Attributes, Array or Null expected, got %s',
-                    Util::getPhpTypeName($attributes)
+                    Html::getPhpTypeName($attributes)
                 );
             }
             return $self;
@@ -85,6 +87,7 @@ class Attributes
      * @param Attribute|string $attribute
      * @param string|array $value
      * @return $this
+     * @throws ProgrammingError
      */
     public function add($attribute, $value = null)
     {
@@ -106,9 +109,10 @@ class Attributes
     }
 
     /**
-     * @param Attribute|string|array $attribute
+     * @param Attribute|array|string $attribute
      * @param string|array $value
      * @return $this
+     * @throws ProgrammingError
      */
     public function set($attribute, $value = null)
     {
@@ -134,6 +138,7 @@ class Attributes
     /**
      * @param $name
      * @return Attribute
+     * @throws ProgrammingError
      */
     public function get($name)
     {
@@ -146,16 +151,26 @@ class Attributes
 
     /**
      * @param $name
-     * @return bool
+     * @return Attribute|false
      */
-    public function delete($name)
+    public function remove($name)
     {
         if ($this->has($name)) {
+            $attribute = $this->attributes[$name];
             unset($this->attributes[$name]);
-            return true;
+
+            return $attribute;
         } else {
             return false;
         }
+    }
+
+    /**
+     * @deprecated
+     */
+    public function delete($name)
+    {
+        return $this->remove($name);
     }
 
     /**
@@ -202,17 +217,19 @@ class Attributes
      * @return $this
      * @throws ProgrammingError
      */
-    public function registerCallbackFor($name, $callback)
+    public function registerAttributeCallback($name, $callback)
     {
         if (! is_callable($callback)) {
-            throw new ProgrammingError('registerCallBack expects a callable callback');
+            throw new ProgrammingError(__METHOD__ . ' expects a callable callback');
         }
         $this->callbacks[$name] = $callback;
+
         return $this;
     }
 
     /**
-     * @inheritdoc
+     * @return string
+     * @throws ProgrammingError
      */
     public function render()
     {
@@ -220,7 +237,7 @@ class Attributes
             return '';
         }
 
-        $parts = array();
+        $parts = [];
         foreach ($this->callbacks as $name => $callback) {
             $attribute = call_user_func($callback);
             if ($attribute instanceof Attribute) {

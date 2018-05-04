@@ -27,6 +27,7 @@ class Attribute
      *
      * @param $name
      * @param $value
+     * @throws ProgrammingError
      */
     public function __construct($name, $value = null)
     {
@@ -37,6 +38,7 @@ class Attribute
      * @param $name
      * @param $value
      * @return static
+     * @throws ProgrammingError
      */
     public static function create($name, $value)
     {
@@ -158,6 +160,7 @@ class Attribute
     /**
      * @param $name
      * @return static
+     * @throws ProgrammingError
      */
     public static function createEmpty($name)
     {
@@ -182,9 +185,9 @@ class Attribute
     {
         // TODO: escape differently
         if (is_array($value)) {
-            return Util::escapeForHtml(implode(' ', $value));
+            return Html::escapeForHtml(implode(' ', $value));
         } else {
-            return Util::escapeForHtml((string) $value);
+            return Html::escapeForHtml((string) $value);
         }
     }
 }

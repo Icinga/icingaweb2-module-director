@@ -170,7 +170,7 @@ class Table extends BaseElement
     {
         $classes = $this->getRowClasses($row);
         if (! empty($classes)) {
-            $tr->attributes()->add('class', $classes);
+            $tr->getAttributes()->add('class', $classes);
         }
 
         return $tr;
