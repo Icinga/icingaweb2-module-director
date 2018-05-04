@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use dipl\Web\Table\ZfQueryBasedTable;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Forms\IcingaMultiEditForm;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
@@ -112,7 +114,8 @@ abstract class ObjectsController extends ActionController
         }
 
         // Hint: might be used in controllers extending this
-        $this->table = $this->getTable();
+        $this->table = $this->eventuallyFilterCommand($this->getTable());
+
         $this->table->renderTo($this);
         (new AdditionalTableActions($this->getAuth(), $this->url(), $this->table))
             ->appendTo($this->actions());
@@ -187,9 +190,13 @@ abstract class ObjectsController extends ActionController
             )
             ->actions(new TemplateActionBar($shortType, $this->url()));
 
-        $this->params->get('render') === 'tree'
-            ? TemplateTreeRenderer::showType($shortType, $this, $this->db())
-            : TemplatesTable::create($shortType, $this->db())->renderTo($this);
+        if ($this->params->get('render') === 'tree') {
+            TemplateTreeRenderer::showType($shortType, $this, $this->db());
+        } else {
+            $table = TemplatesTable::create($shortType, $this->db());
+            $this->eventuallyFilterCommand($table);
+            $table->renderTo($this);
+        }
     }
 
     /**
@@ -239,6 +246,7 @@ abstract class ObjectsController extends ActionController
 
         $table = new ApplyRulesTable($this->db());
         $table->setType($this->getType());
+        $this->eventuallyFilterCommand($table);
         $table->renderTo($this);
     }
 
@@ -309,6 +317,37 @@ abstract class ObjectsController extends ActionController
         }
 
         return $objects;
+    }
+
+    /**
+     * @param ZfQueryBasedTable $table
+     * @return ZfQueryBasedTable
+     * @throws \Icinga\Exception\ConfigurationError
+     */
+    protected function eventuallyFilterCommand(ZfQueryBasedTable $table)
+    {
+        if ($this->params->get('command')) {
+            $command = IcingaCommand::load($this->params->get('command'), $this->db());
+            switch ($this->getBaseType()) {
+                case 'host':
+                case 'service':
+                    $table->getQuery()->where(
+                        $this->db()->getDbAdapter()->quoteInto(
+                            '(o.check_command_id = ? OR o.event_command_id = ?)',
+                            $command->getAutoincId()
+                        )
+                    );
+                    break;
+                case 'notification':
+                    $table->getQuery()->where(
+                        'o.command_id = ?',
+                        $command->getAutoincId()
+                    );
+                    break;
+            }
+        }
+
+        return $table;
     }
 
     /**
