@@ -20,6 +20,7 @@ before switching to a new version.
 * FEATURE: Users equipped with related permissions can toggle "Show SQL" in the GUI
 * FEATURE: A Service Set can now be assigned to multiple hosts at once #1281
 * FEATURE: Commands can now be filtered by usage (#1480)
+* FIX: Don't suggest Command templates where Commands are required (#1414)
 
 ### CLI
 * FEATURE: Director Health Check Plugin (#1278)

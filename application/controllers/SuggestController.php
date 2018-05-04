@@ -192,7 +192,11 @@ class SuggestController extends ActionController
     protected function suggestCheckcommandnames()
     {
         $db = $this->db()->getDbAdapter();
-        $query = $db->select()->from('icinga_command', 'object_name')->order('object_name');
+        $query = $db->select()
+            ->from('icinga_command', 'object_name')
+            ->where('object_type != ?', 'template')
+            ->order('object_name');
+
         return $db->fetchCol($query);
     }
 
