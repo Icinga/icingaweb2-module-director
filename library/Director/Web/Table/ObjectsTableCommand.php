@@ -34,7 +34,8 @@ class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
 
     public function showOnlyUsed()
     {
-        $this->getQuery()->where('('
+        $this->getQuery()->where(
+            '('
             . 'EXISTS (SELECT check_command_id FROM icinga_host WHERE check_command_id = o.id)'
             . ' OR EXISTS (SELECT check_command_id FROM icinga_service WHERE check_command_id = o.id)'
             . ' OR EXISTS (SELECT event_command_id FROM icinga_host WHERE event_command_id = o.id)'
@@ -46,7 +47,8 @@ class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
 
     public function showOnlyUnUsed()
     {
-        $this->getQuery()->where('('
+        $this->getQuery()->where(
+            '('
             . 'NOT EXISTS (SELECT check_command_id FROM icinga_host WHERE check_command_id = o.id)'
             . ' AND NOT EXISTS (SELECT check_command_id FROM icinga_service WHERE check_command_id = o.id)'
             . ' AND NOT EXISTS (SELECT event_command_id FROM icinga_host WHERE event_command_id = o.id)'
