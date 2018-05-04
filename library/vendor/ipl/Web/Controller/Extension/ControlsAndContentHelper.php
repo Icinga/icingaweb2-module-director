@@ -2,7 +2,7 @@
 
 namespace dipl\Web\Controller\Extension;
 
-use dipl\Html\Html;
+use dipl\Html\HtmlDocument;
 use dipl\Web\Widget\Content;
 use dipl\Web\Widget\Controls;
 use dipl\Web\Widget\Tabs;
@@ -53,10 +53,10 @@ trait ControlsAndContentHelper
     }
 
     /**
-     * @param Html|null $actionBar
-     * @return Html
+     * @param HtmlDocument|null $actionBar
+     * @return HtmlDocument
      */
-    public function actions(Html $actionBar = null)
+    public function actions(HtmlDocument $actionBar = null)
     {
         if ($actionBar === null) {
             return $this->controls()->getActionBar();

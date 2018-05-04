@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use Countable;
+use dipl\Html\HtmlDocument;
 use Exception;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -16,7 +16,7 @@ use dipl\Translation\TranslationHelper;
 use dipl\Web\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
 
-abstract class Dashboard extends Html implements Countable
+abstract class Dashboard extends HtmlDocument
 {
     use TranslationHelper;
 

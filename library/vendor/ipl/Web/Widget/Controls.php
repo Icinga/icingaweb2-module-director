@@ -5,6 +5,7 @@ namespace dipl\Web\Widget;
 use dipl\Html\BaseHtmlElement;
 use dipl\Html\Container;
 use dipl\Html\Html;
+use dipl\Html\HtmlDocument;
 
 class Controls extends Container
 {
@@ -112,7 +113,7 @@ class Controls extends Container
         return $this->actions;
     }
 
-    public function setActionBar(Html $actionBar)
+    public function setActionBar(HtmlDocument $actionBar)
     {
         if ($this->actions !== null) {
             $this->remove($this->actions);

@@ -2,7 +2,7 @@
 
 namespace dipl\Web\Widget;
 
-use dipl\Html\Html;
+use dipl\Html\HtmlDocument;
 use dipl\Web\Url;
 
 interface ControlsAndContent
@@ -18,9 +18,9 @@ interface ControlsAndContent
     public function tabs();
 
     /**
-     * @return Html
+     * @return HtmlDocument
      */
-    public function actions(Html $actionBar = null);
+    public function actions(HtmlDocument $actionBar = null);
 
     /**
      * @return Content
