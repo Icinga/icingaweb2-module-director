@@ -2,16 +2,13 @@
 
 namespace dipl\Html;
 
-use Countable;
 use Exception;
 use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
 
 /**
- * Class Html
- * @package dipl\Html
+ * TODO: This should no longer extend HtmlDocument
  */
-class Html implements ValidHtml, Countable
+class Html extends HtmlDocument
 {
     /** Charset to be used - we only support UTF-8 */
     const CHARSET = 'UTF-8';
@@ -22,95 +19,28 @@ class Html implements ValidHtml, Countable
     /** @var bool */
     protected static $showTraces = true;
 
-    protected $contentSeparator = '';
-
-    /** @var ValidHtml[] */
-    private $content = [];
-
-    /** @var array */
-    private $contentIndex = [];
-
-    /**
-     * @param ValidHtml|array|string $content
-     * @return $this
-     */
-    public function add($content)
-    {
-        if (is_array($content)) {
-            foreach ($content as $c) {
-                $this->addContent($c);
-            }
-        } else {
-            $this->addIndexedContent(Html::wantHtml($content));
-        }
-
-        return $this;
-    }
-
     /**
      * @param $tag
-     * @return BaseElement
-     * @throws ProgrammingError
+     * @param null $attributes
+     * @param null $content
+     * @return HtmlElement
      */
-    public function getFirst($tag)
+    public static function tag($tag, $attributes = null, $content = null)
     {
-        foreach ($this->content as $c) {
-            if ($c instanceof BaseElement && $c->getTag() === $tag) {
-                return $c;
-            }
-        }
-
-        throw new ProgrammingError(
-            'Trying to get first %s, but there is no such',
-            $tag
-        );
-    }
-
-    /**
-     * @param $content
-     * @return $this
-     */
-    public function prepend($content)
-    {
-        if (is_array($content)) {
-            foreach (array_reverse($content) as $c) {
-                $this->prepend($c);
-            }
-        } else {
-            $pos = 0;
-            $html = Html::wantHtml($content);
-            array_unshift($this->content, $html);
-            $this->incrementIndexKeys();
-            $this->addObjectPosition($html, $pos);
-        }
-
-        return $this;
-    }
-
-    public function remove(Html $html)
-    {
-        $key = spl_object_hash($html);
-        if (array_key_exists($key, $this->contentIndex)) {
-            foreach ($this->contentIndex[$key] as $pos) {
-                unset($this->content[$pos]);
-            }
-        }
-
-        $this->reIndexContent();
+        return HtmlElement::create($tag, $attributes, $content);
     }
 
     /**
      * @param $string
-     * @return Html
+     * @return FormattedString
+     * @throws IcingaException
      */
-    public function addPrintf($string)
+    public static function sprintf($string)
     {
         $args = func_get_args();
         array_shift($args);
 
-        return $this->add(
-            new FormattedString($string, $args)
-        );
+        return new FormattedString($string, $args);
     }
 
     /**
@@ -130,112 +60,6 @@ class Html implements ValidHtml, Countable
     }
 
     /**
-     * @param Html|array|string $content
-     * @return $this
-     */
-    public function setContent($content)
-    {
-        $this->content = array();
-        static::addContent($content);
-
-        return $this;
-    }
-
-    /**
-     * @see Html::add()
-     */
-    public function addContent($content)
-    {
-        return $this->add($content);
-    }
-
-    /**
-     * return ValidHtml[]
-     */
-    public function getContent()
-    {
-        return $this->content;
-    }
-
-    /**
-     * @return bool
-     */
-    public function hasContent()
-    {
-        return ! empty($this->content);
-    }
-
-    /**
-     * @return int
-     */
-    public function count()
-    {
-        return count($this->content);
-    }
-
-    /**
-     * @param $separator
-     * @return self
-     */
-    public function setSeparator($separator)
-    {
-        $this->contentSeparator = $separator;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function render()
-    {
-        $html = array();
-
-        foreach ($this->content as $element) {
-            if (is_string($element)) {
-                var_dump($this->content);
-            }
-            $html[] = $element->render();
-        }
-
-        return implode($this->contentSeparator, $html);
-    }
-
-    /**
-     * @param $tag
-     * @param null $attributes
-     * @param null $content
-     * @return BaseElement
-     */
-    public static function tag($tag, $attributes = null, $content = null)
-    {
-        return Element::create($tag, $attributes, $content);
-    }
-
-    /**
-     * @deprecated
-     * @param $name
-     * @param null $attributes
-     * @return Element
-     * @throws ProgrammingError
-     */
-    public static function element($name, $attributes = null)
-    {
-        // TODO: This might be anything here, add a better check
-        if (! ctype_alnum($name)) {
-            throw new ProgrammingError('Invalid element requested');
-        }
-
-        $class = __NAMESPACE__ . '\\' . $name;
-        /** @var Element $element */
-        $element = new $class();
-        if ($attributes !== null) {
-            $element->setAttributes($attributes);
-        }
-
-        return $element;
-    }
-
-    /**
      * @param $any
      * @return ValidHtml
      * @throws IcingaException
@@ -247,7 +71,7 @@ class Html implements ValidHtml, Countable
         } elseif (static::canBeRenderedAsString($any)) {
             return new Text($any);
         } elseif (is_array($any)) {
-            $html = new Html();
+            $html = new HtmlDocument();
             foreach ($any as $el) {
                 $html->add(static::wantHtml($el));
             }
@@ -283,7 +107,7 @@ class Html implements ValidHtml, Countable
     /**
      * @param $name
      * @param $arguments
-     * @return BaseElement
+     * @return HtmlElement
      */
     public static function __callStatic($name, $arguments)
     {
@@ -309,7 +133,7 @@ class Html implements ValidHtml, Countable
             }
         }
 
-        return Element::create($name, $attributes, $content);
+        return HtmlElement::create($name, $attributes, $content);
     }
 
     /**
@@ -364,59 +188,6 @@ class Html implements ValidHtml, Countable
     }
 
     /**
-     * @return string
-     */
-    public function __toString()
-    {
-        try {
-            return $this->render();
-        } catch (Exception $e) {
-            return static::renderError($e);
-        }
-    }
-
-    public static function sprintf($string)
-    {
-        $args = func_get_args();
-        array_shift($args);
-        return new FormattedString($string, $args);
-    }
-
-    private function reIndexContent()
-    {
-        $this->contentIndex = [];
-        foreach ($this->content as $pos => $html) {
-            $this->addObjectPosition($html, $pos);
-        }
-    }
-
-    private function addObjectPosition(ValidHtml $html, $pos)
-    {
-        $key = spl_object_hash($html);
-        if (array_key_exists($key, $this->contentIndex)) {
-            $this->contentIndex[$key][] = $pos;
-        } else {
-            $this->contentIndex[$key] = [$pos];
-        }
-    }
-
-    private function addIndexedContent(ValidHtml $html)
-    {
-        $pos = count($this->content);
-        $this->content[$pos] = $html;
-        $this->addObjectPosition($html, $pos);
-    }
-
-    private function incrementIndexKeys()
-    {
-        foreach ($this->contentIndex as & $index) {
-            foreach ($index as & $pos) {
-                $pos++;
-            }
-        }
-    }
-
-    /**
      * This defines the flags used when escaping for HTML
      *
      * - Single quotes are not escaped (ENT_COMPAT)
@@ -437,5 +208,32 @@ class Html implements ValidHtml, Countable
         }
 
         return self::$htmlEscapeFlags;
+    }
+
+    /**
+     * @deprecated
+     */
+    public static function element($name, $attributes = null)
+    {
+        return Html::tag($name, $attributes);
+    }
+
+    /**
+     * @deprecated
+     * @see Html::add()
+     */
+    public function addContent($content)
+    {
+        return $this->add($content);
+    }
+
+    /**
+     * @deprecated
+     *
+     * @return bool
+     */
+    public function hasContent()
+    {
+        return ! $this->isEmpty();
     }
 }

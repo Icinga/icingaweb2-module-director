@@ -166,14 +166,6 @@ class Attributes
     }
 
     /**
-     * @deprecated
-     */
-    public function delete($name)
-    {
-        return $this->remove($name);
-    }
-
-    /**
      * @param $name
      * @return bool
      */
