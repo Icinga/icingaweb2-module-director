@@ -5,7 +5,7 @@ namespace dipl\Html;
 use dipl\Web\Url;
 use Icinga\Web\Url as WebUrl;
 
-class Link extends BaseElement
+class Link extends BaseHtmlElement
 {
     protected $tag = 'a';
 

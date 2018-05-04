@@ -3,11 +3,11 @@
 namespace dipl\Web\Widget;
 
 use dipl\Html\Attributes;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Element;
 use dipl\Html\Html;
 
-class ListItem extends BaseElement
+class ListItem extends BaseHtmlElement
 {
     protected $contentSeparator = "\n";
 

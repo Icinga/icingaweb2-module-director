@@ -153,13 +153,13 @@ abstract class TemplateController extends CompatController
         }
 
         $typeName = $this->getTranslatedType();
-        $this->content()->addPrintf(
+        $this->content()->add(Html::sprintf(
             $this->translate(
                 'This is the "%s" %s Template. Based on this, you might want to:'
             ),
             $typeName,
             $templateName
-        )->add(
+        ))->add(
             $list
         )->add(
             Html::tag('h2', null, $this->translate('Current Template Usage'))

@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Util;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
 
@@ -19,10 +19,10 @@ class ActivityLogTable extends ZfQueryBasedTable
 
     protected $hasObjectFilter = false;
 
-    /** @var BaseElement */
+    /** @var BaseHtmlElement */
     protected $currentHead;
 
-    /** @var BaseElement */
+    /** @var BaseHtmlElement */
     protected $currentBody;
 
     protected $searchColumns = array(

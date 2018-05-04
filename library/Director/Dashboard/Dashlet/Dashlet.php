@@ -6,13 +6,13 @@ use DirectoryIterator;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Dashboard\Dashboard;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Html\Icon;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
 
-abstract class Dashlet extends BaseElement
+abstract class Dashlet extends BaseHtmlElement
 {
     use TranslationHelper;
 

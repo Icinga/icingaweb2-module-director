@@ -2,9 +2,9 @@
 
 namespace dipl\Web\Widget;
 
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 
-class ActionBar extends BaseElement
+class ActionBar extends BaseHtmlElement
 {
     protected $contentSeparator = ' ';
 

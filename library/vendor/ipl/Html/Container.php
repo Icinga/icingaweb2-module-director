@@ -2,7 +2,7 @@
 
 namespace dipl\Html;
 
-class Container extends BaseElement
+class Container extends BaseHtmlElement
 {
     /** @var string */
     protected $contentSeparator = "\n";

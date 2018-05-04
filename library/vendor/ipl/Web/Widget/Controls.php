@@ -2,7 +2,7 @@
 
 namespace dipl\Web\Widget;
 
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Container;
 use dipl\Html\Html;
 
@@ -24,7 +24,7 @@ class Controls extends Container
     /** @var string */
     private $subTitle;
 
-    /** @var BaseElement */
+    /** @var BaseHtmlElement */
     private $titleElement;
 
     /**
@@ -42,7 +42,7 @@ class Controls extends Container
         return $this->setTitleElement($this->renderTitleElement());
     }
 
-    public function setTitleElement(BaseElement $element)
+    public function setTitleElement(BaseHtmlElement $element)
     {
         if ($this->titleElement !== null) {
             $this->remove($this->titleElement);
@@ -125,7 +125,7 @@ class Controls extends Container
     }
 
     /**
-     * @return BaseElement
+     * @return BaseHtmlElement
      */
     protected function renderTitleElement()
     {

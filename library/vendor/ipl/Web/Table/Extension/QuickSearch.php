@@ -2,31 +2,31 @@
 
 namespace dipl\Web\Table\Extension;
 
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Web\Url;
 use dipl\Web\Widget\Controls;
 
 trait QuickSearch
 {
-    /** @var BaseElement */
+    /** @var BaseHtmlElement */
     private $quickSearchForm;
 
-    public function getQuickSearch(BaseElement $parent, Url $url)
+    public function getQuickSearch(BaseHtmlElement $parent, Url $url)
     {
         $this->requireQuickSearchForm($parent, $url);
         $search = $url->getParam('q');
         return $search;
     }
 
-    private function requireQuickSearchForm(BaseElement $parent, Url $url)
+    private function requireQuickSearchForm(BaseHtmlElement $parent, Url $url)
     {
         if ($this->quickSearchForm === null) {
             $this->quickSearchForm = $this->buildQuickSearchForm($parent, $url);
         }
     }
 
-    private function buildQuickSearchForm(BaseElement $parent, Url $url)
+    private function buildQuickSearchForm(BaseHtmlElement $parent, Url $url)
     {
         $search = $url->getParam('q');
 
@@ -52,7 +52,7 @@ trait QuickSearch
         return $form;
     }
 
-    protected function addQuickSearchToControls(Controls $parent, BaseElement $form)
+    protected function addQuickSearchToControls(Controls $parent, BaseHtmlElement $form)
     {
         $title = $parent->getTitleElement();
         if ($title === null) {

@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Link;
 use dipl\Html\Table;
 use dipl\Translation\TranslationHelper;
@@ -48,7 +48,7 @@ class CoreApiFieldsTable extends Table
         }
     }
 
-    protected function addAttributeColumns(BaseElement $tr, $attrs)
+    protected function addAttributeColumns(BaseHtmlElement $tr, $attrs)
     {
         $tr->add([
             $this->makeBooleanColumn($attrs->state),

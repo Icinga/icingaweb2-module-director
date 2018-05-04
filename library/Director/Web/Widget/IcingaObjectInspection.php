@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
@@ -13,7 +13,7 @@ use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Module\Director\Web\Table\DbHelper;
 use stdClass;
 
-class IcingaObjectInspection extends BaseElement
+class IcingaObjectInspection extends BaseHtmlElement
 {
     use DbHelper;
     use TranslationHelper;

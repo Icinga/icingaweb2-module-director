@@ -4,7 +4,7 @@ namespace dipl\Html;
 
 use Traversable;
 
-class Table extends BaseElement
+class Table extends BaseHtmlElement
 {
     protected $contentSeparator = ' ';
 

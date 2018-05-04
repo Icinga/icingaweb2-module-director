@@ -2,7 +2,7 @@
 
 namespace dipl\Html;
 
-class Icon extends BaseElement
+class Icon extends BaseHtmlElement
 {
     protected $tag = 'i';
 

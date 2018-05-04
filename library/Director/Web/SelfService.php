@@ -165,7 +165,7 @@ class SelfService
         $docBaseUrl = 'https://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/distributed-monitoring';
         $sectionSetup = 'distributed-monitoring-setup-satellite-client';
         $sectionTopDown = 'distributed-monitoring-top-down';
-        $c->add(Html::p()->addPrintf(
+        $c->add(Html::tag('p')->add(Html::sprintf(
             'Please check the %s for more related information.'
             . ' The Director-assisted setup corresponds to configuring a %s environment.',
             Html::a(
@@ -176,7 +176,7 @@ class SelfService
                 ['href' => $docBaseUrl . '#' . $sectionTopDown],
                 $this->translate('Top Down')
             )
-        ));
+        )));
 
         $cc->addTitle('Agent deployment instructions');
         $certname = $host->getObjectName();

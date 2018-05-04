@@ -5,11 +5,11 @@ namespace Icinga\Module\Director\Web\Form\IplElement;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\ExtensibleSet as Set;
 use Icinga\Module\Director\Web\Form\IconHelper;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Translation\TranslationHelper;
 
-class ExtensibleSetElement extends BaseElement
+class ExtensibleSetElement extends BaseHtmlElement
 {
     use TranslationHelper;
 
@@ -201,7 +201,7 @@ class ExtensibleSetElement extends BaseElement
         }
     }
 
-    private function eventuallyAddAutosuggestion(BaseElement $element)
+    private function eventuallyAddAutosuggestion(BaseHtmlElement $element)
     {
         if ($this->suggestionContext !== null) {
             $attrs = $element->getAttributes();
@@ -340,7 +340,7 @@ class ExtensibleSetElement extends BaseElement
         }
     }
 
-    private function addRemainingAttributes(BaseElement $element)
+    private function addRemainingAttributes(BaseHtmlElement $element)
     {
         if ($this->remainingAttribs !== null) {
             $element->getAttributes()->add($this->remainingAttribs);
@@ -349,7 +349,7 @@ class ExtensibleSetElement extends BaseElement
         return $element;
     }
 
-    private function eventuallyDisable(BaseElement $element)
+    private function eventuallyDisable(BaseHtmlElement $element)
     {
         if ($this->isDisabled()) {
             $this->disableElement($element);
@@ -358,13 +358,13 @@ class ExtensibleSetElement extends BaseElement
         return $element;
     }
 
-    private function disableElement(BaseElement $element)
+    private function disableElement(BaseHtmlElement $element)
     {
         $element->getAttributes()->set('disabled', 'disabled');
         return $element;
     }
 
-    private function disableIf(BaseElement $element, $condition)
+    private function disableIf(BaseHtmlElement $element, $condition)
     {
         if ($condition) {
             $this->disableElement($element);

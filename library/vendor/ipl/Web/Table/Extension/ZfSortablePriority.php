@@ -5,7 +5,7 @@ namespace dipl\Web\Table\Extension;
 use Icinga\Module\Director\Web\Form\IconHelper;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Html\HtmlString;
 use Zend_Db_Select as ZfSelect;
@@ -50,7 +50,7 @@ trait ZfSortablePriority
         return $request->getPost('__FORM_NAME') === $this->getUniqueFormName();
     }
 
-    protected function addSortPriorityButtons(BaseElement $tr, $row)
+    protected function addSortPriorityButtons(BaseHtmlElement $tr, $row)
     {
         $tr->add(
             Html::tag(

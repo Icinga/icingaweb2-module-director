@@ -6,7 +6,7 @@ use Icinga\Exception\AuthenticationException;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Html\Link;
 
@@ -218,11 +218,11 @@ class IcingaHostForm extends DirectorObjectForm
 
         $inherited = $this->getInheritedGroups();
         if (! empty($inherited)) {
-            /** @var BaseElement $links */
+            /** @var BaseHtmlElement $links */
             $links = $this->createHostgroupLinks($inherited);
             if (count($this->object()->getGroups())) {
                 $links->addAttributes(['class' => 'strike-links']);
-                /** @var BaseElement $link */
+                /** @var BaseHtmlElement $link */
                 foreach ($links->getContent() as $link) {
                     $link->addAttributes([
                         'title' => $this->translate(
@@ -242,9 +242,9 @@ class IcingaHostForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function strikeGroupLinks(BaseElement $links)
+    protected function strikeGroupLinks(BaseHtmlElement $links)
     {
-        /** @var BaseElement $link */
+        /** @var BaseHtmlElement $link */
         foreach ($links->getContent() as $link) {
             $link->getAttributes()->add('style', 'text-decoration: strike');
         }

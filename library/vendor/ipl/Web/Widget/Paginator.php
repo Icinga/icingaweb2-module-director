@@ -4,14 +4,14 @@ namespace dipl\Web\Widget;
 
 use Icinga\Exception\ProgrammingError;
 use dipl\Data\Paginatable;
-use dipl\Html\BaseElement;
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Html\Icon;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
 use dipl\Web\Url;
 
-class Paginator extends BaseElement
+class Paginator extends BaseHtmlElement
 {
     use TranslationHelper;
 
