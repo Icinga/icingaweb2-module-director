@@ -445,7 +445,6 @@ class IcingaConfig
     protected function generateFromDb()
     {
         PrefetchCache::initialize($this->connection);
-
         $start = microtime(true);
 
         MemoryLimit::raiseTo('1024M');
@@ -478,8 +477,10 @@ class IcingaConfig
             ;
 
         if (! $this->isLegacy()) {
-            $this->configFile('zones.d/director-global/commands')
-                ->prepend("library \"methods\"\n\n");
+            $this->configFile(sprintf(
+                'zones.d/%s/commands',
+                $this->connection->getDefaultGlobalZoneName()
+            ))->prepend("library \"methods\"\n\n");
         }
 
         PrefetchCache::forget();
