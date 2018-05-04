@@ -58,7 +58,7 @@ class Attribute
      */
     public function setName($name)
     {
-        if (! preg_match('/^[a-z][a-z:-]*$/i', $name)) {
+        if (! preg_match('/^[a-z][a-z0-9:-]*$/i', $name)) {
             throw new ProgrammingError(
                 'Attribute names with special characters are not yet allowed: %s',
                 $name
