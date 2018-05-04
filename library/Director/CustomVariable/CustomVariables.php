@@ -275,6 +275,32 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    public function restoreStoredVar($key)
+    {
+        if (array_key_exists($key, $this->storedVars)) {
+            $this->vars[$key] = clone($this->storedVars[$key]);
+            $this->vars[$key]->setUnmodified();
+            $this->recheckForModifications();
+            $this->refreshIndex();
+        } elseif (array_key_exists($key, $this->vars)) {
+            unset($this->vars[$key]);
+            $this->recheckForModifications();
+            $this->refreshIndex();
+        }
+    }
+
+    protected function recheckForModifications()
+    {
+        $this->modified = false;
+        foreach ($this->vars as $var) {
+            if ($var->hasBeenModified()) {
+                $this->modified = true;
+
+                return;
+            }
+        }
+    }
+
     public function getOriginalVars()
     {
         return $this->storedVars;
