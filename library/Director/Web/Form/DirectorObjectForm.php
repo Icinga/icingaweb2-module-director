@@ -11,6 +11,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
@@ -885,6 +886,15 @@ abstract class DirectorObjectForm extends DirectorForm
                     )
                 );
             }
+        } elseif ($object instanceof IcingaCommand && $object->isInUse()) {
+            $el->setAttrib('disabled', 'disabled');
+            $el->setAttrib(
+                'title',
+                sprintf(
+                    $this->translate('This Command is still in use by %d other objects'),
+                    $object->countDirectUses()
+                )
+            );
         }
 
         $this->addElement($el);

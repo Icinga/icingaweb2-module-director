@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\Arguments;
+use Zend_Db_Select as DbSelect;
 
 class IcingaCommand extends IcingaObject implements ObjectWithArguments
 {
@@ -147,6 +148,41 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
     protected function prefersGlobalZone()
     {
         return true;
+    }
+
+    public function countDirectUses()
+    {
+        $db = $this->getDb();
+        $id = (int) $this->get('id');
+
+        $qh = $db->select()->from(
+            array('h' => 'icinga_host'),
+            array('cnt' => 'COUNT(*)')
+        )->where('h.check_command_id = ?', $id)
+         ->orWhere('h.event_command_id = ?', $id);
+        $qs = $db->select()->from(
+            array('s' => 'icinga_service'),
+            array('cnt' => 'COUNT(*)')
+        )->where('s.check_command_id = ?', $id)
+            ->orWhere('s.event_command_id = ?', $id);
+        $qn = $db->select()->from(
+            array('n' => 'icinga_notification'),
+            array('cnt' => 'COUNT(*)')
+        )->where('n.command_id = ?', $id);
+        $query = $db->select()->union(
+            [$qh, $qs, $qn],
+            DbSelect::SQL_UNION_ALL
+        );
+
+        return $db->fetchOne($db->select()->from(
+            ['all_cnts' => $query],
+            ['cnt' => 'SUM(cnt)']
+        ));
+    }
+
+    public function isInUse()
+    {
+        return $this->countDirectUses() > 0;
     }
 
     protected function renderCommand()
