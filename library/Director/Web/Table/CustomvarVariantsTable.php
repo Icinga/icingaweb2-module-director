@@ -19,7 +19,7 @@ class CustomvarVariantsTable extends ZfQueryBasedTable
     {
         $table = new static($db);
         $table->varName = $varName;
-        $table->attributes()->set('class', 'common-table');
+        $table->getAttributes()->set('class', 'common-table');
         return $table;
     }
 

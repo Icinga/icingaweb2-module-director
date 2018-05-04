@@ -33,7 +33,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     {
         $table = new static($set->getConnection());
         $table->set = $set;
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
         return $table;
     }
 
@@ -109,7 +109,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         ]);
 
         if ($row->disabled === 'y') {
-            $tr->attributes()->add('class', 'disabled');
+            $tr->getAttributes()->add('class', 'disabled');
         }
 
         return $tr;

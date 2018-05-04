@@ -13,7 +13,7 @@ class JobTable extends ZfQueryBasedTable
 
     protected function assemble()
     {
-        $this->attributes()->add('class', 'jobs');
+        $this->getAttributes()->add('class', 'jobs');
         parent::assemble();
     }
 
@@ -30,7 +30,7 @@ class JobTable extends ZfQueryBasedTable
         }
 
         $tr = $this::row([$caption]);
-        $tr->attributes()->add('class', $this->getJobClasses($row));
+        $tr->getAttributes()->add('class', $this->getJobClasses($row));
 
         return $tr;
     }

@@ -2,11 +2,11 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use dipl\Html\Html;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Data\Filter\Filter;
-use dipl\Html\Util;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 
 class SuggestController extends ActionController
@@ -46,7 +46,7 @@ class SuggestController extends ActionController
                     $matches[] = $this->highlight($str, $search);
                 }
             } else {
-                $matches[] = Util::escapeForHtml($str);
+                $matches[] = Html::escapeForHtml($str);
             }
         }
 
@@ -260,7 +260,7 @@ class SuggestController extends ActionController
     protected function highlight($val, $search)
     {
         $search = ($search);
-        $val = Util::escapeForHtml($val);
+        $val = Html::escapeForHtml($val);
         return preg_replace(
             '/(' . preg_quote($search, '/') . ')/i',
             '<strong>\1</strong>',

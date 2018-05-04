@@ -71,7 +71,7 @@ class IcingaObjectDatafieldTable extends SimpleQueryBasedTable
         ]);
 
         if (! $definedOnThis) {
-            $row->attributes()->add('class', 'disabled');
+            $row->getAttributes()->add('class', 'disabled');
         }
 
         return $row;

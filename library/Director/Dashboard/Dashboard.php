@@ -12,7 +12,6 @@ use Icinga\Module\Director\Db;
 use Icinga\Web\Widget\Tab;
 use dipl\Html\Html;
 use dipl\Html\HtmlString;
-use dipl\Html\Util;
 use dipl\Translation\TranslationHelper;
 use dipl\Web\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
@@ -65,7 +64,7 @@ abstract class Dashboard extends Html implements Countable
             $this->add(Html::tag(
                 'p',
                 null,
-                HtmlString::create(nl2br(Util::escapeForHtml($description)))
+                HtmlString::create(nl2br(Html::escapeForHtml($description)))
             ));
         }
 

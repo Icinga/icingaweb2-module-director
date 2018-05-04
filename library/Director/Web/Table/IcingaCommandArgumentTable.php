@@ -25,7 +25,7 @@ class IcingaCommandArgumentTable extends ZfQueryBasedTable
 
     public function assemble()
     {
-        $this->attributes()->set('data-base-target', '_self');
+        $this->getAttributes()->set('data-base-target', '_self');
     }
 
     public function renderRow($row)

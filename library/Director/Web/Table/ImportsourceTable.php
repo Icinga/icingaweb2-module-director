@@ -21,7 +21,7 @@ class ImportsourceTable extends ZfQueryBasedTable
 
     protected function assemble()
     {
-        $this->attributes()->add('class', 'syncstate');
+        $this->getAttributes()->add('class', 'syncstate');
         parent::assemble();
     }
 
@@ -41,7 +41,7 @@ class ImportsourceTable extends ZfQueryBasedTable
         }
 
         $tr = $this::row([$caption]);
-        $tr->attributes()->add('class', $row->import_state);
+        $tr->getAttributes()->add('class', $row->import_state);
 
         return $tr;
     }

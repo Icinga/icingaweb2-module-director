@@ -45,7 +45,7 @@ class PropertymodifierTable extends ZfQueryBasedTable
 
     protected function assemble()
     {
-        $this->attributes()->set('data-base-target', '_self');
+        $this->getAttributes()->set('data-base-target', '_self');
     }
 
     public function getColumns()

@@ -177,7 +177,7 @@ abstract class ObjectController extends ActionController
         $form->handleRequest();
         $this->content()->add($form);
         $table = new IcingaObjectDatafieldTable($object);
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
         $table->renderTo($this);
     }
 

@@ -246,7 +246,7 @@ class IcingaHostForm extends DirectorObjectForm
     {
         /** @var BaseElement $link */
         foreach ($links->getContent() as $link) {
-            $link->attributes()->add('style', 'text-decoration: strike');
+            $link->getAttributes()->add('style', 'text-decoration: strike');
         }
         $links->add('aha');
     }

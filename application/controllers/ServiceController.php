@@ -206,7 +206,7 @@ class ServiceController extends ObjectController
         );
         $table = (new IcingaAppliedServiceTable($this->db()))
             ->setService($service);
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
 
         $this->content()->add($table);
     }

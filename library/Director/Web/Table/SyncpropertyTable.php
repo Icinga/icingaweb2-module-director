@@ -26,7 +26,7 @@ class SyncpropertyTable extends ZfQueryBasedTable
     public static function create(SyncRule $rule)
     {
         $table = new static($rule->getConnection());
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
         $table->rule = $rule;
         return $table;
     }

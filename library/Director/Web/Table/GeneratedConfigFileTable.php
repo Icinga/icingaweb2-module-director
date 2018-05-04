@@ -24,7 +24,7 @@ class GeneratedConfigFileTable extends ZfQueryBasedTable
     {
         $table = new static($db);
         $table->config = $config;
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
         return $table;
     }
 
@@ -43,7 +43,7 @@ class GeneratedConfigFileTable extends ZfQueryBasedTable
         ]);
 
         if ($row->file_path === $this->activeFile) {
-            $tr->attributes()->add('class', 'active');
+            $tr->getAttributes()->add('class', 'active');
         }
 
         return $tr;

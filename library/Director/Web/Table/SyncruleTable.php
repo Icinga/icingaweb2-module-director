@@ -14,7 +14,7 @@ class SyncruleTable extends ZfQueryBasedTable
 
     protected function assemble()
     {
-        $this->attributes()->add('class', 'syncstate');
+        $this->getAttributes()->add('class', 'syncstate');
         parent::assemble();
     }
 
@@ -34,7 +34,7 @@ class SyncruleTable extends ZfQueryBasedTable
         }
 
         $tr = $this::row([$caption, $row->object_type]);
-        $tr->attributes()->add('class', $row->sync_state);
+        $tr->getAttributes()->add('class', $row->sync_state);
 
         return $tr;
     }

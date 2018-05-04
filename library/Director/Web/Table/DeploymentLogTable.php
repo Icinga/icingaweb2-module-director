@@ -19,7 +19,7 @@ class DeploymentLogTable extends ZfQueryBasedTable
 
     public function assemble()
     {
-        $this->attributes()->add('class', 'deployment-log');
+        $this->getAttributes()->add('class', 'deployment-log');
     }
 
     public function renderRow($row)

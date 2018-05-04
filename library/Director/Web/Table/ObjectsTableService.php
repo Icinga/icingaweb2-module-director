@@ -60,7 +60,7 @@ class ObjectsTableService extends ObjectsTable
 
         $hostField = static::td(Link::create($caption, $url));
         if ($row->host === null) {
-            $hostField->attributes()->add('class', 'error');
+            $hostField->getAttributes()->add('class', 'error');
         }
         $tr = static::tr([
             $hostField,
@@ -68,7 +68,7 @@ class ObjectsTableService extends ObjectsTable
         ]);
 
         if ($row->host_disabled === 'y' || $row->disabled === 'y') {
-            $tr->attributes()->add('class', 'disabled');
+            $tr->getAttributes()->add('class', 'disabled');
         }
         return $tr;
     }

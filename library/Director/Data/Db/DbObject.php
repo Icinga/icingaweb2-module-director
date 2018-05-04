@@ -218,6 +218,7 @@ abstract class DbObject
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+
         return $this;
     }
 
@@ -987,6 +988,7 @@ abstract class DbObject
      * @param DbConnection|null $connection
      *
      * @return static
+     * @throws IE
      */
     public static function create($properties = array(), DbConnection $connection = null)
     {
@@ -1004,6 +1006,10 @@ abstract class DbObject
         return array_key_exists($class, self::$prefetched);
     }
 
+    /**
+     * @param $key
+     * @return static|bool
+     */
     protected static function getPrefetched($key)
     {
         $class = get_called_class();
@@ -1065,6 +1071,13 @@ abstract class DbObject
         return self::$prefetchStats;
     }
 
+    /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     * @throws IE
+     * @throws NotFoundError
+     */
     public static function loadWithAutoIncId($id, DbConnection $connection)
     {
         /* Need to cast to int, otherwise the id will be matched against
@@ -1084,9 +1097,17 @@ abstract class DbObject
         $obj->setConnection($connection)
             ->set($obj->autoincKeyName, $id)
             ->loadFromDb();
+
         return $obj;
     }
 
+    /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     * @throws IE
+     * @throws NotFoundError
+     */
     public static function load($id, DbConnection $connection)
     {
         if ($prefetched = static::getPrefetched($id)) {
@@ -1096,6 +1117,7 @@ abstract class DbObject
         /** @var DbObject $obj */
         $obj = new static;
         $obj->setConnection($connection)->setKey($id)->loadFromDb();
+
         return $obj;
     }
 
@@ -1105,6 +1127,7 @@ abstract class DbObject
      * @param string|null $keyColumn
      *
      * @return static[]
+     * @throws IE
      */
     public static function loadAll(DbConnection $connection, $query = null, $keyColumn = null)
     {
@@ -1138,6 +1161,7 @@ abstract class DbObject
      * @param bool $force
      *
      * @return static[]
+     * @throws IE
      */
     public static function prefetchAll(DbConnection $connection, $force = false)
     {

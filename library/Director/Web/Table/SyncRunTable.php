@@ -14,7 +14,7 @@ class SyncRunTable extends ZfQueryBasedTable
     public static function create(SyncRule $rule)
     {
         $table = new static($rule->getConnection());
-        $table->attributes()
+        $table->getAttributes()
             ->set('data-base-target', '_self')
             ->add('class', 'history');
         $table->rule = $rule;

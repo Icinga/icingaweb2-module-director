@@ -75,7 +75,7 @@ class InspectTreeRenderer extends BaseElement
         $hasChildren = property_exists($node, 'children');
         $li = Html::tag('li');
         if (! $hasChildren) {
-            $li->attributes()->add('class', 'collapsed');
+            $li->getAttributes()->add('class', 'collapsed');
         }
 
         if ($hasChildren) {

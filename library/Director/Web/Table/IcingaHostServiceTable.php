@@ -27,7 +27,7 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
     {
         $table = new static($host->getConnection());
         $table->setHost($host);
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
         return $table;
     }
 

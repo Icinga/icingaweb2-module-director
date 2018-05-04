@@ -6,7 +6,6 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigFile;
 use dipl\Html\Html;
 use dipl\Html\HtmlString;
 use dipl\Html\Link;
-use dipl\Html\Util;
 use dipl\Translation\TranslationHelper;
 
 class ShowConfigFile extends Html
@@ -32,7 +31,7 @@ class ShowConfigFile extends Html
 
     protected function prepareContent()
     {
-        $source = $this->linkObjects(Util::escapeForHtml($this->file->getContent()));
+        $source = $this->linkObjects(Html::escapeForHtml($this->file->getContent()));
         if ($this->highlight) {
             $source = $this->highlight(
                 $source,

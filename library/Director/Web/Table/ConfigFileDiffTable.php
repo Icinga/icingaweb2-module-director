@@ -24,7 +24,7 @@ class ConfigFileDiffTable extends ZfQueryBasedTable
     public static function load($leftSum, $rightSum, Db $connection)
     {
         $table = new static($connection);
-        $table->attributes()->add('class', 'config-diff');
+        $table->getAttributes()->add('class', 'config-diff');
         return $table->setLeftChecksum($leftSum)
             ->setRightChecksum($rightSum);
     }
@@ -36,7 +36,7 @@ class ConfigFileDiffTable extends ZfQueryBasedTable
             $row->file_path,
         ]);
 
-        $tr->attributes()->add('class', 'file-' . $row->file_action);
+        $tr->getAttributes()->add('class', 'file-' . $row->file_action);
         return $tr;
     }
 

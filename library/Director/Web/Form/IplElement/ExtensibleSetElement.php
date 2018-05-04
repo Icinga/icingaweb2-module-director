@@ -194,7 +194,7 @@ class ExtensibleSetElement extends BaseElement
         $this->addAddMore();
 
         if ($this->isSorted()) {
-            $this->attributes()->add('class', 'sortable');
+            $this->getAttributes()->add('class', 'sortable');
         }
         if (null !== $this->description) {
             $this->addDescription($this->description);
@@ -204,7 +204,7 @@ class ExtensibleSetElement extends BaseElement
     private function eventuallyAddAutosuggestion(BaseElement $element)
     {
         if ($this->suggestionContext !== null) {
-            $attrs = $element->attributes();
+            $attrs = $element->getAttributes();
             $attrs->add('class', 'director-suggest');
             $attrs->set([
                 'autocomplete'   => 'off',
@@ -270,7 +270,7 @@ class ExtensibleSetElement extends BaseElement
             )
         );
         if ($cnt !== 0) { // TODO: was === 0?!
-            $field->attributes()->add('class', 'extend-set');
+            $field->getAttributes()->add('class', 'extend-set');
         }
 
         if ($this->suggestionContext === null) {
@@ -324,7 +324,7 @@ class ExtensibleSetElement extends BaseElement
                 'id' => $this->id . $this->suffix($this->chosenOptionCount),
                 'value' => $val
             ]);
-            $text->attributes()->set([
+            $text->getAttributes()->set([
                 'autocomplete'   => 'off',
                 'autocorrect'    => 'off',
                 'autocapitalize' => 'off',
@@ -343,7 +343,7 @@ class ExtensibleSetElement extends BaseElement
     private function addRemainingAttributes(BaseElement $element)
     {
         if ($this->remainingAttribs !== null) {
-            $element->attributes()->add($this->remainingAttribs);
+            $element->getAttributes()->add($this->remainingAttribs);
         }
 
         return $element;
@@ -360,7 +360,7 @@ class ExtensibleSetElement extends BaseElement
 
     private function disableElement(BaseElement $element)
     {
-        $element->attributes()->set('disabled', 'disabled');
+        $element->getAttributes()->set('disabled', 'disabled');
         return $element;
     }
 

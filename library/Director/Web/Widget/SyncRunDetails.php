@@ -19,7 +19,7 @@ class SyncRunDetails extends NameValueTable
     public function __construct(SyncRun $run)
     {
         $this->run = $run;
-        $this->attributes()->add('data-base-target', '_next'); // eigentlich nur runSummary
+        $this->getAttributes()->add('data-base-target', '_next'); // eigentlich nur runSummary
         $this->addNameValuePairs([
             $this->translate('Start time') => $run->start_time,
             $this->translate('Duration') => sprintf('%.2fs', $run->duration_ms / 1000),

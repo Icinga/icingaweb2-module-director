@@ -151,7 +151,7 @@ class ObjectsTable extends ZfQueryBasedTable
             $classes[] = 'disabled';
         }
         if (! empty($classes)) {
-            $tr->attributes()->add('class', $classes);
+            $tr->getAttributes()->add('class', $classes);
         }
 
         return $tr;

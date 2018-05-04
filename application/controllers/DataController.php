@@ -104,7 +104,7 @@ class DataController extends ActionController
         $this->addListTabs($listId, 'entries');
 
         $table = new DatalistEntryTable($this->db());
-        $table->attributes()->set('data-base-target', '_self');
+        $table->getAttributes()->set('data-base-target', '_self');
         $table->setList($list);
         $this->content()->add([$form, $table]);
     }

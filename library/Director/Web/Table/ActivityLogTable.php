@@ -34,7 +34,7 @@ class ActivityLogTable extends ZfQueryBasedTable
 
     public function assemble()
     {
-        $this->attributes()->add('class', 'activity-log');
+        $this->getAttributes()->add('class', 'activity-log');
     }
 
     public function setLastDeployedId($id)

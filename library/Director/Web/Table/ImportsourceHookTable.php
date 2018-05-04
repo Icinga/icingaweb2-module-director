@@ -24,7 +24,7 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
 
     protected function assemble()
     {
-        $this->attributes()->add('class', 'raw-data-table collapsed');
+        $this->getAttributes()->add('class', 'raw-data-table collapsed');
     }
 
     public function getColumns()

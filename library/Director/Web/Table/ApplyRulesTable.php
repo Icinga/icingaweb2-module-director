@@ -56,7 +56,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
         ]);
 
         if ($row->disabled === 'y') {
-            $tr->attributes()->add('class', 'disabled');
+            $tr->getAttributes()->add('class', 'disabled');
         }
 
         return $tr;
