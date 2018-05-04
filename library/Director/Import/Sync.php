@@ -79,6 +79,10 @@ class Sync
 
     protected $replaceVars = false;
 
+    protected $hasPropertyDisabled = false;
+
+    protected $serviceOverrideKeyName;
+
     /**
      * @var SyncRun
      */
@@ -118,6 +122,7 @@ class Sync
      * Retrieve modifications a given SyncRule would apply
      *
      * @return array  Array of IcingaObject elements
+     * @throws Exception
      */
     public function getExpectedModifications()
     {
@@ -189,6 +194,10 @@ class Sync
         foreach ($this->syncProperties as $key => $prop) {
             if ($prop->destination_field === 'vars' && $prop->merge_policy === 'override') {
                 $this->replaceVars = true;
+            }
+
+            if ($prop->destination_field === 'disabled') {
+                $this->hasPropertyDisabled = true;
             }
 
             if (! strlen($prop->filter_expression)) {
@@ -263,6 +272,9 @@ class Sync
     protected function fetchImportedData()
     {
         Benchmark::measure('Begin loading imported data');
+        if ($this->rule->object_type === 'host') {
+            $this->serviceOverrideKeyName = $this->db->settings()->override_services_varname;
+        }
 
         $this->imported = array();
 
@@ -575,9 +587,10 @@ class Sync
     /**
      * Evaluates a SyncRule and returns a list of modified objects
      *
-     * TODO: This needs to be splitted into smaller methods
+     * TODO: Split this into smaller methods
      *
-     * @return DbObject[]          List of modified IcingaObjects
+     * @return DbObject|IcingaObject[] List of modified IcingaObjects
+     * @throws Exception
      */
     protected function prepare()
     {
@@ -586,8 +599,8 @@ class Sync
         }
 
         $this->raiseLimits()
-             ->prepareCache()
              ->startMeasurements()
+             ->prepareCache()
              ->fetchSyncProperties()
              ->prepareRelatedImportSources()
              ->prepareSourceColumns()
@@ -595,45 +608,16 @@ class Sync
              ->fetchImportedData()
              ->deferResolvers();
 
-        // TODO: directly work on existing objects, remember imported keys, then purge
+        Benchmark::measure('Begin preparing updated objects');
         $newObjects = $this->prepareNewObjects();
 
-        $hasDisabled = false;
-        foreach ($this->syncProperties as $property) {
-            if ($property->get('destination_field') === 'disabled') {
-                $hasDisabled = true;
-            }
-        }
-
-        Benchmark::measure('Begin preparing updated objects');
-
+        Benchmark::measure('Ready to process objects');
         /** @var DbObject|IcingaObject $object */
         foreach ($newObjects as $key => $object) {
-            if (array_key_exists($key, $this->objects)) {
-                switch ($this->rule->get('update_policy')) {
-                    case 'override':
-                        $this->objects[$key]->replaceWith($object);
-                        break;
-
-                    case 'merge':
-                        // TODO: re-evaluate merge settings. vars.x instead of
-                        //       just "vars" might suffice.
-                        $this->objects[$key]->merge($object, $this->replaceVars);
-                        if (! $hasDisabled && $object->hasProperty('disabled')) {
-                            $this->objects[$key]->resetProperty('disabled');
-                        }
-                        break;
-
-                    default:
-                        // policy 'ignore', no action
-                }
-            } else {
-                $this->objects[$key] = $object;
-            }
+            $this->processObject($key, $object);
         }
 
-        Benchmark::measure('Done preparing updated objects');
-
+        Benchmark::measure('Modified objects are ready, applying purge strategy');
         $noAction = array();
         foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
             if (array_key_exists($key, $newObjects)) {
@@ -669,6 +653,68 @@ class Sync
     }
 
     /**
+     * @param $key
+     * @param DbObject|IcingaObject $object
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    protected function processObject($key, $object)
+    {
+        if (array_key_exists($key, $this->objects)) {
+            $this->refreshObject($key, $object);
+        } else {
+            $this->addNewObject($key, $object);
+        }
+    }
+
+    /**
+     * @param $key
+     * @param DbObject|IcingaObject $object
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    protected function refreshObject($key, $object)
+    {
+        $policy = $this->rule->get('update_policy');
+
+        switch ($policy) {
+            case 'override':
+                $this->objects[$key]->replaceWith($object);
+                break;
+
+            case 'merge':
+                // TODO: re-evaluate merge settings. vars.x instead of
+                //       just "vars" might suffice.
+                $this->objects[$key]->merge($object, $this->replaceVars);
+                if (! $this->hasPropertyDisabled && $object->hasProperty('disabled')) {
+                    $this->objects[$key]->resetProperty('disabled');
+                }
+                break;
+
+            default:
+                // policy 'ignore', no action
+        }
+
+        if ($policy === 'override' || $policy === 'merge') {
+            if ($object instanceof IcingaHost) {
+                $keyName = $this->serviceOverrideKeyName;
+                if (! $object->hasInitializedVars() || ! isset($object->vars()->$key)) {
+                    $this->objects[$key]->vars()->restoreStoredVar($keyName);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param $key
+     * @param DbObject|IcingaObject $object
+     */
+    protected function addNewObject($key, $object)
+    {
+        $this->objects[$key] = $object;
+    }
+
+    /**
      * Runs a SyncRule and applies all resulting changes
      * @return int
      * @throws Exception
@@ -692,6 +738,7 @@ class Sync
             $created = 0;
             $modified = 0;
             $deleted = 0;
+            $failed = 0;
             foreach ($objects as $object) {
                 $this->setResolver($object);
                 if ($object->shouldBeRemoved()) {
@@ -701,12 +748,24 @@ class Sync
                 }
 
                 if ($object->hasBeenModified()) {
-                    if ($object->hasBeenLoadedFromDb()) {
+                    $existing = $object->hasBeenLoadedFromDb();
+
+                    try {
+                        $object->store($db);
+                    } catch (Exception $e) {
+                        if ($this->singleObjectsAreAllowedToFail()) {
+                            $failed++;
+                            continue;
+                        } else {
+                            throw $e;
+                        }
+                    }
+
+                    if ($existing) {
                         $modified++;
                     } else {
                         $created++;
                     }
-                    $object->store($db);
                 }
             }
 

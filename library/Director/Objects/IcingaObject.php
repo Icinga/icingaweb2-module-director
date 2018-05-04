@@ -1303,6 +1303,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->vars;
     }
 
+    /**
+     * @return bool
+     * @throws ProgrammingError
+     */
+    public function hasInitializedVars()
+    {
+        $this->assertCustomVarsSupport();
+
+        return $this->vars !== null;
+    }
+
     public function getVarsTableName()
     {
         return $this->getTableName() . '_var';

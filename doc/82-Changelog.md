@@ -43,6 +43,7 @@ before switching to a new version.
 * FEATURE: new Property Modifier to url-encode values
 * FEATURE: new Property Modifier: uppercase the first character of each word
 * FEATURE: Kickstart Helper now also imports Event Commands (#1389)
+* FEATURE: Preserve _override_servicevars on sync, even when replacing vars (#1307)
 
 ### Internals
 * FEATURE: Html/Attribute now allows boolean properties
