@@ -258,7 +258,8 @@
             } else {
                 $ul = $('<ul class="director-suggestions"></ul>');
                 $ul.insertAfter($input);
-                $ul.css({width: $input.css('width')});
+                var suggestionWidth = (parseInt($input.css('width')) * 2) + 'px';
+                $ul.css({width: suggestionWidth});
                 return this.refreshSuggestionList($ul, $input);
             }
         },

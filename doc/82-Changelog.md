@@ -24,6 +24,8 @@ before switching to a new version.
 * FEATURE: A Service Set can now be assigned to multiple hosts at once #1281
 * FEATURE: Commands can now be filtered by usage (#1480)
 * FEATURE: Show usage of Commands over templates and objects (#335)
+* FEATURE: Allow horizontal size increase of Import Source DB Query field (#299)
+* FEATURE: Small UI improvements like #1308
 * FIX: Don't suggest Command templates where Commands are required (#1414)
 * FIX: Do not allow to delete Commands being used by other objects (#1443)
 
