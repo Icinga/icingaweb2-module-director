@@ -37,6 +37,7 @@ abstract class ObjectsController extends ActionController
 
     /**
      * @return $this
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
      */
     protected function addObjectsTabs()
     {
@@ -50,6 +51,11 @@ abstract class ObjectsController extends ActionController
         return $this;
     }
 
+    /**
+     * @return IcingaObjectsHandler
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function apiRequestHandler()
     {
         $request = $this->getRequest();
@@ -72,6 +78,11 @@ abstract class ObjectsController extends ActionController
         ))->setTable($table);
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
@@ -103,16 +114,24 @@ abstract class ObjectsController extends ActionController
         // Hint: might be used in controllers extending this
         $this->table = $this->getTable();
         $this->table->renderTo($this);
-        (new AdditionalTableActions($this->getAuth(), $this->url()))
+        (new AdditionalTableActions($this->getAuth(), $this->url(), $this->table))
             ->appendTo($this->actions());
     }
 
+    /**
+     * @return ObjectsTable
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     protected function getTable()
     {
         return ObjectsTable::create($this->getType(), $this->db())
             ->setAuth($this->getAuth());
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     public function editAction()
     {
         $type = ucfirst($this->getType());
@@ -146,6 +165,9 @@ abstract class ObjectsController extends ActionController
      * Loads the TemplatesTable or the TemplateTreeRenderer
      *
      * Passing render=tree switches to the tree view.
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
      */
     public function templatesAction()
     {
@@ -170,11 +192,21 @@ abstract class ObjectsController extends ActionController
             : TemplatesTable::create($shortType, $this->db())->renderTo($this);
     }
 
+    /**
+     * @return $this
+     * @throws \Icinga\Security\SecurityException
+     */
     protected function assertApplyRulePermission()
     {
         return $this->assertPermission('director/admin');
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
+     */
     public function applyrulesAction()
     {
         $type = $this->getType();
@@ -210,6 +242,11 @@ abstract class ObjectsController extends ActionController
         $table->renderTo($this);
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     */
     public function setsAction()
     {
         $type = $this->getType();
@@ -243,6 +280,10 @@ abstract class ObjectsController extends ActionController
         ObjectSetTable::create($type, $this->db(), $this->getAuth())->renderTo($this);
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     protected function loadMultiObjectsFromParams()
     {
         $filter = Filter::fromQueryString($this->params->toString());
@@ -288,12 +329,19 @@ abstract class ObjectsController extends ActionController
         return $this;
     }
 
+    /**
+     * @param $feature
+     * @return bool
+     */
     protected function supports($feature)
     {
         $func = "supports$feature";
         return IcingaObject::createByType($this->getType())->$func();
     }
 
+    /**
+     * @return string
+     */
     protected function getBaseType()
     {
         $type = $this->getType();
@@ -304,6 +352,9 @@ abstract class ObjectsController extends ActionController
         }
     }
 
+    /**
+     * @return string
+     */
     protected function getType()
     {
         // Strip final 's' and upcase an eventual 'group'
@@ -318,11 +369,17 @@ abstract class ObjectsController extends ActionController
         );
     }
 
+    /**
+     * @return string
+     */
     protected function getPluralType()
     {
         return preg_replace('/cys$/', 'cies', $this->getType() . 's');
     }
 
+    /**
+     * @return string
+     */
     protected function getPluralBaseType()
     {
         return preg_replace('/cys$/', 'cies', $this->getBaseType() . 's');

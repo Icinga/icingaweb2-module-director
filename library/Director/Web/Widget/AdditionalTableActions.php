@@ -6,8 +6,10 @@ use dipl\Html\Html;
 use dipl\Html\Icon;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
+use dipl\Web\Table\ZfQueryBasedTable;
 use dipl\Web\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Web\Table\FilterableByUsage;
 
 class AdditionalTableActions
 {
@@ -19,10 +21,14 @@ class AdditionalTableActions
     /** @var Url */
     protected $url;
 
-    public function __construct(Auth $auth, Url $url)
+    /** @var ZfQueryBasedTable */
+    protected $table;
+
+    public function __construct(Auth $auth, Url $url, ZfQueryBasedTable $table)
     {
         $this->auth = $auth;
         $this->url = $url;
+        $this->table = $table;
     }
 
     public function appendTo(Html $parent)
@@ -33,6 +39,10 @@ class AdditionalTableActions
         }
         if ($this->hasPermission('director/showsql')) {
             $links[] = $this->createShowSqlToggle();
+        }
+
+        if ($this->table instanceof FilterableByUsage) {
+            $parent->add($this->showUsageFilter($this->table));
         }
 
         if (! empty($links)) {
@@ -67,6 +77,43 @@ class AdditionalTableActions
         }
 
         return $link;
+    }
+
+    protected function showUsageFilter(FilterableByUsage $table)
+    {
+        $active = $this->url->getParam('usage', 'all');
+        $links = [
+            Link::create($this->translate('all'), $this->url->without('usage')),
+            Link::create($this->translate('used'), $this->url->with('usage', 'used')),
+            Link::create($this->translate('unused'), $this->url->with('usage', 'unused')),
+        ];
+
+        if ($active === 'used') {
+            $table->showOnlyUsed();
+        } elseif ($active === 'unused') {
+            $table->showOnlyUnUsed();
+        }
+
+        $options = $this->ul(
+            $this->li([
+                Link::create(
+                    sprintf($this->translate('Usage (%s)'), $active),
+                    '#',
+                    null,
+                    [
+                        'class' => 'icon-sitemap'
+                    ]
+                ),
+                $subUl = Html::tag('ul')
+            ]),
+            ['class' => 'nav']
+        );
+
+        foreach ($links as $link) {
+            $subUl->add($this->li($link));
+        }
+
+        return $options;
     }
 
     protected function moreOptions($links)
