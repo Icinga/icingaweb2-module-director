@@ -5,7 +5,6 @@ namespace dipl\Web\Table;
 use Countable;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
-use Icinga\Exception\ProgrammingError;
 use dipl\Data\Paginatable;
 use dipl\Db\Zf1\FilterRenderer;
 use dipl\Html\Table;
@@ -29,11 +28,7 @@ abstract class QueryBasedTable extends Table implements Countable
 
     private $firstRow;
 
-    private $firstRowOnPage;
-
     private $lastRow = false;
-
-    private $lastRowOnPage = false;
 
     private $rowNumber;
 

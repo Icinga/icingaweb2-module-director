@@ -31,7 +31,7 @@ trait ZfSortablePriority
 
         if ($request->isPost() && $this->hasBeenSent($request)) {
             // $this->fixPriorities();
-            foreach ($request->getPost() as $key => $value) {
+            foreach (array_keys($request->getPost()) as $key) {
                 if (substr($key, 0, 8) === 'MOVE_UP_') {
                     $id = (int) substr($key, 8);
                     $this->moveRow($id, 'up');

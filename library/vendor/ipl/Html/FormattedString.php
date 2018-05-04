@@ -24,7 +24,9 @@ class FormattedString implements ValidHtml
     public static function create($string)
     {
         $args = func_get_args();
-        return new static(array_shift($args), $args);
+        array_shift($args);
+
+        return new static($string, $args);
     }
 
     public function render()

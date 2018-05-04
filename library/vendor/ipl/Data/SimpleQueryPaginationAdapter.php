@@ -10,8 +10,6 @@ class SimpleQueryPaginationAdapter implements Paginatable
     /** @var SimpleQuery */
     private $query;
 
-    private $countQuery;
-
     public function __construct(SimpleQuery $query)
     {
         $this->query = $query;
