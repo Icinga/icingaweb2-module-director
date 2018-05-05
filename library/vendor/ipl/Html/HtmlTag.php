@@ -11,21 +11,21 @@ abstract class HtmlTag
      * @param $content
      * @param Attributes|array $attributes
      *
-     * @return Element
+     * @return HtmlElement
      */
     public static function h1($content, $attributes = null)
     {
-        return Element::create('h1', $attributes)->setContent($content);
+        return HtmlElement::create('h1', $attributes)->setContent($content);
     }
 
     /**
      * @param $content
      * @param Attributes|array $attributes
      *
-     * @return Element
+     * @return HtmlElement
      */
     public static function p($content, $attributes = null)
     {
-        return Element::create('p', $attributes)->setContent($content);
+        return HtmlElement::create('p', $attributes)->setContent($content);
     }
 }

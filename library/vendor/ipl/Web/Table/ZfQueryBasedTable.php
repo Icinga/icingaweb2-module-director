@@ -7,7 +7,6 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
 use dipl\Db\Zf1\FilterRenderer;
 use dipl\Db\Zf1\SelectPaginationAdapter;
-use dipl\Html\Container;
 use dipl\Html\DeferredText;
 use dipl\Html\Html;
 use dipl\Html\Link;
@@ -119,7 +118,7 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
     public function dumpSqlQuery(Url $url)
     {
         $self = $this;
-        return Container::create(['class' => 'sql-dump'], [
+        return Html::tag('div', ['class' => 'sql-dump'], [
             Link::create('[ close ]', $url->without('format')),
             Html::tag('h3', null, $this->translate('SQL Query')),
             Html::tag('pre', null, new DeferredText(

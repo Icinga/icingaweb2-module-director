@@ -54,6 +54,7 @@ abstract class BaseHtmlElement extends HtmlDocument
     /**
      * @param Attributes|array|null $attributes
      * @return $this
+     * @throws \Icinga\Exception\IcingaException
      */
     public function setAttributes($attributes)
     {
@@ -61,6 +62,12 @@ abstract class BaseHtmlElement extends HtmlDocument
         return $this;
     }
 
+    /**
+     * @param $key
+     * @param $value
+     * @return $this
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function setAttribute($key, $value)
     {
         $this->getAttributes()->set($key, $value);
@@ -70,6 +77,7 @@ abstract class BaseHtmlElement extends HtmlDocument
     /**
      * @param Attributes|array|null $attributes
      * @return $this
+     * @throws \Icinga\Exception\ProgrammingError
      */
     public function addAttributes($attributes)
     {
@@ -77,6 +85,9 @@ abstract class BaseHtmlElement extends HtmlDocument
         return $this;
     }
 
+    /**
+     * @return array
+     */
     public function getDefaultAttributes()
     {
         return $this->defaultAttributes;
@@ -102,6 +113,10 @@ abstract class BaseHtmlElement extends HtmlDocument
     {
     }
 
+    /**
+     * @param array|ValidHtml|string $content
+     * @return $this
+     */
     public function add($content)
     {
         if (! $this->hasBeenAssembled) {

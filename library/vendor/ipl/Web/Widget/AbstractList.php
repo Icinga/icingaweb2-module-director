@@ -4,8 +4,8 @@ namespace dipl\Web\Widget;
 
 use dipl\Html\Attributes;
 use dipl\Html\BaseHtmlElement;
-use dipl\Html\Element;
 use dipl\Html\Html;
+use dipl\Html\HtmlElement;
 
 class AbstractList extends BaseHtmlElement
 {
@@ -35,6 +35,6 @@ class AbstractList extends BaseHtmlElement
      */
     public function addItem($content, $attributes = null)
     {
-        return $this->add(Element::create('li', $attributes, $content));
+        return $this->add(HtmlElement::create('li', $attributes, $content));
     }
 }

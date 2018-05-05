@@ -11,16 +11,16 @@ class Table extends BaseHtmlElement
     /** @var string */
     protected $tag = 'table';
 
-    /** @var Element */
+    /** @var HtmlElement */
     private $caption;
 
-    /** @var Element */
+    /** @var HtmlElement */
     private $header;
 
-    /** @var Element */
+    /** @var HtmlElement */
     private $body;
 
-    /** @var Element */
+    /** @var HtmlElement */
     private $footer;
 
     /** @var array */
@@ -49,7 +49,7 @@ class Table extends BaseHtmlElement
      */
     public function setCaption($content)
     {
-        $this->caption = Element::create('caption')->addContent(
+        $this->caption = Html::tag('caption')->add(
             $content
         );
 
@@ -61,11 +61,11 @@ class Table extends BaseHtmlElement
      *
      * @param Attributes|array $attributes
      * @param Html|array|string $content
-     * @return Element
+     * @return HtmlElement
      */
     public static function tr($content = null, $attributes = null)
     {
-        return Element::create('tr', $attributes, $content);
+        return Html::tag('tr', $attributes, $content);
     }
 
     /**
@@ -73,11 +73,11 @@ class Table extends BaseHtmlElement
      *
      * @param Attributes|array $attributes
      * @param Html|array|string $content
-     * @return Element
+     * @return HtmlElement
      */
     public static function th($content = null, $attributes = null)
     {
-        return Element::create('th', $attributes, $content);
+        return HtmlElement::create('th', $attributes, $content);
     }
 
     /**
@@ -85,13 +85,20 @@ class Table extends BaseHtmlElement
      *
      * @param Attributes|array $attributes
      * @param Html|array|string $content
-     * @return Element
+     * @return HtmlElement
      */
     public static function td($content = null, $attributes = null)
     {
-        return Element::create('td', $attributes, $content);
+        return HtmlElement::create('td', $attributes, $content);
     }
 
+    /**
+     * @param $row
+     * @param null $attributes
+     * @param string $tag
+     * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
     public static function row($row, $attributes = null, $tag = 'td')
     {
         $tr = static::tr();
@@ -106,6 +113,10 @@ class Table extends BaseHtmlElement
         return $tr;
     }
 
+    /**
+     * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function generateHeader()
     {
         return $this->nextHeader()->add(
@@ -113,14 +124,23 @@ class Table extends BaseHtmlElement
         );
     }
 
+    /**
+     * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function generateFooter()
     {
-        return Element::create('tfoot')->add(
+        return HtmlElement::create('tfoot')->add(
             $this->addHeaderColumnsTo(static::tr())
         );
     }
 
-    protected function addHeaderColumnsTo(Element $parent)
+    /**
+     * @param HtmlElement $parent
+     * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
+    protected function addHeaderColumnsTo(HtmlElement $parent)
     {
         foreach ($this->getColumnsToBeRendered() as $column) {
             $parent->add(
@@ -139,15 +159,25 @@ class Table extends BaseHtmlElement
         return $this->columnsToBeRendered;
     }
 
+    /**
+     * @param array $columns
+     * @return $this
+     */
     public function setColumnsToBeRendered(array $columns)
     {
         $this->columnsToBeRendered = $columns;
+
         return $this;
     }
 
+    /**
+     * @param $row
+     * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function renderRow($row)
     {
-        $tr = $this->addRowClasses(Element::create('tr'), $row);
+        $tr = $this->addRowClasses(Html::tag('tr'), $row);
 
         $columns = $this->getColumnsToBeRendered();
         if ($columns === null) {
@@ -166,7 +196,13 @@ class Table extends BaseHtmlElement
         return $tr;
     }
 
-    public function addRowClasses(Element $tr, $row)
+    /**
+     * @param HtmlElement $tr
+     * @param $row
+     * @return HtmlElement
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    public function addRowClasses(HtmlElement $tr, $row)
     {
         $classes = $this->getRowClasses($row);
         if (! empty($classes)) {
@@ -176,6 +212,11 @@ class Table extends BaseHtmlElement
         return $tr;
     }
 
+    /**
+     * @param Traversable $rows
+     * @return HtmlDocument|HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function renderRows(Traversable $rows)
     {
         $body = $this->body();
@@ -186,24 +227,34 @@ class Table extends BaseHtmlElement
         return $body;
     }
 
+    /**
+     * @return HtmlElement
+     */
     public function body()
     {
         if ($this->body === null) {
-            $this->body = Element::create('tbody')->setSeparator("\n");
+            $this->body = Html::tag('tbody')->setSeparator("\n");
         }
 
         return $this->body;
     }
 
+    /**
+     * @return HtmlElement
+     */
     public function header()
     {
         if ($this->header === null) {
-            $this->header = Element::create('thead')->setSeparator("\n");
+            $this->header = Html::tag('thead')->setSeparator("\n");
         }
 
         return $this->header;
     }
 
+    /**
+     * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function footer()
     {
         if ($this->footer === null) {
@@ -213,6 +264,9 @@ class Table extends BaseHtmlElement
         return $this->footer;
     }
 
+    /**
+     * @return HtmlElement
+     */
     public function nextBody()
     {
         if ($this->body !== null) {
@@ -223,6 +277,9 @@ class Table extends BaseHtmlElement
         return $this->body();
     }
 
+    /**
+     * @return HtmlElement
+     */
     public function nextHeader()
     {
         if ($this->header !== null) {
@@ -233,6 +290,9 @@ class Table extends BaseHtmlElement
         return $this->header();
     }
 
+    /**
+     * @return string
+     */
     public function renderContent()
     {
         if (null !== $this->caption) {

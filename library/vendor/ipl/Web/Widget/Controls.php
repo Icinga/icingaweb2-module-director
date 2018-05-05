@@ -3,15 +3,16 @@
 namespace dipl\Web\Widget;
 
 use dipl\Html\BaseHtmlElement;
-use dipl\Html\Container;
 use dipl\Html\Html;
 use dipl\Html\HtmlDocument;
 
-class Controls extends Container
+class Controls extends BaseHtmlElement
 {
+    protected $tag = 'div';
+
     protected $contentSeparator = "\n";
 
-    protected $defaultAttributes = array('class' => 'controls');
+    protected $defaultAttributes = ['class' => 'controls'];
 
     /** @var Tabs */
     private $tabs;

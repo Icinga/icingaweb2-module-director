@@ -2,6 +2,9 @@
 
 namespace dipl\Html;
 
+/**
+ * @deprecated
+ */
 class Container extends BaseHtmlElement
 {
     /** @var string */

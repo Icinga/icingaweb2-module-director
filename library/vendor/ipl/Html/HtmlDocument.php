@@ -20,9 +20,12 @@ class HtmlDocument implements ValidHtml, Countable
     /** @var array */
     private $contentIndex = [];
 
+    protected $hasBeenAssembled = false;
+
     /**
      * @param ValidHtml|array|string $content
      * @return $this
+     * @throws \Icinga\Exception\IcingaException
      */
     public function add($content)
     {
@@ -75,6 +78,7 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param $content
      * @return $this
+     * @throws \Icinga\Exception\IcingaException
      */
     public function prepend($content)
     {
@@ -108,6 +112,7 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param $string
      * @return HtmlDocument
+     * @throws \Icinga\Exception\IcingaException
      */
     public function addPrintf($string)
     {
@@ -122,6 +127,7 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param HtmlDocument|array|string $content
      * @return $this
+     * @throws \Icinga\Exception\IcingaException
      */
     public function setContent($content)
     {
@@ -151,7 +157,10 @@ class HtmlDocument implements ValidHtml, Countable
     public function render()
     {
         $html = [];
-        $this->assemble();
+        if (! $this->hasBeenAssembled) {
+            $this->hasBeenAssembled = true;
+            $this->assemble();
+        }
 
         foreach ($this->content as $element) {
             if (is_string($element)) {
