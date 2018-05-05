@@ -206,24 +206,4 @@ class Html
 
         return self::$htmlEscapeFlags;
     }
-
-    /*
-    // @deprecated
-    public static function element($name, $attributes = null)
-    {
-        return Html::tag($name, $attributes);
-    }
-
-    // @deprecated
-    public function addContent($content)
-    {
-        return $this->add($content);
-    }
-
-    // @deprecated
-    public function hasContent()
-    {
-        return ! $this->isEmpty();
-    }
-    */
 }
