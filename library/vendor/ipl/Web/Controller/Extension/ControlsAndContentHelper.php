@@ -33,7 +33,7 @@ trait ControlsAndContentHelper
     public function controls()
     {
         if ($this->controls === null) {
-            $this->view->controls = $this->controls = Controls::create();
+            $this->view->controls = $this->controls = new Controls();
         }
 
         return $this->controls;
@@ -72,7 +72,7 @@ trait ControlsAndContentHelper
     public function content()
     {
         if ($this->content === null) {
-            $this->view->content = $this->content = Content::create();
+            $this->view->content = $this->content = new Content();
         }
 
         return $this->content;

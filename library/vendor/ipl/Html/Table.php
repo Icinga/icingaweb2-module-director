@@ -46,6 +46,7 @@ class Table extends BaseHtmlElement
      *
      * @param $content
      * @return $this
+     * @throws \Icinga\Exception\IcingaException
      */
     public function setCaption($content)
     {
@@ -200,7 +201,7 @@ class Table extends BaseHtmlElement
      * @param HtmlElement $tr
      * @param $row
      * @return HtmlElement
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
      */
     public function addRowClasses(HtmlElement $tr, $row)
     {
@@ -266,6 +267,7 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
      */
     public function nextBody()
     {
@@ -279,6 +281,7 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
      */
     public function nextHeader()
     {
@@ -292,6 +295,7 @@ class Table extends BaseHtmlElement
 
     /**
      * @return string
+     * @throws \Icinga\Exception\IcingaException
      */
     public function renderContent()
     {
