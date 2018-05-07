@@ -4338,7 +4338,7 @@ msgstr "Die übergebenen Eigenschaften wurden für \"%s\" gespeichert"
 #: library/Director/Web/Form/DirectorObjectForm.php:1521
 msgid "The host/service states you want to get notifications for"
 msgstr ""
-"Die Host/Service Stati, für die Benachrichtigungen versandt werden sollen"
+"Die Host/Service Status, für die Benachrichtigungen versandt werden sollen"
 
 #: library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:21
 msgid "The last (rightmost) OU"
