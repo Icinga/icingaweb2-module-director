@@ -189,6 +189,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $type = substr($col, 0, -7);
                 return $this->selectGroup($type, $filter);
             }
+
+            if (substr($col, -10) === '.templates' && $dummy->supportsImports()) {
+                $type = substr($col, 0, -10);
+                return $this->selectTemplate($type, $filter);
+            }
         }
 
         return $this->text($filter);
@@ -197,6 +202,17 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
     protected function selectGroup($type, Filter $filter)
     {
         $available = IcingaObjectGroup::enumForType($type);
+
+        return $this->select(
+            $this->elementId('value', $filter),
+            $this->optionalEnum($available),
+            $filter->getExpression()
+        );
+    }
+
+    protected function selectTemplate($type, Filter $filter)
+    {
+        $available = IcingaObject::enumTemplatesByType($type);
 
         return $this->select(
             $this->elementId('value', $filter),

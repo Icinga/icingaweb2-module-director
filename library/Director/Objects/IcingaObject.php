@@ -3,9 +3,11 @@
 namespace Icinga\Module\Director\Objects;
 
 use Exception;
+use Icinga\Application\Config;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
@@ -2374,6 +2376,35 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
+    }
+
+    public static function enumTemplatesByType($type, Db $connection = null)
+    {
+        // GH 826: copied from IcingaObjectGroup to implement select population in Assign where
+        if ($connection === null) {
+            // TODO: not nice :(
+            $connection = Db::fromResourceName(
+                Config::module('director')->get('db', 'resource')
+            );
+        }
+
+        // Last resort defense against potentiall lousy checks:
+        if (! ctype_alpha($type)) {
+            throw new IcingaException(
+                'Holy shit, you should never have reached this'
+            );
+        }
+
+        $db = $connection->getDbAdapter();
+        $select = $db->select()->from(
+            'icinga_' . $type,
+            array(
+                'name'    => 'object_name',
+                'display' => 'COALESCE(display_name, object_name)'
+            )
+        )->where('object_type = ?', 'template')->order('display');
+
+        return $db->fetchPairs($select);
     }
 
     /**
