@@ -28,6 +28,7 @@ before switching to a new version.
 * FEATURE: Small UI improvements like #1308
 * FIX: Don't suggest Command templates where Commands are required (#1414)
 * FIX: Do not allow to delete Commands being used by other objects (#1443)
+* FIX: Show 'Inspect' tab only for Endpoints with an ApiUser (#1293)
 
 ### CLI
 * FEATURE: Director Health Check Plugin (#1278)
