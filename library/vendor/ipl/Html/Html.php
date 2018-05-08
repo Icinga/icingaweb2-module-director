@@ -5,10 +5,7 @@ namespace dipl\Html;
 use Exception;
 use Icinga\Exception\IcingaException;
 
-/**
- * TODO: This should no longer extend HtmlDocument
- */
-class Html extends HtmlDocument
+class Html
 {
     /** Charset to be used - we only support UTF-8 */
     const CHARSET = 'UTF-8';
@@ -208,32 +205,5 @@ class Html extends HtmlDocument
         }
 
         return self::$htmlEscapeFlags;
-    }
-
-    /**
-     * @deprecated
-     */
-    public static function element($name, $attributes = null)
-    {
-        return Html::tag($name, $attributes);
-    }
-
-    /**
-     * @deprecated
-     * @see Html::add()
-     */
-    public function addContent($content)
-    {
-        return $this->add($content);
-    }
-
-    /**
-     * @deprecated
-     *
-     * @return bool
-     */
-    public function hasContent()
-    {
-        return ! $this->isEmpty();
     }
 }

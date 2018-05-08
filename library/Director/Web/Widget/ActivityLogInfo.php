@@ -2,13 +2,13 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use dipl\Html\HtmlElement;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\RestoreObjectForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
-use dipl\Html\Container;
 use dipl\Html\Html;
 use dipl\Html\Icon;
 use dipl\Html\Link;
@@ -66,13 +66,13 @@ class ActivityLogInfo extends Html
 
     /**
      * @param Url $url
-     * @return Container
+     * @return HtmlElement
      */
     public function getPagination(Url $url)
     {
         /** @var Url $url */
         $url = $url->without('checksum')->without('show');
-        $div = Container::create([
+        $div = Html::tag('div', [
             'class' => 'pagination-control',
             'style' => 'float: right; width: 5em'
         ]);

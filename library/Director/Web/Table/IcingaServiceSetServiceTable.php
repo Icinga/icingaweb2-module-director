@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use dipl\Html\Element;
+use dipl\Html\HtmlElement;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
 
@@ -67,7 +67,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
-    protected function addHeaderColumnsTo(Element $parent)
+    protected function addHeaderColumnsTo(HtmlElement $parent)
     {
         if ($this->host || $this->affectedHost) {
             $this->addHostHeaderTo($parent);
@@ -125,7 +125,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this->title ?: $this->translate('Servicename');
     }
 
-    protected function addHostHeaderTo(Element $parent)
+    protected function addHostHeaderTo(HtmlElement $parent)
     {
         if (! $this->host) {
             $deleteLink = '';

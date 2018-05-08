@@ -3,15 +3,16 @@
 namespace dipl\Web\Widget;
 
 use dipl\Html\BaseHtmlElement;
-use dipl\Html\Container;
 use dipl\Html\Html;
 use dipl\Html\HtmlDocument;
 
-class Controls extends Container
+class Controls extends BaseHtmlElement
 {
+    protected $tag = 'div';
+
     protected $contentSeparator = "\n";
 
-    protected $defaultAttributes = array('class' => 'controls');
+    protected $defaultAttributes = ['class' => 'controls'];
 
     /** @var Tabs */
     private $tabs;
@@ -32,6 +33,7 @@ class Controls extends Container
      * @param $title
      * @param null $subTitle
      * @return $this
+     * @throws \Icinga\Exception\IcingaException
      */
     public function addTitle($title, $subTitle = null)
     {
@@ -43,6 +45,11 @@ class Controls extends Container
         return $this->setTitleElement($this->renderTitleElement());
     }
 
+    /**
+     * @param BaseHtmlElement $element
+     * @return $this
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function setTitleElement(BaseHtmlElement $element)
     {
         if ($this->titleElement !== null) {
@@ -85,6 +92,7 @@ class Controls extends Container
     /**
      * @param Tabs $tabs
      * @return $this
+     * @throws \Icinga\Exception\ProgrammingError
      */
     public function prependTabs(Tabs $tabs)
     {
@@ -102,7 +110,8 @@ class Controls extends Container
     }
 
     /**
-     * @return Html
+     * @return ActionBar
+     * @throws \Icinga\Exception\IcingaException
      */
     public function getActionBar()
     {
@@ -113,6 +122,11 @@ class Controls extends Container
         return $this->actions;
     }
 
+    /**
+     * @param HtmlDocument $actionBar
+     * @return $this
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function setActionBar(HtmlDocument $actionBar)
     {
         if ($this->actions !== null) {
@@ -127,10 +141,11 @@ class Controls extends Container
 
     /**
      * @return BaseHtmlElement
+     * @throws \Icinga\Exception\IcingaException
      */
     protected function renderTitleElement()
     {
-        $h1 = Html::tag('h1')->setContent($this->title);
+        $h1 = Html::tag('h1', null, $this->title);
         if ($this->subTitle) {
             $h1->setSeparator(' ')->add(
                 Html::tag('small', null, $this->subTitle)
@@ -140,6 +155,10 @@ class Controls extends Container
         return $h1;
     }
 
+    /**
+     * @return string
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function renderContent()
     {
         if (null !== $this->tabs) {

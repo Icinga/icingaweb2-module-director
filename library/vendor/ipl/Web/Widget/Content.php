@@ -2,11 +2,13 @@
 
 namespace dipl\Web\Widget;
 
-use dipl\Html\Container;
+use dipl\Html\BaseHtmlElement;
 
-class Content extends Container
+class Content extends BaseHtmlElement
 {
+    protected $tag = 'div';
+
     protected $contentSeparator = "\n";
 
-    protected $defaultAttributes = array('class' => 'content');
+    protected $defaultAttributes = ['class' => 'content'];
 }
