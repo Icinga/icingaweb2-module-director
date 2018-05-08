@@ -10,6 +10,9 @@ use dipl\Html\Html;
 
 class SettingsController extends ActionController
 {
+    /**
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     */
     public function indexAction()
     {
         // Hint: this is for the module configuration tab, legacy code
@@ -22,6 +25,10 @@ class SettingsController extends ActionController
             ->handleRequest();
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function selfServiceAction()
     {
         $form = SelfServiceSettingsForm::create($this->db(), new Settings($this->db()));
@@ -35,7 +42,7 @@ class SettingsController extends ActionController
 
         $this->addSingleTab($this->translate('Self Service'))
             ->addTitle($this->translate('Self Service API - Global Settings'))
-            ->content()->add(Html::p($hint))
+            ->content()->add(Html::tag('p', null, $hint))
             ->add($form);
     }
 }

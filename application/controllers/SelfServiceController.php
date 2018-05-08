@@ -34,6 +34,11 @@ class SelfServiceController extends ActionController
     {
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws ProgrammingError
+     * @throws \Zend_Controller_Request_Exception
+     */
     public function apiVersionAction()
     {
         if ($this->getRequest()->isApiRequest()) {
@@ -43,6 +48,11 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Zend_Controller_Exception
+     */
     public function registerHostAction()
     {
         $request = $this->getRequest();
@@ -90,13 +100,18 @@ class SelfServiceController extends ActionController
         $form->handleRequest();
         $this->addSingleTab($this->translate('Self Service'))
             ->addTitle($this->translate('Self Service - Host Registration'))
-            ->content()->add(Html::p($this->translate(
+            ->content()->add(Html::tag('p', null, $this->translate(
                 'In case an Icinga Admin provided you with a self service API'
                 . ' token, this is where you can register new hosts'
             )))
             ->add($form);
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Zend_Controller_Request_Exception
+     * @throws \Zend_Controller_Response_Exception
+     */
     public function ticketAction()
     {
         if (!$this->getRequest()->isApiRequest()) {
@@ -130,6 +145,11 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @param $response
+     * @throws ProgrammingError
+     * @throws \Zend_Controller_Request_Exception
+     */
     protected function sendPowerShellResponse($response)
     {
         if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
@@ -143,6 +163,12 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @param $error
+     * @param $code
+     * @throws \Zend_Controller_Request_Exception
+     * @throws \Zend_Controller_Response_Exception
+     */
     protected function sendPowerShellError($error, $code)
     {
         $this->getResponse()->setHttpResponseCode($code);
@@ -153,6 +179,11 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @param $value
+     * @return string
+     * @throws ProgrammingError
+     */
     protected function makePowerShellBoolean($value)
     {
         if ($value === 'y' || $value === true) {
@@ -167,6 +198,11 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @param array $params
+     * @return string
+     * @throws ProgrammingError
+     */
     protected function makePlainTextPowerShellArray(array $params)
     {
         $plain = '';
@@ -183,6 +219,11 @@ class SelfServiceController extends ActionController
         return $plain;
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Zend_Controller_Request_Exception
+     * @throws \Zend_Controller_Response_Exception
+     */
     public function powershellParametersAction()
     {
         if (!$this->getRequest()->isApiRequest()) {
@@ -200,6 +241,15 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws ProgrammingError
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Zend_Controller_Request_Exception
+     * @throws \Zend_Controller_Response_Exception
+     */
     protected function shipPowershellParams()
     {
         $db = $this->db();
@@ -271,6 +321,16 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @param IcingaHost $host
+     * @param array $params
+     * @throws NotFoundError
+     * @throws ProgrammingError
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Zend_Controller_Request_Exception
+     * @throws \Zend_Controller_Response_Exception
+     */
     protected function addHostToParams(IcingaHost $host, array & $params)
     {
         if (! $host->isObject()) {
@@ -346,6 +406,10 @@ class SelfServiceController extends ActionController
         }
     }
 
+    /**
+     * @return Settings
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     protected function getSettings()
     {
         if ($this->settings === null) {

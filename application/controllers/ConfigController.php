@@ -37,6 +37,12 @@ class ConfigController extends ActionController
     {
     }
 
+    /**
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function deploymentsAction()
     {
         if ($this->sendNotFoundForRestApi()) {
@@ -77,6 +83,11 @@ class ConfigController extends ActionController
         $table->renderTo($this);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws NotFoundError
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     public function deployAction()
     {
         $request = $this->getRequest();
@@ -114,6 +125,12 @@ class ConfigController extends ActionController
         }
     }
 
+    /**
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function activitiesAction()
     {
         if ($this->sendNotFoundForRestApi()) {
@@ -161,6 +178,12 @@ class ConfigController extends ActionController
         $table->renderTo($this);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function activityAction()
     {
         if ($this->sendNotFoundForRestApi()) {
@@ -185,6 +208,10 @@ class ConfigController extends ActionController
         $this->content()->add($info);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     public function settingsAction()
     {
         if ($this->sendNotFoundForRestApi()) {
@@ -203,6 +230,12 @@ class ConfigController extends ActionController
 
     /**
      * Show all files for a given config
+     *
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\ProgrammingError
      */
     public function filesAction()
     {
@@ -246,6 +279,12 @@ class ConfigController extends ActionController
 
     /**
      * Show a single file
+     *
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\ProgrammingError
      */
     public function fileAction()
     {
@@ -276,7 +315,12 @@ class ConfigController extends ActionController
         ));
     }
 
-    // TODO: Check if this can be removed
+    /**
+     * TODO: Check if this can be removed
+     *
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function storeAction()
     {
         $this->assertPermission('director/deploy');
@@ -289,6 +333,11 @@ class ConfigController extends ActionController
         );
     }
 
+    /**
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function diffAction()
     {
         if ($this->sendNotFoundForRestApi()) {
@@ -310,7 +359,7 @@ class ConfigController extends ActionController
             }
         }
 
-        $this->content()->add(Html::form(['action' => $this->url(), 'method' => 'GET'], [
+        $this->content()->add(Html::tag('form', ['action' => $this->url(), 'method' => 'GET'], [
             new HtmlString($this->view->formSelect(
                 'left',
                 $leftSum,
@@ -336,6 +385,11 @@ class ConfigController extends ActionController
         ConfigFileDiffTable::load($leftSum, $rightSum, $this->db())->renderTo($this);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     */
     public function filediffAction()
     {
         if ($this->sendNotFoundForRestApi()) {
@@ -361,6 +415,10 @@ class ConfigController extends ActionController
             ));
     }
 
+    /**
+     * @param $checksum
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function deploymentSucceeded($checksum)
     {
         if ($this->getRequest()->isApiRequest()) {
@@ -375,6 +433,11 @@ class ConfigController extends ActionController
         }
     }
 
+    /**
+     * @param $checksum
+     * @param null $error
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function deploymentFailed($checksum, $error = null)
     {
         $extra = $error ? ': ' . $error: '';
@@ -391,6 +454,10 @@ class ConfigController extends ActionController
         }
     }
 
+    /**
+     * @return \dipl\Web\Widget\Tabs
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function configTabs()
     {
         $tabs = $this->tabs();

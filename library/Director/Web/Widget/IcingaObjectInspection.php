@@ -32,6 +32,9 @@ class IcingaObjectInspection extends BaseHtmlElement
         $this->db = $db;
     }
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function assemble()
     {
         $attrs = $this->object->attrs;
@@ -43,9 +46,13 @@ class IcingaObjectInspection extends BaseHtmlElement
         }
 
         $this->renderObjectAttributes($attrs);
-        // $this->add(Html::pre(PlainObjectRenderer::render($this->object)));
+        // $this->add(Html::tag('pre', null, PlainObjectRenderer::render($this->object)));
     }
 
+    /**
+     * @param $result
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function renderLastCheckResult($result)
     {
         $this->add(Html::tag('h2', null, $this->translate('Last Check Result')));
@@ -55,6 +62,10 @@ class IcingaObjectInspection extends BaseHtmlElement
         }
     }
 
+    /**
+     * @param array $command
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function renderExecutedCommand(array $command)
     {
         $command = implode(' ', array_map('escapeshellarg', $command));
@@ -68,6 +79,10 @@ class IcingaObjectInspection extends BaseHtmlElement
     {
     }
 
+    /**
+     * @param $attrs
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function renderObjectAttributes($attrs)
     {
         $blacklist = [
@@ -101,6 +116,13 @@ class IcingaObjectInspection extends BaseHtmlElement
         ]);
     }
 
+    /**
+     * @param $key
+     * @param $objectName
+     * @return Link|Link[]
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function renderLinkedObject($key, $objectName)
     {
         $keys = [
@@ -124,6 +146,12 @@ class IcingaObjectInspection extends BaseHtmlElement
         }
     }
 
+    /**
+     * @param $groups
+     * @return Link[]
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function linkGroups($groups)
     {
         if ($groups === null) {
@@ -146,6 +174,10 @@ class IcingaObjectInspection extends BaseHtmlElement
         return $links;
     }
 
+    /**
+     * @param stdClass $source
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function renderSourceLocation(stdClass $source)
     {
         $findRelative = 'api/packages/director';
@@ -187,6 +219,13 @@ class IcingaObjectInspection extends BaseHtmlElement
         return $db->fetchRow($query);
     }
 
+    /**
+     * @param $deployment
+     * @param $source
+     * @return Link
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function linkToSourceLocation($deployment, $source)
     {
         $filename = $source->director_relative;

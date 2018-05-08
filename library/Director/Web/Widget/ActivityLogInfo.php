@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use dipl\Html\HtmlDocument;
 use dipl\Html\HtmlElement;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\ConfigDiff;
@@ -17,7 +18,7 @@ use dipl\Web\Url;
 use dipl\Web\Widget\NameValueTable;
 use dipl\Web\Widget\Tabs;
 
-class ActivityLogInfo extends Html
+class ActivityLogInfo extends HtmlDocument
 {
     use TranslationHelper;
 
@@ -67,6 +68,7 @@ class ActivityLogInfo extends Html
     /**
      * @param Url $url
      * @return HtmlElement
+     * @throws \Icinga\Exception\IcingaException
      */
     public function getPagination(Url $url)
     {
@@ -100,6 +102,12 @@ class ActivityLogInfo extends Html
         return $div->add($ul);
     }
 
+    /**
+     * @param $tabName
+     * @return $this
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function showTab($tabName)
     {
         if ($tabName === null) {
@@ -128,13 +136,21 @@ class ActivityLogInfo extends Html
         return new IcingaConfig($this->db);
     }
 
+    /**
+     * @param $diffs
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function addDiffs($diffs)
     {
         foreach ($diffs as $file => $diff) {
-            $this->add(Html::h3($file))->add($diff);
+            $this->add(Html::tag('h3', null, $file))->add($diff);
         }
     }
 
+    /**
+     * @return $this
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function getRestoreForm()
     {
         return RestoreObjectForm::load()
@@ -204,6 +220,11 @@ class ActivityLogInfo extends Html
         return $entry->object_name;
     }
 
+    /**
+     * @param Url|null $url
+     * @return Tabs
+     * @throws ProgrammingError
+     */
     public function getTabs(Url $url = null)
     {
         if ($this->tabs === null) {
@@ -213,6 +234,11 @@ class ActivityLogInfo extends Html
         return $this->tabs;
     }
 
+    /**
+     * @param Url $url
+     * @return Tabs
+     * @throws ProgrammingError
+     */
     public function createTabs(Url $url)
     {
         $entry = $this->entry;
@@ -288,6 +314,7 @@ class ActivityLogInfo extends Html
 
     /**
      * @return IcingaObject
+     * @throws \Icinga\Exception\IcingaException
      */
     protected function oldObject()
     {
@@ -303,6 +330,7 @@ class ActivityLogInfo extends Html
 
     /**
      * @return IcingaObject
+     * @throws \Icinga\Exception\IcingaException
      */
     protected function newObject()
     {
@@ -314,6 +342,7 @@ class ActivityLogInfo extends Html
 
     /**
      * @return IcingaConfig
+     * @throws \Icinga\Exception\IcingaException
      */
     protected function newConfig()
     {
@@ -322,6 +351,7 @@ class ActivityLogInfo extends Html
 
     /**
      * @return IcingaConfig
+     * @throws \Icinga\Exception\IcingaException
      */
     protected function oldConfig()
     {
@@ -340,6 +370,10 @@ class ActivityLogInfo extends Html
         );
     }
 
+    /**
+     * @return NameValueTable
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function getInfoTable()
     {
         $entry = $this->entry;
@@ -402,6 +436,10 @@ class ActivityLogInfo extends Html
         return false;
     }
 
+    /**
+     * @return string
+     * @throws ProgrammingError
+     */
     public function getTitle()
     {
         switch ($this->entry->action_name) {
@@ -428,6 +466,7 @@ class ActivityLogInfo extends Html
      * @param $type
      * @param $props
      * @return IcingaObject
+     * @throws \Icinga\Exception\IcingaException
      */
     protected function createObject($type, $props)
     {

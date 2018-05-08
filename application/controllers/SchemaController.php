@@ -18,16 +18,26 @@ class SchemaController extends ActionController
         ];
     }
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function mysqlAction()
     {
         $this->serveSchema('mysql');
     }
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function pgsqlAction()
     {
         $this->serveSchema('pgsql');
     }
 
+    /**
+     * @param $type
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function serveSchema($type)
     {
         $schema = $this->loadSchema($type);
@@ -44,7 +54,7 @@ class SchemaController extends ActionController
             ->addSchemaTabs($type)
             ->addTitle($this->schemas[$type])
             ->addDownloadAction()
-            ->content()->add(Html::pre($schema));
+            ->content()->add(Html::tag('pre', null, $schema));
     }
 
     protected function loadSchema($type)
@@ -58,6 +68,11 @@ class SchemaController extends ActionController
         );
     }
 
+    /**
+     * @return $this
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function addDownloadAction()
     {
         $this->actions()->add(
@@ -75,6 +90,12 @@ class SchemaController extends ActionController
         return $this;
     }
 
+    /**
+     * @param $active
+     * @return $this
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function addSchemaTabs($active)
     {
         $tabs = $this->tabs();

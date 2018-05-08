@@ -33,6 +33,11 @@ class SelfService
         $this->api = $api;
     }
 
+    /**
+     * @param ControlsAndContent $controller
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function renderTo(ControlsAndContent $controller)
     {
         $host = $this->host;
@@ -47,17 +52,21 @@ class SelfService
         }
     }
 
+    /**
+     * @param ControlsAndContent $c
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function showRegisteredAgentInstructions(ControlsAndContent $c)
     {
         $c->addTitle($this->translate('Registered Agent'));
         $c->content()->add([
-            Html::p($this->translate(
+            Html::tag('p', null, $this->translate(
                 'This host has been registered via the Icinga Director Self Service'
                 . " API. In case you re-installed the host or somehow lost it's"
                 . ' secret key, you might want to dismiss the current key. This'
                 . ' would allow you to register the same host again.'
             )),
-            Html::p(['class' => 'warning'], $this->translate(
+            Html::tag('p', ['class' => 'warning'], $this->translate(
                 'It is not a good idea to do so as long as your Agent still has'
                 . ' a valid Self Service API key!'
             )),
@@ -65,6 +74,11 @@ class SelfService
         ]);
     }
 
+    /**
+     * @param ControlsAndContent $cc
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function showSelfServiceTemplateInstructions(ControlsAndContent $cc)
     {
         $host = $this->host;
@@ -102,26 +116,27 @@ class SelfService
             $wizard = new AgentWizard($host);
 
             $c->add([
-                Html::p([$this->translate('Api Key:'), ' ', Html::strong($key)]),
-                Html::pre(
+                Html::tag('p', null, [$this->translate('Api Key:'), ' ', Html::tag('strong', null, $key)]),
+                Html::tag(
+                    'pre',
                     ['class' => 'logfile'],
                     $wizard->renderTokenBasedWindowsInstaller($key)
                 ),
-                Html::h2($this->translate('Generate a new key')),
-                Html::p(['class' => 'warning'], $this->translate(
+                Html::tag('h2', null, $this->translate('Generate a new key')),
+                Html::tag('p', ['class' => 'warning'], $this->translate(
                     'This will invalidate the former key'
                 )),
             ]);
         }
 
         $c->add([
-            // Html::p($this->translate('..')),
+            // Html::tag('p', null, $this->translate('..')),
             IcingaGenerateApiKeyForm::load()->setHost($host)->handleRequest()
         ]);
         if ($hasKey) {
             $c->add([
-                Html::h2($this->translate('Stop sharing this Template')),
-                Html::p($this->translate(
+                Html::tag('h2', null, $this->translate('Stop sharing this Template')),
+                Html::tag('p', null, $this->translate(
                     'You can stop sharing a Template at any time. This will'
                     . ' immediately invalidate the former key.'
                 )),
@@ -130,6 +145,11 @@ class SelfService
         }
     }
 
+    /**
+     * @param ControlsAndContent $cc
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function showNewAgentInstructions(ControlsAndContent $cc)
     {
         $c = $cc->content();
@@ -150,14 +170,20 @@ class SelfService
         $wizard = new AgentWizard($host);
 
         $c->add([
-            Html::h2('Microsoft Windows'),
-            Html::pre(
+            Html::tag('h2', null, 'Microsoft Windows'),
+            Html::tag(
+                'pre',
                 ['class' => 'logfile'],
                 $wizard->renderTokenBasedWindowsInstaller($key)
             )
         ]);
     }
 
+    /**
+     * @param ControlsAndContent $cc
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function showLegacyAgentInstructions(ControlsAndContent $cc)
     {
         $host = $this->host;
@@ -168,11 +194,13 @@ class SelfService
         $c->add(Html::tag('p')->add(Html::sprintf(
             'Please check the %s for more related information.'
             . ' The Director-assisted setup corresponds to configuring a %s environment.',
-            Html::a(
+            Html::tag(
+                'a',
                 ['href' => $docBaseUrl . '#' . $sectionSetup],
                 $this->translate('Icinga 2 Client documentation')
             ),
-            Html::a(
+            Html::tag(
+                'a',
                 ['href' => $docBaseUrl . '#' . $sectionTopDown],
                 $this->translate('Top Down')
             )
@@ -186,7 +214,7 @@ class SelfService
             $wizard = new AgentWizard($host);
             $wizard->setTicketSalt($this->api->getTicketSalt());
         } catch (Exception $e) {
-            $c->add(Html::p(['class' => 'error'], sprintf(
+            $c->add(Html::tag('p', ['class' => 'error'], sprintf(
                 $this->translate(
                     'A ticket for this agent could not have been requested from'
                     . ' your deployment endpoint: %s'
@@ -200,33 +228,37 @@ class SelfService
         // TODO: move to CSS
         $codeStyle = ['style' => 'background: black; color: white; height: 14em; overflow: scroll;'];
         $c->add([
-            Html::h2($this->translate('For manual configuration')),
-            Html::p($this->translate('Ticket'), ': ', Html::code($ticket)),
-            Html::h2($this->translate('Windows Kickstart Script')),
+            Html::tag('h2', null, $this->translate('For manual configuration')),
+            Html::tag('p', null, [$this->translate('Ticket'), ': ', Html::tag('code', null, $ticket)]),
+            Html::tag('h2', null, $this->translate('Windows Kickstart Script')),
             Link::create(
                 $this->translate('Download'),
                 $cc->url()->with('download', 'windows-kickstart'),
                 null,
                 ['class' => 'icon-download', 'target' => '_blank']
             ),
-            Html::pre($codeStyle, $wizard->renderWindowsInstaller()),
-            Html::p($this->translate(
+            Html::tag('pre', $codeStyle, $wizard->renderWindowsInstaller()),
+            Html::tag('p', null, $this->translate(
                 'This requires the Icinga Agent to be installed. It generates and signs'
                 . ' it\'s certificate and it also generates a minimal icinga2.conf to get'
                 . ' your agent connected to it\'s parents'
             )),
-            Html::h2($this->translate('Linux commandline')),
+            Html::tag('h2', null, $this->translate('Linux commandline')),
             Link::create(
                 $this->translate('Download'),
                 $cc->url()->with('download', 'linux'),
                 null,
                 ['class' => 'icon-download', 'target' => '_blank']
             ),
-            Html::p($this->translate('Just download and run this script on your Linux Client Machine:')),
-            Html::pre($codeStyle, $wizard->renderLinuxInstaller())
+            Html::tag('p', null, $this->translate('Just download and run this script on your Linux Client Machine:')),
+            Html::tag('pre', $codeStyle, $wizard->renderLinuxInstaller())
         ]);
     }
 
+    /**
+     * @param $os
+     * @throws NotFoundError
+     */
     public function handleLegacyAgentDownloads($os)
     {
         $wizard = new AgentWizard($this->host);

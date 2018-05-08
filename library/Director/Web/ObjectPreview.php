@@ -26,6 +26,11 @@ class ObjectPreview
         $this->request = $request;
     }
 
+    /**
+     * @param ControlsAndContent $cc
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function renderTo(ControlsAndContent $cc)
     {
         $object = $this->object;
@@ -65,13 +70,14 @@ class ObjectPreview
 
         $content = $cc->content();
         if ($object->isDisabled()) {
-            $content->add(Html::p(
+            $content->add(Html::tag(
+                'p',
                 ['class' => 'error'],
                 $this->translate('This object will not be deployed as it has been disabled')
             ));
         }
         if ($object->isExternal()) {
-            $content->add(Html::p($this->translate((
+            $content->add(Html::tag('p', null, $this->translate((
                 'This is an external object. It has been imported from Icinga 2 through the'
                 . ' Core API and cannot be managed with the Icinga Director. It is however'
                 . ' perfectly valid to create objects using this or referring to this object.'
@@ -83,7 +89,7 @@ class ObjectPreview
 
         foreach ($config->getFiles() as $filename => $file) {
             if (! $object->isExternal()) {
-                $content->add(Html::h2($filename));
+                $content->add(Html::tag('h2', null, $filename));
             }
 
             $classes = array();
@@ -93,7 +99,7 @@ class ObjectPreview
                 $classes[] = 'logfile';
             }
 
-            $content->add(Html::pre(['class' => $classes], $file->getContent()));
+            $content->add(Html::tag('pre', ['class' => $classes], $file->getContent()));
         }
     }
 }

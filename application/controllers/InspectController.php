@@ -23,6 +23,11 @@ class InspectController extends ActionController
         $this->assertPermission('director/inspect');
     }
 
+    /**
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function typesAction()
     {
         $object = $this->endpoint();
@@ -49,6 +54,10 @@ class InspectController extends ActionController
         );
     }
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function typeAction()
     {
         $api = $this->endpoint()->api();
@@ -66,25 +75,30 @@ class InspectController extends ActionController
 
         if (! $type->abstract) {
             $objects = $api->listObjects($typeName, $type->plural_name);
-            $c->add(Html::p(sprintf($this->translate('%d objects found'), count($objects))));
+            $c->add(Html::tag('p', null, sprintf($this->translate('%d objects found'), count($objects))));
             $c->add(new CoreApiObjectsTable($objects, $this->endpoint(), $type));
         }
 
         if (count((array) $type->fields)) {
             $c->add([
-                Html::h2($this->translate('Type attributes')),
+                Html::tag('h2', null, $this->translate('Type attributes')),
                 new CoreApiFieldsTable($type->fields, $this->url())
             ]);
         }
 
         if (count($type->prototype_keys)) {
             $c->add([
-                Html::h2($this->translate('Prototypes (methods)')),
+                Html::tag('h2', null, $this->translate('Prototypes (methods)')),
                 new CoreApiPrototypesTable($type->prototype_keys, $type->name)
             ]);
         }
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function objectAction()
     {
         $name = $this->params->get('name');
@@ -100,6 +114,10 @@ class InspectController extends ActionController
         );
     }
 
+    /**
+     * @param IcingaEndpoint $endpoint
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function showEndpointInformation(IcingaEndpoint $endpoint)
     {
         $this->content()->add(
@@ -111,6 +129,12 @@ class InspectController extends ActionController
         );
     }
 
+    /**
+     * @param IcingaEndpoint $endpoint
+     * @return Link
+     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function linkToEndpoint(IcingaEndpoint $endpoint)
     {
         return Link::create($endpoint->getObjectName(), 'director/endpoint', [
@@ -118,15 +142,27 @@ class InspectController extends ActionController
         ]);
     }
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function statusAction()
     {
         $this->addSingleTab($this->translate('Status'));
         $this->addTitle($this->translate('Icinga 2 API - Status'));
-        $this->content()->add(
-            Html::pre(PlainObjectRenderer::render($this->endpoint()->api()->getStatus()))
-        );
+        $this->content()->add(Html::tag(
+            'pre',
+            null,
+            PlainObjectRenderer::render($this->endpoint()->api()->getStatus())
+        ));
     }
 
+    /**
+     * @return IcingaEndpoint
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function endpoint()
     {
         if ($this->endpoint === null) {

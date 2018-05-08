@@ -2,13 +2,14 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use dipl\Html\HtmlDocument;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigFile;
 use dipl\Html\Html;
 use dipl\Html\HtmlString;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
 
-class ShowConfigFile extends Html
+class ShowConfigFile extends HtmlDocument
 {
     use TranslationHelper;
 
@@ -26,10 +27,12 @@ class ShowConfigFile extends Html
         $this->file = $file;
         $this->highlight         = $highlight;
         $this->highlightSeverity = $highlightSeverity;
-        $this->prepareContent();
     }
 
-    protected function prepareContent()
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     */
+    protected function assemble()
     {
         $source = $this->linkObjects(Html::escapeForHtml($this->file->getContent()));
         if ($this->highlight) {
@@ -40,12 +43,19 @@ class ShowConfigFile extends Html
             );
         }
 
-        $this->add(Html::pre(
+        $this->add(Html::tag(
+            'pre',
             ['class' => 'generated-config'],
             new HtmlString($source)
         ));
     }
 
+    /**
+     * @param $match
+     * @return string
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function linkObject($match)
     {
         if ($match[2] === 'Service') {

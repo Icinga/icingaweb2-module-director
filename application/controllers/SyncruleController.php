@@ -18,6 +18,12 @@ use dipl\Html\Link;
 
 class SyncruleController extends ActionController
 {
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function indexAction()
     {
         $this->setAutoRefreshInterval(10);
@@ -36,7 +42,7 @@ class SyncruleController extends ActionController
         }
 
         $c = $this->content();
-        $c->add(Html::p($rule->get('description')));
+        $c->add(Html::tag('p', null, $rule->get('description')));
         if (! $rule->hasSyncProperties()) {
             $this->addPropertyHint($rule);
             return;
@@ -48,13 +54,13 @@ class SyncruleController extends ActionController
 
         switch ($rule->get('sync_state')) {
             case 'unknown':
-                $c->add(Html::p($this->translate(
+                $c->add(Html::tag('p', null, $this->translate(
                     "It's currently unknown whether we are in sync with this rule."
                     . ' You should either check for changes or trigger a new Sync Run.'
                 )));
                 break;
             case 'in-sync':
-                $c->add(Html::p(sprintf(
+                $c->add(Html::tag('p', null, sprintf(
                     $this->translate('This Sync Rule was last found to by in Sync at %s.'),
                     $rule->get('last_attempt')
                 )));
@@ -85,10 +91,10 @@ class SyncruleController extends ActionController
         $c->add($runForm);
 
         if ($run) {
-            $c->add(Html::h3($this->translate('Last sync run details')));
+            $c->add(Html::tag('h3', null, $this->translate('Last sync run details')));
             $c->add(new SyncRunDetails($run));
             if ($run->get('rule_name') !== $ruleName) {
-                $c->add(Html::p(sprintf(
+                $c->add(Html::tag('p', null, sprintf(
                     $this->translate("It has been renamed since then, its former name was %s"),
                     $run->get('rule_name')
                 )));
@@ -96,6 +102,10 @@ class SyncruleController extends ActionController
         }
     }
 
+    /**
+     * @param SyncRule $rule
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function addPropertyHint(SyncRule $rule)
     {
         $this->warning(Html::sprintf(
@@ -108,21 +118,39 @@ class SyncruleController extends ActionController
         ));
     }
 
+    /**
+     * @param $msg
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function warning($msg)
     {
-        $this->content()->add(Html::p(['class' => 'warning'], $msg));
+        $this->content()->add(Html::tag('p', ['class' => 'warning'], $msg));
     }
 
+    /**
+     * @param $msg
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function error($msg)
     {
-        $this->content()->add(Html::p(['class' => 'error'], $msg));
+        $this->content()->add(Html::tag('p', ['class' => 'error'], $msg));
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function addAction()
     {
         $this->editAction();
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function editAction()
     {
         $form = SyncRuleForm::load()
@@ -151,6 +179,10 @@ class SyncruleController extends ActionController
         $this->content()->add($form);
     }
 
+    /**
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function propertyAction()
     {
         $rule = $this->requireSyncRule('rule_id');
@@ -169,11 +201,21 @@ class SyncruleController extends ActionController
             ->renderTo($this);
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function editpropertyAction()
     {
         $this->addpropertyAction();
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function addpropertyAction()
     {
         $db = $this->db();
@@ -211,6 +253,12 @@ class SyncruleController extends ActionController
             ->renderTo($this);
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function historyAction()
     {
         $this->setAutoRefreshInterval(30);
@@ -225,6 +273,13 @@ class SyncruleController extends ActionController
         SyncRunTable::create($rule)->renderTo($this);
     }
 
+    /**
+     * @param string $key
+     * @return SyncRule
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function requireSyncRule($key = 'id')
     {
         $id = $this->params->get($key);
