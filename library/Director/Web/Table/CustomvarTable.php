@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\Html;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
 use Zend_Db_Adapter_Abstract as ZfDbAdapter;
@@ -24,7 +25,7 @@ class CustomvarTable extends ZfQueryBasedTable
         ]);
 
         foreach ($this->getObjectTypes() as $type) {
-            $tr->add($this::td($this::nobr(sprintf(
+            $tr->add($this::td(Html::tag('nobr', null, sprintf(
                 $this->translate('%d / %d'),
                 $row->{"cnt_$type"},
                 $row->{"distinct_$type"}
