@@ -4340,6 +4340,16 @@ msgid "The host/service states you want to get notifications for"
 msgstr ""
 "Die Host/Service Stati, für die Benachrichtigungen versandt werden sollen"
 
+#: library/Director/Web/Form/DirectorObjectForm.php:1586
+msgid "The service states you want to get notifications for"
+msgstr ""
+"Die Service Status, für die Benachrichtigungen versandt werden sollen"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1594
+msgid "The host states you want to get notifications for"
+msgstr ""
+"Die Host Status, für die Benachrichtigungen versandt werden sollen"
+
 #: library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:21
 msgid "The last (rightmost) OU"
 msgstr "Die letzte (rechteste) OU"
