@@ -9,6 +9,8 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
+use Icinga\Module\Director\IcingaConfig\HostStateFilterSet;
+use Icinga\Module\Director\IcingaConfig\ServiceStateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -1565,37 +1567,55 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this;
     }
 
-    protected function addEventFilterElements($elements = array('states','types'))
+    protected function addEventFilterElements($elements = ['states','types'], $stateTypes = ['host', 'service'])
     {
         if (in_array('states', $elements)) {
-            $this->addElement('extensibleSet', 'states', array(
-                'label' => $this->translate('States'),
-                'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
-                'description'  => $this->translate(
-                    'The host/service states you want to get notifications for'
-                ),
-            ));
+            if (!array_diff(['host', 'service'], $stateTypes)) {
+                $this->addElement('extensibleSet', 'states', [
+                    'label'        => $this->translate('States'),
+                    'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
+                    'description'  => $this->translate(
+                        'The host/service states you want to get notifications for'
+                    ),
+                ]);
+            } else if (in_array('service', $stateTypes)) {
+                $this->addElement('extensibleSet', 'states', [
+                    'label'        => $this->translate('Service States'),
+                    'multiOptions' => $this->optionallyAddFromEnum($this->enumServiceStates()),
+                    'description'  => $this->translate(
+                        'The service states you want to get notifications for'
+                    ),
+                ]);
+            } else if (in_array('host', $stateTypes)) {
+                $this->addElement('extensibleSet', 'states', [
+                    'label'        => $this->translate('Host States'),
+                    'multiOptions' => $this->optionallyAddFromEnum($this->enumHostStates()),
+                    'description'  => $this->translate(
+                        'The host states you want to get notifications for'
+                    ),
+                ]);
+            }
         }
 
         if (in_array('types', $elements)) {
-            $this->addElement('extensibleSet', 'types', array(
-                'label' => $this->translate('Transition types'),
+            $this->addElement('extensibleSet', 'types', [
+                'label'        => $this->translate('Transition types'),
                 'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
                 'description'  => $this->translate(
                     'The state transition types you want to get notifications for'
                 ),
-            ));
+            ]);
         }
 
-        $this->addDisplayGroup($elements, 'event_filters', array(
-            'decorators' => array(
+        $this->addDisplayGroup($elements, 'event_filters', [
+            'decorators' => [
                 'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
+                ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
-            ),
-            'order' =>70,
+            ],
+            'order'  => 70,
             'legend' => $this->translate('State and transition type filters')
-        ));
+        ]);
 
         return $this;
     }
@@ -1625,6 +1645,18 @@ abstract class DirectorObjectForm extends DirectorForm
     protected function enumStates()
     {
         $set = new StateFilterSet();
+        return $set->enumAllowedValues();
+    }
+
+    protected function enumHostStates()
+    {
+        $set = new HostStateFilterSet();
+        return $set->enumAllowedValues();
+    }
+
+    protected function enumServiceStates()
+    {
+        $set = new ServiceStateFilterSet();
         return $set->enumAllowedValues();
     }
 
