@@ -43,7 +43,7 @@ class JobDetails extends HtmlDocument
 
         if ($job->ts_last_attempt) {
             if ($job->last_attempt_succeeded) {
-                $this->add(Html::tag('p', sprintf(
+                $this->add(Html::tag('p', null, sprintf(
                     $this->translate('The last attempt succeeded at %s'),
                     $job->ts_last_attempt
                 )));
