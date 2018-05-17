@@ -30,6 +30,9 @@ class TemplateTree
 
     protected $templateNameToId;
 
+    /** @var bool */
+    protected static $syncMode = false;
+
     public function __construct($type, Db $connection)
     {
         $this->type = $type;
@@ -132,7 +135,8 @@ class TemplateTree
 
     public function getAncestorsFor(IcingaObject $object)
     {
-        if ($object->hasBeenModified()
+        if (static::isSyncMode()
+            || $object->hasBeenModified()
             && $object->gotImports()
             && $object->imports()->hasBeenModified()
         ) {
@@ -387,6 +391,22 @@ class TemplateTree
         // echo '<pre style="padding-top: 6em">' . $query . '</pre>';
 
         return $db->fetchAll($query);
+    }
+
+    /**
+     * @return bool
+     */
+    public static function isSyncMode()
+    {
+        return self::$syncMode;
+    }
+
+    /**
+     * @param bool $syncMode
+     */
+    public static function setSyncMode($syncMode = true)
+    {
+        self::$syncMode = $syncMode;
     }
 }
 
