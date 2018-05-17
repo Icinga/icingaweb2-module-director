@@ -6,6 +6,7 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use InvalidArgumentException;
 use LogicException;
 use Zend_Db_Select as ZfSelect;
@@ -74,6 +75,11 @@ abstract class GroupMembershipResolver
     public function refreshDb($force = false)
     {
         if ($force || ! $this->isDeferred()) {
+            if ($this->isDeferred()) {
+                // ensure we are not working with cached data
+                IcingaTemplateRepository::clear();
+            }
+
             Benchmark::measure('Rechecking all objects');
             $this->recheckAllObjects($this->getAppliedGroups());
             Benchmark::measure('Recheck done, loading existing mappings');
