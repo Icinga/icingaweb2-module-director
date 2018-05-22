@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 use Exception;
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
 use Icinga\Module\Monitoring\Object\Service;
@@ -17,31 +18,41 @@ class ServiceActions extends ServiceActionsHook
         try {
             return $this->getThem($service);
         } catch (Exception $e) {
-            return array();
+            return [];
         }
     }
 
+    /**
+     * @param Service $service
+     * @return array
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function getThem(Service $service)
     {
-        $actions = array();
+        $actions = [];
         $db = $this->db();
         if (! $db) {
-            return array();
+            return [];
         }
 
+        $hostname = $service->host_name;
         if (Util::hasPermission('director/inspect')) {
-            $actions['Inspect'] = Url::fromPath(
-                'director/inspect/object',
-                array(
-                    'type'   => 'service',
-                    'plural' => 'services',
-                    'name'   => sprintf(
-                        '%s!%s',
-                        $service->host_name,
-                        $service->service_description
-                    )
+            $actions['Inspect'] = Url::fromPath('director/inspect/object', [
+                'type'   => 'service',
+                'plural' => 'services',
+                'name'   => sprintf(
+                    '%s!%s',
+                    $hostname,
+                    $service->service_description
                 )
-            );
+            ]);
+        }
+
+        if (IcingaHost::exists($hostname, $db)) {
+            $actions['Modify'] = Url::fromPath('director/host/findservice', [
+                'name'    => $hostname,
+                'service' => $service->service_description
+            ]);
         }
 
         return $actions;
