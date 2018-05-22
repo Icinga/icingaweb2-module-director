@@ -816,7 +816,10 @@ class Sync
     {
         PrefetchCache::initialize($this->db);
 
-        IcingaObject::prefetchAllRelationsByType($this->rule->object_type, $this->db);
+        $dummy = IcingaObject::createByType($this->rule->object_type);
+        if ($dummy instanceof IcingaObject) {
+            IcingaObject::prefetchAllRelationsByType($this->rule->object_type, $this->db);
+        }
 
         return $this;
     }
