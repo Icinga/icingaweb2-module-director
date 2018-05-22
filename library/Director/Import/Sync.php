@@ -749,17 +749,7 @@ class Sync
 
                 if ($object->hasBeenModified()) {
                     $existing = $object->hasBeenLoadedFromDb();
-
-                    try {
-                        $object->store($db);
-                    } catch (Exception $e) {
-                        if ($this->singleObjectsAreAllowedToFail()) {
-                            $failed++;
-                            continue;
-                        } else {
-                            throw $e;
-                        }
-                    }
+                    $object->store($db);
 
                     if ($existing) {
                         $modified++;
