@@ -145,13 +145,18 @@ class TemplateTree
     protected function getAncestorsForUnstoredObject(IcingaObject $object)
     {
         $this->requireTree();
-        $names = $object->imports()->listImportNames();
         $ancestors = [];
-        foreach ($names as $name) {
-            if (! array_key_exists($name, $this->templateNameToId)) {
-                continue;
+        foreach ($object->imports() as $import) {
+            $name = $import->getObjectName();
+            if ($import->hasBeenLoadedFromDb()) {
+                $pid = $import->get('id');
+            } else {
+                if (! array_key_exists($name, $this->templateNameToId)) {
+                    continue;
+                }
+                $pid = $this->templateNameToId[$name];
             }
-            $pid = $this->templateNameToId[$name];
+
             $this->getAncestorsById($pid, $ancestors);
 
             // Hint: inheritance order matters
