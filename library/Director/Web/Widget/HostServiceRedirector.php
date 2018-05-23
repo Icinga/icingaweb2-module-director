@@ -45,6 +45,8 @@ class HostServiceRedirector
             return $url;
         } elseif ($url = $this->getServiceSetServiceUrl($serviceName)) {
             return $url;
+        } elseif ($url = $this->getAppliedServiceSetUrl($serviceName)) {
+            return $url;
         }
 
         return Url::fromPath('director/host/invalidservice', [
@@ -168,6 +170,27 @@ class HostServiceRedirector
         $matcher = $this->getHostApplyMatcher();
         foreach ($this->fetchAllApplyRulesForService($serviceName) as $rule) {
             if ($matcher->matchesFilter($rule->filter)) {
+                return Url::fromPath('director/host/servicesetservice', [
+                    'name'    => $this->host->getObjectName(),
+                    'service' => $serviceName,
+                    'set'     => $rule->service_set_name
+                ]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param $serviceName
+     * @return Url|null
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    protected function getAppliedServiceSetUrl($serviceName)
+    {
+        $matcher = $this->getHostApplyMatcher();
+        foreach ($this->fetchAllServiceSetApplyRulesForService($serviceName) as $rule) {
+            if ($matcher->matchesFilter($rule->filter)) {
                 return Url::fromPath('director/host/appliedservice', [
                     'name'       => $this->host->getObjectName(),
                     'service_id' => $rule->id,
@@ -199,6 +222,32 @@ class HostServiceRedirector
             ]
         )->where('object_name = ?', $serviceName)
         ->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
+
+        $allRules = $db->fetchAll($query);
+        foreach ($allRules as $rule) {
+            $rule->filter = Filter::fromQueryString($rule->assign_filter);
+        }
+
+        return $allRules;
+    }
+
+    protected function fetchAllServiceSetApplyRulesForService($serviceName)
+    {
+        $db = $this->db->getDbAdapter();
+        $query = $db->select()->from(
+            ['s' => 'icinga_service'],
+            [
+                'id'            => 's.id',
+                'name'          => 's.object_name',
+                'assign_filter' => 'ss.assign_filter',
+                'service_set_name' => 'ss.object_name',
+            ]
+        )->join(
+            ['ss' => 'icinga_service_set'],
+            's.service_set_id = ss.id',
+            []
+        )->where('s.object_name = ?', $serviceName)
+        ->where('ss.assign_filter IS NOT NULL');
 
         $allRules = $db->fetchAll($query);
         foreach ($allRules as $rule) {
