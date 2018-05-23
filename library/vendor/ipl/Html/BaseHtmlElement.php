@@ -61,6 +61,7 @@ abstract class BaseHtmlElement extends HtmlDocument
     public function setAttributes($attributes)
     {
         $this->attributes = Attributes::wantAttributes($attributes);
+
         return $this;
     }
 
@@ -74,6 +75,7 @@ abstract class BaseHtmlElement extends HtmlDocument
     public function setAttribute($key, $value)
     {
         $this->getAttributes()->set($key, $value);
+
         return $this;
     }
 
@@ -81,10 +83,12 @@ abstract class BaseHtmlElement extends HtmlDocument
      * @param Attributes|array|null $attributes
      * @return $this
      * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
      */
     public function addAttributes($attributes)
     {
         $this->getAttributes()->add($attributes);
+
         return $this;
     }
 
@@ -99,6 +103,7 @@ abstract class BaseHtmlElement extends HtmlDocument
     public function setTag($tag)
     {
         $this->tag = $tag;
+
         return $this;
     }
 
@@ -109,11 +114,7 @@ abstract class BaseHtmlElement extends HtmlDocument
 
     public function renderContent()
     {
-        return parent::render();
-    }
-
-    protected function assemble()
-    {
+        return parent::renderUnwrapped();
     }
 
     /**
@@ -123,10 +124,7 @@ abstract class BaseHtmlElement extends HtmlDocument
      */
     public function add($content)
     {
-        if (! $this->hasBeenAssembled) {
-            $this->hasBeenAssembled = true;
-            $this->assemble();
-        }
+        $this->ensureAssembled();
 
         parent::add($content);
 
@@ -136,14 +134,12 @@ abstract class BaseHtmlElement extends HtmlDocument
     /**
      * @return string
      * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
      */
-    public function render()
+    public function renderUnwrapped()
     {
+        $this->ensureAssembled();
         $tag = $this->getTag();
-        if (! $this->hasBeenAssembled) {
-            $this->hasBeenAssembled = true;
-            $this->assemble();
-        }
 
         $content = $this->renderContent();
         if (strlen($content) || $this->wantsClosingTag()) {
@@ -166,6 +162,7 @@ abstract class BaseHtmlElement extends HtmlDocument
     /**
      * @return string
      * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
      */
     public function renderAttributes()
     {
@@ -174,6 +171,17 @@ abstract class BaseHtmlElement extends HtmlDocument
         } else {
             return $this->getAttributes()->render();
         }
+    }
+
+    /**
+     * @param HtmlDocument $document
+     * @return $this
+     */
+    public function wrap(HtmlDocument $document)
+    {
+        $document->addWrapper($this);
+
+        return $this;
     }
 
     public function wantsClosingTag()

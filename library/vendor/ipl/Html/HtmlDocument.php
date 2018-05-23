@@ -14,6 +14,9 @@ class HtmlDocument implements ValidHtml, Countable
 {
     protected $contentSeparator = '';
 
+    /** @var BaseHtmlElement */
+    protected $wrapper;
+
     /** @var ValidHtml[] */
     private $content = [];
 
@@ -38,6 +41,40 @@ class HtmlDocument implements ValidHtml, Countable
         }
 
         return $this;
+    }
+
+    /**
+     * @param BaseHtmlElement $wrapper
+     * @return $this
+     */
+    public function setWrapper(BaseHtmlElement $wrapper)
+    {
+        $this->wrapper = $wrapper;
+
+        return $this;
+    }
+
+    /**
+     * @param BaseHtmlElement $wrapper
+     * @return $this
+     */
+    public function addWrapper(BaseHtmlElement $wrapper)
+    {
+        if ($this->wrapper === null) {
+            $this->setWrapper($wrapper);
+        } else {
+            $this->setWrapper($wrapper->wrap($this->wrapper));
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return HtmlDocument|null
+     */
+    public function getWrapper()
+    {
+        return $this->wrapper;
     }
 
     /**
@@ -152,15 +189,69 @@ class HtmlDocument implements ValidHtml, Countable
     }
 
     /**
-     * @inheritdoc
+     * @return string
+     * @throws ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
      */
     public function render()
     {
-        $html = [];
+        if ($this->wrapper === null) {
+            return $this->renderUnwrapped();
+        } else {
+            return $this->renderWrapped();
+        }
+    }
+
+    /**
+     * @return string
+     * @throws ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
+     */
+    protected function renderWrapped()
+    {
+        // TODO: we don't like this, but have no better solution right now.
+        //       However, it works as expected, tests are green
+        $wrapper = $this->wrapper;
+        $this->wrapper = null;
+        $result = $wrapper->renderWrappedDocument($this);
+        $this->wrapper = $wrapper;
+
+        return $result;
+    }
+
+    /**
+     * @param HtmlDocument $document
+     * @return string
+     * @throws ProgrammingError
+     * @throws \Icinga\Exception\IcingaException
+     */
+    protected function renderWrappedDocument(HtmlDocument $document)
+    {
+        $wrapper = clone($this);
+        $wrapper->add($document);
+        return $wrapper->render();
+    }
+
+    /**
+     * @return $this
+     */
+    public function ensureAssembled()
+    {
         if (! $this->hasBeenAssembled) {
             $this->hasBeenAssembled = true;
             $this->assemble();
         }
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function renderUnwrapped()
+    {
+        $this->ensureAssembled();
+        $html = [];
 
         foreach ($this->content as $element) {
             if (is_string($element)) {
@@ -226,5 +317,14 @@ class HtmlDocument implements ValidHtml, Countable
     public function getContent()
     {
         return $this->content;
+    }
+
+    public function __clone()
+    {
+        foreach ($this->content as $key => $element) {
+            $this->content[$key] = clone($element);
+        }
+
+        $this->reIndexContent();
     }
 }
