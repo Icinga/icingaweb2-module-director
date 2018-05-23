@@ -87,12 +87,16 @@ class ConfigJob extends JobHook
             return false;
         }
 
+        if (DirectorDeploymentLog::loadLatest($db)->getConfigHexChecksum()
+            === $config->getHexChecksum()
+        ) {
+            return false;
+        }
+
         if ($this->getActiveChecksum() === $config->getHexChecksum()) {
             return false;
         }
 
-        // $current = $api->getActiveChecksum($db);
-        // TODO: no current, but last deployment
         return true;
     }
 
