@@ -59,6 +59,17 @@ class Db extends DbConnection
         return (int) $db->fetchOne($query);
     }
 
+    public function getLastDeploymentChecksum()
+    {
+        $select = "SELECT config_checksum FROM (SELECT * FROM (SELECT 1 AS pos, "
+                . $this->dbHexFunc('config_checksum')
+                . " AS config_checksum"
+                . " FROM director_deployment_log ORDER BY id DESC LIMIT 1) a"
+                . " UNION SELECT 2 AS pos, '' AS config_checksum) u ORDER BY pos LIMIT 1";
+
+        return $this->db()->fetchOne($select);
+    }
+
     public function settings()
     {
         if ($this->settings === null) {
