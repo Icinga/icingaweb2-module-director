@@ -10,8 +10,11 @@ class Attributes
     /** @var Attribute[] */
     protected $attributes = [];
 
-    /** @var callable */
+    /** @var callable[] */
     protected $callbacks = [];
+
+    /** @var callable[] */
+    protected $setterCallbacks = [];
 
     /** @var string */
     protected $prefix = '';
@@ -91,7 +94,8 @@ class Attributes
      */
     public function add($attribute, $value = null)
     {
-        if ($attribute instanceof static) {
+        // TODO: do not allow Attribute and Attributes
+        if ($attribute instanceof Attributes) {
             foreach ($attribute->getAttributes() as $a) {
                 $this->add($a);
             }
@@ -102,7 +106,12 @@ class Attributes
                 $this->add($name, $value);
             }
         } else {
-            $this->addAttribute(Attribute::create($attribute, $value));
+            if (array_key_exists($attribute, $this->setterCallbacks)) {
+                $callback = $this->setterCallbacks[$attribute];
+                $callback($value);
+            } else {
+                $this->addAttribute(Attribute::create($attribute, $value));
+            }
         }
 
         return $this;
@@ -131,7 +140,14 @@ class Attributes
 
             return $this;
         } else {
-            return $this->setAttribute(new Attribute($attribute, $value));
+            if (array_key_exists($attribute, $this->setterCallbacks)) {
+                $callback = $this->setterCallbacks[$attribute];
+                $callback($value);
+
+                return $this;
+            } else {
+                return $this->setAttribute(new Attribute($attribute, $value));
+            }
         }
     }
 
@@ -204,17 +220,29 @@ class Attributes
     /**
      * Callback must return an instance of Attribute
      *
+     * TODO: setCallback
+     *
      * @param string $name
      * @param callable $callback
+     * @param callable $setterCallback
      * @return $this
      * @throws ProgrammingError
      */
-    public function registerAttributeCallback($name, $callback)
+    public function registerAttributeCallback($name, $callback, $setterCallback = null)
     {
-        if (! is_callable($callback)) {
-            throw new ProgrammingError(__METHOD__ . ' expects a callable callback');
+        if ($callback !== null) {
+            if (! is_callable($callback)) {
+                throw new ProgrammingError(__METHOD__ . ' expects a callable callback');
+            }
+            $this->callbacks[$name] = $callback;
         }
-        $this->callbacks[$name] = $callback;
+
+        if ($setterCallback !== null) {
+            if (! is_callable($setterCallback)) {
+                throw new ProgrammingError(__METHOD__ . ' expects a callable setterCallback');
+            }
+            $this->setterCallbacks[$name] = $setterCallback;
+        }
 
         return $this;
     }
@@ -225,15 +253,13 @@ class Attributes
      */
     public function render()
     {
-        if (empty($this->attributes) && empty($this->callbacks)) {
-            return '';
-        }
-
         $parts = [];
         foreach ($this->callbacks as $name => $callback) {
             $attribute = call_user_func($callback);
             if ($attribute instanceof Attribute) {
-                $parts[] = $attribute->render();
+                if ($attribute->getValue() !== null) {
+                    $parts[] = $attribute->render();
+                }
             } elseif (is_string($attribute)) {
                 $parts[] = Attribute::create($name, $attribute)->render();
             } elseif (null === $attribute) {
@@ -252,6 +278,10 @@ class Attributes
             }
 
             $parts[] = $attribute->render();
+        }
+
+        if (empty($parts)) {
+            return '';
         }
 
         $separator = ' ' . $this->prefix;
