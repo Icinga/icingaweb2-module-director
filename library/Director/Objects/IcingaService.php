@@ -114,6 +114,11 @@ class IcingaService extends IcingaObject
         'apply_for'
     ];
 
+    /**
+     * @return IcingaCommand
+     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function getCheckCommand()
     {
         $id = $this->getSingleResolvedProperty('check_command_id');
@@ -123,6 +128,9 @@ class IcingaService extends IcingaObject
         );
     }
 
+    /**
+     * @return bool
+     */
     public function isApplyRule()
     {
         if ($this->hasBeenAssignedToHostTemplate()) {
@@ -133,11 +141,19 @@ class IcingaService extends IcingaObject
             && $this->object_type === 'apply';
     }
 
+    /**
+     * @return bool
+     */
     public function usesVarOverrides()
     {
         return $this->use_var_overrides === 'y';
     }
 
+    /**
+     * @param string $key
+     * @return $this
+     * @throws IcingaException
+     */
     protected function setKey($key)
     {
         if (is_int($key)) {
@@ -188,6 +204,11 @@ class IcingaService extends IcingaObject
         return $this->renderRelationProperty('host', $this->host_id, 'host_name');
     }
 
+    /**
+     * @param IcingaConfig $config
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     public function renderToLegacyConfig(IcingaConfig $config)
     {
         if ($this->get('service_set_id') !== null) {
@@ -201,6 +222,7 @@ class IcingaService extends IcingaObject
 
     /**
      * @param IcingaConfig $config
+     * @throws IcingaException
      */
     protected function renderLegacyApplyToConfig(IcingaConfig $config)
     {
@@ -223,6 +245,13 @@ class IcingaService extends IcingaObject
         $this->set('assign_filter', $assign_filter);
     }
 
+    /**
+     * @param $hostname
+     * @param IcingaConfig $config
+     * @return \Icinga\Module\Director\IcingaConfig\IcingaConfigFile
+     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
     {
         $host = IcingaHost::load($hostname, $this->getConnection());
@@ -232,6 +261,11 @@ class IcingaService extends IcingaObject
         );
     }
 
+    /**
+     * @return string
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     public function toLegacyConfigString()
     {
         if ($this->get('service_set_id') !== null) {
@@ -254,6 +288,10 @@ class IcingaService extends IcingaObject
         }
     }
 
+    /**
+     * @return string
+     * @throws IcingaException
+     */
     public function toConfigString()
     {
         if ($this->get('service_set_id')) {
@@ -269,6 +307,11 @@ class IcingaService extends IcingaObject
         }
     }
 
+    /**
+     * @return string
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     protected function renderObjectHeader()
     {
         if ($this->isApplyRule()
@@ -297,6 +340,9 @@ class IcingaService extends IcingaObject
         return parent::renderObjectHeader();
     }
 
+    /**
+     * @return string
+     */
     protected function getLegacyObjectKeyName()
     {
         if ($this->isTemplate()) {
@@ -306,6 +352,9 @@ class IcingaService extends IcingaObject
         }
     }
 
+    /**
+     * @return bool
+     */
     protected function hasBeenAssignedToHostTemplate()
     {
         return $this->host_id && $this->getRelatedObject(
@@ -314,6 +363,10 @@ class IcingaService extends IcingaObject
         )->object_type === 'template';
     }
 
+    /**
+     * @return string
+     * @throws ProgrammingError
+     */
     protected function renderSuffix()
     {
         if ($this->isApplyRule() || $this->usesVarOverrides()) {
@@ -323,6 +376,10 @@ class IcingaService extends IcingaObject
         }
     }
 
+    /**
+     * @return string
+     * @throws ProgrammingError
+     */
     protected function renderImportHostVarOverrides()
     {
         if (! $this->connection) {
@@ -334,6 +391,10 @@ class IcingaService extends IcingaObject
         return "\n    import DirectorOverrideTemplate\n";
     }
 
+    /**
+     * @return string
+     * @throws IcingaException
+     */
     protected function renderCustomExtensions()
     {
         $output = '';
@@ -370,6 +431,10 @@ class IcingaService extends IcingaObject
         }
     }
 
+    /**
+     * @return array
+     * @throws ProgrammingError
+     */
     public function getBlacklistedHostnames()
     {
         if ($this->isApplyRule()) {
@@ -445,6 +510,10 @@ class IcingaService extends IcingaObject
         return $zone;
     }
 
+    /**
+     * @return string
+     * @throws IcingaException
+     */
     public function createWhere()
     {
         $where = parent::createWhere();
@@ -460,7 +529,15 @@ class IcingaService extends IcingaObject
         return $where;
     }
 
-    // TODO: Duplicate code, clean this up, split it into multiple methods
+
+    /**
+     * TODO: Duplicate code, clean this up, split it into multiple methods
+     * @param Db|null $connection
+     * @param string $prefix
+     * @param null $filter
+     * @return array
+     * @throws IcingaException
+     */
     public static function enumProperties(
         Db $connection = null,
         $prefix = '',
@@ -547,6 +624,9 @@ class IcingaService extends IcingaObject
         return $properties;
     }
 
+    /**
+     * @throws IcingaException
+     */
     protected function beforeStore()
     {
         parent::beforeStore();
