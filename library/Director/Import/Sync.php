@@ -23,56 +23,34 @@ use Icinga\Exception\IcingaException;
 
 class Sync
 {
-    /**
-     * @var SyncRule
-     */
+    /** @var SyncRule */
     protected $rule;
 
-    /**
-     * @var Db
-     */
+    /** @var Db */
     protected $db;
 
-    /**
-     * Related ImportSource objects
-     *
-     * @var array
-     */
+    /** @var array Related ImportSource objects */
     protected $sources;
 
-    /**
-     * Source columns we want to fetch from our sources
-     *
-     * @var array
-     */
+    /** @var array Source columns we want to fetch from our sources */
     protected $sourceColumns;
 
-    /**
-     * Imported data
-     */
+    /** @var array Imported data */
     protected $imported;
 
-    /**
-     * Objects to work with
-     *
-     * @var IcingaObject[]
-     */
+    /** @var IcingaObject[] Objects to work with */
     protected $objects;
 
-    /**
-     * Whether we already prepared your sync
-     *
-     * @var bool
-     */
+    /** @var bool Whether we already prepared your sync */
     protected $isPrepared = false;
 
-    protected $modify = array();
+    protected $modify = [];
 
-    protected $remove = array();
+    protected $remove = [];
 
-    protected $create = array();
+    protected $create = [];
 
-    protected $errors = array();
+    protected $errors = [];
 
     /** @var SyncProperty[] */
     protected $syncProperties;
@@ -91,15 +69,12 @@ class Sync
     protected $runStartTime;
 
     /** @var Filter[] */
-    protected $columnFilters = array();
+    protected $columnFilters = [];
 
     /** @var HostGroupMembershipResolver|bool */
     protected $hostGroupMembershipResolver;
 
     /**
-     * Constructor. No direct initialization allowed right now. Please use one
-     * of the available static factory methods
-     *
      * @param SyncRule $rule
      */
     public function __construct(SyncRule $rule)
@@ -112,6 +87,7 @@ class Sync
      * Whether the given sync rule would apply modifications
      *
      * @return boolean
+     * @throws Exception
      */
     public function hasModifications()
     {
@@ -126,7 +102,7 @@ class Sync
      */
     public function getExpectedModifications()
     {
-        $modified = array();
+        $modified = [];
         $objects = $this->prepare();
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
@@ -151,9 +127,9 @@ class Sync
         if (is_array($value)) {
             return $value;
         } elseif ($value === null) {
-            return array();
+            return [];
         } else {
-            return array($value);
+            return [$value];
         }
     }
 
@@ -225,10 +201,12 @@ class Sync
      * Instantiates all related ImportSource objects
      *
      * @return self
+     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function prepareRelatedImportSources()
     {
-        $this->sources = array();
+        $this->sources = [];
         foreach ($this->syncProperties as $p) {
             $id = $p->source_id;
             if (! array_key_exists($id, $this->sources)) {
@@ -246,13 +224,13 @@ class Sync
      */
     protected function prepareSourceColumns()
     {
-        // $fieldMap = array();
-        $this->sourceColumns = array();
+        // $fieldMap = [];
+        $this->sourceColumns = [];
 
         foreach ($this->syncProperties as $p) {
             $sourceId = $p->source_id;
             if (! array_key_exists($sourceId, $this->sourceColumns)) {
-                $this->sourceColumns[$sourceId] = array();
+                $this->sourceColumns[$sourceId] = [];
             }
 
             foreach (SyncUtils::extractVariableNames($p->source_expression) as $varname) {
@@ -276,7 +254,7 @@ class Sync
             $this->serviceOverrideKeyName = $this->db->settings()->override_services_varname;
         }
 
-        $this->imported = array();
+        $this->imported = [];
 
         $sourceKeyPattern = $this->rule->getSourceKeyPattern();
         $combinedKey = $this->rule->hasCombinedKey();
@@ -292,7 +270,7 @@ class Sync
 
             $usedColumns = SyncUtils::getRootVariables($this->sourceColumns[$sourceId]);
 
-            $filterColumns = array();
+            $filterColumns = [];
             foreach ($this->columnFilters as $filter) {
                 foreach ($filter->listFilteredColumns() as $column) {
                     $filterColumns[$column] = $column;
@@ -314,7 +292,7 @@ class Sync
             $rows = $run->fetchRows($usedColumns);
             Benchmark::measure(sprintf('Fetched source %s', $source->source_name));
 
-            $this->imported[$sourceId] = array();
+            $this->imported[$sourceId] = [];
             foreach ($rows as $row) {
                 if ($combinedKey) {
                     $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
@@ -358,7 +336,11 @@ class Sync
         return $this;
     }
 
-    // TODO: This is rubbish, we need to filter at fetch time
+    /**
+     * TODO: This is rubbish, we need to filter at fetch time
+     *
+     * @throws IcingaException
+     */
     protected function removeForeignListEntries()
     {
         $listId = null;
@@ -374,7 +356,7 @@ class Sync
             );
         }
 
-        $no = array();
+        $no = [];
         foreach ($this->objects as $k => $o) {
             if ((int) $o->list_id !== (int) $listId) {
                 $no[] = $k;
@@ -386,13 +368,17 @@ class Sync
         }
     }
 
+    /**
+     * @return $this
+     * @throws IcingaException
+     */
     protected function loadExistingObjects()
     {
         Benchmark::measure('Begin loading existing objects');
 
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->rule->hasCombinedKey()) {
-            $this->objects = array();
+            $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
 
             foreach (IcingaObject::loadAllByType(
@@ -439,98 +425,106 @@ class Sync
         return $this;
     }
 
+    /**
+     * @return array
+     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function prepareNewObjects()
     {
-        $newObjects = array();
+        $objects = [];
 
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
 
             foreach ($this->imported[$sourceId] as $key => $row) {
-                $newProps = array();
-
-                $newVars = array();
-                $imports = array();
-
-                foreach ($this->syncProperties as $propertyKey => $p) {
-                    if ($p->source_id !== $sourceId) {
-                        continue;
-                    }
-
-                    if (! $this->rowMatchesPropertyFilter($row, $propertyKey)) {
-                        continue;
-                    }
-
-                    $prop = $p->destination_field;
-
-                    $val = SyncUtils::fillVariables($p->source_expression, $row);
-
-                    if (substr($prop, 0, 5) === 'vars.') {
-                        $varName = substr($prop, 5);
-                        if (substr($varName, -2) === '[]') {
-                            $varName = substr($varName, 0, -2);
-                            $val = $this->wantArray($val);
-                        }
-                        $newVars[$varName] = $val;
+                if (! array_key_exists($key, $objects)) {
+                    // Safe default values for object_type and object_name
+                    if ($this->rule->object_type === 'datalistEntry') {
+                        $props = [];
                     } else {
-                        if ($prop === 'import') {
-                            if (is_array($val)) {
-                                $imports = array_merge($imports, $val);
-                            } elseif (!is_null($val)) {
-                                $imports[] = $val;
-                            }
-                        } else {
-                            $newProps[$prop] = $val;
-                        }
+                        $props = [
+                            'object_type' => 'object',
+                            'object_name' => $key
+                        ];
                     }
-                }
-                if (! array_key_exists($key, $newObjects)) {
-                    $newObjects[$key] = IcingaObject::createByType(
+
+                    $objects[$key] = IcingaObject::createByType(
                         $this->rule->object_type,
-                        array(),
+                        $props,
                         $this->db
                     );
                 }
 
-                $object = $newObjects[$key];
-
-                // Safe default values for object_type and object_name
-                if ($this->rule->object_type !== 'datalistEntry') {
-                    if (! array_key_exists('object_type', $newProps)
-                        || $newProps['object_type'] === null
-                    ) {
-                        $newProps['object_type'] = 'object';
-                    }
-
-                    if (! array_key_exists('object_name', $newProps)
-                        || $newProps['object_name'] === null
-                    ) {
-                        $newProps['object_name'] = $key;
-                    }
-                }
-
-                foreach ($newProps as $prop => $value) {
-                    // TODO: data type?
-                    $object->set($prop, $value);
-                }
-
-                foreach ($newVars as $prop => $var) {
-                    $object->vars()->$prop = $var;
-                }
-
-                if (! empty($imports)) {
-                    // TODO: merge imports!!!
-                    $object->imports()->set($imports);
-                }
+                $object = $objects[$key];
+                $this->prepareNewObject($row, $object, $sourceId);
             }
         }
 
-        return $newObjects;
+        return $objects;
     }
 
+    /**
+     * @param $row
+     * @param DbObject $object
+     * @param $sourceId
+     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    protected function prepareNewObject($row, DbObject $object, $sourceId)
+    {
+        foreach ($this->syncProperties as $propertyKey => $p) {
+            if ($p->source_id !== $sourceId) {
+                continue;
+            }
+
+            if (! $this->rowMatchesPropertyFilter($row, $propertyKey)) {
+                continue;
+            }
+
+            $prop = $p->destination_field;
+
+            $val = SyncUtils::fillVariables($p->source_expression, $row);
+
+            if ($object instanceof IcingaObject) {
+                if ($prop === 'import') {
+                    if ($val !== null) {
+                        $object->imports()->add($val);
+                    }
+                } elseif ($prop === 'groups') {
+                    if ($val !== null) {
+                        $object->groups()->add($val);
+                    }
+                } elseif (substr($prop, 0, 5) === 'vars.') {
+                    $varName = substr($prop, 5);
+                    if (substr($varName, -2) === '[]') {
+                        $varName = substr($varName, 0, -2);
+                        $current = $this->wantArray($object->vars()->$varName);
+                        $object->vars()->$varName = array_merge(
+                            $current,
+                            $this->wantArray($val)
+                        );
+                    } else {
+                        $object->vars()->$varName = $val;
+                    }
+                }
+            } else {
+                if ($val !== null) {
+                    $object->set($prop, $val);
+                }
+            }
+        }
+    }
+
+    /**
+     * @return $this
+     * @throws IcingaException
+     */
     protected function deferResolvers()
     {
-        if (in_array($this->rule->get('object_type'), array('host', 'hostgroup'))) {
+        if (in_array($this->rule->get('object_type'), ['host', 'hostgroup'])) {
             $resolver = $this->getHostGroupMembershipResolver();
             $resolver->defer()->setUseTransactions(false);
         }
@@ -541,6 +535,7 @@ class Sync
     /**
      * @param DbObject $object
      * @return $this
+     * @throws IcingaException
      */
     protected function setResolver($object)
     {
@@ -554,6 +549,10 @@ class Sync
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws IcingaException
+     */
     protected function notifyResolvers()
     {
         if ($resolver = $this->getHostGroupMembershipResolver()) {
@@ -565,13 +564,14 @@ class Sync
 
     /**
      * @return bool|HostGroupMembershipResolver
+     * @throws IcingaException
      */
     protected function getHostGroupMembershipResolver()
     {
         if ($this->hostGroupMembershipResolver === null) {
             if (in_array(
                 $this->rule->get('object_type'),
-                array('host', 'hostgroup')
+                ['host', 'hostgroup']
             )) {
                 $this->hostGroupMembershipResolver = new HostGroupMembershipResolver(
                     $this->db
@@ -618,7 +618,7 @@ class Sync
         }
 
         Benchmark::measure('Modified objects are ready, applying purge strategy');
-        $noAction = array();
+        $noAction = [];
         foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
             if (array_key_exists($key, $newObjects)) {
                 // Object has been touched, do not delete
@@ -759,11 +759,11 @@ class Sync
                 }
             }
 
-            $runProperties = array(
+            $runProperties = [
                 'objects_created'  => $created,
                 'objects_deleted'  => $deleted,
                 'objects_modified' => $modified,
-            );
+            ];
 
             if ($created + $deleted + $modified > 0) {
                 // TODO: What if this has been the very first activity?
