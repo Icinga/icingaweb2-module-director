@@ -5,12 +5,14 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\PropertiesFilter;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
+use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 
 class IcingaService extends IcingaObject
 {
@@ -18,7 +20,7 @@ class IcingaService extends IcingaObject
 
     protected $table = 'icinga_service';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                      => null,
         'object_name'             => null,
         'object_type'             => null,
@@ -54,9 +56,9 @@ class IcingaService extends IcingaObject
         'use_var_overrides'       => null,
         'assign_filter'           => null,
         'template_choice_id'      => null,
-    );
+    ];
 
-    protected $relations = array(
+    protected $relations = [
         'host'             => 'IcingaHost',
         'service_set'      => 'IcingaServiceSet',
         'check_command'    => 'IcingaCommand',
@@ -65,9 +67,9 @@ class IcingaService extends IcingaObject
         'command_endpoint' => 'IcingaEndpoint',
         'zone'             => 'IcingaZone',
         'template_choice'  => 'IcingaTemplateChoiceService',
-    );
+    ];
 
-    protected $booleans = array(
+    protected $booleans = [
         'enable_notifications'  => 'enable_notifications',
         'enable_active_checks'  => 'enable_active_checks',
         'enable_passive_checks' => 'enable_passive_checks',
@@ -77,13 +79,13 @@ class IcingaService extends IcingaObject
         'volatile'              => 'volatile',
         'use_agent'             => 'use_agent',
         'use_var_overrides'     => 'use_var_overrides',
-    );
+    ];
 
-    protected $intervalProperties = array(
+    protected $intervalProperties = [
         'check_interval' => 'check_interval',
         'check_timeout'  => 'check_timeout',
         'retry_interval' => 'retry_interval',
-    );
+    ];
 
     protected $supportsGroups = true;
 
@@ -101,16 +103,16 @@ class IcingaService extends IcingaObject
 
     protected $supportedInLegacy = true;
 
-    protected $keyName = array('host_id', 'service_set_id', 'object_name');
+    protected $keyName = ['host_id', 'service_set_id', 'object_name'];
 
-    protected $prioritizedProperties = array('host_id');
+    protected $prioritizedProperties = ['host_id'];
 
-    protected $propertiesNotForRendering = array(
+    protected $propertiesNotForRendering = [
         'id',
         'object_name',
         'object_type',
         'apply_for'
-    );
+    ];
 
     public function getCheckCommand()
     {
@@ -141,7 +143,7 @@ class IcingaService extends IcingaObject
         if (is_int($key)) {
             $this->id = $key;
         } elseif (is_array($key)) {
-            foreach (array('id', 'host_id', 'service_set_id', 'object_name') as $k) {
+            foreach (['id', 'host_id', 'service_set_id', 'object_name'] as $k) {
                 if (array_key_exists($k, $key)) {
                     $this->set($k, $key[$k]);
                 }
@@ -346,6 +348,14 @@ class IcingaService extends IcingaObject
             $output .= "\n    " . $filter . "\n";
         }
 
+        $blacklist = $this->getBlacklistedHostnames();
+        if (! empty($blacklist)) {
+            $output .= sprintf(
+                "    ignore where host.name IN %s\n",
+                c::renderArray($blacklist)
+            );
+        }
+
         // A hand-crafted command endpoint overrides use_agent
         if ($this->command_endpoint_id !== null) {
             return $output;
@@ -358,6 +368,21 @@ class IcingaService extends IcingaObject
         } else {
             return $output;
         }
+    }
+
+    public function getBlacklistedHostnames()
+    {
+        if ($this->isApplyRule()) {
+            if (PrefetchCache::shouldBeUsed()) {
+                $lookup = PrefetchCache::instance()->hostServiceBlacklist();
+            } else {
+                $lookup = new HostServiceBlacklist($this->getConnection());
+            }
+
+            return $lookup->getBlacklistedHostnamesForService($this);
+        }
+
+        return [];
     }
 
     /**
@@ -441,7 +466,7 @@ class IcingaService extends IcingaObject
         $prefix = '',
         $filter = null
     ) {
-        $serviceProperties = array();
+        $serviceProperties = [];
         if ($filter === null) {
             $filter = new PropertiesFilter();
         }
@@ -466,7 +491,7 @@ class IcingaService extends IcingaObject
             $serviceProperties[$prefix . $prop] = $prop;
         }
 
-        $serviceVars = array();
+        $serviceVars = [];
 
         if ($connection !== null) {
             foreach ($connection->fetchDistinctServiceVars() as $var) {
@@ -490,7 +515,7 @@ class IcingaService extends IcingaObject
         $props = mt('director', 'Service properties');
         $vars  = mt('director', 'Custom variables');
 
-        $properties = array();
+        $properties = [];
         if (!empty($serviceProperties)) {
             $properties[$props] = $serviceProperties;
             $properties[$props][$prefix . 'groups'] = 'Groups';
