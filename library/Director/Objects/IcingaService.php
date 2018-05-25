@@ -411,10 +411,17 @@ class IcingaService extends IcingaObject
 
         $blacklist = $this->getBlacklistedHostnames();
         if (! empty($blacklist)) {
-            $output .= sprintf(
-                "    ignore where host.name in %s\n",
-                c::renderArray($blacklist)
-            );
+            if (count($blacklist) === 1) {
+                $output .= sprintf(
+                    "    ignore host.name == %s\n",
+                    c::renderString($blacklist[0])
+                );
+            } else {
+                $output .= sprintf(
+                    "    ignore where host.name in %s\n",
+                    c::renderArray($blacklist)
+                );
+            }
         }
 
         // A hand-crafted command endpoint overrides use_agent
