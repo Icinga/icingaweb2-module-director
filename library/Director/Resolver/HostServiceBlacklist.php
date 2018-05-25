@@ -61,6 +61,10 @@ class HostServiceBlacklist
 
     public function fetchMappingsForService(IcingaService $service)
     {
+        if (! $service->hasBeenLoadedFromDb()) {
+            return [];
+        }
+
         $db = $this->db->getDbAdapter();
         $query = $db->select()->from(['hsb' => $this->table], [
             'host_name' => 'h.object_name',

@@ -413,7 +413,7 @@ class IcingaService extends IcingaObject
         if (! empty($blacklist)) {
             if (count($blacklist) === 1) {
                 $output .= sprintf(
-                    "    ignore host.name == %s\n",
+                    "    ignore where host.name == %s\n",
                     c::renderString($blacklist[0])
                 );
             } else {

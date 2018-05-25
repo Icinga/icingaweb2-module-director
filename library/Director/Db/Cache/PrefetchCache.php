@@ -108,6 +108,7 @@ class PrefetchCache
     {
         if ($this->hostServiceBlacklist === null) {
             $this->hostServiceBlacklist = new HostServiceBlacklist($this->db);
+            $this->hostServiceBlacklist->preloadMappings();
         }
 
         return $this->hostServiceBlacklist;
