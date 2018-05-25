@@ -170,10 +170,9 @@ class HostServiceRedirector
         $matcher = $this->getHostApplyMatcher();
         foreach ($this->fetchAllApplyRulesForService($serviceName) as $rule) {
             if ($matcher->matchesFilter($rule->filter)) {
-                return Url::fromPath('director/host/servicesetservice', [
-                    'name'    => $this->host->getObjectName(),
-                    'service' => $serviceName,
-                    'set'     => $rule->service_set_name
+                return Url::fromPath('director/host/appliedservice', [
+                    'name'       => $this->host->getObjectName(),
+                    'service_id' => $rule->id,
                 ]);
             }
         }
@@ -191,9 +190,10 @@ class HostServiceRedirector
         $matcher = $this->getHostApplyMatcher();
         foreach ($this->fetchAllServiceSetApplyRulesForService($serviceName) as $rule) {
             if ($matcher->matchesFilter($rule->filter)) {
-                return Url::fromPath('director/host/appliedservice', [
-                    'name'       => $this->host->getObjectName(),
-                    'service_id' => $rule->id,
+                return Url::fromPath('director/host/servicesetservice', [
+                    'name'    => $this->host->getObjectName(),
+                    'service' => $serviceName,
+                    'set'     => $rule->service_set_name
                 ]);
             }
         }
