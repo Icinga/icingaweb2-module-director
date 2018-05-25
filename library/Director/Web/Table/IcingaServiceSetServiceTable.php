@@ -78,6 +78,12 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $parent;
     }
 
+    /**
+     * @param $row
+     * @return Link
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function getServiceLink($row)
     {
         if ($this->affectedHost) {
@@ -111,6 +117,9 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         if ($row->disabled === 'y') {
             $tr->getAttributes()->add('class', 'disabled');
         }
+        if ($row->blacklisted === 'y') {
+            $tr->getAttributes()->add('class', 'strike-links');
+        }
 
         return $tr;
     }
@@ -125,6 +134,11 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this->title ?: $this->translate('Servicename');
     }
 
+    /**
+     * @param HtmlElement $parent
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function addHostHeaderTo(HtmlElement $parent)
     {
         if (! $this->host) {
@@ -164,9 +178,14 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         $parent->add($this::th([$this->getTitle(), $deleteLink]));
     }
 
+    /**
+     * @return \Zend_Db_Select
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Zend_Db_Select_Exception
+     */
     public function prepareQuery()
     {
-        return $this->db()->select()->from(
+        $query = $this->db()->select()->from(
             ['s' => 'icinga_service'],
             [
                 'id'             => 's.id',
@@ -185,5 +204,19 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
             's.service_set_id = ?',
             $this->set->get('id')
         )->order('s.object_name');
+
+        if ($this->affectedHost) {
+            $query->joinLeft(
+                ['hsb' => 'icinga_host_service_blacklist'],
+                's.id = hsb.service_id',
+                []
+            )->group('s.id')->columns([
+                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
+            ]);
+        } else {
+            $query->columns(['blacklisted' => "'n'"]);
+        }
+
+        return $query;
     }
 }

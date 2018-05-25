@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
@@ -43,6 +44,11 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         if ($this->providesOverrides()) {
@@ -79,6 +85,27 @@ class IcingaServiceForm extends DirectorObjectForm
             || ($this->object && $this->object->usesVarOverrides());
     }
 
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     * @throws \Zend_Form_Exception
+     */
+    protected function addFields()
+    {
+        if ($this->providesOverrides() && $this->hasBeenBlacklisted()) {
+            $this->onAddedFields();
+
+            return;
+        } else {
+            parent::addFields();
+        }
+    }
+
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     * @throws \Zend_Form_Exception
+     */
     protected function onAddedFields()
     {
         if (! $this->providesOverrides()) {
@@ -106,8 +133,140 @@ class IcingaServiceForm extends DirectorObjectForm
 
             $this->setSubmitLabel(false);
         }
+
+        if ($this->hasBeenBlacklisted()) {
+            $this->addDeleteButton($this->translate('Restore'));
+        } else {
+            $this->addDeleteButton($this->translate('Blacklist'));
+        }
+
+        if (! $this->hasSubmitButton()) {
+            $this->addDisplayGroup([$this->deleteButtonName], 'buttons', [
+                'decorators' => [
+                    'FormElements',
+                    ['HtmlTag', ['tag' => 'dl']],
+                    'DtDdWrapper',
+                ],
+                'order' => 1000,
+            ]);
+        }
     }
 
+    /**
+     * @param IcingaService $service
+     * @return IcingaService
+     * @throws ProgrammingError
+     */
+    protected function getFirstParent(IcingaService $service)
+    {
+        $objects = $service->imports()->getObjects();
+        if (empty($objects)) {
+            throw new ProgrammingError('Something went wrong, got no parent');
+        }
+        reset($objects);
+        return current($objects);
+    }
+
+    /**
+     * @return bool
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
+    protected function hasBeenBlacklisted()
+    {
+        if (! $this->providesOverrides() || $this->object === null) {
+            return false;
+        }
+
+        $host = $this->host;
+        $service = $this->getFirstParent($this->object);
+        $db = $this->db->getDbAdapter();
+        if ($this->providesOverrides()) {
+            return 1 === (int) $db->fetchOne(
+                $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
+                    ->where('host_id = ?', $host->get('id'))
+                    ->where('service_id = ?', $service->get('id'))
+            );
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param $object
+     * @throws IcingaException
+     * @throws ProgrammingError
+     * @throws \Zend_Db_Adapter_Exception
+     */
+    protected function deleteObject($object)
+    {
+        /** @var IcingaService $object */
+        if ($this->providesOverrides()) {
+            if ($this->hasBeenBlacklisted()) {
+                $this->removeFromBlacklist();
+            } else {
+                $this->blacklist();
+            }
+        } else {
+            parent::deleteObject($object);
+        }
+    }
+
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     * @throws \Zend_Db_Adapter_Exception
+     */
+    protected function blacklist()
+    {
+        $host = $this->host;
+        $service = $this->getFirstParent($this->object);
+
+        $db = $this->db->getDbAdapter();
+        $host->unsetOverriddenServiceVars($service)->store();
+
+        if ($db->insert('icinga_host_service_blacklist', [
+            'host_id'    => $host->get('id'),
+            'service_id' => $service->get('id')
+        ])) {
+            $msg = sprintf(
+                $this->translate('%s has been blacklisted on %s'),
+                $service->getObjectName(),
+                $host->getObjectName()
+            );
+            $this->redirectOnSuccess($msg);
+        }
+    }
+
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
+    protected function removeFromBlacklist()
+    {
+        $host = $this->host;
+        $service = $this->getFirstParent($this->object);
+
+        $db = $this->db->getDbAdapter();
+        $where = implode(' AND ', [
+            $db->quoteInto('host_id = ?', $host->get('id')),
+            $db->quoteInto('service_id = ?', $service->get('id')),
+        ]);
+        if ($db->delete('icinga_host_service_blacklist', $where)) {
+            $msg = sprintf(
+                $this->translate('%s has been removed from blacklist %s'),
+                $service->getObjectName(),
+                $host->getObjectName()
+            );
+            $this->redirectOnSuccess($msg);
+        }
+    }
+
+    /**
+     * @param IcingaService $service
+     * @return $this
+     * @throws ProgrammingError
+     */
     public function createApplyRuleFor(IcingaService $service)
     {
         $this->apply = $service;
@@ -118,6 +277,9 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function setupServiceElements()
     {
         if ($this->object) {
@@ -144,6 +306,10 @@ class IcingaServiceForm extends DirectorObjectForm
              ->setButtons();
     }
 
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     protected function addOverrideHint()
     {
         if ($this->object && $this->object->usesVarOverrides()) {
@@ -204,6 +370,10 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addHtmlHint($hint, ['name' => 'inheritance_hint']);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     protected function setupOnHostForSet()
     {
         $msg = $this->translate(
@@ -248,6 +418,9 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function setupHostRelatedElements()
     {
         $this->addHidden('host_id', $this->host->id);
@@ -291,6 +464,9 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function setupSetRelatedElements()
     {
         $this->addHidden('service_set_id', $this->set->id);
@@ -333,6 +509,10 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addNameElement()
     {
         $this->addElement('text', 'object_name', array(
@@ -350,6 +530,10 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addHostObjectElement()
     {
         if ($this->isObject()) {
@@ -366,6 +550,10 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addApplyForElement()
     {
         if ($this->object->isApplyRule()) {
@@ -392,6 +580,10 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addGroupsElement()
     {
         $groups = $this->enumServicegroups();
@@ -415,6 +607,10 @@ class IcingaServiceForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addAgentAndZoneElements()
     {
         if (!$this->isTemplate()) {
@@ -470,6 +666,10 @@ class IcingaServiceForm extends DirectorObjectForm
         return $db->fetchPairs($select);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     protected function succeedForOverrides()
     {
         $vars = array();
@@ -502,6 +702,10 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->redirectOnSuccess($msg);
     }
 
+    /**
+     * @throws IcingaException
+     * @throws ProgrammingError
+     */
     public function onSuccess()
     {
         if ($this->providesOverrides()) {

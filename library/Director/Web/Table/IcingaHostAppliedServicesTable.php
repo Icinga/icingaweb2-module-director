@@ -52,6 +52,12 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     public function renderRow($row)
     {
+        if ($row->blacklisted === 'y') {
+            $attributes = ['class' => 'strike-links'];
+        } else {
+            $attributes = null;
+        }
+
         return $this::row([
             Link::create(
                 sprintf(
@@ -65,7 +71,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                     'service_id' => $row->id,
                 ]
             )
-        ]);
+        ], $attributes);
     }
 
     public function prepareQuery()
@@ -82,7 +88,8 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         return $ds->select()->columns([
             'id'            => 'id',
             'name'          => 'name',
-            'filter' => 'filter',
+            'filter'        => 'filter',
+            'blacklisted'   => 'blacklisted',
             'assign_filter' => 'assign_filter',
         ]);
     }
@@ -108,8 +115,13 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 'id'            => 's.id',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
+                'blacklisted'   => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
             ]
-        )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
+        )->joinLeft(
+            ['hsb' => 'icinga_host_service_blacklist'],
+            's.id = hsb.service_id',
+            []
+        )->group('s.id')->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
 
         return $db->fetchAll($query);
     }

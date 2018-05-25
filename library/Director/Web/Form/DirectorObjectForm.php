@@ -781,14 +781,15 @@ abstract class DirectorObjectForm extends DirectorForm
         } catch (Exception $e) {
             $this->addUniqueException($e);
         }
+
+        if ($this->shouldBeDeleted()) {
+            $this->deleteObject($this->object());
+        }
     }
 
     protected function handlePost()
     {
         $object = $this->object();
-        if ($this->shouldBeDeleted()) {
-            $this->deleteObject($object);
-        }
 
         $post = $this->getRequest()->getPost();
         $this->populate($post);

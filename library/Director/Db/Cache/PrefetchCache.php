@@ -6,6 +6,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use Icinga\Module\Director\Resolver\TemplateTree;
 
 /**
@@ -30,6 +31,8 @@ class PrefetchCache
     protected $renderedVars = array();
 
     protected $templateTrees = array();
+
+    protected $hostServiceBlacklist;
 
     public static function initialize(Db $db)
     {
@@ -99,6 +102,15 @@ class PrefetchCache
 
             return $this->renderedVars[$checksum];
         }
+    }
+
+    public function hostServiceBlacklist()
+    {
+        if ($this->hostServiceBlacklist === null) {
+            $this->hostServiceBlacklist = new HostServiceBlacklist($this->db);
+        }
+
+        return $this->hostServiceBlacklist;
     }
 
     /**

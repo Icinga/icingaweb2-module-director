@@ -412,7 +412,7 @@ class IcingaService extends IcingaObject
         $blacklist = $this->getBlacklistedHostnames();
         if (! empty($blacklist)) {
             $output .= sprintf(
-                "    ignore where host.name IN %s\n",
+                "    ignore where host.name in %s\n",
                 c::renderArray($blacklist)
             );
         }
