@@ -509,6 +509,10 @@ class Sync
                     } else {
                         $object->vars()->$varName = $val;
                     }
+                } else {
+                    if ($val !== null) {
+                        $object->set($prop, $val);
+                    }
                 }
             } else {
                 if ($val !== null) {
