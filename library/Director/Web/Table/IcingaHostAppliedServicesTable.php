@@ -74,6 +74,10 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         ], $attributes);
     }
 
+    /**
+     * @return \Icinga\Data\SimpleQuery
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function prepareQuery()
     {
         $services = [];
@@ -94,6 +98,10 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         ]);
     }
 
+    /***
+     * @return array
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function getAllApplyRules()
     {
         if ($this->allApplyRules === null) {
@@ -106,6 +114,10 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         return $this->allApplyRules;
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function fetchAllApplyRules()
     {
         $db = $this->db;
@@ -119,7 +131,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             ]
         )->joinLeft(
             ['hsb' => 'icinga_host_service_blacklist'],
-            's.id = hsb.service_id',
+            $db->quoteInto('s.id = hsb.service_id AND hsb.host_id = ?', $this->host->get('id')),
             []
         )->group('s.id')->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
 

@@ -185,7 +185,8 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
      */
     public function prepareQuery()
     {
-        $query = $this->db()->select()->from(
+        $db = $this->db();
+        $query = $db->select()->from(
             ['s' => 'icinga_service'],
             [
                 'id'             => 's.id',
@@ -208,7 +209,10 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         if ($this->affectedHost) {
             $query->joinLeft(
                 ['hsb' => 'icinga_host_service_blacklist'],
-                's.id = hsb.service_id',
+                $db->quoteInto(
+                    's.id = hsb.service_id AND hsb.host_id = ?',
+                    $this->affectedHost->get('id')
+                ),
                 []
             )->group('s.id')->columns([
                 'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
