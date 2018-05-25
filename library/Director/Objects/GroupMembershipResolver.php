@@ -565,7 +565,7 @@ abstract class GroupMembershipResolver
 
     protected function assertBeenLoadedFromDb(IcingaObject $object)
     {
-        if (! ctype_digit($object->get('id'))) {
+        if (! is_int($object->get('id')) && ! ctype_digit($object->get('id'))) {
             throw new ProgrammingError(
                 'Group resolver does not support unstored objects'
             );
