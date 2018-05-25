@@ -223,7 +223,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $service = $this->getFirstParent($this->object);
 
         $db = $this->db->getDbAdapter();
-        $host->unsetOverriddenServiceVars($service)->store();
+        $host->unsetOverriddenServiceVars($this->object->getObjectName())->store();
 
         if ($db->insert('icinga_host_service_blacklist', [
             'host_id'    => $host->get('id'),
