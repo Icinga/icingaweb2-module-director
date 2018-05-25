@@ -2,8 +2,7 @@
 
 namespace dipl\Html;
 
-use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
+use InvalidArgumentException;
 
 class Attributes
 {
@@ -22,7 +21,7 @@ class Attributes
     /**
      * Attributes constructor.
      * @param Attribute[] $attributes
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function __construct(array $attributes = null)
     {
@@ -44,7 +43,7 @@ class Attributes
     /**
      * @param Attribute[] $attributes
      * @return static
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public static function create(array $attributes = null)
     {
@@ -54,7 +53,7 @@ class Attributes
     /**
      * @param Attributes|array|null $attributes
      * @return Attributes
-     * @throws IcingaException
+     * @throws InvalidArgumentException
      */
     public static function wantAttributes($attributes)
     {
@@ -69,10 +68,10 @@ class Attributes
 
                 return $self;
             } elseif ($attributes !== null) {
-                throw new IcingaException(
+                throw new InvalidArgumentException(sprintf(
                     'Attributes, Array or Null expected, got %s',
                     Html::getPhpTypeName($attributes)
-                );
+                ));
             }
             return $self;
         }
@@ -90,7 +89,7 @@ class Attributes
      * @param Attribute|string $attribute
      * @param string|array $value
      * @return $this
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function add($attribute, $value = null)
     {
@@ -121,7 +120,7 @@ class Attributes
      * @param Attribute|array|string $attribute
      * @param string|array $value
      * @return $this
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function set($attribute, $value = null)
     {
@@ -154,7 +153,7 @@ class Attributes
     /**
      * @param $name
      * @return Attribute
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function get($name)
     {
@@ -226,20 +225,20 @@ class Attributes
      * @param callable $callback
      * @param callable $setterCallback
      * @return $this
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function registerAttributeCallback($name, $callback, $setterCallback = null)
     {
         if ($callback !== null) {
             if (! is_callable($callback)) {
-                throw new ProgrammingError(__METHOD__ . ' expects a callable callback');
+                throw new InvalidArgumentException(__METHOD__ . ' expects a callable callback');
             }
             $this->callbacks[$name] = $callback;
         }
 
         if ($setterCallback !== null) {
             if (! is_callable($setterCallback)) {
-                throw new ProgrammingError(__METHOD__ . ' expects a callable setterCallback');
+                throw new InvalidArgumentException(__METHOD__ . ' expects a callable setterCallback');
             }
             $this->setterCallbacks[$name] = $setterCallback;
         }
@@ -249,7 +248,7 @@ class Attributes
 
     /**
      * @return string
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function render()
     {
@@ -265,7 +264,7 @@ class Attributes
             } elseif (null === $attribute) {
                 continue;
             } else {
-                throw new ProgrammingError(
+                throw new InvalidArgumentException(
                     'A registered attribute callback must return string, null'
                     . ' or an Attribute'
                 );

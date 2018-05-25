@@ -57,20 +57,8 @@ class Text implements ValidHtml
         if ($this->escaped) {
             return $this->string;
         } else {
-            return Html::escapeForHtml($this->string);
+            return Html::escape($this->string);
         }
-    }
-
-    /**
-     * TODO: Allow to (statically) inject an error renderer. This will allow
-     *       us to satisfy "Show exceptions" settings and/or preferences
-     *
-     * @param Exception|string $error
-     * @return string
-     */
-    protected function renderError($error)
-    {
-        return Html::renderError($error);
     }
 
     /**
@@ -81,7 +69,7 @@ class Text implements ValidHtml
         try {
             return $this->render();
         } catch (Exception $e) {
-            return $this->renderError($e);
+            return Error::render($e);
         }
     }
 }

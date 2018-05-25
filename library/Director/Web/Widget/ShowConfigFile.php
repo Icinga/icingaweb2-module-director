@@ -34,7 +34,7 @@ class ShowConfigFile extends HtmlDocument
      */
     protected function assemble()
     {
-        $source = $this->linkObjects(Html::escapeForHtml($this->file->getContent()));
+        $source = $this->linkObjects(Html::escape($this->file->getContent()));
         if ($this->highlight) {
             $source = $this->highlight(
                 $source,

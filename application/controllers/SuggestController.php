@@ -46,7 +46,7 @@ class SuggestController extends ActionController
                     $matches[] = $this->highlight($str, $search);
                 }
             } else {
-                $matches[] = Html::escapeForHtml($str);
+                $matches[] = Html::escape($str);
             }
         }
 
@@ -260,7 +260,7 @@ class SuggestController extends ActionController
     protected function highlight($val, $search)
     {
         $search = ($search);
-        $val = Html::escapeForHtml($val);
+        $val = Html::escape($val);
         return preg_replace(
             '/(' . preg_quote($search, '/') . ')/i',
             '<strong>\1</strong>',

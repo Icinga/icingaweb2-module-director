@@ -2,21 +2,26 @@
 
 namespace dipl\Html;
 
+/**
+ * The HtmlElement represents any HTML element
+ *
+ * A typical HTML element includes a tag, attributes and content.
+ */
 class HtmlElement extends BaseHtmlElement
 {
     /**
-     * Container constructor.
+     * Create a new HTML element from the given tag, attributes and content
      *
-     * @param string $tag
-     * @param Attributes|array $attributes
-     * @param ValidHtml|array|string $content
+     * @param   string                  $tag        The tag for the element
+     * @param   Attributes|array        $attributes The HTML attributes for the element
+     * @param   ValidHtml|string|array  $content    The content of the element
      */
     public function __construct($tag, $attributes = null, $content = null)
     {
         $this->tag = $tag;
 
         if ($attributes !== null) {
-            $this->attributes = $this->getAttributes()->add($attributes);
+            $this->getAttributes()->add($attributes);
         }
 
         if ($content !== null) {

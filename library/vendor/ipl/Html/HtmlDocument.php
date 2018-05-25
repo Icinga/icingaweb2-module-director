@@ -4,13 +4,13 @@ namespace dipl\Html;
 
 use Countable;
 use Exception;
-use Icinga\Exception\ProgrammingError;
+use InvalidArgumentException;
 
 /**
  * Class Html
- * @package dipl\Html
+ * @package ipl\Html
  */
-class HtmlDocument implements ValidHtml, Countable
+class HtmlDocument implements Countable, ValidHtml
 {
     protected $contentSeparator = '';
 
@@ -28,7 +28,6 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param ValidHtml|array|string $content
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function add($content)
     {
@@ -96,7 +95,7 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param $tag
      * @return BaseHtmlElement
-     * @throws ProgrammingError
+     * @throws InvalidArgumentException
      */
     public function getFirst($tag)
     {
@@ -106,16 +105,15 @@ class HtmlDocument implements ValidHtml, Countable
             }
         }
 
-        throw new ProgrammingError(
+        throw new InvalidArgumentException(sprintf(
             'Trying to get first %s, but there is no such',
             $tag
-        );
+        ));
     }
 
     /**
      * @param $content
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function prepend($content)
     {
@@ -149,7 +147,6 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param $string
      * @return HtmlDocument
-     * @throws \Icinga\Exception\IcingaException
      */
     public function addPrintf($string)
     {
@@ -164,7 +161,6 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param HtmlDocument|array|string $content
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function setContent($content)
     {
@@ -190,8 +186,6 @@ class HtmlDocument implements ValidHtml, Countable
 
     /**
      * @return string
-     * @throws ProgrammingError
-     * @throws \Icinga\Exception\IcingaException
      */
     public function render()
     {
@@ -204,8 +198,6 @@ class HtmlDocument implements ValidHtml, Countable
 
     /**
      * @return string
-     * @throws ProgrammingError
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function renderWrapped()
     {
@@ -222,8 +214,6 @@ class HtmlDocument implements ValidHtml, Countable
     /**
      * @param HtmlDocument $document
      * @return string
-     * @throws ProgrammingError
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function renderWrappedDocument(HtmlDocument $document)
     {
@@ -271,7 +261,7 @@ class HtmlDocument implements ValidHtml, Countable
         try {
             return $this->render();
         } catch (Exception $e) {
-            return Html::renderError($e);
+            return Error::render($e);
         }
     }
 

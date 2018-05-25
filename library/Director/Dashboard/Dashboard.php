@@ -64,7 +64,7 @@ abstract class Dashboard extends HtmlDocument
             $this->add(Html::tag(
                 'p',
                 null,
-                HtmlString::create(nl2br(Html::escapeForHtml($description)))
+                HtmlString::create(nl2br(Html::escape($description)))
             ));
         }
 

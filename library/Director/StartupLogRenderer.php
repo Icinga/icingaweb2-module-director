@@ -20,7 +20,7 @@ class StartupLogRenderer implements ValidHtml
     public function render()
     {
         $deployment = $this->deployment;
-        $log = Html::escapeForHtml($deployment->get('startup_log'));
+        $log = Html::escape($deployment->get('startup_log'));
         $lines = array();
         $severity = 'information';
         $sevPattern = '/^(debug|notice|information|warning|critical)\/(\w+)/';

@@ -3,19 +3,15 @@
 namespace dipl\Html;
 
 /**
- * Interface ValidHtml
- *
- * Implementations of this interface MUST guarantee, that the result of the
- * render() method gives valid UTF-8 encoded HTML5.
+ * Interface for HTML elements or primitives that promise to render valid UTF-8 encoded HTML5 with special characters
+ * converted to HTML entities
  */
 interface ValidHtml
 {
     /**
-     * Renders to  HTML
+     * Render to HTML
      *
-     * The result of this method is a valid UTF8-encoded HTML5 string.
-     *
-     * @return string
+     * @return  string  UTF-8 encoded HTML5 with special characters converted to HTML entities
      */
     public function render();
 }
