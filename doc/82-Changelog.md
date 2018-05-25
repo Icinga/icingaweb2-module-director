@@ -53,6 +53,8 @@ before switching to a new version.
 ### Icinga Configuration
 * FEATURE: support flapping settings for Icinga &gt;= 2.8.0 (#330)
 * FEATURE: include all itl packages in Linux Agent sample config (#1450)
+* FEATURE: it's now possible to blacklist inherited or applied Services on
+  single hosts (#907)
 
 1.4.3
 -----
