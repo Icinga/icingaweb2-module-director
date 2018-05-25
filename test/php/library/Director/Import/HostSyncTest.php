@@ -2,6 +2,7 @@
 
 namespace Tests\Icinga\Module\Director\IcingaConfig;
 
+use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Test\SyncTest;
 
@@ -53,6 +54,62 @@ class HostSyncTest extends SyncTest
         ));
 
         $this->assertFalse($this->sync->hasModifications(), 'Should not have modifications pending');
+    }
+
+    public function testSyncMultipleGroups()
+    {
+        $this->requireGroups(['SYNCTEST_groupa', 'SYNCTEST_groupb']);
+        $this->runImport([[
+        'host' => 'SYNCTEST_groups1',
+            'g1'   => 'SYNCTEST_groupa',
+            'g2'   => 'SYNCTEST_groupb'
+        ], [
+            'host' => 'SYNCTEST_groups2',
+            'g1'   => null,
+            'g2'   => 'SYNCTEST_groupb'
+        ]]);
+
+        $this->setUpProperty(array(
+            'source_expression' => '${host}',
+            'destination_field' => 'object_name',
+            'priority'          => 10,
+        ));
+        $this->setUpProperty(array(
+            'source_expression' => '${g1}',
+            'destination_field' => 'groups',
+            'priority'          => 12,
+        ));
+        $this->setUpProperty(array(
+            'source_expression' => '${g2}',
+            'destination_field' => 'groups',
+            'priority'          => 11,
+        ));
+
+        $this->assertTrue($this->sync->hasModifications(), 'Should have modifications pending');
+
+        $modifications = array();
+        /** @var IcingaObject $mod */
+        foreach ($this->sync->getExpectedModifications() as $mod) {
+            $name = $mod->object_name;
+            $modifications[$name] = $mod;
+
+            switch ($name) {
+                case 'SYNCTEST_groups1':
+                    $this->assertEquals([
+                        'SYNCTEST_groupa',
+                        'SYNCTEST_groupb',
+                    ], $mod->get('groups'));
+                    break;
+                case 'SYNCTEST_groups2':
+                    $this->assertEquals([
+                        'SYNCTEST_groupb',
+                    ], $mod->get('groups'));
+                    break;
+            }
+        }
+
+        $this->assertGreaterThan(0, $this->sync->apply(), 'Should successfully apply at least 1 update');
+        $this->assertFalse($this->sync->hasModifications(), 'Should not have modifications pending after sync');
     }
 
     public function testSyncFilteredData()
@@ -151,5 +208,43 @@ class HostSyncTest extends SyncTest
             $modifications,
             'SYNCTEST_filtered_in_unusedfield_propfilter should be modified'
         );
+    }
+
+    /**
+     * @param $names
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     */
+    protected function requireGroups($names)
+    {
+        foreach ($names as $name) {
+            if (! IcingaHostGroup::exists($name, $this->getDb())) {
+                IcingaHostGroup::create([
+                    'object_name' => $name,
+                    'object_type' => 'object',
+                ], $this->getDb())->store();
+            }
+        }
+    }
+
+    /**
+     * @param $names
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function removeGroups($names)
+    {
+        foreach ($names as $name) {
+            if (IcingaHostGroup::exists($name, $this->getDb())) {
+                IcingaHostGroup::load($name, $this->getDb())->delete();
+            }
+        }
+    }
+
+    public function tearDown()
+    {
+        $this->removeGroups(['SYNCTEST_groupa', 'SYNCTEST_groupb']);
+        parent::tearDown();
     }
 }
