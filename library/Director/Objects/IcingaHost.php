@@ -106,7 +106,7 @@ class IcingaHost extends IcingaObject
         if ($filter === null) {
             $filter = new PropertiesFilter();
         }
-        $realProperties = static::create()->listProperties();
+        $realProperties = array_merge(['templates'], static::create()->listProperties());
         sort($realProperties);
 
         if ($filter->match(PropertiesFilter::$HOST_PROPERTY, 'name')) {

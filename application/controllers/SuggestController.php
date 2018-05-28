@@ -234,7 +234,11 @@ class SuggestController extends ActionController
 
     protected function getFilterColumns($prefix, $keys)
     {
-        $all = IcingaService::enumProperties($this->db(), $prefix);
+        if ($prefix === 'host.') {
+            $all = IcingaHost::enumProperties($this->db(), $prefix);
+        } else {
+            $all = IcingaService::enumProperties($this->db(), $prefix);
+        }
         $res = [];
         foreach ($keys as $key) {
             if (array_key_exists($key, $all)) {
