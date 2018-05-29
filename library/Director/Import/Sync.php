@@ -618,7 +618,15 @@ class Sync
         Benchmark::measure('Ready to process objects');
         /** @var DbObject|IcingaObject $object */
         foreach ($newObjects as $key => $object) {
-            $this->processObject($key, $object);
+            try {
+                $this->processObject($key, $object);
+            } catch (Exception $e) {
+                if ($this->singleObjectsAreAllowedToFail()) {
+                    continue;
+                } else {
+                    throw $e;
+                }
+            }
         }
 
         Benchmark::measure('Modified objects are ready, applying purge strategy');
@@ -753,7 +761,17 @@ class Sync
 
                 if ($object->hasBeenModified()) {
                     $existing = $object->hasBeenLoadedFromDb();
-                    $object->store($db);
+
+                    try {
+                        $object->store($db);
+                    } catch (Exception $e) {
+                        if ($this->singleObjectsAreAllowedToFail()) {
+                            $failed++;
+                            continue;
+                        } else {
+                            throw $e;
+                        }
+                    }
 
                     if ($existing) {
                         $modified++;
@@ -816,5 +834,15 @@ class Sync
         }
 
         return $this;
+    }
+
+    /**
+     * Hint: I'm still unsure whether this should be allowed
+     *
+     * @return bool
+     */
+    protected function singleObjectsAreAllowedToFail()
+    {
+        return false;
     }
 }
