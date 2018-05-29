@@ -6,6 +6,7 @@ use Icinga\Application\Benchmark;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\SyncUtils;
@@ -19,7 +20,7 @@ class ImportSource extends DbObjectWithSettings
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                 => null,
         'source_name'        => null,
         'provider_class'     => null,
@@ -28,13 +29,83 @@ class ImportSource extends DbObjectWithSettings
         'last_error_message' => null,
         'last_attempt'       => null,
         'description'        => null,
-    );
+    ];
+
+    protected $stateProperties = [
+        'import_state',
+        'last_error_message',
+        'last_attempt',
+    ];
 
     protected $settingsTable = 'import_source_setting';
 
     protected $settingsRemoteId = 'source_id';
 
     private $rowModifiers;
+
+    /**
+     * @return \stdClass
+     */
+    public function export()
+    {
+        $plain = (object) $this->getProperties();
+        $plain->originalId = $plain->id;
+        unset($plain->id);
+
+        foreach ($this->stateProperties as $key) {
+            unset($plain->$key);
+        }
+
+        $plain->settings = (object) $this->getSettings();
+        $plain->modifiers = $this->exportRowModifiers();
+
+        return $plain;
+    }
+
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $id = $properties['originalId'];
+        unset($properties['originalId']);
+
+        if (static::existsWithNameAndId($properties['source_name'], $id, $db)) {
+            $object = static::loadWithAutoIncId($id, $db);
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->importPropertyModifiers($properties['modifiers']);
+        unset($properties['modifiers']);
+        $object->setProperties($properties);
+
+        return $object;
+    }
+
+    protected function importPropertyModifiers($modifiers)
+    {
+    }
+
+    protected static function existsWithNameAndId($name, $id, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+
+        return (string) $id === (string) $db->fetchOne(
+            $db->select()
+                ->from('import_source', 'id')
+                ->where('id = ?', $id)
+                ->where('name = ?', $name)
+        );
+    }
+
+    protected function exportRowModifiers()
+    {
+        $modifiers = [];
+        foreach ($this->fetchRowModifiers() as $modifier) {
+            $modifiers[] = $modifier->export();
+        }
+
+        return $modifiers;
+    }
 
     /**
      * @param bool $required
@@ -62,7 +133,7 @@ class ImportSource extends DbObjectWithSettings
 
         $db = $this->getDb();
         $query = $db->select()->from(
-            array('ir' => 'import_run'),
+            ['ir' => 'import_run'],
             'ir.id'
         )->where('ir.source_id = ?', $this->id)
         ->where('ir.start_time < ?', date('Y-m-d H:i:s', $timestamp))
@@ -119,6 +190,16 @@ class ImportSource extends DbObjectWithSettings
         return $this;
     }
 
+    public function getObjectName()
+    {
+        return $this->get('source_name');
+    }
+
+    public static function getKeyColumnName()
+    {
+        return 'source_name';
+    }
+
     protected function applyPropertyModifierToRow(PropertyModifierHook $modifier, $key, $row)
     {
         if ($modifier->requiresRow()) {
@@ -166,6 +247,9 @@ class ImportSource extends DbObjectWithSettings
         return count($this->getRowModifiers()) > 0;
     }
 
+    /**
+     * @return ImportRowModifier[]
+     */
     public function fetchRowModifiers()
     {
         $db = $this->getDb();
@@ -193,11 +277,11 @@ class ImportSource extends DbObjectWithSettings
 
     protected function prepareRowModifiers()
     {
-        $modifiers = array();
+        $modifiers = [];
 
         foreach ($this->fetchRowModifiers() as $mod) {
             if (! array_key_exists($mod->property_name, $modifiers)) {
-                $modifiers[$mod->property_name] = array();
+                $modifiers[$mod->property_name] = [];
             }
 
             $modifiers[$mod->property_name][] = $mod->getInstance();
@@ -208,7 +292,7 @@ class ImportSource extends DbObjectWithSettings
 
     public function listModifierTargetProperties()
     {
-        $list = array();
+        $list = [];
         foreach ($this->getRowModifiers() as $rowMods) {
             /** @var PropertyModifierHook $mod */
             foreach ($rowMods as $mod) {

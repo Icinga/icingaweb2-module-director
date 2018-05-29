@@ -50,6 +50,24 @@ class DirectorDatafield extends DbObjectWithSettings
         return $obj;
     }
 
+    public function export()
+    {
+        $plain = (object) $this->getProperties();
+        $plain->originalId = $plain->id;
+        unset($plain->id);
+        $plain->settings = (object) $this->getSettings();
+
+        if (property_exists($plain->settings, 'datalist_id')) {
+            $plain->settings->datalist = DirectorDatalist::loadWithAutoIncId(
+                $plain->settings->datalist_id,
+                $this->getConnection()
+            )->get('list_name');
+            unset($plain->settings->datalist_id);
+        }
+
+        return $plain;
+    }
+
     protected function setObject(IcingaObject $object)
     {
         $this->object = $object;

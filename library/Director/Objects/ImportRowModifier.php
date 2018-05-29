@@ -51,6 +51,19 @@ class ImportRowModifier extends DbObjectWithSettings
         return $this->hookInstance;
     }
 
+    /**
+     * @return \stdClass
+     */
+    public function export()
+    {
+        $properties =  $this->getProperties();
+        unset($properties['id']);
+        unset($properties['source_id']);
+        $properties['settings'] = (object) $this->getSettings();
+
+        return (object) $properties;
+    }
+
     protected function beforeStore()
     {
         if (! $this->hasBeenLoadedFromDb()) {
