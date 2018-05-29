@@ -18,8 +18,6 @@ class Link extends BaseHtmlElement
      * @param $url
      * @param null $urlParams
      * @param array|null $attributes
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function __construct($content, $url, $urlParams = null, array $attributes = null)
     {
@@ -36,8 +34,6 @@ class Link extends BaseHtmlElement
      * @param mixed $attributes
      *
      * @return static
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public static function create($content, $url, $urlParams = null, array $attributes = null)
     {
@@ -48,7 +44,6 @@ class Link extends BaseHtmlElement
     /**
      * @param $url
      * @param $urlParams
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function setUrl($url, $urlParams)
     {
@@ -71,7 +66,6 @@ class Link extends BaseHtmlElement
 
     /**
      * @return Attribute
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function getHrefAttribute()
     {

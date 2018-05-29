@@ -3,9 +3,9 @@
 namespace dipl\Web;
 
 use Icinga\Application\Icinga;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Url as WebUrl;
 use Icinga\Web\UrlParams;
+use InvalidArgumentException;
 
 /**
  * Class Url
@@ -26,10 +26,10 @@ class Url extends WebUrl
         }
 
         if (! is_string($url)) {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(sprintf(
                 'url "%s" is not a string',
                 $url
-            );
+            ));
         }
 
         $self = new static;

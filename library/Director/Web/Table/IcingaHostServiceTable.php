@@ -13,6 +13,7 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
     /** @var IcingaHost */
     protected $host;
 
+    /** @var IcingaHost */
     protected $inheritedBy;
 
     protected $searchColumns = [
@@ -51,9 +52,15 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
+        if ($row->blacklisted === 'y') {
+            $attributes = ['class' => 'strike-links'];
+        } else {
+            $attributes = null;
+        }
+
         return $this::row([
             $this->getServiceLink($row)
-        ]);
+        ], $attributes);
     }
 
     protected function getServiceLink($row)
@@ -95,9 +102,15 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
         ];
     }
 
+    /**
+     * @return \Zend_Db_Select
+     * @throws \Zend_Db_Select_Exception
+     */
     public function prepareQuery()
     {
-        return $this->db()->select()->from(
+        $db = $this->db();
+
+        $query = $db->select()->from(
             ['s' => 'icinga_service'],
             [
                 'id'          => 's.id',
@@ -114,5 +127,23 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
             's.host_id = ?',
             $this->host->get('id')
         )->order('s.object_name');
+
+        if ($this->inheritedBy) {
+            $query->joinLeft(
+                ['hsb' => 'icinga_host_service_blacklist'],
+                $db->quoteInto(
+                    's.id = hsb.service_id AND hsb.host_id = ?',
+                    $this->inheritedBy->get('id')
+                ),
+                []
+            );
+            $query->columns([
+                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
+            ]);
+        } else {
+            $query->columns(['blacklisted' => "('n')"]);
+        }
+
+        return $query;
     }
 }

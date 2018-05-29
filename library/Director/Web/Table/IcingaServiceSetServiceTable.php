@@ -81,8 +81,6 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     /**
      * @param $row
      * @return Link
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function getServiceLink($row)
     {
@@ -136,8 +134,6 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
     /**
      * @param HtmlElement $parent
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function addHostHeaderTo(HtmlElement $parent)
     {
@@ -180,7 +176,6 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
     /**
      * @return \Zend_Db_Select
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Zend_Db_Select_Exception
      */
     public function prepareQuery()
@@ -218,7 +213,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                 'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
             ]);
         } else {
-            $query->columns(['blacklisted' => "'n'"]);
+            $query->columns(['blacklisted' => "('n')"]);
         }
 
         return $query;

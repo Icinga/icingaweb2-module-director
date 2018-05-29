@@ -4,7 +4,6 @@ namespace dipl\Web\Table;
 
 use Icinga\Data\Db\DbConnection;
 use Icinga\Data\Filter\Filter;
-use Icinga\Exception\ProgrammingError;
 use dipl\Db\Zf1\FilterRenderer;
 use dipl\Db\Zf1\SelectPaginationAdapter;
 use dipl\Html\DeferredText;
@@ -12,6 +11,7 @@ use dipl\Html\Html;
 use dipl\Html\Link;
 use dipl\Web\Widget\ControlsAndContent;
 use dipl\Web\Url;
+use LogicException;
 use Zend_Db_Adapter_Abstract as DbAdapter;
 
 abstract class ZfQueryBasedTable extends QueryBasedTable
@@ -32,10 +32,10 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
             $this->connection = $db;
             $this->db = $db->getDbAdapter();
         } else {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Unable to deal with %s db class',
                 get_class($db)
-            );
+            ));
         }
     }
 

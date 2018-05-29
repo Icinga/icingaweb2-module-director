@@ -76,7 +76,6 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     /**
      * @return \Icinga\Data\SimpleQuery
-     * @throws \Icinga\Exception\IcingaException
      */
     public function prepareQuery()
     {
@@ -100,7 +99,6 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     /***
      * @return array
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function getAllApplyRules()
     {
@@ -116,7 +114,6 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     /**
      * @return array
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function fetchAllApplyRules()
     {
