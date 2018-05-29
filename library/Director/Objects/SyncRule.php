@@ -17,7 +17,7 @@ class SyncRule extends DbObject
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                 => null,
         'rule_name'          => null,
         'object_type'        => null,
@@ -28,7 +28,13 @@ class SyncRule extends DbObject
         'last_error_message' => null,
         'last_attempt'       => null,
         'description'        => null,
-    );
+    ];
+
+    protected $stateProperties = [
+        'import_state',
+        'last_error_message',
+        'last_attempt',
+    ];
 
     private $sync;
 
@@ -51,15 +57,15 @@ class SyncRule extends DbObject
     public function listInvolvedSourceIds()
     {
         if (! $this->hasBeenLoadedFromDb()) {
-            return array();
+            return [];
         }
 
         $db = $this->getDb();
         return array_map('intval', array_unique(
             $db->fetchCol(
                 $db->select()
-                   ->from(array('p' => 'sync_property'), 'p.source_id')
-                   ->join(array('s' => 'import_source'), 's.id = p.source_id', array())
+                   ->from(['p' => 'sync_property'], 'p.source_id')
+                   ->join(['s' => 'import_source'], 's.id = p.source_id', array())
                    ->where('rule_id = ?', $this->get('id'))
                    ->order('s.source_name')
             )
@@ -68,7 +74,7 @@ class SyncRule extends DbObject
 
     public function fetchInvolvedImportSources()
     {
-        $sources = array();
+        $sources = [];
 
         foreach ($this->listInvolvedSourceIds() as $sourceId) {
             $sources[$sourceId] = ImportSource::load($sourceId, $this->getConnection());
@@ -85,7 +91,7 @@ class SyncRule extends DbObject
 
         $db = $this->getDb();
         $query = $db->select()->from(
-            array('sr' => 'sync_run'),
+            ['sr' => 'sync_run'],
             'sr.start_time'
         )->where('sr.rule_id = ?', $this->get('id'))
         ->order('sr.start_time DESC')
@@ -102,7 +108,7 @@ class SyncRule extends DbObject
 
         $db = $this->getDb();
         $query = $db->select()->from(
-            array('sr' => 'sync_run'),
+            ['sr' => 'sync_run'],
             'sr.id'
         )->where('sr.rule_id = ?', $this->get('id'))
         ->order('sr.start_time DESC')
@@ -234,6 +240,40 @@ class SyncRule extends DbObject
         }
     }
 
+    public function export()
+    {
+        $plain = (object) $this->getProperties();
+        $plain->originalId = $plain->id;
+        unset($plain->id);
+
+        foreach ($this->stateProperties as $key) {
+            unset($plain->$key);
+        }
+        $plain->properties = $this->exportSyncProperties();
+
+        return $plain;
+    }
+
+    public function exportSyncProperties()
+    {
+        $all = [];
+        $db = $this->getDb();
+        $sourceNames = $db->fetchPairs(
+            $db->select()->from('import_source', ['id', 'source_name'])
+        );
+
+        foreach ($this->getSyncProperties() as $property) {
+            $properties = $property->getProperties();
+            $properties['source'] = $sourceNames[$properties['source_id']];
+            unset($properties['id']);
+            unset($properties['rule_id']);
+            unset($properties['source_id']);
+            $all[] = (object) $properties;
+        }
+
+        return $all;
+    }
+
     /**
      * Whether we have a combined key (e.g. services on hosts)
      *
@@ -345,7 +385,7 @@ class SyncRule extends DbObject
     public function getSyncProperties()
     {
         if (! $this->hasBeenLoadedFromDb()) {
-            return array();
+            return [];
         }
 
         if ($this->syncProperties === null) {
