@@ -51,7 +51,7 @@ class IcingaServiceTest extends BaseTestCase
     }
 
     /**
-     * @expectedException Icinga\Exception\ProgrammingError
+     * @expectedException \LogicException
      */
     public function testRefusesAssignRulesWhenNotBeingAnApply()
     {

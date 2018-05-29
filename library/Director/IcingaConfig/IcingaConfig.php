@@ -5,10 +5,7 @@ namespace Icinga\Module\Director\IcingaConfig;
 use Icinga\Application\Benchmark;
 use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
-use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
@@ -17,6 +14,9 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
+use InvalidArgumentException;
+use LogicException;
+use RuntimeException;
 
 class IcingaConfig
 {
@@ -28,9 +28,7 @@ class IcingaConfig
 
     protected $lastActivityChecksum;
 
-    /**
-     * @var \Zend_Db_Adapter_Abstract
-     */
+    /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
     protected $connection;
@@ -83,17 +81,17 @@ class IcingaConfig
         if ($this->isLegacy()) {
             return $this->deploymentModeV1;
         } else {
-            throw new ProgrammingError('There is no deployment mode for Icinga 2 config format!');
+            throw new LogicException('There is no deployment mode for Icinga 2 config format!');
         }
     }
 
     public function setConfigFormat($format)
     {
         if (! in_array($format, array('v1', 'v2'))) {
-            throw new ConfigurationError(
+            throw new InvalidArgumentException(sprintf(
                 'Only Icinga v1 and v2 config format is supported, got "%s"',
                 $format
-            );
+            ));
         }
 
         $this->configFormat = $format;
@@ -438,8 +436,6 @@ class IcingaConfig
     }
 
     /**
-     * @throws IcingaException
-     *
      * @return self
      */
     protected function generateFromDb()
@@ -453,7 +449,7 @@ class IcingaConfig
         ini_set('zend.enable_gc', 0);
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
-            throw new IcingaException(
+            throw new RuntimeException(
                 'Refusing to render the configuration, your DB layer corrupts binary data.'
                 . ' You might be affected by Zend Framework bug #655'
             );
@@ -754,10 +750,10 @@ apply Service for (title => params in host.vars["%s"]) {
         foreach (Hook::all('Director\\ShipConfigFiles') as $hook) {
             foreach ($hook->fetchFiles() as $filename => $file) {
                 if (array_key_exists($filename, $this->files)) {
-                    throw new ProgrammingError(
+                    throw new LogicException(sprintf(
                         'Cannot ship one file twice: %s',
                         $filename
-                    );
+                    ));
                 }
                 if ($file instanceof IcingaConfigFile) {
                     $this->files[$filename] = $file;

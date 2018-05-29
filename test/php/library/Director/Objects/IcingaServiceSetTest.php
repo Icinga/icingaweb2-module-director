@@ -107,7 +107,7 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\IcingaException
+     * @expectedException \RuntimeException
      */
     public function testCreatingSetWithoutType()
     {
@@ -118,9 +118,9 @@ class IcingaServiceSetTest extends IcingaObjectTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\ProgrammingError
+     * @expectedException \InvalidArgumentException
      */
-    public function testCreatingHostSetWithoutHost()
+    public function testCreatingServiceSetWithoutHost()
     {
         $set = IcingaServiceSet::create(array(
             'object_name' => '___TEST__set_BAD2',

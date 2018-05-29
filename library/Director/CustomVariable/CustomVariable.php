@@ -2,11 +2,12 @@
 
 namespace Icinga\Module\Director\CustomVariable;
 
-use Icinga\Exception\ProgrammingError;
+use Exception;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
-use Exception;
+use InvalidArgumentException;
+use LogicException;
 
 abstract class CustomVariable implements IcingaConfigRenderer
 {
@@ -97,16 +98,15 @@ abstract class CustomVariable implements IcingaConfigRenderer
 
     /**
      * @param bool $renderExpressions
-     * @throws ProgrammingError
      * @return string
      */
     public function toConfigString($renderExpressions = false)
     {
         // TODO: this should be an abstract method once we deprecate PHP < 5.3.9
-        throw new ProgrammingError(
+        throw new LogicException(sprintf(
             '%s has no toConfigString() implementation',
             get_class($this)
-        );
+        ));
     }
 
     public function flatten(array & $flat, $prefix)
@@ -236,7 +236,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
             // TODO: check for specific class/stdClass/interface?
             return new CustomVariableDictionary($key, $value);
         } else {
-            throw new ProgrammingError('WTF (%s): %s', $key, var_export($value, 1));
+            throw new LogicException(sprintf('WTF (%s): %s', $key, var_export($value, 1)));
         }
     }
 
@@ -250,14 +250,14 @@ abstract class CustomVariable implements IcingaConfigRenderer
                 $var = self::create($row->varname, json_decode($row->varvalue));
                 break;
             case 'expression':
-                throw new ProgrammingError(
+                throw new InvalidArgumentException(
                     'Icinga code expressions are not yet supported'
                 );
             default:
-                throw new ProgrammingError(
+                throw new InvalidArgumentException(sprintf(
                     '%s is not a supported custom variable format',
                     $row->format
-                );
+                ));
         }
         if (property_exists($row, 'checksum')) {
             $var->setChecksum($row->checksum);

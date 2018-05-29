@@ -425,7 +425,7 @@ class IcingaHostTest extends BaseTestCase
         $a->store();
         try {
             $b->store();
-        } catch (IcingaException $e) {
+        } catch (\RuntimeException $e) {
             $msg = $e->getMessage();
             $matchMysql = strpos(
                 $msg,

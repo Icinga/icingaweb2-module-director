@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
+use LogicException;
 
 /**
  * This class is required for historical reasons
@@ -15,10 +15,10 @@ class IcingaObjectLegacyAssignments
     public static function applyToObject(IcingaObject $object, $values)
     {
         if (! $object->supportsAssignments()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'I can only assign for applied objects, got %s',
                 $object->object_type
-            );
+            ));
         }
 
         if ($values === null) {
@@ -70,7 +70,7 @@ class IcingaObjectLegacyAssignments
 
     protected static function throwCompatError()
     {
-        throw new ProgrammingError(
+        throw new LogicException(
             'You ran into an unexpected compatibility issue. Please report'
             . ' this with details helping us to reproduce this to the'
             . ' Icinga project'

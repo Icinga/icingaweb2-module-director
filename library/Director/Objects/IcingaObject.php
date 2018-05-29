@@ -19,6 +19,8 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use InvalidArgumentException;
+use LogicException;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
@@ -448,7 +450,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      *
      * @param Filter|string $filter
      *
-     * @throws ProgrammingError
+     * @throws LogicException
      *
      * @return self
      */
@@ -461,11 +463,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $type = get_class($this);
             }
 
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'I can only assign for applied objects or objects with native'
                 . ' support for assigments, got %s',
                 $type
-            );
+            ));
         }
 
         // @codingStandardsIgnoreEnd
@@ -739,10 +741,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif ($value === '' || $value === null) {
             return null;
         } else {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(sprintf(
                 'Got invalid boolean: %s',
                 var_export($value, 1)
-            );
+            ));
         }
     }
 
@@ -1231,10 +1233,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertCustomVarsSupport()
     {
         if (! $this->supportsCustomVars()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no custom vars',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1243,10 +1245,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertGroupsSupport()
     {
         if (! $this->supportsGroups()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no groups',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1255,10 +1257,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertRangesSupport()
     {
         if (! $this->supportsRanges()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no ranges',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1267,10 +1269,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertImportsSupport()
     {
         if (! $this->supportsImports()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no imports',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1305,7 +1307,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     /**
      * @return bool
-     * @throws ProgrammingError
      */
     public function hasInitializedVars()
     {
@@ -1580,7 +1581,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif ($deploymentMode === 'masterless') {
             // no additional config
         } else {
-            throw new ProgrammingError('Unsupported deployment mode: %s' .$deploymentMode);
+            throw new LogicException(sprintf(
+                'Unsupported deployment mode: %s',
+                $deploymentMode
+            ));
         }
 
         $config->configFile(
@@ -2336,10 +2340,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return $this->get('object_name');
         } else {
             // TODO: replace with an exception once finished
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Trying to access "object_name" for an instance of "%s"',
                 get_class($this)
-            );
+            ));
         }
     }
 
@@ -2443,7 +2447,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @param $type
      * @param Db $db
      * @return IcingaObject[]
-     * @throws ProgrammingError
      */
     public static function loadAllExternalObjectsByType($type, Db $db)
     {
@@ -2452,10 +2455,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $dummy = $class::create();
 
         if (is_array($dummy->getKeyName())) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'There is no support for loading external objects of type "%s"',
                 $type
-            );
+            ));
         } else {
             $query = $db->getDbAdapter()
                 ->select()
@@ -2593,7 +2596,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
                         $k = $relKey;
                     } else {
-                        throw new ProgrammingError('No such relation: %s', $relKey);
+                        throw new LogicException(sprintf(
+                            'No such relation: %s',
+                            $relKey
+                        ));
                     }
                 }
             }

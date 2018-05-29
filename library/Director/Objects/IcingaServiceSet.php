@@ -3,10 +3,9 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
-use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use InvalidArgumentException;
 
 class IcingaServiceSet extends IcingaObject
 {
@@ -55,7 +54,10 @@ class IcingaServiceSet extends IcingaObject
                 $this->set('object_name', $keyComponents[0]);
                 $this->set('object_type', 'template');
             } else {
-                throw new IcingaException('Can not parse key: %s', $key);
+                throw new InvalidArgumentException(sprintf(
+                    'Can not parse key: %s',
+                    $key
+                ));
             }
         } else {
             return parent::setKey($key);
@@ -287,7 +289,7 @@ class IcingaServiceSet extends IcingaObject
         $name = $this->getObjectName();
 
         if ($this->isObject() && $this->get('host_id') === null) {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(
                 'A Service Set cannot be an object with no related host'
             );
         }

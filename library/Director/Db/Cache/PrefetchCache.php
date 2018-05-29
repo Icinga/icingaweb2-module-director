@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Db\Cache;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use Icinga\Module\Director\Resolver\TemplateTree;
+use LogicException;
 
 /**
  * Central prefetch cache
@@ -45,14 +45,14 @@ class PrefetchCache
     }
 
     /**
-     * @throws ProgrammingError
+     * @throws LogicException
      *
      * @return self
      */
     public static function instance()
     {
         if (static::$instance === null) {
-            throw new ProgrammingError('Prefetch cache has not been loaded');
+            throw new LogicException('Prefetch cache has not been loaded');
         }
 
         return static::$instance;
