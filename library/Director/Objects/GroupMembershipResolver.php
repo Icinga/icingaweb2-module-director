@@ -4,8 +4,8 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
+use LogicException;
 use Zend_Db_Select as ZfSelect;
 
 /**
@@ -52,6 +52,7 @@ abstract class GroupMembershipResolver
 
     /**
      * @return $this
+     * @throws \Zend_Db_Adapter_Exception
      */
     public function refreshAllMappings()
     {
@@ -61,6 +62,7 @@ abstract class GroupMembershipResolver
     /**
      * @param bool $force
      * @return $this
+     * @throws \Zend_Db_Adapter_Exception
      */
     public function refreshDb($force = false)
     {
@@ -100,11 +102,11 @@ abstract class GroupMembershipResolver
     public function getType()
     {
         if ($this->type === null) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 '"type" is required when extending %s, got none in %s',
                 __CLASS__,
                 get_class($this)
-            );
+            ));
         }
 
         return $this->type;
@@ -126,16 +128,16 @@ abstract class GroupMembershipResolver
     {
         // Hint: cannot use hasBeenLoadedFromDB, as it is false in onStore()
         //       for new objects
-        if (! $id = $object->get('id')) {
+        if (null === ($id = $object->get('id'))) {
             return $this;
         }
         // Disabling for now, how should this work?
         // $this->assertBeenLoadedFromDb($object);
         if ($this->objects === null) {
-            $this->objects = array();
+            $this->objects = [];
         }
 
-        $this->objects[$object->get('id')] = $object;
+        $this->objects[$id] = $object;
         return $this;
     }
 
@@ -238,6 +240,9 @@ abstract class GroupMembershipResolver
         return $this;
     }
 
+    /**
+     * @throws \Zend_Db_Adapter_Exception
+     */
     protected function storeNewMappings()
     {
         $diff = $this->getDifference($this->newMappings, $this->existingMappings);
@@ -566,7 +571,7 @@ abstract class GroupMembershipResolver
     protected function assertBeenLoadedFromDb(IcingaObject $object)
     {
         if (! is_int($object->get('id')) && ! ctype_digit($object->get('id'))) {
-            throw new ProgrammingError(
+            throw new LogicException(
                 'Group resolver does not support unstored objects'
             );
         }
