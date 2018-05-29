@@ -6,6 +6,9 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaUserForm extends DirectorObjectForm
 {
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->addObjectTypeElement();
@@ -46,11 +49,16 @@ class IcingaUserForm extends DirectorObjectForm
              ->addEnableNotificationsElement()
              ->addDisabledElement()
              ->addZoneElements()
+             ->addPeriodElement()
              ->addEventFilterElements()
              ->groupMainProperties()
              ->setButtons();
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addZoneElements()
     {
         if (! $this->isTemplate()) {
@@ -71,6 +79,9 @@ class IcingaUserForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     protected function addEnableNotificationsElement()
     {
         $this->optionalBoolean(
@@ -82,6 +93,10 @@ class IcingaUserForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addGroupsElement()
     {
         $groups = $this->enumUsergroups();
@@ -104,6 +119,10 @@ class IcingaUserForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addDisplayNameElement()
     {
         if ($this->isTemplate()) {
@@ -121,6 +140,36 @@ class IcingaUserForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
+    protected function addPeriodElement()
+    {
+        $periods = $this->db->enumTimeperiods();
+        if (empty($periods)) {
+            return $this;
+        }
+
+        $this->addElement(
+            'select',
+            'period_id',
+            array(
+                'label' => $this->translate('Time period'),
+                'description' => $this->translate(
+                    'The name of a time period which determines when notifications'
+                    . ' to this User should be triggered. Not set by default.'
+                ),
+                'multiOptions' => $this->optionalEnum($periods),
+            )
+        );
+
+        return $this;
+    }
+
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function groupObjectDefinition()
     {
         $elements = array(
@@ -131,6 +180,7 @@ class IcingaUserForm extends DirectorObjectForm
             'groups',
             'email',
             'pager',
+            'period_id',
             'enable_notifications',
             'disabled',
         );
@@ -145,6 +195,9 @@ class IcingaUserForm extends DirectorObjectForm
         ));
     }
 
+    /**
+     * @return array
+     */
     protected function enumUsergroups()
     {
         $db = $this->db->getDbAdapter();
