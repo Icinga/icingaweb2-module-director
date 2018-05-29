@@ -150,6 +150,13 @@ class CoreApi implements DeploymentApiInterface
 
     public function checkHostAndWaitForResult($host, $timeout = 10)
     {
+        $object = $this->getObject($host, 'hosts');
+        if (isset($object->attrs->last_check_result)) {
+            $oldOutput = $object->attrs->last_check_result->output;
+        } else {
+            $oldOutput = '';
+        }
+
         $now = microtime(true);
         $this->checkHostNow($host);
 
@@ -158,7 +165,7 @@ class CoreApi implements DeploymentApiInterface
                 $object = $this->getObject($host, 'hosts');
                 if (isset($object->attrs->last_check_result)) {
                     $res = $object->attrs->last_check_result;
-                    if ($res->execution_start > $now) {
+                    if ($res->execution_start > $now || $res->output !== $oldOutput) {
                         return $res;
                     }
                 } else {
@@ -175,7 +182,7 @@ class CoreApi implements DeploymentApiInterface
                 break;
             }
 
-            usleep(150000);
+            usleep(50000);
         }
 
         return false;
