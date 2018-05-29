@@ -55,9 +55,12 @@ class PropertyModifierJsonDecode extends PropertyModifierHook
         return $decoded;
     }
 
-    // TODO: just return json_last_error_msg() for PHP >= 5.5.0
     protected function getLastJsonError()
     {
+         if ((PHP_VERSION > 5.5)) {
+            return json_last_error_msg();
+        }
+        
         switch (json_last_error()) {
             case JSON_ERROR_DEPTH:
                 return 'The maximum stack depth has been exceeded';
