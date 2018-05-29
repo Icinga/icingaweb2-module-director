@@ -23,22 +23,6 @@ class DirectorDatalistEntry extends DbObject
     );
 
     /**
-     * @param DirectorDatalist $list
-     * @return static[]
-     * @throws IcingaException
-     */
-    public static function loadAllForList(DirectorDatalist $list)
-    {
-        $query = $list->getDb()
-            ->select()
-            ->from('director_datalist_entry')
-            ->where('list_id = ?', $list->get('id'))
-            ->order('entry_name ASC');
-
-        return static::loadAll($list->getConnection(), $query, 'entry_name');
-    }
-
-    /**
      * @param $roles
      * @throws IcingaException
      * @codingStandardsIgnoreStart

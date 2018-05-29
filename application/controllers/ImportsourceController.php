@@ -30,10 +30,6 @@ class ImportsourceController extends ActionController
     public function indexAction()
     {
         $source = ImportSource::load($this->params->getRequired('id'), $this->db());
-        if ($this->params->get('format') === 'json') {
-            $this->sendJson($this->getResponse());
-            return;
-        }
         $this->addTitle(
             $this->translate('Import source: %s'),
             $source->get('source_name')

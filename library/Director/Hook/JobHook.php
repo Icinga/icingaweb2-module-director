@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Hook;
 
+use Icinga\Application\Logger;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -50,11 +51,6 @@ abstract class JobHook
         }
 
         return $class;
-    }
-
-    public function exportSettings()
-    {
-        return $this->jobDefinition->getSettings();
     }
 
     public static function getSuggestedRunInterval(QuickForm $form)

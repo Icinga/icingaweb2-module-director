@@ -17,23 +17,4 @@ class DirectorDatalist extends DbObject
         'list_name'     => null,
         'owner'         => null
     );
-
-    public function export()
-    {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-
-        $plain->entries = [];
-        $entries = DirectorDatalistEntry::loadAllForList($this);
-        foreach ($entries as $key => $entry) {
-            $plainEntry = (object) $entry->getProperties();
-            unset($plainEntry->id);
-            unset($plainEntry->list_id);
-
-            $plain->entries[] = $plainEntry;
-        }
-
-        return $plain;
-    }
 }

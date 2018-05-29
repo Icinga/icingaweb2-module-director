@@ -28,30 +28,6 @@ class IcingaTemplateChoice extends IcingaObject
         return substr(substr($this->table, 0, -16), 7);
     }
 
-    public function export()
-    {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
-        $requiredId = $plain->required_template_id;
-        unset($plain->required_template_id);
-        if ($requiredId) {
-            $db = $this->getDb();
-            $query = $db->select()->from(
-                ['o' => $this->getObjectTableName()],
-                ['o.id', 'o.object_name']
-            )->where("o.object_type = 'template'")
-                ->where('o.template_choice_id = ?', $this->get('id'))
-                ->order('o.object_name');
-
-            return $db->fetchPairs($query);
-        }
-
-        $plain->members = array_values($this->getMembers());
-
-        return $plain;
-    }
-
     public function isMainChoice()
     {
         return $this->hasBeenLoadedFromDb()
@@ -158,9 +134,7 @@ class IcingaTemplateChoice extends IcingaObject
                 ['o' => $this->getObjectTableName()],
                 ['o.id', 'o.object_name']
             )->where("o.object_type = 'template'")
-             ->where('o.template_choice_id = ?', $this->get('id'))
-             ->order('o.object_name');
-
+             ->where('o.template_choice_id = ?', $this->get('id'));
             return $db->fetchPairs($query);
         } else {
             return [];

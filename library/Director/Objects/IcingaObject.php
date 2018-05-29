@@ -2332,13 +2332,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getObjectName()
     {
-        $property = static::getKeyColumnName();
-        if ($this->hasProperty($property)) {
-            return $this->get($property);
+        if ($this->hasProperty('object_name')) {
+            return $this->get('object_name');
         } else {
+            // TODO: replace with an exception once finished
             throw new ProgrammingError(
-                'Trying to access "%s" for an instance of "%s"',
-                $property,
+                'Trying to access "object_name" for an instance of "%s"',
                 get_class($this)
             );
         }
@@ -2349,10 +2348,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // allow for icinga_host and host
         $type = lcfirst(preg_replace('/^icinga_/', '', $type));
 
-        // Hint: Sync/Import are not IcingaObjects, this should be reconsidered:
-        if (strpos($type, 'import') === 0 || strpos($type, 'sync') === 0) {
-            $prefix = '';
-        } elseif (strpos($type, 'data') === false) {
+        if (strpos($type, 'data') === false) {
             $prefix = 'Icinga';
         } else {
             $prefix = 'Director';
@@ -2422,32 +2418,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $class::exists($id, $db);
     }
 
-    public static function getKeyColumnName()
-    {
-        return 'object_name';
-    }
-
-    public static function loadAllByType($type, Db $db, $query = null, $keyColumn = null)
+    public static function loadAllByType($type, Db $db, $query = null, $keyColumn = 'object_name')
     {
         /** @var DbObject $class */
         $class = self::classByType($type);
 
-        if ($keyColumn === null) {
-            if (method_exists($class, 'getKeyColumnName')) {
-                $keyColumn = $class::getKeyColumnName();
-            }
-        }
-
         if (is_array($class::create()->getKeyName())) {
             return $class::loadAll($db, $query);
         } else {
-            if (PrefetchCache::shouldBeUsed()
-                && $query === null
-                && $keyColumn === static::getKeyColumnName()
-            ) {
+            if (PrefetchCache::shouldBeUsed() && $query === null && $keyColumn === 'object_name') {
                 $result = array();
                 foreach ($class::prefetchAll($db) as $row) {
-                    $result[$row->$keyColumn] = $row;
+                    $result[$row->object_name] = $row;
                 }
 
                 return $result;

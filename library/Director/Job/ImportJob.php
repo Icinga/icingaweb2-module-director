@@ -22,24 +22,6 @@ class ImportJob extends JobHook
         }
     }
 
-    public function exportSettings()
-    {
-        $settings = parent::exportSettings();
-        if (array_key_exists('source_id', $settings)) {
-            $id = $settings['source_id'];
-            if ($id !== '__ALL__') {
-                $settings['source'] = ImportSource::loadWithAutoIncId(
-                    $id,
-                    $this->db()
-                )->get('source_name');
-            }
-
-            unset($settings['source_id']);
-        }
-
-        return $settings;
-    }
-
     protected function runForSource(ImportSource $source)
     {
         if ($this->getSetting('run_import') === 'y') {

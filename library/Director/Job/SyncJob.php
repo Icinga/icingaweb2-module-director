@@ -24,20 +24,6 @@ class SyncJob extends JobHook
         }
     }
 
-    public function exportSettings()
-    {
-        $settings = [
-            'apply_changes' => $this->getSetting('apply_changes') === 'y'
-        ];
-        $id = $this->getSetting('rule_id');
-        if ($id !== '__ALL__') {
-            $settings['rule'] = SyncRule::load((int) $id, $this->db())
-                ->get('rule_name');
-        }
-
-        return $settings;
-    }
-
     protected function runForRule(SyncRule $rule)
     {
         if ($this->getSetting('apply_changes') === 'y') {
