@@ -1116,6 +1116,10 @@ abstract class DirectorObjectForm extends DirectorForm
      */
     protected function addChoices($type)
     {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
         $connection = $this->getDb();
         $choiceType = 'TemplateChoice' . ucfirst($type);
         $choices = IcingaObject::loadAllByType($choiceType, $connection);
