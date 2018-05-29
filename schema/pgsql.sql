@@ -1417,7 +1417,7 @@ CREATE TABLE import_source (
   id serial,
   source_name character varying(64) NOT NULL,
   key_column character varying(64) NOT NULL,
-  provider_class character varying(72) NOT NULL,
+  provider_class character varying(128) NOT NULL,
   import_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
@@ -1448,7 +1448,7 @@ CREATE TABLE import_row_modifier (
   source_id integer NOT NULL,
   property_name character varying(255) NOT NULL,
   target_property character varying(255) DEFAULT NULL,
-  provider_class character varying(72) NOT NULL,
+  provider_class character varying(128) NOT NULL,
   priority integer NOT NULL,
   description text DEFAULT NULL,
   PRIMARY KEY (id),
@@ -1981,4 +1981,4 @@ COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (147, NOW());
+  VALUES (148, NOW());

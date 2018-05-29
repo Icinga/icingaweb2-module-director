@@ -1273,7 +1273,7 @@ CREATE TABLE import_source (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_name VARCHAR(64) NOT NULL,
   key_column VARCHAR(64) NOT NULL,
-  provider_class VARCHAR(72) NOT NULL,
+  provider_class VARCHAR(128) NOT NULL,
   import_state ENUM(
     'unknown',
     'in-sync',
@@ -1304,7 +1304,7 @@ CREATE TABLE import_row_modifier (
   source_id INT(10) UNSIGNED NOT NULL,
   property_name VARCHAR(255) NOT NULL,
   target_property VARCHAR(255) DEFAULT NULL,
-  provider_class VARCHAR(72) NOT NULL,
+  provider_class VARCHAR(128) NOT NULL,
   priority SMALLINT UNSIGNED NOT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
@@ -1686,4 +1686,4 @@ CREATE TABLE icinga_dependency_states_set (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (147, NOW());
+  VALUES (148, NOW());
