@@ -87,6 +87,18 @@ class AssignRendererTest extends BaseTestCase
         );
     }
 
+    public function testWhetherSlashesAreNotEscaped()
+    {
+        $string = 'host.name=' . json_encode('a/b');
+
+        $expected = 'assign where host.name == "a/b"';
+
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
     protected function renderer($string)
     {
         return AssignRenderer::forFilter(Filter::fromQueryString($string));
