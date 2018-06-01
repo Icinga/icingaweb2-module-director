@@ -15,7 +15,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
 
     protected $type = 'CheckCommand';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                    => null,
         'object_name'           => null,
         'object_type'           => null,
@@ -24,7 +24,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
         'command'               => null,
         'timeout'               => null,
         'zone_id'               => null,
-    );
+    ];
 
     protected $supportsCustomVars = true;
 
@@ -34,17 +34,17 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
 
     protected $supportedInLegacy = true;
 
-    protected $intervalProperties = array(
+    protected $intervalProperties = [
         'timeout' => 'timeout',
-    );
+    ];
 
-    protected $relations = array(
-        'zone'             => 'IcingaZone',
-    );
+    protected $relations = [
+        'zone' => 'IcingaZone',
+    ];
 
     protected static $pluginDir;
 
-    protected $hiddenExecuteTemplates = array(
+    protected $hiddenExecuteTemplates = [
         'PluginCheck'        => 'plugin-check-command',
         'PluginNotification' => 'plugin-notification-command',
         'PluginEvent'        => 'plugin-event-command',
@@ -56,7 +56,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
         'IdoCheck'         => 'ido-check-command',
         'RandomCheck'      => 'random-check-command',
         'CrlCheck'         => 'clr-check-command',
-    );
+    ];
 
     /**
      * Render the 'medhods_execute' property as 'execute'
@@ -76,10 +76,10 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
 
     protected function renderObjectHeader()
     {
-        if ($this->methods_execute) {
+        if ($execute = $this->get('methods_execute')) {
             $itlImport = sprintf(
                 '    import "%s"' . "\n",
-                $this->hiddenExecuteTemplates[$this->methods_execute]
+                $this->hiddenExecuteTemplates[$execute]
             );
         } else {
             $itlImport = '';
@@ -95,6 +95,10 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
         }
     }
 
+    /**
+     * @param $type
+     * @return string
+     */
     protected function renderObjectHeaderWithType($type)
     {
         return sprintf(
@@ -112,7 +116,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
         } elseif (is_object($value)) {
             // {  type => Function } -> really??
             return null;
-            return $value;
+            // return $value;
         }
 
         if (self::$pluginDir !== null) {
@@ -150,6 +154,10 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
         return true;
     }
 
+    /**
+     * @return string
+     * @throws \Zend_Db_Select_Exception
+     */
     public function countDirectUses()
     {
         $db = $this->getDb();
@@ -180,6 +188,10 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
         ));
     }
 
+    /**
+     * @return bool
+     * @throws \Zend_Db_Select_Exception
+     */
     public function isInUse()
     {
         return $this->countDirectUses() > 0;
@@ -187,7 +199,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
 
     protected function renderCommand()
     {
-        $command = $this->command;
+        $command = $this->get('command');
         $prefix = '';
         if (preg_match('~^([A-Z][A-Za-z0-9_]+\s\+\s)(.+?)$~', $command, $m)) {
             $prefix  = $m[1];
@@ -206,7 +218,8 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
     {
          return $path[0] === '/'
             || $path[0] === '\\'
-            || preg_match('/^[A-Za-z]:\\\/', substr($path, 0, 3));
+            || preg_match('/^[A-Za-z]:\\\/', substr($path, 0, 3))
+            || preg_match('/^%[A-Z][A-Za-z0-9\(\)-]*%/', $path);
     }
 
     public static function setPluginDir($pluginDir)
@@ -222,7 +235,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
 
     protected function renderLegacyCommand()
     {
-        $command = $this->command;
+        $command = $this->get('command');
         if (preg_match('~^(\$USER\d+\$/?)(.+)$~', $command)) {
             // should be fine, since the user decided to use a macro
         } elseif (! $this->isAbsolutePath($command)) {

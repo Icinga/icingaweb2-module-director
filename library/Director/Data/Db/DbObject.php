@@ -536,7 +536,7 @@ abstract class DbObject
      *
      * // TODO: may conflict with ->id
      *
-     * @return string
+     * @return string|array
      */
     public function getId()
     {
@@ -549,6 +549,7 @@ abstract class DbObject
                 }
                 $id[$key] = $this->properties[$key];
             }
+
             return $id;
         } else {
             if (isset($this->properties[$this->keyName])) {
