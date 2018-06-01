@@ -888,30 +888,14 @@ form dd.active li.active input.related-action[type='submit'] {
 
 form {
   p.description {
-    color: inherit;
+    color: @gray;
     font-style: normal;
-    position: absolute;
-    bottom: 1em;
-    width: 96%;
-    max-width: unset;
-    margin-left: 13em;
-    max-height: 12em;
-    overflow-x: auto;
-    background: @tr-active-color;
-    border: 1px solid @icinga-blue;
-    border-radius: 0.5em;
-    font-size: 1.2em;
-    right: 2%;
-    color: @icinga-blue;
-    padding-left: 3em;
-    display: none;
-    z-index: 100;
+    padding: 0.5em;
   }
 
   p.description:before {
-    content: '\e881';
+    content: '\e85b';
     font-family: 'ifont';
-    font-size: 1.5em;
     color: @icinga-blue;
     position: absolute;
     margin-left: -1.5em;
