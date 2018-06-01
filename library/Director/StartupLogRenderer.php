@@ -31,6 +31,15 @@ class StartupLogRenderer implements ValidHtml
         $markReplace = '        ^';
 
         foreach (preg_split('/\n/', $log) as $line) {
+            if (preg_match('/^\[([\d\s\:\+\-]+)\]\s/', $line, $m)) {
+                $time = $m[1];
+                // TODO: we might use new DateTime($time) and show a special "timeAgo"
+                //       format - but for now this should suffice.
+                $line = substr($line, strpos($line, ']') + 2);
+            } else {
+                $time = null;
+            }
+
             if (preg_match($sevPattern, $line, $m)) {
                 $severity = $m[1];
                 $line = preg_replace(
@@ -70,7 +79,11 @@ class StartupLogRenderer implements ValidHtml
                 );
             }
 
-            $lines[] .= $line;
+            if ($time === null) {
+                $lines[] .= $line;
+            } else {
+                $lines[] .= "[$time] $line";
+            }
         }
         return implode("\n", $lines);
     }
