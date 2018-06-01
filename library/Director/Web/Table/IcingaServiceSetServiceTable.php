@@ -209,7 +209,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                     $this->affectedHost->get('id')
                 ),
                 []
-            )->group('s.id')->columns([
+            )->columns([
                 'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
             ]);
         } else {
