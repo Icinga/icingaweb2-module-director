@@ -533,25 +533,28 @@ globals.directorWarnOnceForThresholds = function() {
 
         return sprintf(
             '
-const DirectorOverrideVars = "%s"
-const DirectorOverrideTemplate = "%s"
+if (! globals["DirectorOverrideTemplate"]) {
+  const DirectorOverrideVars = "%s"
+  const DirectorOverrideTemplate = "%s"
 
-template Service DirectorOverrideTemplate {
-  /**
-   * Seems that host is missing when used in a service object, works fine for
-   * apply rules
-   */
-  if (! host) {
-    var host = get_host(host_name)
-  }
+  template Service DirectorOverrideTemplate ignore_on_error {
+    /**
+     * Seems that host is missing when used in a service object, works fine for
+     * apply rules
+     */
+    if (! host) {
+      var host = get_host(host_name)
+    }
 
-  if (vars) {
-    vars += host.vars[DirectorOverrideVars][name]
-  } else {
-    vars = host.vars[DirectorOverrideVars][name]
+    if (vars) {
+      vars += host.vars[DirectorOverrideVars][name]
+    } else {
+      vars = host.vars[DirectorOverrideVars][name]
+    }
   }
 }
 ',
+            $settings->override_services_templatename,
             $settings->override_services_varname,
             $settings->override_services_templatename
         );

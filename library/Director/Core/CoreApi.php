@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Core;
 
 use Exception;
-use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -11,11 +10,13 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaZone;
+use RuntimeException;
 
 class CoreApi implements DeploymentApiInterface
 {
     protected $client;
 
+    /** @var Db */
     protected $db;
 
     public function __construct(RestApiClient $client)
@@ -30,11 +31,9 @@ class CoreApi implements DeploymentApiInterface
         return $this;
     }
 
-    public function getObjects($name, $pluraltype, $attrs = array(), $ignorePackage = null)
+    public function getObjects($pluralType, $attrs = array(), $ignorePackage = null)
     {
-        $name = strtolower($name);
-        $params = (object) array(
-        );
+        $params = (object) [];
         if ($ignorePackage) {
             $params->filter = 'obj.package!="' . $ignorePackage . '"';
         }
@@ -44,7 +43,7 @@ class CoreApi implements DeploymentApiInterface
         }
 
         return $this->client->get(
-            'objects/' . urlencode(strtolower($pluraltype)),
+            'objects/' . urlencode(strtolower($pluralType)),
             $params
         )->getResult('name');
     }
@@ -173,10 +172,10 @@ class CoreApi implements DeploymentApiInterface
                 }
             } catch (Exception $e) {
                 // Unable to fetch the requested object
-                throw new IcingaException(
+                throw new RuntimeException(sprintf(
                     'Unable to fetch the requested host "%s"',
                     $host
-                );
+                ));
             }
             if (microtime(true) > ($now + $timeout)) {
                 break;
@@ -206,11 +205,11 @@ class CoreApi implements DeploymentApiInterface
                 }
             } catch (Exception $e) {
                 // Unable to fetch the requested object
-                throw new IcingaException(
+                throw new RuntimeException(sprintf(
                     'Unable to fetch the requested service "%s" on "%s"',
                     $service,
                     $host
-                );
+                ));
             }
             if (microtime(true) > ($now + $timeout)) {
                 break;
@@ -245,10 +244,10 @@ class CoreApi implements DeploymentApiInterface
     protected function assertRuntimeCreationSupportFor(IcingaObject $object)
     {
         if (!$this->supportsRuntimeCreationFor($object)) {
-            throw new IcingaException(
+            throw new RuntimeException(sprintf(
                 'Object creation at runtime is not supported for "%s"',
                 $object->getShortTableName()
-            );
+            ));
         }
     }
 
@@ -344,14 +343,19 @@ constants
         return array_keys($result);
     }
 
-    public function getModules()
+    public function getPackages()
     {
         return $this->client->get('config/packages')->getResult('name');
     }
 
     public function getActiveStageName()
     {
-        return current($this->listModuleStages('director', true));
+        return current($this->listPackageStages($this->getPackageName(), true));
+    }
+
+    protected function getPackageName()
+    {
+        return $this->db->settings()->get('icinga_package_name');
     }
 
     public function getActiveChecksum(Db $conn)
@@ -370,7 +374,7 @@ constants
         return $db->fetchOne($query);
     }
 
-    protected function getDirectorObjects($type, $single, $plural, $map)
+    protected function getDirectorObjects($type, $plural, $map)
     {
         $attrs = array_merge(
             array_keys($map),
@@ -378,7 +382,7 @@ constants
         );
 
         $objects = array();
-        $result  = $this->getObjects($single, $plural, $attrs, 'director');
+        $result  = $this->getObjects($plural, $attrs, $this->getPackageName());
         foreach ($result as $name => $row) {
             $attrs = $row->attrs;
 
@@ -404,25 +408,25 @@ constants
      */
     public function getZoneObjects()
     {
-        return $this->getDirectorObjects('Zone', 'Zone', 'zones', array(
+        return $this->getDirectorObjects('Zone', 'zones', [
             'parent' => 'parent',
             'global' => 'is_global',
-        ));
+        ]);
     }
 
     public function getUserObjects()
     {
-        return $this->getDirectorObjects('User', 'User', 'users', array(
+        return $this->getDirectorObjects('User', 'users', [
             'display_name' => 'display_name',
             'email'        => 'email',
             'groups'       => 'groups',
             'vars'         => 'vars',
-        ));
+        ]);
     }
 
     protected function buildEndpointZoneMap()
     {
-        $zones = $this->getObjects('zone', 'zones', $attrs = array('endpoints'), 'director');
+        $zones = $this->getObjects('zones', ['endpoints'], $this->getPackageName());
         $zoneMap = array();
 
         foreach ($zones as $name => $zone) {
@@ -440,11 +444,11 @@ constants
     public function getEndpointObjects()
     {
         $zoneMap = $this->buildEndpointZoneMap();
-        $objects = $this->getDirectorObjects('Endpoint', 'Endpoint', 'endpoints', array(
+        $objects = $this->getDirectorObjects('Endpoint', 'endpoints', [
             'host'         => 'host',
             'port'         => 'port',
             'log_duration' => 'log_duration',
-        ));
+        ]);
 
         foreach ($objects as $object) {
             $name = $object->object_name;
@@ -458,7 +462,7 @@ constants
 
     public function getHostObjects()
     {
-        return $this->getDirectorObjects('Host', 'Host', 'hosts', array(
+        return $this->getDirectorObjects('Host', 'hosts', [
             'display_name'          => 'display_name',
             'address'               => 'address',
             'address6'              => 'address6',
@@ -486,21 +490,21 @@ constants
             'action_url'            => 'action_url',
             'icon_image'            => 'icon_image',
             'icon_image_alt'        => 'icon_image_alt',
-        ));
+        ]);
     }
 
     public function getHostGroupObjects()
     {
-        return $this->getDirectorObjects('HostGroup', 'HostGroup', 'hostgroups', array(
+        return $this->getDirectorObjects('HostGroup', 'hostgroups', [
             'display_name' => 'display_name',
-        ));
+        ]);
     }
 
     public function getUserGroupObjects()
     {
-        return $this->getDirectorObjects('UserGroup', 'UserGroup', 'usergroups', array(
+        return $this->getDirectorObjects('UserGroup', 'usergroups', [
             'display_name' => 'display_name',
-        ));
+        ]);
     }
 
     /**
@@ -534,13 +538,13 @@ constants
     {
         IcingaCommand::setPluginDir($this->getConstant('PluginDir'));
 
-        $objects = $this->getDirectorObjects('Command', "${type}Command", "${type}Commands", array(
+        $objects = $this->getDirectorObjects('Command', "${type}Commands", [
             'arguments' => 'arguments',
             // 'env'      => 'env',
             'timeout'   => 'timeout',
             'command'   => 'command',
-            'vars'      => 'vars'
-        ));
+            'vars'      => 'vars',
+        ]);
         foreach ($objects as $obj) {
             $obj->methods_execute = "Plugin$type";
         }
@@ -548,15 +552,15 @@ constants
         return $objects;
     }
 
-    public function listModuleStages($name, $active = null)
+    public function listPackageStages($name, $active = null)
     {
-        $modules = $this->getModules();
+        $packages = $this->getPackages();
         $found = array();
 
-        if (array_key_exists($name, $modules)) {
-            $module = $modules[$name];
-            $current = $module->{'active-stage'};
-            foreach ($module->stages as $stage) {
+        if (array_key_exists($name, $packages)) {
+            $package = $packages[$name];
+            $current = $package->{'active-stage'};
+            foreach ($package->stages as $stage) {
                 if ($active === null) {
                     $found[] = $stage;
                 } elseif ($active === true) {
@@ -576,7 +580,7 @@ constants
 
     public function collectLogFiles(Db $db)
     {
-        $existing = $this->listModuleStages('director');
+        $existing = $this->listPackageStages($this->getPackageName());
         foreach (DirectorDeploymentLog::getUncollected($db) as $deployment) {
             $stage = $deployment->get('stage_name');
             if (! in_array($stage, $existing)) {
@@ -614,69 +618,77 @@ constants
     public function wipeInactiveStages(Db $db)
     {
         $uncollected = DirectorDeploymentLog::getUncollected($db);
-        $moduleName = 'director';
-        foreach ($this->listModuleStages($moduleName, false) as $stage) {
+        $packageName = $this->getPackageName();
+        foreach ($this->listPackageStages($packageName, false) as $stage) {
             if (array_key_exists($stage, $uncollected)) {
                 continue;
             }
-            $this->client->delete('config/stages/' . $moduleName . '/' . $stage);
+            $this->client->delete('config/stages/' . $packageName . '/' . $stage);
         }
     }
 
     public function listStageFiles($stage)
     {
         return array_keys(
-            $this->client->get(
-                'config/stages/director/' . $stage
-            )->getResult('name', array('type' => 'file'))
+            $this->client->get(sprintf(
+                'config/stages/%s/%s',
+                urlencode($this->getPackageName()),
+                urlencode($stage)
+            ))->getResult('name', array('type' => 'file'))
         );
     }
 
     public function getStagedFile($stage, $file)
     {
-        return $this->client->getRaw(
-            'config/files/director/' . $stage . '/' . urlencode($file)
-        );
+        return $this->client->getRaw(sprintf(
+            'config/files/%s/%s/%s',
+            urlencode($this->getPackageName()),
+            urlencode($stage),
+            urlencode($file)
+        ));
     }
 
-    public function hasModule($moduleName)
+    public function hasPackage($name)
     {
-        $modules = $this->getModules();
-        return array_key_exists($moduleName, $modules);
+        $modules = $this->getPackages();
+        return array_key_exists($name, $modules);
     }
 
-    public function createModule($moduleName)
+    public function createPackage($name)
     {
-        return $this->client->post('config/packages/' . $moduleName)->succeeded();
+        return $this->client->post('config/packages/' . urlencode($name))->succeeded();
     }
 
-    public function deleteModule($moduleName)
+    public function deletePackage($name)
     {
-        return $this->client->delete('config/packages/' . $moduleName)->succeeded();
+        return $this->client->delete('config/packages/' . urlencode($name))->succeeded();
     }
 
-    public function assertModuleExists($moduleName)
+    public function assertPackageExists($name)
     {
-        if (! $this->hasModule($moduleName)) {
-            if (! $this->createModule($moduleName)) {
-                throw new IcingaException(
-                    'Failed to create the module "%s" through the REST API',
-                    $moduleName
-                );
+        if (! $this->hasPackage($name)) {
+            if (! $this->createPackage($name)) {
+                throw new RuntimeException(sprintf(
+                    'Failed to create the package "%s" through the REST API',
+                    $name
+                ));
             }
         }
 
         return $this;
     }
 
-    public function deleteStage($moduleName, $stageName)
+    public function deleteStage($packageName, $stageName)
     {
-        return $this->client->delete('config/stages', array(
-            'module' => $moduleName,
+        return $this->client->delete('config/stages', [
+            'module' => $packageName,
             'stage'  => $stageName
-        ))->succeeded();
+        ])->succeeded();
     }
 
+    /**
+     * @throws Exception
+     */
     public function stream()
     {
         $allTypes = array(
@@ -699,8 +711,18 @@ constants
         $this->client->request('post', $url, null, false, true);
     }
 
-    public function dumpConfig(IcingaConfig $config, Db $db, $moduleName = 'director')
+    /**
+     * @param IcingaConfig $config
+     * @param Db $db
+     * @param null $packageName
+     * @return \Icinga\Module\Director\Data\Db\DbObject
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
+    public function dumpConfig(IcingaConfig $config, Db $db, $packageName = null)
     {
+        if ($packageName === null) {
+            $packageName = $db->settings()->get('icinga_package_name');
+        }
         $start = microtime(true);
         $deployment = DirectorDeploymentLog::create(array(
             // 'config_id'      => $config->id,
@@ -714,21 +736,18 @@ constants
             // 'module_name'    => $moduleName,
         ));
 
-        $this->assertModuleExists($moduleName);
+        $this->assertPackageExists($packageName);
 
-        $response = $this->client->post(
-            'config/stages/' . $moduleName,
-            array(
-                'files' => $config->getFileContents()
-            )
-        );
+        $response = $this->client->post('config/stages/' . urlencode($packageName), [
+            'files' => $config->getFileContents()
+        ]);
 
         $duration = (int) ((microtime(true) - $start) * 1000);
         // $deployment->duration_ms = $duration;
         $deployment->set('duration_dump', $duration);
 
         if ($response->succeeded()) {
-            if ($stage = $response->getResult('stage', array('package' => $moduleName))) { // Status?
+            if ($stage = $response->getResult('stage', ['package' => $packageName])) { // Status?
                 $deployment->set('stage_name', key($stage));
                 $deployment->set('dump_succeeded', 'y');
             } else {
@@ -739,6 +758,7 @@ constants
         }
 
         $deployment->store($db);
+
         return $deployment->set('dump_succeeded', 'y');
     }
 

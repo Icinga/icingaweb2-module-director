@@ -86,6 +86,7 @@ class KickstartHelper
 
     /**
      * @return KickstartHelper
+     * @throws ProgrammingError
      */
     public function loadConfigFromFile()
     {
@@ -152,6 +153,7 @@ class KickstartHelper
 
     /**
      * @return IcingaApiUser
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function apiUser()
     {
@@ -179,6 +181,7 @@ class KickstartHelper
     /**
      * @param IcingaObject[] $objects
      * @return IcingaObject[]
+     * @throws NestingError
      */
     protected function sortByParent(array $objects)
     {
@@ -235,6 +238,8 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws NestingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function fetchZones()
     {
@@ -248,6 +253,7 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeZones()
     {
@@ -282,6 +288,8 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function fetchEndpoints()
     {
@@ -302,6 +310,7 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeEndpoints()
     {
@@ -385,6 +394,8 @@ class KickstartHelper
      * TODO: remove outdated ones
      *
      * @return $this
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function importCommands()
     {
@@ -436,6 +447,7 @@ class KickstartHelper
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getDeploymentApi()
     {
@@ -456,11 +468,14 @@ class KickstartHelper
         $client->setCredentials($apiuser->object_name, $apiuser->password);
 
         $api = new CoreApi($client);
+        $api->setDb($this->db);
+
         return $api;
     }
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getConfiguredApi()
     {
@@ -474,11 +489,14 @@ class KickstartHelper
         $client->setCredentials($apiuser->object_name, $apiuser->password);
 
         $api = new CoreApi($client);
+        $api->setDb($this->db);
+
         return $api;
     }
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function switchToDeploymentApi()
     {
@@ -487,6 +505,7 @@ class KickstartHelper
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function api()
     {

@@ -56,7 +56,10 @@ class IcingaEndpoint extends IcingaObject
     {
         $format = $this->connection->settings()->config_format;
         if ($format === 'v2') {
-            return new CoreApi($this->getRestApiClient());
+            $api = new CoreApi($this->getRestApiClient());
+            $api->setDb($this->getConnection());
+
+            return $api;
         } elseif ($format === 'v1') {
             return new LegacyDeploymentApi($this->connection);
         } else {

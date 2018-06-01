@@ -11,6 +11,9 @@ class SettingsForm extends DirectorForm
     /** @var Settings */
     protected $settings;
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $settings = $this->settings;
@@ -34,6 +37,17 @@ class SettingsForm extends DirectorForm
                 . ' might be adjusted to a custom Zone name'
             ),
             'value'  => $settings->getStoredValue('default_global_zone')
+        ));
+
+        $this->addElement('text', 'icinga_package_name', array(
+            'label'        => $this->translate('Icinga Package Name'),
+            'description'  => $this->translate(
+                'The Icinga Package name Director uses to deploy it\'s configuration.'
+                . ' This defaults to "director" and should not be changed unless'
+                . ' you really know what you\'re doing'
+            ),
+            'placeholder'  => $settings->get('icinga_package_name'),
+            'value'  => $settings->getStoredValue('icinga_package_name')
         ));
 
         $this->addElement('select', 'disable_all_jobs', array(

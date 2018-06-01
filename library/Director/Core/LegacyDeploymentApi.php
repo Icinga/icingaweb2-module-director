@@ -33,7 +33,8 @@ class LegacyDeploymentApi implements DeploymentApiInterface
      */
     public function collectLogFiles(Db $db)
     {
-        $existing = $this->listModuleStages('director');
+        $packageName = $db->settings()->get('icinga_package_name');
+        $existing = $this->listPackageStages($packageName);
 
         foreach (DirectorDeploymentLog::getUncollected($db) as $deployment) {
             $stage = $deployment->get('stage_name');
@@ -78,7 +79,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     public function wipeInactiveStages(Db $db)
     {
         $uncollected = DirectorDeploymentLog::getUncollected($db);
-        $moduleName = 'director';
+        $packageName = $db->settings()->get('icinga_package_name');
         $currentStage = $this->getActiveStageName();
 
         // try to expire old deployments
@@ -98,7 +99,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
             }
         }
 
-        foreach ($this->listModuleStages($moduleName) as $stage) {
+        foreach ($this->listPackageStages($packageName) as $stage) {
             if (array_key_exists($stage, $uncollected)
                 && $uncollected[$stage]->get('startup_succeeded') === null
             ) {
@@ -106,7 +107,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
             } elseif ($stage === $currentStage) {
                 continue;
             } else {
-                $this->deleteStage($moduleName, $stage);
+                $this->deleteStage($packageName, $stage);
             }
         }
     }
@@ -152,9 +153,9 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     }
 
     /** @inheritdoc */
-    public function listModuleStages($moduleName)
+    public function listPackageStages($packageName)
     {
-        $this->assertModuleName($moduleName);
+        $this->assertPackageName($packageName);
         $this->assertDeploymentPath();
 
         $dh = @opendir($this->deploymentPath);
@@ -191,9 +192,9 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     }
 
     /** @inheritdoc */
-    public function deleteStage($moduleName, $stageName)
+    public function deleteStage($packageName, $stageName)
     {
-        $this->assertModuleName($moduleName);
+        $this->assertPackageName($packageName);
         $this->assertDeploymentPath();
 
         $path = $this->getStagePath($stageName);
@@ -202,9 +203,12 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     }
 
     /** @inheritdoc */
-    public function dumpConfig(IcingaConfig $config, Db $db, $moduleName = 'director')
+    public function dumpConfig(IcingaConfig $config, Db $db, $packageName = null)
     {
-        $this->assertModuleName($moduleName);
+        if ($packageName === null) {
+            $packageName = $db->settings()->get('icinga_package_name');
+        }
+        $this->assertPackageName($packageName);
         $this->assertDeploymentPath();
 
         $start = microtime(true);
@@ -364,12 +368,12 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     /**
      * Assert that only the director module is interacted with
      *
-     * @param  string  $moduleName
+     * @param  string  $packageName
      * @throws IcingaException  When another module is requested
      */
-    protected function assertModuleName($moduleName)
+    protected function assertPackageName($packageName)
     {
-        if ($moduleName !== 'director') {
+        if ($packageName !== 'director') {
             throw new IcingaException('Does not supported different modules!');
         }
     }

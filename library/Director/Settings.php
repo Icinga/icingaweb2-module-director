@@ -12,6 +12,7 @@ class Settings
 
     protected $defaults = [
         'default_global_zone'             => 'director-global',
+        'icinga_package_name'             => 'director',
         'magic_apply_for'                 => '_director_apply_for',
         'config_format'                   => 'v2',
         'override_services_varname'       => '_override_servicevars',
@@ -55,6 +56,11 @@ class Settings
         return $this->db;
     }
 
+    /**
+     * @param $key
+     * @param null $default
+     * @return mixed|null
+     */
     public function get($key, $default = null)
     {
         if (null === ($value = $this->getStoredValue($key, $default))) {
@@ -64,6 +70,11 @@ class Settings
         }
     }
 
+    /**
+     * @param $key
+     * @param null $default
+     * @return mixed|null
+     */
     public function getStoredValue($key, $default = null)
     {
         if (null === ($value = $this->getSetting($key))) {
@@ -95,6 +106,12 @@ class Settings
         }
     }
 
+    /**
+     * @param $name
+     * @param $value
+     * @return $this
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function set($name, $value)
     {
         $db = $this->db;
@@ -172,11 +189,20 @@ class Settings
         $this->cache = (array) $db->fetchPairs($query);
     }
 
+    /**
+     * @param $key
+     * @return mixed|null
+     */
     public function __get($key)
     {
         return $this->get($key);
     }
 
+    /**
+     * @param $key
+     * @param $value
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function __set($key, $value)
     {
         $this->set($key, $value);
