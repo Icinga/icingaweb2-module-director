@@ -589,19 +589,10 @@
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
-            $dd.find('p.description.fading-out')
-                .stop(true)
-                .removeClass('fading-out')
-                .fadeIn('fast');
 
             $form.find('dd').not($dd)
                 .find('p.description')
-                .not('.fading-out')
-                .addClass('fading-out')
-                .delay(500)
-                .fadeOut('slow', function () {
-                    $(this).removeClass('fading-out').hide()
-                });
+                .hide();
         },
 
         highlightFormErrors: function($container)
