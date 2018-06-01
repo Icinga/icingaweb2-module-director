@@ -42,6 +42,13 @@ abstract class DbObjectWithSettings extends DbObject
         return parent::get($key);
     }
 
+    public function setSettings(array $settings)
+    {
+        $this->settings = $settings;
+
+        return $this;
+    }
+
     public function getSettings()
     {
         return $this->settings;
