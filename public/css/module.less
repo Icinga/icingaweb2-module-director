@@ -859,34 +859,16 @@ form dd.active li.active input.related-action[type='submit'] {
 
 form {
   p.description {
-    color: inherit;
+    color: @gray;
     font-style: normal;
-    position: absolute;
-    bottom: 1em;
-    width: 96%;
-    max-width: unset;
-    margin-left: 13em;
-    max-height: 12em;
-    overflow-x: auto;
-    background: @tr-active-color;
-    border: 1px solid @icinga-blue;
-    border-radius: 0.5em;
-    font-size: 1.2em;
-    right: 2%;
-    color: @icinga-blue;
-    padding-left: 3em;
-    display: none;
-    z-index: 100;
+    padding: 0.5em;
   }
 
   p.description:before {
-    content: '\e881';
+    content: '\e85b';
     font-family: 'ifont';
-    font-size: 1.5em;
     color: @icinga-blue;
-    position: absolute;
-    margin-left: -1.5em;
-    margin-top: -0.25em;
+    margin-right: 0.4em;
   }
 }
 
@@ -900,43 +882,6 @@ form.db-selector {
     margin-top: 0.5em;
     min-width: 14em;
     width: auto;
-  }
-}
-
-#layout.minimal-layout {
-  form p.description {
-    margin: 0;
-    border-radius: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-height: 8em;
-    font-size: 0.835em;
-    max-width: unset;
-    width: auto;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-  }
-}
-
-#layout.twocols {
-  form {
-    p.description {
-      width: 46%;
-      max-width: 46%;
-    }
-  }
-}
-
-#layout.twocols &#col1 {
-  form {
-    p.description {
-      margin-right: auto;
-      right: auto;
-      margin-left: 2%;
-      left: 0;
-    }
   }
 }
 
