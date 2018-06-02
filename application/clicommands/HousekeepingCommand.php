@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Db\Housekeeping;
+use Icinga\Module\Director\Db\MembershipHousekeeping;
 
 class HousekeepingCommand extends Command
 {
@@ -59,6 +60,41 @@ class HousekeepingCommand extends Command
             $this->housekeeping()->runAllTasks();
         } else {
             $this->housekeeping()->runTask($job);
+        }
+    }
+
+    /**
+     * Check and repair membership cache
+     *
+     * Options:
+     *   --type host  Set the object type (Only host supported currently)
+     *   --apply      Actually update the database
+     */
+    public function membershipsAction()
+    {
+        $type = $this->params->get('type', 'host');
+        $apply = $this->params->shift('apply');
+
+        /** @var MembershipHousekeeping $class */
+        $class = 'Icinga\\Module\\Director\\Db\\' . ucfirst($type) . 'MembershipHousekeeping';
+        /** @var MembershipHousekeeping $helper */
+        $helper = new $class($this->db());
+
+        printf("Checking %s memberships\n", $type);
+
+        list($new, $outdated) = $helper->check();
+        $newCount = count($new);
+        $outdatedCount = count($outdated);
+        $objects = $helper->getObjects();
+        $groups = $helper->getGroups();
+
+        printf("%d objects - %d groups\n", count($objects), count($groups));
+
+        printf("Found %d new and %d outdated mappings\n", $newCount, $outdatedCount);
+
+        if ($apply && $newCount > 0 && $outdatedCount > 0) {
+            $helper->update();
+            printf("Update complete.\n");
         }
     }
 
