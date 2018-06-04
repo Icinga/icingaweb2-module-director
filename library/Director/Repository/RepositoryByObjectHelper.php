@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Repository;
 
+use Icinga\Authentication\Auth;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -13,6 +14,9 @@ trait RepositoryByObjectHelper
     /** @var Db */
     protected $connection;
 
+    /** @var Auth */
+    protected static $auth;
+
     /** @var static[] */
     protected static $instances = [];
 
@@ -23,17 +27,35 @@ trait RepositoryByObjectHelper
     }
 
     /**
-     * @param $type
+     * @param string $type
+     * @return bool
+     */
+    public static function hasInstanceForType($type)
+    {
+        return array_key_exists($type, self::$instances);
+    }
+
+    /**
+     * @param string $type
      * @param Db $connection
      * @return static
      */
     public static function instanceByType($type, Db $connection)
     {
-        if (!array_key_exists($type, self::$instances)) {
+        if (! static::hasInstanceForType($type)) {
             self::$instances[$type] = new static($type, $connection);
         }
 
         return self::$instances[$type];
+    }
+
+    /**
+     * @param IcingaObject $object
+     * @return bool
+     */
+    public static function hasInstanceForObject(IcingaObject $object)
+    {
+        return static::hasInstanceForType($object->getShortTableName());
     }
 
     /**
@@ -60,5 +82,14 @@ trait RepositoryByObjectHelper
             $object->getShortTableName(),
             $connection
         );
+    }
+
+    protected static function auth()
+    {
+        if (self::$auth === null) {
+            self::$auth = Auth::getInstance();
+        }
+
+        return self::$auth;
     }
 }
