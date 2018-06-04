@@ -58,6 +58,9 @@ before switching to a new version.
 ### Internals
 * FEATURE: Html/Attribute now allows boolean properties
 * FEATURE: Html/Attribute allows colons in attribute names (required for SVGs)
+* FEATURE: Html/Attributes can be prefixed (helps with data-*)
+* FEATURE: Html/Img data:-urls are now supported
+* FEATURE: ipl has been aligned with the upcoming ipl-html library
 
 1.4.3
 -----
