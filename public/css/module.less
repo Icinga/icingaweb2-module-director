@@ -889,17 +889,18 @@ form dd.active li.active input.related-action[type='submit'] {
 form {
   p.description {
     color: @gray;
-    font-style: normal;
-    padding: 0.5em;
+    font-style: italic;
+    padding: 0.25em 0.5em;
+    display: none;
   }
 
-  p.description:before {
-    content: '\e85b';
-    font-family: 'ifont';
-    color: @icinga-blue;
-    position: absolute;
-    margin-left: -1.5em;
-    margin-top: -0.25em;
+  dd.active {
+    p.description {
+      font-style: normal;
+      display: block;
+      height: auto;
+      color: @text-color;
+    }
   }
 }
 
@@ -913,43 +914,6 @@ form.db-selector {
     margin-top: 0.5em;
     min-width: 14em;
     width: auto;
-  }
-}
-
-#layout.minimal-layout {
-  form p.description {
-    margin: 0;
-    border-radius: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-height: 8em;
-    font-size: 0.835em;
-    max-width: unset;
-    width: auto;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-  }
-}
-
-#layout.twocols {
-  form {
-    p.description {
-      width: 46%;
-      max-width: 46%;
-    }
-  }
-}
-
-#layout.twocols &#col1 {
-  form {
-    p.description {
-      margin-right: auto;
-      right: auto;
-      margin-left: 2%;
-      left: 0;
-    }
   }
 }
 

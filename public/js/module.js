@@ -600,7 +600,6 @@
             }
 
             var $dd = $input.closest('dd');
-            $dd.find('p.description').show();
             if ($dd.attr('id') && $dd.attr('id').match(/button/)) {
                 return;
             }
@@ -612,10 +611,6 @@
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
-
-            $form.find('dd').not($dd)
-                .find('p.description')
-                .hide();
         },
 
         highlightFormErrors: function($container)
@@ -636,10 +631,6 @@
             $fieldset.toggleClass('collapsed');
             this.fixFieldsetInfo($fieldset);
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
-        },
-
-        hideInactiveFormDescriptions: function($container) {
-            $container.find('dd').not('.active').find('p.description').hide();
         },
 
         beforeRender: function(ev) {
@@ -704,7 +695,6 @@
             this.scrollHighlightIntoView($container);
             this.scrollActiveRowIntoView($container);
             this.highlightActiveDashlet($container);
-            this.hideInactiveFormDescriptions($container);
             if (iid = $container.data('activeExtensibleEntry')) {
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
