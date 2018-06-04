@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
-use Icinga\Exception\ProgrammingError;
+use InvalidArgumentException;
 
 class IcingaConfigRendered implements IcingaConfigRenderer
 {
@@ -11,7 +11,7 @@ class IcingaConfigRendered implements IcingaConfigRenderer
     public function __construct($string)
     {
         if (! is_string($string)) {
-            throw new ProgrammingError('IcingaConfigRendered accepts only strings');
+            throw new InvalidArgumentException('IcingaConfigRendered accepts only strings');
         }
 
         $this->rendered = $string;
