@@ -14,6 +14,8 @@ before switching to a new version.
 * FEATURE: Showing the executed SQL query now requires the `showsql` permission
 * FEATURE: Grant access to Service Set in a controlled way
 * FIX: do not allow a user to create hosts he wouldn't be allowed to see #1451
+* FIX: Hostgroup-based restrictions worked fine when applied, bug was buggy in
+  combination with directly assigned or inherited groups (#1464)
 
 ### Icinga Configuration
 * FEATURE: Add 'is false (or not set)' condition for apply rules (#1436)

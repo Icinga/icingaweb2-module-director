@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
+use InvalidArgumentException;
 use LogicException;
 use Zend_Db_Select as ZfSelect;
 
@@ -43,6 +44,8 @@ abstract class GroupMembershipResolver
 
     /** @var bool */
     protected $useTransactions = false;
+
+    protected $groupMap;
 
     public function __construct(Db $connection)
     {
@@ -269,6 +272,24 @@ abstract class GroupMembershipResolver
         );
     }
 
+    protected function getGroupId($name)
+    {
+        if ($this->groupMap === null) {
+            $this->groupMap = $this->db->fetchPairs(
+                $this->db->select()->from('icinga_hostgroup', ['object_name', 'id'])
+            );
+        }
+
+        if (array_key_exists($name, $this->groupMap)) {
+            return $this->groupMap[$name];
+        } else {
+            throw new InvalidArgumentException(
+                'Unable to lookup the group name for "%s"',
+                $name
+            );
+        }
+    }
+
     protected function removeOutdatedMappings()
     {
         $diff = $this->getDifference($this->existingMappings, $this->newMappings);
@@ -328,6 +349,9 @@ abstract class GroupMembershipResolver
         return $diff;
     }
 
+    /**
+     * This fetches already resolved memberships
+     */
     protected function fetchStoredMappings()
     {
         $mappings = array();
@@ -342,7 +366,6 @@ abstract class GroupMembershipResolver
         );
         $this->addMembershipWhere($query, "${type}_id", $this->objects);
         $this->addMembershipWhere($query, "${type}group_id", $this->groups);
-
         foreach ($this->db->fetchAll($query) as $row) {
             $groupId = $row->group_id;
             $objectId = $row->object_id;
@@ -402,18 +425,32 @@ abstract class GroupMembershipResolver
                 continue;
             }
             $mt = microtime(true);
+            $id = $object->get('id');
 
             // TODO: fix this last hard host dependency
             $resolver = HostApplyMatches::prepare($object);
             foreach ($groups as $groupId => $filter) {
                 if ($resolver->matchesFilter($filter)) {
                     if (! array_key_exists($groupId, $mappings)) {
-                        $mappings[$groupId] = array();
+                        $mappings[$groupId] = [];
                     }
 
-                    $id = $object->get('id');
                     $mappings[$groupId][$id] = $id;
                 }
+            }
+
+
+            $groupNames = $object->get('groups');
+            if (empty($groupNames)) {
+                $groupNames = $object->listInheritedGroupNames();
+            }
+            foreach ($groupNames as $name) {
+                $groupId = $this->getGroupId($name);
+                if (! array_key_exists($groupId, $mappings)) {
+                    $mappings[$groupId] = [];
+                }
+
+                $mappings[$groupId][$id] = $id;
             }
 
             $times[] = (microtime(true) - $mt) * 1000;
