@@ -38,6 +38,8 @@ before switching to a new version.
 * FIX: Do not allow to delete Commands being used by other objects (#1443)
 * FIX: Show 'Inspect' tab only for Endpoints with an ApiUser (#1293)
 * FIX: It's now possible to specify TimePeriods for single Users #944
+* FIX: Redirect after not modifying a Command Argument failed on some RHEL 7
+  setups (#1512)
 
 ### CLI
 * FEATURE: Director Health Check Plugin (#1278)

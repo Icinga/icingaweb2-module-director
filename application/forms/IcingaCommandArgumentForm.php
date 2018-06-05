@@ -164,7 +164,9 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             );
             $cmd->store($this->db);
         } else {
-            $this->setHttpResponseCode(304);
+            if ($this->isApiRequest()) {
+                $this->setHttpResponseCode(304);
+            }
             $msg = $this->translate('No action taken, object has not been modified');
         }
         $this->setSuccessUrl(
