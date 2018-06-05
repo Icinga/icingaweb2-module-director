@@ -203,10 +203,10 @@ class IcingaServiceForm extends DirectorObjectForm
             $db = $this->db->getDbAdapter();
             if ($this->providesOverrides()) {
                 $this->blacklisted = 1 === (int)$db->fetchOne(
-                        $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
-                            ->where('host_id = ?', $host->get('id'))
-                            ->where('service_id = ?', $service->get('id'))
-                    );
+                    $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
+                        ->where('host_id = ?', $host->get('id'))
+                        ->where('service_id = ?', $service->get('id'))
+                );
             } else {
                 $this->blacklisted = false;
             }
