@@ -51,6 +51,10 @@ class IcingaServiceForm extends DirectorObjectForm
      */
     public function setup()
     {
+        if (!$this->isNew() || $this->providesOverrides()) {
+            $this->tryToFetchHost();
+        }
+
         if ($this->providesOverrides()) {
             return;
         }
@@ -60,20 +64,23 @@ class IcingaServiceForm extends DirectorObjectForm
             return;
         }
 
-        try {
-            if (!$this->isNew() && $this->host === null) {
-                $this->host = $this->object->getResolvedRelated('host');
-            }
-        } catch (NestingError $nestingError) {
-            // ignore for the form to load
-        }
-
         if ($this->set !== null) {
             $this->setupSetRelatedElements();
         } elseif ($this->host === null) {
             $this->setupServiceElements();
         } else {
             $this->setupHostRelatedElements();
+        }
+    }
+
+    protected function tryToFetchHost()
+    {
+        try {
+            if ($this->host === null) {
+                $this->host = $this->object->getResolvedRelated('host');
+            }
+        } catch (NestingError $nestingError) {
+            // ignore for the form to load
         }
     }
 
