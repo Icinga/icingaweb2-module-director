@@ -104,7 +104,6 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
 
     /**
      * @return \Zend_Db_Select
-     * @throws \Zend_Db_Select_Exception
      */
     public function prepareQuery()
     {
@@ -118,31 +117,25 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
                 'host'        => 'h.object_name',
                 'service'     => 's.object_name',
                 'object_type' => 's.object_type',
+                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
             ]
         )->joinLeft(
             ['h' => 'icinga_host'],
             'h.id = s.host_id',
             []
+        )->joinLeft(
+            ['hsb' => 'icinga_host_service_blacklist'],
+            $db->quoteInto(
+                's.id = hsb.service_id AND hsb.host_id = ?',
+                $this->inheritedBy === null
+                    ? $this->host->get('id')
+                    : $this->inheritedBy->get('id')
+            ),
+            []
         )->where(
             's.host_id = ?',
             $this->host->get('id')
         )->order('s.object_name');
-
-        if ($this->inheritedBy) {
-            $query->joinLeft(
-                ['hsb' => 'icinga_host_service_blacklist'],
-                $db->quoteInto(
-                    's.id = hsb.service_id AND hsb.host_id = ?',
-                    $this->inheritedBy->get('id')
-                ),
-                []
-            );
-            $query->columns([
-                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
-            ]);
-        } else {
-            $query->columns(['blacklisted' => "('n')"]);
-        }
 
         return $query;
     }

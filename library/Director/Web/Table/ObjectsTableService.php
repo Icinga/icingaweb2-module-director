@@ -27,6 +27,7 @@ class ObjectsTableService extends ObjectsTable
             'hots_object_type' => 'h.object_type',
             'host_disabled'    => 'h.disabled',
             'id'               => 'o.id',
+            'blacklisted'      => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
         ];
     }
 
@@ -68,9 +69,14 @@ class ObjectsTableService extends ObjectsTable
             static::td($row->object_name)
         ]);
 
+        $attributes = $tr->getAttributes();
         if ($row->host_disabled === 'y' || $row->disabled === 'y') {
-            $tr->getAttributes()->add('class', 'disabled');
+            $attributes->add('class', 'disabled');
         }
+        if ($row->blacklisted === 'y') {
+            $attributes->add('class', 'strike-links');
+        }
+
         return $tr;
     }
 
@@ -79,6 +85,10 @@ class ObjectsTableService extends ObjectsTable
         return parent::prepareQuery()->joinLeft(
             ['h' => 'icinga_host'],
             'o.host_id = h.id',
+            []
+        )->joinLeft(
+            ['hsb' => 'icinga_host_service_blacklist'],
+            'hsb.service_id = o.id AND hsb.host_id = o.host_id',
             []
         )->where('o.service_set_id IS NULL')
             ->order('o.object_name')->order('h.object_name');
