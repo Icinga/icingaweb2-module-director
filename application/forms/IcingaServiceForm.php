@@ -32,15 +32,20 @@ class IcingaServiceForm extends DirectorObjectForm
 
     private $inheritedFrom;
 
+    /** @var bool|null */
+    private $blacklisted;
+
     public function setApplyGenerated(IcingaService $applyGenerated)
     {
         $this->applyGenerated = $applyGenerated;
+
         return $this;
     }
 
     public function setInheritedFrom($hostname)
     {
         $this->inheritedFrom = $hostname;
+
         return $this;
     }
 
@@ -61,6 +66,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
         if ($this->host && $this->set) {
             $this->setupOnHostForSet();
+
             return;
         }
 
@@ -119,31 +125,37 @@ class IcingaServiceForm extends DirectorObjectForm
             return;
         }
 
-        $this->addOverrideHint();
-
-        $group = $this->getDisplayGroup('custom_fields');
-
-        if ($group) {
-            $elements = $group->getElements();
-            $group->setElements([$this->getElement('inheritance_hint')]);
-            $group->addElements($elements);
-            $this->setSubmitLabel(
-                $this->translate('Override vars')
-            );
-        } else {
-            $this->addElementsToGroup(
-                array('inheritance_hint'),
-                'custom_fields',
-                20,
-                $this->translate('Hints regarding this service')
-            );
-
-            $this->setSubmitLabel(false);
-        }
-
         if ($this->hasBeenBlacklisted()) {
+            $this->addHtml(
+                Html::tag(
+                    'p',
+                    ['class' => 'warning'],
+                    $this->translate('This Service has been blacklisted on this host')
+                ),
+                ['name' => 'HINT_blacklisted']
+            );
+            $group = null;
             $this->addDeleteButton($this->translate('Restore'));
+            $this->setSubmitLabel(false);
         } else {
+            $this->addOverrideHint();
+            $group = $this->getDisplayGroup('custom_fields');
+            if ($group) {
+                $elements = $group->getElements();
+                $group->setElements([$this->getElement('inheritance_hint')]);
+                $group->addElements($elements);
+                $this->setSubmitLabel($this->translate('Override vars'));
+            } else {
+                $this->addElementsToGroup(
+                    ['inheritance_hint'],
+                    'custom_fields',
+                    20,
+                    $this->translate('Hints regarding this service')
+                );
+
+                $this->setSubmitLabel(false);
+            }
+
             $this->addDeleteButton($this->translate('Blacklist'));
         }
 
@@ -185,18 +197,22 @@ class IcingaServiceForm extends DirectorObjectForm
             return false;
         }
 
-        $host = $this->host;
-        $service = $this->getFirstParent($this->object);
-        $db = $this->db->getDbAdapter();
-        if ($this->providesOverrides()) {
-            return 1 === (int) $db->fetchOne(
-                $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
-                    ->where('host_id = ?', $host->get('id'))
-                    ->where('service_id = ?', $service->get('id'))
-            );
-        } else {
-            return false;
+        if ($this->blacklisted === null) {
+            $host = $this->host;
+            $service = $this->getFirstParent($this->object);
+            $db = $this->db->getDbAdapter();
+            if ($this->providesOverrides()) {
+                $this->blacklisted = 1 === (int)$db->fetchOne(
+                        $db->select()->from('icinga_host_service_blacklist', 'COUNT(*)')
+                            ->where('host_id = ?', $host->get('id'))
+                            ->where('service_id = ?', $service->get('id'))
+                    );
+            } else {
+                $this->blacklisted = false;
+            }
         }
+
+        return $this->blacklisted;
     }
 
     /**
