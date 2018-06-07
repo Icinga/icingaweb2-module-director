@@ -35,6 +35,9 @@ before switching to a new version.
 * FEATURE: Allow horizontal size increase of Import Source DB Query field (#299)
 * FEATURE: Small UI improvements like #1308
 * FEATURE: Data Lists can be chosen by name in Sync rules (#1048)
+* FEATURE: Inspect feature got refactored, also for Services (#264, #689, #1396, #1397)
+* FEATURE: The "Modify" hook is now available for Services (#689), regardless
+  of whether they have been directly assigned, inherited or applied
 * FIX: Don't suggest Command templates where Commands are required (#1414)
 * FIX: Do not allow to delete Commands being used by other objects (#1443)
 * FIX: Show 'Inspect' tab only for Endpoints with an ApiUser (#1293)
