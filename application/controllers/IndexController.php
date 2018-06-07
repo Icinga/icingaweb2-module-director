@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use Exception;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Forms\ApplyMigrationsForm;
+use Icinga\Module\Director\Forms\KickstartForm;
 
 class IndexController extends DashboardController
 {
@@ -44,9 +45,7 @@ class IndexController extends DashboardController
             $this->addSingleTab($this->translate('Kickstart'));
         }
 
-        $this->content()->prepend(
-            $this->loadForm('kickstart')->handleRequest()
-        );
+        $this->content()->prepend(KickstartForm::load()->handleRequest());
     }
 
     protected function hasDeploymentEndpoint()

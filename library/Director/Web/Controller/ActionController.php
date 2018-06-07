@@ -4,18 +4,15 @@ namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
-use Icinga\Module\Director\Web\Form\FormLoader;
-use Icinga\Module\Director\Web\Form\QuickForm;
-use Icinga\Module\Director\Web\Table\QuickTable;
-use Icinga\Module\Director\Web\Table\TableLoader;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
-use Icinga\Web\Widget;
+use InvalidArgumentException;
 use dipl\Compat\Translator;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
@@ -38,6 +35,10 @@ abstract class ActionController extends Controller implements ControlsAndContent
     /** @var Monitoring */
     private $monitoring;
 
+    /**
+     * @throws SecurityException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function init()
     {
         $this->initializeTranslator();
@@ -57,11 +58,17 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $this->Auth();
     }
 
+    /**
+     * @throws SecurityException
+     */
     protected function checkDirectorPermissions()
     {
         $this->assertPermission('director/admin');
     }
 
+    /**
+     * @throws SecurityException
+     */
     protected function checkSpecialDirectorPermissions()
     {
         if ($this->params->get('format') === 'sql') {
@@ -100,7 +107,11 @@ abstract class ActionController extends Controller implements ControlsAndContent
     public function setAutorefreshInterval($interval)
     {
         if (! $this->getRequest()->isApiRequest()) {
-            parent::setAutorefreshInterval($interval);
+            try {
+                parent::setAutorefreshInterval($interval);
+            } catch (ProgrammingError $e) {
+                throw new InvalidArgumentException($e->getMessage());
+            }
         }
 
         return $this;
@@ -145,34 +156,9 @@ abstract class ActionController extends Controller implements ControlsAndContent
     }
 
     /**
-     * @param string $name
-     *
-     * @return QuickForm
-     */
-    public function loadForm($name)
-    {
-        $form = FormLoader::load($name, $this->Module());
-        if ($this->getRequest()->isApiRequest()) {
-            // TODO: Ask form for API support?
-            $form->setApiRequest();
-        }
-
-        return $form;
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return QuickTable
-     */
-    public function loadTable($name)
-    {
-        return TableLoader::load($name, $this->Module());
-    }
-
-    /**
      * @param string $permission
      * @return $this
+     * @throws SecurityException
      */
     public function assertPermission($permission)
     {

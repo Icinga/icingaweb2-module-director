@@ -211,23 +211,6 @@ class ServiceController extends ObjectController
         $this->content()->add($table);
     }
 
-    public function loadForm($name)
-    {
-        $form = parent::loadForm($name);
-        if ($name === 'icingaService') {
-            if ($this->host) {
-                $form->setHost($this->host);
-            } elseif ($this->set) {
-                $form->setServiceSet($this->set)->setSuccessUrl(
-                    'director/serviceset/services',
-                    array('name' => $this->set->object_name)
-                );
-            }
-        }
-
-        return $form;
-    }
-
     protected function loadObject()
     {
         if ($this->object === null) {
