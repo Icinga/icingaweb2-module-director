@@ -554,7 +554,6 @@ if (! globals["DirectorOverrideTemplate"]) {
   }
 }
 ',
-            $settings->override_services_templatename,
             $settings->override_services_varname,
             $settings->override_services_templatename
         );
