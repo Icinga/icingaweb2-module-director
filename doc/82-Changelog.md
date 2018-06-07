@@ -24,6 +24,7 @@ before switching to a new version.
 * FEATURE: it's now possible to blacklist inherited or applied Services on
   single hosts (#907)
 * FEATURE: timestamped startup log rendering for upcoming Icinga v2.9.0 (#1478)
+* FEATURE: allow to switch between multiple Director databases (#1498)
 
 ### User Interface
 * FEATURE: Admins have now access to JSON download links in many places
