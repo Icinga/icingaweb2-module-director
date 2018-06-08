@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Command as CliCommand;
+use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
@@ -19,13 +20,14 @@ class Command extends CliCommand
 
     protected function renderJson($object, $pretty = true)
     {
-        if ($pretty && version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            return json_encode($object, JSON_PRETTY_PRINT) . "\n";
-        } else {
-            return json_encode($object) . "\n";
-        }
+        return json_encode($object, $pretty ? JSON_PRETTY_PRINT : null) . "\n";
     }
 
+    /**
+     * @param $json
+     * @return mixed
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function parseJson($json)
     {
         $res = json_decode($json);
@@ -59,6 +61,12 @@ class Command extends CliCommand
         }
     }
 
+    /**
+     * @param null $endpointName
+     * @return CoreApi|\Icinga\Module\Director\Core\LegacyDeploymentApi
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function api($endpointName = null)
     {
         if ($this->api === null) {
@@ -95,6 +103,7 @@ class Command extends CliCommand
 
     /**
      * @return Db
+     * @throws ConfigurationError
      */
     protected function db()
     {
@@ -109,7 +118,7 @@ class Command extends CliCommand
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
-                $this->fail('Director is not configured correctly');
+                throw new ConfigurationError('Director is not configured correctly');
             }
         }
 

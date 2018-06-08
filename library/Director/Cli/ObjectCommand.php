@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Cli;
 
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 
 class ObjectCommand extends Command
 {
@@ -107,7 +108,7 @@ class ObjectCommand extends Command
         }
 
         if (! array_key_exists('object_name', $props)) {
-            $this->fail('Cannot creat an object with at least an object name');
+            $this->fail('Cannot create an object with at least an object name');
         }
 
         $object = IcingaObject::createByType(
@@ -396,7 +397,7 @@ class ObjectCommand extends Command
         if ($this->name === null) {
             $name = $this->params->shift();
             if (! $name) {
-                $this->fail('Object name parameter is required');
+                throw new InvalidArgumentException('Object name parameter is required');
             }
 
             $this->name = $name;
