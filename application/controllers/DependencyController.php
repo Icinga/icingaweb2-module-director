@@ -10,10 +10,10 @@ class DependencyController extends ObjectController
 {
     protected $apply;
 
-    protected function beforeTabs()
-    {
-    }
-
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function init()
     {
         parent::init();
@@ -26,6 +26,12 @@ class DependencyController extends ObjectController
         }
     }
 
+    /**
+     * @return \Icinga\Module\Director\Objects\IcingaObject
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\InvalidPropertyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function loadObject()
     {
         if ($this->object === null) {
@@ -42,12 +48,11 @@ class DependencyController extends ObjectController
         return $this->object;
     }
 
-    public function loadForm($name)
-    {
-        $form = parent::loadForm($name);
-        return $form;
-    }
-
+    /**
+     * Hint: this is never being called. Why?
+     *
+     * @param $form
+     */
     protected function beforeHandlingAddRequest($form)
     {
         /** @var IcingaDependencyForm $form */

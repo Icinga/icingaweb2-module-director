@@ -3,17 +3,21 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaDependency;
 
 class IcingaDependencyForm extends DirectorObjectForm
 {
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->setupDependencyElements();
     }
 
+    /***
+     * @throws \Zend_Form_Exception
+     */
     protected function setupDependencyElements()
     {
         $this->addObjectTypeElement();
@@ -35,6 +39,10 @@ class IcingaDependencyForm extends DirectorObjectForm
              ->setButtons();
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addZoneSection()
     {
         $this->addZoneElement(true);
@@ -55,6 +63,10 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addNameElement()
     {
         $this->addElement('text', 'object_name', [
@@ -66,7 +78,10 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
-
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addAssignmentElements()
     {
         if (!$this->object || !$this->object->isApplyRule()) {
@@ -105,6 +120,10 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addPeriodElement()
     {
         $periods = $this->db->enumTimeperiods();
@@ -128,6 +147,9 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     protected function addBooleanElements()
     {
         $this->addBoolean('disable_checks', [
@@ -157,6 +179,10 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addObjectsElement()
     {
         $this->addElement(
@@ -246,6 +272,12 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
+    /**
+     * Hint: this is unused. Why?
+     *
+     * @param IcingaDependency $dependency
+     * @return $this
+     */
     public function createApplyRuleFor(IcingaDependency $dependency)
     {
         $object = $this->object();
