@@ -26,11 +26,6 @@ class Form extends BaseHtmlElement
     /** @var BaseHtmlElement|null */
     protected $defaultElementDecorator;
 
-    /**
-     * @var BaseFormElement[]
-     */
-    private $elements = [];
-
     private $populatedValues = [];
 
     /** @var Request TODO: nonono */
