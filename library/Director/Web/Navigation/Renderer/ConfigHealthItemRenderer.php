@@ -22,7 +22,14 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 
     protected function hasProblems()
     {
-        $this->checkHealth();
+        try {
+            $this->checkHealth();
+        } catch (Exception $e) {
+            $this->directorState = self::STATE_UNKNOWN;
+            $this->count = 1;
+            $this->message = $e->getMessage();
+        }
+
         return $this->count > 0;
     }
 
