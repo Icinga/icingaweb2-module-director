@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -13,6 +12,8 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
+use InvalidArgumentException;
+use RuntimeException;
 
 class IcingaService extends IcingaObject
 {
@@ -138,7 +139,7 @@ class IcingaService extends IcingaObject
         }
 
         return $this->hasProperty('object_type')
-            && $this->object_type === 'apply';
+            && $this->get('object_type') === 'apply';
     }
 
     /**
@@ -146,18 +147,17 @@ class IcingaService extends IcingaObject
      */
     public function usesVarOverrides()
     {
-        return $this->use_var_overrides === 'y';
+        return $this->get('use_var_overrides') === 'y';
     }
 
     /**
      * @param string $key
      * @return $this
-     * @throws IcingaException
      */
     protected function setKey($key)
     {
         if (is_int($key)) {
-            $this->id = $key;
+            $this->set('id', $key);
         } elseif (is_array($key)) {
             foreach (['id', 'host_id', 'service_set_id', 'object_name'] as $k) {
                 if (array_key_exists($k, $key)) {
@@ -165,13 +165,15 @@ class IcingaService extends IcingaObject
                 }
             }
         } else {
-            return parent::setKey($key);
+            parent::setKey($key);
         }
 
         return $this;
     }
 
     /**
+     * @param $name
+     * @return $this
      * @codingStandardsIgnoreStart
      */
     protected function setObject_Name($name)
@@ -201,13 +203,12 @@ class IcingaService extends IcingaObject
             return '';
         }
 
-        return $this->renderRelationProperty('host', $this->host_id, 'host_name');
+        return $this->renderRelationProperty('host', $this->get('host_id'), 'host_name');
     }
 
     /**
      * @param IcingaConfig $config
      * @throws IcingaException
-     * @throws ProgrammingError
      */
     public function renderToLegacyConfig(IcingaConfig $config)
     {
@@ -246,25 +247,25 @@ class IcingaService extends IcingaObject
     }
 
     /**
-     * @param $hostname
+     * @param string $hostname
      * @param IcingaConfig $config
      * @return \Icinga\Module\Director\IcingaConfig\IcingaConfigFile
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
     {
-        $host = IcingaHost::load($hostname, $this->getConnection());
         return $config->configFile(
-            'director/' . $host->getRenderingZone($config) . '/service_apply',
+            sprintf(
+                'director/%s/service_apply',
+                IcingaHost::load($hostname, $this->getConnection())
+                    ->getRenderingZone($config)
+            ),
             '.cfg'
         );
     }
 
     /**
      * @return string
-     * @throws IcingaException
-     * @throws ProgrammingError
      */
     public function toLegacyConfigString()
     {
@@ -273,14 +274,16 @@ class IcingaService extends IcingaObject
         }
 
         if ($this->isApplyRule()) {
-            throw new ProgrammingError('Apply Services can not be rendered directly.');
+            throw new InvalidArgumentException('Apply Services can not be rendered directly.');
         }
 
         $str = parent::toLegacyConfigString();
 
-        if (! $this->isDisabled() && $this->host_id && $this->getRelated('host')->isDisabled()) {
-            return
-                "# --- This services host has been disabled ---\n"
+        if (! $this->isDisabled()
+            && $this->get('host_id')
+            && $this->getRelated('host')->isDisabled()
+        ) {
+            return "# --- This services host has been disabled ---\n"
                 . preg_replace('~^~m', '# ', trim($str))
                 . "\n\n";
         } else {
@@ -290,7 +293,6 @@ class IcingaService extends IcingaObject
 
     /**
      * @return string
-     * @throws IcingaException
      */
     public function toConfigString()
     {
@@ -299,9 +301,11 @@ class IcingaService extends IcingaObject
         }
         $str = parent::toConfigString();
 
-        if (! $this->isDisabled() && $this->host_id && $this->getRelated('host')->isDisabled()) {
-            return "/* --- This services host has been disabled ---\n"
-                . $str . "*/\n";
+        if (! $this->isDisabled()
+            && $this->get('host_id')
+            && $this->getRelated('host')->isDisabled()
+        ) {
+            return "/* --- This services host has been disabled ---\n$str*/\n";
         } else {
             return $str;
         }
@@ -309,8 +313,6 @@ class IcingaService extends IcingaObject
 
     /**
      * @return string
-     * @throws IcingaException
-     * @throws ProgrammingError
      */
     protected function renderObjectHeader()
     {
@@ -357,15 +359,16 @@ class IcingaService extends IcingaObject
      */
     protected function hasBeenAssignedToHostTemplate()
     {
-        return $this->host_id && $this->getRelatedObject(
+        $hostId = $this->get('host_id');
+
+        return $hostId && $this->getRelatedObject(
             'host',
-            $this->host_id
-        )->object_type === 'template';
+            $hostId
+        )->isTemplate();
     }
 
     /**
      * @return string
-     * @throws ProgrammingError
      */
     protected function renderSuffix()
     {
@@ -378,12 +381,11 @@ class IcingaService extends IcingaObject
 
     /**
      * @return string
-     * @throws ProgrammingError
      */
     protected function renderImportHostVarOverrides()
     {
         if (! $this->connection) {
-            throw new ProgrammingError(
+            throw new RuntimeException(
                 'Cannot render services without an assigned DB connection'
             );
         }
@@ -393,7 +395,6 @@ class IcingaService extends IcingaObject
 
     /**
      * @return string
-     * @throws IcingaException
      */
     protected function renderCustomExtensions()
     {
@@ -403,7 +404,7 @@ class IcingaService extends IcingaObject
             // TODO: use assignment renderer?
             $filter = sprintf(
                 'assign where %s in host.templates',
-                c::renderString($this->host)
+                c::renderString($this->get('host'))
             );
 
             $output .= "\n    " . $filter . "\n";
@@ -425,13 +426,13 @@ class IcingaService extends IcingaObject
         }
 
         // A hand-crafted command endpoint overrides use_agent
-        if ($this->command_endpoint_id !== null) {
+        if ($this->get('command_endpoint_id') !== null) {
             return $output;
         }
 
-        if ($this->use_agent === 'y') {
+        if ($this->get('use_agent') === 'y') {
             return $output . c::renderKeyValue('command_endpoint', 'host_name');
-        } elseif ($this->use_agent === 'n') {
+        } elseif ($this->get('use_agent') === 'n') {
             return $output . c::renderKeyValue('command_endpoint', c::renderPhpValue(null));
         } else {
             return $output;
@@ -440,7 +441,6 @@ class IcingaService extends IcingaObject
 
     /**
      * @return array
-     * @throws ProgrammingError
      */
     public function getBlacklistedHostnames()
     {
@@ -483,7 +483,7 @@ class IcingaService extends IcingaObject
     protected function renderLegacyDisplay_Name()
     {
         // @codingStandardsIgnoreEnd
-        return c1::renderKeyValue('display_name', $this->display_name);
+        return c1::renderKeyValue('display_name', $this->get('display_name'));
     }
 
     public function hasCheckCommand()
@@ -493,33 +493,25 @@ class IcingaService extends IcingaObject
 
     public function getOnDeleteUrl()
     {
-        if ($this->host_id) {
-            return 'director/host/services?name=' . rawurlencode($this->host);
+        if ($this->get('host_id')) {
+            return 'director/host/services?name=' . rawurlencode($this->get('host'));
         } else {
             return parent::getOnDeleteUrl();
         }
     }
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    protected function getDefaultZone(IcingaConfig $config = null)
     {
-        if ($this->prefersGlobalZone()) {
-            return $this->connection->getDefaultGlobalZoneName();
+        if ($this->get('host_id') === null) {
+            return parent::getDefaultZone();
+        } else {
+            return $this->getRelatedObject('host', $this->get('host_id'))
+                ->getRenderingZone($config);
         }
-
-        $zone = parent::getRenderingZone($config);
-
-        // if bound to a host, and zone is fallback to master
-        if ($this->host_id !== null && $zone === $this->connection->getMasterZoneName()) {
-            /** @var IcingaHost $host */
-            $host = $this->getRelatedObject('host', $this->host_id);
-            return $host->getRenderingZone($config);
-        }
-        return $zone;
     }
 
     /**
      * @return string
-     * @throws IcingaException
      */
     public function createWhere()
     {
@@ -543,7 +535,6 @@ class IcingaService extends IcingaObject
      * @param string $prefix
      * @param null $filter
      * @return array
-     * @throws IcingaException
      */
     public static function enumProperties(
         Db $connection = null,
@@ -631,9 +622,6 @@ class IcingaService extends IcingaObject
         return $properties;
     }
 
-    /**
-     * @throws IcingaException
-     */
     protected function beforeStore()
     {
         parent::beforeStore();
@@ -641,7 +629,7 @@ class IcingaService extends IcingaObject
             && $this->get('service_set_id') === null
             && $this->get('host_id') === null
         ) {
-            throw new IcingaException(
+            throw new InvalidArgumentException(
                 'Cannot store a Service object without a related host'
             );
         }

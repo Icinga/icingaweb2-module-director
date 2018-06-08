@@ -1660,11 +1660,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        return $this->getDefaultZone($config);
+    }
+
+    protected function getDefaultZone(IcingaConfig $config = null)
+    {
         if ($this->prefersGlobalZone()) {
             return $this->connection->getDefaultGlobalZoneName();
+        } else {
+            return $this->connection->getMasterZoneName();
         }
-
-        return $this->connection->getMasterZoneName();
     }
 
     protected function prefersGlobalZone()
