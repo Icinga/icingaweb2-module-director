@@ -1511,9 +1511,10 @@ abstract class DirectorObjectForm extends DirectorForm
      * Forms should use this helper method for objects using the typical
      * assign_filter column
      *
-     * @param array  $properties Form element properties
+     * @param array $properties Form element properties
      *
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addAssignFilter($properties)
     {
@@ -1543,10 +1544,11 @@ abstract class DirectorObjectForm extends DirectorForm
      * TODO: Evaluate whether parts or all of this could be moved to the element
      * class.
      *
-     * @param string $name       Element name
-     * @param array  $properties Form element properties
+     * @param string $name Element name
+     * @param array $properties Form element properties
      *
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addFilterElement($name, $properties)
     {

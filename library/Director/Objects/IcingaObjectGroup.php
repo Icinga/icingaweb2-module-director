@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Config;
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use RuntimeException;
 
 abstract class IcingaObjectGroup extends IcingaObject
 {
@@ -36,9 +36,9 @@ abstract class IcingaObjectGroup extends IcingaObject
             );
         }
 
-        // Last resort defense against potentiall lousy checks:
+        // Last resort defense against potentially lousy checks:
         if (! ctype_alpha($type)) {
-            throw new IcingaException(
+            throw new RuntimeException(
                 'Holy shit, you should never have reached this'
             );
         }
