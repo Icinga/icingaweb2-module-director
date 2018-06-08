@@ -5,7 +5,6 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Data\FilterColumns;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Web\Form\Element\Boolean;
 use Icinga\Module\Director\Web\Form\IconHelper;
 
@@ -211,6 +210,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
             if (substr($col, -7) === '.groups' && $dummy->supportsGroups()) {
                 $type = substr($col, 0, -7);
+
                 return $this->selectGroup($type, $filter);
             }
         }
@@ -225,12 +225,13 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
      */
     protected function selectGroup($type, FilterExpression $filter)
     {
-        $available = IcingaObjectGroup::enumForType($type);
-
-        return $this->select(
+        return $this->view->formText(
             $this->elementId('value', $filter),
-            $this->optionalEnum($available),
-            $filter->getExpression()
+            $filter->getExpression(),
+            [
+                'class' => 'director-suggest',
+                'data-suggestion-context' => "${type}groupnames",
+            ]
         );
     }
 

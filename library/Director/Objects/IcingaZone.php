@@ -9,23 +9,23 @@ class IcingaZone extends IcingaObject
 {
     protected $table = 'icinga_zone';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'          => null,
         'object_name' => null,
         'object_type' => null,
         'disabled'    => 'n',
         'parent_id'   => null,
         'is_global'   => 'n',
-    );
+    ];
 
-    protected $booleans = array(
+    protected $booleans = [
         // Global is a reserved word in SQL, column name was prefixed
         'is_global' => 'global'
-    );
+    ];
 
-    protected $relations = array(
+    protected $relations = [
         'parent' => 'IcingaZone',
-    );
+    ];
 
     protected $supportsImports = true;
 
@@ -46,8 +46,8 @@ class IcingaZone extends IcingaObject
         // If the zone has a parent zone...
         if ($this->get('parent_id')) {
             // ...we render the zone object to the parent zone
-            return $this->parent;
-        } elseif ($this->is_global === 'y') {
+            return $this->get('parent');
+        } elseif ($this->get('is_global') === 'y') {
             // ...additional global zones are rendered to our global zone...
             return $this->connection->getDefaultGlobalZoneName();
         } else {
@@ -59,17 +59,19 @@ class IcingaZone extends IcingaObject
     public function setEndpointList($list)
     {
         $this->endpointList = $list;
+
         return $this;
     }
 
     // TODO: Move this away, should be prefetchable:
     public function listEndpoints()
     {
-        if ($this->id && $this->endpointList === null) {
+        $id = $this->get('id');
+        if ($id && $this->endpointList === null) {
             $db = $this->getDb();
             $query = $db->select()
                 ->from('icinga_endpoint', 'object_name')
-                ->where('zone_id = ?', $this->id)
+                ->where('zone_id = ?', $id)
                 ->order('object_name');
 
             $this->endpointList = $db->fetchCol($query);

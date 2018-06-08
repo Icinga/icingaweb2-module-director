@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\LegacyDeploymentApi;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use InvalidArgumentException;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -15,22 +15,22 @@ class IcingaEndpoint extends IcingaObject
 
     protected $supportsImports = true;
 
-    protected $defaultProperties = array(
-        'id'                    => null,
-        'zone_id'               => null,
-        'object_name'           => null,
-        'object_type'           => null,
-        'disabled'              => 'n',
-        'host'                  => null,
-        'port'                  => null,
-        'log_duration'          => null,
-        'apiuser_id'            => null,
-    );
+    protected $defaultProperties = [
+        'id'           => null,
+        'zone_id'      => null,
+        'object_name'  => null,
+        'object_type'  => null,
+        'disabled'     => 'n',
+        'host'         => null,
+        'port'         => null,
+        'log_duration' => null,
+        'apiuser_id'   => null,
+    ];
 
-    protected $relations = array(
+    protected $relations = [
         'zone'    => 'IcingaZone',
         'apiuser' => 'IcingaApiUser',
-    );
+    ];
 
     public function hasApiUser()
     {
@@ -49,8 +49,6 @@ class IcingaEndpoint extends IcingaObject
      * Return a core API, depending on the configuration format
      *
      * @return CoreApi|LegacyDeploymentApi
-     *
-     * @throws ProgrammingError  When configured config_format is unknown
      */
     public function api()
     {
@@ -63,7 +61,7 @@ class IcingaEndpoint extends IcingaObject
         } elseif ($format === 'v1') {
             return new LegacyDeploymentApi($this->connection);
         } else {
-            throw new ProgrammingError('Unsupported config format: %s', $format);
+            throw new InvalidArgumentException("Unsupported config format: $format");
         }
     }
 
