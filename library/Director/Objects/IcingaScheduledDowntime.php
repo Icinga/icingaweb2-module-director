@@ -2,13 +2,11 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
-
 class IcingaScheduledDowntime extends IcingaObject
 {
     protected $table = 'icinga_scheduled_downtime';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                => null,
         'zone_id'           => null,
         'object_name'       => null,
@@ -19,23 +17,23 @@ class IcingaScheduledDowntime extends IcingaObject
         'comment'           => null,
         'fixed'             => null,
         'duration'          => null,
-    );
+    ];
 
     protected $supportsImports = true;
 
     protected $supportsRanges = true;
 
-    protected $relations = array(
+    protected $relations = [
         'zone' => 'IcingaZone',
-    );
+    ];
 
-    protected $booleans = array(
+    protected $booleans = [
         'fixed' => 'fixed',
-    );
+    ];
 
-    protected $intervalProperties = array(
+    protected $intervalProperties = [
         'duration' => 'duration',
-    );
+    ];
 
     /**
      * Render update property

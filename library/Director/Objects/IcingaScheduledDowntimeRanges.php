@@ -2,17 +2,17 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
-use Iterator;
 use Countable;
-use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
+use Exception;
+use Iterator;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 
 class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfigRenderer
 {
-    protected $storedRanges = array();
+    protected $storedRanges = [];
 
-    protected $ranges = array();
+    protected $ranges = [];
 
     protected $modified = false;
 
@@ -134,11 +134,11 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
                 $this->modified = true;
             }
         } else {
-            $this->ranges[$range] = IcingaTimePeriodRange::create(array(
-                'timeperiod_id' => $this->object->id,
-                'range_key'     => $range,
-                'range_value'   => $value,
-            ));
+            $this->ranges[$range] = IcingaScheduledDowntimeRange::create([
+                'scheduled_downtime_id' => $this->object->id,
+                'range_key'             => $range,
+                'range_value'           => $value,
+            ]);
             $this->modified = true;
         }
 
@@ -167,7 +167,7 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
 
     public function clear()
     {
-        $this->ranges = array();
+        $this->ranges = [];
         $this->modified = true;
         $this->refreshIndex();
     }
@@ -205,13 +205,12 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
 
         $table = $this->getRangeTableName();
 
-        $query = $db->select()->from(
-            array('o' => $table)
-        )->where('o.timeperiod_id = ?', (int) $this->object->id)
+        $query = $db->select()
+            ->from(['o' => $table])
+            ->where('o.scheduled_downtime_id = ?', (int) $this->object->get('id'))
             ->order('o.range_key');
 
-        $class = $this->getClass();
-        $this->ranges = $class::loadAll($connection, $query, 'range_key');
+        $this->ranges = IcingaScheduledDowntimeRange::loadAll($connection, $query, 'range_key');
         $this->storedRanges = array();
 
         foreach ($this->ranges as $key => $range) {
@@ -223,13 +222,17 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
 
     public function store()
     {
+        $db = $this->object->getConnection();
         foreach ($this->ranges as $range) {
             $range->timeperiod_id = $this->object->id;
-            $range->store($this->object->getConnection());
+            $range->store($db);
         }
 
         foreach (array_diff(array_keys($this->storedRanges), array_keys($this->ranges)) as $delete) {
-            $this->storedRanges[$delete]->delete();
+            $db->getDbAdapter()->delete(
+                'icinga_scheduled_downtime_range',
+                $this->storedRanges[$delete]->createWhere()
+            );
         }
 
         $this->storedRanges = $this->ranges;
@@ -239,7 +242,7 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
 
     protected function getClass()
     {
-        return __NAMESPACE__ . '\\IcingaTimePeriodRange';
+        return __NAMESPACE__ . '\\IcingaScheduledDowntimeRange';
     }
 
     public static function loadForStoredObject(IcingaObject $object)
@@ -265,6 +268,11 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
         }
 
         return $string . "    }\n";
+    }
+
+    public function toLegacyConfigString()
+    {
+        return '';
     }
 
     public function __toString()
