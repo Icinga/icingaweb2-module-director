@@ -1624,6 +1624,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $filename;
     }
 
+    protected function getNameForZoneId($zoneId, IcingaConfig $config = null)
+    {
+        // TODO: this is still ugly.
+        if ($config === null) {
+            return IcingaZone::loadWithAutoIncId(
+                $zoneId,
+                $this->getConnection()
+            )->getObjectName();
+        } else {
+            // Config has a lookup cache, is faster:
+            return $config->getZoneName($zoneId);
+        }
+    }
+
     public function getRenderingZone(IcingaConfig $config = null)
     {
         if ($this->hasUnresolvedRelatedProperty('zone_id')) {
@@ -1633,30 +1647,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($this->hasProperty('zone_id')) {
             if (! $this->supportsImports()) {
                 if ($zoneId = $this->get('zone_id')) {
-                    // TODO: this is ugly.
-                    if ($config === null) {
-                        return IcingaZone::loadWithAutoIncId(
-                            $zoneId,
-                            $this->getConnection()
-                        )->getObjectName();
-                    } else {
-                        // Config has a lookup cache, is faster:
-                        return $config->getZoneName($zoneId);
-                    }
+                    return $this->getNameForZoneId($zoneId, $config);
                 }
             }
 
             try {
                 if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
-                    if ($config === null) {
-                        return IcingaZone::loadWithAutoIncId(
-                            $zoneId,
-                            $this->getConnection()
-                        )->getObjectName();
-                    } else {
-                        // Config has a lookup cache, is faster:
-                        return $config->getZoneName($zoneId);
-                    }
+                    return $this->getNameForZoneId($zoneId, $config);
                 }
             } catch (Exception $e) {
                 return self::RESOLVE_ERROR;
