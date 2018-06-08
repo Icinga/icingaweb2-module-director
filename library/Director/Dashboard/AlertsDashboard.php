@@ -8,6 +8,8 @@ class AlertsDashboard extends Dashboard
         'Notifications',
         'Users',
         'Timeperiods',
+        'DependencyObject',
+        'ScheduledDowntimeApply',
     );
 
     public function getTitle()
