@@ -7,6 +7,7 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\SyncUtils;
@@ -43,6 +44,8 @@ class ImportSource extends DbObjectWithSettings
 
     private $rowModifiers;
 
+    private $newRowModifiers;
+
     /**
      * @return \stdClass
      */
@@ -67,22 +70,45 @@ class ImportSource extends DbObjectWithSettings
         $properties = (array) $plain;
         $id = $properties['originalId'];
         unset($properties['originalId']);
+        $name = $properties['source_name'];
 
-        if (static::existsWithNameAndId($properties['source_name'], $id, $db)) {
+        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
             $object = static::loadWithAutoIncId($id, $db);
+        } elseif (static::existsWithName($name, $db)) {
+            throw new DuplicateKeyException(
+                'Import Source %s already exists',
+                $name
+            );
         } else {
             $object = static::create([], $db);
         }
 
-        $object->importPropertyModifiers($properties['modifiers']);
+        $object->newRowModifiers = $properties['modifiers'];
         unset($properties['modifiers']);
         $object->setProperties($properties);
 
         return $object;
     }
 
-    protected function importPropertyModifiers($modifiers)
+    public static function loadByName($name, Db $connection)
     {
+        $db = $connection->getDbAdapter();
+        $properties = $db->fetchRow(
+            $db->select()->from('import_source')->where('source_name = ?', $name)
+        );
+
+        return static::create([], $connection)->setDbProperties($properties);
+    }
+
+    protected static function existsWithName($name, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+
+        return (string) $name === (string) $db->fetchOne(
+            $db->select()
+                ->from('import_source', 'source_name')
+                ->where('source_name = ?', $name)
+        );
     }
 
     protected static function existsWithNameAndId($name, $id, Db $connection)
@@ -93,7 +119,7 @@ class ImportSource extends DbObjectWithSettings
             $db->select()
                 ->from('import_source', 'id')
                 ->where('id = ?', $id)
-                ->where('name = ?', $name)
+                ->where('source_name = ?', $name)
         );
     }
 
@@ -114,6 +140,31 @@ class ImportSource extends DbObjectWithSettings
     public function fetchLastRun($required = false)
     {
         return $this->fetchLastRunBefore(time() + 1, $required);
+    }
+
+    /**
+     * @throws DuplicateKeyException
+     */
+    protected function onStore()
+    {
+        parent::onStore();
+        if ($this->newRowModifiers !== null) {
+            $connection = $this->getConnection();
+            $db = $connection->getDbAdapter();
+            $myId = $this->get('id');
+            if ($this->hasBeenLoadedFromDb()) {
+                $db->delete(
+                    'import_row_modifier',
+                    $db->quoteInto('source_id = ?', $myId)
+                );
+            }
+
+            foreach ($this->newRowModifiers as $modifier) {
+                $modifier = ImportRowModifier::create((array) $modifier, $connection);
+                $modifier->set('source_id', $myId);
+                $modifier->store();
+            }
+        }
     }
 
     /**
