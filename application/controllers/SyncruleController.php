@@ -6,9 +6,11 @@ use Icinga\Module\Director\Forms\SyncCheckForm;
 use Icinga\Module\Director\Forms\SyncPropertyForm;
 use Icinga\Module\Director\Forms\SyncRuleForm;
 use Icinga\Module\Director\Forms\SyncRunForm;
+use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
+use Icinga\Module\Director\Web\Form\CloneSyncRuleForm;
 use Icinga\Module\Director\Web\Table\SyncpropertyTable;
 use Icinga\Module\Director\Web\Table\SyncRunTable;
 use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
@@ -166,6 +168,14 @@ class SyncruleController extends ActionController
                 $this->translate('Sync rule: %s'),
                 $rule->rule_name
             ));
+            $this->actions()->add(
+                Link::create(
+                    $this->translate('Clone'),
+                    'director/syncrule/clone',
+                    ['id' => $id],
+                    ['class' => 'icon-paste']
+                )
+            );
 
             if (! $rule->hasSyncProperties()) {
                 $this->addPropertyHint($rule);
@@ -177,6 +187,41 @@ class SyncruleController extends ActionController
 
         $form->handleRequest();
         $this->content()->add($form);
+    }
+
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    public function cloneAction()
+    {
+        $id = $this->params->getRequired('id');
+        $rule = SyncRule::load($id, $this->db());
+        $this->tabs()->add('show', [
+            'url'       => 'director/syncrule',
+            'urlParams' => ['id' => $id],
+            'label'     => $this->translate('Sync rule'),
+        ])->add('clone', [
+            'url'       => 'director/syncrule/clone',
+            'urlParams' => ['id' => $id],
+            'label'     => $this->translate('Clone'),
+        ])->activate('clone');
+        $this->addTitle('Clone: %s', $rule->get('rule_name'));
+        $this->actions()->add(
+            Link::create(
+                $this->translate('Modify'),
+                'director/syncrule/edit',
+                ['id' => $rule->get('id')],
+                ['class' => 'icon-paste']
+            )
+        );
+
+        $form = new CloneSyncRuleForm($rule);
+        $this->content()->add($form);
+        $form->handleRequest($this->getRequest());
     }
 
     /**
