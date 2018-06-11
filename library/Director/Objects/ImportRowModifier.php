@@ -66,7 +66,7 @@ class ImportRowModifier extends DbObjectWithSettings
 
     protected function beforeStore()
     {
-        if (! $this->hasBeenLoadedFromDb()) {
+        if (! $this->hasBeenLoadedFromDb() && $this->get('priority') === null) {
             $this->setNextPriority('source_id');
         }
     }
