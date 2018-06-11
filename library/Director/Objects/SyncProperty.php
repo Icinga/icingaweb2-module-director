@@ -28,9 +28,17 @@ class SyncProperty extends DbObject
 
     protected function beforeStore()
     {
-        if (! $this->hasBeenLoadedFromDb()) {
+        if (! $this->hasBeenLoadedFromDb() && $this->get('priority') === null) {
             $this->setNextPriority('rule_id');
         }
+    }
+
+    public function setSource($name)
+    {
+        $source = ImportSource::loadByName($name, $this->getConnection());
+        $this->set('source_id', $source->get('id'));
+
+        return $this;
     }
 
     protected function onInsert()
