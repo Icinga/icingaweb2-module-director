@@ -2,10 +2,12 @@
 
 namespace Icinga\Module\Director;
 
+use Exception;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Exception\ConfigurationError;
+use RuntimeException;
 use Zend_Db_Expr;
 use Zend_Db_Select;
 
@@ -24,6 +26,25 @@ class Db extends DbConnection
     protected function db()
     {
         return $this->getDbAdapter();
+    }
+
+    public function runFailSafeTransaction($callable)
+    {
+        if (! is_callable($callable)) {
+            throw new RuntimeException(__METHOD__ . ' needs a Callable');
+        }
+
+        $db = $this->db();
+        $db->beginTransaction();
+        try {
+            $callable();
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollback();
+            throw $e;
+        }
+
+        return $this;
     }
 
     public function countActivitiesSinceLastDeployedConfig(IcingaObject $object = null)

@@ -100,4 +100,22 @@ class ImportExport
 
         return $res;
     }
+
+    public function unserializeImportSources($objects)
+    {
+        $this->connection->runFailSafeTransaction(function () use ($objects) {
+            foreach ($objects as $object) {
+                ImportSource::import($object, $this->connection)->store();
+            }
+        });
+    }
+
+    public function unserializeSyncRules($objects)
+    {
+        $this->connection->runFailSafeTransaction(function () use ($objects) {
+            foreach ($objects as $object) {
+                SyncRule::import($object, $this->connection)->store();
+            }
+        });
+    }
 }
