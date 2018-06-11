@@ -5,6 +5,8 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Import\PurgeStrategy\PurgeStrategy;
 use Icinga\Module\Director\Import\Sync;
 use Exception;
@@ -31,7 +33,7 @@ class SyncRule extends DbObject
     ];
 
     protected $stateProperties = [
-        'import_state',
+        'sync_state',
         'last_error_message',
         'last_attempt',
     ];
@@ -53,6 +55,8 @@ class SyncRule extends DbObject
     private $sourceKeyPattern;
 
     private $destinationKeyPattern;
+
+    private $newSyncProperties;
 
     public function listInvolvedSourceIds()
     {
@@ -254,6 +258,65 @@ class SyncRule extends DbObject
         return $plain;
     }
 
+    /**
+     * @param object $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $id = $properties['originalId'];
+        unset($properties['originalId']);
+        $name = $properties['rule_name'];
+
+        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
+            $object = static::loadWithAutoIncId($id, $db);
+        } elseif (static::existsWithName($name, $db)) {
+            throw new DuplicateKeyException(
+                'Import Source %s already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->newSyncProperties = $properties['properties'];
+        unset($properties['properties']);
+        $object->setProperties($properties);
+
+        return $object;
+    }
+
+    /**
+     * @throws DuplicateKeyException
+     */
+    protected function onStore()
+    {
+        parent::onStore();
+        if ($this->newSyncProperties !== null) {
+            $connection = $this->getConnection();
+            $db = $connection->getDbAdapter();
+            $myId = $this->get('id');
+            if ($this->hasBeenLoadedFromDb()) {
+                $db->delete(
+                    'sync_rule_property',
+                    $db->quoteInto('rule_id = ?', $myId)
+                );
+            }
+
+            foreach ($this->newSyncProperties as $property) {
+                unset($property->rule_name);
+                $property = SyncProperty::create((array) $property, $connection);
+                $property->set('rule_id', $myId);
+                $property->store();
+            }
+        }
+    }
+
     public function exportSyncProperties()
     {
         $all = [];
@@ -406,5 +469,45 @@ class SyncRule extends DbObject
                ->where('rule_id = ?', $this->get('id'))
                ->order('priority ASC')
         );
+    }
+
+    /**
+     * TODO: implement in a generic way, this is duplicated code
+     *
+     * @param string $name
+     * @param Db $connection
+     * @api internal
+     * @return bool
+     */
+    public static function existsWithName($name, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+
+        return (string) $name === (string) $db->fetchOne(
+                $db->select()
+                    ->from('sync_rule', 'rule_name')
+                    ->where('rule_name = ?', $name)
+            );
+    }
+
+    /**
+     * TODO: idem
+     *
+     * @param string $name
+     * @param int $id
+     * @param Db $connection
+     * @api internal
+     * @return bool
+     */
+    protected static function existsWithNameAndId($name, $id, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+
+        return (string) $id === (string) $db->fetchOne(
+                $db->select()
+                    ->from('sync_rule', 'id')
+                    ->where('id = ?', $id)
+                    ->where('rule_name = ?', $name)
+            );
     }
 }
