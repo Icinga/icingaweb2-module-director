@@ -60,7 +60,7 @@ class IcingaNotificationForm extends DirectorObjectForm
             return $this;
         }
 
-        $this->addEventFilterElements(['states','types'],[$applyTo] );
+        $this->addEventFilterElements(['states', 'types'], [$applyTo]);
 
         return $this;
     }
