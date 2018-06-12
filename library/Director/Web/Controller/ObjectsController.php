@@ -14,6 +14,7 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
 use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
 use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
+use Icinga\Module\Director\Web\Form\FormLoader;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectSetTable;
 use Icinga\Module\Director\Web\Table\ObjectsTable;
@@ -317,6 +318,23 @@ abstract class ObjectsController extends ActionController
         }
 
         return $objects;
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return \Icinga\Module\Director\Web\Form\QuickForm
+     * @throws \Icinga\Exception\ProgrammingError
+     */
+    public function loadForm($name)
+    {
+        $form = FormLoader::load($name, $this->Module());
+        if ($this->getRequest()->isApiRequest()) {
+            // TODO: Ask form for API support?
+            $form->setApiRequest();
+        }
+
+        return $form;
     }
 
     /**
