@@ -15,6 +15,9 @@ use dipl\Html\Link;
 
 class ImportsourceController extends ActionController
 {
+    /**
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     */
     public function init()
     {
         parent::init();
@@ -27,6 +30,11 @@ class ImportsourceController extends ActionController
         }
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function indexAction()
     {
         $source = ImportSource::load($this->params->getRequired('id'), $this->db());
@@ -42,6 +50,9 @@ class ImportsourceController extends ActionController
         $this->content()->add(new ImportSourceDetails($source));
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     public function addAction()
     {
         $this->addTitle($this->translate('Add import source'))
@@ -52,41 +63,69 @@ class ImportsourceController extends ActionController
             );
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     */
     public function editAction()
     {
         $form = ImportSourceForm::load()->setDb($this->db())
             ->loadObject($this->params->getRequired('id'))
             ->setListUrl('director/importsources')
             ->handleRequest();
+        $this->addTitle(
+            $this->translate('Import source: %s'),
+            $form->getObject()->get('source_name')
+        )->setAutorefreshInterval(10);
 
         $this->content()->add($form);
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function previewAction()
     {
         $source = ImportSource::load($this->params->getRequired('id'), $this->db());
 
         $this->addTitle(
-            $this->translate('Import source preview: "%s"'),
+            $this->translate('Import source preview: %s'),
             $source->get('source_name')
         );
 
+        $this->actions()->add(Link::create('[..]', '#', null, [
+            'onclick' => 'javascript:$("table.raw-data-table").toggleClass("collapsed");'
+        ]));
         (new ImportsourceHookTable())->setImportSource($source)->renderTo($this);
     }
 
+    /**
+     * @return ImportSource
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function requireImportSourceAndAddModifierTable()
     {
         $source = ImportSource::load($this->params->getRequired('source_id'), $this->db());
         PropertymodifierTable::load($source, $this->url())
             ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
             ->renderTo($this);
+
         return $source;
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function modifierAction()
     {
-        $this->addTitle($this->translate('Property modifiers'));
         $source = $this->requireImportSourceAndAddModifierTable();
+        $this->addTitle($this->translate('Property modifiers: %s'), $source->get('source_name'));
         $this->addAddLink(
             $this->translate('Add property modifier'),
             'director/importsource/addmodifier',
@@ -95,16 +134,27 @@ class ImportsourceController extends ActionController
         );
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function historyAction()
     {
         $source = ImportSource::load($this->params->getRequired('id'), $this->db());
-        $this->addTitle($this->translate('Import run history'));
+        $this->addTitle($this->translate('Import run history: %s'), $source->get('source_name'));
 
         // TODO: temporarily disabled, find a better place for stats:
         // $this->view->stats = $this->db()->fetchImportStatistics();
         ImportrunTable::load($source)->renderTo($this);
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function addmodifierAction()
     {
         $source = $this->requireImportSourceAndAddModifierTable();
@@ -124,6 +174,12 @@ class ImportsourceController extends ActionController
         );
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function editmodifierAction()
     {
         // We need to load the table AFTER adding the title, otherwise search
@@ -148,6 +204,10 @@ class ImportsourceController extends ActionController
         );
     }
 
+    /**
+     * @param ImportSource $source
+     * @return $this
+     */
     protected function addBackToModifiersLink(ImportSource $source)
     {
         $this->actions()->add(
