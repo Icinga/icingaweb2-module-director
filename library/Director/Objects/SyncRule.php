@@ -484,10 +484,10 @@ class SyncRule extends DbObject
         $db = $connection->getDbAdapter();
 
         return (string) $name === (string) $db->fetchOne(
-                $db->select()
-                    ->from('sync_rule', 'rule_name')
-                    ->where('rule_name = ?', $name)
-            );
+            $db->select()
+                ->from('sync_rule', 'rule_name')
+                ->where('rule_name = ?', $name)
+        );
     }
 
     /**
@@ -504,10 +504,10 @@ class SyncRule extends DbObject
         $db = $connection->getDbAdapter();
 
         return (string) $id === (string) $db->fetchOne(
-                $db->select()
-                    ->from('sync_rule', 'id')
-                    ->where('id = ?', $id)
-                    ->where('rule_name = ?', $name)
-            );
+            $db->select()
+                ->from('sync_rule', 'id')
+                ->where('id = ?', $id)
+                ->where('rule_name = ?', $name)
+        );
     }
 }

@@ -33,7 +33,6 @@ class CloneSyncRuleForm extends Form
         $this->addElement('submit', 'submit', [
             'label' => $this->translate('Clone')
         ]);
-
     }
 
     /**
