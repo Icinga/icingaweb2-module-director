@@ -100,7 +100,7 @@ class ImportSource extends DbObjectWithSettings
         return static::create([], $connection)->setDbProperties($properties);
     }
 
-    protected static function existsWithName($name, Db $connection)
+    public static function existsWithName($name, Db $connection)
     {
         $db = $connection->getDbAdapter();
 
