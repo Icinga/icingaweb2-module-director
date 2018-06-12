@@ -38,6 +38,7 @@ before switching to a new version.
 * FEATURE: Inspect feature got refactored, also for Services (#264, #689, #1396, #1397)
 * FEATURE: The "Modify" hook is now available for Services (#689), regardless
   of whether they have been directly assigned, inherited or applied
+* FEATURE: Config preview links imports, hosts and commands to related objects (#1521)
 * FIX: Don't suggest Command templates where Commands are required (#1414)
 * FIX: Do not allow to delete Commands being used by other objects (#1443)
 * FIX: Show 'Inspect' tab only for Endpoints with an ApiUser (#1293)

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web;
 
+use dipl\Html\Text;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Request;
@@ -99,7 +100,75 @@ class ObjectPreview
                 $classes[] = 'logfile';
             }
 
-            $content->add(Html::tag('pre', ['class' => $classes], $file->getContent()));
+            $plain = Html::wantHtml($file->getContent())->render();
+            $plain = preg_replace_callback(
+                '/^(\s+import\s+\&quot\;)(.+)(\&quot\;)/m',
+                [$this, 'linkImport'],
+                $plain
+            );
+            $plain = preg_replace_callback(
+                '/^(\s+(?:check_|event_)?command\s+=\s+\&quot\;)(.+)(\&quot\;)/m',
+                [$this, 'linkCommand'],
+                $plain
+            );
+            $plain = preg_replace_callback(
+                '/^(\s+host_name\s+=\s+\&quot\;)(.+)(\&quot\;)/m',
+                [$this, 'linkHost'],
+                $plain
+            );
+            $text = Text::create($plain)->setEscaped();
+
+            $content->add(Html::tag('pre', ['class' => $classes], $text));
         }
+    }
+
+    /**
+     * @api internal
+     * @param $match
+     * @return string
+     */
+    public function linkImport($match)
+    {
+        $blacklist = [
+            'plugin-notification-command',
+            'plugin-check-command',
+        ];
+        if (in_array($match[2], $blacklist)) {
+            return $match[1] . $match[2] . $match[3];
+        }
+
+        return $match[1] . Link::create(
+            $match[2],
+            sprintf('director/' . $this->object->getShortTableName()),
+            ['name' => $match[2]]
+        )->render() . $match[3];
+    }
+
+    /**
+     * @api internal
+     * @param $match
+     * @return string
+     */
+    public function linkCommand($match)
+    {
+        return $match[1] . Link::create(
+            $match[2],
+            sprintf('director/command'),
+            ['name' => $match[2]]
+        )->render() . $match[3];
+    }
+
+    /**
+     * @api internal
+     * @param $match
+     * @return string
+     */
+    public function linkHost($match)
+    {
+        return $match[1] . Link::create(
+            $match[2],
+            sprintf('director/host'),
+            ['name' => $match[2]]
+        )->render() . $match[3];
     }
 }
