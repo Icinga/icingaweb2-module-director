@@ -26,6 +26,10 @@ class KickstartForm extends DirectorForm
     /** @var IcingaEndpoint */
     private $endpoint;
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->storeConfigLabel = $this->translate('Store configuration');
@@ -178,6 +182,9 @@ class KickstartForm extends DirectorForm
         $this->setSubmitLabel($this->translate('Run import'));
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     protected function onSetup()
     {
         if ($this->hasBeenSubmitted()) {
@@ -212,6 +219,9 @@ class KickstartForm extends DirectorForm
         }
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function addResourceConfigElements()
     {
         $config = $this->config();
@@ -251,6 +261,9 @@ class KickstartForm extends DirectorForm
         $this->setSubmitLabel($this->storeConfigLabel);
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function addResourceDisplayGroup()
     {
         $elements = array(
@@ -273,6 +286,9 @@ class KickstartForm extends DirectorForm
         ));
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function addKickstartDisplayGroup()
     {
         $elements = array(
@@ -290,6 +306,10 @@ class KickstartForm extends DirectorForm
         ));
     }
 
+    /**
+     * @return bool
+     * @throws \Zend_Form_Exception
+     */
     protected function storeResourceConfig()
     {
         $config = $this->config();
@@ -332,6 +352,11 @@ class KickstartForm extends DirectorForm
         return $this;
     }
 
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Zend_Form_Exception
+     */
     public function onSuccess()
     {
         if ($this->getSubmitLabel() === $this->storeConfigLabel) {
@@ -385,6 +410,10 @@ class KickstartForm extends DirectorForm
         return ResourceFactory::create($this->getResourceName());
     }
 
+    /**
+     * @return Migrations
+     * @throws \Icinga\Exception\IcingaException
+     */
     protected function migrations()
     {
         return new Migrations($this->getDb());
