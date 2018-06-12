@@ -42,10 +42,27 @@ class IcingaNotificationForm extends DirectorObjectForm
              ->addAssignmentElements()
              ->addDisabledElement()
              ->addCommandElements()
-             ->addEventFilterElements()
+             ->addEventFilterElement()
              ->addZoneElements()
              ->groupMainProperties()
              ->setButtons();
+    }
+
+    protected function addEventFilterElement()
+    {
+        if ($this->isTemplate()) {
+            return $this->addEventFilterElements();
+        }
+
+        $applyTo = $this->getSentOrObjectValue('apply_to');
+
+        if (! $applyTo) {
+            return $this;
+        }
+
+        $this->addEventFilterElements(['states', 'types'], [$applyTo]);
+
+        return $this;
     }
 
     protected function addZoneElements()
