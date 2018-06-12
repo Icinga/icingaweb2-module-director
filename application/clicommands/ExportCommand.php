@@ -13,8 +13,6 @@ class ExportCommand extends Command
     /**
      * Export all ImportSource definitions
      *
-     * Use this command to delete a single Icinga object
-     *
      * USAGE
      *
      * icingacli director export importsource [options]
@@ -35,8 +33,6 @@ class ExportCommand extends Command
 
     /**
      * Export all SyncRule definitions
-     *
-     * Use this command to delete a single Icinga object
      *
      * USAGE
      *
