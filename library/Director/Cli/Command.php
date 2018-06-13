@@ -3,12 +3,13 @@
 namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Command as CliCommand;
-use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Application\Config;
+use RuntimeException;
 
 class Command extends CliCommand
 {
@@ -26,45 +27,40 @@ class Command extends CliCommand
     /**
      * @param $json
      * @return mixed
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function parseJson($json)
     {
         $res = json_decode($json);
 
         if ($res === null) {
-            $this->fail(sprintf(
-                'Invalid JSON',
-                $this->getLastJsonError()
-            ));
+            $this->fail('Invalid JSON: %s', $this->getLastJsonError());
         }
 
         return $res;
     }
 
-    // TODO: just return json_last_error_msg() for PHP >= 5.5.0
+    public function fail($msg)
+    {
+        $args = func_get_args();
+        array_shift($args);
+        if (count($args)) {
+            $msg = vsprintf($msg, $args);
+        }
+
+        throw new RuntimeException($msg);
+    }
+
+    /**
+     * @return string
+     */
     protected function getLastJsonError()
     {
-        switch (json_last_error()) {
-            case JSON_ERROR_DEPTH:
-                return 'The maximum stack depth has been exceeded';
-            case JSON_ERROR_CTRL_CHAR:
-                return 'Control character error, possibly incorrectly encoded';
-            case JSON_ERROR_STATE_MISMATCH:
-                return 'Invalid or malformed JSON';
-            case JSON_ERROR_SYNTAX:
-                return 'Syntax error';
-            case JSON_ERROR_UTF8:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            default:
-                return 'An error occured when parsing a JSON string';
-        }
+        return JsonException::getJsonErrorMessage(json_last_error());
     }
 
     /**
      * @param null $endpointName
      * @return CoreApi|\Icinga\Module\Director\Core\LegacyDeploymentApi
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function api($endpointName = null)
@@ -85,8 +81,6 @@ class Command extends CliCommand
     /**
      * Raise PHP resource limits
      *
-     * TODO: do this in a failsafe way, and only if necessary
-     *
      * @return self;
      */
     protected function raiseLimits()
@@ -103,7 +97,6 @@ class Command extends CliCommand
 
     /**
      * @return Db
-     * @throws ConfigurationError
      */
     protected function db()
     {
@@ -118,7 +111,7 @@ class Command extends CliCommand
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
-                throw new ConfigurationError('Director is not configured correctly');
+                throw new RuntimeException('Director is not configured correctly');
             }
         }
 
