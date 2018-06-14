@@ -113,8 +113,8 @@ trait ControlsAndContentHelper
     }
 
     /**
-     * @param $title
-     * @param null $url
+     * @param string $title
+     * @param mixed $url
      * @param string $name
      * @return $this
      */
@@ -161,7 +161,9 @@ trait ControlsAndContentHelper
      */
     protected function getUrlFromRequest()
     {
-        $webUrl = $this->getRequest()->getUrl();
+        /** @var \Icinga\Web\Request $request */
+        $request = $this->getRequest();
+        $webUrl = $request->getUrl();
 
         return Url::fromPath(
             $webUrl->getPath()

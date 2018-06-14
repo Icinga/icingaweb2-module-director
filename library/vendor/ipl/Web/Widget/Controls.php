@@ -5,6 +5,8 @@ namespace dipl\Web\Widget;
 use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use dipl\Html\HtmlDocument;
+use Icinga\Exception\ProgrammingError;
+use RuntimeException;
 
 class Controls extends BaseHtmlElement
 {
@@ -33,7 +35,6 @@ class Controls extends BaseHtmlElement
      * @param $title
      * @param null $subTitle
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function addTitle($title, $subTitle = null)
     {
@@ -48,7 +49,6 @@ class Controls extends BaseHtmlElement
     /**
      * @param BaseHtmlElement $element
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function setTitleElement(BaseHtmlElement $element)
     {
@@ -92,7 +92,6 @@ class Controls extends BaseHtmlElement
     /**
      * @param Tabs $tabs
      * @return $this
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function prependTabs(Tabs $tabs)
     {
@@ -102,7 +101,12 @@ class Controls extends BaseHtmlElement
             $current = $this->tabs->getTabs();
             $this->tabs = $tabs;
             foreach ($current as $name => $tab) {
-                $this->tabs->add($name, $tab);
+                try {
+                    // TODO: Use ipl-based tabs
+                    $this->tabs->add($name, $tab);
+                } catch (ProgrammingError $e) {
+                    throw new RuntimeException($e->getMessage(), 0, $e);
+                }
             }
         }
 
@@ -111,7 +115,6 @@ class Controls extends BaseHtmlElement
 
     /**
      * @return ActionBar
-     * @throws \Icinga\Exception\IcingaException
      */
     public function getActionBar()
     {
@@ -125,7 +128,6 @@ class Controls extends BaseHtmlElement
     /**
      * @param HtmlDocument $actionBar
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function setActionBar(HtmlDocument $actionBar)
     {
@@ -141,7 +143,6 @@ class Controls extends BaseHtmlElement
 
     /**
      * @return BaseHtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function renderTitleElement()
     {
@@ -157,7 +158,6 @@ class Controls extends BaseHtmlElement
 
     /**
      * @return string
-     * @throws \Icinga\Exception\IcingaException
      */
     public function renderContent()
     {
