@@ -213,8 +213,8 @@ abstract class ObjectsController extends ActionController
     /**
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\ProgrammingError
      * @throws \Icinga\Security\SecurityException
+     * @throws NotFoundError
      */
     public function applyrulesAction()
     {
@@ -256,6 +256,7 @@ abstract class ObjectsController extends ActionController
      * @throws NotFoundError
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Security\SecurityException
      */
     public function setsAction()
     {
@@ -325,7 +326,6 @@ abstract class ObjectsController extends ActionController
      * @param string $name
      *
      * @return \Icinga\Module\Director\Web\Form\QuickForm
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function loadForm($name)
     {
@@ -342,6 +342,7 @@ abstract class ObjectsController extends ActionController
      * @param ZfQueryBasedTable $table
      * @return ZfQueryBasedTable
      * @throws \Icinga\Exception\ConfigurationError
+     * @throws NotFoundError
      */
     protected function eventuallyFilterCommand(ZfQueryBasedTable $table)
     {
