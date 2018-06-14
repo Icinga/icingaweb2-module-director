@@ -53,7 +53,7 @@ class CloneImportSourceForm extends Form
         $export->source_name = $newName;
 
         if (ImportSource::existsWithName($newName, $this->source->getConnection())) {
-            $this->getElement('import_name')->addMessage('Name already exists');
+            $this->getElement('source_name')->addMessage('Name already exists');
         }
         $this->newSource = ImportSource::import($export, $this->getTargetDb());
         $this->newSource->store();
