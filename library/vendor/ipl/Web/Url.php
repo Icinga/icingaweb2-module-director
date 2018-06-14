@@ -2,10 +2,13 @@
 
 namespace dipl\Web;
 
+use Exception;
 use Icinga\Application\Icinga;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Url as WebUrl;
 use Icinga\Web\UrlParams;
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Class Url
@@ -91,8 +94,14 @@ class Url extends WebUrl
         foreach ($params as $k => $v) {
             $urlParams->set($k, $v);
         }
-        $url->setParams($urlParams);
+        try {
+            $url->setParams($urlParams);
+        } catch (ProgrammingError $e) {
+            throw new RuntimeException($e->getMessage());
+        }
+
         $url->setBasePath($request->getBaseUrl());
+
         return $url;
     }
 
@@ -101,15 +110,34 @@ class Url extends WebUrl
         if (property_exists($this, 'basePath')) {
             parent::setBasePath($basePath);
         } else {
-            return $this->setBaseUrl($basePath);
+            $this->setBaseUrl($basePath);
+        }
+
+        return $this;
+    }
+
+    public function setParams($params)
+    {
+        try {
+            return parent::setParams($params);
+        } catch (ProgrammingError $e) {
+            throw new InvalidArgumentException($e->getMessage(), 0, $e);
         }
     }
 
     protected static function getRequest()
     {
-        $app = Icinga::app();
+        try {
+            $app = Icinga::app();
+        } catch (ProgrammingError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
         if ($app->isCli()) {
-            return new FakeRequest();
+            try {
+                return new FakeRequest();
+            } catch (Exception $e) {
+                throw new RuntimeException($e->getMessage(), 0, $e);
+            }
         } else {
             return $app->getRequest();
         }
