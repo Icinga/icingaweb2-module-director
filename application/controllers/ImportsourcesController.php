@@ -30,10 +30,10 @@ class ImportsourcesController extends ActionController
         if ($this->getRequest()->isApiRequest()) {
             switch (strtolower($this->getRequest()->getMethod())) {
                 case 'get':
-                    throw new \RuntimeException('sdaf');
+                    $this->sendExport();
                     break;
                 case 'post':
-                    $this->import($this->getRequest()->getRawBody());
+                    $this->acceptImport($this->getRequest()->getRawBody());
                     break;
                 // TODO: put / replace all?
                 default:
@@ -51,6 +51,15 @@ class ImportsourcesController extends ActionController
             )->tabs(new ImportTabs())->activate('importsource');
 
         (new ImportsourceTable($this->db()))->renderTo($this);
+    }
+
+    /**
+     * @param $raw
+     * @throws \Icinga\Exception\ConfigurationError
+     */
+    protected function acceptImport(& $raw)
+    {
+        (new ImportExport($this->db()))->unserializeImportSources(json_decode($raw));
     }
 
     /**
