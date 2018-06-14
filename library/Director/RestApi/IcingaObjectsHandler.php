@@ -44,6 +44,11 @@ class IcingaObjectsHandler extends RequestHandler
         return $this->table;
     }
 
+    /**
+     * @throws ProgrammingError
+     * @throws \Zend_Db_Select_Exception
+     * @throws \Zend_Db_Statement_Exception
+     */
     protected function streamJsonResult()
     {
         $this->response->setHeader('Content-Type', 'application/json', true);

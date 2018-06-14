@@ -57,7 +57,7 @@ abstract class ObjectsController extends ActionController
     /**
      * @return IcingaObjectsHandler
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
+     * @throws NotFoundError
      */
     protected function apiRequestHandler()
     {
@@ -84,7 +84,7 @@ abstract class ObjectsController extends ActionController
     /**
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
+     * @throws NotFoundError
      */
     public function indexAction()
     {
@@ -171,7 +171,8 @@ abstract class ObjectsController extends ActionController
      * Passing render=tree switches to the tree view.
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Security\SecurityException
+     * @throws NotFoundError
      */
     public function templatesAction()
     {
