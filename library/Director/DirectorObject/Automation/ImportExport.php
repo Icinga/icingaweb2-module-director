@@ -103,19 +103,27 @@ class ImportExport
 
     public function unserializeImportSources($objects)
     {
-        $this->connection->runFailSafeTransaction(function () use ($objects) {
+        $count = 0;
+        $this->connection->runFailSafeTransaction(function () use ($objects, & $count) {
             foreach ($objects as $object) {
                 ImportSource::import($object, $this->connection)->store();
+                $count++;
             }
         });
+
+        return $count;
     }
 
     public function unserializeSyncRules($objects)
     {
-        $this->connection->runFailSafeTransaction(function () use ($objects) {
+        $count = 0;
+        $this->connection->runFailSafeTransaction(function () use ($objects, & $count) {
             foreach ($objects as $object) {
                 SyncRule::import($object, $this->connection)->store();
             }
+            $count++;
         });
+
+        return $count;
     }
 }
