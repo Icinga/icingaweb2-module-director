@@ -37,6 +37,7 @@ abstract class ActionController extends Controller implements ControlsAndContent
 
     /**
      * @throws SecurityException
+     * @throws \Icinga\Exception\AuthenticationException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function init()
