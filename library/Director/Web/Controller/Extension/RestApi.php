@@ -4,7 +4,10 @@ namespace Icinga\Module\Director\Web\Controller\Extension;
 
 use Icinga\Exception\AuthenticationException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Web\Response;
+use InvalidArgumentException;
+use Zend_Controller_Response_Exception;
 
 trait RestApi
 {
@@ -17,9 +20,14 @@ trait RestApi
         }
     }
 
+    /**
+     * @return bool
+     */
     protected function sendNotFoundForRestApi()
     {
-        if ($this->getRequest()->isApiRequest()) {
+        /** @var \Icinga\Web\Request $request */
+        $request = $this->getRequest();
+        if ($request->isApiRequest()) {
             $this->sendJsonError($this->getResponse(), 'Not found', 404);
             return true;
         } else {
@@ -27,6 +35,9 @@ trait RestApi
         }
     }
 
+    /**
+     * @throws AuthenticationException
+     */
     protected function assertApiPermission()
     {
         if (! $this->hasPermission('director/api')) {
@@ -34,9 +45,15 @@ trait RestApi
         }
     }
 
+    /**
+     * @throws AuthenticationException
+     * @throws NotFoundError
+     */
     protected function checkForRestApiRequest()
     {
-        if ($this->getRequest()->isApiRequest()) {
+        /** @var \Icinga\Web\Request $request */
+        $request = $this->getRequest();
+        if ($request->isApiRequest()) {
             $this->assertApiPermission();
             if (! $this->isApified()) {
                 throw new NotFoundError('No such API endpoint found');
@@ -44,37 +61,39 @@ trait RestApi
         }
     }
 
+    /**
+     * @param Response $response
+     * @param $object
+     */
     protected function sendJson(Response $response, $object)
     {
         $response->setHeader('Content-Type', 'application/json', true);
         echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
     }
 
+    /**
+     * @param Response $response
+     * @param string $message
+     * @param int|null $code
+     */
     protected function sendJsonError(Response $response, $message, $code = null)
     {
         if ($code !== null) {
-            $response->setHttpResponseCode((int) $code);
+            try {
+                $response->setHttpResponseCode((int) $code);
+            } catch (Zend_Controller_Response_Exception $e) {
+                throw new InvalidArgumentException($e->getMessage(), 0, $e);
+            }
         }
 
         $this->sendJson($response, (object) ['error' => $message]);
     }
 
-    // TODO: just return json_last_error_msg() for PHP >= 5.5.0
+    /**
+     * @return string
+     */
     protected function getLastJsonError()
     {
-        switch (json_last_error()) {
-            case JSON_ERROR_DEPTH:
-                return 'The maximum stack depth has been exceeded';
-            case JSON_ERROR_CTRL_CHAR:
-                return 'Control character error, possibly incorrectly encoded';
-            case JSON_ERROR_STATE_MISMATCH:
-                return 'Invalid or malformed JSON';
-            case JSON_ERROR_SYNTAX:
-                return 'Syntax error';
-            case JSON_ERROR_UTF8:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            default:
-                return 'An error occured when parsing a JSON string';
-        }
+        return JsonException::getJsonErrorMessage(json_last_error());
     }
 }
