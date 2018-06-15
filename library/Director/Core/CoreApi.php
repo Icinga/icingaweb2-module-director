@@ -512,7 +512,7 @@ constants
      */
     public function getCheckCommandObjects()
     {
-        return $this->getSpecificCommandObjects('Command');
+        return $this->getSpecificCommandObjects('Check');
     }
 
     /**
