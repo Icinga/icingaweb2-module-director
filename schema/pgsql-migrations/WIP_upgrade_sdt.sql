@@ -5,6 +5,7 @@ CREATE TABLE icinga_scheduled_downtime (
   zone_id integer DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
+  apply_to enum_host_service NULL DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   author character varying(255) DEFAULT NULL,
   comment text DEFAULT NULL,
