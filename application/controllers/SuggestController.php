@@ -188,8 +188,14 @@ class SuggestController extends ActionController
         return $this->fetchTemplateNames('icinga_user');
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Security\SecurityException
+     * @codingStandardsIgnoreStart
+     */
     protected function suggestScheduled_downtimetemplates()
     {
+        // @codingStandardsIgnoreEnd
         $this->assertPermission('director/scheduled-downtimes');
         return $this->fetchTemplateNames('icinga_scheduled_downtime');
     }
