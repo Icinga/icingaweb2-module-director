@@ -17,6 +17,7 @@ class IcingaScheduledDowntime extends IcingaObject
         'comment'           => null,
         'fixed'             => null,
         'duration'          => null,
+        'apply_to'          => null,
         'assign_filter'     => null,
     ];
 

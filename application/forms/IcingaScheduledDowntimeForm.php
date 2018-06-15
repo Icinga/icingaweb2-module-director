@@ -49,6 +49,50 @@ class IcingaScheduledDowntimeForm extends DirectorObjectForm
             'required' => ! $this->isTemplate(),
         ]);
 
+        $this->addAssignmentElements();
         $this->setButtons();
+    }
+
+
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
+    protected function addAssignmentElements()
+    {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $this->addElement('select', 'apply_to', [
+            'label'        => $this->translate('Apply to'),
+            'description'  => $this->translate(
+                'Whether this dependency should affect hosts or services'
+            ),
+            'required'     => true,
+            'class'        => 'autosubmit',
+            'multiOptions' => $this->optionalEnum([
+                'host'    => $this->translate('Hosts'),
+                'service' => $this->translate('Services'),
+            ])
+        ]);
+
+        $applyTo = $this->getSentOrObjectValue('apply_to');
+
+        if (! $applyTo) {
+            return $this;
+        }
+
+        $suggestionContext = ucfirst($applyTo) . 'FilterColumns';
+        $this->addAssignFilter([
+            'suggestionContext' => $suggestionContext,
+            'required' => true,
+            'description' => $this->translate(
+                'This allows you to configure an assignment filter. Please feel'
+                . ' free to combine as many nested operators as you want'
+            )
+        ]);
+
+        return $this;
     }
 }
