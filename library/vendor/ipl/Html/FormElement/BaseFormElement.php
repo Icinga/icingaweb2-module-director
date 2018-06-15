@@ -41,10 +41,18 @@ abstract class BaseFormElement extends BaseHtmlElement
     /**
      * Link constructor.
      * @param $name
-     * @param $value
      * @param \dipl\Html\Attributes|array|null $attributes
      */
     public function __construct($name, $attributes = null)
+    {
+        $this->registerAttributeCallbacks();
+        if ($attributes !== null) {
+            $this->addAttributes($attributes);
+        }
+        $this->setName($name);
+    }
+
+    protected function registerAttributeCallbacks()
     {
         $this->getAttributes()
             ->registerAttributeCallback('label', [$this, 'getNoAttribute'], [$this, 'setLabel'])
@@ -53,10 +61,6 @@ abstract class BaseFormElement extends BaseHtmlElement
             ->registerAttributeCallback('description', [$this, 'getNoAttribute'], [$this, 'setDescription'])
             ->registerAttributeCallback('validators', null, [$this, 'setValidators'])
             ->registerAttributeCallback('required', [$this, 'getRequiredAttribute'], [$this, 'setRequired']);
-        if ($attributes !== null) {
-            $this->addAttributes($attributes);
-        }
-        $this->setName($name);
     }
 
     /**
