@@ -2,6 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\ConfigurationError;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+
 class IcingaScheduledDowntime extends IcingaObject
 {
     protected $table = 'icinga_scheduled_downtime';
@@ -53,10 +56,30 @@ class IcingaScheduledDowntime extends IcingaObject
         return '';
     }
 
+    /**
+     * @return string
+     * @throws ConfigurationError
+     */
     protected function renderObjectHeader()
     {
-        return parent::renderObjectHeader()
-            . '    import "legacy-timeperiod"' . "\n";
+        if ($this->isApplyRule()) {
+            if (($to = $this->get('apply_to')) === null) {
+                throw new ConfigurationError(
+                    'Applied notification "%s" has no valid object type',
+                    $this->getObjectName()
+                );
+            }
+
+            return sprintf(
+                "%s %s %s to %s {\n",
+                $this->getObjectTypeName(),
+                $this->getType(),
+                c::renderString($this->getObjectName()),
+                ucfirst($to)
+            );
+        } else {
+            return parent::renderObjectHeader();
+        }
     }
 
     public function isActive($now = null)
