@@ -48,8 +48,11 @@ abstract class ObjectsController extends ActionController
         if (substr($this->getType(), -5) === 'Group') {
             $tabName = 'groups';
         }
-        $this->tabs(new ObjectsTabs($this->getBaseType(), $this->Auth()))
-            ->activate($tabName);
+        $this->tabs(new ObjectsTabs(
+            $this->getBaseType(),
+            $this->Auth(),
+            $this->getBaseObjectUrl()
+        ))->activate($tabName);
 
         return $this;
     }
@@ -126,7 +129,8 @@ abstract class ObjectsController extends ActionController
     protected function getTable()
     {
         return ObjectsTable::create($this->getType(), $this->db())
-            ->setAuth($this->getAuth());
+            ->setAuth($this->getAuth())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
     }
 
     /**
@@ -240,12 +244,13 @@ abstract class ObjectsController extends ActionController
                 $this->translate('All your %s Apply Rules'),
                 $tType
             );
+        $baseUrl = 'director/' . $this->getBaseObjectUrl();
         $this->actions()
             //->add($this->getBackToDashboardLink())
             ->add(
                 Link::create(
                     $this->translate('Add'),
-                    "director/$type/add",
+                    "${baseUrl}/add",
                     ['type' => 'apply'],
                     [
                         'title' => sprintf(
@@ -259,7 +264,8 @@ abstract class ObjectsController extends ActionController
             );
 
         $table = new ApplyRulesTable($this->db());
-        $table->setType($this->getType());
+        $table->setType($this->getType())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
         $this->eventuallyFilterCommand($table);
         $table->renderTo($this);
     }

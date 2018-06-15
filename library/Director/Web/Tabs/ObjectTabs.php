@@ -117,7 +117,7 @@ class ObjectTabs extends Tabs
 
         if ($object->supportsRanges()) {
             $this->add('ranges', [
-                'url'       => 'director/timeperiod/ranges',
+                'url'       => "director/${type}/ranges",
                 'urlParams' => $params,
                 'label'     => $this->translate('Ranges')
             ]);

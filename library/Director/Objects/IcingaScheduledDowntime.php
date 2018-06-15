@@ -17,11 +17,14 @@ class IcingaScheduledDowntime extends IcingaObject
         'comment'           => null,
         'fixed'             => null,
         'duration'          => null,
+        'assign_filter'     => null,
     ];
 
     protected $supportsImports = true;
 
     protected $supportsRanges = true;
+
+    protected $supportsApplyRules = true;
 
     protected $relations = [
         'zone' => 'IcingaZone',

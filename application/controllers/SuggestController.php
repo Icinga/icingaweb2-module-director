@@ -188,6 +188,12 @@ class SuggestController extends ActionController
         return $this->fetchTemplateNames('icinga_user');
     }
 
+    protected function suggestScheduled_downtimetemplates()
+    {
+        $this->assertPermission('director/scheduled-downtimes');
+        return $this->fetchTemplateNames('icinga_scheduled_downtime');
+    }
+
     protected function suggestCheckcommandnames()
     {
         $db = $this->db()->getDbAdapter();
@@ -199,7 +205,7 @@ class SuggestController extends ActionController
         return $db->fetchCol($query);
     }
 
-    protected function fetchTemplateNames($table, $where)
+    protected function fetchTemplateNames($table, $where = null)
     {
         $db = $this->db()->getDbAdapter();
         $query = $db->select()

@@ -25,6 +25,11 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     private $type;
 
+    /** @var IcingaObject */
+    protected $dummyObject;
+
+    protected $baseObjectUrl;
+
     public static function create($type, Db $db)
     {
         $table = new static($db);
@@ -35,6 +40,14 @@ class ApplyRulesTable extends ZfQueryBasedTable
     public function setType($type)
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function setBaseObjectUrl($url)
+    {
+        $this->baseObjectUrl = $url;
+
         return $this;
     }
 
@@ -99,32 +112,32 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     public function createActionLinks($row)
     {
-        $type = $this->type;
+        $baseUrl = 'director/' . $this->baseObjectUrl;
         $links = [];
         $links[] = Link::create(
             Icon::create('sitemap'),
-            "director/${type}template/applytargets",
+            "${baseUrl}template/applytargets",
             ['id' => $row->id],
             ['title' => $this->translate('Show affected Objects')]
         );
 
         $links[] = Link::create(
             Icon::create('edit'),
-            "director/$type/edit",
+            "$baseUrl/edit",
             ['id' => $row->id],
             ['title' => $this->translate('Modify this Apply Rule')]
         );
 
         $links[] = Link::create(
             Icon::create('doc-text'),
-            "director/$type/render",
+            "$baseUrl/render",
             ['id' => $row->id],
             ['title' => $this->translate('Apply Rule rendering preview')]
         );
 
         $links[] = Link::create(
             Icon::create('history'),
-            "director/$type/history",
+            "$baseUrl/history",
             ['id' => $row->id],
             ['title' => $this->translate('Apply rule history')]
         );
@@ -149,9 +162,22 @@ class ApplyRulesTable extends ZfQueryBasedTable
         return FilterRenderer::applyToQuery($filter, $query);
     }
 
+
+    /**
+     * @return IcingaObject
+     */
+    protected function getDummyObject()
+    {
+        if ($this->dummyObject === null) {
+            $type = $this->type;
+            $this->dummyObject = IcingaObject::createByType($type);
+        }
+        return $this->dummyObject;
+    }
+
     public function prepareQuery()
     {
-        $type = $this->type;
+        $table = $this->getDummyObject()->getTableName();
         $columns = [
             'id'            => 'o.id',
             'object_name'   => 'o.object_name',
@@ -159,13 +185,13 @@ class ApplyRulesTable extends ZfQueryBasedTable
             'assign_filter' => 'o.assign_filter',
         ];
         $query = $this->db()->select()->from(
-            ['o' => "icinga_$type"],
+            ['o' => $table],
             $columns
         )->where(
             "object_type = 'apply'"
         )->order('o.object_name');
 
-        if ($type === 'service') {
+        if ($this->type === 'service') {
             $query->where('service_set_id IS NULL');
         }
 

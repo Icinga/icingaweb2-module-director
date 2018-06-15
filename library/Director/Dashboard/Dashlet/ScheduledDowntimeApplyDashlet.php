@@ -15,6 +15,6 @@ class ScheduledDowntimeApplyDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/scheduled_downtimes/applyrules';
+        return 'director/scheduled-downtimes/applyrules';
     }
 }
