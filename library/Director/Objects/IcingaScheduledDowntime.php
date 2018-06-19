@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use RuntimeException;
 
 class IcingaScheduledDowntime extends IcingaObject
 {
@@ -43,31 +43,16 @@ class IcingaScheduledDowntime extends IcingaObject
     ];
 
     /**
-     * Render update property
-     *
-     * Avoid complaints for method names with underscore:
-     * @codingStandardsIgnoreStart
-     *
      * @return string
-     */
-    public function renderUpdate_method()
-    {
-        // @codingStandardsIgnoreEnd
-        return '';
-    }
-
-    /**
-     * @return string
-     * @throws ConfigurationError
      */
     protected function renderObjectHeader()
     {
         if ($this->isApplyRule()) {
             if (($to = $this->get('apply_to')) === null) {
-                throw new ConfigurationError(
+                throw new RuntimeException(sprintf(
                     'Applied notification "%s" has no valid object type',
                     $this->getObjectName()
-                );
+                ));
             }
 
             return sprintf(
@@ -101,6 +86,6 @@ class IcingaScheduledDowntime extends IcingaObject
 
     protected function prefersGlobalZone()
     {
-        return true;
+        return false;
     }
 }
