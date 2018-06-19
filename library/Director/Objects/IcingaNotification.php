@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use RuntimeException;
 
 class IcingaNotification extends IcingaObject
 {
     protected $table = 'icinga_notification';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                    => null,
         'object_name'           => null,
         'object_type'           => null,
@@ -26,7 +26,7 @@ class IcingaNotification extends IcingaObject
         'period_id'             => null,
         'zone_id'               => null,
         'assign_filter'         => null,
-    );
+    ];
 
     protected $supportsCustomVars = true;
 
@@ -36,29 +36,29 @@ class IcingaNotification extends IcingaObject
 
     protected $supportsApplyRules = true;
 
-    protected $relatedSets = array(
+    protected $relatedSets = [
         'states' => 'StateFilterSet',
         'types'  => 'TypeFilterSet',
-    );
+    ];
 
-    protected $multiRelations = array(
+    protected $multiRelations = [
         'users'       => 'IcingaUser',
         'user_groups' => 'IcingaUserGroup',
-    );
+    ];
 
-    protected $relations = array(
+    protected $relations = [
         'zone'    => 'IcingaZone',
         'host'    => 'IcingaHost',
         'service' => 'IcingaService',
         'command' => 'IcingaCommand',
         'period'  => 'IcingaTimePeriod',
-    );
+    ];
 
-    protected $intervalProperties = array(
+    protected $intervalProperties = [
         'notification_interval' => 'interval',
         'times_begin'           => 'times_begin',
         'times_end'             => 'times_end',
-    );
+    ];
 
     protected function prefersGlobalZone()
     {
@@ -78,18 +78,15 @@ class IcingaNotification extends IcingaObject
     protected function renderTimes_begin()
     {
         // @codingStandardsIgnoreEnd
-        $times = (object) array(
+        $times = (object) [
             'begin' => c::renderInterval($this->times_begin)
-        );
+        ];
 
-        if ($this->times_end !== null) {
-            $times->end = c::renderInterval($this->times_end);
+        if ($this->get('times_end') !== null) {
+            $times->end = c::renderInterval($this->get('times_end'));
         }
 
-        return c::renderKeyValue(
-            'times',
-            c::renderDictionary($times)
-        );
+        return c::renderKeyValue('times', c::renderDictionary($times));
     }
 
     /**
@@ -106,18 +103,15 @@ class IcingaNotification extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
 
-        if ($this->times_begin !== null) {
+        if ($this->get('times_begin') !== null) {
             return '';
         }
 
-        $times = (object) array(
-            'end' => c::renderInterval($this->times_end)
-        );
+        $times = (object) [
+            'end' => c::renderInterval($this->get('times_end'))
+        ];
 
-        return c::renderKeyValue(
-            'times',
-            c::renderDictionary($times)
-        );
+        return c::renderKeyValue('times', c::renderDictionary($times));
     }
 
     /**
@@ -138,10 +132,10 @@ class IcingaNotification extends IcingaObject
     {
         if ($this->isApplyRule()) {
             if (($to = $this->get('apply_to')) === null) {
-                throw new ConfigurationError(
+                throw new RuntimeException(sprintf(
                     'Applied notification "%s" has no valid object type',
                     $this->getObjectName()
-                );
+                ));
             }
 
             return sprintf(
@@ -161,7 +155,7 @@ class IcingaNotification extends IcingaObject
         if (is_int($key)) {
             $this->id = $key;
         } elseif (is_array($key)) {
-            foreach (array('id', 'host_id', 'service_id', 'object_name') as $k) {
+            foreach (['id', 'host_id', 'service_id', 'object_name'] as $k) {
                 if (array_key_exists($k, $key)) {
                     $this->set($k, $key[$k]);
                 }

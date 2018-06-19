@@ -6,7 +6,7 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
-use Icinga\Exception\ProgrammingError;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -21,6 +21,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use InvalidArgumentException;
 use LogicException;
+use RuntimeException;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
@@ -62,22 +63,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected $type;
 
     /* key/value!! */
-    protected $booleans = array();
+    protected $booleans = [];
 
     // Property suffixed with _id must exist
-    protected $relations = array(
+    protected $relations = [
         // property => PropertyClass
-    );
+    ];
 
-    protected $relatedSets = array(
+    protected $relatedSets = [
         // property => ExtensibleSetClass
-    );
+    ];
 
-    protected $multiRelations = array(
+    protected $multiRelations = [
         // property => IcingaObjectClass
-    );
+    ];
 
-    protected $loadedMultiRelations = array();
+    protected $loadedMultiRelations = [];
 
     /**
      * Allows to set properties pointing to related objects by name without
@@ -85,18 +86,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      *
      * @var array
      */
-    protected $unresolvedRelatedProperties = array();
+    protected $unresolvedRelatedProperties = [];
 
-    protected $loadedRelatedSets = array();
+    protected $loadedRelatedSets = [];
 
     // Will be rendered first, before imports
-    protected $prioritizedProperties = array();
+    protected $prioritizedProperties = [];
 
-    protected $propertiesNotForRendering = array(
+    protected $propertiesNotForRendering = [
         'id',
         'object_name',
         'object_type',
-    );
+    ];
 
     /**
      * Array of interval property names
@@ -106,7 +107,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      *
      * @var array
      */
-    protected $intervalProperties = array();
+    protected $intervalProperties = [];
 
     /** @var  Db */
     protected $connection;
@@ -123,7 +124,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private $shouldBeRemoved = false;
 
-    private $resolveCache = array();
+    private $resolveCache = [];
 
     private $cachedPlainUnmodified;
 
@@ -294,23 +295,47 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->relations[$property];
     }
 
+    /**
+     * @param $property
+     * @return IcingaObject
+     */
     public function getRelated($property)
     {
         return $this->getRelatedObject($property, $this->{$property . '_id'});
     }
 
+    /**
+     * @param $property
+     * @param $id
+     * @return string
+     */
     protected function getRelatedObjectName($property, $id)
     {
-        return $this->getRelatedObject($property, $id)->object_name;
+        return $this->getRelatedObject($property, $id)->getObjectName();
     }
 
+    /**
+     * @param $property
+     * @param $id
+     * @return IcingaObject
+     */
     protected function getRelatedObject($property, $id)
     {
         /** @var IcingaObject $class */
         $class = $this->getRelationClass($property);
-        return $class::loadWithAutoIncId($id, $this->connection);
+        try {
+            $object = $class::loadWithAutoIncId($id, $this->connection);
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
+
+        return $object;
     }
 
+    /**
+     * @param $property
+     * @return IcingaObject|null
+     */
     public function getResolvedRelated($property)
     {
         $id = $this->getSingleResolvedProperty($property . '_id');
@@ -336,7 +361,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         /** @var static $class */
         $class = self::classByType($type);
         /** @var static $dummy */
-        $dummy = $class::create(array(), $db);
+        $dummy = $class::create([], $db);
         $dummy->prefetchAllRelatedTypes();
     }
 
@@ -496,20 +521,30 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * @param $name
+     */
     protected function resolveUnresolvedRelatedProperty($name)
     {
         $short = substr($name, 0, -3);
         /** @var IcingaObject $class */
         $class = $this->getRelationClass($short);
-        $object = $class::load(
-            $this->unresolvedRelatedProperties[$name],
-            $this->connection
-        );
+        try {
+            $object = $class::load(
+                $this->unresolvedRelatedProperties[$name],
+                $this->connection
+            );
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
 
         $this->reallySet($name, $object->get('id'));
         unset($this->unresolvedRelatedProperties[$name]);
     }
 
+    /**
+     * @return bool
+     */
     public function hasBeenModified()
     {
         if (parent::hasBeenModified()) {
@@ -573,6 +608,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return array_key_exists($name, $this->unresolvedRelatedProperties);
     }
 
+    /**
+     * @param $key
+     * @return mixed
+     */
     protected function getRelationId($key)
     {
         if ($this->hasUnresolvedRelatedProperty($key)) {
@@ -582,6 +621,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::get($key);
     }
 
+    /**
+     * @param $key
+     * @return string|null
+     */
     protected function getRelatedProperty($key)
     {
         $idKey = $key . '_id';
@@ -592,13 +635,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($id = $this->get($idKey)) {
             /** @var IcingaObject $class */
             $class = $this->getRelationClass($key);
-            $object = $class::loadWithAutoIncId($id, $this->connection);
-            return $object->get('object_name');
+            try {
+                $object = $class::loadWithAutoIncId($id, $this->connection);
+            } catch (NotFoundError $e) {
+                throw new RuntimeException($e->getMessage(), 0, $e);
+            }
+
+            return $object->getObjectName();
         }
 
         return null;
     }
 
+    /**
+     * @param string $key
+     * @return \Icinga\Module\Director\CustomVariable\CustomVariable|mixed|null
+     */
     public function get($key)
     {
         if (substr($key, 0, 5) === 'vars.') {
@@ -1026,6 +1078,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->groups()->listGroupNames();
     }
 
+    /**
+     * @return array
+     * @throws NotFoundError
+     */
     public function listInheritedGroupNames()
     {
         $parents = $this->imports()->getObjects();
@@ -1046,6 +1102,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * @return array
+     * @throws NotFoundError
+     */
     public function listResolvedGroupNames()
     {
         $groups = $this->groups()->listGroupNames();
@@ -1056,6 +1116,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $groups;
     }
 
+    /**
+     * @param $group
+     * @return bool
+     * @throws NotFoundError
+     */
     public function hasGroup($group)
     {
         if ($group instanceof static) {
@@ -1139,8 +1204,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        /** @var IcingaObject $object */
-        foreach (array_reverse($this->imports()->getObjects()) as $object) {
+        /** @var IcingaObject[] $imports */
+        try {
+            $imports = array_reverse($this->imports()->getObjects());
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e->getMessage());
+        }
+
+        foreach ($imports as $object) {
             $v = $object->getSingleResolvedProperty($key);
             if (null !== $v) {
                 return $v;
@@ -1368,6 +1439,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             && $this->get('object_type') === 'apply';
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
     protected function storeRelatedObjects()
     {
         $this
@@ -1380,6 +1456,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeArguments();
     }
 
+    /**
+     * @throws NotFoundError
+     */
     protected function beforeStore()
     {
         $this->resolveUnresolvedRelatedProperties();
@@ -1388,12 +1467,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function onInsert()
     {
         DirectorActivityLog::logCreation($this, $this->connection);
         $this->storeRelatedObjects();
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function onUpdate()
     {
         DirectorActivityLog::logModification($this, $this->connection);
@@ -1454,7 +1543,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
-     * @return self
+     * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeArguments()
     {
@@ -1470,7 +1560,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
-     * @return self
+     * @return $this
      */
     protected function storeRelatedSets()
     {
@@ -1484,7 +1574,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
-     * @return self
+     * @return $this
+     * @throws NotFoundError
+     * @throws \Zend_Db_Adapter_Exception
      */
     protected function storeImports()
     {
@@ -1571,7 +1663,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 && array_key_exists('enable_active_checks', $this->defaultProperties)
             ) {
                 $passive = clone($this);
-                $passive->enable_active_checks = false;
+                $passive->set('enable_active_checks', false);
 
                 $config->configFile(
                     'director/master/' . $filename,
@@ -1624,6 +1716,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $filename;
     }
 
+    /**
+     * @param $zoneId
+     * @param IcingaConfig|null $config
+     * @return string
+     * @throws NotFoundError
+     */
     protected function getNameForZoneId($zoneId, IcingaConfig $config = null)
     {
         // TODO: this is still ugly.
@@ -1645,13 +1743,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->hasProperty('zone_id')) {
-            if (! $this->supportsImports()) {
-                if ($zoneId = $this->get('zone_id')) {
-                    return $this->getNameForZoneId($zoneId, $config);
-                }
-            }
-
             try {
+                if (! $this->supportsImports()) {
+                    if ($zoneId = $this->get('zone_id')) {
+                        return $this->getNameForZoneId($zoneId, $config);
+                    }
+                }
+
                 if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
                     return $this->getNameForZoneId($zoneId, $config);
                 }
@@ -1802,7 +1900,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         return c1::renderKeyValue(
             $legacyKey,
-            c1::renderBoolean($this->$property)
+            c1::renderBoolean($this->get($property))
         );
     }
 
@@ -1956,12 +2054,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderBooleanProperty($key)
     {
-        return c::renderKeyValue($key, c::renderBoolean($this->$key));
+        return c::renderKeyValue($key, c::renderBoolean($this->get($key)));
     }
 
     protected function renderPropertyAsSeconds($key)
     {
-        return c::renderKeyValue($key, c::renderInterval($this->$key));
+        return c::renderKeyValue($key, c::renderInterval($this->get($key)));
     }
 
     protected function renderSuffix()
@@ -2406,6 +2504,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @param Db $db
      *
      * @return IcingaObject
+     * @throws NotFoundError
      */
     public static function loadByType($type, $id, Db $db)
     {
@@ -2499,6 +2598,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return static::create((array) $plain, $connection);
     }
 
+    /**
+     * @param IcingaObject $object
+     * @param null $preserve
+     * @return $this
+     * @throws NotFoundError
+     */
     public function replaceWith(IcingaObject $object, $preserve = null)
     {
         if ($preserve === null) {
@@ -2517,7 +2622,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    // TODO: with rules? What if I want to override vars? Drop in favour of vars.x?
+    /**
+     * TODO: with rules? What if I want to override vars? Drop in favour of vars.x?
+     *
+     * @param IcingaObject $object
+     * @param bool $replaceVars
+     * @return $this
+     * @throws NotFoundError
+     */
     public function merge(IcingaObject $object, $replaceVars = false)
     {
         $object = clone($object);
@@ -2577,6 +2689,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * @param bool $resolved
+     * @param bool $skipDefaults
+     * @param array|null $chosenProperties
+     * @param bool $resolveIds
+     * @return object
+     * @throws NotFoundError
+     */
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
@@ -2813,6 +2933,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return 'director/' . $plural;
     }
 
+    /**
+     * @param bool $resolved
+     * @param bool $skipDefaults
+     * @param array|null $chosenProperties
+     * @return string
+     * @throws NotFoundError
+     */
     public function toJson(
         $resolved = false,
         $skipDefaults = false,

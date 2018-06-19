@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use RuntimeException;
 
 class IcingaCommandArgument extends IcingaObject
 {
@@ -52,7 +52,7 @@ class IcingaCommandArgument extends IcingaObject
 
     public function isSkippingKey()
     {
-        return $this->skip_key === 'y' || $this->argument_name === null;
+        return $this->get('skip_key') === 'y' || $this->get('argument_name') === null;
     }
 
     // Preserve is not supported
@@ -159,13 +159,13 @@ class IcingaCommandArgument extends IcingaObject
         $resolveIds = true
     ) {
         if ($resolved) {
-            throw new ProgrammingError(
+            throw new RuntimeException(
                 'A single CommandArgument cannot be resolved'
             );
         }
 
         if ($chosenProperties) {
-            throw new ProgrammingError(
+            throw new RuntimeException(
                 'IcingaCommandArgument does not support chosenProperties[]'
             );
         }
@@ -181,64 +181,65 @@ class IcingaCommandArgument extends IcingaObject
     public function toConfigString()
     {
         $data = array();
-        if ($this->argument_value) {
-            switch ($this->argument_format) {
+        $value = $this->get('argument_value');
+        if ($value) {
+            switch ($this->get('argument_format')) {
                 case 'string':
-                    $data['value'] = c::renderString($this->argument_value);
+                    $data['value'] = c::renderString($value);
                     break;
                 case 'json':
-                    if (is_object($this->argument_value)) {
-                        $data['value'] = c::renderDictionary($this->argument_value);
-                    } elseif (is_array($this->argument_value)) {
-                        $data['value'] = c::renderArray($this->argument_value);
-                    } elseif (is_null($this->argument_value)) {
+                    if (is_object($value)) {
+                        $data['value'] = c::renderDictionary($value);
+                    } elseif (is_array($value)) {
+                        $data['value'] = c::renderArray($value);
+                    } elseif (is_null($value)) {
                         // TODO: recheck all this. I bet we never reach this:
                         $data['value'] = 'null';
-                    } elseif (is_bool($this->argument_value)) {
-                        $data['value'] = c::renderBoolean($this->argument_value);
+                    } elseif (is_bool($value)) {
+                        $data['value'] = c::renderBoolean($value);
                     } else {
-                        $data['value'] = $this->argument_value;
+                        $data['value'] = $value;
                     }
                     break;
                 case 'expression':
-                    $data['value'] = c::renderExpression($this->argument_value);
+                    $data['value'] = c::renderExpression($value);
                     break;
             }
         }
 
-        if ($this->sort_order !== null) {
-            $data['order'] = $this->sort_order;
+        if ($this->get('sort_order') !== null) {
+            $data['order'] = $this->get('sort_order');
         }
 
-        if ($this->set_if) {
-            switch ($this->set_if_format) {
+        if (null !== $this->get('set_if')) {
+            switch ($this->get('set_if_format')) {
                 case 'expression':
-                    $data['set_if'] = c::renderExpression($this->set_if);
+                    $data['set_if'] = c::renderExpression($this->get('set_if'));
                     break;
                 case 'string':
                 default:
-                    $data['set_if'] = c::renderString($this->set_if);
+                    $data['set_if'] = c::renderString($this->get('set_if'));
                     break;
             }
         }
 
-        if ($this->required) {
-            $data['required'] = c::renderBoolean($this->required);
+        if (null !== $this->get('required')) {
+            $data['required'] = c::renderBoolean($this->get('required'));
         }
 
         if ($this->isSkippingKey()) {
             $data['skip_key'] = c::renderBoolean('y');
         }
 
-        if ($this->repeat_key) {
-            $data['repeat_key'] = c::renderBoolean($this->repeat_key);
+        if (null !== $this->get('repeat_key')) {
+            $data['repeat_key'] = c::renderBoolean($this->get('repeat_key'));
         }
 
-        if ($this->description) {
-            $data['description'] = c::renderString($this->description);
+        if (null !== $this->get('description')) {
+            $data['description'] = c::renderString($this->get('description'));
         }
 
-        if (array_keys($data) === array('value')) {
+        if (array_keys($data) === ['value']) {
             return $data['value'];
         } else {
             return c::renderDictionary($data);

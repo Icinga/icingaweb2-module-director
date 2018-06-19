@@ -26,7 +26,7 @@ trait FormElementContainer
     {
         if (! array_key_exists($name, $this->elements)) {
             throw new InvalidArgumentException(sprintf(
-                'Trying to get inexistant element "%s"',
+                'Trying to get non existent element "%s"',
                 $name
             ));
         }
@@ -60,10 +60,8 @@ trait FormElementContainer
 
         if ($this instanceof BaseHtmlElement) {
             $element = $this->decorate($this->getElement($name));
+            $this->add($element);
         }
-        //...
-
-        $this->add($element);
 
         return $this;
     }
@@ -103,7 +101,7 @@ trait FormElementContainer
      *
      * @param $name
      * @param $type
-     * @param $options
+     * @param $attributes
      * @return BaseFormElement
      */
     public function createElement($name, $type, $attributes = null)

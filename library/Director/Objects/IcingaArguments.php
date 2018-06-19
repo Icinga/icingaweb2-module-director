@@ -2,18 +2,20 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
-use Iterator;
 use Countable;
+use Exception;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use InvalidArgumentException;
+use Iterator;
 
 class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 {
-    protected $storedArguments = array();
+    /** @var IcingaCommandArgument[] */
+    protected $storedArguments = [];
 
     /** @var IcingaCommandArgument[] */
-    protected $arguments = array();
+    protected $arguments = [];
 
     protected $modified = false;
 
@@ -21,7 +23,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     private $position = 0;
 
-    protected $idx = array();
+    protected $idx = [];
 
     public function __construct(IcingaObject $object)
     {
@@ -90,7 +92,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             );
         }
 
-        $argument->set('command_id', $this->object->id);
+        $argument->set('command_id', $this->object->get('id'));
 
         $key = $argument->argument_name;
         if (array_key_exists($key, $this->arguments)) {
@@ -114,18 +116,18 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     protected function mungeCommandArgument($key, $value)
     {
-        $attrs = array(
+        $attrs = [
             'argument_name' => (string) $key,
-        );
+        ];
 
-        $map = array(
+        $map = [
             'skip_key'    => 'skip_key',
             'repeat_key'  => 'repeat_key',
             'required'    => 'required',
-            // 'order'       => 'sort_order',
+            // 'order'    => 'sort_order',
             'description' => 'description',
             'set_if'      => 'set_if',
-        );
+        ];
 
         $argValue = null;
         if (is_object($value)) {
@@ -187,7 +189,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     {
         if (empty($arguments)) {
             if (count($this->arguments)) {
-                $this->arguments = array();
+                $this->arguments = [];
                 $this->modified = true;
             }
 
@@ -218,6 +220,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
     /**
      * Magic isset check
      *
+     * @param string $argument
      * @return boolean
      */
     public function __isset($argument)
@@ -244,13 +247,13 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     public function add(IcingaCommandArgument $argument)
     {
-        if (array_key_exists($argument->argument_name, $this->arguments)) {
+        $name = $argument->get('argument_name');
+        if (array_key_exists($name, $this->arguments)) {
             // TODO: Fail unless $argument equals existing one
             return $this;
         }
 
-        $this->arguments[$argument->argument_name] = $argument;
-        $connection = $this->object->getConnection();
+        $this->arguments[$name] = $argument;
         $this->modified = true;
         $this->refreshIndex();
 
@@ -269,13 +272,13 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
         $table = $this->object->getTableName();
         $query = $db->select()->from(
-            array('o' => $table),
-            array()
+            ['o' => $table],
+            []
         )->join(
-            array('a' => 'icinga_command_argument'),
+            ['a' => 'icinga_command_argument'],
             'o.id = a.command_id',
             '*'
-        )->where('o.object_name = ?', $this->object->object_name)
+        )->where('o.object_name = ?', $this->object->getObjectName())
         ->order('a.sort_order')->order('a.argument_name');
 
         $this->arguments = IcingaCommandArgument::loadAll($connection, $query, 'argument_name');
@@ -292,18 +295,18 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $resolveIds = true
     ) {
         if ($chosenProperties !== null) {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(
                 'IcingaArguments does not support chosenProperties[]'
             );
         }
 
-        $args = array();
+        $args = [];
         foreach ($this->arguments as $arg) {
             if ($arg->shouldBeRemoved()) {
                 continue;
             }
 
-            $args[$arg->argument_name] = $arg->toPlainObject(
+            $args[$arg->get('argument_name')] = $arg->toPlainObject(
                 $resolved,
                 $skipDefaults,
                 null,
@@ -316,7 +319,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     public function toUnmodifiedPlainObject()
     {
-        $args = array();
+        $args = [];
         foreach ($this->storedArguments as $key => $arg) {
             $args[$arg->argument_name] = $arg->toPlainObject();
         }
@@ -326,7 +329,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     protected function cloneStored()
     {
-        $this->storedArguments = array();
+        $this->storedArguments = [];
         foreach ($this->arguments as $k => $v) {
             $this->storedArguments[$k] = clone($v);
         }
@@ -338,18 +341,19 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return $arguments->loadFromDb();
     }
 
+    /**
+     * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     public function store()
     {
         $db = $this->object->getConnection();
-
-        $dummy = IcingaCommandArgument::create();
-
-        $deleted = array();
+        $deleted = [];
         foreach ($this->arguments as $key => $argument) {
             if ($argument->shouldBeRemoved()) {
                 $deleted[] = $key;
             } else {
-                $argument->command_id = $this->object->id;
+                $argument->set('command_id', $this->object->get('id'));
                 $argument->store($db);
             }
         }
@@ -360,6 +364,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         }
 
         $this->cloneStored();
+
         return $this;
     }
 
@@ -369,13 +374,13 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             return '';
         }
 
-        $args = array();
+        $args = [];
         foreach ($this->arguments as $arg) {
             if ($arg->shouldBeRemoved()) {
                 continue;
             }
 
-            $args[$arg->argument_name] = $arg->toConfigString();
+            $args[$arg->get('argument_name')] = $arg->toConfigString();
         }
         return c::renderKeyOperatorValue('arguments', '+=', c::renderDictionary($args));
     }

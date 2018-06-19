@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Repository;
 
 use Icinga\Authentication\Auth;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
+use RuntimeException;
 
 trait RepositoryByObjectHelper
 {
@@ -62,7 +62,6 @@ trait RepositoryByObjectHelper
      * @param IcingaObject $object
      * @param Db|null $connection
      * @return static
-     * @throws ProgrammingError
      */
     public static function instanceByObject(IcingaObject $object, Db $connection = null)
     {
@@ -71,11 +70,11 @@ trait RepositoryByObjectHelper
         }
 
         if (! $connection) {
-            throw new ProgrammingError(
+            throw new RuntimeException(sprintf(
                 'Cannot use repository for %s "%s" as it has no DB connection',
                 $object->getShortTableName(),
                 $object->getObjectName()
-            );
+            ));
         }
 
         return static::instanceByType(

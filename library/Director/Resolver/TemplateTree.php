@@ -3,10 +3,9 @@
 namespace Icinga\Module\Director\Resolver;
 
 use Icinga\Application\Benchmark;
-use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
+use RuntimeException;
 
 class TemplateTree
 {
@@ -59,12 +58,12 @@ class TemplateTree
                 if (array_key_exists($pid, $this->names)) {
                     $parents[] = $this->names[$pid];
                 } else {
-                    throw new ConfigurationError(
+                    throw new RuntimeException(sprintf(
                         'Got invalid parent id %d for %s "%s"',
                         $pid,
                         $this->type,
                         $object->getObjectName()
-                    );
+                    ));
                 }
             }
         }
@@ -125,7 +124,9 @@ class TemplateTree
         if ($object->hasBeenLoadedFromDb()) {
             return $this->getParentsById($object->getProperty('id'));
         } else {
-            throw new NotImplementedError('Not yet');
+            throw new RuntimeException(
+                'Loading parents for unstored objects has not been implemented yet'
+            );
             // return $this->getParentsForUnstoredObject($object);
         }
     }
@@ -217,7 +218,9 @@ class TemplateTree
         if ($object->hasBeenLoadedFromDb()) {
             return $this->getChildrenById($object->getProperty('id'));
         } else {
-            throw new NotImplementedError('Not yet');
+            throw new RuntimeException(
+                'Loading children for unstored objects has not been implemented yet'
+            );
             // return $this->getChildrenForUnstoredObject($object);
         }
     }
@@ -238,7 +241,9 @@ class TemplateTree
         if ($object->hasBeenLoadedFromDb()) {
             return $this->getDescendantsById($object->getProperty('id'));
         } else {
-            throw new NotImplementedError('Not yet');
+            throw new RuntimeException(
+                'Loading descendants for unstored objects has not been implemented yet'
+            );
             // return $this->getDescendantsForUnstoredObject($object);
         }
     }
@@ -262,7 +267,10 @@ class TemplateTree
         if ($parentId === null) {
             return $this->returnFullTree();
         } else {
-            return $this->partialTree($parentId);
+            throw new RuntimeException(
+                'Partial tree fetching has not been implemented yet'
+            );
+            // return $this->partialTree($parentId);
         }
     }
 
