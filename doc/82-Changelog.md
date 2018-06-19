@@ -14,6 +14,7 @@ next (will be 1.8.0)
 ### User Interface
 * FIX: It's now possible to set Endpoint ports > 32767 on PostgreSQL (#928)
 * FEATURE: Data Fields can now be grouped into categories (#1969)
+* FEATURE: Inspect is now available for Packages, Stages and Files (#1995)
 
 1.7.2
 -----

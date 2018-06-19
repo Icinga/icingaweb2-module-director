@@ -131,6 +131,11 @@ class ObjectTabs extends Tabs
                 'urlParams' => ['endpoint' => $object->getObjectName()],
                 'label'     => $this->translate('Inspect')
             ]);
+            $this->add('packages', [
+                'url'       => 'director/inspect/packages',
+                'urlParams' => ['endpoint' => $object->getObjectName()],
+                'label'     => $this->translate('Packages')
+            ]);
         }
 
         if ($object->getShortTableName() === 'host') {
