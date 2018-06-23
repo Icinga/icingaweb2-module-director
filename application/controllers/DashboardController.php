@@ -10,13 +10,16 @@ class DashboardController extends ActionController
 {
     protected function checkDirectorPermissions()
     {
+        // No special permissions required, override parent method
     }
 
     protected function addDbSelection()
     {
-        $form = new DbSelectorForm($this->Window(), $this->listAllowedDbResourceNames());
-        $this->content()->add($form);
-        $form->handleRequest($this->getRequest());
+        if ($this->isMultiDbSetup()) {
+            $form = new DbSelectorForm($this->Window(), $this->listAllowedDbResourceNames());
+            $this->content()->add($form);
+            $form->handleRequest($this->getRequest());
+        }
     }
 
     /**

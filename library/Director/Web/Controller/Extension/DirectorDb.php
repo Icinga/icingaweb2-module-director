@@ -66,6 +66,11 @@ trait DirectorDb
         return preg_split('/\s*,\s*/', $string, -1, PREG_SPLIT_NO_EMPTY);
     }
 
+    protected function isMultiDbSetup()
+    {
+        return count($this->listAvailableDbResourceNames()) > 1;
+    }
+
     /**
      * @return array
      */
