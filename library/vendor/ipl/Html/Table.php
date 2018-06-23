@@ -46,7 +46,6 @@ class Table extends BaseHtmlElement
      *
      * @param $content
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function setCaption($content)
     {
@@ -98,7 +97,6 @@ class Table extends BaseHtmlElement
      * @param null $attributes
      * @param string $tag
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public static function row($row, $attributes = null, $tag = 'td')
     {
@@ -116,7 +114,6 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function generateHeader()
     {
@@ -127,7 +124,6 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function generateFooter()
     {
@@ -139,7 +135,6 @@ class Table extends BaseHtmlElement
     /**
      * @param HtmlElement $parent
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function addHeaderColumnsTo(HtmlElement $parent)
     {
@@ -161,6 +156,7 @@ class Table extends BaseHtmlElement
     }
 
     /**
+     * @deprecated
      * @param array $columns
      * @return $this
      */
@@ -172,9 +168,9 @@ class Table extends BaseHtmlElement
     }
 
     /**
+     * @deprecated
      * @param $row
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function renderRow($row)
     {
@@ -198,10 +194,10 @@ class Table extends BaseHtmlElement
     }
 
     /**
+     * @deprecated
      * @param HtmlElement $tr
      * @param $row
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function addRowClasses(HtmlElement $tr, $row)
     {
@@ -214,9 +210,9 @@ class Table extends BaseHtmlElement
     }
 
     /**
+     * @deprecated
      * @param Traversable $rows
      * @return HtmlDocument|HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function renderRows(Traversable $rows)
     {
@@ -254,7 +250,6 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function footer()
     {
@@ -267,7 +262,6 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function nextBody()
     {
@@ -281,7 +275,6 @@ class Table extends BaseHtmlElement
 
     /**
      * @return HtmlElement
-     * @throws \Icinga\Exception\IcingaException
      */
     public function nextHeader()
     {
@@ -295,7 +288,6 @@ class Table extends BaseHtmlElement
 
     /**
      * @return string
-     * @throws \Icinga\Exception\IcingaException
      */
     public function renderContent()
     {

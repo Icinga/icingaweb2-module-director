@@ -11,12 +11,12 @@ class SelectElement extends BaseFormElement
 
     public function __construct($name, $attributes = null)
     {
-        parent::__construct($name, $attributes);
         $this->getAttributes()->registerAttributeCallback(
             'options',
             null,
             [$this, 'setOptions']
         );
+        parent::__construct($name, $attributes);
     }
 
     /**
