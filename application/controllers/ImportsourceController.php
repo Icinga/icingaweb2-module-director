@@ -17,7 +17,10 @@ use dipl\Html\Link;
 class ImportsourceController extends ActionController
 {
     /**
+     * @throws \Icinga\Exception\AuthenticationException
      * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
      */
     public function init()
     {
@@ -33,6 +36,7 @@ class ImportsourceController extends ActionController
 
     /**
      * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -40,7 +44,7 @@ class ImportsourceController extends ActionController
     {
         $source = ImportSource::load($this->params->getRequired('id'), $this->db());
         if ($this->params->get('format') === 'json') {
-            $this->sendJson($this->getResponse());
+            $this->sendJson($this->getResponse(), $source->export());
             return;
         }
         $this->addTitle(
@@ -54,7 +58,6 @@ class ImportsourceController extends ActionController
                 null,
                 [
                     'data-base-target' => '_blank',
-
                 ]
             )
         );

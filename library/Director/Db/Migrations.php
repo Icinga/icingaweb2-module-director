@@ -5,8 +5,8 @@ namespace Icinga\Module\Director\Db;
 use DirectoryIterator;
 use Exception;
 use Icinga\Application\Icinga;
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\Db\DbConnection;
+use RuntimeException;
 
 class Migrations
 {
@@ -25,7 +25,7 @@ class Migrations
     public function __construct(DbConnection $connection)
     {
         if (version_compare(PHP_VERSION, '5.4.0') < 0) {
-            throw new IcingaException(
+            throw new RuntimeException(
                 "PHP version 5.4.x is required for Director >= 1.4.0, you're running %s."
                 . ' Please either upgrade PHP or downgrade Icinga Director',
                 PHP_VERSION

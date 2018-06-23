@@ -31,6 +31,7 @@ class IcingaTemplateRepository
      * @param IcingaObject $object
      * @param bool $recursive
      * @return IcingaObject[]
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function getTemplatesFor(IcingaObject $object, $recursive = false)
     {
@@ -47,6 +48,7 @@ class IcingaTemplateRepository
      * @param array $ids
      * @param IcingaObject $object
      * @return IcingaObject[]
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function getTemplatesForIds(array $ids, IcingaObject $object)
     {
@@ -70,6 +72,7 @@ class IcingaTemplateRepository
      * @param IcingaObject $object
      * @param bool $recursive
      * @return IcingaObject[]
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function getTemplatesIndexedByNameFor(
         IcingaObject $object,
