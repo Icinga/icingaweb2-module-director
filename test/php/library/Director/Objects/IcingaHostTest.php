@@ -256,7 +256,7 @@ class IcingaHostTest extends BaseTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\NotFoundError
+     * @expectedException \RuntimeException
      */
     public function testFailsToStoreWithMissingLazyRelations()
     {
@@ -337,7 +337,7 @@ class IcingaHostTest extends BaseTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\NotFoundError
+     * @expectedException \RuntimeException
      */
     public function testFailsToStoreWithInvalidUnresolvedDependencies()
     {
