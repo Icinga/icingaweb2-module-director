@@ -663,6 +663,8 @@ class Db extends DbConnection
     {
         if ($this->isPgsql()) {
             return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
+        } elseif ($this->isMysql()) {
+            return new Zend_Db_Expr('UNHEX(\'' . bin2hex($binary) . '\')');
         }
 
         return $binary;
