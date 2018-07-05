@@ -88,10 +88,25 @@ ZONES_ICINGA2=`cat << EOF
 
 // TODO: improve establish connection handling
 object Endpoint "${ICINGA2_NODENAME}" {}
-object Endpoint "${ICINGA2_CA_NODE}" {}
+EOF
+`
+
+for PARENTZONE_ENDPOINT in ${ICINGA2_PARENT_ENDPOINTS[@]}
+do
+ZONES_ICINGA2=`cat <<EOF
+$ZONES_ICINGA2
+object Endpoint "${PARENTZONE_ENDPOINT}" {}
+EOF
+`
+done
+
+PARENTZONE_ENDPOINT_LIST=$(printf ' , "%s"' "${ICINGA2_PARENT_ENDPOINTS[@]}")
+PARENTZONE_ENDPOINT_LIST=${PARENTZONE_ENDPOINT_LIST:3}
+
+ZONES_ICINGA2=`cat <<EOF
+$ZONES_ICINGA2
 object Zone "${ICINGA2_PARENT_ZONE}" {
-  endpoints = [ "$ICINGA2_PARENT_ENDPOINTS" ]
-  // TODO: all endpoints in master zone
+  endpoints = [ $PARENTZONE_ENDPOINT_LIST ]
 }
 
 object Zone "director-global" { global = true }
