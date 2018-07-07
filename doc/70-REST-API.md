@@ -523,7 +523,7 @@ There are two types of such keys:
 Template keys basically grant the permission to:
 
 * Create a new host based on that template
-* Specify name annd address properties for that host
+* Specify name and address properties for that host
 
 This is a one-time operation and allows one to claim ownership of a specific host.
 Now, there are two possible scenarios:
