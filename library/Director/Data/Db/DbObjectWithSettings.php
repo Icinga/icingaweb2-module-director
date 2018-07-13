@@ -139,10 +139,15 @@ abstract class DbObjectWithSettings extends DbObject
     protected function fetchSettingsFromDb()
     {
         $db = $this->getDb();
+        $id = $this->get('id');
+        if (! $id) {
+            return [];
+        }
+
         return $db->fetchPairs(
             $db->select()
                ->from($this->settingsTable, ['setting_name', 'setting_value'])
-               ->where($this->settingsRemoteId . ' = ?', $this->get('id'))
+               ->where($this->settingsRemoteId . ' = ?', $id)
                ->order('setting_name')
         );
     }
