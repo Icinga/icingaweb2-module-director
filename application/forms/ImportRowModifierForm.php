@@ -22,7 +22,6 @@ class ImportRowModifierForm extends DirectorObjectForm
     public function setup()
     {
         $this->addHidden('source_id', $this->source->id);
-        $this->addHidden('priority', 1);
 
         $this->addElement('select', 'property_name', array(
             'label'        => $this->translate('Property'),
