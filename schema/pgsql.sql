@@ -1988,4 +1988,4 @@ COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (148, NOW());
+  VALUES (149, NOW());
