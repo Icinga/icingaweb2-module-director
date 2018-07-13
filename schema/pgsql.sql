@@ -1267,11 +1267,18 @@ CREATE TABLE icinga_usergroup (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
-  PRIMARY KEY (id)
+  zone_id integer DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_usergroup_zone
+    FOREIGN KEY (zone_id)
+    REFERENCES icinga_zone (id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
 CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name);
+CREATE INDEX usergroup_zone ON icinga_usergroup (zone_id);
 
 
 CREATE TABLE icinga_usergroup_inheritance (

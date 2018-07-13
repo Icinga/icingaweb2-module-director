@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-
 class IcingaUserGroup extends IcingaObjectGroup
 {
     protected $table = 'icinga_usergroup';
@@ -14,10 +12,10 @@ class IcingaUserGroup extends IcingaObjectGroup
         'object_type'   => null,
         'disabled'      => 'n',
         'display_name'  => null,
+        'zone_id'       => null,
     ];
 
-    public function getRenderingZone(IcingaConfig $config = null)
-    {
-        return $this->connection->getMasterZoneName();
-    }
+    protected $relations = [
+        'zone' => 'IcingaZone',
+    ];
 }

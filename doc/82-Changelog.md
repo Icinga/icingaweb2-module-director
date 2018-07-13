@@ -25,6 +25,7 @@ before switching to a new version.
   single hosts (#907)
 * FEATURE: timestamped startup log rendering for upcoming Icinga v2.9.0 (#1478)
 * FEATURE: allow to switch between multiple Director databases (#1498)
+* FEATURE: it's now possible to specify Zones for UserGroups (#1163)
 
 ### User Interface
 * FEATURE: Admins have now access to JSON download links in many places

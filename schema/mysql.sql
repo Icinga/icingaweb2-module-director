@@ -1044,9 +1044,15 @@ CREATE TABLE icinga_usergroup (
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
+  zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
-  KEY search_idx (display_name)
+  KEY search_idx (display_name),
+  CONSTRAINT icinga_usergroup_zone
+    FOREIGN KEY zone (zone_id)
+    REFERENCES icinga_zone (id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_usergroup_inheritance (

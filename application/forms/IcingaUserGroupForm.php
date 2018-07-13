@@ -6,6 +6,9 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaUserGroupForm extends DirectorObjectForm
 {
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->addHidden('object_type', 'object');
@@ -17,24 +20,27 @@ class IcingaUserGroupForm extends DirectorObjectForm
         ));
 
         $this->addGroupDisplayNameElement()
-             // TODO: re-add this once we have zone_id in groups tables
-             // ->addZoneElements()
+             ->addZoneElements()
              ->groupMainProperties()
              ->setButtons();
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addZoneElements()
     {
-        $this->addZoneElement();
-        $this->addDisplayGroup(array('zone_id'), 'clustering', array(
-            'decorators' => array(
+        $this->addZoneElement(true);
+        $this->addDisplayGroup(['zone_id'], 'clustering', [
+            'decorators' => [
                 'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
+                ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
-            ),
-            'order' => 80,
+            ],
+            'order'  => 80,
             'legend' => $this->translate('Zone settings')
-        ));
+        ]);
 
         return $this;
     }
