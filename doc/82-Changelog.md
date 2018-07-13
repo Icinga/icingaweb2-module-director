@@ -63,6 +63,8 @@ before switching to a new version.
 * FEATURE: Preserve _override_servicevars on sync, even when replacing vars (#1307)
 
 ### Internals
+* FIX: problems related to users working from different time zones have been
+  fixed (#1270, #1332)
 * FEATURE: Html/Attribute now allows boolean properties
 * FEATURE: Html/Attribute allows colons in attribute names (required for SVGs)
 * FEATURE: Html/Attributes can be prefixed (helps with data-*)

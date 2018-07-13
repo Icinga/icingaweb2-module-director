@@ -100,7 +100,7 @@ class DirectorActivityLog extends DbObject
             'author'          => static::username(),
             'object_type'     => $type,
             'new_properties'  => $newProps,
-            'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
+            'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
         );
 
@@ -131,7 +131,7 @@ class DirectorActivityLog extends DbObject
             'object_type'     => $type,
             'old_properties'  => $oldProps,
             'new_properties'  => $newProps,
-            'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
+            'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
         );
 
@@ -161,7 +161,7 @@ class DirectorActivityLog extends DbObject
             'author'          => static::username(),
             'object_type'     => $type,
             'old_properties'  => $oldProps,
-            'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
+            'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
         );
 
