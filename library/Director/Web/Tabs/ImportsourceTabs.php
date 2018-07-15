@@ -17,6 +17,16 @@ class ImportsourceTabs extends Tabs
         $this->assemble();
     }
 
+    public function activateMainWithPostfix($postfix)
+    {
+        $mainTab = 'index';
+        $tab = $this->get($mainTab);
+        $tab->setLabel($tab->getLabel() . ": $postfix");
+        $this->activate($mainTab);
+
+        return $this;
+    }
+
     protected function assemble()
     {
         if ($id = $this->id) {
@@ -25,10 +35,6 @@ class ImportsourceTabs extends Tabs
                 'url'       => 'director/importsource',
                 'urlParams' => $params,
                 'label'     => $this->translate('Import source'),
-            ])->add('edit', [
-                'url'       => 'director/importsource/edit',
-                'urlParams' => $params,
-                'label'     => $this->translate('Modify'),
             ])->add('modifier', [
                 'url'       => 'director/importsource/modifier',
                 'urlParams' => ['source_id' => $id],

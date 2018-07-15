@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
+use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\CloneImportSourceForm;
@@ -34,6 +35,13 @@ class ImportsourceController extends ActionController
         }
     }
 
+    protected function addMainActions()
+    {
+        $this->actions(new AutomationObjectActionBar(
+            $this->getRequest()
+        ));
+    }
+
     /**
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\IcingaException
@@ -42,6 +50,7 @@ class ImportsourceController extends ActionController
      */
     public function indexAction()
     {
+        $this->addMainActions();
         $source = ImportSource::load($this->params->getRequired('id'), $this->db());
         if ($this->params->get('format') === 'json') {
             $this->sendJson($this->getResponse(), $source->export());
@@ -51,17 +60,6 @@ class ImportsourceController extends ActionController
             $this->translate('Import source: %s'),
             $source->get('source_name')
         )->setAutorefreshInterval(10);
-        $this->actions()->add(
-            Link::create(
-                $this->translate('Download JSON'),
-                $this->url()->with('format', 'json'),
-                null,
-                [
-                    'data-base-target' => '_blank',
-                ]
-            )
-        );
-
         $this->content()->add(new ImportSourceDetails($source));
     }
 
@@ -84,19 +82,13 @@ class ImportsourceController extends ActionController
      */
     public function editAction()
     {
+        $this->addMainActions();
+        $this->tabs()->activateMainWithPostfix($this->translate('Modify'));
         $id = $this->params->getRequired('id');
         $form = ImportSourceForm::load()->setDb($this->db())
             ->loadObject($id)
             ->setListUrl('director/importsources')
             ->handleRequest();
-        $this->actions()->add(
-            Link::create(
-                $this->translate('Clone'),
-                'director/importsource/clone',
-                ['id' => $id],
-                ['class' => 'icon-paste']
-            )
-        );
         $this->addTitle(
             $this->translate('Import source: %s'),
             $form->getObject()->get('source_name')
@@ -107,34 +99,16 @@ class ImportsourceController extends ActionController
 
     /**
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function cloneAction()
     {
+        $this->addMainActions();
+        $this->tabs()->activateMainWithPostfix($this->translate('Clone'));
         $id = $this->params->getRequired('id');
         $source = ImportSource::load($id, $this->db());
-        $this->tabs()->add('show', [
-            'url'       => 'director/importsource',
-            'urlParams' => ['id' => $id],
-            'label'     => $this->translate('Import Source'),
-        ])->add('clone', [
-            'url'       => 'director/importsource/clone',
-            'urlParams' => ['id' => $id],
-            'label'     => $this->translate('Clone'),
-        ])->activate('clone');
         $this->addTitle('Clone: %s', $source->get('source_name'));
-        $this->actions()->add(
-            Link::create(
-                $this->translate('Modify'),
-                'director/importsource/edit',
-                ['id' => $source->get('id')],
-                ['class' => 'icon-paste']
-            )
-        );
-
         $form = new CloneImportSourceForm($source);
         $this->content()->add($form);
         $form->handleRequest($this->getRequest());
