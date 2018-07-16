@@ -26,6 +26,7 @@ before switching to a new version.
 * FEATURE: timestamped startup log rendering for upcoming Icinga v2.9.0 (#1478)
 * FEATURE: allow to switch between multiple Director databases (#1498)
 * FEATURE: it's now possible to specify Zones for UserGroups (#1163)
+* FEATURE: dependencies are no longer considered experimental
 
 ### User Interface
 * FEATURE: Admins have now access to JSON download links in many places

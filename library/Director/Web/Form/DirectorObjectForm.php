@@ -1142,6 +1142,7 @@ abstract class DirectorObjectForm extends DirectorForm
     /**
      * @param bool $required
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addImportsElement($required = null)
     {
@@ -1223,6 +1224,10 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addGroupDisplayNameElement()
     {
         $this->addElement('text', 'display_name', array(
@@ -1240,6 +1245,7 @@ abstract class DirectorObjectForm extends DirectorForm
      * @param bool $force
      *
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addCheckCommandElements($force = false)
     {
