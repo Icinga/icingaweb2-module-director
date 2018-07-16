@@ -52,11 +52,15 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
+        $classes = [];
         if ($row->blacklisted === 'y') {
-            $attributes = ['class' => 'strike-links'];
-        } else {
-            $attributes = null;
+            $classes[] = 'strike-links';
         }
+        if ($row->disabled === 'y') {
+            $classes[] = 'disabled';
+        }
+
+        $attributes = empty($classes) ? null : ['class' => $classes];
 
         return $this::row([
             $this->getServiceLink($row)
@@ -116,6 +120,7 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
                 'host_id'     => 's.host_id',
                 'host'        => 'h.object_name',
                 'service'     => 's.object_name',
+                'disabled'    => 's.disabled',
                 'object_type' => 's.object_type',
                 'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END"
             ]

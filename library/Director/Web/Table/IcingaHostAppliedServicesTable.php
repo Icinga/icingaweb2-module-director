@@ -52,11 +52,15 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     public function renderRow($row)
     {
+        $classes = [];
         if ($row->blacklisted === 'y') {
-            $attributes = ['class' => 'strike-links'];
-        } else {
-            $attributes = null;
+            $classes[] = 'strike-links';
         }
+        if ($row->disabled === 'y') {
+            $classes[] = 'disabled';
+        }
+
+        $attributes = empty($classes) ? null : ['class' => $classes];
 
         return $this::row([
             Link::create(
@@ -92,6 +96,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             'id'            => 'id',
             'name'          => 'name',
             'filter'        => 'filter',
+            'disabled'      => 'disabled',
             'blacklisted'   => 'blacklisted',
             'assign_filter' => 'assign_filter',
         ]);
@@ -124,6 +129,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 'id'            => 's.id',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
+                'disabled'      => 's.disabled',
                 'blacklisted'   => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
             ]
         )->joinLeft(
