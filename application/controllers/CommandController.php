@@ -32,7 +32,9 @@ class CommandController extends ObjectController
      */
     public function indexAction()
     {
-        $this->showUsage();
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->showUsage();
+        }
         parent::indexAction();
     }
 
