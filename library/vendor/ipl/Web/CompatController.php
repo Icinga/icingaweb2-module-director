@@ -10,6 +10,7 @@ use Icinga\Application\Modules\Module;
 use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
+use Icinga\File\Pdf;
 use Icinga\Forms\AutoRefreshForm;
 use Icinga\Security\SecurityException;
 use Icinga\User;
