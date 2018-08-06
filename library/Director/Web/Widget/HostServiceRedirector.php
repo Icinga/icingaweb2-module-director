@@ -32,8 +32,7 @@ class HostServiceRedirector
     /**
      * @param $serviceName
      * @return Url
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function getRedirectionUrl($serviceName)
     {
@@ -57,7 +56,7 @@ class HostServiceRedirector
 
     /**
      * @return IcingaHost[]
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getParents()
     {
@@ -73,8 +72,6 @@ class HostServiceRedirector
     /**
      * @param $serviceName
      * @return Url|null
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function getSingleServiceUrl($serviceName)
     {
@@ -94,8 +91,7 @@ class HostServiceRedirector
     /**
      * @param $serviceName
      * @return Url|null
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getParentServiceUrl($serviceName)
     {
@@ -118,8 +114,7 @@ class HostServiceRedirector
     /**
      * @param $serviceName
      * @return Url|null
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getServiceSetServiceUrl($serviceName)
     {
@@ -163,7 +158,6 @@ class HostServiceRedirector
     /**
      * @param $serviceName
      * @return Url|null
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function getAppliedServiceUrl($serviceName)
     {
@@ -183,7 +177,6 @@ class HostServiceRedirector
     /**
      * @param $serviceName
      * @return Url|null
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function getAppliedServiceSetUrl($serviceName)
     {

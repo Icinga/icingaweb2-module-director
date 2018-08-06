@@ -49,8 +49,6 @@ class HostController extends ObjectController
     /**
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function serviceAction()
     {
@@ -68,8 +66,6 @@ class HostController extends ObjectController
     /**
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function servicesetAction()
     {
@@ -86,8 +82,6 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function addServicesHeader()
     {
@@ -109,9 +103,7 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function findserviceAction()
     {
@@ -123,7 +115,9 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function invalidserviceAction()
     {
@@ -139,8 +133,8 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function servicesAction()
     {
@@ -210,7 +204,6 @@ class HostController extends ObjectController
      * @param IcingaHost $host
      * @param IcingaHost|null $affectedHost
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function addHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null)
     {
@@ -248,9 +241,8 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function appliedserviceAction()
     {
@@ -287,9 +279,8 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function inheritedserviceAction()
     {
@@ -329,7 +320,6 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Exception\ProgrammingError
      */
@@ -360,9 +350,7 @@ class HostController extends ObjectController
     /**
      * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function servicesetserviceAction()
     {
@@ -404,8 +392,6 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function commonForServices()
     {
@@ -421,7 +407,6 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Exception\ProgrammingError
      */
@@ -464,10 +449,6 @@ class HostController extends ObjectController
         }
     }
 
-    /**
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
-     */
     protected function addOptionalInspectLink()
     {
         if (! $this->hasPermission('director/inspect')) {

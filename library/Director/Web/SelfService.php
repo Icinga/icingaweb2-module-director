@@ -35,7 +35,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $controller
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\ProgrammingError
      */
     public function renderTo(ControlsAndContent $controller)
@@ -54,7 +53,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $c
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function showRegisteredAgentInstructions(ControlsAndContent $c)
     {
@@ -76,7 +74,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $cc
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\ProgrammingError
      */
     protected function showSelfServiceTemplateInstructions(ControlsAndContent $cc)
@@ -147,7 +144,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $cc
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\ProgrammingError
      */
     protected function showNewAgentInstructions(ControlsAndContent $cc)
@@ -181,8 +177,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $cc
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function showLegacyAgentInstructions(ControlsAndContent $cc)
     {
