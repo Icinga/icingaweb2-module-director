@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Forms\RemoveLinkForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use dipl\Html\HtmlElement;
@@ -156,6 +157,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                 ]
             );
         } else {
+            // !!!
             $deleteLink = Link::create(
                 $this->translate('Remove'),
                 'director/host/removeset',
@@ -169,6 +171,16 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                     'title' => $this->translate('Remove this set from this host')
                 ]
             );
+            $deleteLink = new RemoveLinkForm(
+                $this->translate('Remove'),
+                $this->translate('Remove this set from this host'),
+                'director/host/removeset',
+                [
+                    'name' => $this->host->getObjectName(),
+                    'setId' => $this->set->get('id')
+                ]
+            );
+            $deleteLink->handleRequest();
         }
 
         $parent->add($this::th([$this->getTitle(), $deleteLink]));
