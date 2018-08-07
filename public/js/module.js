@@ -677,6 +677,9 @@
             if (! this.containerIsAutorefreshed($container) && ! this.containerIsAutoSubmitted($container)) {
                 this.putFocusOnFirstFormElement($container);
             }
+
+            // Turn off autocomplete for all suggested fields
+            $container.find('input.director-suggest').each(this.disableAutocomplete);
         },
 
         highlightActiveDashlet: function($container)
@@ -789,6 +792,14 @@
             } else {
                 $fieldset.find('legend span.element-count').remove();
             }
+        },
+
+        disableAutocomplete: function() {
+            $(this)
+                .attr('autocomplete', 'off')
+                .attr('autocorrect', 'off')
+                .attr('autocapitalize', 'off')
+                .attr('spellcheck', 'false');
         }
     };
 
