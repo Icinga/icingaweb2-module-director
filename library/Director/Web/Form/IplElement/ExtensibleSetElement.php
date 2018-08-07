@@ -207,10 +207,6 @@ class ExtensibleSetElement extends BaseHtmlElement
             $attrs = $element->getAttributes();
             $attrs->add('class', 'director-suggest');
             $attrs->set([
-                'autocomplete'   => 'off',
-                'autocorrect'    => 'off',
-                'autocapitalize' => 'off',
-                'spellcheck'     => 'false',
                 'data-suggestion-context' => $this->suggestionContext,
             ]);
         }
