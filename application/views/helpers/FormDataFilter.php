@@ -189,9 +189,12 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         if ($filter) {
             // TODO: Make this configurable
             $type = 'host';
+            $prefixLen = strlen($type) + 1;
             $filter = clone($filter);
+            $col = $filter->getColumn();
 
             if ($this->columnIsJson($filter)) {
+                $col = $filter->getExpression();
                 $filter->setExpression(json_decode($filter->getColumn()));
             } else {
                 $filter->setExpression(json_decode($filter->getExpression()));
@@ -201,7 +204,6 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 return '';
             }
             $dummy = IcingaObject::createByType($type);
-            $col = $filter->getColumn();
             if ($dummy->hasProperty($col)) {
                 if ($dummy->propertyIsBoolean($col)) {
                     return $this->boolean($filter);
@@ -212,6 +214,10 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $type = substr($col, 0, -7);
 
                 return $this->selectGroup($type, $filter);
+            } elseif (substr($col, $prefixLen, 5) === 'vars.') {
+                $var = substr($col, $prefixLen + 5);
+
+                return $this->text($filter, "DataListValues!${var}");
             }
         }
 
@@ -263,26 +269,38 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
     /**
      * @param FilterExpression|null $filter
+     * @param string                $suggestionContext
+     *
      * @return mixed
      */
-    protected function text(FilterExpression $filter = null)
+    protected function text(FilterExpression $filter = null, $suggestionContext = null)
     {
+        $attr = null;
+        if ($suggestionContext !== null) {
+            $attr = [
+                'class'                   => 'director-suggest',
+                'data-suggestion-context' => $suggestionContext,
+            ];
+        }
+
         $value = $filter === null ? '' : $filter->getExpression();
         if (is_array($value)) {
             return $this->view->formIplExtensibleSet(
                 $this->elementId('value', $filter),
-                $value
+                $value,
+                $attr
             );
         }
 
         return $this->view->formText(
             $this->elementId('value', $filter),
-            $value
+            $value,
+            $attr
         );
     }
 
     /**
-     * @return \Icinga\Data\Filter\FilterMatch
+     * @return \Icinga\Data\Filter\FilterExpression
      */
     protected function emptyExpression()
     {

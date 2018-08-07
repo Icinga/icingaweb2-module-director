@@ -309,6 +309,14 @@
             var $el = $suggestion.closest('ul').siblings('.director-suggest');
             var val = $suggestion.text();
 
+            // extract label and key from key
+            var re = /^(.+) \[(\w+)]$/;
+
+            var withLabel = val.match(re);
+            if (withLabel) {
+                val = withLabel[2];
+            }
+
             if (val.match(/\.$/)) {
                 $el.val(val);
                 this.getSuggestionList($el, true);
