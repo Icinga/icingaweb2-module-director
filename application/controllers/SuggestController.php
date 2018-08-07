@@ -19,9 +19,19 @@ class SuggestController extends ActionController
     {
         // TODO: Using some temporarily hardcoded methods, should use DataViews later on
         $context = $this->getRequest()->getPost('context');
+        $key = null;
+
+        if (strpos($context, '!') !== false) {
+            list($context, $key) = preg_split('~!~', $context, 2);
+        }
+
         $func = 'suggest' . ucfirst($context);
         if (method_exists($this, $func)) {
-            $all = $this->$func();
+            if (! empty($key)) {
+                $all = $this->$func($key);
+            } else {
+                $all = $this->$func();
+            }
         } else {
             $all = array();
         }
@@ -230,6 +240,56 @@ class SuggestController extends ActionController
             $this->translate('Host Custom variables'),
             $this->translate('Custom variables')
         ]);
+    }
+
+    protected function suggestDataListValues($field = null)
+    {
+        if ($field === null) {
+            // field is required!
+            return [];
+        }
+
+        $datalistType = 'Icinga\\Module\\Director\\DataType\\DataTypeDatalist';
+        $db = $this->db()->getDbAdapter();
+
+        $query = $db->select()
+            ->from(['f' =>'director_datafield'], [])
+            ->join(
+                ['sid' => 'director_datafield_setting'],
+                'sid.datafield_id = f.id AND sid.setting_name = \'datalist_id\'',
+                []
+            )
+            ->join(
+                ['l' => 'director_datalist'],
+                'l.id = sid.setting_value',
+                []
+            )
+            ->join(
+                ['e' => 'director_datalist_entry'],
+                'e.list_id = l.id',
+                ['entry_name', 'entry_value']
+            )
+            ->where('datatype = ?', $datalistType)
+            ->where('varname = ?', $field)
+            ->order('entry_value');
+
+
+        // TODO: respect allowed_roles
+        /* this implementation from DataTypeDatalist is broken
+        $roles = array_map('json_encode', Acl::instance()->listRoleNames());
+
+        if (empty($roles)) {
+            $query->where('allowed_roles IS NULL');
+        } else {
+            $query->where('(allowed_roles IS NULL OR allowed_roles IN (?))', $roles);
+        }
+        */
+
+        $data = [];
+        foreach ($db->fetchPairs($query) as $key => $label) {
+            $data[] = sprintf("%s [%s]", $label, $key);
+        }
+        return $data;
     }
 
     protected function getFilterColumns($prefix, $keys)
