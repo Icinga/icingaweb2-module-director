@@ -8,11 +8,12 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Data\Filter\FilterNot;
 use Icinga\Data\Filter\FilterOr;
-use Icinga\Exception\ProgrammingError;
-use Icinga\Exception\QueryException;
+use InvalidArgumentException;
+use RuntimeException;
 use Zend_Db_Adapter_Abstract as DbAdapter;
 use Zend_Db_Expr as DbExpr;
 use Zend_Db_Select as DbSelect;
+use Zend_Db_Select_Exception as DbSelectException;
 
 class FilterRenderer
 {
@@ -66,7 +67,14 @@ class FilterRenderer
     protected function extractColumnMap(DbSelect $query)
     {
         $map = [];
-        foreach ($query->getPart(DbSelect::COLUMNS) as $col) {
+        try {
+            $columns = $query->getPart(DbSelect::COLUMNS);
+        } catch (DbSelectException $e) {
+            // Will not happen.
+            throw new RuntimeException($e->getMessage());
+        }
+
+        foreach ($columns as $col) {
             if ($col[1] instanceof DbExpr) {
                 $map[$col[2]] = (string) $col[1];
             } else {
@@ -97,21 +105,27 @@ class FilterRenderer
             $op = ' AND ';
             $prefix = 'NOT ';
         } else {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(
                 'Cannot render a %s filter chain for Zf Db',
                 get_class($filter)
             );
         }
 
-        $parts = array();
-        if (! $filter->isEmpty()) {
+        $parts = [];
+        if ($filter->isEmpty()) {
+            // Hint: we might want to fail here
+            return '';
+        } else {
             foreach ($filter->filters() as $f) {
                 $part = $this->renderFilter($f, $level + 1);
                 if ($part !== '') {
                     $parts[] = $part;
                 }
             }
-            if (! empty($parts)) {
+            if (empty($parts)) {
+                // will not happen, as we are not empty
+                return '';
+            } else {
                 if ($level > 0) {
                     return "$prefix (" . implode($op, $parts) . ')';
                 } else {
@@ -124,6 +138,9 @@ class FilterRenderer
     protected function renderFilterExpression(FilterExpression $filter)
     {
         $col = $this->lookupColumnAlias($filter->getColumn());
+        if (! ctype_digit($col)) {
+            $col = $this->db->quoteIdentifier($col);
+        }
         $sign = $filter->getSign();
         $expression = $filter->getExpression();
 
@@ -195,7 +212,7 @@ class FilterRenderer
             );
         }
 
-        throw new ProgrammingError(
+        throw new InvalidArgumentException(
             'Array expressions can only be rendered for = and !=, got %s',
             $sign
         );
@@ -210,8 +227,13 @@ class FilterRenderer
     {
         if ($filter instanceof FilterChain) {
             return $this->renderFilterChain($filter, $level);
-        } else {
+        } elseif ($filter instanceof FilterExpression) {
             return $this->renderFilterExpression($filter);
+        } else {
+            throw new RuntimeException(sprintf(
+                'Filter of type FilterChain or FilterExpression expected, got %s',
+                get_class($filter)
+            ));
         }
     }
 
@@ -219,7 +241,7 @@ class FilterRenderer
     {
         // bindParam? bindValue?
         if (is_array($value)) {
-            $ret = array();
+            $ret = [];
             foreach ($value as $val) {
                 $ret[] = $this->escape($val);
             }
@@ -243,7 +265,9 @@ class FilterRenderer
                 return sprintf('(%1$s NOT IN (%2$s) OR %1$s IS NULL)', $col, $this->escape($expression));
             }
 
-            throw new QueryException('Unable to render array expressions with operators other than equal or not equal');
+            throw new InvalidArgumentException(
+                'Unable to render array expressions with operators other than equal or not equal'
+            );
         } elseif ($sign === '=' && strpos($expression, '*') !== false) {
             if ($expression === '*') {
                 return new DbExpr('TRUE');

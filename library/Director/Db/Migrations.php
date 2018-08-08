@@ -10,9 +10,7 @@ use RuntimeException;
 
 class Migrations
 {
-    /**
-     * @var \Zend_Db_Adapter_Abstract
-     */
+    /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
     /**

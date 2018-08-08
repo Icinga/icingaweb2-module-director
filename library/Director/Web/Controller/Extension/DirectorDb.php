@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Controller\Extension;
 
-use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use RuntimeException;
 
 trait DirectorDb
 {
@@ -111,7 +111,6 @@ trait DirectorDb
     }
 
     /**
-     * @throws ConfigurationError
      *
      * @return Db
      */
@@ -123,12 +122,12 @@ trait DirectorDb
                 $this->db = Db::fromResourceName($resourceName);
             } elseif ($this instanceof ActionController) {
                 if ($this->getRequest()->isApiRequest()) {
-                    throw new ConfigurationError('Icinga Director is not correctly configured');
+                    throw new RuntimeException('Icinga Director is not correctly configured');
                 } else {
                     $this->redirectNow('director');
                 }
             } else {
-                throw new ConfigurationError('Icinga Director is not correctly configured');
+                throw new RuntimeException('Icinga Director is not correctly configured');
             }
         }
 

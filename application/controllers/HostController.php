@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Controllers;
 
 use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Web\Url;
 use Exception;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
@@ -21,8 +23,6 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Module\Director\Web\Widget\HostServiceRedirector;
-use Icinga\Web\Url;
-use dipl\Html\Link;
 
 class HostController extends ObjectController
 {
@@ -33,7 +33,6 @@ class HostController extends ObjectController
 
     /**
      * @return HostgroupRestriction
-     * @throws \Icinga\Exception\ConfigurationError
      */
     protected function getHostgroupRestriction()
     {
@@ -46,10 +45,6 @@ class HostController extends ObjectController
         $this->addOptionalMonitoringLink();
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     public function serviceAction()
     {
         $host = $this->getHostObject();
@@ -63,10 +58,6 @@ class HostController extends ObjectController
         );
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     public function servicesetAction()
     {
         $host = $this->getHostObject();
@@ -80,9 +71,6 @@ class HostController extends ObjectController
         );
     }
 
-    /**
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     protected function addServicesHeader()
     {
         $host = $this->getHostObject();
@@ -115,8 +103,6 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function invalidserviceAction()
@@ -132,8 +118,6 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function servicesAction()
@@ -203,7 +187,6 @@ class HostController extends ObjectController
     /**
      * @param IcingaHost $host
      * @param IcingaHost|null $affectedHost
-     * @throws \Icinga\Exception\ConfigurationError
      */
     protected function addHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null)
     {
@@ -240,8 +223,6 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function appliedserviceAction()
@@ -278,8 +259,6 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function inheritedserviceAction()
@@ -319,9 +298,7 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function removesetAction()
     {
@@ -348,8 +325,6 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function servicesetserviceAction()
@@ -390,9 +365,6 @@ class HostController extends ObjectController
         $this->commonForServices();
     }
 
-    /**
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     protected function commonForServices()
     {
         $host = $this->object;
@@ -406,9 +378,7 @@ class HostController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function agentAction()
     {

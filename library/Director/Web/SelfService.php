@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web;
 
 use Exception;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Forms\IcingaForgetApiKeyForm;
 use Icinga\Module\Director\Forms\IcingaGenerateApiKeyForm;
@@ -35,7 +36,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $controller
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function renderTo(ControlsAndContent $controller)
     {
@@ -74,7 +74,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $cc
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function showSelfServiceTemplateInstructions(ControlsAndContent $cc)
     {
@@ -100,7 +99,7 @@ class SelfService
             ]
         ));
 
-        if (Icinga::app()->getModuleManager()->hasLoaded('doc')) {
+        if ($this->hasDocsModuleLoaded()) {
             $actions->add(Link::create(
                 $this->translate('Documentation'),
                 'doc/module/director/chapter/Self-Service-API',
@@ -144,7 +143,6 @@ class SelfService
 
     /**
      * @param ControlsAndContent $cc
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function showNewAgentInstructions(ControlsAndContent $cc)
     {
@@ -153,7 +151,7 @@ class SelfService
         $key = $host->getSingleResolvedProperty('api_key');
         $cc->addTitle($this->translate('Configure this Agent  via Self Service API'));
 
-        if (Icinga::app()->getModuleManager()->hasLoaded('doc')) {
+        if ($this->hasDocsModuleLoaded()) {
             $actions = $cc->actions();
             $actions->add(Link::create(
                 $this->translate('Documentation'),
@@ -275,5 +273,17 @@ class SelfService
         header('Content-Disposition: attachment; filename=icinga2-agent-kickstart.' . $ext);
         echo $script;
         exit;
+    }
+
+    /**
+     * @return bool
+     */
+    protected function hasDocsModuleLoaded()
+    {
+        try {
+            return Icinga::app()->getModuleManager()->hasLoaded('doc');
+        } catch (ProgrammingError $e) {
+            return false;
+        }
     }
 }

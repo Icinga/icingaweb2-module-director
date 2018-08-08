@@ -22,12 +22,13 @@ use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
 use Icinga\Module\Director\Web\Widget\DeployedConfigInfoHeader;
 use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
-use Icinga\Web\Url;
 use Exception;
+use RuntimeException;
 use dipl\Html\Html;
 use dipl\Html\HtmlString;
 use dipl\Html\Icon;
 use dipl\Html\Link;
+use dipl\Web\Url;
 
 class ConfigController extends ActionController
 {
@@ -38,10 +39,7 @@ class ConfigController extends ActionController
     }
 
     /**
-     * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
      */
     public function deploymentsAction()
     {
@@ -84,9 +82,9 @@ class ConfigController extends ActionController
     }
 
     /**
-     * @throws IcingaException
      * @throws NotFoundError
-     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Icinga\Security\SecurityException
      */
     public function deployAction()
     {
@@ -96,10 +94,10 @@ class ConfigController extends ActionController
         }
 
         if (! $request->isPost()) {
-            throw new IcingaException(
+            throw new RuntimeException(sprintf(
                 'Unsupported method: %s',
                 $request->getMethod()
-            );
+            ));
         }
         $this->assertPermission('director/deploy');
 
@@ -126,10 +124,7 @@ class ConfigController extends ActionController
     }
 
     /**
-     * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
      */
     public function activitiesAction()
     {
@@ -180,7 +175,6 @@ class ConfigController extends ActionController
 
     /**
      * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\ProgrammingError
      */
@@ -209,8 +203,7 @@ class ConfigController extends ActionController
     }
 
     /**
-     * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Security\SecurityException
      */
     public function settingsAction()
     {
@@ -231,11 +224,8 @@ class ConfigController extends ActionController
     /**
      * Show all files for a given config
      *
-     * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\MissingParameterException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
      */
     public function filesAction()
     {
@@ -280,11 +270,8 @@ class ConfigController extends ActionController
     /**
      * Show a single file
      *
-     * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\MissingParameterException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
      */
     public function fileAction()
     {
@@ -318,8 +305,7 @@ class ConfigController extends ActionController
     /**
      * TODO: Check if this can be removed
      *
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
      */
     public function storeAction()
     {
@@ -334,9 +320,7 @@ class ConfigController extends ActionController
     }
 
     /**
-     * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Security\SecurityException
      */
     public function diffAction()
     {
@@ -387,7 +371,6 @@ class ConfigController extends ActionController
 
     /**
      * @throws IcingaException
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\MissingParameterException
      */
     public function filediffAction()
@@ -417,7 +400,6 @@ class ConfigController extends ActionController
 
     /**
      * @param $checksum
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function deploymentSucceeded($checksum)
     {
@@ -436,7 +418,6 @@ class ConfigController extends ActionController
     /**
      * @param $checksum
      * @param null $error
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function deploymentFailed($checksum, $error = null)
     {
@@ -456,7 +437,6 @@ class ConfigController extends ActionController
 
     /**
      * @return \dipl\Web\Widget\Tabs
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function configTabs()
     {
