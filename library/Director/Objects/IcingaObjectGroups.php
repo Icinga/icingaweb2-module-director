@@ -195,7 +195,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                         break;
                     case 'fail':
                         throw new NotFoundError(
-                            'The group "%s" doesn\'t exists.',
+                            'The group "%s" doesn\'t exist.',
                             $group
                         );
                         break;
