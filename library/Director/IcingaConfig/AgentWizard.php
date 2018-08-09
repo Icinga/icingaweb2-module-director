@@ -128,10 +128,7 @@ class AgentWizard
 
     protected function loadPowershellModule()
     {
-        return file_get_contents(
-            dirname(dirname(dirname(__DIR__)))
-            . '/contrib/windows-agent-installer/Icinga2Agent.psm1'
-        );
+        return $this->getContribFile('windows-agent-installer/Icinga2Agent.psm1');
     }
 
     public function renderWindowsInstaller()
@@ -244,46 +241,48 @@ class AgentWizard
 
     public function renderLinuxInstaller()
     {
-        return $this->loadBashModuleHead()
-            . $this->renderBashParameters(
-                array(
-                    'ICINGA2_NODENAME'         => $this->getCertName(),
-                    'ICINGA2_CA_TICKET'        => $this->getTicket(),
-                    'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
-                    'ICINGA2_PARENT_ENDPOINTS' => array_keys($this->getParentEndpoints()),
-                    'ICINGA2_CA_NODE'          => $this->getCaServer(),
-                )
-            )
-            . "\n"
-            . $this->loadBashModule()
-            . "\n\n";
+        $script = $this->loadBashModule();
+
+        $endpoints = [];
+        foreach ($this->getParentEndpoints() as $endpoint) {
+            $endpoints[$endpoint->getObjectName()] = $endpoint->get('host');
+        }
+
+        return $this->replaceBashTemplate($script, [
+            'ICINGA2_NODENAME'         => $this->getCertName(),
+            'ICINGA2_CA_TICKET'        => $this->getTicket(),
+            'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
+            'ICINGA2_PARENT_ENDPOINTS' => $endpoints,
+            'ICINGA2_CA_NODE'          => $this->getCaServer(),
+            'ICINGA2_GLOBAL_ZONES'     => [$this->db()->getDefaultGlobalZoneName()],
+        ]);
     }
 
     protected function loadBashModule()
     {
-        return file_get_contents(
-            dirname(dirname(dirname(__DIR__)))
-            . '/contrib/linux-agent-installer/Icinga2Agent.bash'
-        );
+        return $this->getContribFile('linux-agent-installer/Icinga2Agent.bash');
     }
 
-    protected function loadBashModuleHead()
+    protected function replaceBashTemplate($script, $parameters)
     {
-        return file_get_contents(
-            dirname(dirname(dirname(__DIR__)))
-            . '/contrib/linux-agent-installer/Icinga2AgentHead.bash'
-        );
-    }
-
-    protected function renderBashParameters($parameters)
-    {
-        $parts = array();
-
         foreach ($parameters as $key => $value) {
-            $parts[] = $this->renderBashParameter($key, $value);
+            $quotedKey = preg_quote($key, '~');
+            if (is_array($value)) {
+                $list = [];
+                foreach ($value as $k => $v) {
+                    if (!is_numeric($k)) {
+                        $v = "$k,$v";
+                    }
+                    $list[] = escapeshellarg($v);
+                }
+                $value = '(' . join(' ', $list) . ')';
+            } else {
+                $value = escapeshellarg($value);
+            }
+            $script = preg_replace("~^#?$quotedKey='@$quotedKey@'$~m", "${key}=${value}", $script);
         }
 
-        return implode("\n", $parts);
+        return $script;
     }
 
     protected function renderBashParameter($key, $value)
@@ -306,5 +305,15 @@ class AgentWizard
         }
 
         return $ret;
+    }
+
+    protected function getContribDir()
+    {
+        return dirname(dirname(dirname(__DIR__))) . '/contrib';
+    }
+
+    protected function getContribFile($path)
+    {
+        return file_get_contents($this->getContribDir() . '/' . $path);
     }
 }
