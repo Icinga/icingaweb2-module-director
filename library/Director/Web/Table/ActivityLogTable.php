@@ -29,7 +29,7 @@ class ActivityLogTable extends ZfQueryBasedTable
         'author',
         'object_name',
         'object_type',
-        'action_name',
+        'action',
     );
 
     public function assemble()
