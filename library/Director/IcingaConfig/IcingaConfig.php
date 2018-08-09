@@ -533,18 +533,35 @@ globals.directorWarnOnceForThresholds = function() {
 
         return sprintf(
             '
-if (! globals["DirectorOverrideTemplate"]) {
-  const DirectorOverrideVars = "%s"
   const DirectorOverrideTemplate = "%s"
+if (! globals[DirectorOverrideTemplate]) {
+  const DirectorOverrideVars = "%s"
+
+  globals.directorWarnedOnceForServiceWithoutHost = false;
+  globals.directorWarnOnceForServiceWithoutHost = function() {
+    if (globals.directorWarnedOnceForServiceWithoutHost == false) {
+      globals.directorWarnedOnceForServiceWithoutHost = true
+      log(
+        LogWarning,
+        "config",
+        "Director: Custom Variable Overrides will not work in this Icinga 2 version. See Director issue #1579"
+      )
+    }
+  }
 
   template Service DirectorOverrideTemplate ignore_on_error {
     /**
      * Seems that host is missing when used in a service object, works fine for
      * apply rules
      */
-    if (! host) {
-      var host = get_host(host_name)
-    }
+    try {
+      if (! host) {
+        var host = get_host(host_name)
+      }
+      if (! host) {
+        globals.directorWarnOnceForServiceWithoutHost()
+      }
+    } except { globals.directorWarnOnceForServiceWithoutHost() }
 
     if (vars) {
       vars += host.vars[DirectorOverrideVars][name]
