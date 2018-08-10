@@ -46,6 +46,8 @@ class AutomationObjectActionBar extends ActionBar
                 $params,
                 ['class' => 'icon-paste']
             ),
+            /*
+            // TODO: enable once handled in the controller
             'export' => Link::create(
                 $this->translate('Download JSON'),
                 $this->request->getUrl()->with('format', 'json'),
@@ -54,6 +56,7 @@ class AutomationObjectActionBar extends ActionBar
                     'data-base-target' => '_blank',
                 ]
             )
+            */
 
         ];
         unset($links[$action]);
