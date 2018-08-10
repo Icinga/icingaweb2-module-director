@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use dipl\Html\BaseHtmlElement;
+use dipl\Html\Html;
 use dipl\Html\Link;
 use dipl\Html\Table;
 use dipl\Translation\TranslationHelper;
@@ -62,7 +63,7 @@ class CoreApiFieldsTable extends Table
 
     protected function makeBooleanColumn($value)
     {
-        return $this::td($value ? $this::strong('true') : 'false');
+        return $this::td($value ? Html::tag('strong', 'true') : 'false');
     }
 
     public function getColumnsToBeRendered()
