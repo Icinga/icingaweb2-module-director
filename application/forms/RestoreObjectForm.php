@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Forms;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 
 class RestoreObjectForm extends DirectorForm
@@ -26,7 +25,8 @@ class RestoreObjectForm extends DirectorForm
 
         $keyParams = $object->getKeyParams();
 
-        if ($object instanceof IcingaService && $object->isApplyRule()) {
+        if ($object->supportsApplyRules() && $object->get('object_type') === 'apply') {
+            // TODO: not all apply should be considered unique by name + object_type
             $query = $db->getDbAdapter()
                 ->select()
                 ->from($object->getTableName())
