@@ -23,6 +23,7 @@
 : "${ICINGA2_PARENT_ENDPOINTS:=()}"
 : "${ICINGA2_GLOBAL_ZONES:=director-global}"
 : "${ICINGA2_DRYRUN:=}"
+: "${ICINGA2_UPDATE_CONFIG:=}"
 
 # Helper functions
 fail() {
@@ -130,16 +131,13 @@ else
 fi
 
 if [ -z "${ICINGA2_SSLDIR}" ]; then
-  if version_compare "$(icinga_major)" ">=" 2.8; then
+  if [ -f "${ICINGA2_SSLDIR_OLD}/${ICINGA2_NODENAME}.crt" ]; then
+    info "Using old SSL directory: ${ICINGA2_SSLDIR_OLD}"
+    info "Because you already have a certificate in ${ICINGA2_SSLDIR_OLD}/${ICINGA2_NODENAME}.crt"
+    ICINGA2_SSLDIR="${ICINGA2_SSLDIR_OLD}"
+  elif version_compare "$(icinga_major)" ">=" 2.8 ; then
     info "Using new SSL directory: ${ICINGA2_SSLDIR_NEW}"
     ICINGA2_SSLDIR="${ICINGA2_SSLDIR_NEW}"
-
-    if [ -f "${ICINGA2_SSLDIR_OLD}/${ICINGA2_NODENAME}.crt" ]; then
-      warn "ERROR: a certificate for '${ICINGA2_NODENAME}' already exists"
-      warn "Please move ${ICINGA2_SSLDIR_OLD}/${ICINGA2_NODENAME}.??? manually to"
-      warn "${ICINGA2_SSLDIR_NEW}"
-      exit 1
-    fi
   else
     info "Using old SSL directory: ${ICINGA2_SSLDIR_OLD}"
     ICINGA2_SSLDIR="${ICINGA2_SSLDIR_OLD}"
@@ -155,10 +153,11 @@ if [ -f "${ICINGA2_SSLDIR}/${ICINGA2_NODENAME}.crt" ]; then
   warn "ERROR: a certificate for '${ICINGA2_NODENAME}' already exists"
   warn "Please remove ${ICINGA2_SSLDIR}/${ICINGA2_NODENAME}.??? in case you want a"
   warn "new certificate to be generated and signed by ${ICINGA2_CA_NODE}"
-  echo
-  read -r -p "Do you want to continue updating config files? [y/N] " answer
-  if [ "${answer,,}" != y ] && [ "${answer,,}" != yes ]; then
-    fail "Aborting."
+
+  if [ -z "${ICINGA2_UPDATE_CONFIG}" ] && [ -z "${ICINGA2_DRYRUN}" ]; then
+    warn "Aborting here, you can can call the script like this to just update config:"
+    info " ICINGA2_UPDATE_CONFIG=1 $0"
+    exit 1
   fi
 elif [ -z "${ICINGA2_DRYRUN}" ]; then
   if ! "$ICINGA2_BIN" pki new-cert --cn "${ICINGA2_NODENAME}" \
