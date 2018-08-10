@@ -1208,7 +1208,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         try {
             $imports = array_reverse($this->imports()->getObjects());
         } catch (NotFoundError $e) {
-            throw new RuntimeException($e->getMessage(), 0, $e->getMessage());
+            throw new RuntimeException($e->getMessage(), 0, $e);
         }
 
         foreach ($imports as $object) {
