@@ -1,26 +1,26 @@
 # Icinga Web 2 - Head for multiple monitoring backends.
-# Copyright (C) 2017 Icinga Development Team
+# Copyright (C) 2018 Icinga Development Team
 # This file is distributed under the same license as Director Module.
 # Thomas Widhalm <widhalmt@widhalm.or.at>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Director Module (master)\n"
 "Report-Msgid-Bugs-To: dev@icinga.com\n"
-"POT-Creation-Date: 2017-11-24 10:52+0100\n"
-"PO-Revision-Date: 2017-11-24 10:49+0100\n"
+"POT-Creation-Date: 2018-08-12 12:18+0200\n"
+"PO-Revision-Date: 2018-08-12 12:23+0200\n"
 "Last-Translator: Thomas Gelf <thomas@gelf.net>\n"
 "Language: de_DE\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-Basepath: .\n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.7.1\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:588
+#: library/Director/Web/Form/DirectorObjectForm.php:602
 #, php-format
 msgid " (inherited from \"%s\")"
 msgstr " (geerbt von \"%s\")"
@@ -37,12 +37,52 @@ msgstr "# Benutzt"
 msgid "# Vars"
 msgstr "# Vars"
 
-#: library/Director/Web/Table/CustomvarTable.php:28
+#: library/Director/Web/Table/CustomvarTable.php:29
 #, php-format
 msgid "%d / %d"
 msgstr "%d / %d"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:230
+#: library/Director/Resolver/CommandUsage.php:53
+#, php-format
+msgid "%d Host Template(s)"
+msgstr "%d Host-Vorlagen"
+
+#: library/Director/Resolver/CommandUsage.php:52
+#, php-format
+msgid "%d Host(s)"
+msgstr "%d Host(s)"
+
+#: library/Director/Resolver/CommandUsage.php:63
+#, php-format
+msgid "%d Notification Apply Rule(s)"
+msgstr "%d Benachrichtigungs-Apply-Regeln"
+
+#: library/Director/Resolver/CommandUsage.php:62
+#, php-format
+msgid "%d Notification Template(s)"
+msgstr "%d Benachrichtigungsvorlagen"
+
+#: library/Director/Resolver/CommandUsage.php:61
+#, php-format
+msgid "%d Notification(s)"
+msgstr "%d Benachrichtigung(en)"
+
+#: library/Director/Resolver/CommandUsage.php:58
+#, php-format
+msgid "%d Service Apply Rule(s)"
+msgstr "%d Service Apply-Regel(n)"
+
+#: library/Director/Resolver/CommandUsage.php:57
+#, php-format
+msgid "%d Service Template(s)"
+msgstr "%d Service-Vorlage(n)"
+
+#: library/Director/Resolver/CommandUsage.php:56
+#, php-format
+msgid "%d Service(s)"
+msgstr "%d Service(s)"
+
+#: library/Director/Dashboard/Dashlet/Dashlet.php:231
 #, php-format
 msgid "%d apply rules have been defined"
 msgstr "%d Apply-Regeln wurden definiert"
@@ -57,17 +97,17 @@ msgstr "%d erstellt"
 msgid "%d deleted"
 msgstr "%d gelöscht"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:92
+#: library/Director/Web/Widget/DeploymentInfo.php:104
 #, php-format
 msgid "%d files"
 msgstr "%d Dateien"
 
-#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:80
+#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:83
 #, php-format
 msgid "%d files rendered in %0.2fs"
 msgstr "%d Dateien in %0.2fs erstellt "
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:272
+#: library/Director/Dashboard/Dashlet/Dashlet.php:273
 #, php-format
 msgid "%d have been externally defined and will not be deployed"
 msgstr "%d wurden extern definiert und werden nicht ausgebracht"
@@ -77,12 +117,12 @@ msgstr "%d wurden extern definiert und werden nicht ausgebracht"
 msgid "%d modified"
 msgstr "%d geändert"
 
-#: application/controllers/InspectController.php:68
+#: application/controllers/InspectController.php:78
 #, php-format
 msgid "%d objects found"
 msgstr "%d Objekte gefunden"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:255
+#: library/Director/Dashboard/Dashlet/Dashlet.php:256
 #, php-format
 msgid "%d objects have been defined"
 msgstr "%d Objekte wurden definiert"
@@ -92,27 +132,27 @@ msgstr "%d Objekte wurden definiert"
 msgid "%d objects have been modified"
 msgstr "%d Objekte wurden verändert"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:101
+#: library/Director/Web/Widget/DeploymentInfo.php:113
 #, php-format
 msgid "%d objects, %d templates, %d apply rules"
 msgstr "%d Objekte, %d Vorlagen, %d Apply-Regeln"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:264
+#: library/Director/Dashboard/Dashlet/Dashlet.php:265
 #, php-format
 msgid "%d of them are templates"
 msgstr "%d davon sind Vorlagen"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:212
+#: library/Director/Dashboard/Dashlet/Dashlet.php:213
 #, php-format
 msgid "%d templates have been defined"
 msgstr "%d Vorlagen wurden definiert"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:409
+#: library/Director/Web/Widget/ActivityLogInfo.php:450
 #, php-format
 msgid "%s \"%s\" has been created"
 msgstr "%s \"%s\" wurde erstellt"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:412
+#: library/Director/Web/Widget/ActivityLogInfo.php:453
 #, php-format
 msgid "%s \"%s\" has been deleted"
 msgstr "%s \"%s\" wurde gelöscht"
@@ -122,33 +162,33 @@ msgstr "%s \"%s\" wurde gelöscht"
 msgid "%s \"%s\" has been imported\""
 msgstr "%s \"%s\" wurde importiert\""
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:415
+#: library/Director/Web/Widget/ActivityLogInfo.php:456
 #, php-format
 msgid "%s \"%s\" has been modified"
 msgstr "%s \"%s\" wurde geändert"
 
-#: library/Director/Web/Table/ObjectSetTable.php:51
+#: library/Director/Web/Table/ObjectSetTable.php:57
 #, php-format
 msgid "%s (%d members)"
 msgstr "%s (%d Mitglieder)"
 
-#: application/controllers/HostController.php:134
+#: application/controllers/HostController.php:169
 #, php-format
 msgid "%s (Applied Service set)"
 msgstr "%s (zugewiesenes Service-Set)"
 
-#: application/controllers/HostController.php:176
+#: application/controllers/HostController.php:215
 #, php-format
 msgid "%s (Service set)"
 msgstr "%s (Service-Set)"
 
-#: application/forms/SettingsForm.php:143
 #: application/forms/SelfServiceSettingsForm.php:243
+#: application/forms/SettingsForm.php:157
 #, php-format
 msgid "%s (default)"
 msgstr "%s (default)"
 
-#: library/Director/Web/Table/IcingaHostAppliedServicesTable.php:58
+#: library/Director/Web/Table/IcingaHostAppliedServicesTable.php:68
 #, php-format
 msgid "%s (where %s)"
 msgstr "%s (wo %s)"
@@ -163,23 +203,33 @@ msgstr "%s Vorlagen"
 msgid "%s based on %s"
 msgstr "%s basierend auf %s"
 
-#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:99
+#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:106
 #, php-format
 msgid "%s config changes happend since the last deployed configuration"
 msgstr ""
 "%s Konfigurationsänderungen seit der letzten ausgebrachten Konfiguration"
 
-#: library/Director/Web/Widget/SyncRunDetails.php:41
+#: application/forms/IcingaServiceForm.php:256
+#, php-format
+msgid "%s has been blacklisted on %s"
+msgstr "%s wurde auf %s geblacklisted"
+
+#: application/forms/IcingaServiceForm.php:280
+#, php-format
+msgid "%s is no longer blacklisted on %s"
+msgstr "%s ist nicht länger auf %s geblacklisted"
+
+#: library/Director/Web/Widget/SyncRunDetails.php:48
 #, php-format
 msgid "%s objects have been modified"
 msgstr "%s Objekte wurden verändert"
 
-#: application/controllers/HostController.php:300
+#: application/controllers/HostController.php:351
 #, php-format
 msgid "%s on %s (from set: %s)"
 msgstr "%s auf %s (aus dem Set \"%s\")"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:287
+#: library/Director/Dashboard/Dashlet/Dashlet.php:288
 #, php-format
 msgid "%s related group objects have been created"
 msgstr "%s verwandte Gruppenobjekte wurden erstellt"
@@ -189,12 +239,12 @@ msgstr "%s verwandte Gruppenobjekte wurden erstellt"
 msgid "%s templates based on %s"
 msgstr "%s Vorlagen basierend auf %s"
 
-#: application/controllers/ImportsourceController.php:127
+#: application/controllers/ImportsourceController.php:223
 #, php-format
 msgid "%s: Property Modifier"
 msgstr "%s: Eigenschaftsmodifikatoren"
 
-#: application/controllers/ImportsourceController.php:108
+#: application/controllers/ImportsourceController.php:195
 #, php-format
 msgid "%s: add Property Modifier"
 msgstr "%s: Eigenschaftsmodifikator hinzufügen"
@@ -204,32 +254,32 @@ msgstr "%s: Eigenschaftsmodifikator hinzufügen"
 msgid "(on %s)"
 msgstr "(auf %s)"
 
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:238
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:234
 msgid "- add more -"
 msgstr "- mehr hinzuzufügen -"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1004
+#: library/Director/Web/Form/DirectorObjectForm.php:1028
 msgid "- click to add more -"
 msgstr "- Hier klicken um mehr hinzuzufügen -"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:597
+#: library/Director/Web/Form/DirectorObjectForm.php:611
 msgid "- inherited -"
 msgstr "- geerbt -"
 
-#: application/forms/SelfServiceSettingsForm.php:51
+#: application/forms/SelfServiceSettingsForm.php:66
 msgid "- no automatic installation -"
 msgstr "- keine automatische Installation -"
 
-#: application/views/helpers/FormDataFilter.php:388
-#: application/controllers/ConfigController.php:318
-#: application/controllers/ConfigController.php:329
-#: application/forms/SettingsForm.php:147
+#: application/views/helpers/FormDataFilter.php:465
+#: application/controllers/ConfigController.php:351
+#: application/controllers/ConfigController.php:362
 #: application/forms/SelfServiceSettingsForm.php:239
+#: application/forms/SettingsForm.php:161
 #: library/Director/Web/Form/QuickBaseForm.php:119
 #: library/Director/DataType/DataTypeDatalist.php:22
 #: library/Director/DataType/DataTypeDirectorObject.php:43
 #: library/Director/DataType/DataTypeSqlQuery.php:37
-#: library/Director/Job/ImportJob.php:84 library/Director/Job/SyncJob.php:93
+#: library/Director/Job/ImportJob.php:102 library/Director/Job/SyncJob.php:107
 msgid "- please choose -"
 msgstr "- bitte wählen -"
 
@@ -270,7 +320,7 @@ msgstr ""
 
 # Geschlecht kann hier leider nicht bestimmt werden -ThW
 #: application/forms/IcingaTimePeriodRangeForm.php:85
-#: library/Director/Web/Form/DirectorObjectForm.php:627
+#: library/Director/Web/Form/DirectorObjectForm.php:641
 #, php-format
 msgid "A new %s has successfully been created"
 msgstr "Ein neuer %s wurde erfolgreich erstellt"
@@ -280,7 +330,7 @@ msgstr "Ein neuer %s wurde erfolgreich erstellt"
 msgid "A new Self Service API key for %s has been generated"
 msgstr "Ein neuer Selbstbedienungs-API-Schlüssel für %s wurde erstellt"
 
-#: application/forms/ImportRowModifierForm.php:65
+#: application/forms/ImportRowModifierForm.php:74
 msgid ""
 "A property modifier allows you to modify a specific property at import time"
 msgstr ""
@@ -304,11 +354,11 @@ msgstr ""
 "Eine kurzer Name um diesen Auftrag zu bezeichnen. Sprechende Bezeichnungen "
 "wie \"Puppet Hosts importieren\" bieten sich an"
 
-#: application/forms/IcingaServiceSetForm.php:31
+#: application/forms/IcingaServiceSetForm.php:30
 msgid "A short name identifying this set of services"
 msgstr "Eine kurzer Name um dieses Service-Set zu bezeichnen"
 
-#: library/Director/Web/SelfService.php:191
+#: library/Director/Web/SelfService.php:211
 #, php-format
 msgid ""
 "A ticket for this agent could not have been requested from your deployment "
@@ -323,22 +373,22 @@ msgid ""
 "A total of %d config changes happened since your last deployed config has "
 "been rendered"
 msgstr ""
-"Insgesamt wurde die Konfiguration %d mal seit dem letzten Ausbringen geändert"
+"Insgesamt wurde die Konfiguration %d mal seit dem letzten Ausrollen geändert"
 
 #: application/forms/IcingaHostSelfServiceForm.php:49
 msgid "API Key"
 msgstr "API-Schlüssel"
 
-#: application/forms/KickstartForm.php:144
 #: application/forms/IcingaEndpointForm.php:46
+#: application/forms/KickstartForm.php:148
 msgid "API user"
 msgstr "API Benutzer"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1322
+#: library/Director/Web/Form/DirectorObjectForm.php:1356
 msgid "Accept passive checks"
 msgstr "Passive Checkergebnisse akzeptieren"
 
-#: application/forms/IcingaHostForm.php:88
+#: application/forms/IcingaHostForm.php:89
 msgid "Accepts config"
 msgstr "Akzeptiert Konfiguration"
 
@@ -347,83 +397,93 @@ msgstr "Akzeptiert Konfiguration"
 msgid "Acknowledgement"
 msgstr "Bestätigung"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:354
-#: library/Director/Web/Widget/ActivityLogInfo.php:364
 #: library/Director/Web/Table/ConfigFileDiffTable.php:81
+#: library/Director/Web/Widget/ActivityLogInfo.php:391
+#: library/Director/Web/Widget/ActivityLogInfo.php:401
 msgid "Action"
 msgstr "Aktion"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1404
+#: library/Director/Web/Form/DirectorObjectForm.php:1469
 msgid "Action URL"
 msgstr "Aktions-URL"
 
-#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:59
-#: library/Director/Web/Widget/ActivityLogInfo.php:387
 #: library/Director/Web/Table/QuickTable.php:280
+#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:62
+#: library/Director/Web/Widget/ActivityLogInfo.php:424
 msgid "Actions"
 msgstr "Aktionen"
 
-#: application/forms/SettingsForm.php:129
+#: application/forms/SettingsForm.php:143
 msgid "Activation Tool"
 msgstr "Aktivierungswerkzeug"
 
-#: application/forms/SettingsForm.php:108
+#: application/forms/SettingsForm.php:122
 msgid "Active-Passive"
 msgstr "Aktiv-Passiv"
 
-#: library/Director/Web/Widget/SyncRunDetails.php:26
+#: library/Director/Web/Widget/SyncRunDetails.php:27
 msgid "Activity"
 msgstr "Aktivität"
 
-#: application/controllers/ConfigController.php:126
+#: application/controllers/ConfigController.php:138
 #: library/Director/Dashboard/Dashlet/ActivityLogDashlet.php:11
 #: library/Director/Web/Tabs/InfraTabs.php:29
 msgid "Activity Log"
 msgstr "Aktivitätslog"
 
-#: library/Director/Web/Controller/ObjectController.php:189
+#: library/Director/Web/Controller/ObjectController.php:193
 #, php-format
 msgid "Activity Log: %s"
 msgstr "Aktivitätslog: %s"
 
-#: configuration.php:92
+#: configuration.php:106
 msgid "Activity log"
 msgstr "Aktivitätslog"
 
 #: application/controllers/DataController.php:22
 #: application/controllers/DataController.php:61
-#: library/Director/Web/Form/DirectorObjectForm.php:478
-#: library/Director/Web/Controller/ActionController.php:114
-#: library/Director/Web/Controller/ObjectsController.php:180
-#: library/Director/Web/Controller/ObjectsController.php:215
+#: library/Director/Web/Form/DirectorObjectForm.php:492
+#: library/Director/Web/Controller/ActionController.php:134
+#: library/Director/Web/Controller/ObjectsController.php:235
+#: library/Director/Web/Controller/ObjectsController.php:277
 #: library/Director/Web/ActionBar/ChoicesActionBar.php:16
 #: library/Director/Web/ActionBar/ObjectsActionBar.php:16
 #: library/Director/Web/ActionBar/TemplateActionBar.php:19
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: library/Director/Web/Controller/ObjectController.php:65
+#: library/Director/Web/Controller/ObjectController.php:66
 #: library/Director/Web/Tabs/ObjectTabs.php:51
 #, php-format
 msgid "Add %s"
 msgstr "%s hinzufügen"
 
-#: library/Director/Web/Controller/ObjectController.php:275
+#: library/Director/Web/Controller/ObjectController.php:279
 #, php-format
 msgid "Add %s: %s"
 msgstr "%s hinzufügen: %s"
 
-#: application/controllers/HostsController.php:34
-#: application/controllers/HostsController.php:43
+#: application/controllers/HostsController.php:38
+#: application/controllers/HostsController.php:52
 msgid "Add Service"
 msgstr "Service hinzufügen"
 
-#: application/controllers/HostController.php:60
+#: application/controllers/HostsController.php:43
+#: application/controllers/HostsController.php:83
+msgid "Add Service Set"
+msgstr "Service-Set hinzufügen"
+
+#: application/controllers/HostsController.php:100
+#, php-format
+msgid "Add Service Set to %d hosts"
+msgstr "Füge Service-Set zu %d Hosts hinzu"
+
+#: application/controllers/HostController.php:65
 #, php-format
 msgid "Add Service Set: %s"
 msgstr "Service-Set hinzufügen: %s"
 
-#: application/controllers/HostController.php:47
+#: application/controllers/HostController.php:52
 #, php-format
 msgid "Add Service: %s"
 msgstr "Service hinzufügen: %s"
@@ -436,24 +496,24 @@ msgstr "Einen neues Datenfeld hinzufügen"
 msgid "Add a new Data List"
 msgstr "Datenliste hinzufügen"
 
-#: application/controllers/ImportsourcesController.php:16
+#: application/controllers/ImportsourcesController.php:49
 msgid "Add a new Import Source"
 msgstr "Importquelle hinzufügen"
 
-#: application/controllers/JobsController.php:15
 #: application/controllers/JobController.php:25
+#: application/controllers/JobsController.php:15
 msgid "Add a new Job"
 msgstr "Job hinzufügen"
 
-#: application/controllers/SyncrulesController.php:16
+#: application/controllers/SyncrulesController.php:28
 msgid "Add a new Sync Rule"
 msgstr "Synchronisationsregel hinzufügen"
 
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:474
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:470
 msgid "Add a new entry"
 msgstr "Einen neuen Eintrag hinzufügen"
 
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:260
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:256
 msgid "Add a new one..."
 msgstr "Einen Neuen hinzufügen..."
 
@@ -467,7 +527,7 @@ msgstr "Füge ein Service-Set zu \"%s\" hinzu"
 msgid "Add a service to \"%s\""
 msgstr "Füge einen Service zu \"%s\" hinzu"
 
-#: application/views/helpers/FormDataFilter.php:439
+#: application/views/helpers/FormDataFilter.php:516
 msgid "Add another filter"
 msgstr "Weiteren Filter hinzufügen"
 
@@ -475,64 +535,64 @@ msgstr "Weiteren Filter hinzufügen"
 msgid "Add data list entry"
 msgstr "Datenlisteneintrag hinzufügen"
 
-#: application/controllers/ImportsourceController.php:43
+#: application/controllers/ImportsourceController.php:71
 msgid "Add import source"
 msgstr "Importquelle hinzufügen"
 
-#: library/Director/Web/Controller/ObjectController.php:281
+#: library/Director/Web/Controller/ObjectController.php:285
 #, php-format
 msgid "Add new Icinga %s"
 msgstr "Neuen Icinga %s hinzufügen"
 
-#: library/Director/Web/Controller/ObjectController.php:264
+#: library/Director/Web/Controller/ObjectController.php:268
 #, php-format
 msgid "Add new Icinga %s template"
 msgstr "Neue Icinga %s Vorlage hinzufügen"
 
-#: application/controllers/ImportsourceController.php:87
+#: application/controllers/ImportsourceController.php:163
 msgid "Add property modifier"
 msgstr "Eigenschaftsmodifikator hinzufügen"
 
+#: application/controllers/HostController.php:81
 #: application/controllers/ServicesetController.php:66
-#: application/controllers/HostController.php:76
 msgid "Add service"
 msgstr "Service hinzufügen"
 
-#: application/controllers/HostController.php:81
+#: application/controllers/HostController.php:86
 msgid "Add service set"
 msgstr "Service-Set hinzufügen"
 
-#: application/controllers/HostsController.php:60
+#: application/controllers/HostsController.php:69
 #, php-format
 msgid "Add service to %d hosts"
 msgstr "Füge einen Service zu %d Hosts hinzu"
 
-#: application/controllers/SyncruleController.php:157
+#: application/controllers/SyncruleController.php:237
 msgid "Add sync property rule"
 msgstr "Regel für Synchronisationseigenschaft hinzufügen"
 
-#: application/controllers/SyncruleController.php:190
+#: application/controllers/SyncruleController.php:280
 #, php-format
 msgid "Add sync property: %s"
 msgstr "Synchronisationseigenschaft hinzufügen: %s"
 
-#: application/controllers/SyncruleController.php:143
+#: application/controllers/SyncruleController.php:184
 msgid "Add sync rule"
 msgstr "Synchronisationsregel hinzufügen"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1390
+#: library/Director/Web/Form/DirectorObjectForm.php:1455
 msgid "Additional notes for this object"
 msgstr "Weitere Notizen zu diesem Objekt"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1443
+#: library/Director/Web/Form/DirectorObjectForm.php:1508
 msgid "Additional properties"
 msgstr "Weitere Eigenschaften"
 
-#: library/Director/Web/Tabs/ObjectTabs.php:136
+#: library/Director/Web/Tabs/ObjectTabs.php:138
 msgid "Agent"
 msgstr "Agent"
 
-#: application/forms/SelfServiceSettingsForm.php:126
+#: application/forms/SelfServiceSettingsForm.php:141
 msgid "Agent Version"
 msgstr "Agenten-Version"
 
@@ -540,11 +600,11 @@ msgstr "Agenten-Version"
 msgid "Alias"
 msgstr "Alias"
 
-#: application/controllers/ConfigController.php:136
+#: application/controllers/ConfigController.php:148
 msgid "All changes"
 msgstr "Alle Änderungen"
 
-#: application/forms/SettingsForm.php:64
+#: application/forms/SettingsForm.php:78
 msgid ""
 "All changes are tracked in the Director database. In addition you might also "
 "want to send an audit log through the Icinga Web 2 logging mechanism. That "
@@ -558,21 +618,21 @@ msgstr ""
 "entweder an Syslog oder die konfigurierte Logdatei geschickt. Dafür muss "
 "Icinga Web 2 mindestens mit dem \"Info\" Level loggen."
 
-#: application/forms/SyncPropertyForm.php:275
+#: application/forms/SyncPropertyForm.php:307
 msgid "All custom variables (vars)"
 msgstr "Alle benutzerdefinierten Variablen (vars)"
 
-#: application/forms/IcingaServiceForm.php:491
+#: application/forms/IcingaServiceForm.php:711
 #, php-format
 msgid "All overrides have been removed from \"%s\""
 msgstr "Alle überschriebenen Eigenschaften wurden von \"%s\" entfernt"
 
-#: library/Director/Web/Controller/ObjectsController.php:173
+#: library/Director/Web/Controller/ObjectsController.php:228
 #, php-format
 msgid "All your %s Apply Rules"
 msgstr "Alle %s Apply Regeln"
 
-#: library/Director/Web/Controller/ObjectsController.php:149
+#: library/Director/Web/Controller/ObjectsController.php:190
 #, php-format
 msgid "All your %s Templates"
 msgstr "Alle %s Templates"
@@ -589,27 +649,35 @@ msgstr "Zugriff auf die Director API erlauben"
 msgid "Allow to access the full audit log"
 msgstr "Zugriff auf das volle Audit-Log erlauben"
 
-#: configuration.php:10
+#: configuration.php:14
 msgid "Allow to configure hosts"
 msgstr "Erlauben, Hosts zu konfigurieren"
 
-#: configuration.php:13
+#: configuration.php:19
 msgid "Allow to configure notifications"
 msgstr "Erlauben, Benachrichtigungen zu konfigurieren"
 
-#: configuration.php:11
+#: configuration.php:16
+msgid "Allow to configure service sets"
+msgstr "Erlauben, Service-Sets zu konfigurieren"
+
+#: configuration.php:15
 msgid "Allow to configure services"
 msgstr "Erlauben, Services zu konfigurieren"
 
-#: configuration.php:12
+#: configuration.php:18
 msgid "Allow to configure users"
 msgstr "Erlauben, Benutzer zu konfigurieren"
 
-#: configuration.php:9
-msgid "Allow to deploy configuration"
-msgstr "Das Ausbringen von Konfigurationen erlauben"
-
 #: configuration.php:17
+msgid "Allow to define Service Set Apply Rules"
+msgstr "Erlaube  Definieren von Service-Set Apply-Regeln"
+
+#: configuration.php:13
+msgid "Allow to deploy configuration"
+msgstr "Das Ausrollen von Konfigurationen erlauben"
+
+#: configuration.php:23
 msgid ""
 "Allow to inspect objects through the Icinga 2 API (could contain sensitive "
 "information)"
@@ -621,6 +689,12 @@ msgstr ""
 msgid "Allow to show configuration (could contain sensitive information)"
 msgstr "Anzeigen der Konfiguration erlauben (könnte sensible Daten enthalten)"
 
+#: configuration.php:11
+msgid "Allow to show the full executed SQL queries in some places"
+msgstr ""
+"Erlaube das Anzeigen der vollständigen ausgeführten SQL-Statements an "
+"einigen Stellen"
+
 #: application/forms/DirectorDatalistEntryForm.php:45
 msgid ""
 "Allow to use this entry only to users with one of these Icinga Web 2 roles"
@@ -628,7 +702,7 @@ msgstr ""
 "Erlaube es ausschließlich Benutzern mit einer dieser Icinga Web 2 Rollen, "
 "diesen Eintrag zu nutzen"
 
-#: configuration.php:20
+#: configuration.php:26
 msgid "Allow unrestricted access to Icinga Director"
 msgstr "Unbeschränkten Zugriff auf die Director API erlauben"
 
@@ -673,7 +747,7 @@ msgid "Also wipe all \"%s\" custom variables from %d objects?"
 msgstr ""
 "Außerdem alle \"%s\" benutzerdefinierten Variablen von %d Objekten entfernen?"
 
-#: application/forms/IcingaHostForm.php:357
+#: application/forms/IcingaHostForm.php:349
 msgid ""
 "Alternative name for this host. Might be a host alias or and kind of string "
 "helping your users to identify this host"
@@ -681,7 +755,7 @@ msgstr ""
 "Alternativer Name für diesen Host. Kann ein Alias oder jede Zeichenkette "
 "sein, die Benutzern hilft, diesen Host zu identifizieren"
 
-#: application/forms/IcingaUserForm.php:116
+#: application/forms/IcingaUserForm.php:135
 msgid ""
 "Alternative name for this user. In case your object name is a username, this "
 "could be the full name of the corresponding person"
@@ -690,7 +764,7 @@ msgstr ""
 "Benutzername ist, könnte hier der vollständige Name der betreffenden Person "
 "hinterlegt werden"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1424
+#: library/Director/Web/Form/DirectorObjectForm.php:1489
 msgid "Alternative text to be shown in case above icon is missing"
 msgstr "Alternativer Text der angezeigt werden soll, falls obiges Icon fehlt"
 
@@ -710,7 +784,7 @@ msgstr ""
 "Ein Icinga DSL Ausdruck, z.B.: var cmd = macro(\"$cmd$\"); return "
 "typeof(command) == String ..."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1406
+#: library/Director/Web/Form/DirectorObjectForm.php:1471
 msgid ""
 "An URL leading to additional actions for this object. Often used with Icinga "
 "Classic, rarely with Icinga Web 2 as it provides far better possibilities to "
@@ -720,11 +794,11 @@ msgstr ""
 "Classic, jedoch selten mit Icinga Web 2 genutzt, da dieses viel bessere "
 "Möglichkeiten zur Integration von Addons bietet"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1399
+#: library/Director/Web/Form/DirectorObjectForm.php:1464
 msgid "An URL pointing to additional notes for this object"
 msgstr "Eine URL zu Notizen für dieses Objekt"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1415
+#: library/Director/Web/Form/DirectorObjectForm.php:1480
 msgid ""
 "An URL pointing to an icon for this object. Try \"tux.png\" for icons "
 "relative to public/img/icons or \"cloud\" (no extension) for items from the "
@@ -734,14 +808,14 @@ msgstr ""
 "public/img/icons oder \"cloud\" (ohne Erweiterung) für Objekte aus dem "
 "Icinga Icon-Fundus"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1203
+#: library/Director/Web/Form/DirectorObjectForm.php:1236
 msgid ""
 "An alternative display name for this group. If you wonder how this could be "
 "helpful just leave it blank"
 msgstr ""
 "Ein alternativer Anzeigename für diese Gruppe. Kann leer gelassen werden."
 
-#: application/forms/ImportRowModifierForm.php:47
+#: application/forms/ImportRowModifierForm.php:56
 msgid ""
 "An extended description for this Import Row Modifier. This should explain "
 "it's purpose and why it has been put in place at all."
@@ -785,7 +859,7 @@ msgstr ""
 msgid "Any first (leftmost) component"
 msgstr "Beliebige erste (linkeste) Komponente"
 
-#: library/Director/Web/SelfService.php:105
+#: library/Director/Web/SelfService.php:115
 msgid "Api Key:"
 msgstr "API-Schlüssel:"
 
@@ -794,16 +868,16 @@ msgstr "API-Schlüssel:"
 msgid "Applied %s"
 msgstr "Angewendete(r) %s"
 
-#: application/forms/IcingaHostForm.php:212
+#: application/forms/IcingaHostForm.php:213
 msgid "Applied groups"
 msgstr "Angewendete Gruppen"
 
-#: application/controllers/HostController.php:203
+#: application/controllers/HostController.php:245
 #, php-format
 msgid "Applied service: %s"
 msgstr "Zugewiesener Service: %s"
 
-#: application/controllers/HostController.php:145
+#: application/controllers/HostController.php:180
 msgid "Applied services"
 msgstr "Zugewiesene Services"
 
@@ -821,7 +895,7 @@ msgstr "Apply \"%s\""
 msgid "Apply %d pending schema migrations"
 msgstr "%d Schema-Migrations-Scripte anwenden"
 
-#: application/forms/IcingaServiceForm.php:382
+#: application/forms/IcingaServiceForm.php:590
 msgid "Apply For"
 msgstr "Anwenden auf"
 
@@ -833,8 +907,8 @@ msgstr "Apply-Regel"
 msgid "Apply Rule rendering preview"
 msgstr "Rendering-Vorschau für diese Apply-Regel"
 
-#: library/Director/Web/Table/NotificationTemplateUsageTable.php:11
 #: library/Director/Web/Table/DependencyTemplateUsageTable.php:11
+#: library/Director/Web/Table/NotificationTemplateUsageTable.php:11
 #: library/Director/Web/Table/ServiceTemplateUsageTable.php:12
 msgid "Apply Rules"
 msgstr "Apply-Regeln"
@@ -843,7 +917,7 @@ msgstr "Apply-Regeln"
 msgid "Apply a pending schema migration"
 msgstr "Ein ausstehende Schema-Migration durchführen"
 
-#: library/Director/Job/SyncJob.php:61
+#: library/Director/Job/SyncJob.php:75
 msgid "Apply changes"
 msgstr "Änderungen anwenden"
 
@@ -852,7 +926,7 @@ msgid "Apply notifications with specific properties according to given rules. "
 msgstr ""
 "Benachrichtigungen mit bestimmten Eigenschaften anhand von Regeln hinzufügen."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1037
+#: library/Director/Web/Form/DirectorObjectForm.php:1061
 msgid "Apply rule"
 msgstr "Apply Regel"
 
@@ -860,12 +934,12 @@ msgstr "Apply Regel"
 msgid "Apply rule history"
 msgstr "Apply-Regel Historie"
 
-#: application/forms/KickstartForm.php:33
+#: application/forms/KickstartForm.php:37
 msgid "Apply schema migrations"
 msgstr "Schema-Migrations-Scripte anwenden"
 
-#: application/forms/IcingaNotificationForm.php:79
-#: application/forms/IcingaDependencyForm.php:56
+#: application/forms/IcingaDependencyForm.php:92
+#: application/forms/IcingaNotificationForm.php:81
 msgid "Apply to"
 msgstr "Anwenden auf"
 
@@ -886,7 +960,7 @@ msgstr "Argument Makros"
 msgid "Argument name"
 msgstr "Argumentname"
 
-#: application/forms/SyncPropertyForm.php:281
+#: application/forms/SyncPropertyForm.php:313
 msgid "Arguments"
 msgstr "Argumente"
 
@@ -896,11 +970,11 @@ msgstr "Argumente"
 msgid "Array"
 msgstr "Array"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1475
+#: library/Director/Web/Form/DirectorObjectForm.php:1541
 msgid "Assign where"
 msgstr "Zuweisen wo"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:348
+#: library/Director/Web/Widget/ActivityLogInfo.php:383
 msgid "Author"
 msgstr "Autor"
 
@@ -908,7 +982,7 @@ msgstr "Autor"
 msgid "Automate all tasks"
 msgstr "Automatisiere alle Aufgaben"
 
-#: configuration.php:88
+#: configuration.php:102
 msgid "Automation"
 msgstr "Automatisierung"
 
@@ -920,14 +994,14 @@ msgstr "Verfügbare Auswahlmöglichkeiten"
 msgid "Back"
 msgstr "Zurück"
 
+#: application/forms/IcingaServiceForm.php:159
+msgid "Blacklist"
+msgstr "Blacklist"
+
 #: application/forms/DirectorDatafieldForm.php:148
 #: application/forms/IcingaObjectFieldForm.php:117
 msgid "Caption"
 msgstr "Überschrift"
-
-#: library/vendor/ipl/Web/Table/Extension/ZfSortablePriority.php:140
-msgid "Change priority"
-msgstr "Priorität ändern"
 
 #: application/forms/IcingaMultiEditForm.php:261
 #, php-format
@@ -938,16 +1012,16 @@ msgstr "Diesen Wert zu ändern beeinflusst %d Objekt(e): %s"
 msgid "Check Commands"
 msgstr "Check-Kommando"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1223
+#: library/Director/Web/Form/DirectorObjectForm.php:1257
 msgid "Check command"
 msgstr "Check-Kommando"
 
-#: application/forms/IcingaNotificationForm.php:253
-#: library/Director/Web/Form/DirectorObjectForm.php:1224
+#: application/forms/IcingaNotificationForm.php:252
+#: library/Director/Web/Form/DirectorObjectForm.php:1258
 msgid "Check command definition"
 msgstr "Check-Kommandodefinition"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1292
+#: library/Director/Web/Form/DirectorObjectForm.php:1326
 msgid ""
 "Check command timeout in seconds. Overrides the CheckCommand's timeout "
 "attribute"
@@ -955,24 +1029,24 @@ msgstr ""
 "Timeout für das Check-Kommando in Sekunden. Überschreibt die Timeout-"
 "Konfiguration des Kommandos"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:308
+#: library/Director/Web/Form/DirectorObjectForm.php:322
 msgid "Check execution"
 msgstr "Check-Ausführung"
 
-#: application/forms/ImportCheckForm.php:23
 #: application/forms/SyncCheckForm.php:23
+#: application/forms/ImportCheckForm.php:23
 msgid "Check for changes"
 msgstr "Auf Änderungen prüfen"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1259
+#: library/Director/Web/Form/DirectorObjectForm.php:1293
 msgid "Check interval"
 msgstr "Check-Intervall"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1304
+#: library/Director/Web/Form/DirectorObjectForm.php:1338
 msgid "Check period"
 msgstr "Checkzeitraum"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1290
+#: library/Director/Web/Form/DirectorObjectForm.php:1324
 msgid "Check timeout"
 msgstr "Check-Timeout"
 
@@ -980,19 +1054,19 @@ msgstr "Check-Timeout"
 msgid "Checking this Import Source failed"
 msgstr "Überprüfen dieser Importquelle fehlgeschlagen"
 
-#: application/forms/SyncCheckForm.php:62
+#: application/forms/SyncCheckForm.php:61
 msgid "Checking this sync rule failed"
 msgstr "Überprüfen dieser Synchronisationsregel fehlgeschlagen"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:382
+#: library/Director/Web/Widget/ActivityLogInfo.php:419
 msgid "Checksum"
 msgstr "Prüfsumme"
 
-#: application/forms/IcingaDependencyForm.php:187
+#: application/forms/IcingaDependencyForm.php:231
 msgid "Child Host"
 msgstr "Kind-Host"
 
-#: application/forms/IcingaDependencyForm.php:203
+#: application/forms/IcingaDependencyForm.php:247
 msgid "Child Service"
 msgstr "Kind-Service"
 
@@ -1005,7 +1079,7 @@ msgstr "Auswahlname"
 msgid "Choices"
 msgstr "Auswahl"
 
-#: application/forms/IcingaHostForm.php:171
+#: application/forms/IcingaHostForm.php:172
 msgid "Choose a Host Template"
 msgstr "Wähle eine Service-Vorlage"
 
@@ -1017,7 +1091,7 @@ msgstr "Wähle eine Service-Vorlage"
 msgid "Choose an object type"
 msgstr "Einen Objekttyp auswählen"
 
-#: application/forms/IcingaServiceForm.php:364
+#: application/forms/IcingaServiceForm.php:568
 msgid "Choose the host this single service should be assigned to"
 msgstr "Host wählen, dem dieser einzelne Service zugewiesen werden soll"
 
@@ -1038,7 +1112,13 @@ msgstr ""
 msgid "Chose an (optional) parent zone"
 msgstr "Eine (optionale) Elternzone auswählen"
 
-#: library/Director/Web/Controller/ObjectController.php:251
+#: application/controllers/SyncruleController.php:173
+#: application/controllers/SyncruleController.php:210
+#: application/controllers/ImportsourceController.php:108
+#: library/Director/Web/Form/CloneImportSourceForm.php:34
+#: library/Director/Web/Form/CloneSyncRuleForm.php:34
+#: library/Director/Web/Controller/ObjectController.php:255
+#: library/Director/Web/ActionBar/AutomationObjectActionBar.php:44
 msgid "Clone"
 msgstr "Klonen"
 
@@ -1063,18 +1143,18 @@ msgstr "Vorlagen-Felder klonen"
 msgid "Clone the object as is, preserving imports"
 msgstr "Objekt vollständig unter Erhalt der Vererbung klonen"
 
-#: library/Director/Web/Controller/ObjectController.php:141
+#: library/Director/Web/Controller/ObjectController.php:143
 #, php-format
 msgid "Clone: %s"
 msgstr "Klone %s"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1076
+#: library/Director/Web/Form/DirectorObjectForm.php:1100
 msgid "Cluster Zone"
 msgstr "Cluster Zone"
 
 #: library/Director/Dashboard/Dashlet/ChoicesDashlet.php:17
 msgid ""
-"Combine multiple templates into meaningful Choices, making live easier for "
+"Combine multiple templates into meaningful Choices, making life easier for "
 "your users"
 msgstr ""
 "Kombiniere mehrere Vorlagen zu sprechenden Wahlmöglichkeiten, um die "
@@ -1090,12 +1170,12 @@ msgstr "Kommando"
 msgid "Command Templates"
 msgstr "Kommando-Vorlagen"
 
-#: application/controllers/CommandController.php:31
+#: application/controllers/CommandController.php:88
 #, php-format
 msgid "Command arguments: %s"
 msgstr "Kommandoargumente: %s"
 
-#: application/forms/IcingaHostForm.php:98
+#: application/forms/IcingaHostForm.php:99
 msgid "Command endpoint"
 msgstr "Kommandoendpunkt"
 
@@ -1107,9 +1187,9 @@ msgstr "Kommandoname"
 msgid "Command type"
 msgstr "Kommandotyp"
 
-#: configuration.php:80
-#: library/Director/Dashboard/Dashlet/CommandObjectDashlet.php:13
+#: configuration.php:94
 #: library/Director/Dashboard/Dashlet/CheckCommandsDashlet.php:19
+#: library/Director/Dashboard/Dashlet/CommandObjectDashlet.php:13
 #: library/Director/Web/Table/CustomvarVariantsTable.php:57
 msgid "Commands"
 msgstr "Kommandos"
@@ -1124,10 +1204,10 @@ msgid "Condition format"
 msgstr "Bedingungsformat"
 
 #: application/controllers/JobController.php:68
-#: application/controllers/ConfigController.php:229
-#: application/controllers/ConfigController.php:410
-#: library/Director/Web/Widget/DeploymentInfo.php:48
-#: library/Director/Web/Table/CoreApiFieldsTable.php:77
+#: application/controllers/ConfigController.php:252
+#: application/controllers/ConfigController.php:457
+#: library/Director/Web/Table/CoreApiFieldsTable.php:78
+#: library/Director/Web/Widget/DeploymentInfo.php:60
 msgid "Config"
 msgstr "Konfiguration"
 
@@ -1135,61 +1215,57 @@ msgstr "Konfiguration"
 msgid "Config Deployment"
 msgstr "Ausrollen der Konfiguration"
 
-#: application/controllers/ConfigController.php:388
+#: application/controllers/ConfigController.php:432
 #: application/forms/DeployConfigForm.php:99
 #: application/forms/DeploymentLinkForm.php:149
 msgid "Config deployment failed"
 msgstr "Ausrollen der Konfiguration fehlgeschlagen"
 
-#: application/controllers/ConfigController.php:300
-#: application/controllers/ConfigController.php:301
+#: application/controllers/ConfigController.php:333
+#: application/controllers/ConfigController.php:334
 msgid "Config diff"
 msgstr "Konfigurationsunterschied"
 
-#: application/controllers/ConfigController.php:271
-#: application/controllers/ConfigController.php:356
+#: application/controllers/ConfigController.php:297
+#: application/controllers/ConfigController.php:393
 #, php-format
 msgid "Config file \"%s\""
 msgstr "Konfigurationsdatei \"%s\""
 
-#: application/controllers/ConfigController.php:372
+#: application/controllers/ConfigController.php:412
 #: application/forms/DeployConfigForm.php:75
 #: application/forms/DeployConfigForm.php:94
 #: application/forms/DeploymentLinkForm.php:136
 msgid "Config has been submitted, validation is going on"
 msgstr "Konfiguration wurde übergeben, Überprüfung ist im Gange"
 
-#: library/Director/Web/ObjectPreview.php:35
+#: library/Director/Web/ObjectPreview.php:41
 #, php-format
 msgid "Config preview: %s"
 msgstr "Konfigurationsvorschau: %s"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:67
+#: library/Director/Web/Widget/DeploymentInfo.php:79
 msgid "Configuration"
 msgstr "Konfiguration"
 
-#: application/forms/SettingsForm.php:75
+#: application/forms/SettingsForm.php:89
 msgid "Configuration format"
 msgstr "Konfigurationsformat"
 
-#: application/forms/KickstartForm.php:302
+#: application/forms/KickstartForm.php:322
 msgid "Configuration has been stored"
 msgstr "Konfiguration wurde gespeichert"
 
-#: library/Director/Web/SelfService.php:138
+#: library/Director/Web/SelfService.php:152
 msgid "Configure this Agent  via Self Service API"
 msgstr "Konfiguriere diesen Agent über die Selbstbedienungs-API"
 
-#: library/vendor/ipl/Web/Table/ZfQueryBasedTable.php:130
-msgid "Count Query"
-msgstr "Count-Abfage"
-
-#: library/Director/Web/Controller/ObjectsController.php:185
+#: library/Director/Web/Controller/ObjectsController.php:240
 #, php-format
 msgid "Create a new %s Apply Rule"
 msgstr "Erstelle eine neue %s Apply-Regel"
 
-#: library/Director/Web/Controller/ObjectsController.php:220
+#: library/Director/Web/Controller/ObjectsController.php:282
 #, php-format
 msgid "Create a new %s Set"
 msgstr "Erstelle ein neues %s-Set"
@@ -1217,7 +1293,7 @@ msgstr "Neues Objekt erstellen"
 msgid "Create a new template choice"
 msgstr "Neue Template-Auswahl erstellen"
 
-#: application/forms/KickstartForm.php:32
+#: application/forms/KickstartForm.php:36
 msgid "Create database schema"
 msgstr "Datenbankschema erstellen"
 
@@ -1254,7 +1330,7 @@ msgstr "Benutzerdefinierte Variablen - Übersicht"
 msgid "Custom expression"
 msgstr "Benutzerdefinierter Ausdruck"
 
-#: library/Director/Web/Controller/ObjectController.php:153
+#: library/Director/Web/Controller/ObjectController.php:155
 #, php-format
 msgid "Custom fields: %s"
 msgstr "Benutzerdefinierte Felder: \"%s\""
@@ -1263,23 +1339,23 @@ msgstr "Benutzerdefinierte Felder: \"%s\""
 msgid "Custom notification"
 msgstr "Benutzerdefinierte Benachrichtigung"
 
-#: application/forms/IcingaServiceForm.php:232
-#: library/Director/Web/Form/IcingaObjectFieldLoader.php:224
+#: application/forms/IcingaServiceForm.php:424
+#: library/Director/Web/Form/IcingaObjectFieldLoader.php:227
 msgid "Custom properties"
 msgstr "Benutzerdefinierte Eigenschaften"
 
-#: application/forms/SyncPropertyForm.php:64
+#: application/forms/SyncPropertyForm.php:67
 msgid "Custom variable"
 msgstr "Benutzerdefinierte Variable"
 
-#: application/forms/SyncPropertyForm.php:274
+#: application/forms/SyncPropertyForm.php:306
 msgid "Custom variable (vars.)"
 msgstr "Benutzerdefinierte Variable (vars.)"
 
-#: application/controllers/SuggestController.php:217
-#: application/controllers/SuggestController.php:227
-#: library/Director/Objects/IcingaService.php:486
-#: library/Director/Objects/IcingaHost.php:149
+#: application/controllers/SuggestController.php:231
+#: application/controllers/SuggestController.php:241
+#: library/Director/Objects/IcingaHost.php:153
+#: library/Director/Objects/IcingaService.php:591
 msgid "Custom variables"
 msgstr "Benutzerdefinierte Variablen"
 
@@ -1291,7 +1367,7 @@ msgstr "Benutzerdefinierte Variable - Übersicht"
 msgid "DB Query"
 msgstr "Datenbank-Abfrage"
 
-#: application/forms/KickstartForm.php:229
+#: application/forms/KickstartForm.php:239
 msgid "DB Resource"
 msgstr "Datenbankressource"
 
@@ -1370,11 +1446,11 @@ msgstr ""
 msgid "Data type"
 msgstr "Datentyp"
 
-#: application/forms/KickstartForm.php:272
+#: application/forms/KickstartForm.php:285
 msgid "Database backend"
 msgstr "Datenbankbackend"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:349
+#: library/Director/Web/Widget/ActivityLogInfo.php:384
 msgid "Date"
 msgstr "Datum"
 
@@ -1383,7 +1459,7 @@ msgstr "Datum"
 msgid "Day(s)"
 msgstr "Tag(e)"
 
-#: application/forms/SettingsForm.php:84
+#: application/forms/SettingsForm.php:98
 msgid ""
 "Default configuration format. Please note that v1.x is for special "
 "transitional projects only and completely unsupported. There are no plans to "
@@ -1394,7 +1470,7 @@ msgstr ""
 "unterstützt wird. Es gibt keine Pläne aus dem Director ein "
 "Konfigurationswerkzeug für Icinga 1.x zu machen"
 
-#: application/forms/SettingsForm.php:29
+#: application/forms/SettingsForm.php:32
 msgid "Default global zone"
 msgstr "Globale Standard-Zone"
 
@@ -1422,7 +1498,7 @@ msgstr ""
 "Nützlich sind diese auch für Dashboards, Benachrichtigungen oder "
 "Berechtigungen"
 
-#: application/forms/SelfServiceSettingsForm.php:88
+#: application/forms/SelfServiceSettingsForm.php:103
 msgid ""
 "Define a download Url or local directory from which the a specific Icinga 2 "
 "Agent MSI Installer package should be fetched. Please ensure to only define "
@@ -1468,7 +1544,7 @@ msgstr ""
 msgid "Define whatever you want to be monitored"
 msgstr "Angeben, was überwacht werden soll"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1281
+#: library/Director/Web/Form/DirectorObjectForm.php:1315
 msgid "Defines after how many check attempts a new hard state is reached"
 msgstr ""
 "Legt fest, nach wie vielen Versuchen ein neuer Hard State erreicht wird"
@@ -1489,12 +1565,12 @@ msgstr ""
 "Definiere Service-Gruppen für mehr Struktur. Nützlich für Dashboards. "
 "Benachrichtigungen und Berechtigungen können auf Gruppen basieren."
 
-#: application/forms/IcingaNotificationForm.php:197
+#: application/forms/IcingaNotificationForm.php:196
 msgid "Delay unless the first notification should be sent"
 msgstr "Verzögerung bis die erste Benachrichtigung verschickt werden soll"
 
 #: application/forms/IcingaObjectFieldForm.php:185
-#: library/Director/Web/Form/DirectorObjectForm.php:854
+#: library/Director/Web/Form/DirectorObjectForm.php:869
 msgid "Delete"
 msgstr "Löschen"
 
@@ -1508,58 +1584,58 @@ msgstr "Abhängigkeiten"
 
 #: application/forms/DeploymentLinkForm.php:85
 msgid "Deploy"
-msgstr "Ausbringen"
+msgstr "Ausrollen"
 
 #: application/forms/DeployConfigForm.php:39
 #, php-format
 msgid "Deploy %d pending changes"
-msgstr "%d ausstehende Änderungen ausbringen"
+msgstr "%d ausstehende Änderungen ausrollen"
 
 #: library/Director/Dashboard/DeploymentDashboard.php:15
 msgid "Deploy configuration to your Icinga nodes"
-msgstr "Konfiguration auf Icinga Knoten ausbringen"
+msgstr "Konfiguration auf Icinga Knoten ausrollen"
 
-#: library/Director/Job/ConfigJob.php:191
+#: library/Director/Job/ConfigJob.php:195
 msgid "Deploy modified config"
-msgstr "Veränderte Konfiguration ausbringen"
+msgstr "Veränderte Konfiguration ausrollen"
 
-#: application/controllers/ConfigController.php:222
-#: application/controllers/ConfigController.php:402
-#: library/Director/Web/Widget/DeploymentInfo.php:42
+#: application/controllers/ConfigController.php:245
+#: application/controllers/ConfigController.php:449
+#: library/Director/Web/Widget/DeploymentInfo.php:54
 msgid "Deployment"
 msgstr "Deployment"
 
-#: application/forms/SettingsForm.php:119
+#: application/forms/SettingsForm.php:133
 msgid "Deployment Path"
-msgstr "Ausbringungspfad"
+msgstr "Deployment-Pfad"
 
 #: application/controllers/DeploymentController.php:22
 msgid "Deployment details"
-msgstr "Deployment Details"
+msgstr "Deployment-Details"
 
-#: application/forms/SettingsForm.php:104
+#: application/forms/SettingsForm.php:118
 msgid "Deployment mode"
-msgstr "Ausbringungsmodus"
+msgstr "Ausrollmodus"
 
-#: application/forms/SettingsForm.php:113
+#: application/forms/SettingsForm.php:127
 msgid "Deployment mode for Icinga 1 configuration"
-msgstr "Ausbringungsmodus für Icinga 1 Konfiguration"
+msgstr "Ausrollmodus für Icinga 1 Konfiguration"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:65
+#: library/Director/Web/Widget/DeploymentInfo.php:77
 msgid "Deployment time"
-msgstr "Deployment Zeit"
+msgstr "Deployment-Zeit"
 
-#: configuration.php:97 application/controllers/ConfigController.php:46
+#: configuration.php:111 application/controllers/ConfigController.php:50
 #: library/Director/Web/Tabs/InfraTabs.php:36
 msgid "Deployments"
 msgstr "Deployments"
 
 #: application/forms/DirectorDatafieldForm.php:157
+#: application/forms/ImportRowModifierForm.php:54
 #: application/forms/SyncRuleForm.php:33
-#: application/forms/ImportRowModifierForm.php:45
 #: application/forms/ImportSourceForm.php:24
-#: application/forms/IcingaObjectFieldForm.php:125
 #: application/forms/IcingaServiceSetForm.php:100
+#: application/forms/IcingaObjectFieldForm.php:125
 #: application/forms/IcingaTemplateChoiceForm.php:56
 msgid "Description"
 msgstr "Beschreibung"
@@ -1568,16 +1644,16 @@ msgstr "Beschreibung"
 msgid "Destination"
 msgstr "Ziel"
 
-#: application/forms/SyncPropertyForm.php:45
+#: application/forms/SyncPropertyForm.php:48
 msgid "Destination Field"
 msgstr "Zielfeld"
 
-#: application/controllers/ConfigController.php:357
-#: library/Director/Web/Widget/ActivityLogInfo.php:222
+#: application/controllers/ConfigController.php:394
+#: library/Director/Web/Widget/ActivityLogInfo.php:249
 msgid "Diff"
 msgstr "Diff"
 
-#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:71
+#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:74
 msgid "Diff with other config"
 msgstr "Mit anderer Konfiguration vergleichen"
 
@@ -1593,42 +1669,42 @@ msgstr "Director Kickstart-Assistent"
 msgid "Director Settings"
 msgstr "Director-Einstellungen"
 
-#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:66
+#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:73
 msgid "Director database schema has not been created yet"
 msgstr "Datenbankschema für Director wurde noch nicht erstellt"
 
-#: application/forms/IcingaDependencyForm.php:116
+#: application/forms/IcingaDependencyForm.php:156
 msgid "Disable Checks"
 msgstr "Checks deaktivieren"
 
-#: application/forms/IcingaDependencyForm.php:124
+#: application/forms/IcingaDependencyForm.php:164
 msgid "Disable Notificiations"
 msgstr "Benachrichtigungen deaktivieren"
 
-#: application/forms/SettingsForm.php:40
+#: application/forms/SettingsForm.php:54
 msgid "Disable all Jobs"
 msgstr "Alle Aufträge deaktivieren"
 
 #: application/forms/DirectorJobForm.php:37
-#: library/Director/Web/Form/DirectorObjectForm.php:1189
+#: library/Director/Web/Form/DirectorObjectForm.php:1218
 msgid "Disabled"
 msgstr "Deaktiviert"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1190
+#: library/Director/Web/Form/DirectorObjectForm.php:1219
 msgid "Disabled objects will not be deployed"
 msgstr "Deaktivierte Objekte werden nicht ausgebracht"
 
 #: application/forms/IcingaTimePeriodForm.php:37
-#: library/Director/Web/Form/DirectorObjectForm.php:1201
+#: library/Director/Web/Form/DirectorObjectForm.php:1234
 msgid "Display Name"
 msgstr "Anzeigename"
 
-#: application/forms/IcingaUserForm.php:114
-#: application/forms/IcingaHostForm.php:354
+#: application/forms/IcingaHostForm.php:346
+#: application/forms/IcingaUserForm.php:133
 msgid "Display name"
 msgstr "Anzeigename"
 
-#: library/Director/Web/Table/CustomvarTable.php:41
+#: library/Director/Web/Table/CustomvarTable.php:42
 msgid "Distinct Commands"
 msgstr "Unterschiedliche Kommandos"
 
@@ -1640,8 +1716,8 @@ msgstr "Mehr mit benutzerdefinierten Daten anfangen"
 msgid "Do not transform at all"
 msgstr "Überhaupt nicht umwandeln"
 
-#: library/Director/Web/SelfService.php:94
-#: library/Director/Web/SelfService.php:143
+#: library/Director/Web/SelfService.php:104
+#: library/Director/Web/SelfService.php:157
 msgid "Documentation"
 msgstr "Dokumentation"
 
@@ -1649,17 +1725,21 @@ msgstr "Dokumentation"
 msgid "Down"
 msgstr "Down"
 
-#: application/controllers/SchemaController.php:65
-#: library/Director/Web/SelfService.php:207
-#: library/Director/Web/SelfService.php:220
+#: application/controllers/SchemaController.php:80
+#: library/Director/Web/SelfService.php:227
+#: library/Director/Web/SelfService.php:240
 msgid "Download"
 msgstr "Download"
 
-#: application/forms/SelfServiceSettingsForm.php:55
+#: library/Director/Web/Widget/AdditionalTableActions.php:59
+msgid "Download as JSON"
+msgstr "Als JSON herunterladen"
+
+#: application/forms/SelfServiceSettingsForm.php:70
 msgid "Download from a custom url"
 msgstr "Von einer benutzerdefinierten URL laden"
 
-#: application/forms/SelfServiceSettingsForm.php:54
+#: application/forms/SelfServiceSettingsForm.php:69
 msgid "Download from packages.icinga.com"
 msgstr "Von packages.icinga.com herunterladen"
 
@@ -1679,8 +1759,8 @@ msgstr "Downtime startet"
 msgid "Drop Self Service API key"
 msgstr "Selbstbedienungs-API-Schlüssel verwerfen"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:68
-#: library/Director/Web/Widget/SyncRunDetails.php:25
+#: library/Director/Web/Widget/DeploymentInfo.php:80
+#: library/Director/Web/Widget/SyncRunDetails.php:26
 msgid "Duration"
 msgstr "Dauer"
 
@@ -1692,17 +1772,21 @@ msgstr "Ein Feld bearbeiten"
 msgid "Edit list"
 msgstr "Liste bearbeiten"
 
-#: application/forms/IcingaUserForm.php:33
+#: application/forms/IcingaUserForm.php:36
 msgid "Email"
 msgstr "E-Mail"
 
-#: application/forms/SettingsForm.php:55
+#: application/forms/SettingsForm.php:69
 msgid "Enable audit log"
 msgstr "Revisionslog aktivieren"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1334
+#: library/Director/Web/Form/DirectorObjectForm.php:1368
 msgid "Enable event handler"
 msgstr "Eventhandler aktivieren"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1380
+msgid "Enable flap detection"
+msgstr "Flap-Erkennung aktivieren"
 
 #: application/forms/IcingaEndpointForm.php:24
 #: application/forms/SyncRuleForm.php:22
@@ -1710,7 +1794,7 @@ msgstr "Eventhandler aktivieren"
 msgid "Endpoint"
 msgstr "Endpunkt"
 
-#: application/forms/KickstartForm.php:110
+#: application/forms/KickstartForm.php:114
 msgid "Endpoint Name"
 msgstr "Name des Endpunkts"
 
@@ -1731,11 +1815,11 @@ msgstr "Endpunkte"
 msgid "Error"
 msgstr "Fehler"
 
-#: application/forms/IcingaHostForm.php:81
+#: application/forms/IcingaHostForm.php:82
 msgid "Establish connection"
 msgstr "Verbindung herstellen"
 
-#: application/forms/IcingaServiceForm.php:386
+#: application/forms/IcingaServiceForm.php:594
 msgid ""
 "Evaluates the apply for rule for all objects with the custom attribute "
 "specified. E.g selecting \"host.vars.custom_attr\" will generate \"for "
@@ -1749,15 +1833,15 @@ msgstr ""
 "Dabei ist \"config\" dann als \"$config$\" zugänglich. HINWEIS: nur "
 "benutzerdefinierte Eigenschaften vom Typ \"Array\" sind wählbar."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1238
+#: library/Director/Web/Form/DirectorObjectForm.php:1272
 msgid "Event command"
 msgstr "Event-Kommando"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1239
+#: library/Director/Web/Form/DirectorObjectForm.php:1273
 msgid "Event command definition"
 msgstr "Event-Kommandodefinition"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1316
+#: library/Director/Web/Form/DirectorObjectForm.php:1350
 msgid "Execute active checks"
 msgstr "Aktive Checks ausführen"
 
@@ -1765,7 +1849,11 @@ msgstr "Aktive Checks ausführen"
 msgid "Execution interval for this job, in seconds"
 msgstr "Ausführungsintervall dieses Auftrags, in Sekunden"
 
-#: application/forms/SyncPropertyForm.php:172
+#: application/forms/SyncPropertyForm.php:249
+msgid "Existing Data Lists"
+msgstr "Vorhandene Datenlisten"
+
+#: application/forms/SyncPropertyForm.php:234
 msgid "Existing templates"
 msgstr "Vorhandene Vorlagen"
 
@@ -1800,7 +1888,7 @@ msgstr ""
 "Externe Benachrichtigungs-Kommandos wurden in der lokalen Icinga-2-"
 "Konfiguration definiert."
 
-#: library/Director/Web/Widget/DeploymentInfo.php:123
+#: library/Director/Web/Widget/DeploymentInfo.php:135
 msgid "Failed"
 msgstr "Fehlgeschlagen"
 
@@ -1814,8 +1902,8 @@ msgid "Field has been removed"
 msgstr "Feld wurde entfernt"
 
 #: application/forms/DirectorDatafieldForm.php:139
-#: library/Director/Web/Table/IcingaObjectDatafieldTable.php:50
 #: library/Director/Web/Table/DatafieldTable.php:48
+#: library/Director/Web/Table/IcingaObjectDatafieldTable.php:50
 msgid "Field name"
 msgstr "Feldname"
 
@@ -1833,23 +1921,32 @@ msgid "File"
 msgstr "Datei"
 
 #: application/forms/SyncRuleForm.php:79
-#: application/forms/SyncPropertyForm.php:99
+#: application/forms/SyncPropertyForm.php:102
 msgid "Filter Expression"
 msgstr "Filterausdruck"
 
-#: configuration.php:39
+#: configuration.php:45
 msgid "Filter available notification apply rules"
 msgstr "Verfügbare Benachrichtigungs-Apply-Regeln filtern"
 
-#: configuration.php:32
+#: configuration.php:38
 msgid "Filter available service apply rules"
 msgstr "Verfügbare Service-Apply-Regeln filtern"
 
+#: configuration.php:52
+msgid ""
+"Filter available service set templates. Use asterisks (*) as wildcards, like "
+"in DB* or *net*"
+msgstr ""
+"Verfügbare Service-Set-Vorlagen filtern. Benutze Sternchen (*) als "
+"Platzhalter, wie in DB* oder *net*"
+
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:29
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:27
 msgid "Filter method"
 msgstr "Filter-Methode"
 
-#: application/forms/IcingaNotificationForm.php:195
+#: application/forms/IcingaNotificationForm.php:194
 msgid "First notification delay"
 msgstr "Verzögerung der ersten Benachrichtigung"
 
@@ -1861,27 +1958,47 @@ msgstr "Flapping"
 msgid "Flapping ends"
 msgstr "Flapping endet"
 
+#: library/Director/Web/Form/DirectorObjectForm.php:1401
+msgid ""
+"Flapping lower bound in percent for a service to be considered not flapping"
+msgstr ""
+"Untere Flapping-Grenze in Prozent um einen Service nicht als Flapping "
+"einzuordnen"
+
 #: library/Director/IcingaConfig/TypeFilterSet.php:34
 msgid "Flapping starts"
 msgstr "Flapping beginnt"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1388
+msgid "Flapping threshold (high)"
+msgstr "Flapping Schwellewert (hoch)"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1399
+msgid "Flapping threshold (low)"
+msgstr "Flapping Schwellwert (niedrig)"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1390
+msgid "Flapping upper bound in percent for a service to be considered flapping"
+msgstr ""
+"Obere Flapping-Grenze in Prozent um einen Service als Flapping einzuordnen"
 
 #: application/forms/IcingaCloneObjectForm.php:33
 msgid "Flatten all inherited properties, strip imports"
 msgstr "Alle vererbten Eigenschaften flach machen, Importierte entfernen"
 
-#: application/forms/SelfServiceSettingsForm.php:72
+#: application/forms/SelfServiceSettingsForm.php:87
 msgid "Flush API directory"
 msgstr "API-Verzeichnis leeren"
 
-#: library/Director/Web/SelfService.php:203
+#: library/Director/Web/SelfService.php:223
 msgid "For manual configuration"
 msgstr "Manuelle Konfiguration"
 
-#: library/Director/Job/ConfigJob.php:177
+#: library/Director/Job/ConfigJob.php:181
 msgid "Force rendering"
 msgstr "Erstellen erzwingen"
 
-#: library/Director/Objects/DirectorDatafield.php:74
+#: library/Director/Objects/DirectorDatafield.php:92
 #, php-format
 msgid "Form element could not be created, %s is missing"
 msgstr "Formularelement konnte nicht erstellt werden, %s ist nicht vorhanden"
@@ -1896,7 +2013,7 @@ msgstr "Formular wurde erfolgreich abgeschickt"
 msgid "Format"
 msgstr "Format"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:242
+#: library/Director/Web/Widget/ActivityLogInfo.php:269
 msgid "Former object"
 msgstr "Vorheriges Objekt"
 
@@ -1908,15 +2025,15 @@ msgstr "Voll qualifizierter Domain-Name (FQDN)"
 msgid "Generate Self Service API key"
 msgstr "Selbstservice-API-Schlüssel generieren"
 
-#: library/Director/Web/SelfService.php:110
+#: library/Director/Web/SelfService.php:121
 msgid "Generate a new key"
 msgstr "Neuen Schlüssel generieren"
 
-#: application/controllers/ConfigController.php:233
+#: application/controllers/ConfigController.php:256
 msgid "Generated config"
 msgstr "Erzeugte Konfiguration"
 
-#: application/controllers/HostController.php:105
+#: application/controllers/HostController.php:140
 msgid "Generated from host vars"
 msgstr "Aus Host-Variablen generiert"
 
@@ -1928,15 +2045,15 @@ msgstr "Werde alarmiert, wenn etwas schief läuft"
 msgid "Get an overview of used CustomVars and their variants"
 msgstr "Eine Übersicht über benutzerdefinierte Variablen und deren Varianten"
 
-#: application/controllers/ConfigController.php:196
+#: application/controllers/ConfigController.php:216
 msgid "Global Director Settings"
 msgstr "Globale Director-Einstellungen"
 
-#: library/Director/Web/SelfService.php:87
+#: library/Director/Web/SelfService.php:97
 msgid "Global Self Service Setting"
 msgstr "Globale Selbstbedienungs-Einstellungen"
 
-#: application/forms/SelfServiceSettingsForm.php:151
+#: application/forms/SelfServiceSettingsForm.php:44
 msgid "Global Zones"
 msgstr "Globale Zonen"
 
@@ -1953,7 +2070,7 @@ msgstr "Kleben"
 msgid "Go back to \"%s\" Dashboard"
 msgstr "Zurück zum \"%s\" Dashboard"
 
-#: library/Director/Job/ConfigJob.php:203
+#: library/Director/Job/ConfigJob.php:207
 msgid "Grace period"
 msgstr "Gnadenfrist"
 
@@ -1961,17 +2078,17 @@ msgstr "Gnadenfrist"
 msgid "Group"
 msgstr "Gruppe"
 
-#: application/forms/IcingaHostForm.php:228
+#: application/forms/IcingaHostForm.php:229
 msgid ""
 "Group has been inherited, but will be overridden by locally assigned group(s)"
 msgstr ""
 "Die Gruppe wurde geerbt, wird aber von lokal gesetzten Gruppen überschrieben"
 
-#: application/forms/SyncPropertyForm.php:284
+#: application/forms/SyncPropertyForm.php:316
 msgid "Group membership"
 msgstr "Gruppenmitgliedschaft"
 
-#: library/Director/Web/Controller/ObjectController.php:207
+#: library/Director/Web/Controller/ObjectController.php:211
 #, php-format
 msgid "Group membership: %s"
 msgstr "Gruppenmitgliedschaft: %s"
@@ -1984,9 +2101,9 @@ msgstr ""
 "Das Bündel von Services in Sets erlaubt es, Services welche häufig gemeinsam "
 "benutzt werden in einem Einzelschritt zuzuweisen"
 
-#: application/forms/IcingaUserForm.php:94
-#: application/forms/IcingaServiceForm.php:404
-#: application/forms/IcingaHostForm.php:198
+#: application/forms/IcingaHostForm.php:199
+#: application/forms/IcingaUserForm.php:109
+#: application/forms/IcingaServiceForm.php:616
 #: library/Director/Web/Tabs/ObjectsTabs.php:60
 msgid "Groups"
 msgstr "Gruppen"
@@ -1997,31 +2114,35 @@ msgstr ""
 "Hier finden sich alle Einzel-Services welche einzelnen Hosts zugewiesen "
 "wurden"
 
-#: library/Director/Web/Table/CoreApiFieldsTable.php:80
+#: library/Director/Web/Table/CoreApiFieldsTable.php:81
 msgid "Hidden"
 msgstr "Versteckt"
 
-#: application/forms/IcingaServiceForm.php:105
+#: library/Director/Web/Widget/AdditionalTableActions.php:70
+msgid "Hide SQL"
+msgstr "SQL verbergeb"
+
+#: application/forms/IcingaServiceForm.php:153
 msgid "Hints regarding this service"
 msgstr "Hinweise zu diesem Service"
 
-#: library/Director/Web/Tabs/ImportsourceTabs.php:39
-#: library/Director/Web/Tabs/ObjectTabs.php:95
 #: library/Director/Web/Tabs/SyncRuleTabs.php:39
+#: library/Director/Web/Tabs/ObjectTabs.php:95
+#: library/Director/Web/Tabs/ImportsourceTabs.php:45
 msgid "History"
 msgstr "Historie"
 
 #: application/controllers/ServiceController.php:51
 #: application/forms/IcingaHostVarForm.php:15
 #: application/forms/SyncRuleForm.php:12
-#: application/forms/IcingaServiceForm.php:360
+#: application/forms/IcingaServiceForm.php:564
 #: library/Director/TranslationDummy.php:13
 #: library/Director/Web/Table/ObjectsTableEndpoint.php:20
 msgid "Host"
 msgstr "Host"
 
-#: application/controllers/SuggestController.php:226
-#: library/Director/Objects/IcingaService.php:499
+#: application/controllers/SuggestController.php:240
+#: library/Director/Objects/IcingaService.php:604
 msgid "Host Custom variables"
 msgstr "Benutzerdefinierte Host-Variablen"
 
@@ -2037,8 +2158,8 @@ msgstr "Hostgruppen"
 msgid "Host Name"
 msgstr "Hostname"
 
-#: application/forms/IcingaHostForm.php:152
-#: application/forms/IcingaHostForm.php:169
+#: application/forms/IcingaHostForm.php:153
+#: application/forms/IcingaHostForm.php:170
 msgid "Host Template"
 msgstr "Host-Vorlage"
 
@@ -2046,13 +2167,13 @@ msgstr "Host-Vorlage"
 msgid "Host Templates"
 msgstr "Host-Vorlagen"
 
+#: application/forms/IcingaHostForm.php:321
 #: application/forms/IcingaHostSelfServiceForm.php:35
-#: application/forms/IcingaHostForm.php:329
 msgid "Host address"
 msgstr "Hostadresse"
 
+#: application/forms/IcingaHostForm.php:323
 #: application/forms/IcingaHostSelfServiceForm.php:37
-#: application/forms/IcingaHostForm.php:331
 msgid ""
 "Host address. Usually an IPv4 address, but may be any kind of address your "
 "check plugin is able to deal with"
@@ -2060,7 +2181,7 @@ msgstr ""
 "Hostadresse. Üblicherweise eine IPv4 Adresse, kann jedoch jede Art von "
 "Adresse sein, mit der das Plugin umgehen kann"
 
-#: configuration.php:43
+#: configuration.php:57
 msgid "Host configs"
 msgstr "Host-Konfigurationen"
 
@@ -2080,10 +2201,10 @@ msgstr "Hostname (lokaler Teil, ohne Domain)"
 msgid "Host objects"
 msgstr "Hostobjekte"
 
-#: application/controllers/SuggestController.php:216
-#: application/controllers/SuggestController.php:225
-#: library/Director/Objects/IcingaService.php:498
-#: library/Director/Objects/IcingaHost.php:148
+#: application/controllers/SuggestController.php:230
+#: application/controllers/SuggestController.php:239
+#: library/Director/Objects/IcingaHost.php:152
+#: library/Director/Objects/IcingaService.php:603
 msgid "Host properties"
 msgstr "Hosteigenschaften"
 
@@ -2095,7 +2216,7 @@ msgstr "Auswahlmöglichkeit für Hostvorlagen"
 msgid "Host template choices"
 msgstr "Auswahlmöglichkeiten für Hostvorlagen"
 
-#: application/forms/IcingaHostGroupForm.php:15
+#: application/forms/IcingaHostGroupForm.php:14
 msgid "Hostgroup"
 msgstr "Hostgruppe"
 
@@ -2103,7 +2224,7 @@ msgstr "Hostgruppe"
 msgid "Hostgroups"
 msgstr "Hostgruppen"
 
-#: application/forms/IcingaHostForm.php:201
+#: application/forms/IcingaHostForm.php:202
 msgid ""
 "Hostgroups that should be directly assigned to this node. Hostgroups can be "
 "useful for various reasons. You might assign service checks based on "
@@ -2119,16 +2240,16 @@ msgstr ""
 "direkt einzelnen Hosts oder Hostvorlagen zugeordnet werden. Auch über Apply "
 "Regeln können Hostgruppen zugewiesen werden."
 
-#: application/forms/IcingaHostForm.php:37
+#: application/forms/IcingaHostForm.php:38
 #: library/Director/Web/Table/IcingaServiceSetHostTable.php:38
 msgid "Hostname"
 msgstr "Hostname"
 
-#: configuration.php:72 application/forms/IcingaNotificationForm.php:87
-#: application/forms/IcingaServiceForm.php:458
-#: application/forms/IcingaDependencyForm.php:63
+#: configuration.php:86 application/forms/IcingaDependencyForm.php:99
+#: application/forms/IcingaNotificationForm.php:89
+#: application/forms/IcingaServiceForm.php:674
 #: library/Director/Dashboard/Dashlet/HostsDashlet.php:11
-#: library/Director/Web/Table/CustomvarTable.php:42
+#: library/Director/Web/Table/CustomvarTable.php:43
 #: library/Director/Web/Table/CustomvarVariantsTable.php:58
 #: library/Director/Import/ImportSourceCoreApi.php:63
 #: library/Director/DataType/DataTypeDirectorObject.php:54
@@ -2145,7 +2266,7 @@ msgstr "Hosts welche dieses Set benutzen: %s"
 msgid "IP address / hostname of remote node"
 msgstr "IP Adresse / Hostname des entfernten Knoten"
 
-#: application/forms/KickstartForm.php:122
+#: application/forms/KickstartForm.php:126
 msgid ""
 "IP address / hostname of your Icinga node. Please note that this information "
 "will only be used for the very first connection to your Icinga instance. The "
@@ -2161,31 +2282,31 @@ msgstr ""
 "host-Eigenschaft entweder eine IP Adresse oder einen auflösbaren Hostname "
 "enthält. Der Director muss diesen Endpunkt erreichen können"
 
+#: application/forms/IcingaHostForm.php:329
 #: application/forms/IcingaHostSelfServiceForm.php:43
-#: application/forms/IcingaHostForm.php:337
 msgid "IPv6 address"
 msgstr "IPv6 Adresse"
 
-#: library/Director/Web/Controller/ObjectsController.php:209
+#: library/Director/Web/Controller/ObjectsController.php:271
 #, php-format
 msgid "Icinga %s Sets"
 msgstr "Icinga %s-Sets"
 
-#: application/controllers/InspectController.php:33
+#: application/controllers/InspectController.php:39
 #, php-format
 msgid "Icinga 2 - Objects: %s"
 msgstr "Icinga-2-Objekte: %s"
 
-#: application/controllers/InspectController.php:102
+#: application/controllers/InspectController.php:152
 msgid "Icinga 2 API - Status"
 msgstr "Icinga 2  API - Status"
 
-#: library/Director/Web/SelfService.php:173
+#: library/Director/Web/SelfService.php:192
 msgid "Icinga 2 Client documentation"
 msgstr "Icinga 2 Client-Dokumentation"
 
-#: application/forms/IcingaServiceForm.php:448
-#: application/forms/IcingaHostForm.php:130
+#: application/forms/IcingaHostForm.php:131
+#: application/forms/IcingaServiceForm.php:664
 msgid "Icinga Agent and zone settings"
 msgstr "Icinga Agenten- und Zoneneinstellungen"
 
@@ -2198,15 +2319,15 @@ msgstr "Icinga API Benutzer"
 msgid "Icinga DSL"
 msgstr "Icinga-DSL"
 
-#: configuration.php:64
+#: configuration.php:78
 msgid "Icinga Director"
 msgstr "Icinga-Director"
 
-#: application/controllers/DashboardController.php:21
+#: application/controllers/DashboardController.php:36
 msgid "Icinga Director - Main Dashboard"
 msgstr "Icinga Director - Übersichtsdashboard"
 
-#: application/forms/SettingsForm.php:32
+#: application/forms/SettingsForm.php:35
 msgid ""
 "Icinga Director decides to deploy objects like CheckCommands to a global "
 "zone. This defaults to \"director-global\" but might be adjusted to a custom "
@@ -2224,7 +2345,7 @@ msgstr ""
 "Der Icinga Director stellt eine Selbstbedienungs-API bereit, über welche "
 "sich neue Icinga-Knoten selbst registrieren können"
 
-#: application/forms/KickstartForm.php:120
+#: application/forms/KickstartForm.php:124
 msgid "Icinga Host"
 msgstr "Icinga-Host"
 
@@ -2232,21 +2353,25 @@ msgstr "Icinga-Host"
 msgid "Icinga Infrastructure"
 msgstr "Icinga-Infrastruktur"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1078
+#: application/forms/SettingsForm.php:43
+msgid "Icinga Package Name"
+msgstr "Icinga Package Name"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1102
 msgid ""
 "Icinga cluster zone. Allows to manually override Directors decisions of "
 "where to deploy your config to. You should consider not doing so unless you "
 "gained deep understanding of how an Icinga Cluster stack works"
 msgstr ""
 "Icinga-Cluster-Zone. Erlaubt ein manuelles Überschreiben der Entscheidung, "
-"wohin der Director die Konfiguration ausbringt. Sollte nicht ohne "
+"wohin der Director die Konfiguration ausrollt. Sollte nicht ohne "
 "ausreichendes Wissen um den Icinga-Cluster-Stack verändert werden."
 
-#: application/forms/IcingaHostGroupForm.php:17
+#: application/forms/IcingaHostGroupForm.php:16
 msgid "Icinga object name for this host group"
 msgstr "Icinga-Objektname für diese Hostgruppe"
 
-#: application/forms/IcingaHostForm.php:41
+#: application/forms/IcingaHostForm.php:42
 msgid ""
 "Icinga object name for this host. This is usually a fully qualified host "
 "name but it could basically be any kind of string. To make things easier for "
@@ -2258,35 +2383,35 @@ msgstr ""
 "sprechende Namen für Vorlagen verwendet werden. z.B. ist \"Standard Linux "
 "Server\" leichter verständlich als \"generic-host\""
 
-#: application/forms/IcingaServiceGroupForm.php:17
+#: application/forms/IcingaServiceGroupForm.php:16
 msgid "Icinga object name for this service group"
 msgstr "Icinga-Objektname für diese Servicegruppe"
 
-#: application/forms/IcingaUserGroupForm.php:16
+#: application/forms/IcingaUserGroupForm.php:19
 msgid "Icinga object name for this user group"
 msgstr "Icinga-Objektname für diese Benutzergruppe"
 
-#: application/forms/SettingsForm.php:80
+#: application/forms/SettingsForm.php:94
 msgid "Icinga v1.x"
 msgstr "Icinga v1.x"
 
-#: application/forms/SettingsForm.php:79
+#: application/forms/SettingsForm.php:93
 msgid "Icinga v2.x"
 msgstr "Icinga v2.x"
 
-#: application/forms/IcingaHostForm.php:72
+#: application/forms/IcingaHostForm.php:73
 msgid "Icinga2 Agent"
 msgstr "Icinga-2-Agent"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1413
+#: library/Director/Web/Form/DirectorObjectForm.php:1478
 msgid "Icon image"
 msgstr "Icon Bild"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1422
+#: library/Director/Web/Form/DirectorObjectForm.php:1487
 msgid "Icon image alt"
 msgstr "Icon Bild alternativ"
 
-#: library/Director/Web/Table/CoreApiFieldsTable.php:73
+#: library/Director/Web/Table/CoreApiFieldsTable.php:74
 msgid "Id"
 msgstr "ID"
 
@@ -2298,7 +2423,7 @@ msgstr "Bezeichner für das Icinga-Kommando, das erstellt werden soll"
 msgid "Ignore"
 msgstr "Ignorieren"
 
-#: application/forms/IcingaDependencyForm.php:132
+#: application/forms/IcingaDependencyForm.php:172
 msgid "Ignore Soft States"
 msgstr "Soft-States ignorieren"
 
@@ -2316,14 +2441,15 @@ msgstr "Externe \"%s\" importieren"
 msgid "Import run"
 msgstr "Importlauf"
 
-#: application/controllers/ImportsourceController.php:97
-msgid "Import run history"
-msgstr "Importlaufhistorie"
+#: application/controllers/ImportsourceController.php:178
+#, php-format
+msgid "Import run history: %s"
+msgstr "Importlaufhistorie: %s"
 
-#: application/controllers/ImportsourcesController.php:13
+#: application/controllers/ImportsourcesController.php:46
 #: library/Director/Web/Tabs/ImportTabs.php:20
-#: library/Director/Web/Tabs/ImportsourceTabs.php:27
-#: library/Director/Job/ImportJob.php:46
+#: library/Director/Web/Tabs/ImportsourceTabs.php:37
+#: library/Director/Job/ImportJob.php:64
 msgid "Import source"
 msgstr "Importquelle"
 
@@ -2331,17 +2457,18 @@ msgstr "Importquelle"
 msgid "Import source name"
 msgstr "Name der Importquelle"
 
-#: application/controllers/ImportsourceController.php:66
+#: application/controllers/ImportsourceController.php:127
 #, php-format
-msgid "Import source preview: \"%s\""
-msgstr "Vorschau der Importquelle: \"%s\""
+msgid "Import source preview: %s"
+msgstr "Vorschau der Importquelle: %s"
 
-#: application/controllers/ImportsourceController.php:34
+#: application/controllers/ImportsourceController.php:60
+#: application/controllers/ImportsourceController.php:93
 #, php-format
 msgid "Import source: %s"
 msgstr "Importquelle: %s"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1163
+#: library/Director/Web/Form/DirectorObjectForm.php:1192
 msgid ""
 "Importable templates, add as many as you want. Please note that order "
 "matters when importing properties from multiple templates: last one wins"
@@ -2373,11 +2500,11 @@ msgstr ""
 "Konfiguration entfernt werden. Sollte ein Konflikt auftreten, geschieht "
 "nichts weiter, als dass die Konfiguration nicht ausgerollt werden kann."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1161
+#: library/Director/Web/Form/DirectorObjectForm.php:1190
 msgid "Imports"
 msgstr "Importe"
 
-#: application/controllers/SelfServiceController.php:94
+#: application/controllers/SelfServiceController.php:104
 msgid ""
 "In case an Icinga Admin provided you with a self service API token, this is "
 "where you can register new hosts"
@@ -2395,7 +2522,7 @@ msgstr ""
 "dieser Parameter festzulegen, ob auch Up- und Downgrades zu der spezifierten "
 "Icinga 2 Version gewünscht sind."
 
-#: application/forms/SelfServiceSettingsForm.php:128
+#: application/forms/SelfServiceSettingsForm.php:143
 msgid ""
 "In case the Icinga 2 Agent should be automatically installed, this has to be "
 "a string value like: 2.6.3"
@@ -2403,7 +2530,7 @@ msgstr ""
 "Falls der Icinga-2-Agent automatisch installiert werden soll, muss dies in "
 "String der Form 2.6.3 sein."
 
-#: application/forms/SelfServiceSettingsForm.php:74
+#: application/forms/SelfServiceSettingsForm.php:89
 msgid ""
 "In case the Icinga Agent will accept configuration from the parent Icinga 2 "
 "system, it will possibly write data to /var/lib/icinga2/api/*. By setting "
@@ -2419,7 +2546,7 @@ msgstr ""
 msgid "Indirect"
 msgstr "Indirekt"
 
-#: application/controllers/HostController.php:96
+#: application/controllers/HostController.php:131
 msgid "Individual Service objects"
 msgstr "Individuelle Service-Objekte"
 
@@ -2427,24 +2554,25 @@ msgstr "Individuelle Service-Objekte"
 msgid "Infrastructure"
 msgstr "Infrastruktur"
 
-#: application/forms/SyncPropertyForm.php:278
+#: application/forms/SyncPropertyForm.php:310
 msgid "Inheritance (import)"
 msgstr "Vererbung (Import)"
 
-#: application/forms/IcingaHostForm.php:235
+#: application/forms/IcingaHostForm.php:236
 msgid "Inherited groups"
 msgstr "Geerbte Gruppen"
 
-#: application/controllers/HostController.php:243
+#: application/controllers/HostController.php:288
 #, php-format
 msgid "Inherited service: %s"
 msgstr "Geerbter Service: %s"
 
-#: library/Director/Web/Tabs/ObjectTabs.php:128
+#: application/controllers/HostController.php:429
+#: library/Director/Web/Tabs/ObjectTabs.php:130
 msgid "Inspect"
 msgstr "Inspizieren"
 
-#: application/controllers/InspectController.php:55
+#: application/controllers/InspectController.php:65
 msgid "Inspect - object list"
 msgstr "Inspizieren - Objektliste"
 
@@ -2452,11 +2580,11 @@ msgstr "Inspizieren - Objektliste"
 msgid "Install NSClient++"
 msgstr "NSClient++ installieren"
 
-#: application/forms/SelfServiceSettingsForm.php:44
+#: application/forms/SelfServiceSettingsForm.php:59
 msgid "Installation Source"
 msgstr "Installationsquelle"
 
-#: application/forms/SelfServiceSettingsForm.php:137
+#: application/forms/SelfServiceSettingsForm.php:152
 msgid "Installer Hashes"
 msgstr "Prüfsummen für den Installer"
 
@@ -2464,12 +2592,12 @@ msgstr "Prüfsummen für den Installer"
 msgid "Internal commands"
 msgstr "Interne Kommandos"
 
-#: application/controllers/SyncruleController.php:89
+#: application/controllers/SyncruleController.php:100
 #, php-format
 msgid "It has been renamed since then, its former name was %s"
 msgstr "Es wurde seither umbenannt. Sein bisheriger Name war %s"
 
-#: library/Director/Web/SelfService.php:61
+#: library/Director/Web/SelfService.php:68
 msgid ""
 "It is not a good idea to do so as long as your Agent still has a valid Self "
 "Service API key!"
@@ -2487,7 +2615,7 @@ msgstr ""
 "vorgegeben wird. Setzt man sie auf Eins (1) erhält man ein Dropdown-Feld, "
 "eine höhere Nummer verwandelt diese in ein Mehrfach-Auswahlfeld."
 
-#: library/Director/Web/Widget/ImportSourceDetails.php:35
+#: library/Director/Web/Widget/ImportSourceDetails.php:40
 msgid ""
 "It's currently unknown whether we are in sync with this Import Source. You "
 "should either check for changes or trigger a new Import Run."
@@ -2496,7 +2624,7 @@ msgstr ""
 "ist. Es sollte auf Änderungen geprüft oder ein neuer Importlauf angestoßen "
 "werden."
 
-#: application/controllers/SyncruleController.php:49
+#: application/controllers/SyncruleController.php:60
 msgid ""
 "It's currently unknown whether we are in sync with this rule. You should "
 "either check for changes or trigger a new Sync Run."
@@ -2533,7 +2661,7 @@ msgstr "Aufträge"
 msgid "Jump to this object"
 msgstr "Zu diesem Objekt springen"
 
-#: library/Director/Web/SelfService.php:225
+#: library/Director/Web/SelfService.php:245
 msgid "Just download and run this script on your Linux Client Machine:"
 msgstr ""
 "Einfach dieses Skript herunterladen und auf dem Linux Client-Rechner "
@@ -2543,11 +2671,15 @@ msgstr ""
 msgid "Keep matching elements"
 msgstr "Übereinstimmende Elemente behalten"
 
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:60
+msgid "Keep only matching rows (Whitelist)"
+msgstr "Behalte nur passende Zeilen (Whitelist)"
+
 #: library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:31
 msgid "Keep the DN as is"
 msgstr "DN unverändert behalten"
 
-#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:20
+#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:26
 msgid "Keep the JSON string as is"
 msgstr "JSON-String beibehalten"
 
@@ -2568,12 +2700,12 @@ msgstr "Schlüssel"
 msgid "Key column name"
 msgstr "Schlüsselspaltenname"
 
-#: application/controllers/IndexController.php:44
 #: application/controllers/KickstartController.php:12
+#: application/controllers/IndexController.php:49
 msgid "Kickstart"
 msgstr "Kickstart"
 
-#: application/forms/KickstartForm.php:289
+#: application/forms/KickstartForm.php:305
 #: library/Director/Dashboard/Dashlet/KickstartDashlet.php:11
 msgid "Kickstart Wizard"
 msgstr "Kickstart Assistent"
@@ -2583,21 +2715,25 @@ msgid "LDAP Search Base"
 msgstr "LDAP Suchbasis"
 
 #: application/forms/DirectorDatalistEntryForm.php:27
-#: library/Director/Web/Table/IcingaObjectDatafieldTable.php:49
 #: library/Director/Web/Table/DatafieldTable.php:47
 #: library/Director/Web/Table/DatalistEntryTable.php:53
+#: library/Director/Web/Table/IcingaObjectDatafieldTable.php:49
 msgid "Label"
 msgstr "Bezeichnung"
 
-#: application/forms/IcingaNotificationForm.php:206
+#: library/Director/Web/Widget/IcingaObjectInspection.php:58
+msgid "Last Check Result"
+msgstr "Letztes Check-Ergebnis"
+
+#: application/forms/IcingaNotificationForm.php:205
 msgid "Last notification"
 msgstr "Letzte Benachrichtigung"
 
-#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:64
+#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:67
 msgid "Last related activity"
 msgstr "Zuletzt verwendete Konfiguration"
 
-#: application/controllers/SyncruleController.php:85
+#: application/controllers/SyncruleController.php:96
 msgid "Last sync run details"
 msgstr "Details des letzten Imports"
 
@@ -2651,16 +2787,16 @@ msgstr "Import fehlschlagen lassen"
 #: library/Director/PropertyModifier/PropertyModifierDnsRecords.php:36
 #: library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:32
 #: library/Director/PropertyModifier/PropertyModifierGetHostByName.php:19
-#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:21
+#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:27
 msgid "Let the whole import run fail"
 msgstr "Den ganzen Importlauf fehlschlagen lassen"
 
-#: configuration.php:25
+#: configuration.php:31
 msgid "Limit access to the given comma-separated list of hostgroups"
 msgstr ""
 "Den Zugriff auf diese Kommagetrennte Liste von Host-Gruppen beschränken"
 
-#: library/Director/Web/SelfService.php:218
+#: library/Director/Web/SelfService.php:238
 msgid "Linux commandline"
 msgstr "Linux Kommandozeile"
 
@@ -2677,7 +2813,7 @@ msgstr "Listeneinträge"
 msgid "List name"
 msgstr "Listenname"
 
-#: application/forms/SettingsForm.php:121
+#: application/forms/SettingsForm.php:135
 msgid ""
 "Local directory to deploy Icinga 1.x configuration. Must be writable by "
 "icingaweb2. (e.g. /etc/icinga/director)"
@@ -2691,7 +2827,7 @@ msgid "Log Duration"
 msgstr "Behaltefrist des Logs"
 
 #: application/forms/IcingaAddServiceForm.php:66
-#: library/Director/Web/Form/DirectorObjectForm.php:549
+#: library/Director/Web/Form/DirectorObjectForm.php:563
 msgid "Main properties"
 msgstr "Haupteigenschaften"
 
@@ -2746,11 +2882,23 @@ msgstr ""
 msgid "Mandatory"
 msgstr "Pflicht"
 
-#: application/forms/SettingsForm.php:109
+#: application/forms/SettingsForm.php:123
 msgid "Master-less"
 msgstr "Masterlos"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1279
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:35
+msgid "Match NULL value columns"
+msgstr "Triff auf Spalten NULL-Werten zu"
+
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:34
+msgid "Match boolean FALSE"
+msgstr "Triff auf boolesches FALSE zu"
+
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:33
+msgid "Match boolean TRUE"
+msgstr "Triff auf boolesches TRUE zu"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1313
 msgid "Max check attempts"
 msgstr "Maximale Checkwiederholungen"
 
@@ -2767,7 +2915,7 @@ msgstr "Mitglieder"
 msgid "Merge"
 msgstr "Zusammenführen"
 
-#: application/forms/SyncPropertyForm.php:113
+#: application/forms/SyncPropertyForm.php:116
 msgid "Merge Policy"
 msgstr "Zusammenführungsrichtlinie"
 
@@ -2783,16 +2931,18 @@ msgstr ""
 msgid "Minimum required"
 msgstr "Erforderliches Minimum"
 
-#: application/forms/ImportRowModifierForm.php:62
+#: application/forms/ImportRowModifierForm.php:71
 msgid "Modifier"
 msgstr "Modifikator"
 
-#: library/Director/Web/Tabs/ImportsourceTabs.php:35
+#: library/Director/Web/Tabs/ImportsourceTabs.php:41
 msgid "Modifiers"
 msgstr "Modifikatoren"
 
+#: application/controllers/SyncruleController.php:215
+#: application/controllers/ImportsourceController.php:86
 #: library/Director/Web/Controller/TemplateController.php:112
-#: library/Director/Web/Tabs/ImportsourceTabs.php:31
+#: library/Director/Web/ActionBar/AutomationObjectActionBar.php:38
 #: library/Director/Web/Tabs/SyncRuleTabs.php:33
 msgid "Modify"
 msgstr "Ändere"
@@ -2802,7 +2952,7 @@ msgstr "Ändere"
 msgid "Modify %d hosts"
 msgstr "%d Hosts verändern"
 
-#: library/Director/Web/Controller/ObjectsController.php:126
+#: library/Director/Web/Controller/ObjectsController.php:163
 #, php-format
 msgid "Modify %d objects"
 msgstr "%d Objekte bearbeiten"
@@ -2828,27 +2978,19 @@ msgstr "Diese Apply-Regeln ändern"
 msgid "Monitored Services"
 msgstr "Überwachte Services"
 
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:504
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:500
 msgid "Move down"
 msgstr "Nach unten bewegen"
 
-#: library/vendor/ipl/Web/Table/Extension/ZfSortablePriority.php:155
-msgid "Move down (lower priority)"
-msgstr "Nach unten schieben (Priorität verringern)"
-
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:494
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:490
 msgid "Move up"
 msgstr "Nach oben bewegen"
 
-#: library/vendor/ipl/Web/Table/Extension/ZfSortablePriority.php:150
-msgid "Move up (raise priority)"
-msgstr "Nach oben schieben (Priorität erhöhen)"
-
-#: library/Director/Web/Controller/ObjectsController.php:124
+#: library/Director/Web/Controller/ObjectsController.php:161
 msgid "Multiple objects"
 msgstr "Mehrere Objekte"
 
-#: application/controllers/ConfigController.php:144
+#: application/controllers/ConfigController.php:156
 msgid "My changes"
 msgstr "Meine Änderungen"
 
@@ -2859,17 +3001,17 @@ msgstr "MySQL Schema"
 #: application/forms/IcingaApiUserForm.php:14
 #: application/forms/IcingaHostVarForm.php:22
 #: application/forms/IcingaServiceVarForm.php:22
+#: application/forms/IcingaDependencyForm.php:73
 #: application/forms/IcingaAddServiceForm.php:138
-#: application/forms/IcingaServiceForm.php:337
-#: application/forms/IcingaDependencyForm.php:40
+#: application/forms/IcingaServiceForm.php:542
+#: library/Director/Web/Table/CoreApiFieldsTable.php:72
 #: library/Director/Web/Table/ChoicesTable.php:41
-#: library/Director/Web/Table/CoreApiFieldsTable.php:71
 #: library/Director/Web/Table/CoreApiObjectsTable.php:54
 #: library/Director/Web/Table/CoreApiPrototypesTable.php:37
 msgid "Name"
 msgstr "Name"
 
-#: application/forms/IcingaDependencyForm.php:42
+#: application/forms/IcingaDependencyForm.php:75
 msgid "Name for the Icinga dependency you are going to create"
 msgstr "Name der Icinga-Abhängigkeit, die erstellt werden soll"
 
@@ -2881,16 +3023,16 @@ msgstr "Name der Icinga-Endpunkt-Vorlage, die erstellt werden soll"
 msgid "Name for the Icinga endpoint you are going to create"
 msgstr "Name des Icinga-Endpunkt, der erstellt werden soll"
 
-#: application/forms/IcingaNotificationForm.php:23
+#: application/forms/IcingaNotificationForm.php:21
 msgid "Name for the Icinga notification template you are going to create"
 msgstr "Name der Icinga-Benachrichtigungs-Vorlage, die erstellt werden soll"
 
-#: application/forms/IcingaNotificationForm.php:29
+#: application/forms/IcingaNotificationForm.php:27
 msgid "Name for the Icinga notification you are going to create"
 msgstr "Name der Icinga-Benachrichtigung, die erstellt werden soll"
 
 #: application/forms/IcingaAddServiceForm.php:141
-#: application/forms/IcingaServiceForm.php:340
+#: application/forms/IcingaServiceForm.php:545
 msgid "Name for the Icinga service you are going to create"
 msgstr "Name des Icinga-Service, der erstellt werden soll"
 
@@ -2902,11 +3044,11 @@ msgstr "Name des Icinga-Zeitraums, der erstellt werden soll"
 msgid "Name for the Icinga timperiod template you are going to create"
 msgstr "Name der Icinga-Zeitraum-Vorlage, die erstellt werden soll"
 
-#: application/forms/IcingaUserForm.php:27
+#: application/forms/IcingaUserForm.php:30
 msgid "Name for the Icinga user object you are going to create"
 msgstr "Name für das Icinga-Benutzerobjekt, das Sie erstellen möchten"
 
-#: application/forms/IcingaUserForm.php:21
+#: application/forms/IcingaUserForm.php:24
 msgid "Name for the Icinga user template you are going to create"
 msgstr "Name für die Icinga-Benutzervorlage, die Sie erstellen möchten"
 
@@ -2918,7 +3060,7 @@ msgstr "Name der Icinga-Zone, die erstellt werden soll"
 msgid "Name needs to be changed when cloning a Template"
 msgstr "Beim Klonen einer Vorlage muss der Name geändert werden"
 
-#: library/Director/Web/Table/CoreApiFieldsTable.php:81
+#: library/Director/Web/Table/CoreApiFieldsTable.php:82
 msgid "Nav"
 msgstr "Nav"
 
@@ -2930,34 +3072,33 @@ msgstr "Neues Feld"
 msgid "New Job"
 msgstr "Neuer Job"
 
-#: library/Director/Web/Tabs/ImportsourceTabs.php:48
+#: library/Director/Web/Tabs/ImportsourceTabs.php:54
 msgid "New import source"
 msgstr "Neue Importquelle"
 
 #: application/forms/IcingaCloneObjectForm.php:22
+#: library/Director/Web/Form/CloneImportSourceForm.php:30
+#: library/Director/Web/Form/CloneSyncRuleForm.php:30
 msgid "New name"
 msgstr "Neuer Name"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:231
+#: library/Director/Web/Widget/ActivityLogInfo.php:258
 msgid "New object"
 msgstr "Neues Objekt"
 
+#: application/forms/IcingaHostForm.php:31
 #: application/forms/IcingaAddServiceForm.php:34
-#: application/forms/IcingaHostForm.php:30
 msgid "Next"
 msgstr "Weiter"
 
-#: library/vendor/ipl/Web/Widget/Paginator.php:346
-msgid "Next page"
-msgstr "Nächste Seite"
-
-#: application/forms/IcingaZoneForm.php:29
-#: application/forms/SyncRuleForm.php:74 application/forms/SettingsForm.php:44
-#: application/forms/SettingsForm.php:59
 #: application/forms/SelfServiceSettingsForm.php:227
-#: library/Director/Job/ConfigJob.php:186
-#: library/Director/Job/ConfigJob.php:198 library/Director/Job/ImportJob.php:68
-#: library/Director/Job/SyncJob.php:71
+#: application/forms/IcingaZoneForm.php:29
+#: application/forms/SyncRuleForm.php:74 application/forms/SettingsForm.php:58
+#: application/forms/SettingsForm.php:73
+#: library/Director/PropertyModifier/PropertyModifierUpperCaseFirst.php:26
+#: library/Director/Job/ConfigJob.php:190
+#: library/Director/Job/ConfigJob.php:202 library/Director/Job/ImportJob.php:86
+#: library/Director/Job/SyncJob.php:85
 msgid "No"
 msgstr "Nein"
 
@@ -2966,16 +3107,16 @@ msgstr "Nein"
 msgid "No %s resource available"
 msgstr "Keine %s Ressource verfügbar"
 
-#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:86
+#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:93
 msgid "No API user configured, you might run the kickstart helper"
 msgstr ""
 "Kein API Benutzer konfiguriert. Der kickstart helper sollte ausgeführt werden"
 
-#: application/forms/IcingaHostForm.php:158
+#: application/forms/IcingaHostForm.php:159
 msgid "No Host Template has been provided yet"
 msgstr "Es wurde noch keine passende Host-Vorlage bereitgestellt"
 
-#: application/forms/IcingaHostForm.php:146
+#: application/forms/IcingaHostForm.php:147
 msgid "No Host template has been chosen"
 msgstr "Keine Host-Vorlage wurde ausgewählt"
 
@@ -2983,32 +3124,32 @@ msgstr "Keine Host-Vorlage wurde ausgewählt"
 msgid "No Service Templates have been provided yet"
 msgstr "Es wurde noch keine passende Vorlage bereitgestellt"
 
+#: application/forms/IcingaCommandArgumentForm.php:170
 #: application/forms/IcingaTimePeriodRangeForm.php:94
-#: application/forms/IcingaCommandArgumentForm.php:168
-#: application/forms/IcingaServiceForm.php:502
-#: library/Director/Web/Form/DirectorObjectForm.php:635
+#: application/forms/IcingaServiceForm.php:722
+#: library/Director/Web/Form/DirectorObjectForm.php:649
 msgid "No action taken, object has not been modified"
 msgstr "Keine Aktion durchgeführt, das Objekt wurde nicht verändert"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:222
+#: library/Director/Dashboard/Dashlet/Dashlet.php:223
 msgid "No apply rule has been defined yet"
 msgstr "Bisher wurde kein Apply-Regel definiert"
 
-#: library/Director/Web/Widget/SyncRunDetails.php:35
+#: library/Director/Web/Widget/SyncRunDetails.php:42
 msgid "No changes have been made"
 msgstr "Keine Änderungen wurden gemacht"
 
-#: application/controllers/DashboardController.php:46
+#: application/controllers/DashboardController.php:64
 msgid "No dashboard available, you might have not enough permissions"
 msgstr ""
 "Kein Dashboard verfügbar, eventuell wurden nicht genügend Zugriffsrechte "
 "gewährt"
 
-#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:55
+#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:62
 msgid "No database has been configured for Icinga Director"
 msgstr "Keine Datenbank für den Icinga-Director wurde konfiguriert"
 
-#: application/forms/KickstartForm.php:222
+#: application/forms/KickstartForm.php:232
 msgid ""
 "No database resource has been configured yet. Please choose a resource to "
 "complete your config"
@@ -3016,11 +3157,11 @@ msgstr ""
 "Es wurde bisher keine Datenbankressource konfiguriert. Bitte eine Ressource "
 "auswählen, um die Konfiguration zu vervollständigen"
 
-#: application/forms/KickstartForm.php:45
+#: application/forms/KickstartForm.php:49
 msgid "No database schema has been created yet"
 msgstr "Kein Datenbankschema wurde bisher erstellt"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:240
+#: library/Director/Dashboard/Dashlet/Dashlet.php:241
 msgid "No object has been defined yet"
 msgstr "Kein Objekt wurde bisher definiert"
 
@@ -3028,7 +3169,7 @@ msgstr "Kein Objekt wurde bisher definiert"
 msgid "No object has been modified"
 msgstr "Kein Objekt wurde verändert"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1138
+#: library/Director/Web/Form/DirectorObjectForm.php:1167
 msgid "No related template has been provided yet"
 msgstr "Es wurde noch keine passende Vorlage bereitgestellt"
 
@@ -3036,27 +3177,32 @@ msgstr "Es wurde noch keine passende Vorlage bereitgestellt"
 msgid "No service has been chosen"
 msgstr "Keine Service wurde ausgewählt"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1133
+#: application/controllers/HostController.php:112
+#, php-format
+msgid "No such service: %s"
+msgstr "Kein solcher Service: %s"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:1162
 msgid "No template has been chosen"
 msgstr "Keine Vorlage wurde ausgewählt"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:204
+#: library/Director/Dashboard/Dashlet/Dashlet.php:205
 msgid "No template has been defined yet"
 msgstr "Es wurde noch keine Vorlage definiert"
 
-#: application/forms/IcingaServiceForm.php:384
+#: application/forms/IcingaServiceForm.php:592
 msgid "None"
 msgstr "Keine"
 
 #: library/Director/Dashboard/Dashlet/EndpointObjectDashlet.php:57
 msgid "None could be used for deployments right now"
-msgstr "Keines kann momentan zum Ausbringen verwendet werden"
+msgstr "Keines kann momentan zum Ausrollen verwendet werden"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1388
+#: library/Director/Web/Form/DirectorObjectForm.php:1453
 msgid "Notes"
 msgstr "Notizen"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1397
+#: library/Director/Web/Form/DirectorObjectForm.php:1462
 msgid "Notes URL"
 msgstr "Notizen-URL"
 
@@ -3073,7 +3219,7 @@ msgstr ""
 "Keine Aktion nötig. Die Daten von dieser Importquelle haben sich seit dem "
 "letzten Lauf nicht geändert"
 
-#: application/forms/RestoreObjectForm.php:33
+#: application/forms/RestoreObjectForm.php:76
 msgid "Nothing to do, restore would not modify the current object"
 msgstr ""
 "Nichts zu tun, eine Wiederherstellung würde das aktuelle Objekt nicht ändern"
@@ -3082,7 +3228,7 @@ msgstr ""
 msgid "Nothing would change, this rule is still in sync"
 msgstr "Es würde sich nichts ändern, diese Regel ist noch synchron"
 
-#: application/forms/IcingaNotificationForm.php:27
+#: application/forms/IcingaNotificationForm.php:25
 #: library/Director/TranslationDummy.php:18
 msgid "Notification"
 msgstr "Benachrichtigung"
@@ -3105,15 +3251,15 @@ msgstr ""
 "Benachrichtigungs-Kommandos erlauben das Ausführen beliebiger Aktionen wenn "
 "eine Benachrichtigung stattfinden soll"
 
-#: application/forms/IcingaNotificationForm.php:21
+#: application/forms/IcingaNotificationForm.php:19
 msgid "Notification Template"
 msgstr "Benachrichtigungsvorlage"
 
-#: application/forms/IcingaNotificationForm.php:252
+#: application/forms/IcingaNotificationForm.php:251
 msgid "Notification command"
 msgstr "Benachrichtigungskommando"
 
-#: application/forms/IcingaNotificationForm.php:174
+#: application/forms/IcingaNotificationForm.php:173
 msgid "Notification interval"
 msgstr "Benachrichtigungsintervall"
 
@@ -3125,10 +3271,10 @@ msgstr "Auswahlmöglichkeiten für Benachrichtigungsvorlagen"
 msgid "Notification templates"
 msgstr "Benachrichtigungsvorlagen"
 
-#: configuration.php:84
-#: library/Director/Dashboard/Dashlet/NotificationApplyDashlet.php:13
+#: configuration.php:98
 #: library/Director/Dashboard/Dashlet/NotificationsDashlet.php:13
-#: library/Director/Web/Table/CustomvarTable.php:45
+#: library/Director/Dashboard/Dashlet/NotificationApplyDashlet.php:13
+#: library/Director/Web/Table/CustomvarTable.php:46
 #: library/Director/Web/Table/CustomvarVariantsTable.php:61
 msgid "Notifications"
 msgstr "Benachrichtigungen"
@@ -3171,14 +3317,14 @@ msgstr ""
 msgid "OK"
 msgstr "Ok"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1028
-#: library/Director/Web/Form/DirectorObjectForm.php:1033
+#: library/Director/Web/Form/DirectorObjectForm.php:1052
+#: library/Director/Web/Form/DirectorObjectForm.php:1057
 #: library/Director/Web/Controller/TemplateController.php:128
 #: library/Director/DataType/DataTypeDirectorObject.php:64
 msgid "Object"
 msgstr "Objekt"
 
-#: application/controllers/InspectController.php:91
+#: application/controllers/InspectController.php:106
 msgid "Object Inspection"
 msgstr "Objekt-Inspektion"
 
@@ -3194,25 +3340,25 @@ msgstr "Objektklasse"
 msgid "Object dependency relationships."
 msgstr "Objekt-Abhängigkeiten."
 
-#: application/forms/RestoreObjectForm.php:37
+#: application/forms/RestoreObjectForm.php:80
 msgid "Object has been re-created"
 msgstr "Objekt wurde wiederhergestellt"
 
-#: application/forms/RestoreObjectForm.php:29
+#: application/forms/RestoreObjectForm.php:72
 msgid "Object has been restored"
 msgstr "Objekt wurde wiederhergestellt"
 
-#: application/forms/SyncPropertyForm.php:322
+#: application/forms/SyncPropertyForm.php:357
 msgid "Object properties"
 msgstr "Objekteigenschaften"
 
 #: application/forms/IcingaTimePeriodForm.php:13
-#: library/Director/Web/Form/DirectorObjectForm.php:1041
+#: library/Director/Web/Form/DirectorObjectForm.php:1065
 #: library/Director/Web/Table/SyncruleTable.php:46
 msgid "Object type"
 msgstr "Objekttyp"
 
-#: application/controllers/InspectController.php:57
+#: application/controllers/InspectController.php:67
 #, php-format
 msgid "Object type \"%s\""
 msgstr "Objekttyp \"%s\""
@@ -3221,9 +3367,9 @@ msgstr "Objekttyp \"%s\""
 msgid "Object/Tpl/Apply"
 msgstr "Objekt/Vorlage/Apply"
 
-#: library/Director/Web/Table/TemplateUsageTable.php:24
 #: library/Director/Web/Table/HostTemplateUsageTable.php:11
 #: library/Director/Web/Table/ServiceTemplateUsageTable.php:11
+#: library/Director/Web/Table/TemplateUsageTable.php:24
 msgid "Objects"
 msgstr "Objekte"
 
@@ -3231,20 +3377,20 @@ msgstr "Objekte"
 msgid "On failure"
 msgstr "Bei Fehler"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:226
+#: library/Director/Dashboard/Dashlet/Dashlet.php:227
 msgid "One apply rule has been defined"
 msgstr "Eine Apply-Regel wurde definiert"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:248
+#: library/Director/Dashboard/Dashlet/Dashlet.php:249
 msgid "One external object has been defined, it will not be deployed"
 msgstr "Ein externes Objekt wurde erstellt, es wird nicht ausgebracht"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:251
+#: library/Director/Dashboard/Dashlet/Dashlet.php:252
 msgid "One object has been defined"
 msgstr "Ein Objekt wurde definiert"
 
 #: application/forms/IcingaMultiEditForm.php:84
-#: library/Director/Web/Widget/SyncRunDetails.php:38
+#: library/Director/Web/Widget/SyncRunDetails.php:45
 msgid "One object has been modified"
 msgstr "Ein Objekt wurde verändert"
 
@@ -3267,8 +3413,8 @@ msgid "One or more time periods, e.g. 00:00-24:00 or 00:00-09:00,17:00-24:00"
 msgstr ""
 "Einer oder mehrere Zeiträume, z.B. 00:00-24:00  oder 00:00-09:00,17:00-24:00"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:208
-#: library/Director/Dashboard/Dashlet/Dashlet.php:245
+#: library/Director/Dashboard/Dashlet/Dashlet.php:209
+#: library/Director/Dashboard/Dashlet/Dashlet.php:246
 msgid "One template has been defined"
 msgstr "Eine Vorlage wurde definiert"
 
@@ -3292,7 +3438,7 @@ msgstr ""
 "Optionaler Kommando-Timeout. Erlaubt sind Werte in Sekunden oder Werte mit "
 "nachgestellter Zeiteinheit. z.B. 1m oder auch 3m 30s."
 
-#: application/forms/IcingaDependencyForm.php:205
+#: application/forms/IcingaDependencyForm.php:249
 msgid ""
 "Optional. The child service. If omitted this dependency object is treated as "
 "host dependency."
@@ -3300,7 +3446,7 @@ msgstr ""
 "Optional. Der Kind-Service. Falls leer wird dieses Objekt als Host-"
 "Abhängigkeit behandelt."
 
-#: application/forms/IcingaDependencyForm.php:169
+#: application/forms/IcingaDependencyForm.php:213
 msgid ""
 "Optional. The parent service. If omitted this dependency object is treated "
 "as host dependency."
@@ -3312,17 +3458,18 @@ msgstr ""
 msgid "Other available fields"
 msgstr "Andere verfügbare Felder"
 
-#: application/forms/SyncPropertyForm.php:245
+#: application/forms/SyncPropertyForm.php:272
 msgid "Other sources"
 msgstr "Andere Quellen"
 
-#: application/forms/IcingaServiceForm.php:98
-#: application/forms/IcingaServiceForm.php:203
-#: application/forms/IcingaServiceForm.php:235
+#: application/forms/IcingaServiceForm.php:147
+#: application/forms/IcingaServiceForm.php:391
+#: application/forms/IcingaServiceForm.php:427
 msgid "Override vars"
 msgstr "Variablen überschreiben"
 
-#: application/controllers/DashboardController.php:28
+#: application/controllers/DashboardController.php:46
+#: library/Director/Web/ActionBar/AutomationObjectActionBar.php:32
 msgid "Overview"
 msgstr "Überblick"
 
@@ -3335,19 +3482,15 @@ msgstr ""
 "PHP Version 5.4.x ist für den Director >= 1.4.0 erforderlich, hier läuft %s. "
 "Bitte entweder PHP upgraden oder den Icinga Director downgraden"
 
-#: application/forms/IcingaUserForm.php:38
+#: application/forms/IcingaUserForm.php:41
 msgid "Pager"
 msgstr "Pager"
 
-#: library/vendor/ipl/Web/Widget/Paginator.php:452
-msgid "Pagination"
-msgstr "Seitennavigation"
-
-#: application/forms/IcingaDependencyForm.php:148
+#: application/forms/IcingaDependencyForm.php:192
 msgid "Parent Host"
 msgstr "Eltern-Host"
 
-#: application/forms/IcingaDependencyForm.php:167
+#: application/forms/IcingaDependencyForm.php:211
 msgid "Parent Service"
 msgstr "Eltern-Service"
 
@@ -3355,13 +3498,13 @@ msgstr "Eltern-Service"
 msgid "Parent Zone"
 msgstr "Übergeordnete Zone"
 
-#: application/forms/KickstartForm.php:152
 #: application/forms/IcingaApiUserForm.php:19
+#: application/forms/KickstartForm.php:156
 msgid "Password"
 msgstr "Passwort"
 
-#: library/Director/PropertyModifier/PropertyModifierCombine.php:14
 #: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:13
+#: library/Director/PropertyModifier/PropertyModifierCombine.php:14
 msgid "Pattern"
 msgstr "Muster"
 
@@ -3382,7 +3525,7 @@ msgstr "Eine Datenliste auswählen, die für Map lookups verwendet wird"
 msgid "Please choose a specific Icinga object type"
 msgstr "Bitte einen bestimmten Icinga-Objekttyp auswählen"
 
-#: library/Director/Job/ImportJob.php:48
+#: library/Director/Job/ImportJob.php:66
 msgid ""
 "Please choose your import source that should be executed. You could create "
 "different schedules for different sources or also opt for running all of "
@@ -3392,7 +3535,7 @@ msgstr ""
 "verschiedene Zeitpläne für verschiedene Quellen erstellt oder alle "
 "gleichzeitig ausgeführt werden."
 
-#: library/Director/Job/SyncJob.php:51
+#: library/Director/Job/SyncJob.php:65
 msgid ""
 "Please choose your synchronization rule that should be executed. You could "
 "create different schedules for different rules or also opt for running all "
@@ -3408,7 +3551,7 @@ msgstr ""
 "Bitte klicke \"Speicher\" erneut um die von der Abfrage bereitgestellten "
 "Spalten zu ermitteln"
 
-#: application/forms/KickstartForm.php:241
+#: application/forms/KickstartForm.php:251
 #, php-format
 msgid "Please click %s to create new DB resources"
 msgstr "%s klicken, um neue Datenbankressourcen zu erstellen"
@@ -3418,7 +3561,7 @@ msgstr "%s klicken, um neue Datenbankressourcen zu erstellen"
 msgid "Please click %s to create new resources"
 msgstr "%s klicken, um neue Ressourcen zu erstellen"
 
-#: application/forms/IcingaHostForm.php:150
+#: application/forms/IcingaHostForm.php:151
 #, php-format
 msgid "Please define a %s first"
 msgstr "Bitte zuerst eine %s definieren"
@@ -3427,11 +3570,11 @@ msgstr "Bitte zuerst eine %s definieren"
 msgid "Please define a Service Template first"
 msgstr "Bitte zuerst eine entsprechende Service-Vorlage definieren"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1136
+#: library/Director/Web/Form/DirectorObjectForm.php:1165
 msgid "Please define a related template first"
 msgstr "Bitte zuerst eine entsprechende Vorlage definieren"
 
-#: application/forms/KickstartForm.php:206
+#: application/forms/KickstartForm.php:213
 msgid ""
 "Please make sure that your database exists and your user has been granted "
 "enough permissions"
@@ -3439,7 +3582,7 @@ msgstr ""
 "Überprüfen, ob die Datenbank existiert und der Benutzer ausreichende "
 "Berechtigungen hat"
 
-#: application/forms/SettingsForm.php:20
+#: application/forms/SettingsForm.php:23
 msgid ""
 "Please only change those settings in case you are really sure that you are "
 "required to do so. Usually the defaults chosen by the Icinga Director should "
@@ -3479,11 +3622,12 @@ msgid "Plugin commands"
 msgstr "Plugin-Kommandos"
 
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:50
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:52
 msgid "Policy"
 msgstr "Richtlinie"
 
-#: application/forms/KickstartForm.php:134
 #: application/forms/IcingaEndpointForm.php:36
+#: application/forms/KickstartForm.php:138
 msgid "Port"
 msgstr "Port"
 
@@ -3495,18 +3639,10 @@ msgstr "Position"
 msgid "PostgreSQL schema"
 msgstr "PostgreSQL Schema"
 
-#: library/Director/Web/Tabs/ImportsourceTabs.php:43
 #: library/Director/Web/Tabs/ObjectTabs.php:86
+#: library/Director/Web/Tabs/ImportsourceTabs.php:49
 msgid "Preview"
 msgstr "Vorschau"
-
-#: library/vendor/ipl/Web/Widget/Paginator.php:321
-msgid "Previous page"
-msgstr "Vorhergehende Seite"
-
-#: library/vendor/ipl/Web/Table/Extension/ZfSortablePriority.php:141
-msgid "Prio"
-msgstr "Prio"
 
 #: library/Director/IcingaConfig/TypeFilterSet.php:23
 msgid "Problem"
@@ -3516,7 +3652,7 @@ msgstr "Problem"
 msgid "Problem handling"
 msgstr "Problembehandlung"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1340
+#: library/Director/Web/Form/DirectorObjectForm.php:1374
 msgid "Process performance data"
 msgstr "Performancedaten verarbeiten"
 
@@ -3525,20 +3661,21 @@ msgstr "Performancedaten verarbeiten"
 msgid "Properties"
 msgstr "Eigenschaften"
 
-#: application/forms/ImportRowModifierForm.php:28
-#: library/Director/Web/Table/PropertymodifierTable.php:100
+#: application/forms/ImportRowModifierForm.php:30
+#: library/Director/Web/Table/PropertymodifierTable.php:113
 msgid "Property"
 msgstr "Eigenschaft"
 
-#: application/controllers/ImportsourceController.php:84
-msgid "Property modifiers"
-msgstr "Eigenschaftsmodifikatoren"
+#: application/controllers/ImportsourceController.php:161
+#, php-format
+msgid "Property modifiers: %s"
+msgstr "Eigenschaftsmodifikatoren: %s"
 
-#: library/Director/Web/Table/CoreApiFieldsTable.php:79
+#: library/Director/Web/Table/CoreApiFieldsTable.php:80
 msgid "Protected"
 msgstr "Geschützt"
 
-#: application/controllers/InspectController.php:81
+#: application/controllers/InspectController.php:91
 msgid "Prototypes (methods)"
 msgstr "Prototypen (Methoden)"
 
@@ -3572,7 +3709,7 @@ msgstr "Bereiche"
 
 #: application/forms/DeployConfigForm.php:34
 msgid "Re-deploy now"
-msgstr "Jetzt erneut ausbringen"
+msgstr "Jetzt erneut ausrollen"
 
 #: library/Director/IcingaConfig/TypeFilterSet.php:24
 msgid "Recovery"
@@ -3586,11 +3723,12 @@ msgstr "Selbstbedienungs-API-Schlüssel neu generieren"
 msgid "Register"
 msgstr "Registrieren"
 
-#: library/Director/Web/SelfService.php:52
+#: library/Director/Web/SelfService.php:59
 msgid "Registered Agent"
 msgstr "Registrierter Agent"
 
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:34
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:32
 msgid "Regular Expression"
 msgstr "Regulärer Ausdruck"
 
@@ -3604,23 +3742,27 @@ msgstr ""
 msgid "Reject matching elements"
 msgstr "Übereinstimmende Elemente ablehnen"
 
-#: application/forms/IcingaDependencyForm.php:225
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:59
+msgid "Reject the whole row (Blacklist)"
+msgstr "Verwerfe die ganze Zeile (Blacklist)"
+
+#: application/forms/IcingaDependencyForm.php:269
 msgid "Related Objects"
 msgstr "Verwandte Objekte"
 
-#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:150
+#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:160
 msgid "Remove"
 msgstr "Entfernen"
 
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:484
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:480
 msgid "Remove this entry"
 msgstr "Diesen Eintrag entfernen"
 
-#: application/views/helpers/FormDataFilter.php:430
+#: application/views/helpers/FormDataFilter.php:507
 msgid "Remove this part of your filter"
 msgstr "Diesen Teil des Filters entfernen"
 
-#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:159
+#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:169
 msgid "Remove this set from this host"
 msgstr "Dieses Set von diesem Host entfernen"
 
@@ -3628,21 +3770,21 @@ msgstr "Dieses Set von diesem Host entfernen"
 msgid "Rename related vars"
 msgstr "Zugehörige Variablen umbenennen"
 
-#: application/controllers/ConfigController.php:60
+#: application/controllers/ConfigController.php:64
 msgid "Render config"
 msgstr "Konfiguration erstellen"
 
-#: application/controllers/ConfigController.php:258
+#: application/controllers/ConfigController.php:284
 msgid "Rendered file"
 msgstr "Erzeugte Datei"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:79
+#: library/Director/Web/Widget/DeploymentInfo.php:91
 #, php-format
 msgid "Rendered in %0.2fs, deployed in %0.2fs"
 msgstr "Erstellt in %0.2fs, ausgebracht in %0.2fs"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:371
-#: library/Director/Web/Widget/ActivityLogInfo.php:376
+#: library/Director/Web/Widget/ActivityLogInfo.php:408
+#: library/Director/Web/Widget/ActivityLogInfo.php:413
 msgid "Rendering"
 msgstr "Erstellen"
 
@@ -3655,19 +3797,23 @@ msgid "Replace"
 msgstr "Ersetzen"
 
 #: application/forms/IcingaCommandArgumentForm.php:119
-#: library/Director/Web/Table/CoreApiFieldsTable.php:78
+#: library/Director/Web/Table/CoreApiFieldsTable.php:79
 msgid "Required"
 msgstr "Benötigt"
 
-#: application/forms/RestoreObjectForm.php:15
+#: application/forms/IcingaServiceForm.php:138
+msgid "Restore"
+msgstr "Wiederherstellen"
+
+#: application/forms/RestoreObjectForm.php:17
 msgid "Restore former object"
 msgstr "Vorheriges Objekt wiederherstellen"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1268
+#: library/Director/Web/Form/DirectorObjectForm.php:1302
 msgid "Retry interval"
 msgstr "Wiederholungsintervall"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1270
+#: library/Director/Web/Form/DirectorObjectForm.php:1304
 msgid ""
 "Retry interval, will be applied after a state change unless the next hard "
 "state is reached"
@@ -3684,16 +3830,16 @@ msgstr "Suchschlüssel unverändert zurück geben"
 msgid "Rule name"
 msgstr "Regelname"
 
-#: library/Director/Job/ImportJob.php:85
+#: library/Director/Job/ImportJob.php:103
 msgid "Run all imports at once"
 msgstr "Alle Importe gleichzeitig ausführen"
 
-#: library/Director/Job/SyncJob.php:94
+#: library/Director/Job/SyncJob.php:108
 msgid "Run all rules at once"
 msgstr "Alle Regeln gleichzeitig ausführen"
 
-#: application/forms/KickstartForm.php:178
-#: library/Director/Job/ImportJob.php:58
+#: application/forms/KickstartForm.php:182
+#: library/Director/Job/ImportJob.php:76
 msgid "Run import"
 msgstr "Import ausführen"
 
@@ -3701,13 +3847,9 @@ msgstr "Import ausführen"
 msgid "Run interval"
 msgstr "Laufintervall"
 
-#: application/forms/IcingaServiceForm.php:429
+#: application/forms/IcingaServiceForm.php:645
 msgid "Run on agent"
 msgstr "Auf Agent ausführen"
-
-#: library/vendor/ipl/Web/Table/ZfQueryBasedTable.php:124
-msgid "SQL Query"
-msgstr "SQL-Abfrage"
 
 #: library/Director/Dashboard/Dashlet/JobDashlet.php:29
 msgid ""
@@ -3717,8 +3859,8 @@ msgstr ""
 "Import, Synchronisation, Ausrollen der Konfiguration, Bereinigung und mehr "
 "planen und automatisieren"
 
-#: library/Director/Dashboard/NotificationsDashboard.php:14
 #: library/Director/Dashboard/UsersDashboard.php:15
+#: library/Director/Dashboard/NotificationsDashboard.php:14
 msgid "Schedule your notifications"
 msgstr "Benachrichtigungen planen"
 
@@ -3730,7 +3872,7 @@ msgstr ""
 "Benachrichtigungen planen. Wer soll wann benachrichtigt werden, wofür, und "
 "für welche Art von Problemen"
 
-#: application/forms/SettingsForm.php:131
+#: application/forms/SettingsForm.php:145
 msgid ""
 "Script or tool to call when activating a new configuration stage. (e.g. "
 "sudo /usr/local/bin/icinga-director-activate) (name of the stage will be the "
@@ -3740,20 +3882,12 @@ msgstr ""
 "ausgeführt werden soll. (z.B. sudo /usr/local/bin/icinga-director-activate) "
 "(der Name der Konfiguration wird dem Skript als Argument mitgegeben)"
 
-#: library/vendor/ipl/Web/Table/Extension/QuickSearch.php:43
-msgid "Search is simple! Try to combine multiple words"
-msgstr "Suchen ist einfach! Versuche, mehrere Wörter zu kombinieren"
-
-#: library/vendor/ipl/Web/Table/Extension/QuickSearch.php:45
-msgid "Search..."
-msgstr "Suchen..."
-
-#: application/controllers/SettingsController.php:36
-#: application/controllers/SelfServiceController.php:91
+#: application/controllers/SelfServiceController.php:101
+#: application/controllers/SettingsController.php:43
 msgid "Self Service"
 msgstr "Selbstbedienung"
 
-#: application/controllers/SelfServiceController.php:92
+#: application/controllers/SelfServiceController.php:102
 msgid "Self Service - Host Registration"
 msgstr "Selbstbedienung - Host-Registrierung"
 
@@ -3761,7 +3895,7 @@ msgstr "Selbstbedienung - Host-Registrierung"
 msgid "Self Service API"
 msgstr "Selbstbedienungs-API"
 
-#: application/controllers/SettingsController.php:37
+#: application/controllers/SettingsController.php:44
 msgid "Self Service API - Global Settings"
 msgstr "Selbstbedienungs-API - Globale Einstellungen"
 
@@ -3769,12 +3903,12 @@ msgstr "Selbstbedienungs-API - Globale Einstellungen"
 msgid "Self Service Settings have been stored"
 msgstr "Selbstbedienungseinstellungen wurden gespeichert"
 
-#: application/forms/IcingaUserForm.php:78
-#: library/Director/Web/Form/DirectorObjectForm.php:1328
+#: application/forms/IcingaUserForm.php:89
+#: library/Director/Web/Form/DirectorObjectForm.php:1362
 msgid "Send notifications"
 msgstr "Benachrichtigungen senden"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:66
+#: library/Director/Web/Widget/DeploymentInfo.php:78
 msgid "Sent to"
 msgstr "Senden an"
 
@@ -3803,7 +3937,7 @@ msgid "Service Set"
 msgstr "Service-Set"
 
 #: library/Director/Dashboard/Dashlet/ServiceSetsDashlet.php:11
-#: library/Director/Web/Table/CustomvarTable.php:44
+#: library/Director/Web/Table/CustomvarTable.php:45
 #: library/Director/Web/Table/CustomvarVariantsTable.php:60
 msgid "Service Sets"
 msgstr "Service-Sets"
@@ -3820,7 +3954,7 @@ msgstr "Dienst-Benutzeraccount"
 msgid "Service groups"
 msgstr "Servicegruppen"
 
-#: application/forms/IcingaServiceForm.php:408
+#: application/forms/IcingaServiceForm.php:620
 msgid ""
 "Service groups that should be directly assigned to this service. "
 "Servicegroups can be useful for various reasons. They are helpful to "
@@ -3838,16 +3972,17 @@ msgstr ""
 msgid "Service name"
 msgstr "Servicename"
 
-#: application/controllers/SuggestController.php:224
-#: library/Director/Objects/IcingaService.php:485
+#: application/controllers/SuggestController.php:238
+#: library/Director/Objects/IcingaService.php:590
 msgid "Service properties"
 msgstr "Service-Eigenschaften"
 
+#: application/forms/IcingaAddServiceSetForm.php:86
 #: application/forms/IcingaServiceSetForm.php:85
 msgid "Service set"
 msgstr "Service-Set"
 
-#: application/forms/IcingaServiceSetForm.php:29
+#: application/forms/IcingaServiceSetForm.php:28
 msgid "Service set name"
 msgstr "Service-Set Name"
 
@@ -3859,23 +3994,23 @@ msgstr "Auswahlmöglichkeite für Service-Vorlagen"
 msgid "Service template choices"
 msgstr "Auswahlmöglichkeiten für Service-Vorlagen"
 
-#: application/forms/IcingaServiceGroupForm.php:15
+#: application/forms/IcingaServiceGroupForm.php:14
 msgid "Servicegroup"
 msgstr "Servicegruppe"
 
+#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:132
 #: library/Director/Web/Table/IcingaAppliedServiceTable.php:32
-#: library/Director/Web/Table/IcingaHostServiceTable.php:94
-#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:125
+#: library/Director/Web/Table/IcingaHostServiceTable.php:105
 msgid "Servicename"
 msgstr "Servicename"
 
-#: configuration.php:76 application/controllers/ServiceController.php:55
+#: configuration.php:90 application/controllers/ServiceController.php:55
 #: application/controllers/ServiceController.php:78
-#: application/forms/IcingaNotificationForm.php:88
-#: application/forms/IcingaDependencyForm.php:64
-#: library/Director/Web/Tabs/ObjectTabs.php:75
-#: library/Director/Web/Table/CustomvarTable.php:43
+#: application/forms/IcingaDependencyForm.php:100
+#: application/forms/IcingaNotificationForm.php:90
+#: library/Director/Web/Table/CustomvarTable.php:44
 #: library/Director/Web/Table/CustomvarVariantsTable.php:59
+#: library/Director/Web/Tabs/ObjectTabs.php:75
 #: library/Director/DataType/DataTypeDirectorObject.php:56
 #: library/Director/IcingaConfig/StateFilterSet.php:23
 msgid "Services"
@@ -3886,7 +4021,7 @@ msgstr "Services"
 msgid "Services in this set: %s"
 msgstr "Services in diesem Set: %s"
 
-#: application/controllers/HostController.php:93
+#: application/controllers/HostController.php:128
 #, php-format
 msgid "Services: %s"
 msgstr "Services: %s"
@@ -3895,7 +4030,7 @@ msgstr "Services: %s"
 msgid "Serviceset"
 msgstr "Service-Set"
 
-#: application/forms/SyncPropertyForm.php:81
+#: application/forms/SyncPropertyForm.php:84
 msgid "Set based on filter"
 msgstr "Basierend auf Filter setzen"
 
@@ -3906,7 +4041,7 @@ msgstr "Auf \"false\" setzen"
 #: library/Director/PropertyModifier/PropertyModifierDnsRecords.php:34
 #: library/Director/PropertyModifier/PropertyModifierExtractFromDN.php:30
 #: library/Director/PropertyModifier/PropertyModifierGetHostByName.php:17
-#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:19
+#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:25
 msgid "Set no value (null)"
 msgstr "Keinen Wert setzen (null)"
 
@@ -3923,7 +4058,7 @@ msgstr "Auf \"true\" setzen"
 msgid "Sets"
 msgstr "Sets"
 
-#: application/forms/IcingaHostForm.php:100
+#: application/forms/IcingaHostForm.php:101
 msgid ""
 "Setting a command endpoint allows you to force host checks to be executed by "
 "a specific endpoint. Please carefully study the related Icinga documentation "
@@ -3933,20 +4068,20 @@ msgstr ""
 "einem bestimmten Endpoint. Bitte nicht verwenden, ohne die entsprechende "
 "Icinga-Dokumentation gelesen zu haben"
 
-#: application/controllers/ConfigController.php:195
-#: library/Director/Web/SelfService.php:83
+#: application/controllers/ConfigController.php:215
+#: library/Director/Web/SelfService.php:93
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: application/forms/SettingsForm.php:184
+#: application/forms/SettingsForm.php:198
 msgid "Settings have been stored"
 msgstr "Einstellungen wurden gespeichert"
 
-#: library/Director/Web/SelfService.php:76
+#: library/Director/Web/SelfService.php:86
 msgid "Share this Template for Self Service API"
 msgstr "Für die Selbstbedienungs-API freigeben"
 
-#: library/Director/Web/SelfService.php:74
+#: library/Director/Web/SelfService.php:84
 msgid "Shared for Self Service API"
 msgstr "Für die Selbstbedienungs-API freigegeben"
 
@@ -3955,15 +4090,19 @@ msgid "Should all the other characters be lowercased first?"
 msgstr ""
 "Sollen alle anderen Zeichen zuvor in Kleinbuchstaben umgewandelt werden?"
 
-#: application/controllers/HostController.php:351
+#: application/controllers/HostController.php:405
 msgid "Show"
 msgstr "Zeigen"
+
+#: library/Director/Web/Widget/AdditionalTableActions.php:75
+msgid "Show SQL"
+msgstr "SQL anzeigen"
 
 #: library/Director/Web/Table/ApplyRulesTable.php:103
 msgid "Show affected Objects"
 msgstr "Betroffene Objekte zeigen"
 
-#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:461
+#: library/Director/Web/Form/IplElement/ExtensibleSetElement.php:457
 msgid "Show available options"
 msgstr "Verfügbare Optionen anzeigen"
 
@@ -3975,20 +4114,16 @@ msgstr "Basierend auf Filter zeigen"
 msgid "Show details related to this change"
 msgstr "Details zu dieser Änderung zeigen"
 
-#: library/Director/Web/ObjectPreview.php:46
+#: library/Director/Web/ObjectPreview.php:52
 msgid "Show normal"
 msgstr "Normal anzeigen"
 
-#: library/Director/Web/ObjectPreview.php:55
+#: library/Director/Web/ObjectPreview.php:61
 msgid "Show resolved"
 msgstr "Aufgelöst anzeigen"
 
-#: library/vendor/ipl/Web/Widget/Paginator.php:294
-#, php-format
-msgid "Show rows %u to %u of %u"
-msgstr "Zeige die Zeilen %u bis %u von %u"
-
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:33
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:31
 msgid "Simple match with wildcards (*)"
 msgstr "Einfache Suche mit Platzhaltern (*)"
 
@@ -4012,11 +4147,11 @@ msgstr "Quellspalte"
 msgid "Source Expression"
 msgstr "Quellausdruck"
 
-#: application/forms/SyncPropertyForm.php:35
+#: application/forms/SyncPropertyForm.php:38
 msgid "Source Name"
 msgstr "Quellenname"
 
-#: application/forms/SelfServiceSettingsForm.php:86
+#: application/forms/SelfServiceSettingsForm.php:101
 msgid "Source Path"
 msgstr "Quellpfad"
 
@@ -4024,7 +4159,7 @@ msgstr "Quellpfad"
 msgid "Source Type"
 msgstr "Quellentyp"
 
-#: application/forms/SyncPropertyForm.php:151
+#: application/forms/SyncPropertyForm.php:159
 msgid "Source columns"
 msgstr "Quellspalten"
 
@@ -4032,37 +4167,37 @@ msgstr "Quellspalten"
 msgid "Source field"
 msgstr "Quellenfeld"
 
+#: library/Director/Web/Table/ImportrunTable.php:30
 #: library/Director/Web/Table/ImportsourceTable.php:18
 #: library/Director/Web/Table/SyncpropertyTable.php:61
-#: library/Director/Web/Table/ImportrunTable.php:30
 msgid "Source name"
 msgstr "Quellenname"
 
-#: application/forms/SyncPropertyForm.php:321
+#: application/forms/SyncPropertyForm.php:354
 msgid "Special properties"
 msgstr "Spezielle Eigenschaften"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:69
+#: library/Director/Web/Widget/DeploymentInfo.php:81
 msgid "Stage name"
 msgstr "Phasenname"
 
-#: library/Director/Web/Widget/SyncRunDetails.php:24
+#: library/Director/Web/Widget/SyncRunDetails.php:25
 msgid "Start time"
 msgstr "Startzeit"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:70
+#: library/Director/Web/Widget/DeploymentInfo.php:82
 msgid "Startup"
 msgstr "Start"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:144
+#: library/Director/Web/Widget/DeploymentInfo.php:159
 msgid "Startup Log"
 msgstr "Start-Log"
 
-#: library/Director/Web/Table/CoreApiFieldsTable.php:76
+#: library/Director/Web/Table/CoreApiFieldsTable.php:77
 msgid "State"
 msgstr "Zustand"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1543
+#: library/Director/Web/Form/DirectorObjectForm.php:1610
 msgid "State and transition type filters"
 msgstr "Status- und Übergangstypen-Filter"
 
@@ -4070,29 +4205,29 @@ msgstr "Status- und Übergangstypen-Filter"
 msgid "State changes"
 msgstr "Zustandsänderungen"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1518
+#: library/Director/Web/Form/DirectorObjectForm.php:1585
 msgid "States"
 msgstr "Zustände"
 
-#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:78
+#: library/Director/Web/Widget/DeployedConfigInfoHeader.php:81
 msgid "Statistics"
 msgstr "Statistiken"
 
-#: application/controllers/InspectController.php:37
-#: application/controllers/InspectController.php:101
+#: application/controllers/InspectController.php:43
+#: application/controllers/InspectController.php:151
 msgid "Status"
 msgstr "Zustand"
 
-#: library/Director/Web/SelfService.php:123
+#: library/Director/Web/SelfService.php:134
 msgid "Stop sharing this Template"
 msgstr "Diese Vorlage nicht mehr bereitstellen"
 
-#: application/forms/SettingsForm.php:93
-#: library/Director/Web/Form/DirectorObjectForm.php:482
+#: application/forms/SettingsForm.php:107
+#: library/Director/Web/Form/DirectorObjectForm.php:496
 msgid "Store"
 msgstr "Speichern"
 
-#: application/forms/KickstartForm.php:31
+#: application/forms/KickstartForm.php:35
 msgid "Store configuration"
 msgstr "Konfiguration speichern"
 
@@ -4104,7 +4239,7 @@ msgstr "Konfiguration speichern"
 msgid "String"
 msgstr "Zeichenkette"
 
-#: application/views/helpers/FormDataFilter.php:457
+#: application/views/helpers/FormDataFilter.php:534
 msgid "Strip this operator, preserve child nodes"
 msgstr "Diesen Operator entfernen, Kind-Knoten beibehalten"
 
@@ -4112,7 +4247,7 @@ msgstr "Diesen Operator entfernen, Kind-Knoten beibehalten"
 msgid "Submit"
 msgstr "Absenden"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:121
+#: library/Director/Web/Widget/DeploymentInfo.php:133
 msgid "Succeeded"
 msgstr "Gelungen"
 
@@ -4128,16 +4263,16 @@ msgstr "Zur Tabellenansicht wechseln"
 msgid "Switch to Tree view"
 msgstr "Zur Baumansicht wechseln"
 
-#: application/controllers/SyncruleController.php:184
+#: application/controllers/SyncruleController.php:274
 #, php-format
 msgid "Sync \"%s\": %s"
 msgstr "\"%s\": \"%s\" synchronisieren"
 
-#: application/controllers/SyncruleController.php:101
+#: application/controllers/SyncruleController.php:116
 msgid "Sync Properties"
 msgstr "Synchronisationseigenschaften"
 
-#: application/controllers/SyncruleController.php:216
+#: application/controllers/SyncruleController.php:312
 msgid "Sync history"
 msgstr "Synchronisationshistorie"
 
@@ -4150,19 +4285,20 @@ msgstr ""
 "Nur einen Teil der importierten Objekte mit dieser Regel synchronisieren. "
 "Die Icinga Web 2 Filter Syntax kann verwendet werden. z.B: %s"
 
-#: application/controllers/SyncruleController.php:162
+#: application/controllers/SyncruleController.php:242
 msgid "Sync properties"
 msgstr "Synchronisationseigenschaften"
 
-#: application/controllers/SyncrulesController.php:13
+#: application/controllers/SyncruleController.php:206
+#: application/controllers/SyncrulesController.php:25
 #: library/Director/Web/Tabs/ImportTabs.php:23
 #: library/Director/Web/Tabs/SyncRuleTabs.php:29
 #: library/Director/Web/Tabs/SyncRuleTabs.php:46
 msgid "Sync rule"
 msgstr "Synchronisationsregel"
 
-#: application/controllers/SyncruleController.php:27
-#: application/controllers/SyncruleController.php:135
+#: application/controllers/SyncruleController.php:35
+#: application/controllers/SyncruleController.php:168
 #, php-format
 msgid "Sync rule: %s"
 msgstr "Synchronisationsregel: %s"
@@ -4171,7 +4307,7 @@ msgstr "Synchronisationsregel: %s"
 msgid "Synchronization failed"
 msgstr "Synchronisation fehlgeschlagen"
 
-#: library/Director/Job/SyncJob.php:49
+#: library/Director/Job/SyncJob.php:63
 msgid "Synchronization rule"
 msgstr "Synchronisationsregel"
 
@@ -4189,12 +4325,12 @@ msgstr "Tabelle"
 msgid "Target data type"
 msgstr "Zieldatentyp"
 
-#: application/forms/ImportRowModifierForm.php:35
+#: application/forms/ImportRowModifierForm.php:44
 msgid "Target property"
 msgstr "Zieleigenschaft"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1025
-#: library/Director/Web/Form/DirectorObjectForm.php:1029
+#: library/Director/Web/Form/DirectorObjectForm.php:1049
+#: library/Director/Web/Form/DirectorObjectForm.php:1053
 #: library/Director/Web/Controller/TemplateController.php:138
 msgid "Template"
 msgstr "Vorlage"
@@ -4203,42 +4339,42 @@ msgstr "Vorlage"
 msgid "Template Name"
 msgstr "Vorlagenname"
 
-#: library/Director/Web/Controller/ObjectController.php:222
 #: library/Director/Web/Controller/TemplateController.php:107
+#: library/Director/Web/Controller/ObjectController.php:226
 #, php-format
 msgid "Template: %s"
 msgstr "Vorlage: %s"
 
-#: application/forms/IcingaServiceForm.php:457
-#: library/Director/Web/Tree/TemplateTreeRenderer.php:43
-#: library/Director/Web/Tabs/ObjectsTabs.php:53
-#: library/Director/Web/Table/NotificationTemplateUsageTable.php:10
-#: library/Director/Web/Table/TemplateUsageTable.php:23
+#: application/forms/IcingaServiceForm.php:673
 #: library/Director/Web/Table/DependencyTemplateUsageTable.php:10
 #: library/Director/Web/Table/HostTemplateUsageTable.php:10
+#: library/Director/Web/Table/NotificationTemplateUsageTable.php:10
 #: library/Director/Web/Table/ServiceTemplateUsageTable.php:10
+#: library/Director/Web/Table/TemplateUsageTable.php:23
+#: library/Director/Web/Tabs/ObjectsTabs.php:53
+#: library/Director/Web/Tree/TemplateTreeRenderer.php:43
 msgid "Templates"
 msgstr "Vorlagen"
 
-#: library/Director/Job/ImportJob.php:37
+#: library/Director/Job/ImportJob.php:55
 msgid "The \"Import\" job allows to run import actions at regular intervals"
 msgstr ""
 "Der \"Import\" Auftrag erlaubt das Ausführen von Importen in regelmäßigen "
 "Abständen"
 
-#: library/Director/Job/SyncJob.php:39
+#: library/Director/Job/SyncJob.php:53
 msgid "The \"Sync\" job allows to run sync actions at regular intervals"
 msgstr ""
 "Der \"Sync\" Auftrag erlaubt das Ausführen von Synchronisationen in "
 "regelmäßigen Abständen"
 
 #: application/forms/IcingaTimePeriodRangeForm.php:84
-#: library/Director/Web/Form/DirectorObjectForm.php:626
+#: library/Director/Web/Form/DirectorObjectForm.php:640
 #, php-format
 msgid "The %s has successfully been stored"
 msgstr "%s wurde erfolgreich gespeichert"
 
-#: library/Director/Job/ConfigJob.php:217
+#: library/Director/Job/ConfigJob.php:221
 msgid ""
 "The Config job allows you to generate and eventually deploy your Icinga 2 "
 "configuration"
@@ -4246,7 +4382,7 @@ msgstr ""
 "Der Auftrag \"Konfiguration\" erlaubt das Erstellen und eventuelle Ausrollen "
 "der Icinga 2 Konfiguration"
 
-#: application/forms/IcingaUserForm.php:34
+#: application/forms/IcingaUserForm.php:37
 msgid "The Email address of the user."
 msgstr "Die E-Mail-Adresse des Benutzers."
 
@@ -4258,7 +4394,7 @@ msgstr ""
 "Der \"Bereinigen\" Auftrag bietet verschiedene Aktionen, die die Director-"
 "Datenbank schnell und sauber halten"
 
-#: application/controllers/SettingsController.php:31
+#: application/controllers/SettingsController.php:38
 msgid ""
 "The Icinga Director Self Service API allows your Hosts to register "
 "themselves. This allows them to get their Icinga Agent configured, installed "
@@ -4267,6 +4403,16 @@ msgstr ""
 "Die Icinga Director Selbstbedienungs-API erlaubt es Hosts sich selbst zu "
 "registrieren. Auf diese Weise wird deren Icinga-Agent konfiguriert, "
 "installiert und automatisch aktualisiert."
+
+#: application/forms/SettingsForm.php:45
+msgid ""
+"The Icinga Package name Director uses to deploy it's configuration. This "
+"defaults to \"director\" and should not be changed unless you really know "
+"what you're doing"
+msgstr ""
+"Der Icinga Package-Name welchen der Director zum Ausrollen seiner "
+"Konfiguration benutzt. Für gewöhnlich ist das \"director\" und sollte nur "
+"geändert werden, wenn die Auswirkung dieser Anpassung bewusst ist"
 
 #: library/Director/Import/ImportSourceLdap.php:69
 msgid ""
@@ -4280,6 +4426,11 @@ msgstr ""
 #, php-format
 msgid "The Self Service API key for %s has been dropped"
 msgstr "Der Selbstbedienungs-API-Schlüssel für %s wurde verworfen"
+
+#: application/forms/IcingaAddServiceSetForm.php:116
+#, php-format
+msgid "The Service Set \"%s\" has been added to %d hosts"
+msgstr "Das Service-Set \"%s\" wurde zu %d Hosts hinzugefügt"
 
 #: application/forms/IcingaCommandArgumentForm.php:162
 #, php-format
@@ -4295,7 +4446,7 @@ msgid ""
 "The caption which should be displayed to your users when this field is shown"
 msgstr "Die Beschriftung welche Benutzern zu diesem Feld angezeigt werden soll"
 
-#: application/forms/IcingaDependencyForm.php:189
+#: application/forms/IcingaDependencyForm.php:233
 msgid "The child host."
 msgstr "Der Kind-Host."
 
@@ -4314,7 +4465,7 @@ msgstr ""
 "bedeutet, das aktuell keine Leerzeichen in Plugin-Namen und Pfaden "
 "unterstützt werden."
 
-#: application/forms/KickstartForm.php:154
+#: application/forms/KickstartForm.php:158
 msgid "The corresponding password"
 msgstr "Das entsprechende Passwort"
 
@@ -4330,12 +4481,12 @@ msgstr "Der erste (linkeste) CN"
 msgid "The first (leftmost) OU"
 msgstr "Die erste (linkeste) OU"
 
-#: application/forms/IcingaServiceForm.php:492
+#: application/forms/IcingaServiceForm.php:712
 #, php-format
 msgid "The given properties have been stored for \"%s\""
 msgstr "Die übergebenen Eigenschaften wurden für \"%s\" gespeichert"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1521
+#: library/Director/Web/Form/DirectorObjectForm.php:1588
 msgid "The host/service states you want to get notifications for"
 msgstr ""
 "Die Host/Service Status, für die Benachrichtigungen versandt werden sollen"
@@ -4344,19 +4495,19 @@ msgstr ""
 msgid "The last (rightmost) OU"
 msgstr "Die letzte (rechteste) OU"
 
-#: library/Director/Web/Widget/JobDetails.php:45
+#: library/Director/Web/Widget/JobDetails.php:52
 #, php-format
 msgid "The last attempt failed at %s: %s"
 msgstr "Der letzte Versuch schlug um %s: %s fehl"
 
-#: library/Director/Web/Widget/JobDetails.php:40
+#: library/Director/Web/Widget/JobDetails.php:47
 #, php-format
 msgid "The last attempt succeeded at %s"
 msgstr "Der letzte Versuch war um %s erfolgreich"
 
 #: library/Director/Dashboard/Dashlet/DeploymentDashlet.php:83
 msgid "The last deployment did not succeed"
-msgstr "Das letzte Ausbringen war nicht erfolgreich"
+msgstr "Das letzte Ausrollen war nicht erfolgreich"
 
 #: library/Director/Dashboard/Dashlet/DeploymentDashlet.php:85
 msgid "The last deployment is currently pending"
@@ -4366,8 +4517,16 @@ msgstr "Das Ausrollen der Konfiguration ist im Gange"
 msgid "The log duration time."
 msgstr "Die Dauer der Aufzeichnungen."
 
-#: application/forms/IcingaNotificationForm.php:232
-#: application/forms/IcingaDependencyForm.php:103
+#: application/forms/IcingaUserForm.php:160
+msgid ""
+"The name of a time period which determines when notifications to this User "
+"should be triggered. Not set by default."
+msgstr ""
+"Der Name des Zeitraumes, der angibt, wann Benachrichtigungen für diesen "
+"Benutzer ausgelöst werden sollen. Kein Default-Wert."
+
+#: application/forms/IcingaDependencyForm.php:140
+#: application/forms/IcingaNotificationForm.php:231
 msgid ""
 "The name of a time period which determines when this notification should be "
 "triggered. Not set by default."
@@ -4375,7 +4534,7 @@ msgstr ""
 "Der Name des Zeitraumes, der angibt, wann diese Benachrichtigung ausgelöst "
 "werden soll. Kein Default-Wert."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1306
+#: library/Director/Web/Form/DirectorObjectForm.php:1340
 msgid ""
 "The name of a time period which determines when this object should be "
 "monitored. Not limited by default."
@@ -4399,7 +4558,7 @@ msgstr "Der Name des Hosts"
 msgid "The name of the service"
 msgstr "Der Name des Service"
 
-#: application/forms/IcingaNotificationForm.php:176
+#: application/forms/IcingaNotificationForm.php:175
 msgid ""
 "The notification interval (in seconds). This interval is used for active "
 "notifications. Defaults to 30 minutes. If set to 0, re-notifications are "
@@ -4421,11 +4580,11 @@ msgstr ""
 "Ergebnis ist ein boolescher Wert welcher angibt, ob die Maske auf den "
 "numerischen Wert in der Quellspalte zutrifft"
 
-#: application/forms/IcingaUserForm.php:39
+#: application/forms/IcingaUserForm.php:42
 msgid "The pager address of the user."
 msgstr "Die Pageradresse des Benutzers."
 
-#: application/forms/IcingaDependencyForm.php:150
+#: application/forms/IcingaDependencyForm.php:194
 msgid "The parent host."
 msgstr "Der Eltern-Host."
 
@@ -4441,7 +4600,7 @@ msgstr ""
 msgid "The port of the endpoint."
 msgstr "Der Port des Endpunkts"
 
-#: application/forms/KickstartForm.php:137
+#: application/forms/KickstartForm.php:141
 msgid ""
 "The port you are going to use. The default port 5665 will be used if none is "
 "set"
@@ -4452,13 +4611,17 @@ msgstr ""
 #: application/forms/IcingaAddServiceForm.php:166
 #, php-format
 msgid "The service \"%s\" has been added to %d hosts"
-msgstr "Der Service \"%s\" wurde zu %d Hosts hinzugefüge"
+msgstr "Der Service \"%s\" wurde zu %d Hosts hinzugefügt"
+
+#: application/forms/IcingaAddServiceSetForm.php:88
+msgid "The service Set that should be assigned"
+msgstr "Das Service-Set welches zugewiesen werden soll"
 
 #: application/forms/IcingaServiceSetForm.php:87
 msgid "The service set that should be assigned to this host"
 msgstr "Das Service-Set welches diesem Host zugewiesen werden soll"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1531
+#: library/Director/Web/Form/DirectorObjectForm.php:1598
 msgid "The state transition types you want to get notifications for"
 msgstr ""
 "Die Arten von Statusänderungen, für die Benachrichtigungen verschickt werden "
@@ -4473,6 +4636,7 @@ msgid "The string you want to search for"
 msgstr "Die Zeichenkette, nach der gesucht werden soll"
 
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:41
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:43
 msgid ""
 "The string/pattern you want to search for. Depends on the chosen method, use "
 "www.* or *linux* for wildcard matches and expression like /^www\\d+\\./ in "
@@ -4528,7 +4692,7 @@ msgstr ""
 "Es sind %d Änderungen ausständig, wovon %d auf dieses Objekt angewendet "
 "werden"
 
-#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:75
+#: library/Director/Web/Navigation/Renderer/ConfigHealthItemRenderer.php:82
 #, php-format
 msgid "There are %d pending database migrations"
 msgstr "Es sind %d Datenbankmigrationen ausständig"
@@ -4546,9 +4710,9 @@ msgstr "Es gibt keine anstehenden Änderungen"
 
 #: application/forms/DeployConfigForm.php:36
 msgid "There are no pending changes. Deploy anyways"
-msgstr "Es gibt keine anstehenden Änderungen. Dennoch ausbringen"
+msgstr "Es gibt keine anstehenden Änderungen. Dennoch ausrollen"
 
-#: library/Director/Web/Widget/ImportSourceDetails.php:53
+#: library/Director/Web/Widget/ImportSourceDetails.php:58
 msgid ""
 "There are pending changes for this Import Source. You should trigger a new "
 "Import Run."
@@ -4556,7 +4720,7 @@ msgstr ""
 "Es gibt ausstehende Änderungen für diese Importquelle. Ein neuer Importlauf "
 "sollte angestoßen werden."
 
-#: application/controllers/SyncruleController.php:66
+#: application/controllers/SyncruleController.php:77
 msgid ""
 "There are pending changes for this Sync Rule. You should trigger a new Sync "
 "Run."
@@ -4564,7 +4728,7 @@ msgstr ""
 "Es gibt ausstehende Änderungen für diese Synchronisationsregel. Ein neuer "
 "Synchronisationslauf sollte angestoßen werden."
 
-#: application/forms/KickstartForm.php:55
+#: application/forms/KickstartForm.php:59
 msgid "There are pending database migrations"
 msgstr "Es sind Datenbankmigrationen ausständig"
 
@@ -4603,12 +4767,26 @@ msgstr ""
 "geschriebenes) Icinga Web 2 Modul diese Funktionalität nachrüsten, da "
 "Importquellen als Hook in Director realisiert werden"
 
-#: library/Director/Web/Widget/ImportSourceDetails.php:60
+#: application/controllers/CommandController.php:66
+#, php-format
+msgid "This Command is currently being used by %s"
+msgstr "Dieses Kommando wird gegenwärtig von %s benutzt"
+
+#: application/controllers/CommandController.php:73
+msgid "This Command is currently not in use"
+msgstr "Dieses Kommando wird gegenwärtig nicht benutzt"
+
+#: library/Director/Web/Form/DirectorObjectForm.php:895
+#, php-format
+msgid "This Command is still in use by %d other objects"
+msgstr "Dieses Kommando wird von %d anderen Objekten benutzt"
+
+#: library/Director/Web/Widget/ImportSourceDetails.php:65
 #, php-format
 msgid "This Import Source failed when last checked at %s: %s"
 msgstr "Diese Importquelle schlug bei der letzten Prüfung um %s fehl: %s"
 
-#: library/Director/Web/Widget/ImportSourceDetails.php:68
+#: library/Director/Web/Widget/ImportSourceDetails.php:73
 #, php-format
 msgid "This Import Source has an invalid state: %s"
 msgstr "Diese Importquelle hat einen ungültigen Zustand: %s"
@@ -4617,27 +4795,31 @@ msgstr "Diese Importquelle hat einen ungültigen Zustand: %s"
 msgid "This Import Source provides modified data"
 msgstr "Diese Importquelle stellt veränderte Daten zur Verfügung"
 
-#: library/Director/Web/Widget/ImportSourceDetails.php:43
+#: library/Director/Web/Widget/ImportSourceDetails.php:48
 #, php-format
 msgid "This Import Source was last found to be in sync at %s."
 msgstr "Diese Importquelle war zuletzt um %s syncron."
 
-#: application/controllers/SyncruleController.php:73
+#: application/forms/IcingaServiceForm.php:133
+msgid "This Service has been blacklisted on this host"
+msgstr "Dieser Service wurde auf diesem Host geblacklisted"
+
+#: application/controllers/SyncruleController.php:84
 #, php-format
 msgid "This Sync Rule failed when last checked at %s: %s"
 msgstr ""
 "Diese Synchronisationsregel schlug bei der letzten Prüfung um %s fehl: %s"
 
-#: application/controllers/SyncruleController.php:43
+#: application/controllers/SyncruleController.php:54
 msgid "This Sync Rule has never been run before."
 msgstr "Diese Synchronisationsregel wurde noch nie ausgeführt."
 
-#: application/controllers/SyncruleController.php:55
+#: application/controllers/SyncruleController.php:66
 #, php-format
 msgid "This Sync Rule was last found to by in Sync at %s."
 msgstr "Diese Synchronisationsregel war zuletzt synchron um %s."
 
-#: application/forms/SyncPropertyForm.php:101
+#: application/forms/SyncPropertyForm.php:104
 msgid ""
 "This allows to filter for specific parts within the given source expression. "
 "You are allowed to refer all imported columns. Examples: host=www* would set "
@@ -4654,11 +4836,11 @@ msgstr ""
 msgid "This allows to temporarily disable this job"
 msgstr "Erlaubt das vorübergehende Deaktivieren dieses Auftrags"
 
-#: application/forms/IcingaHostGroupForm.php:31
-#: application/forms/IcingaNotificationForm.php:108
-#: application/forms/IcingaServiceGroupForm.php:31
-#: application/forms/IcingaServiceForm.php:244
-#: application/forms/IcingaDependencyForm.php:83
+#: application/forms/IcingaDependencyForm.php:115
+#: application/forms/IcingaNotificationForm.php:106
+#: application/forms/IcingaHostGroupForm.php:30
+#: application/forms/IcingaServiceGroupForm.php:30
+#: application/forms/IcingaServiceForm.php:436
 msgid ""
 "This allows you to configure an assignment filter. Please feel free to "
 "combine as many nested operators as you want"
@@ -4666,7 +4848,7 @@ msgstr ""
 "Hiermit lässt sich ein Zuweisungsfilter (assign) definieren. Dabei lassen "
 "sich beliebig viele Operatoren beliebig tief verschachtelt benutzen"
 
-#: application/forms/IcingaServiceSetForm.php:117
+#: application/forms/IcingaServiceSetForm.php:121
 msgid ""
 "This allows you to configure an assignment filter. Please feel free to "
 "combine as many nested operators as you want. You might also want to skip "
@@ -4678,7 +4860,7 @@ msgstr ""
 "Alternativ kann man diesen Service auch ausschließlich an einzelne Hosts "
 "direkt zuweisen"
 
-#: library/Director/Job/ConfigJob.php:193
+#: library/Director/Job/ConfigJob.php:197
 msgid "This allows you to immediately deploy a modified configuration"
 msgstr "Dies erlaubt das sofortige Ausrollen einer veränderten Konfiguration"
 
@@ -4692,15 +4874,11 @@ msgid "This allows you to modify properties for all chosen hosts at once"
 msgstr ""
 "Hiermit lassen sich Eigenschaften für alle gewählten Hosts auf einmal ändern"
 
-#: application/controllers/DependenciesController.php:22
-msgid "This feature is still experimental"
-msgstr "Dieses Feature ist noch experimentell"
-
-#: application/forms/KickstartForm.php:237
+#: application/forms/KickstartForm.php:247
 msgid "This has to be a MySQL or PostgreSQL database"
 msgstr "Muss eine MySQL oder PostgeSQL Datenbank sein"
 
-#: library/Director/Web/SelfService.php:55
+#: library/Director/Web/SelfService.php:62
 msgid ""
 "This host has been registered via the Icinga Director Self Service API. In "
 "case you re-installed the host or somehow lost it's secret key, you might "
@@ -4712,7 +4890,7 @@ msgstr ""
 "ging, kann es erwünscht sein, den aktuellen Schlüssel zu verwerfen. Das "
 "würde es erlauben, denselben Host neu zu registrieren."
 
-#: application/controllers/InspectController.php:63
+#: application/controllers/InspectController.php:73
 msgid "This is an abstract object type."
 msgstr "Das ist ein abstrakter Objekttyp"
 
@@ -4721,7 +4899,7 @@ msgstr "Das ist ein abstrakter Objekttyp"
 msgid "This is the \"%s\" %s Template. Based on this, you might want to:"
 msgstr "Das ist die \"%s\" %s Vorlage. Basierend auf diese, kann man:"
 
-#: application/forms/KickstartForm.php:112
+#: application/forms/KickstartForm.php:116
 msgid ""
 "This is the name of the Endpoint object (and certificate name) you created "
 "for your ApiListener object. In case you are unsure what this means please "
@@ -4805,21 +4983,21 @@ msgstr ""
 "Dies ist der Konfigurations-Master zu welchem sämtliche Konfiguration "
 "ausgerollt wird"
 
-#: library/Director/Web/Widget/JobDetails.php:51
+#: library/Director/Web/Widget/JobDetails.php:58
 msgid "This job has not been executed yet"
 msgstr "Dieser Auftrag wurde bisher nicht ausgeführt"
 
-#: library/Director/Web/Widget/JobDetails.php:27
+#: library/Director/Web/Widget/JobDetails.php:34
 #, php-format
 msgid "This job runs every %ds and is currently pending"
 msgstr "Dieser Auftrag läuft alle %d und ist aktuell ausständig"
 
-#: library/Director/Web/Widget/JobDetails.php:31
+#: library/Director/Web/Widget/JobDetails.php:38
 #, php-format
 msgid "This job runs every %ds."
 msgstr "Dieser Auftrag läuft alle %d."
 
-#: library/Director/Web/Widget/JobDetails.php:18
+#: library/Director/Web/Widget/JobDetails.php:25
 #, php-format
 msgid ""
 "This job would run every %ds. It has been disabled and will therefore not be "
@@ -4866,19 +5044,19 @@ msgstr ""
 "\"Kombinieren\", falls die gegebenen Datenquelle keine solche Spalte "
 "bereitstellen kann"
 
-#: application/forms/ImportRowModifierForm.php:29
+#: application/forms/ImportRowModifierForm.php:31
 msgid "This must be an import source column (property)"
 msgstr "Muss eine Spalte der Importquelle sein (Eigenschaft)"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:377
+#: library/Director/Web/Widget/ActivityLogInfo.php:414
 msgid "This object has been disabled"
 msgstr "Dieses Objekt wurde deaktiviert"
 
-#: library/Director/Web/Widget/ActivityLogInfo.php:372
+#: library/Director/Web/Widget/ActivityLogInfo.php:409
 msgid "This object has been enabled"
 msgstr "Dieses Objekt wurde aktiviert"
 
-#: library/Director/Web/ObjectPreview.php:70
+#: library/Director/Web/ObjectPreview.php:77
 msgid "This object will not be deployed as it has been disabled"
 msgstr "Das Objekt wird nicht ausgebracht, da es deaktiviert wurde"
 
@@ -4896,7 +5074,7 @@ msgstr ""
 "einen solchen nicht bereitstellt. Die gewählte \"Eigenschaft\" hat hier "
 "keine Auswirkung und wird ignoriert."
 
-#: library/Director/Web/SelfService.php:214
+#: library/Director/Web/SelfService.php:234
 msgid ""
 "This requires the Icinga Agent to be installed. It generates and signs it's "
 "certificate and it also generates a minimal icinga2.conf to get your agent "
@@ -4906,7 +5084,7 @@ msgstr ""
 "sein Zertifikat und erstellt eine minimale icinga2.conf mit welcher der "
 "Agent zu den ihm übergeordneten Systemen verbunden wird"
 
-#: application/forms/IcingaServiceForm.php:171
+#: application/forms/IcingaServiceForm.php:359
 #, php-format
 msgid ""
 "This service belongs to the %s Service Set. Still, you might want to "
@@ -4915,7 +5093,7 @@ msgstr ""
 "Dieser Service gehört zum Service Set %s. Dennoch können die folgenden "
 "Eigenschaften nur für diesen speziellen Host geändert werden."
 
-#: application/forms/IcingaServiceForm.php:211
+#: application/forms/IcingaServiceForm.php:403
 #, php-format
 msgid ""
 "This service belongs to the service set \"%s\". Still, you might want to "
@@ -4924,7 +5102,7 @@ msgstr ""
 "Dieser Service gehört zum Set \"%s\". Dennoch können die folgenden "
 "Eigenschaften nur für diesen speziellen Host geändert werden."
 
-#: application/forms/IcingaServiceForm.php:152
+#: application/forms/IcingaServiceForm.php:340
 msgid ""
 "This service has been generated in an automated way, but still allows you to "
 "override the following properties in a safe way."
@@ -4932,7 +5110,7 @@ msgstr ""
 "Dieser Service wurde durch einen Automatismus erstellt, erlaubt es aber "
 "dennoch die folgenden Eigenschaften auf sichere Weise zu überschreiben."
 
-#: application/forms/IcingaServiceForm.php:158
+#: application/forms/IcingaServiceForm.php:346
 #, php-format
 msgid ""
 "This service has been generated using the %s apply rule, assigned where %s"
@@ -4940,7 +5118,7 @@ msgstr ""
 "Dieser Service wurde durch die Apply-Regel %s erstellt, und wird zugewiesen "
 "wo %s"
 
-#: application/forms/IcingaServiceForm.php:183
+#: application/forms/IcingaServiceForm.php:371
 #, php-format
 msgid ""
 "This service has been inherited from %s. Still, you might want to change the "
@@ -4949,7 +5127,7 @@ msgstr ""
 "Dieser Service wurde von %s geerbt. Dennoch können die folgenden "
 "Eigenschaften nur für diesen speziellen Host geändert werden."
 
-#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:143
+#: library/Director/Web/Table/IcingaServiceSetServiceTable.php:153
 #, php-format
 msgid "This set has been inherited from %s"
 msgstr "Dieses Set wurde von %s geerbt"
@@ -4966,7 +5144,7 @@ msgstr ""
 msgid "This template is not in use"
 msgstr "Diese Vorlage ist nicht in Verwendung"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:870
+#: library/Director/Web/Form/DirectorObjectForm.php:885
 #, php-format
 msgid "This template is still in use by %d other objects"
 msgstr "Diese Vorlage ist noch in Verwendung durch %d andere Objekte"
@@ -4979,11 +5157,11 @@ msgstr "Dies wird als Bezeichner für diese Auswahlmöglichkeit angezeigt werden
 msgid "This will be the visible caption for this entry"
 msgstr "Die sichtbare Bezeichnung für diesen Eintrag"
 
-#: library/Director/Web/SelfService.php:112
+#: library/Director/Web/SelfService.php:123
 msgid "This will invalidate the former key"
 msgstr "Das macht den vorherigen Schlüssel ungültig"
 
-#: library/Director/Web/SelfService.php:204
+#: library/Director/Web/SelfService.php:224
 msgid "Ticket"
 msgstr "Ticket"
 
@@ -4991,9 +5169,10 @@ msgstr "Ticket"
 msgid "Time Period"
 msgstr "Zeitraum"
 
+#: application/forms/IcingaDependencyForm.php:138
+#: application/forms/IcingaNotificationForm.php:229
 #: application/forms/DirectorJobForm.php:60
-#: application/forms/IcingaNotificationForm.php:230
-#: application/forms/IcingaDependencyForm.php:101
+#: application/forms/IcingaUserForm.php:158
 msgid "Time period"
 msgstr "Zeitraum"
 
@@ -5001,7 +5180,7 @@ msgstr "Zeitraum"
 msgid "Time period ranges"
 msgstr "Zeiträume"
 
-#: application/forms/SyncPropertyForm.php:287
+#: application/forms/SyncPropertyForm.php:319
 msgid "Time ranges"
 msgstr "Zeiträume"
 
@@ -5043,8 +5222,8 @@ msgstr "Zeiträume"
 msgid "Timestamp"
 msgstr "Zeitstempel"
 
-#: application/forms/SelfServiceSettingsForm.php:139
-#: application/forms/SelfServiceSettingsForm.php:153
+#: application/forms/SelfServiceSettingsForm.php:46
+#: application/forms/SelfServiceSettingsForm.php:154
 msgid ""
 "To ensure downloaded packages are build by the Icinga Team and not "
 "compromised by third parties, you will be able to provide an array of SHA1 "
@@ -5060,7 +5239,7 @@ msgstr ""
 "keinem davon entspricht, wird das Powershell-Modul sich weigern mit Update "
 "oder Installation des Agenten fortzufahren"
 
-#: library/Director/Web/SelfService.php:177
+#: library/Director/Web/SelfService.php:197
 msgid "Top Down"
 msgstr "Top Down"
 
@@ -5080,7 +5259,7 @@ msgstr "In Kleinbuchstaben umwandeln"
 msgid "Transform to uppercase"
 msgstr "In Großbuchstaben umwandeln"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1528
+#: library/Director/Web/Form/DirectorObjectForm.php:1595
 msgid "Transition types"
 msgstr "Änderungsstypen"
 
@@ -5104,23 +5283,31 @@ msgstr "Anstoßen dieser Importquelle schlug fehl"
 msgid "Tweak some global Director settings"
 msgstr "Einige globale Director-Einstellungen anpassen"
 
-#: library/Director/Web/Table/CoreApiFieldsTable.php:72
 #: library/Director/Web/Table/GroupMemberTable.php:58
 #: library/Director/Web/Table/GroupMemberTable.php:63
+#: library/Director/Web/Table/CoreApiFieldsTable.php:73
 msgid "Type"
 msgstr "Typ"
 
-#: application/controllers/InspectController.php:74
+#: application/controllers/InspectController.php:84
 msgid "Type attributes"
 msgstr "Typ-Attribute"
 
-#: application/forms/SyncPropertyForm.php:159
+#: application/forms/SyncPropertyForm.php:167
 #: library/Director/DataType/DataTypeSqlQuery.php:27
 #, php-format
 msgid "Unable to fetch data: %s"
 msgstr "Daten konnten nicht geholt werden: %s"
 
-#: application/forms/KickstartForm.php:309
+#: application/forms/IcingaHostForm.php:377
+msgid ""
+"Unable to store a host with the given properties because of insufficient "
+"permissions"
+msgstr ""
+"Ein Host konnte aufgrund unzureichender Berechtigungen nicht mit den "
+"gegebenen Eigenschaften abgespeichert werden"
+
+#: application/forms/KickstartForm.php:329
 #, php-format
 msgid ""
 "Unable to store the configuration to \"%s\". Please check file permissions "
@@ -5138,11 +5325,11 @@ msgstr "Nicht ausgebrachte Konfigurationen"
 msgid "Unknown"
 msgstr "Unbekannt"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:118
+#: library/Director/Web/Widget/DeploymentInfo.php:130
 msgid "Unknown, failed to collect related information"
 msgstr "Unbekannt, entsprechende Information konnte nicht gesammelt werden"
 
-#: library/Director/Web/Widget/DeploymentInfo.php:116
+#: library/Director/Web/Widget/DeploymentInfo.php:128
 msgid "Unknown, still waiting for config check outcome"
 msgstr "Unbekannt, warte auf Ergebnis der Konfigurationsprüfung"
 
@@ -5178,11 +5365,16 @@ msgstr "Aktualisierungsmethode"
 msgid "Update Policy"
 msgstr "Aktualisierungsrichtlinie"
 
-#: library/Director/Web/Controller/ObjectController.php:237
+#: library/Director/Web/Controller/ObjectController.php:241
 msgid "Usage"
 msgstr "Benutzung"
 
-#: application/forms/SelfServiceSettingsForm.php:56
+#: library/Director/Web/Widget/AdditionalTableActions.php:101
+#, php-format
+msgid "Usage (%s)"
+msgstr "Benutzung (%s)"
+
+#: application/forms/SelfServiceSettingsForm.php:71
 msgid "Use a local file or network share"
 msgstr "Benutze eine lokales Verzeichnis oder eine Netzwerkfreigabe"
 
@@ -5190,7 +5382,7 @@ msgstr "Benutze eine lokales Verzeichnis oder eine Netzwerkfreigabe"
 msgid "Use lowercase first"
 msgstr "Erst in Kleinbuchstaben umwandeln"
 
-#: application/forms/SyncPropertyForm.php:244
+#: application/forms/SyncPropertyForm.php:271
 msgid "Used sources"
 msgstr "Verwendete Quellen"
 
@@ -5211,12 +5403,12 @@ msgstr "Benutzergruppen"
 msgid "User Templates"
 msgstr "Benutzervorlagen"
 
-#: application/forms/IcingaNotificationForm.php:154
+#: application/forms/IcingaNotificationForm.php:153
 #: library/Director/DataType/DataTypeDirectorObject.php:60
 msgid "User groups"
 msgstr "Benutzergruppen"
 
-#: application/forms/IcingaUserForm.php:98
+#: application/forms/IcingaUserForm.php:113
 msgid ""
 "User groups that should be directly assigned to this user. Groups can be "
 "useful for various reasons. You might prefer to send notifications to groups "
@@ -5226,20 +5418,20 @@ msgstr ""
 "Gruppen können für verschiedene Aufgaben verwendet werden. Eventuell ist es "
 "besser, Benachrichtigungen an Gruppen statt an einzelne Benutzer zu schicken"
 
-#: application/forms/IcingaNotificationForm.php:156
+#: application/forms/IcingaNotificationForm.php:155
 msgid "User groups that should be notified by this notifications"
 msgstr ""
 "Benutzergruppen, die durch diese Benachrichtigungen verständigt werden sollen"
 
-#: application/forms/IcingaUserForm.php:144
+#: application/forms/IcingaUserForm.php:194
 msgid "User properties"
 msgstr "Benutzereigenschaften"
 
-#: application/forms/IcingaUserForm.php:19
+#: application/forms/IcingaUserForm.php:22
 msgid "User template name"
 msgstr "Benutzervorlagenname"
 
-#: application/forms/IcingaUserGroupForm.php:14
+#: application/forms/IcingaUserGroupForm.php:17
 msgid "Usergroup"
 msgstr "Benutzergruppe"
 
@@ -5247,24 +5439,24 @@ msgstr "Benutzergruppe"
 msgid "Usergroups"
 msgstr "Benutzergruppen"
 
-#: application/forms/IcingaUserForm.php:25
+#: application/forms/IcingaUserForm.php:28
 msgid "Username"
 msgstr "Benutzername"
 
-#: application/forms/IcingaNotificationForm.php:129
-#: library/Director/Web/Table/CustomvarTable.php:46
+#: application/forms/IcingaNotificationForm.php:128
+#: library/Director/Web/Table/CustomvarTable.php:47
 #: library/Director/Web/Table/CustomvarVariantsTable.php:62
 #: library/Director/Import/ImportSourceCoreApi.php:65
 #: library/Director/DataType/DataTypeDirectorObject.php:59
 msgid "Users"
 msgstr "Benutzer"
 
-#: library/Director/Dashboard/Dashlet/UserObjectDashlet.php:16
 #: library/Director/Dashboard/Dashlet/UsersDashlet.php:13
+#: library/Director/Dashboard/Dashlet/UserObjectDashlet.php:16
 msgid "Users / Contacts"
 msgstr "Benutzer / Kontakte"
 
-#: application/forms/IcingaNotificationForm.php:131
+#: application/forms/IcingaNotificationForm.php:130
 msgid "Users that should be notified by this notifications"
 msgstr "Benutzer, die durch diese Benachrichtigungen verständigt werden sollen"
 
@@ -5277,8 +5469,8 @@ msgstr ""
 "werden, und zwar basierend auf Filtern welche einzelne oder mehrere "
 "Eigenschaften derselben kombinieren"
 
+#: application/forms/IcingaHostForm.php:330
 #: application/forms/IcingaHostSelfServiceForm.php:44
-#: application/forms/IcingaHostForm.php:338
 msgid "Usually your hosts main IPv6 address"
 msgstr "Üblicherweise die Haupt-IPv6-Adresse des Hosts"
 
@@ -5300,11 +5492,11 @@ msgid "Variable Value"
 msgstr "Variablenwert"
 
 #: application/forms/CustomvarForm.php:16
-#: library/Director/Web/Table/CustomvarTable.php:40
+#: library/Director/Web/Table/CustomvarTable.php:41
 msgid "Variable name"
 msgstr "Variablenname"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1346
+#: library/Director/Web/Form/DirectorObjectForm.php:1408
 msgid "Volatile"
 msgstr "Sprunghaft (Volatile)"
 
@@ -5324,7 +5516,7 @@ msgstr ""
 msgid "Warning"
 msgstr "Warnung"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1043
+#: library/Director/Web/Form/DirectorObjectForm.php:1067
 msgid ""
 "What kind of object this should be. Templates allow full access to any "
 "property, they are your building blocks for \"real\" objects. External "
@@ -5364,6 +5556,14 @@ msgstr "Was soll passieren wenn das resultierende Array leer ist?"
 msgid "What should happen with matching elements?"
 msgstr "Was soll mit passenden Elementen passieren?"
 
+#: library/Director/PropertyModifier/PropertyModifierRejectOrSelect.php:55
+msgid ""
+"What should happen with the row, when this property matches the given "
+"expression?"
+msgstr ""
+"Was soll mit der Zeile passieren, wenn der gegebene Ausdruck auf diese "
+"Eigenschaft zutrifft?"
+
 #: library/Director/PropertyModifier/PropertyModifierDnsRecords.php:32
 msgid "What should we do if the DNS lookup fails?"
 msgstr "Was soll geschehen, wenn die (DNS) Auflösung fehlschlägt?"
@@ -5376,7 +5576,7 @@ msgstr "Was soll geschehen, wenn der gewünschte Teil nicht existiert?"
 msgid "What should we do if the host (DNS) lookup fails?"
 msgstr "Was soll geschehen, wenn die (DNS) Auflösung fehlschlägt?"
 
-#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:16
+#: library/Director/PropertyModifier/PropertyModifierJsonDecode.php:22
 msgid "What should we do in case we are unable to decode the given string?"
 msgstr ""
 "Was soll geschehen, wenn sich der übergebene String nicht dekodieren lässt?"
@@ -5389,7 +5589,7 @@ msgstr "Was soll aus dem DN extrahiert werden?"
 msgid "What to use as your Icinga 2 Agent's Host Name"
 msgstr "Was soll als Hostname für den Icinga-2-Agent genutzt werden?"
 
-#: library/Director/Job/ConfigJob.php:205
+#: library/Director/Job/ConfigJob.php:209
 msgid ""
 "When deploying configuration, wait at least this amount of seconds unless "
 "the next deployment should take place"
@@ -5398,20 +5598,24 @@ msgstr ""
 "warten, bevor das nächste Ausrollen durchgeführt wird"
 
 #: library/Director/PropertyModifier/PropertyModifierSplit.php:21
-#: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:21
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:63
+#: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:21
 msgid "When empty"
 msgstr "falls leer"
 
-#: application/forms/IcingaNotificationForm.php:208
+#: application/forms/IcingaNotificationForm.php:207
 msgid "When the last notification should be sent"
 msgstr "Wann soll die letzte Nachricht versandt werden?"
 
-#: application/forms/SettingsForm.php:49
+#: application/forms/SettingsForm.php:63
 msgid "Whether all configured Jobs should be disabled"
 msgstr "Ob alle konfigurierten Jobs deaktiviert werden sollen"
 
-#: library/Director/Job/ConfigJob.php:179
+#: library/Director/Web/Form/DirectorObjectForm.php:1381
+msgid "Whether flap detection is enabled on this object"
+msgstr "Soll die Flapping-Erkennung für dieses Objekt aktiviert werden?"
+
+#: library/Director/Job/ConfigJob.php:183
 msgid ""
 "Whether rendering should be forced. If not enforced, this job re-renders the "
 "configuration only when there have been activities since the last rendered "
@@ -5421,7 +5625,7 @@ msgstr ""
 "Konfiguration nur erstellt, falls seit dem letzten Erstellen Aktivitäten "
 "durchgeführt wurden"
 
-#: application/forms/IcingaHostForm.php:89
+#: application/forms/IcingaHostForm.php:90
 msgid "Whether the agent is configured to accept config"
 msgstr "Soll der Agent Konfiguration annehmen?"
 
@@ -5433,7 +5637,7 @@ msgstr ""
 "Ist der Wert des Arguments eine Zeichenkette (erlaubt Makros wie $host$) "
 "oder eine Icinga-DSL-Lambda-Funktion? (wird in {{ ... }} eingeschlossen"
 
-#: application/forms/IcingaServiceForm.php:431
+#: application/forms/IcingaServiceForm.php:647
 msgid ""
 "Whether the check commmand for this service should be executed on the Icinga "
 "agent"
@@ -5450,7 +5654,7 @@ msgstr ""
 "wird dieser (z.B. -H) hinzugefügt, es ist also nicht erforderlich dies "
 "explizit auf \"Nein\" zu setzen."
 
-#: application/forms/IcingaHostForm.php:83
+#: application/forms/IcingaHostForm.php:84
 msgid ""
 "Whether the parent (master) node should actively try to connect to this agent"
 msgstr ""
@@ -5469,11 +5673,11 @@ msgstr ""
 msgid "Whether this argument should be required"
 msgstr "Soll dieses Argument erforderlich sein?"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1347
+#: library/Director/Web/Form/DirectorObjectForm.php:1409
 msgid "Whether this check is volatile."
 msgstr "Ist dieser Check sprunghaft (volatile)?"
 
-#: application/forms/IcingaDependencyForm.php:58
+#: application/forms/IcingaDependencyForm.php:94
 msgid "Whether this dependency should affect hosts or services"
 msgstr "Soll diese Abhängigkeit Hosts oder Services betreffen"
 
@@ -5481,11 +5685,11 @@ msgstr "Soll diese Abhängigkeit Hosts oder Services betreffen"
 msgid "Whether this field should be mandatory"
 msgstr "Soll dieses Feld Pflicht sein?"
 
-#: application/forms/IcingaHostForm.php:74
+#: application/forms/IcingaHostForm.php:75
 msgid "Whether this host has the Icinga 2 Agent installed"
 msgstr "Hat dieser Host den Icinga-2-Agent installiert?"
 
-#: application/forms/IcingaNotificationForm.php:81
+#: application/forms/IcingaNotificationForm.php:83
 msgid "Whether this notification should affect hosts or services"
 msgstr "Soll diese Benachrichtigung Hosts oder Services betreffen"
 
@@ -5510,11 +5714,11 @@ msgstr ""
 "Soll diese Zone überall verfügbar sein? Beachte, dass es selten zielführend "
 "ist, globale Zonen in verteilten Umgebungen zu verteilen"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1323
+#: library/Director/Web/Form/DirectorObjectForm.php:1357
 msgid "Whether to accept passive check results for this object"
 msgstr "Sollen passive Checkergebnisse für dieses Objekt akzeptiert werden?"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1317
+#: library/Director/Web/Form/DirectorObjectForm.php:1351
 msgid "Whether to actively check this object"
 msgstr "Soll dieses Objekt aktiv geprüft werden?"
 
@@ -5522,14 +5726,14 @@ msgstr "Soll dieses Objekt aktiv geprüft werden?"
 msgid "Whether to adjust your host name"
 msgstr "Ob der Hostname angepasst werden soll"
 
-#: application/forms/IcingaDependencyForm.php:118
+#: application/forms/IcingaDependencyForm.php:158
 msgid ""
 "Whether to disable checks when this dependency fails. Defaults to false."
 msgstr ""
 "Ob Checks deaktiviert werden sollen, wenn diese Abhängigkeit fehlschlägt. "
 "Standardmäßig ist dies nicht der Fall."
 
-#: application/forms/IcingaDependencyForm.php:126
+#: application/forms/IcingaDependencyForm.php:166
 msgid ""
 "Whether to disable notifications when this dependency fails. Defaults to "
 "true."
@@ -5537,11 +5741,11 @@ msgstr ""
 "Sollen Benachrichtigungen deaktiviert werden, wenn diese Abhängigkeit "
 "fehlschlägt. Standard-Einstellung ist Ja."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1335
+#: library/Director/Web/Form/DirectorObjectForm.php:1369
 msgid "Whether to enable event handlers this object"
 msgstr "Sollen Event-Handler für dieses Objekt aktiviert werden?"
 
-#: application/forms/IcingaDependencyForm.php:134
+#: application/forms/IcingaDependencyForm.php:174
 msgid ""
 "Whether to ignore soft states for the reachability calculation. Defaults to "
 "true."
@@ -5549,7 +5753,7 @@ msgstr ""
 "Ob Soft-States für die Berechnung der Erreichbarkeit berücksichtigt werden "
 "sollen. Dies ist standardmäßig der Fall."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1341
+#: library/Director/Web/Form/DirectorObjectForm.php:1375
 msgid "Whether to process performance data provided by this object"
 msgstr "Sollen Performancedaten von diesem Objekt verarbeitet werden?"
 
@@ -5563,15 +5767,15 @@ msgstr ""
 "desselben Typs aus dem Director entfernt werden, falls sie in der "
 "Importquelle nicht mehr vorhanden sein sollten."
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1329
+#: library/Director/Web/Form/DirectorObjectForm.php:1363
 msgid "Whether to send notifications for this object"
 msgstr "Sollen Benachrichtigungen für dieses Objekt verschickt werden?"
 
-#: application/forms/IcingaUserForm.php:79
+#: application/forms/IcingaUserForm.php:90
 msgid "Whether to send notifications for this user"
 msgstr "Sollen Benachrichtigungen für diesen Benutzer verschickt werden?"
 
-#: application/forms/SyncPropertyForm.php:115
+#: application/forms/SyncPropertyForm.php:118
 msgid ""
 "Whether you want to merge or replace the destination field. Makes no "
 "difference for strings"
@@ -5587,7 +5791,7 @@ msgstr ""
 "Wird als benutzerdefinierte Variable gespeichert, wenn dieser Eintrag aus "
 "der Liste gewählt wird"
 
-#: library/Director/Web/SelfService.php:205
+#: library/Director/Web/SelfService.php:225
 msgid "Windows Kickstart Script"
 msgstr "Kickstart-Skript für Windows"
 
@@ -5599,7 +5803,7 @@ msgstr "Zugehörige Eigenschaften leeren"
 msgid "Wondering about what changed why? Track your changes!"
 msgstr "Hier kann nachvollzogen werden, was weshalb verändert wurde."
 
-#: application/views/helpers/FormDataFilter.php:448
+#: application/views/helpers/FormDataFilter.php:525
 msgid "Wrap this expression into an operator"
 msgstr "Diesen Ausdruck in einen Operator packen"
 
@@ -5608,17 +5812,18 @@ msgstr "Diesen Ausdruck in einen Operator packen"
 msgid "YES, please delete \"%s\""
 msgstr "JA, bitte \"%s\" löschen"
 
-#: application/forms/IcingaZoneForm.php:30
-#: application/forms/SyncRuleForm.php:73 application/forms/SettingsForm.php:45
-#: application/forms/SettingsForm.php:60
 #: application/forms/SelfServiceSettingsForm.php:226
-#: library/Director/Job/ConfigJob.php:185
-#: library/Director/Job/ConfigJob.php:197 library/Director/Job/ImportJob.php:67
-#: library/Director/Job/SyncJob.php:70
+#: application/forms/IcingaZoneForm.php:30
+#: application/forms/SyncRuleForm.php:73 application/forms/SettingsForm.php:59
+#: application/forms/SettingsForm.php:74
+#: library/Director/PropertyModifier/PropertyModifierUpperCaseFirst.php:25
+#: library/Director/Job/ConfigJob.php:189
+#: library/Director/Job/ConfigJob.php:201 library/Director/Job/ImportJob.php:85
+#: library/Director/Job/SyncJob.php:84
 msgid "Yes"
 msgstr "Ja"
 
-#: library/Director/Web/SelfService.php:125
+#: library/Director/Web/SelfService.php:136
 msgid ""
 "You can stop sharing a Template at any time. This will immediately "
 "invalidate the former key."
@@ -5626,7 +5831,7 @@ msgstr ""
 "Die Freigabe einer Vorlage kann jederzeit widerrufen werden. Das macht den "
 "vorherigen Schlüssel sofort ungültig."
 
-#: library/Director/Job/ImportJob.php:60 library/Director/Job/SyncJob.php:63
+#: library/Director/Job/ImportJob.php:78 library/Director/Job/SyncJob.php:77
 msgid ""
 "You could immediately apply eventual changes or just learn about them. In "
 "case you do not want them to be applied immediately, defining a job still "
@@ -5637,7 +5842,7 @@ msgstr ""
 "nicht sofort angewandt werden, ist es immer noch sinnvoll, einen Auftrag zu "
 "erstellen. Verfügbare Änderungen werden in der Director-GUI angezeigt."
 
-#: application/forms/SelfServiceSettingsForm.php:46
+#: application/forms/SelfServiceSettingsForm.php:61
 msgid ""
 "You might want to let the generated Powershell script install the Icinga 2 "
 "Agent in an automated way. If so, please choose where your Windows nodes "
@@ -5657,7 +5862,7 @@ msgstr ""
 "anzuzeigen. Treffen diese nicht zu wird es nicht angezeigt, eventuell "
 "zugehörige Eigenschaften werden beim Speichern dann auch wieder entfernt."
 
-#: application/forms/ImportRowModifierForm.php:37
+#: application/forms/ImportRowModifierForm.php:46
 msgid ""
 "You might want to write the modified value to another (new) property. This "
 "property name can be defined here, the original property would remain "
@@ -5670,14 +5875,14 @@ msgstr ""
 "lediglich der ursprüngliche Wert an Ort und Stelle geändert werden soll, "
 "dieses Feld bitte leer lassen"
 
-#: application/controllers/SyncruleController.php:99
+#: application/controllers/SyncruleController.php:114
 #, php-format
 msgid "You must define some %s before you can run this Sync Rule"
 msgstr ""
 "Bevor dieses Synchronisationsregel ausgeführt werden kann, müssen %s "
 "definiert werden"
 
-#: application/forms/KickstartForm.php:146
+#: application/forms/KickstartForm.php:150
 msgid "Your Icinga 2 API username"
 msgstr "Der Icinga-2-API Benutzername"
 
@@ -5688,7 +5893,7 @@ msgid ""
 msgstr ""
 "Die LDAP Suchbasis. Meist etwas wie OU=Users,OU=HQ,DC=your,DC=company,DC=tld"
 
-#: application/forms/KickstartForm.php:87
+#: application/forms/KickstartForm.php:91
 msgid ""
 "Your configuration looks good. Still, you might want to re-run this "
 "kickstart wizard to (re-)import modified or new manually defined Command "
@@ -5699,23 +5904,23 @@ msgstr ""
 "Kommandodefinitionen oder neue ITL-Kommandos nach einem Icinga-2-Core-"
 "Upgrade (neu) zu importieren."
 
-#: application/forms/KickstartForm.php:65
+#: application/forms/KickstartForm.php:69
 #, php-format
 msgid "Your database looks good, you are ready to %s"
 msgstr ""
 "Datenbank sieht gut aus. Icinga Director sollte jetzt fertig für %s sein."
 
-#: application/forms/KickstartForm.php:99
+#: application/forms/KickstartForm.php:103
 msgid ""
 "Your installation of Icinga Director has not yet been prepared for "
 "deployments. This kickstart wizard will assist you with setting up the "
 "connection to your Icinga 2 server."
 msgstr ""
-"Diese Icinga-Director-Installation wurde noch nicht zum Ausbringen von "
+"Diese Icinga-Director-Installation wurde noch nicht zum Ausrollen von "
 "Konfiguration vorbereitet. Dieser Kickstart-Assistent hilft bei der "
 "Einrichtung der Verbindung zum Icinga 2 Server"
 
-#: library/Director/Web/Form/DirectorObjectForm.php:1260
+#: library/Director/Web/Form/DirectorObjectForm.php:1294
 msgid "Your regular check interval"
 msgstr "Der übliche Check-Intervall"
 
@@ -5737,10 +5942,11 @@ msgstr "Zone"
 msgid "Zone name"
 msgstr "Zonenname"
 
+#: application/forms/IcingaDependencyForm.php:60
+#: application/forms/IcingaNotificationForm.php:65
 #: application/forms/IcingaCommandForm.php:91
-#: application/forms/IcingaNotificationForm.php:63
-#: application/forms/IcingaUserForm.php:68
-#: application/forms/IcingaUserGroupForm.php:36
+#: application/forms/IcingaUserGroupForm.php:42
+#: application/forms/IcingaUserForm.php:76
 msgid "Zone settings"
 msgstr "Zoneneinstellungen"
 
@@ -5749,19 +5955,23 @@ msgstr "Zoneneinstellungen"
 msgid "Zones"
 msgstr "Zonen"
 
-#: application/forms/SyncPropertyForm.php:314
+#: application/forms/SyncPropertyForm.php:346
 msgid "a list"
 msgstr "eine Liste"
 
+#: library/Director/Web/Widget/AdditionalTableActions.php:87
+msgid "all"
+msgstr "alle"
+
+#: application/controllers/SyncruleController.php:288
+#: application/controllers/HostController.php:372
 #: application/controllers/DataController.php:96
-#: application/controllers/ImportsourceController.php:147
-#: application/controllers/SyncruleController.php:198
 #: application/controllers/ServiceController.php:135
 #: application/controllers/ServiceController.php:196
-#: application/controllers/HostController.php:321
-#: library/Director/Web/Controller/ObjectController.php:169
-#: library/Director/Web/Controller/ObjectController.php:390
-#: library/Director/Web/Controller/ActionController.php:130
+#: application/controllers/ImportsourceController.php:248
+#: library/Director/Web/Controller/ObjectController.php:171
+#: library/Director/Web/Controller/ObjectController.php:405
+#: library/Director/Web/Controller/ActionController.php:150
 #: library/Director/Web/ActionBar/DirectorBaseActionBar.php:35
 msgid "back"
 msgstr "Zurück"
@@ -5782,11 +5992,11 @@ msgstr "z.B. -H oder --hostname, leer bedeutet \"skip_key\""
 msgid "e.g. 5%, $host.name$, $lower$%:$upper$%"
 msgstr "z.B. 5%, $host.name$, $lower$%:$upper$%"
 
-#: application/forms/SyncPropertyForm.php:156
+#: application/forms/SyncPropertyForm.php:164
 msgid "failed to fetch"
 msgstr "Abholen fehlgeschlagen"
 
-#: application/forms/KickstartForm.php:243 library/Director/Util.php:182
+#: application/forms/KickstartForm.php:253 library/Director/Util.php:182
 msgid "here"
 msgstr "hier"
 
@@ -5798,7 +6008,7 @@ msgstr "host var name"
 msgid "host var value"
 msgstr "host var value"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:282
+#: library/Director/Dashboard/Dashlet/Dashlet.php:283
 msgid "no related group exists"
 msgstr "keine verwandte Gruppe existiert"
 
@@ -5806,7 +6016,7 @@ msgstr "keine verwandte Gruppe existiert"
 msgid "ok"
 msgstr "ok"
 
-#: library/Director/Dashboard/Dashlet/Dashlet.php:284
+#: library/Director/Dashboard/Dashlet/Dashlet.php:285
 msgid "one related group exists"
 msgstr "eine verwandte Gruppe existiert"
 
@@ -5815,14 +6025,14 @@ msgid "pending"
 msgstr "ausstehend"
 
 #: library/Director/PropertyModifier/PropertyModifierSplit.php:29
-#: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:29
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:71
+#: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:29
 msgid "return NULL"
 msgstr "NULL zurückgeben"
 
 #: library/Director/PropertyModifier/PropertyModifierSplit.php:28
-#: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:28
 #: library/Director/PropertyModifier/PropertyModifierArrayFilter.php:70
+#: library/Director/PropertyModifier/PropertyModifierRegexSplit.php:28
 msgid "return an empty array"
 msgstr "ein leeres Array zurückliefern"
 
@@ -5850,9 +6060,17 @@ msgstr "Unbekannt"
 msgid "unreachable"
 msgstr "unreachable"
 
+#: library/Director/Web/Widget/AdditionalTableActions.php:89
+msgid "unused"
+msgstr "unbenutzt"
+
 #: application/locale/translateMe.php:5
 msgid "up"
 msgstr "up"
+
+#: library/Director/Web/Widget/AdditionalTableActions.php:88
+msgid "used"
+msgstr "benutzt"
 
 #: application/forms/IcingaHostVarForm.php:33
 #: application/forms/IcingaServiceVarForm.php:33
@@ -5863,8 +6081,44 @@ msgstr "Wertformat"
 msgid "warning"
 msgstr "warning"
 
-#~ msgid "Allow to configure service sets"
-#~ msgstr "Erlauben, Service-Sets zu konfigurieren"
+#~ msgid "Change priority"
+#~ msgstr "Priorität ändern"
+
+#~ msgid "Count Query"
+#~ msgstr "Count-Abfage"
+
+#~ msgid "Move down (lower priority)"
+#~ msgstr "Nach unten schieben (Priorität verringern)"
+
+#~ msgid "Move up (raise priority)"
+#~ msgstr "Nach oben schieben (Priorität erhöhen)"
+
+#~ msgid "Next page"
+#~ msgstr "Nächste Seite"
+
+#~ msgid "Pagination"
+#~ msgstr "Seitennavigation"
+
+#~ msgid "Previous page"
+#~ msgstr "Vorhergehende Seite"
+
+#~ msgid "Prio"
+#~ msgstr "Prio"
+
+#~ msgid "SQL Query"
+#~ msgstr "SQL-Abfrage"
+
+#~ msgid "Search is simple! Try to combine multiple words"
+#~ msgstr "Suchen ist einfach! Versuche, mehrere Wörter zu kombinieren"
+
+#~ msgid "Search..."
+#~ msgstr "Suchen..."
+
+#~ msgid "Show rows %u to %u of %u"
+#~ msgstr "Zeige die Zeilen %u bis %u von %u"
+
+#~ msgid "This feature is still experimental"
+#~ msgstr "Dieses Feature ist noch experimentell"
 
 #~ msgid "Filter available service sets"
 #~ msgstr "Verfügbare Service-Sets filtern"
@@ -5920,9 +6174,6 @@ msgstr "warning"
 #~ msgid "Icinga %s"
 #~ msgstr "Icinga %s"
 
-#~ msgid "Icinga Node"
-#~ msgstr "Icinga-Knoten"
-
 #~ msgid "Job %s"
 #~ msgstr "Auftrag %s"
 
@@ -5956,9 +6207,6 @@ msgstr "warning"
 
 #~ msgid "Time"
 #~ msgstr "Zeit"
-
-#~ msgid "# Hosts"
-#~ msgstr "# Hosts"
 
 #~ msgid "Service sets"
 #~ msgstr "Service-Sets"
