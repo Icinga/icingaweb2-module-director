@@ -154,7 +154,7 @@ class IcingaServiceSet extends IcingaObject
             'zones.d/' . $this->getRenderingZone($config) . '/servicesets'
         );
 
-        $file->prepend($this->getConfigHeaderComment($config));
+        $file->addContent($this->getConfigHeaderComment($config));
         return $file;
     }
 
