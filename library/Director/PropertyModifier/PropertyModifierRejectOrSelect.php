@@ -52,7 +52,7 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
             'label'       => $form->translate('Policy'),
             'required'    => true,
             'description' => $form->translate(
-                'What should happen with the row, when this property matches the five expression?'
+                'What should happen with the row, when this property matches the given expression?'
             ),
             'value'        => 'reject',
             'multiOptions' => [
