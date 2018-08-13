@@ -8,6 +8,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use dipl\Html\HtmlElement;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 
 class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 {
@@ -157,29 +158,22 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                 ]
             );
         } else {
-            // !!!
-            $deleteLink = Link::create(
-                $this->translate('Remove'),
-                'director/host/removeset',
-                [
-                    'name' => $this->host->getObjectName(),
-                    'setId' => $this->set->get('id')
-                ],
-                [
-                    'class' => 'icon-cancel',
-                    'style' => 'float: right; font-weight: normal',
-                    'title' => $this->translate('Remove this set from this host')
-                ]
-            );
             $deleteLink = new RemoveLinkForm(
                 $this->translate('Remove'),
                 $this->translate('Remove this set from this host'),
-                'director/host/removeset',
-                [
-                    'name' => $this->host->getObjectName(),
-                    'setId' => $this->set->get('id')
-                ]
+                Url::fromPath('director/host/services', [
+                    'name' => $this->host->getObjectName()
+                ])
             );
+            $hostId = $this->host->get('id');
+            $setName = $this->set->getObjectName();
+            $db = $this->set->getConnection();
+            $deleteLink->runOnSuccess(function () use ($db, $hostId, $setName) {
+                IcingaServiceSet::load([
+                    'host_id' => $hostId,
+                    'object_name' => $setName
+                ], $db)->delete();
+            });
             $deleteLink->handleRequest();
         }
 

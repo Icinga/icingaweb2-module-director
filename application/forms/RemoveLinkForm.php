@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use dipl\Html\Icon;
-use dipl\Web\Url;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 
 class RemoveLinkForm extends DirectorForm
@@ -12,10 +11,13 @@ class RemoveLinkForm extends DirectorForm
 
     private $title;
 
+    private $onSuccessAction;
+
     public function __construct($label, $title, $action, $params = [])
     {
         parent::__construct([
-            'style' => 'float: right'
+            'style' => 'float: right',
+            'data-base-target' => '_self'
         ]);
         $this->label = $label;
         $this->title = $title;
@@ -25,24 +27,31 @@ class RemoveLinkForm extends DirectorForm
         $this->setAction($action);
     }
 
+    public function runOnSuccess($action)
+    {
+        $this->onSuccessAction = $action;
+
+        return $this;
+    }
+
     public function setup()
     {
         $this->setAttrib('class', 'inline');
-        //$this->setDecorators(['Form', 'FormElements']);
-//                     'class' => 'icon-cancel',
-//                    'style' => 'float: right; font-weight: normal',
-//                    'title' => $this->translate('Remove this set from this host')
-
         $this->addHtml(Icon::create('cancel'));
         $this->addSubmitButton($this->label, [
             'class'            => 'link-button',
             'title'            => $this->title,
-            'data-base-target' => '_next'
         ]);
     }
 
     public function onSuccess()
     {
-        // nothing.
+        if ($this->onSuccessAction !== null) {
+            $func = $this->onSuccessAction;
+            $func();
+            $this->redirectOnSuccess(
+                $this->translate('Service Set has been removed')
+            );
+        }
     }
 }
