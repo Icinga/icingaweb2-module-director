@@ -15,14 +15,14 @@ class ExportCommand extends Command
      *
      * USAGE
      *
-     * icingacli director export importsource [options]
+     * icingacli director export importsources [options]
      *
      * OPTIONS
      *
      *   --no-pretty   JSON is pretty-printed per default
      *                 Use this flag to enforce unformatted JSON
      */
-    public function importsourceAction()
+    public function importsourcesAction()
     {
         $export = new ImportExport($this->db());
         echo $this->renderJson(
@@ -36,14 +36,14 @@ class ExportCommand extends Command
      *
      * USAGE
      *
-     * icingacli director syncrule export [options]
+     * icingacli director export syncrules [options]
      *
      * OPTIONS
      *
      *   --no-pretty   JSON is pretty-printed per default
      *                 Use this flag to enforce unformatted JSON
      */
-    public function syncruleAction()
+    public function syncrulesAction()
     {
         $export = new ImportExport($this->db());
         echo $this->renderJson(
@@ -57,14 +57,14 @@ class ExportCommand extends Command
      *
      * USAGE
      *
-     * icingacli director export job [options]
+     * icingacli director export jobs [options]
      *
      * OPTIONS
      *
      *   --no-pretty   JSON is pretty-printed per default
      *                 Use this flag to enforce unformatted JSON
      */
-    public function jobAction()
+    public function jobsAction()
     {
         $export = new ImportExport($this->db());
         echo $this->renderJson(
@@ -78,14 +78,14 @@ class ExportCommand extends Command
      *
      * USAGE
      *
-     * icingacli director export datafield [options]
+     * icingacli director export datafields [options]
      *
      * OPTIONS
      *
      *   --no-pretty   JSON is pretty-printed per default
      *                 Use this flag to enforce unformatted JSON
      */
-    public function datafieldAction()
+    public function datafieldsAction()
     {
         $export = new ImportExport($this->db());
         echo $this->renderJson(
@@ -99,14 +99,14 @@ class ExportCommand extends Command
      *
      * USAGE
      *
-     * icingacli director export datafield [options]
+     * icingacli director export datalists [options]
      *
      * OPTIONS
      *
      *   --no-pretty   JSON is pretty-printed per default
      *                 Use this flag to enforce unformatted JSON
      */
-    public function datalistAction()
+    public function datalistsAction()
     {
         $export = new ImportExport($this->db());
         echo $this->renderJson(
@@ -115,61 +115,61 @@ class ExportCommand extends Command
         );
     }
 
-    /**
-     * Export all IcingaHostGroup definitions
-     *
-     * USAGE
-     *
-     * icingacli director export hostgroup [options]
-     *
-     * OPTIONS
-     *
-     *   --no-pretty   JSON is pretty-printed per default
-     *                 Use this flag to enforce unformatted JSON
-     */
-    public function hostgroupAction()
-    {
-        $export = new ImportExport($this->db());
-        echo $this->renderJson(
-            $export->serializeAllHostGroups(),
-            !$this->params->shift('no-pretty')
-        );
-    }
-
-    /**
-     * Export all IcingaServiceGroup definitions
-     *
-     * USAGE
-     *
-     * icingacli director export servicegroup [options]
-     *
-     * OPTIONS
-     *
-     *   --no-pretty   JSON is pretty-printed per default
-     *                 Use this flag to enforce unformatted JSON
-     */
-    public function servicegroupAction()
-    {
-        $export = new ImportExport($this->db());
-        echo $this->renderJson(
-            $export->serializeAllServiceGroups(),
-            !$this->params->shift('no-pretty')
-        );
-    }
+    // /**
+    //  * Export all IcingaHostGroup definitions
+    //  *
+    //  * USAGE
+    //  *
+    //  * icingacli director export hostgroup [options]
+    //  *
+    //  * OPTIONS
+    //  *
+    //  *   --no-pretty   JSON is pretty-printed per default
+    //  *                 Use this flag to enforce unformatted JSON
+    //  */
+    // public function hostgroupAction()
+    // {
+    //     $export = new ImportExport($this->db());
+    //     echo $this->renderJson(
+    //         $export->serializeAllHostGroups(),
+    //         !$this->params->shift('no-pretty')
+    //     );
+    // }
+    //
+    // /**
+    //  * Export all IcingaServiceGroup definitions
+    //  *
+    //  * USAGE
+    //  *
+    //  * icingacli director export servicegroup [options]
+    //  *
+    //  * OPTIONS
+    //  *
+    //  *   --no-pretty   JSON is pretty-printed per default
+    //  *                 Use this flag to enforce unformatted JSON
+    //  */
+    // public function servicegroupAction()
+    // {
+    //     $export = new ImportExport($this->db());
+    //     echo $this->renderJson(
+    //         $export->serializeAllServiceGroups(),
+    //         !$this->params->shift('no-pretty')
+    //     );
+    // }
 
     /**
      * Export all IcingaTemplateChoiceHost definitions
      *
      * USAGE
      *
-     * icingacli director export hosttemplatechoice [options]
+     * icingacli director export hosttemplatechoices [options]
      *
      * OPTIONS
      *
      *   --no-pretty   JSON is pretty-printed per default
      *                 Use this flag to enforce unformatted JSON
      */
-    public function hosttemplatechoiceAction()
+    public function hosttemplatechoicesAction()
     {
         $export = new ImportExport($this->db());
         echo $this->renderJson(

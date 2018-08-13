@@ -297,6 +297,46 @@ a good reason. The CLI allows you to issue operations that are not allowed in th
 web frontend. Do not use this unless you really understand its implications. And
 remember, with great power comes great responsibility.
 
+
+Import/Export Director Objects
+------------------------------
+
+Some objects are not directly related to Icinga Objects but used by the Director
+to manage them. To make it easier for administrators to for example pre-fill an
+empty Director Instance with Import Sources and Sync Rules, related import/export
+commands come in handy.
+
+Use `icingacli director export <type> [options]` to export objects of a specific
+type:
+
+| Type                  | Description                                     |
+|-----------------------|-------------------------------------------------|
+| `datafields`          | Export all DataField definitions                |
+| `datalists`           | Export all DataList definitions                 |
+| `hosttemplatechoices` | Export all IcingaTemplateChoiceHost definitions |
+| `importsources`       | Export all ImportSource definitions             |
+| `jobs`                | Export all Job definitions                      |
+| `syncrules`           | Export all SyncRule definitions                 |
+
+#### Options
+
+| Option        | Description                                          |
+|---------------|------------------------------------------------------|
+| `--no-pretty` | JSON is pretty-printed per default. Use this flag to |
+|               | enforce unformatted JSON                             |
+
+Use `icingacli director import <type> < exported.json` to import objects of a
+specific type:
+
+| Type                  | Description                                     |
+|-----------------------|-------------------------------------------------|
+| `importsources`       | Import ImportSource definitions from STDIN      |
+| `syncrules`           | Import SyncRule definitions from STDIN          |
+
+
+This feature is available since v1.5.0.
+
+
 Health Check Plugin
 -------------------
 

@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\DirectorObject\Automation\ImportExport;
+use Icinga\Module\Director\Objects\ImportSource;
 
 /**
  * Export Director Config Objects
@@ -11,44 +12,51 @@ use Icinga\Module\Director\DirectorObject\Automation\ImportExport;
 class ImportCommand extends Command
 {
     /**
-     * Export all ImportSource definitions
-     *
-     * Use this command to delete a single Icinga object
+     * Import ImportSource definitions
      *
      * USAGE
      *
-     * icingacli director import importsource [options]
+     * icingacli director import importsources < importsources.json
      *
      * OPTIONS
-     *
-     *   --no-pretty   JSON is pretty-printed per default
-     *                 Use this flag to enforce unformatted JSON
      */
-    public function importsourceAction()
+    public function importsourcesAction()
     {
         $json = file_get_contents('php://stdin');
-        $export = new ImportExport($this->db());
-        $export->unserializeImportSources(json_decode($json));
+        $import = new ImportExport($this->db());
+        $count = $import->unserializeImportSources(json_decode($json));
+        echo "$count Import Sources have been imported\n";
     }
+
+    // /**
+    //  * Import an ImportSource definition
+    //  *
+    //  * USAGE
+    //  *
+    //  * icingacli director import importsource < importsource.json
+    //  *
+    //  * OPTIONS
+    //  */
+    // public function importsourcection()
+    // {
+    //     $json = file_get_contents('php://stdin');
+    //     $object = ImportSource::import(json_decode($json), $this->db());
+    //     $object->store();
+    //     printf("Import Source '%s' has been imported\n", $object->getObjectName());
+    // }
 
     /**
      * Import SyncRule definitions
      *
-     * Use this command to import ....
-     *
      * USAGE
      *
-     * icingacli director syncrule export [options]
-     *
-     * OPTIONS
-     *
-     *   --no-pretty   JSON is pretty-printed per default
-     *                 Use this flag to enforce unformatted JSON
+     * icingacli director import syncrules < syncrules.json
      */
-    public function syncruleAction()
+    public function syncrulesAction()
     {
         $json = file_get_contents('php://stdin');
-        $export = new ImportExport($this->db());
-        $export->unserializeSyncRules(json_decode($json));
+        $import = new ImportExport($this->db());
+        $count = $import->unserializeSyncRules(json_decode($json));
+        echo "$count Sync Rules have been imported\n";
     }
 }
