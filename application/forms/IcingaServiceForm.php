@@ -13,6 +13,7 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use dipl\Html\Html;
 use dipl\Html\Link;
+use RuntimeException;
 
 class IcingaServiceForm extends DirectorObjectForm
 {
@@ -174,22 +175,22 @@ class IcingaServiceForm extends DirectorObjectForm
     /**
      * @param IcingaService $service
      * @return IcingaService
-     * @throws ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getFirstParent(IcingaService $service)
     {
         $objects = $service->imports()->getObjects();
         if (empty($objects)) {
-            throw new ProgrammingError('Something went wrong, got no parent');
+            throw new RuntimeException('Something went wrong, got no parent');
         }
         reset($objects);
+
         return current($objects);
     }
 
     /**
      * @return bool
-     * @throws IcingaException
-     * @throws ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function hasBeenBlacklisted()
     {
@@ -199,7 +200,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
         if ($this->blacklisted === null) {
             $host = $this->host;
-            $service = $this->getFirstParent($this->object);
+            $service = $this->getServiceToBeBlacklisted();
             $db = $this->db->getDbAdapter();
             if ($this->providesOverrides()) {
                 $this->blacklisted = 1 === (int)$db->fetchOne(
@@ -237,13 +238,12 @@ class IcingaServiceForm extends DirectorObjectForm
 
     /**
      * @throws IcingaException
-     * @throws ProgrammingError
      * @throws \Zend_Db_Adapter_Exception
      */
     protected function blacklist()
     {
         $host = $this->host;
-        $service = $this->getFirstParent($this->object);
+        $service = $this->getServiceToBeBlacklisted();
 
         $db = $this->db->getDbAdapter();
         $host->unsetOverriddenServiceVars($this->object->getObjectName())->store();
@@ -262,13 +262,25 @@ class IcingaServiceForm extends DirectorObjectForm
     }
 
     /**
-     * @throws IcingaException
-     * @throws ProgrammingError
+     * @return IcingaService
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function getServiceToBeBlacklisted()
+    {
+        if ($this->set) {
+            return $this->object;
+        } else {
+            return $this->getFirstParent($this->object);
+        }
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function removeFromBlacklist()
     {
         $host = $this->host;
-        $service = $this->getFirstParent($this->object);
+        $service = $this->getServiceToBeBlacklisted();
 
         $db = $this->db->getDbAdapter();
         $where = implode(' AND ', [
@@ -277,7 +289,7 @@ class IcingaServiceForm extends DirectorObjectForm
         ]);
         if ($db->delete('icinga_host_service_blacklist', $where)) {
             $msg = sprintf(
-                $this->translate('%s has been removed from blacklist %s'),
+                $this->translate('%s is no longer blacklisted on %s'),
                 $service->getObjectName(),
                 $host->getObjectName()
             );
@@ -288,15 +300,15 @@ class IcingaServiceForm extends DirectorObjectForm
     /**
      * @param IcingaService $service
      * @return $this
-     * @throws ProgrammingError
      */
     public function createApplyRuleFor(IcingaService $service)
     {
         $this->apply = $service;
         $object = $this->object();
         $object->set('imports', $service->getObjectName());
-        $object->object_type = 'apply';
-        $object->object_name = $service->object_name;
+        $object->set('object_type', 'apply');
+        $object->set('object_name', $service->getObjectName());
+
         return $this;
     }
 

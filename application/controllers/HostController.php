@@ -332,13 +332,23 @@ class HostController extends ObjectController
         $db = $this->db();
         $host = $this->getHostObject();
         $serviceName = $this->params->get('service');
-        $set = IcingaServiceSet::load($this->params->get('set'), $db);
+        $setParams = [
+            'object_name' => $this->params->get('set'),
+            'host_id'     => $host->get('id')
+        ];
+        $setTemplate = IcingaServiceSet::load($this->params->get('set'), $db);
+        if (IcingaServiceSet::exists($setParams, $db)) {
+            $set = IcingaServiceSet::load($setParams, $db);
+        } else {
+            $set = $setTemplate;
+        }
 
         $service = IcingaService::load([
             'object_name'    => $serviceName,
-            'service_set_id' => $set->get('id')
+            'service_set_id' => $setTemplate->get('id')
         ], $this->db());
         $service = IcingaService::create([
+            'id'          => $service->get('id'),
             'object_type' => 'apply',
             'object_name' => $serviceName,
             'host_id'     => $host->get('id'),

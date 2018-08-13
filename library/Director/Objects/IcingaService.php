@@ -444,17 +444,16 @@ class IcingaService extends IcingaObject
      */
     public function getBlacklistedHostnames()
     {
-        if ($this->isApplyRule()) {
-            if (PrefetchCache::shouldBeUsed()) {
-                $lookup = PrefetchCache::instance()->hostServiceBlacklist();
-            } else {
-                $lookup = new HostServiceBlacklist($this->getConnection());
-            }
-
-            return $lookup->getBlacklistedHostnamesForService($this);
+        // Hint: if ($this->isApplyRule()) would be nice, but apply rules are
+        // not enough, one might want to blacklist single services from Sets
+        // assigned to single Hosts.
+        if (PrefetchCache::shouldBeUsed()) {
+            $lookup = PrefetchCache::instance()->hostServiceBlacklist();
+        } else {
+            $lookup = new HostServiceBlacklist($this->getConnection());
         }
 
-        return [];
+        return $lookup->getBlacklistedHostnamesForService($this);
     }
 
     /**
