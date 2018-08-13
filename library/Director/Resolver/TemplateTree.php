@@ -162,7 +162,15 @@ class TemplateTree
 
             // Hint: inheritance order matters
             if (false !== ($key = array_search($name, $ancestors))) {
-                unset($ancestors[$key]);
+                // Note: this used to be just unset($ancestors[$key]), and that
+                // broke Apply Rules inheriting from Templates with the same name
+                // in a way that related fields no longer showed up (#1602)
+                // This new if relaxes this and doesn't unset in case the name
+                // matches the original object name. However, I'm still unsure why
+                // this was required at all.
+                if ($name !== $object->getObjectName()) {
+                    unset($ancestors[$key]);
+                }
             }
             $ancestors[$pid] = $name;
         }
