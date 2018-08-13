@@ -109,6 +109,30 @@ class IcingaServiceSet extends IcingaObject
         return $services;
     }
 
+    public function onDelete()
+    {
+        $hostId = $this->get('host_id');
+        if ($hostId) {
+            $deleteIds = [];
+            foreach ($this->getServiceObjects() as $service) {
+                $deleteIds[] = (int) $service->get('id');
+            }
+
+            if (! empty($deleteIds)) {
+                $db = $this->getDb();
+                $db->delete(
+                    'icinga_host_service_blacklist',
+                    $db->quoteInto(
+                        sprintf('host_id = %s AND service_id IN (?)', $hostId),
+                        $deleteIds
+                    )
+                );
+            }
+        }
+
+        parent::onDelete();
+    }
+
     public function renderToConfig(IcingaConfig $config)
     {
         if ($this->get('assign_filter') === null && $this->isTemplate()) {
