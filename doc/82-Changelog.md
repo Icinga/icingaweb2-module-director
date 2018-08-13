@@ -10,6 +10,10 @@ before switching to a new version.
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/11?closed=1)
 
+### Security Fixes
+* FIX: users with `director/audit` permission had the possibility to inject SQL.
+  Thanks to Boyd Ansems for reporting this.
+
 ### Permissions and Restrictions
 * FEATURE: Showing the executed SQL query now requires the `showsql` permission
 * FEATURE: Grant access to Service Set in a controlled way
@@ -41,12 +45,17 @@ before switching to a new version.
 * FEATURE: The "Modify" hook is now available for Services (#689), regardless
   of whether they have been directly assigned, inherited or applied
 * FEATURE: Config preview links imports, hosts and commands to related objects (#1521)
+* FEATURE: German translation has been refreshed (#1599)
+* FEATURE: Apply Rule editor shows suggestions for Data-List vars (#1588)
 * FIX: Don't suggest Command templates where Commands are required (#1414)
 * FIX: Do not allow to delete Commands being used by other objects (#1443)
 * FIX: Show 'Inspect' tab only for Endpoints with an ApiUser (#1293)
 * FIX: It's now possible to specify TimePeriods for single Users #944
 * FIX: Redirect after not modifying a Command Argument failed on some RHEL 7
   setups (#1512)
+* FIX: click on Service Set titles no longer removes them from their host (#1560)
+* FIX: Restoring objects based on compound keys has been fixed (#1597)
+* FIX: Linux Agent kickstart script improved and tweaked for Icinga 2.9 (#1596)
 
 ### CLI
 * FEATURE: Director Health Check Plugin (#1278)
@@ -72,6 +81,9 @@ before switching to a new version.
 * FEATURE: Html/Attributes can be prefixed (helps with data-*)
 * FEATURE: Html/Img data:-urls are now supported
 * FEATURE: ipl has been aligned with the upcoming ipl-html library
+* FEATURE: Director now supports multiple Databases, allows to switch between
+  them and to deploy different Config Packages. Other features based on this
+  combined with related documentation will follow.
 
 1.4.3
 -----
