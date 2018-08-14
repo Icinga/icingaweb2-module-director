@@ -4,6 +4,19 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.5.1
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/16?closed=1)
+
+### Icinga Configuration
+* FIX: Switched Variable-Override related constant names broke the feature (#1601)
+
+### User Interface
+* FIX: Custom Fields attached to a Service Template have not been shown for Apply
+  Rules whose name matched the Template Name (#1602)
+
 1.5.0
 -----
 ### Fixed issues
