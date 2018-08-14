@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
 
 class ImportRun extends DbObject
 {
@@ -63,6 +64,8 @@ class ImportRun extends DbObject
     public function fetchRows($columns, $filter = null, $keys = null)
     {
         $db = $this->getDb();
+        /** @var Db $connection */
+        $connection = $this->getConnection();
         $binchecksum = $this->rowset_checksum;
 
         $query = $db->select()->from(
@@ -85,7 +88,17 @@ class ImportRun extends DbObject
             array('p' => 'imported_property'),
             'p.checksum = rp.property_checksum',
             array()
-        )->where('rsr.rowset_checksum = ?', $this->getConnection()->quoteBinary($binchecksum))->order('r.object_name');
+        )->order('r.object_name');
+        if ($connection->isMysql()) {
+            $query->where('rsr.rowset_checksum = :checksum')->bind([
+                'checksum' => $binchecksum
+            ]);
+        } else {
+            $query->where(
+                'rsr.rowset_checksum = ?',
+                $connection->quoteBinary($binchecksum)
+            );
+        }
 
         if ($columns === null) {
             $columns = $this->listColumnNames();
