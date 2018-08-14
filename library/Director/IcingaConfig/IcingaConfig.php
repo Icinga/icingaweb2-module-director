@@ -533,7 +533,7 @@ globals.directorWarnOnceForThresholds = function() {
 
         return sprintf(
             '
-  const DirectorOverrideTemplate = "%s"
+const DirectorOverrideTemplate = "%s"
 if (! globals[DirectorOverrideTemplate]) {
   const DirectorOverrideVars = "%s"
 
@@ -549,7 +549,7 @@ if (! globals[DirectorOverrideTemplate]) {
     }
   }
 
-  template Service DirectorOverrideTemplate ignore_on_error {
+  template Service DirectorOverrideTemplate {
     /**
      * Seems that host is missing when used in a service object, works fine for
      * apply rules
@@ -571,8 +571,8 @@ if (! globals[DirectorOverrideTemplate]) {
   }
 }
 ',
-            $settings->override_services_varname,
-            $settings->override_services_templatename
+            $settings->override_services_templatename,
+            $settings->override_services_varname
         );
     }
 
