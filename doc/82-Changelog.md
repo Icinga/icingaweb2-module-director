@@ -17,6 +17,9 @@ before switching to a new version.
 * FIX: Custom Fields attached to a Service Template have not been shown for Apply
   Rules whose name matched the Template Name (#1602)
 
+### Import and Sync
+* FIX: There was an issue with specific binary checksums on MySQL (#1556)
+
 1.5.0
 -----
 ### Fixed issues
