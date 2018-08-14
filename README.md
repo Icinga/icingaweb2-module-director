@@ -60,5 +60,5 @@ they fit your needs. They are being used in productive environments:
   deployments
 * [PuppetDB](https://github.com/Icinga/icingaweb2-module-puppetdb): provides
   an Import Source dealing with your PuppetDB
-* [vShere](https://github.com/Icinga/icingaweb2-module-vsphere): VMware vSphere
+* [vSphere](https://github.com/Icinga/icingaweb2-module-vsphere): VMware vSphere
   Import Source for Virtual Machines and Host Systems
