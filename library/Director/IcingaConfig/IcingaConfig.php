@@ -554,14 +554,12 @@ if (! globals[DirectorOverrideTemplate]) {
      * Seems that host is missing when used in a service object, works fine for
      * apply rules
      */
-    try {
-      if (! host) {
-        var host = get_host(host_name)
-      }
-      if (! host) {
-        globals.directorWarnOnceForServiceWithoutHost()
-      }
-    } except { globals.directorWarnOnceForServiceWithoutHost() }
+    if (! host) {
+      var host = get_host(host_name)
+    }
+    if (! host) {
+      globals.directorWarnOnceForServiceWithoutHost()
+    }
 
     if (vars) {
       vars += host.vars[DirectorOverrideVars][name]
