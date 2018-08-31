@@ -626,17 +626,19 @@
         },
 
         setTreeState: function(ev) {
-          var btn = ev.currentTarget;
-          var tree = jQuery(btn).parents('.tree');
-          var treeStatus = {};
+            var btn = ev.currentTarget;
+            var tree = jQuery(btn).parents('.tree');
+            var treeStatus = {};
 
-          treeStatus = setStatusForTreeChildren(tree, treeStatus);
-          localStorage['treeStatus'] = JSON.stringify(treeStatus);
+            treeStatus = setStatusForTreeChildren(tree, treeStatus);
+            localStorage['treeUrl'] = document.location.href;
+            localStorage['treeStatus'] = JSON.stringify(treeStatus);
         },
 
         loadTreeStatus: function(tree) {
             var treeCached = localStorage['treeStatus'];
-            if(typeof treeCached != 'undefined') {
+            var url = localStorage['treeUrl'];
+            if(typeof treeCached != 'undefined' && typeof url != 'undefined' && url === document.location.href) {
                 var treeStatusObj = JSON.parse(treeCached);
                 setTreeStatusFromCache(tree, treeStatusObj);
             }
