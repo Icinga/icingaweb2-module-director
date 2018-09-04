@@ -43,8 +43,8 @@ trait DirectorDb
         $available = $this->listAvailableDbResourceNames();
         if ($resourceNames = $auth->getRestrictions('director/db_resource')) {
             $names = [];
-            foreach ($resourceNames as $names) {
-                foreach ($this->splitList($names) as $name) {
+            foreach ($resourceNames as $rNames) {
+                foreach ($this->splitList($rNames) as $name) {
                     if (array_key_exists($name, $available)) {
                         $names[] = $name;
                     }
