@@ -916,7 +916,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->assertImportsSupport();
         if ($this->imports === null) {
-            if ($this->hasBeenLoadedFromDb()) {
+            // can not use hasBeenLoadedFromDb() when in onStore()
+            if ($this->getProperty('id') !== null) {
                 $this->imports = IcingaObjectImports::loadForStoredObject($this);
             } else {
                 $this->imports = new IcingaObjectImports($this);
