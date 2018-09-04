@@ -24,6 +24,8 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
 
     private $query;
 
+    private $paginationAdapter;
+
     public function __construct($db)
     {
         if ($db instanceof DbAdapter) {
@@ -52,7 +54,11 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
 
     protected function getPaginationAdapter()
     {
-        return new SelectPaginationAdapter($this->getQuery());
+        if ($this->paginationAdapter === null) {
+            $this->paginationAdapter = new SelectPaginationAdapter($this->getQuery());
+        }
+
+        return $this->paginationAdapter;
     }
 
     public function applyFilter(Filter $filter)

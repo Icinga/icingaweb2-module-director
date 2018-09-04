@@ -12,6 +12,10 @@ class SelectPaginationAdapter implements Paginatable
 
     private $countQuery;
 
+    private $cachedCount;
+
+    private $cachedCountQuery;
+
     public function __construct(ZfSelect $query)
     {
         $this->query = $query;
@@ -28,13 +32,18 @@ class SelectPaginationAdapter implements Paginatable
 
     public function count()
     {
-        Benchmark::measure('Running count() for pagination');
-        $count = $this->query->getAdapter()->fetchOne(
-            $this->getCountQuery()
-        );
-        Benchmark::measure("Counted $count rows");
+        $queryString = (string) $this->getCountQuery();
+        if ($this->cachedCountQuery !== $queryString) {
+            Benchmark::measure('Running count() for pagination');
+            $this->cachedCountQuery = $queryString;
+            $count = $this->query->getAdapter()->fetchOne(
+                $queryString
+            );
+            $this->cachedCount = $count;
+            Benchmark::measure("Counted $count rows");
+        }
 
-        return $count;
+        return $this->cachedCount;
     }
 
     public function limit($count = null, $offset = null)
