@@ -121,7 +121,9 @@ class TemplateTree
 
     public function getParentsFor(IcingaObject $object)
     {
-        if ($object->hasBeenLoadedFromDb()) {
+        // can not use hasBeenLoadedFromDb() when in onStore()
+        $id = $object->getProperty('id');
+        if ($id !== null) {
             return $this->getParentsById($object->getProperty('id'));
         } else {
             throw new RuntimeException(
@@ -223,8 +225,10 @@ class TemplateTree
 
     public function getChildrenFor(IcingaObject $object)
     {
-        if ($object->hasBeenLoadedFromDb()) {
-            return $this->getChildrenById($object->getProperty('id'));
+        // can not use hasBeenLoadedFromDb() when in onStore()
+        $id = $object->getProperty('id');
+        if ($id !== null) {
+            return $this->getChildrenById($id);
         } else {
             throw new RuntimeException(
                 'Loading children for unstored objects has not been implemented yet'
@@ -246,8 +250,10 @@ class TemplateTree
 
     public function getDescendantsFor(IcingaObject $object)
     {
-        if ($object->hasBeenLoadedFromDb()) {
-            return $this->getDescendantsById($object->getProperty('id'));
+        // can not use hasBeenLoadedFromDb() when in onStore()
+        $id = $object->getProperty('id');
+        if ($id !== null) {
+            return $this->getDescendantsById($id);
         } else {
             throw new RuntimeException(
                 'Loading descendants for unstored objects has not been implemented yet'
