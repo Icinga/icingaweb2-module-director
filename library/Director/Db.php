@@ -31,6 +31,11 @@ class Db extends DbConnection
         return $this->getDbAdapter();
     }
 
+    /**
+     * @param $callable
+     * @return $this
+     * @throws Exception
+     */
     public function runFailSafeTransaction($callable)
     {
         if (! is_callable($callable)) {
@@ -43,7 +48,11 @@ class Db extends DbConnection
             $callable();
             $db->commit();
         } catch (Exception $e) {
-            $db->rollback();
+            try {
+                $db->rollback();
+            } catch (Exception $e) {
+                // Well... there is nothing we can do here.
+            }
             throw $e;
         }
 
