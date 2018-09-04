@@ -91,4 +91,9 @@ trait RepositoryByObjectHelper
 
         return self::$auth;
     }
+
+    protected static function clearInstances()
+    {
+        self::$instances = [];
+    }
 }

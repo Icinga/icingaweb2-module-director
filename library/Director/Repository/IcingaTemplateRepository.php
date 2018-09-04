@@ -114,4 +114,9 @@ class IcingaTemplateRepository
 
         return $db->fetchCol($query);
     }
+
+    public static function clear()
+    {
+        static::clearInstances();
+    }
 }
