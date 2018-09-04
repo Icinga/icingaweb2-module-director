@@ -74,7 +74,7 @@ abstract class QueryBasedTable extends Table implements Countable
         return $this->searchColumns;
     }
 
-    protected function search($search)
+    public function search($search)
     {
         if (! empty($search)) {
             $query = $this->getQuery();

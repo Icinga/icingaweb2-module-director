@@ -67,7 +67,7 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
         return $this;
     }
 
-    protected function search($search)
+    public function search($search)
     {
         if (! empty($search)) {
             $query = $this->getQuery();
