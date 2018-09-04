@@ -52,7 +52,12 @@ abstract class ObjectApplyMatches
 
     public function matchesFilter(Filter $filter)
     {
-        return static::getPreparedFilter($filter)->matches($this->flatObject);
+        $filterObj = static::getPreparedFilter($filter);
+        if ($filterObj->isExpression() || ! $filterObj->isEmpty()) {
+            return $filterObj->matches($this->flatObject);
+        } else {
+            return false;
+        }
     }
 
     /**
