@@ -349,9 +349,8 @@ class HostGroupMembershipResolverTest extends BaseTestCase
     {
         $resolver = new HostGroupMembershipResolver($this->getDb());
 
-        $resolver->refreshAllMappings();
-        $this->assertTrue(true); // we reached this without exception
-
-        // TODO: check results of the recheck - it should not change anything at this point
+        $resolver->checkDb();
+        $this->assertEmpty($resolver->getNewMappings(), 'There should not be any new mappings');
+        $this->assertEmpty($resolver->getOutdatedMappings(), 'There should not be any outdated mappings');
     }
 }
