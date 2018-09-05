@@ -16,6 +16,15 @@ master (will be 1.6.0)
 ### CLI
 * FEATURE: It's now possible to dump data as fetched by an Import Source (#1626)
 
+1.5.2
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/17?closed=1)
+
+### Configuration rendering
+* FIX: Fix compatibility with Icinga v2.6, got broken with v1.5.0 (#1614)
+
 1.5.1
 -----
 ### Fixed issues
