@@ -1157,6 +1157,11 @@ CREATE TABLE icinga_user (
   FOREIGN KEY (zone_id)
     REFERENCES icinga_zone (id)
     ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_period
+  FOREIGN KEY (period_id)
+    REFERENCES icinga_timeperiod (id)
+    ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
 
@@ -1988,4 +1993,4 @@ COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (149, NOW());
+  VALUES (150, NOW());

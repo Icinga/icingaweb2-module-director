@@ -940,6 +940,11 @@ CREATE TABLE icinga_user (
     FOREIGN KEY zone (zone_id)
     REFERENCES icinga_zone (id)
     ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_period
+    FOREIGN KEY period (period_id)
+    REFERENCES icinga_timeperiod (id)
+    ON DELETE RESTRICT
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1692,4 +1697,4 @@ CREATE TABLE icinga_dependency_states_set (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (149, NOW());
+  VALUES (150, NOW());
