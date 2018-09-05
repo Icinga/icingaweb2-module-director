@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 
 /**
@@ -62,6 +64,32 @@ class ImportsourceCommand extends Command
         $source = $this->getImportSource();
         $source->checkForChanges();
         $this->showImportStateDetails($source);
+    }
+
+    /**
+     * Fetch current data from a given Import Source
+     *
+     * This command fetches data from the given Import Source and outputs
+     * them as plain JSON
+     *
+     * USAGE
+     *
+     * icingacli director importsource fetch --id <id>
+     *
+     * OPTIONS
+     *
+     *   --id <id>     An Import Source ID. Use the list command to figure out
+     *   --benchmark   Show timing and memory usage details
+     */
+    public function fetchAction()
+    {
+        $source = $this->getImportSource();
+        $source->checkForChanges();
+        $hook = ImportSourceHook::forImportSource($source);
+        Benchmark::measure('Ready to fetch data');
+        $data = $hook->fetchData();
+        Benchmark::measure(sprintf('Got %d rows, ready to dump JSON', count($data)));
+        echo json_encode($data, JSON_PRETTY_PRINT);
     }
 
     /**

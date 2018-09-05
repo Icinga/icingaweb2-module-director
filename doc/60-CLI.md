@@ -493,6 +493,20 @@ to the most recently imported data.
 | `--id <id>`   | An Import Source ID. Use the list command to figure out |
 | `--benchmark` | Show timing and memory usage details                    |
 
+#### Fetch data from a given Import Source
+
+This command fetches data from the given Import Source and outputs them
+as plain JSON
+
+`icingacli director importsource fetch --id <id>`
+
+##### Options
+
+| Option        | Description                                             |
+|---------------|---------------------------------------------------------|
+| `--id <id>`   | An Import Source ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details                    |
+
 #### Trigger an Import Run for a given Import Source
 
 This command fetches data from the given Import Source and stores it to

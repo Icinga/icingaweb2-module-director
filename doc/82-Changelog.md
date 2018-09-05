@@ -4,6 +4,18 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+master (will be 1.6.0)
+----------------------
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/15?closed=1)
+
+### Import and Sync
+* FEATURE: new Property Modifier allows to extract specific Array values (#473)
+
+### CLI
+* FEATURE: It's now possible to dump data as fetched by an Import Source (#1626)
+
 1.5.1
 -----
 ### Fixed issues
