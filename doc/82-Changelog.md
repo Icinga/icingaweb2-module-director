@@ -4,6 +4,15 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.5.2
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/17?closed=1)
+
+### Configuration rendering
+* FIX: Fix compatibility with Icinga v2.6, got broken with v1.5.0 (#1614)
+
 1.5.1
 -----
 ### Fixed issues
