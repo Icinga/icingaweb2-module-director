@@ -25,6 +25,9 @@ master (will be 1.6.0)
 ### Configuration rendering
 * FIX: Fix compatibility with Icinga v2.6, got broken with v1.5.0 (#1614)
 
+### REST API
+* FIX: No more invalid JSON in some special circumstances (#1314)
+
 1.5.1
 -----
 ### Fixed issues
