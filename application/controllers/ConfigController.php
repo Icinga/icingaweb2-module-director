@@ -56,6 +56,9 @@ class ConfigController extends ActionController
                 $this->setAutorefreshInterval(20);
             }
         } catch (Exception $e) {
+            $this->content()->prepend(
+                Html::tag('p', ['class' => 'warning'], $e->getMessage())
+            );
             // No problem, Icinga might be reloading
         }
 
