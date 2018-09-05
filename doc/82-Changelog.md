@@ -10,11 +10,15 @@ master (will be 1.6.0)
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/15?closed=1)
 
+### User Interface
+* FIX: link startup log warning even for non-standard package names (#1633)
+
 ### Import and Sync
 * FEATURE: new Property Modifier allows to extract specific Array values (#473)
 
 ### CLI
 * FEATURE: It's now possible to dump data as fetched by an Import Source (#1626)
+* FIX: Director Health Check no longer warns about no Imports/Syncs/Jobs (#1607)
 
 1.5.2
 -----

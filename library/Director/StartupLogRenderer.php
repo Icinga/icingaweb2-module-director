@@ -24,8 +24,11 @@ class StartupLogRenderer implements ValidHtml
         $lines = array();
         $severity = 'information';
         $sevPattern = '/^(debug|notice|information|warning|critical)\/(\w+)/';
-        $filePatternHint = '~(/[\w/]+/api/packages/director/[^/]+/)([^:]+\.conf)(: (\d+))~';
-        $filePatternDetail = '~(/[\w/]+/api/packages/director/[^/]+/)([^:]+\.conf)(\((\d+)\))~';
+        $settings = new Settings($this->deployment->getConnection());
+        $package = $settings->get('icinga_package_name');
+        $pathPattern = '~(/[\w/]+/api/packages/' . $package . '/[^/]+/)';
+        $filePatternHint = $pathPattern . '([^:]+\.conf)(: (\d+))~';
+        $filePatternDetail = $pathPattern . '([^:]+\.conf)(\((\d+)\))~';
         $markPattern = null;
         // len [stage] + 1
         $markReplace = '        ^';
