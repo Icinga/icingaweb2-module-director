@@ -81,12 +81,14 @@ class PropertyModifierArrayElementByPosition extends PropertyModifierHook
                 } else {
                     return array_shift($value);
                 }
+                // https://github.com/squizlabs/PHP_CodeSniffer/pull/1363
             case 'last':
                 if (empty($value)) {
                     return $this->emptyValue($value);
                 } else {
                     return array_pop($value);
                 }
+                // https://github.com/squizlabs/PHP_CodeSniffer/pull/1363
             case 'fixed':
                 $pos = $this->getSetting('position');
                 if (! is_int($pos) && ! ctype_digit($pos)) {
@@ -102,6 +104,7 @@ class PropertyModifierArrayElementByPosition extends PropertyModifierHook
                 } else {
                     return $this->emptyValue($value);
                 }
+                // https://github.com/squizlabs/PHP_CodeSniffer/pull/1363
             default:
                 throw new ConfigurationError(
                     '"%s" is not a valid array position_type',
