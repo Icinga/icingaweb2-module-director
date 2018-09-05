@@ -2,9 +2,7 @@
 
 namespace dipl\Html\FormElement;
 
-use dipl\Html\BaseHtmlElement;
-
-class TextareaElement extends BaseHtmlElement
+class TextareaElement extends BaseFormElement
 {
     protected $tag = 'textarea';
 }
