@@ -59,6 +59,12 @@ abstract class ObjectController extends ActionController
                 $handler->setObject($this->object);
             }
             $handler->dispatch();
+            // Hint: also here, hard exit. There is too much magic going on.
+            // Letting this bubble up smoothly would be "correct", but proved
+            // to be too fragile. Web 2, all kinds of pre/postDispatch magic,
+            // different view renderers - hard exit is the only safe bet right
+            // now.
+            exit;
         } else {
             $this->eventuallyLoadObject();
             if ($this->getRequest()->getActionName() === 'add') {
