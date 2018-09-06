@@ -198,7 +198,6 @@ class IcingaService extends IcingaObject
     public function renderHost_id()
     {
         // @codingStandardsIgnoreEnd
-
         if ($this->hasBeenAssignedToHostTemplate()) {
             return '';
         }
@@ -231,37 +230,16 @@ class IcingaService extends IcingaObject
 
         $assign_filter = $this->get('assign_filter');
         $filter = Filter::fromQueryString($assign_filter);
-        $hosts = HostApplyMatches::forFilter($filter, $conn);
+        $hostnames = HostApplyMatches::forFilter($filter, $conn);
+
         $this->set('object_type', 'object');
-        $this->set('assign_filter', null);
 
-        foreach ($hosts as $hostname) {
-            $file = $this->legacyHostnameServicesFile($hostname, $config);
-            $this->set('host', $hostname);
-            $file->addLegacyObject($this);
+        foreach ($this->mapHostsToZones($hostnames) as $zone => $names) {
+            $this->set('host_id', $names);
+
+            $config->configFile('director/' . $zone . '/service_apply', '.cfg')
+                ->addLegacyObject($this);
         }
-
-        $this->set('host', null);
-        $this->set('object_type', 'apply');
-        $this->set('assign_filter', $assign_filter);
-    }
-
-    /**
-     * @param string $hostname
-     * @param IcingaConfig $config
-     * @return \Icinga\Module\Director\IcingaConfig\IcingaConfigFile
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
-    {
-        return $config->configFile(
-            sprintf(
-                'director/%s/service_apply',
-                IcingaHost::load($hostname, $this->getConnection())
-                    ->getRenderingZone($config)
-            ),
-            '.cfg'
-        );
     }
 
     /**
@@ -271,10 +249,6 @@ class IcingaService extends IcingaObject
     {
         if ($this->get('service_set_id') !== null) {
             return '';
-        }
-
-        if ($this->isApplyRule()) {
-            throw new InvalidArgumentException('Apply Services can not be rendered directly.');
         }
 
         $str = parent::toLegacyConfigString();

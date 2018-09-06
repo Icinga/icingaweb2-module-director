@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Data\Db;
 
+use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -536,18 +537,22 @@ abstract class DbObject
      *
      * // TODO: may conflict with ->id
      *
+     * @throws IcingaException When key can not be calculated
+     *
      * @return string|array
      */
     public function getId()
     {
-        // TODO: Doesn't work for array() / multicol key
         if (is_array($this->keyName)) {
             $id = array();
             foreach ($this->keyName as $key) {
-                if (! isset($this->properties[$key])) {
-                    return null; // Really?
+                if (isset($this->properties[$key])) {
+                    $id[$key] = $this->properties[$key];
                 }
-                $id[$key] = $this->properties[$key];
+            }
+
+            if (empty($id)) {
+                throw new IcingaException('Could not evaluate id for multi-column object!');
             }
 
             return $id;

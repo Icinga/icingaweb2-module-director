@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
-use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Core\DeploymentApiInterface;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -20,7 +20,7 @@ class DeploymentLinkForm extends DirectorForm
     /** @var Auth */
     protected $auth;
 
-    /** @var CoreApi */
+    /** @var DeploymentApiInterface */
     protected $api;
 
     /** @var Db */
@@ -31,7 +31,7 @@ class DeploymentLinkForm extends DirectorForm
      * @param Auth $auth
      * @return static
      */
-    public static function create(Db $db, DeploymentInfo $info, Auth $auth, CoreApi $api)
+    public static function create(Db $db, DeploymentInfo $info, Auth $auth, DeploymentApiInterface $api)
     {
         $self = static::load();
         $self->setAuth($auth);

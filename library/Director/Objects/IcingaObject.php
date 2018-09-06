@@ -853,6 +853,34 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         return $this->groups->hasBeenModified();
     }
+
+    public function getAppliedGroups()
+    {
+        $this->assertGroupsSupport();
+        if (! $this instanceof IcingaHost) {
+            throw new ProgrammingError('getAppliedGroups is only available for hosts currently!');
+        }
+
+        $type = strtolower($this->type);
+        $query = $this->db->select()->from(
+            ['gr' => "icinga_${type}group_${type}_resolved"],
+            ['g.object_name']
+        )->join(
+            ['g' => "icinga_${type}group"],
+            "g.id = gr.${type}group_id",
+            []
+        )->joinLeft(
+            ['go' => "icinga_${type}group_${type}"],
+            "go.${type}group_id = gr.${type}group_id",
+            []
+        )->where(
+            "gr.${type}_id = ?",
+            $this->id
+        )->where("go.${type}_id IS NULL")->order('g.object_name');
+
+        return $this->db->fetchCol($query);
+    }
+
     /**
      * @return IcingaTimePeriodRanges
      */
@@ -1819,13 +1847,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @codingStandardsIgnoreStart
      */
-    protected function renderLegacyHost_id()
+    protected function renderLegacyHost_id($value)
     {
-        return $this->renderLegacyRelationProperty(
-            'host',
-            $this->get('host_id'),
-            'host_name'
-        );
+        if (is_array($value)) {
+            return c1::renderKeyValue('host_name', c1::renderArray($value));
+        } else {
+            return $this->renderLegacyRelationProperty(
+                'host',
+                $this->get('host_id'),
+                'host_name'
+            );
+        }
     }
 
     /**
@@ -2043,6 +2075,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($this->propertyIsInterval($key)) {
+            return c1::renderKeyValue(
+                $this->intervalProperties[$key],
+                c1::renderInterval($value)
+            );
+        }
+
         if (substr($key, -3) === '_id'
              && $this->hasRelation($relKey = substr($key, 0, -3))
         ) {
@@ -2113,8 +2152,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function renderLegacyGroups()
     {
-        if ($this->supportsGroups()) {
-            return $this->groups()->toLegacyConfigString();
+        if ($this->supportsGroups() && $this->hasBeenLoadedFromDb()) {
+            $applied = array();
+            if ($this instanceof IcingaHost) {
+                $applied = $this->getAppliedGroups();
+            }
+            return $this->groups()->toLegacyConfigString($applied);
         } else {
             return '';
         }
@@ -2323,10 +2366,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function renderAssign_Filter()
     {
-        // @codingStandardsIgnoreEnd
         return '    ' . AssignRenderer::forFilter(
             Filter::fromQueryString($this->get('assign_filter'))
         )->renderAssign() . "\n";
+    }
+
+    public function renderLegacyAssign_Filter()
+    {
+        // @codingStandardsIgnoreEnd
+        if ($this instanceof IcingaHostGroup) {
+            $c = "    # resolved memberships are set via the individual object\n";
+        } elseif ($this instanceof IcingaService) {
+            $c = "    # resolved objects are listed here\n";
+        } else {
+            $c = "    # assign is not supported for " . $this->type . "\n";
+        }
+        $c .= '    #' . AssignRenderer::forFilter(
+            Filter::fromQueryString($this->get('assign_filter'))
+        )->renderAssign() . "\n";
+        return $c;
     }
 
     public function toLegacyConfigString()
@@ -2900,6 +2958,27 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } else {
             return $value !== null;
         }
+    }
+
+    protected function mapHostsToZones($names)
+    {
+        $map = array();
+
+        foreach ($names as $hostname) {
+            /** @var IcingaHost $host */
+            $host = IcingaHost::load($hostname, $this->connection);
+
+            $zone = $host->getRenderingZone();
+            if (! array_key_exists($zone, $map)) {
+                $map[$zone] = array();
+            }
+
+            $map[$zone][] = $hostname;
+        }
+
+        ksort($map);
+
+        return $map;
     }
 
     public function getUrlParams()

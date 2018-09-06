@@ -223,47 +223,25 @@ class IcingaServiceSet extends IcingaObject
         // Delegating this to the service would look, but this way it's faster
         if ($filter = $this->get('assign_filter')) {
             $filter = Filter::fromQueryString($filter);
-            $hosts = HostApplyMatches::forFilter($filter, $conn);
+
+            $hostnames = HostApplyMatches::forFilter($filter, $conn);
+        } else {
+            $hostnames = array($this->getRelated('host')->object_name);
+        }
+
+        foreach ($this->mapHostsToZones($hostnames) as $zone => $names) {
+            $file = $config->configFile('director/' . $zone . '/servicesets', '.cfg');
+            $file->addContent($this->getConfigHeaderComment($config));
+
             foreach ($this->getServiceObjects() as $service) {
                 $service->set('object_type', 'object');
+                $service->set('host_id', $names);
+
                 $this->copyVarsToService($service);
 
-                foreach ($hosts as $hostname) {
-                    $file = $this->legacyHostnameServicesFile($hostname, $config);
-                    $file->addContent($this->getConfigHeaderComment($config));
-                    $service->set('host', $hostname);
-                    $file->addLegacyObject($service);
-                }
-            }
-        } else {
-            foreach ($this->getServiceObjects() as $service) {
-                $service->set('object_type', 'object');
-                $service->set('host_id', $this->get('host_id'));
-                foreach ($this->vars() as $k => $var) {
-                    $service->$k = $var;
-                }
-                $file = $this->legacyRelatedHostFile($service, $config);
-                $file->addContent($this->getConfigHeaderComment($config));
                 $file->addLegacyObject($service);
             }
         }
-    }
-
-    protected function legacyHostnameServicesFile($hostname, IcingaConfig $config)
-    {
-        $host = IcingaHost::load($hostname, $this->getConnection());
-        return $config->configFile(
-            'director/' . $host->getRenderingZone($config) . '/servicesets',
-            '.cfg'
-        );
-    }
-
-    protected function legacyRelatedHostFile(IcingaService $service, IcingaConfig $config)
-    {
-        return $config->configFile(
-            'director/' . $service->getRelated('host')->getRenderingZone($config) . '/servicesets',
-            '.cfg'
-        );
     }
 
     public function getRenderingZone(IcingaConfig $config = null)
