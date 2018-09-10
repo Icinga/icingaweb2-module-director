@@ -446,6 +446,10 @@ abstract class GroupMembershipResolver
             }
             foreach ($groupNames as $name) {
                 $groupId = $this->getGroupId($name);
+                // Ignore groups we're not interested in
+                if (! array_key_exists($groupId, $groups)) {
+                    continue;
+                }
                 if (! array_key_exists($groupId, $mappings)) {
                     $mappings[$groupId] = [];
                 }
