@@ -871,7 +871,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             []
         )->joinLeft(
             ['go' => "icinga_${type}group_${type}"],
-            "go.${type}group_id = gr.${type}group_id",
+            "go.${type}group_id = gr.${type}group_id AND go.${type}_id = " . $this->id,
             []
         )->where(
             "gr.${type}_id = ?",
