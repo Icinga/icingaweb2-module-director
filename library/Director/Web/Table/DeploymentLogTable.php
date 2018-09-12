@@ -30,7 +30,7 @@ class DeploymentLogTable extends ZfQueryBasedTable
         $shortSum = $this->getShortChecksum($row->config_checksum);
         $tr = $this::tr([
             $this::td(Link::create(
-                [$row->peer_identity, " ($shortSum)"],
+                $shortSum === null ? $row->peer_identity : [$row->peer_identity, " ($shortSum)"],
                 'director/deployment',
                 ['id' => $row->id]
             )),

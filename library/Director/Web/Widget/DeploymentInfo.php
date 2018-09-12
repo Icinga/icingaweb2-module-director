@@ -33,18 +33,18 @@ class DeploymentInfo extends HtmlDocument
     public function __construct(DirectorDeploymentLog $deployment)
     {
         $this->deployment = $deployment;
-        $this->config = IcingaConfig::load(
-            $deployment->config_checksum,
-            $deployment->getConnection()
-        );
+        if ($deployment->get('config_checksum') !== null) {
+            $this->config = IcingaConfig::load(
+                $deployment->get('config_checksum'),
+                $deployment->getConnection()
+            );
+        }
     }
 
     /**
      * @param Auth $auth
      * @param Request $request
      * @return Tabs
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function getTabs(Auth $auth, Request $request)
     {
@@ -76,8 +76,14 @@ class DeploymentInfo extends HtmlDocument
         $table->addNameValuePairs([
             $this->translate('Deployment time') => $dep->start_time,
             $this->translate('Sent to')         => $dep->peer_identity,
-            $this->translate('Configuration')   => $this->getConfigDetails(),
-            $this->translate('Duration')        => $this->getDurationInfo(),
+        ]);
+        if ($this->config !== null) {
+            $table->addNameValuePairs([
+                $this->translate('Configuration')   => $this->getConfigDetails(),
+                $this->translate('Duration')        => $this->getDurationInfo(),
+            ]);
+        }
+        $table->addNameValuePairs([
             $this->translate('Stage name')      => $dep->stage_name,
             $this->translate('Startup')         => $this->getStartupInfo()
         ]);
@@ -151,9 +157,6 @@ class DeploymentInfo extends HtmlDocument
         return parent::render();
     }
 
-    /**
-     * @throws \Icinga\Exception\IcingaException
-     */
     protected function addStartupLog()
     {
         $this->add(Html::tag('h2', null, $this->translate('Startup Log')));

@@ -50,6 +50,10 @@ trait DbHelper
 
     public function getShortChecksum($checksum)
     {
+        if ($checksum === null) {
+            return null;
+        }
+
         return substr($this->getChecksum($checksum), 0, 7);
     }
 }
