@@ -14,6 +14,7 @@ class IcingaTimePeriod extends IcingaObject
         'object_name'       => null,
         'object_type'       => null,
         'disabled'          => 'n',
+        'prefer_includes'   => null,
         'display_name'      => null,
         'update_method'     => null,
     );
@@ -27,6 +28,18 @@ class IcingaTimePeriod extends IcingaObject
     protected $relations = array(
         'zone' => 'IcingaZone',
     );
+
+    protected $multiRelations = [
+        'includes' => [
+            'relatedObjectClass' => 'IcingaTimeperiod',
+            'relatedShortName'   => 'include',
+        ],
+        'excludes' => [
+            'relatedObjectClass' => 'IcingaTimeperiod',
+            'relatedShortName'   => 'exclude',
+            'legacyPropertyName' => 'exclude'
+        ],
+    ];
 
     /**
      * Render update property

@@ -273,6 +273,7 @@ CREATE TABLE icinga_timeperiod (
   zone_id integer DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
+  prefer_includes enum_boolean DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_timeperiod_zone
   FOREIGN KEY (zone_id)
@@ -1990,7 +1991,38 @@ CREATE TABLE icinga_dependency_states_set (
 CREATE INDEX dependency_states_set_dependency ON icinga_dependency_states_set (dependency_id);
 COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [], extend: += [], blacklist: -= []';
 
+CREATE TABLE icinga_timeperiod_include (
+  timeperiod_id integer NOT NULL,
+  include_id integer NOT NULL,
+  PRIMARY KEY (timeperiod_id, include_id),
+  CONSTRAINT icinga_timeperiod_timeperiod_include
+  FOREIGN KEY (include_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE,
+  CONSTRAINT icinga_timeperiod_include
+  FOREIGN KEY (timeperiod_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
+
+CREATE TABLE icinga_timeperiod_exclude (
+  timeperiod_id integer NOT NULL,
+  exclude_id integer NOT NULL,
+  PRIMARY KEY (timeperiod_id, exclude_id),
+  CONSTRAINT icinga_timeperiod_timeperiod_exclude
+  FOREIGN KEY (exclude_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE,
+  CONSTRAINT icinga_timeperiod_exclude
+  FOREIGN KEY (timeperiod_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (150, NOW());
+  VALUES (151, NOW());
