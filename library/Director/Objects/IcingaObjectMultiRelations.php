@@ -30,6 +30,8 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
     protected $relatedShortName;
 
+    protected $legacyPropertyName;
+
     private $position = 0;
 
     private $db;
@@ -439,6 +441,11 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
             return '';
         }
 
-        return c1::renderKeyValue($this->propertyName, c1::renderArray($relations));
+        if ($this->legacyPropertyName === null) {
+            return '    # not supported in legacy: ' .
+                c1::renderKeyValue($this->propertyName, c1::renderArray($relations), '');
+        }
+
+        return c1::renderKeyValue($this->legacyPropertyName, c1::renderArray($relations));
     }
 }
