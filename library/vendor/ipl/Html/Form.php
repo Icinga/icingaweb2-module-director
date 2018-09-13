@@ -42,7 +42,7 @@ class Form extends BaseHtmlElement
         $this->request = $request;
 
         if ($this->getAction() === null) {
-            $this->setAction($request->getUrl());
+            $this->setAction($request->getUrl()->getAbsoluteUrl('&'));
         }
 
         return $this;
