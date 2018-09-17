@@ -38,10 +38,10 @@ class IcingaObjectInspection extends BaseHtmlElement
     protected function assemble()
     {
         $attrs = $this->object->attrs;
-        if (property_exists($attrs, 'source_location')) {
+        if (isset($attrs->source_location)) {
             $this->renderSourceLocation($attrs->source_location);
         }
-        if (property_exists($attrs, 'last_check_result')) {
+        if (isset($attrs->last_check_result)) {
             $this->renderLastCheckResult($attrs->last_check_result);
         }
 
