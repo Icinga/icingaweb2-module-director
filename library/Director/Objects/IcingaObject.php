@@ -2179,6 +2179,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @return string
      */
+    protected function renderLegacyMultiRelations()
+    {
+        $out = '';
+        foreach ($this->loadAllMultiRelations() as $rel) {
+            $out .= $rel->toLegacyConfigString();
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return string
+     */
     protected function renderRanges()
     {
         if ($this->supportsRanges()) {
@@ -2393,11 +2406,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderLegacyObjectHeader(),
             $this->renderLegacyImports(),
             $this->renderLegacyProperties(),
-            $this->renderLegacyRanges(),
             //$this->renderArguments(),
             //$this->renderRelatedSets(),
             $this->renderLegacyGroups(),
-            //$this->renderMultiRelations(),
+            $this->renderLegacyMultiRelations(),
+            $this->renderLegacyRanges(),
             $this->renderLegacyCustomExtensions(),
             $this->renderLegacyCustomVars(),
             $this->renderLegacySuffix()
@@ -2442,11 +2455,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderPrioritizedProperties(),
             $this->renderImports(),
             $this->renderProperties(),
-            $this->renderRanges(),
             $this->renderArguments(),
             $this->renderRelatedSets(),
             $this->renderGroups(),
             $this->renderMultiRelations(),
+            $this->renderRanges(),
             $this->renderCustomExtensions(),
             $this->renderCustomVars(),
             $this->renderSuffix()

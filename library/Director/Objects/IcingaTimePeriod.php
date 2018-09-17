@@ -14,9 +14,14 @@ class IcingaTimePeriod extends IcingaObject
         'object_name'       => null,
         'object_type'       => null,
         'disabled'          => 'n',
+        'prefer_includes'   => null,
         'display_name'      => null,
         'update_method'     => null,
     );
+
+    protected $booleans = [
+        'prefer_includes'  => 'prefer_includes',
+    ];
 
     protected $supportsImports = true;
 
@@ -27,6 +32,18 @@ class IcingaTimePeriod extends IcingaObject
     protected $relations = array(
         'zone' => 'IcingaZone',
     );
+
+    protected $multiRelations = [
+        'includes' => [
+            'relatedObjectClass' => 'IcingaTimeperiod',
+            'relatedShortName'   => 'include',
+        ],
+        'excludes' => [
+            'relatedObjectClass' => 'IcingaTimeperiod',
+            'relatedShortName'   => 'exclude',
+            'legacyPropertyName' => 'exclude'
+        ],
+    ];
 
     /**
      * Render update property
@@ -48,15 +65,64 @@ class IcingaTimePeriod extends IcingaObject
             . '    import "legacy-timeperiod"' . "\n";
     }
 
+    protected function checkPeriodInRange($now, $name = null)
+    {
+        if ($name !== null) {
+            $period = static::load($name, $this->connection);
+        } else {
+            $period = $this;
+        }
+
+        foreach ($period->ranges()->getRanges() as $range) {
+            if ($range->isActive($now)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function isActive($now = null)
     {
         if ($now === null) {
             $now = time();
         }
 
-        foreach ($this->ranges()->getRanges() as $range) {
-            if ($range->isActive($now)) {
+        $preferIncludes = $this->get('prefer_includes') !== 'n';
+
+        $active = $this->checkPeriodInRange($now);
+        $included = false;
+        $excluded = false;
+
+        $variants = [
+            'includes' => &$included,
+            'excludes' => &$excluded
+        ];
+
+        foreach ($variants as $key => &$var) {
+            foreach ($this->get($key) as $name) {
+                if ($this->checkPeriodInRange($now, $name)) {
+                    $var = true;
+                    break;
+                }
+            }
+        }
+
+        if ($preferIncludes) {
+            if ($included) {
                 return true;
+            } elseif ($excluded) {
+                return false;
+            } else {
+                return $active;
+            }
+        } else {
+            if ($excluded) {
+                return false;
+            } elseif ($included) {
+                return true;
+            } else {
+                return $active;
             }
         }
 

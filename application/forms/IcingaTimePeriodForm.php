@@ -52,8 +52,54 @@ class IcingaTimePeriodForm extends DirectorObjectForm
             $this->addHidden('update_method', 'LegacyTimePeriod');
         }
 
+        $this->addIncludeExclude();
+
         $this->addImportsElement();
 
         $this->setButtons();
+    }
+
+    protected function addIncludeExclude()
+    {
+        $periods = [];
+        foreach ($this->db->enumTimeperiods() as $id => $period) {
+            if ($this->object === null || $this->object->get('object_name') !== $period) {
+                $periods[$period] = $period;
+            }
+        }
+
+        if (empty($periods)) {
+            return;
+        }
+
+        $this->addElement(
+            'extensibleSet',
+            'includes',
+            array(
+                'label' => $this->translate('Include period'),
+                'description' => $this->translate(
+                    'Include other time periods into this.'
+                ),
+                'multiOptions' => $this->optionalEnum($periods),
+            )
+        );
+
+        $this->addElement(
+            'extensibleSet',
+            'excludes',
+            array(
+                'label' => $this->translate('Exclude period'),
+                'description' => $this->translate(
+                    'Exclude other time periods from this.'
+                ),
+                'multiOptions' => $this->optionalEnum($periods),
+            )
+        );
+
+        $this->optionalBoolean(
+            'prefer_includes',
+            $this->translate('Prefer includes'),
+            $this->translate('Whether to prefer timeperiods includes or excludes. Default to true.')
+        );
     }
 }

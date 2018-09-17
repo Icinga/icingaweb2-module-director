@@ -28,17 +28,28 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
     protected $relationIdColumn;
 
+    protected $relatedShortName;
+
+    protected $legacyPropertyName;
+
     private $position = 0;
 
     private $db;
 
     protected $idx = array();
 
-    public function __construct(IcingaObject $object, $propertyName, $relatedObjectClass)
+    public function __construct(IcingaObject $object, $propertyName, $config)
     {
         $this->object = $object;
         $this->propertyName = $propertyName;
-        $this->relatedObjectClass = $relatedObjectClass;
+
+        if (is_object($config) || is_array($config)) {
+            foreach ($config as $k => $v) {
+                $this->$k = $v;
+            }
+        } else {
+            $this->relatedObjectClass = $config;
+        }
     }
 
     public function getObjects()
@@ -238,15 +249,26 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->propertyName;
     }
 
+    protected function getRelatedShortName()
+    {
+        if ($this->relatedShortName === null) {
+            /** @var IcingaObject $class */
+            $class = $this->getRelatedClassName();
+            $this->relatedShortName = $class::create()->getShortTableName();
+        }
+
+        return $this->relatedShortName;
+    }
+
     protected function getTableName()
     {
-        $class = $this->getRelatedClassName();
-        return $this->object->getTableName() . '_' . $class::create()->getShortTableName();
+        return $this->object->getTableName() . '_' . $this->getRelatedShortName();
     }
 
     protected function getRelatedTableName()
     {
         if ($this->relatedTableName === null) {
+            /** @var IcingaObject $class */
             $class = $this->getRelatedClassName();
             $this->relatedTableName = $class::create()->getTableName();
         }
@@ -257,8 +279,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
     protected function getRelationIdColumn()
     {
         if ($this->relationIdColumn === null) {
-            $class = $this->getRelatedClassName();
-            $this->relationIdColumn = $class::create()->getShortTableName();
+            $this->relationIdColumn = $this->getRelatedShortName();
         }
 
         return $this->relationIdColumn;
@@ -420,6 +441,11 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
             return '';
         }
 
-        return c1::renderKeyValue($this->propertyName, c1::renderArray($relations));
+        if ($this->legacyPropertyName === null) {
+            return '    # not supported in legacy: ' .
+                c1::renderKeyValue($this->propertyName, c1::renderArray($relations), '');
+        }
+
+        return c1::renderKeyValue($this->legacyPropertyName, c1::renderArray($relations));
     }
 }
