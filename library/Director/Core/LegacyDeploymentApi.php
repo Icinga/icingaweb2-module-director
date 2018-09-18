@@ -19,8 +19,8 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     protected $deploymentPath;
     protected $activationScript;
 
-    const DIR_MODE = 0775;
-    const FILE_MODE = 0664;
+    protected $dir_mode;
+    protected $file_mode;
 
     public function __construct(Db $db)
     {
@@ -28,6 +28,9 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         $settings = $this->db->settings();
         $this->deploymentPath = $settings->deployment_path_v1;
         $this->activationScript = $settings->activation_script_v1;
+
+        $this->dir_mode = base_convert($settings->get('deployment_file_mode_v1', '2775'), 8, 10);
+        $this->file_mode = base_convert($settings->get('deployment_dir_mode_v1', '0664'), 8, 10);
     }
 
     /**
@@ -279,7 +282,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
                 if ($fh === null) {
                     throw new IcingaException('Could not open file "%s" for writing.', $fullPath);
                 }
-                chmod($fullPath, self::FILE_MODE);
+                chmod($fullPath, $this->file_mode);
 
                 fwrite($fh, $content);
                 fclose($fh);
@@ -454,7 +457,7 @@ class LegacyDeploymentApi implements DeploymentApiInterface
 
             try {
                 mkdir($path);
-                chmod($path, self::DIR_MODE);
+                chmod($path, $this->dir_mode);
             } catch (Exception $e) {
                 throw new IcingaException('Could not create path "%s": %s', $path, $e->getMessage());
             }
