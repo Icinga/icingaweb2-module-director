@@ -51,6 +51,7 @@ class Housekeeping
             'unlinkedImportedRowSets'    => N_('Unlinked imported row sets'),
             'unlinkedImportedRows'       => N_('Unlinked imported rows'),
             'unlinkedImportedProperties' => N_('Unlinked imported properties'),
+            'resolveCache'               => N_('(Host) group resolve cache'),
         );
     }
 
@@ -188,5 +189,17 @@ class Housekeeping
             . ' ON rp.property_checksum = p.checksum WHERE rp.property_checksum IS NULL';
 
         return $this->db->exec($sql);
+    }
+
+    public function countResolveCache()
+    {
+        $helper = MembershipHousekeeping::instance('host', $this->connection);
+        return array_sum($helper->check());
+    }
+
+    public function wipeResolveCache()
+    {
+        $helper = MembershipHousekeeping::instance('host', $this->connection);
+        return $helper->update();
     }
 }

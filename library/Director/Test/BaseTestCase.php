@@ -6,7 +6,6 @@ use Icinga\Application\Icinga;
 use Icinga\Application\Config;
 use Icinga\Data\ResourceFactory;
 use Icinga\Exception\ConfigurationError;
-use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -16,7 +15,8 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
 {
     private static $app;
 
-    private $db;
+    /** @var Db */
+    private static $db;
 
     public function setUp()
     {
@@ -39,7 +39,7 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
         return $this->getDbResourceName() !== null;
     }
 
-    protected function getDbResourceName()
+    protected static function getDbResourceName()
     {
         if (array_key_exists('DIRECTOR_TESTDB_RES', $_SERVER)) {
             return $_SERVER['DIRECTOR_TESTDB_RES'];
@@ -52,10 +52,10 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
      * @return Db
      * @throws ConfigurationError
      */
-    protected function getDb()
+    protected static function getDb()
     {
-        if ($this->db === null) {
-            $resourceName = $this->getDbResourceName();
+        if (self::$db === null) {
+            $resourceName = self::getDbResourceName();
             if (! $resourceName) {
                 throw new ConfigurationError(
                     'Could not run DB-based tests, please configure a testing db resource'
@@ -74,12 +74,12 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
             if (array_key_exists('DIRECTOR_TESTDB_PASSWORD', $_SERVER)) {
                 $dbConfig->password = $_SERVER['DIRECTOR_TESTDB_PASSWORD'];
             }
-            $this->db = new Db($dbConfig);
-            $migrations = new Migrations($this->db);
+            self::$db = new Db($dbConfig);
+            $migrations = new Migrations(self::$db);
             $migrations->applyPendingMigrations();
         }
 
-        return $this->db;
+        return self::$db;
     }
 
     protected function newObject($type, $name, $properties = array())
