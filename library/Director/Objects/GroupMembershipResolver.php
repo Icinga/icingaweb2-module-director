@@ -82,6 +82,11 @@ abstract class GroupMembershipResolver
 
             Benchmark::measure('Rechecking all objects');
             $this->recheckAllObjects($this->getAppliedGroups());
+            if (empty($this->objects)) {
+                Benchmark::measure('Nothing to check, got no qualified object');
+
+                return $this;
+            }
             Benchmark::measure('Recheck done, loading existing mappings');
             $this->fetchStoredMappings();
             Benchmark::measure('Ready, going to store new mappings');
@@ -150,9 +155,11 @@ abstract class GroupMembershipResolver
             $this->objects = [];
         }
 
-        $this->objects[$id] = $object;
-
-        $this->includeChildObjects($object);
+        if ($object->isTemplate()) {
+            $this->includeChildObjects($object);
+        } else {
+            $this->objects[$id] = $object;
+        }
 
         return $this;
     }
@@ -172,12 +179,9 @@ abstract class GroupMembershipResolver
 
     protected function includeChildObjects(IcingaObject $object)
     {
-        if ($object->get('object_type') !== 'template') {
-            return $this;
-        }
-
         $query = $this->db->select()
-            ->from(['o' => $object->getTableName()]);
+            ->from(['o' => $object->getTableName()])
+            ->where('o.object_type = ?', 'object');
 
         IcingaObjectFilterHelper::filterByTemplate(
             $query,
@@ -465,6 +469,9 @@ abstract class GroupMembershipResolver
 
         foreach ($objects as $object) {
             if ($object->shouldBeRemoved()) {
+                continue;
+            }
+            if ($object->isTemplate()) {
                 continue;
             }
 
