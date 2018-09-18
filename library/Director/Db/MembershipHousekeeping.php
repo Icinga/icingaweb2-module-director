@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Db;
 
 use Icinga\Module\Director\Application\MemoryLimit;
+use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\GroupMembershipResolver;
@@ -28,6 +29,8 @@ abstract class MembershipHousekeeping
 
     protected $prepared = false;
 
+    protected static $instances = [];
+
     public function __construct(Db $connection)
     {
         $this->connection = $connection;
@@ -35,6 +38,25 @@ abstract class MembershipHousekeeping
         if ($this->groupType === null) {
             $this->groupType = $this->type . 'Group';
         }
+    }
+
+    /**
+     * @param string       $type
+     * @param DbConnection $connection
+     *
+     * @return static
+     */
+    public static function instance($type, $connection)
+    {
+        if (! array_key_exists($type, self::$instances)) {
+            /** @var MembershipHousekeeping $class */
+            $class = 'Icinga\\Module\\Director\\Db\\' . ucfirst($type) . 'MembershipHousekeeping';
+
+            /** @var MembershipHousekeeping $helper */
+            self::$instances[$type] = new $class($connection);
+        }
+
+        return self::$instances[$type];
     }
 
     protected function prepare()
@@ -73,6 +95,8 @@ abstract class MembershipHousekeeping
         $this->prepare();
 
         $this->resolver()->refreshDb(true);
+
+        return true;
     }
 
     protected function prepareCache()
