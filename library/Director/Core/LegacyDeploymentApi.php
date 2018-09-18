@@ -19,6 +19,9 @@ class LegacyDeploymentApi implements DeploymentApiInterface
     protected $deploymentPath;
     protected $activationScript;
 
+    const DIR_MODE = 0775;
+    const FILE_MODE = 0664;
+
     public function __construct(Db $db)
     {
         $this->db = $db;
@@ -266,28 +269,17 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         if (file_exists($path)) {
             throw new IcingaException('Stage "%s" does already exist at: ', $stage, $path);
         } else {
-            try {
-                mkdir($path);
-            } catch (Exception $e) {
-                throw new IcingaException('Could not create stage "%s" at: %s - %s', $stage, $path, $e->getMessage());
-            }
+            $this->mkdir($path);
 
             foreach ($files as $file => $content) {
                 $fullPath = $path . DIRECTORY_SEPARATOR . $file;
-                $relativeDir = dirname($file);
-                if ($relativeDir !== '') {
-                    $fullDir = $path . DIRECTORY_SEPARATOR . $relativeDir;
-                    if (! file_exists($fullDir)) {
-                        if (! @mkdir($fullDir, 0755, true)) {
-                            throw new IcingaException('Could not create directory %s', $fullDir);
-                        }
-                    }
-                }
+                $this->mkdir(dirname($fullPath), true);
 
                 $fh = @fopen($fullPath, 'w');
                 if ($fh === null) {
                     throw new IcingaException('Could not open file "%s" for writing.', $fullPath);
                 }
+                chmod($fullPath, self::FILE_MODE);
 
                 fwrite($fh, $content);
                 fclose($fh);
@@ -451,5 +443,21 @@ class LegacyDeploymentApi implements DeploymentApiInterface
         }
 
         rmdir($dir);
+    }
+
+    protected function mkdir($path, $recursive = false)
+    {
+        if (! file_exists($path)) {
+            if ($recursive) {
+                $this->mkdir(dirname($path));
+            }
+
+            try {
+                mkdir($path);
+                chmod($path, self::DIR_MODE);
+            } catch (Exception $e) {
+                throw new IcingaException('Could not create path "%s": %s', $path, $e->getMessage());
+            }
+        }
     }
 }
