@@ -18,18 +18,25 @@ cache:
 
 matrix:
   fast_finish: true
+  include:
+    - env: CHECK=phpcs
+      php: nightly # Note: will be allowed failure
+    - env: CHECK=phpcs
+      php: '7.0'
+    - env: CHECK=phpcs
+      php: '5.4'
   allow_failures:
     - php: nightly
 
 env:
-  - DB=mysql DIRECTOR_TESTDB_RES="Director MySQL TestDB" DIRECTOR_TESTDB="director_test"
-  - DB=pgsql DIRECTOR_TESTDB_RES="Director PostgreSQL TestDB" DIRECTOR_TESTDB="director_test"
+  - CHECK=phpunit DB=mysql DIRECTOR_TESTDB_RES="Director MySQL TestDB" DIRECTOR_TESTDB="director_test"
+  - CHECK=phpunit DB=pgsql DIRECTOR_TESTDB_RES="Director PostgreSQL TestDB" DIRECTOR_TESTDB="director_test"
     DIRECTOR_TESTDB_USER="director_test"
 
 before_script:
   - ./test/setup_vendor.sh
-  - ./test/travis-prepare.sh
+  - '[ "$CHECK" != phpunit ] || ./test/travis-prepare.sh'
 
 script:
-  - php vendor/phpcs.phar
-  - php vendor/phpunit.phar --testdox || php vendor/phpunit.phar --verbose
+  - '[ "$CHECK" != phpcs ] || php vendor/phpcs.phar'
+  - '[ "$CHECK" != phpunit ] || php vendor/phpunit.phar --testdox || php vendor/phpunit.phar --verbose'
