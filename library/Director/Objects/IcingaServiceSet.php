@@ -230,11 +230,25 @@ class IcingaServiceSet extends IcingaObject
             $hostnames = array($this->getRelated('host')->object_name);
         }
 
+        $blacklists = [];
+
         foreach ($this->mapHostsToZones($hostnames) as $zone => $names) {
             $file = $config->configFile('director/' . $zone . '/servicesets', '.cfg');
             $file->addContent($this->getConfigHeaderComment($config));
 
             foreach ($this->getServiceObjects() as $service) {
+                $object_name = $service->object_name;
+
+                if (! array_key_exists($object_name, $blacklists)) {
+                    $blacklists[$object_name] = $service->getBlacklistedHostnames();
+                }
+
+                // check if all hosts in the zone ignore this service
+                $zoneNames = array_diff($names, $blacklists[$object_name]);
+                if (empty($zoneNames)) {
+                    continue;
+                }
+
                 $service->set('object_type', 'object');
                 $service->set('host_id', $names);
 

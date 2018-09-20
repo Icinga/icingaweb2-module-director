@@ -197,12 +197,33 @@ class IcingaService extends IcingaObject
      */
     public function renderHost_id()
     {
-        // @codingStandardsIgnoreEnd
         if ($this->hasBeenAssignedToHostTemplate()) {
             return '';
         }
 
         return $this->renderRelationProperty('host', $this->get('host_id'), 'host_name');
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function renderLegacyHost_id($value)
+    {
+        // @codingStandardsIgnoreEnd
+        if (is_array($value)) {
+            $blacklisted = $this->getBlacklistedHostnames();
+            $c = c1::renderKeyValue('host_name', c1::renderArray(array_diff($value, $blacklisted)));
+
+            // blacklisted in this (zoned) scope?
+            $bl = array_intersect($blacklisted, $value);
+            if (! empty($bl)) {
+                $c .= c1::renderKeyValue('# ignored on', c1::renderArray($bl));
+            }
+
+            return $c;
+        } else {
+            return parent::renderLegacyHost_id($value);
+        }
     }
 
     /**
@@ -236,6 +257,12 @@ class IcingaService extends IcingaObject
 
         foreach ($this->mapHostsToZones($hostnames) as $zone => $names) {
             $this->set('host_id', $names);
+
+            $blacklisted = $this->getBlacklistedHostnames();
+            $zoneNames = array_diff($names, $blacklisted);
+            if (empty($zoneNames)) {
+                continue;
+            }
 
             $config->configFile('director/' . $zone . '/service_apply', '.cfg')
                 ->addLegacyObject($this);
