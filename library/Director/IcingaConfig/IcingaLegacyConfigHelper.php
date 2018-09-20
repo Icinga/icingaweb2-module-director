@@ -102,10 +102,9 @@ class IcingaLegacyConfigHelper
 
     public static function renderInterval($interval)
     {
-        if ($interval % 60 === 0) {
-            return $interval / 60;
-        } else {
-            return sprintf('%.2F', $interval);
+        if ($interval < 60) {
+            $interval = 60;
         }
+        return $interval / 60;
     }
 }
