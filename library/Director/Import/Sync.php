@@ -264,8 +264,8 @@ class Sync
             $sourceId = $source->id;
 
             // Provide an alias column for our key. TODO: double-check this!
-            $key = $source->key_column;
-            $this->sourceColumns[$sourceId][$key] = $key;
+            $keyColumn = $source->key_column;
+            $this->sourceColumns[$sourceId][$keyColumn] = $keyColumn;
             $run = $source->fetchLastRun(true);
 
             $usedColumns = SyncUtils::getRootVariables($this->sourceColumns[$sourceId]);
@@ -296,36 +296,34 @@ class Sync
             foreach ($rows as $row) {
                 if ($combinedKey) {
                     $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
-
-                    if (array_key_exists($key, $this->imported[$sourceId])) {
-                        throw new IcingaException(
-                            'Trying to import row "%s" (%s) twice: %s VS %s',
-                            $key,
-                            $sourceKeyPattern,
-                            json_encode($this->imported[$sourceId][$key]),
-                            json_encode($row)
-                        );
-                    }
                 } else {
-                    if (! property_exists($row, $key)) {
+                    if (! property_exists($row, $keyColumn)) {
                         throw new IcingaException(
                             'There is no key column "%s" in this row from "%s": %s',
-                            $key,
+                            $keyColumn,
                             $source->source_name,
                             json_encode($row)
                         );
                     }
+
+                    $key = $row->$keyColumn;
                 }
 
                 if (! $this->rule->matches($row)) {
                     continue;
                 }
 
-                if ($combinedKey) {
-                    $this->imported[$sourceId][$key] = $row;
-                } else {
-                    $this->imported[$sourceId][$row->$key] = $row;
+                if (array_key_exists($key, $this->imported[$sourceId])) {
+                    throw new IcingaException(
+                        'Trying to import row "%s" (%s) twice: %s VS %s',
+                        $key,
+                        $sourceKeyPattern,
+                        json_encode($this->imported[$sourceId][$key]),
+                        json_encode($row)
+                    );
                 }
+
+                $this->imported[$sourceId][$key] = $row;
             }
 
             unset($rows);
@@ -381,14 +379,21 @@ class Sync
             $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
 
+            $hasHostKey = strpos($destinationKeyPattern, '${host}') !== false;
+            $hasSetKey = strpos($destinationKeyPattern, '${service_set}') !== false;
+            $hasTypeName = strpos($destinationKeyPattern, '${object_type}') !== false;
+
             foreach (IcingaObject::loadAllByType(
                 $this->rule->object_type,
                 $this->db
             ) as $object) {
                 if ($object instanceof IcingaService) {
-                    if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
+                    if ($hasHostKey && $object->host_id === null) {
                         continue;
-                    } elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
+                    } elseif ($hasSetKey && $object->service_set_id === null) {
+                        continue;
+                    } elseif ($hasTypeName && $object->object_type === 'object') {
+                        // don't load objects in type mode (which are apply and templates)
                         continue;
                     }
                 }
@@ -399,14 +404,22 @@ class Sync
                 );
 
                 if (array_key_exists($key, $this->objects)) {
-                    throw new IcingaException(
-                        'Combined destination key "%s" is not unique, got "%s" twice',
-                        $destinationKeyPattern,
-                        $key
-                    );
+                    if ($object->object_type === 'apply') {
+                        // silently ignore all further apply with this name
+                        // we have no unique key
+                        // Note: this means non-unique apply objects are not reliably updated,
+                        // but it *should* update the first in DB
+                        continue;
+                    } else {
+                        throw new IcingaException(
+                            'Combined destination key "%s" is not unique, got "%s" twice',
+                            $destinationKeyPattern,
+                            $key
+                        );
+                    }
+                } else {
+                    $this->objects[$key] = $object;
                 }
-
-                $this->objects[$key] = $object;
             }
         } else {
             $this->objects = IcingaObject::loadAllByType(

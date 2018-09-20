@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -352,20 +353,23 @@ class SyncRule extends DbObject
                 $hasHost = false;
                 $hasObjectName = false;
                 $hasServiceSet = false;
+                $hasType = false;
 
                 foreach ($this->getSyncProperties() as $key => $property) {
                     if ($property->destination_field === 'host') {
                         $hasHost = $property->source_expression;
-                    }
-                    if ($property->destination_field === 'service_set') {
+                    } elseif ($property->destination_field === 'service_set') {
                         $hasServiceSet = $property->source_expression;
-                    }
-                    if ($property->destination_field === 'object_name') {
+                    } elseif ($property->destination_field === 'object_name') {
                         $hasObjectName = $property->source_expression;
+                    } elseif ($property->destination_field === 'object_type') {
+                        $hasType = $property->source_expression;
                     }
                 }
 
-                if ($hasHost !== false && $hasObjectName !== false) {
+                if ($hasObjectName === false) {
+                    throw new MissingParameterException('You need to explicitly set object_name for services');
+                } elseif ($hasHost !== false) {
                     $this->hasCombinedKey = true;
                     $this->sourceKeyPattern = sprintf(
                         '%s!%s',
@@ -374,7 +378,7 @@ class SyncRule extends DbObject
                     );
 
                     $this->destinationKeyPattern = '${host}!${object_name}';
-                } elseif ($hasServiceSet !== false && $hasObjectName !== false) {
+                } elseif ($hasServiceSet !== false) {
                     $this->hasCombinedKey = true;
                     $this->sourceKeyPattern = sprintf(
                         '%s!%s',
@@ -383,6 +387,19 @@ class SyncRule extends DbObject
                     );
 
                     $this->destinationKeyPattern = '${service_set}!${object_name}';
+                } elseif ($hasType !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasType,
+                        $hasObjectName
+                    );
+
+                    $this->destinationKeyPattern = '${object_type}!${object_name}';
+                } else {
+                    throw new MissingParameterException(
+                        'Can not sync services without object_name and one of: host, service_set, object_type'
+                    );
                 }
             } elseif ($this->get('object_type') === 'serviceSet') {
                 $hasHost = false;
