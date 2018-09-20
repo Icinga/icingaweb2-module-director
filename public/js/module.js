@@ -585,11 +585,6 @@
             var $dt = $dd.prev();
             var $form = $dd.closest('form');
 
-            var $desc = $dd.find('p.description');
-            if ($desc.length) {
-                $form.css({ marginBottom: ($desc.height() + 48) + 'px' });
-            }
-
             $form.find('dt, dd, li').removeClass('active');
             $li.addClass('active');
             $dt.addClass('active');
