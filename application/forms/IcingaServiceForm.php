@@ -475,6 +475,7 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addNameElement()
              ->addChoices('service')
              ->addDisabledElement()
+             ->addGroupsElement()
              ->groupMainProperties()
              ->addCheckCommandElements()
              ->addExtraInfoElements()
@@ -521,6 +522,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
         $this->addNameElement()
              ->addDisabledElement()
+             ->addGroupsElement()
              ->groupMainProperties();
 
         if ($this->hasPermission('director/admin')) {
