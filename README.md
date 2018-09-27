@@ -38,7 +38,7 @@ Icinga Director is an Open Source project and lives from your contributions. No
 matter whether these are feature requests, issues, translations, documentation
 or code.
 
-* Please check whether a related issue alredy exists on our [Issue Tracker](https://dev.icinga.com/projects/icingaweb2-module-director/issues)
+* Please check whether a related issue already exists on our [Issue Tracker](https://github.com/Icinga/icingaweb2-module-director/issues)
 * Make sure your code conforms to the [PSR-2: Coding Style Guide](http://www.php-fig.org/psr/psr-2/)
 * [Unit-Tests](doc/93-Testing.md) would be great
 * Send a [Pull Request](https://github.com/Icinga/icingaweb2-module-director/pulls)
