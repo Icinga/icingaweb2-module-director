@@ -534,7 +534,7 @@ globals.directorWarnOnceForThresholds = function() {
         return sprintf(
             '
 const DirectorOverrideTemplate = "%s"
-if (! globals[DirectorOverrideTemplate]) {
+if (! globals.contains(DirectorOverrideTemplate)) {
   const DirectorOverrideVars = "%s"
 
   globals.directorWarnedOnceForServiceWithoutHost = false;
