@@ -9,7 +9,6 @@ use Icinga\Application\Modules\Manager;
 use Icinga\Application\Modules\Module;
 use Icinga\Authentication\Auth;
 use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
 use Icinga\File\Pdf;
 use Icinga\Forms\AutoRefreshForm;
 use Icinga\Security\SecurityException;
@@ -19,6 +18,7 @@ use Icinga\Web\Session;
 use Icinga\Web\UrlParams;
 use Icinga\Web\Url as WebUrl;
 use Icinga\Web\Window;
+use InvalidArgumentException;
 use dipl\Compat\Translator;
 use dipl\Translation\TranslationHelper;
 use dipl\Web\Widget\ControlsAndContent;
@@ -347,7 +347,7 @@ class CompatController extends Zend_Controller_Action implements ControlsAndCont
     public function setAutorefreshInterval($interval)
     {
         if (! is_int($interval) || $interval < 1) {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(
                 'Setting autorefresh interval smaller than 1 second is not allowed'
             );
         }
