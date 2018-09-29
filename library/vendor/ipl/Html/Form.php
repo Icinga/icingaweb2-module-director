@@ -162,7 +162,7 @@ class Form extends BaseHtmlElement
         $values = [];
         foreach ($this->getElements() as $element) {
             if (! $element->isIgnored()) {
-                $values[] = $element->getValue();
+                $values[$element->getName()] = $element->getValue();
             }
         }
 
