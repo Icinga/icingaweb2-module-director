@@ -7,7 +7,7 @@
 -- the frontend or provides everything you need for automated migration
 -- handling. Please find more related information in our documentation.
 
-SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER';
+SET sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT,ANSI_QUOTES,ERROR_FOR_DIVISION_BY_ZERO';
 
 CREATE TABLE director_activity_log (
   id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
