@@ -861,7 +861,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             throw new ProgrammingError('getAppliedGroups is only available for hosts currently!');
         }
 
-        $type = strtolower($this->type);
+        $type = strtolower($this->getType());
         $query = $this->db->select()->from(
             ['gr' => "icinga_${type}group_${type}_resolved"],
             ['g.object_name']
