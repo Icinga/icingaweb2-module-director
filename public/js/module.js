@@ -45,6 +45,9 @@
             }
 
             $a = $(ev.currentTarget);
+            if ($a.hasClass('refresh-container-control')) {
+                return;
+            }
             $container = $a.closest('.container');
             id = $container.attr('id');
 
