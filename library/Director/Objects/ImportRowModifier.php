@@ -60,6 +60,7 @@ class ImportRowModifier extends DbObjectWithSettings
         unset($properties['id']);
         unset($properties['source_id']);
         $properties['settings'] = (object) $this->getSettings();
+        ksort($properties);
 
         return (object) $properties;
     }
