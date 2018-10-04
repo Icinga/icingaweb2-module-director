@@ -82,7 +82,7 @@ class ImportrunTable extends ZfQueryBasedTable
          ->order('r.start_time DESC');
 
         if ($this->source) {
-            $query->where('r.source_id = ?', $this->source->getId());
+            $query->where('r.source_id = ?', $this->source->get('id'));
         }
 
         return $query;

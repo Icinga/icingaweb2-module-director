@@ -120,7 +120,7 @@ class PropertymodifierTable extends ZfQueryBasedTable
         return $this->db()->select()->from(
             ['m' => 'import_row_modifier'],
             $this->getColumns()
-        )->where('m.source_id = ?', $this->source->getId())
+        )->where('m.source_id = ?', $this->source->get('id'))
         ->order('priority');
     }
 }
