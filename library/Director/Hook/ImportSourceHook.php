@@ -36,7 +36,7 @@ abstract class ImportSourceHook
             $db->select()->from(
                 'import_source_setting',
                 ['setting_name', 'setting_value']
-            )->where('source_id = ?', $source->getId())
+            )->where('source_id = ?', $source->get('id'))
         );
 
         $className = $source->get('provider_class');
