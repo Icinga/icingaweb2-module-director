@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
@@ -13,22 +14,30 @@ use Icinga\Module\Director\Web\Table\ImportsourceHookTable;
 use Icinga\Module\Director\Web\Table\PropertymodifierTable;
 use Icinga\Module\Director\Web\Tabs\ImportsourceTabs;
 use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
+use InvalidArgumentException;
 use dipl\Html\Link;
 
 class ImportsourceController extends ActionController
 {
+    /** @var ImportSource|null */
+    private $importSource;
+
+    private $id;
+
     /**
      * @throws \Icinga\Exception\AuthenticationException
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Security\SecurityException
      */
     public function init()
     {
         parent::init();
-
         $id = $this->params->get('source_id', $this->params->get('id'));
-        $tabs = $this->tabs(new ImportsourceTabs($id));
+        if ($id !== null && is_numeric($id)) {
+            $this->id = (int) $id;
+        }
+
+        $tabs = $this->tabs(new ImportsourceTabs($this->id));
         $action = $this->getRequest()->getActionName();
         if ($tabs->has($action)) {
             $tabs->activate($action);
@@ -43,15 +52,13 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function indexAction()
     {
         $this->addMainActions();
-        $source = ImportSource::load($this->params->getRequired('id'), $this->db());
+        $source = $this->getImportSource();
         if ($this->params->get('format') === 'json') {
             $this->sendJson($this->getResponse(), $source->export());
             return;
@@ -63,9 +70,6 @@ class ImportsourceController extends ActionController
         $this->content()->add(new ImportSourceDetails($source));
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     */
     public function addAction()
     {
         $this->addTitle($this->translate('Add import source'))
@@ -77,16 +81,14 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\MissingParameterException
+     * @throws NotFoundError
      */
     public function editAction()
     {
         $this->addMainActions();
-        $this->tabs()->activateMainWithPostfix($this->translate('Modify'));
-        $id = $this->params->getRequired('id');
-        $form = ImportSourceForm::load()->setDb($this->db())
-            ->loadObject($id)
+        $this->activateTabWithPostfix($this->translate('Modify'));
+        $form = ImportSourceForm::load()
+            ->setObject($this->getImportSource())
             ->setListUrl('director/importsources')
             ->handleRequest();
         $this->addTitle(
@@ -98,16 +100,13 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function cloneAction()
     {
         $this->addMainActions();
-        $this->tabs()->activateMainWithPostfix($this->translate('Clone'));
-        $id = $this->params->getRequired('id');
-        $source = ImportSource::load($id, $this->db());
+        $this->activateTabWithPostfix($this->translate('Clone'));
+        $source = $this->getImportSource();
         $this->addTitle('Clone: %s', $source->get('source_name'));
         $form = new CloneImportSourceForm($source);
         $this->content()->add($form);
@@ -115,13 +114,11 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function previewAction()
     {
-        $source = ImportSource::load($this->params->getRequired('id'), $this->db());
+        $source = $this->getImportSource();
 
         $this->addTitle(
             $this->translate('Import source preview: %s'),
@@ -136,13 +133,11 @@ class ImportsourceController extends ActionController
 
     /**
      * @return ImportSource
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function requireImportSourceAndAddModifierTable()
     {
-        $source = ImportSource::load($this->params->getRequired('source_id'), $this->db());
+        $source = $this->getImportSource();
         PropertymodifierTable::load($source, $this->url())
             ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
             ->renderTo($this);
@@ -151,8 +146,6 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function modifierAction()
@@ -162,19 +155,17 @@ class ImportsourceController extends ActionController
         $this->addAddLink(
             $this->translate('Add property modifier'),
             'director/importsource/addmodifier',
-            ['source_id' => $source->getId()],
+            ['source_id' => $source->get('id')],
             '_self'
         );
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function historyAction()
     {
-        $source = ImportSource::load($this->params->getRequired('id'), $this->db());
+        $source = $this->getImportSource();
         $this->addTitle($this->translate('Import run history: %s'), $source->get('source_name'));
 
         // TODO: temporarily disabled, find a better place for stats:
@@ -183,9 +174,6 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function addmodifierAction()
@@ -202,14 +190,12 @@ class ImportsourceController extends ActionController
                 ->setSource($source)
                 ->setSuccessUrl(
                     'director/importsource/modifier',
-                    ['source_id' => $source->getId()]
+                    ['source_id' => $source->get('id')]
                 )->handleRequest()
         );
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -217,7 +203,7 @@ class ImportsourceController extends ActionController
     {
         // We need to load the table AFTER adding the title, otherwise search
         // will not be placed next to the title
-        $source = ImportSource::load($this->params->getRequired('source_id'), $this->db());
+        $source = $this->getImportSource();
 
         $this->addTitle(
             $this->translate('%s: Property Modifier'),
@@ -238,6 +224,34 @@ class ImportsourceController extends ActionController
     }
 
     /**
+     * @return ImportSource
+     * @throws NotFoundError
+     */
+    protected function getImportSource()
+    {
+        if ($this->importSource === null) {
+            if ($this->id === null) {
+                throw new InvalidArgumentException('Got no ImportSource id');
+            }
+            $this->importSource = ImportSource::loadWithAutoIncId(
+                $this->id,
+                $this->db()
+            );
+        }
+
+        return $this->importSource;
+    }
+
+    protected function activateTabWithPostfix($title)
+    {
+        /** @var ImportsourceTabs $tabs */
+        $tabs = $this->tabs();
+        $tabs->activateMainWithPostfix($title);
+
+        return $this;
+    }
+
+    /**
      * @param ImportSource $source
      * @return $this
      */
@@ -247,7 +261,7 @@ class ImportsourceController extends ActionController
             Link::create(
                 $this->translate('back'),
                 'director/importsource/modifier',
-                ['source_id' => $source->getId()],
+                ['source_id' => $source->get('id')],
                 ['class' => 'icon-left-big']
             )
         );
