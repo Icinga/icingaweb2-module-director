@@ -349,8 +349,8 @@ class Diff_SequenceMatcher
 			return $this->matchingBlocks;
 		}
 
-		$aLength = count($this->a);
-		$bLength = count($this->b);
+		$aLength = (isset($this->a) ? count($this->a) : 0);
+		$bLength = (isset($this->b) ? count($this->b) : 0);
 
 		$queue = array(
 			array(
