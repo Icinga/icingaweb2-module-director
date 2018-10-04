@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Hook\JobHook;
 use Exception;
+use InvalidArgumentException;
 
 class DirectorJob extends DbObjectWithSettings
 {
@@ -48,7 +48,7 @@ class DirectorJob extends DbObjectWithSettings
     public function job()
     {
         if ($this->job === null) {
-            $class = $this->job_class;
+            $class = $this->get('job_class');
             $this->job = new $class;
             $this->job->setDb($this->connection);
             $this->job->setDefinition($this);
@@ -58,20 +58,20 @@ class DirectorJob extends DbObjectWithSettings
     }
 
     /**
-     * @throws IcingaException
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     public function run()
     {
         $job = $this->job();
-        $this->ts_last_attempt = date('Y-m-d H:i:s');
+        $this->set('ts_last_attempt', date('Y-m-d H:i:s'));
 
         try {
             $job->run();
-            $this->last_attempt_succeeded = 'y';
+            $this->set('last_attempt_succeeded', 'y');
         } catch (Exception $e) {
-            $this->ts_last_error = date('Y-m-d H:i:s');
-            $this->last_error_message = $e->getMessage();
-            $this->last_attempt_succeeded = 'n';
+            $this->set('ts_last_error', date('Y-m-d H:i:s'));
+            $this->set('last_error_message', $e->getMessage());
+            $this->set('last_attempt_succeeded', 'n');
         }
 
         if ($this->hasBeenModified()) {
@@ -81,7 +81,6 @@ class DirectorJob extends DbObjectWithSettings
 
     /**
      * @return bool
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function shouldRun()
@@ -91,7 +90,6 @@ class DirectorJob extends DbObjectWithSettings
 
     /**
      * @return bool
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function isOverdue()
@@ -101,27 +99,26 @@ class DirectorJob extends DbObjectWithSettings
         }
 
         return (
-            strtotime($this->ts_last_attempt) + $this->run_interval * 2
+            strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') * 2
         ) < time();
     }
 
     public function hasBeenDisabled()
     {
-        return $this->disabled === 'y';
+        return $this->get('disabled') === 'y';
     }
 
     /**
      * @return bool
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function isPending()
     {
-        if ($this->ts_last_attempt === null) {
+        if ($this->get('ts_last_attempt') === null) {
             return $this->isWithinTimeperiod();
         }
 
-        if (strtotime($this->ts_last_attempt) + $this->run_interval < time()) {
+        if (strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') < time()) {
             return $this->isWithinTimeperiod();
         }
 
@@ -130,7 +127,6 @@ class DirectorJob extends DbObjectWithSettings
 
     /**
      * @return bool
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function isWithinTimeperiod()
@@ -144,25 +140,25 @@ class DirectorJob extends DbObjectWithSettings
 
     public function lastAttemptSucceeded()
     {
-        return $this->last_attempt_succeeded === 'y';
+        return $this->get('last_attempt_succeeded') === 'y';
     }
 
     public function hasTimeperiod()
     {
-        return $this->timeperiod_id !== null;
+        return $this->get('timeperiod_id') !== null;
     }
 
     /**
      * @param $timeperiod
      * @return $this
-     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function setTimeperiod($timeperiod)
     {
         if (is_string($timeperiod)) {
             $timeperiod = IcingaTimePeriod::load($timeperiod, $this->connection);
         } elseif (! $timeperiod instanceof IcingaTimePeriod) {
-            throw new IcingaException('TimePeriod expected');
+            throw new InvalidArgumentException('TimePeriod expected');
         }
 
         $this->set('timeperiod_id', $timeperiod->get('id'));
@@ -172,9 +168,7 @@ class DirectorJob extends DbObjectWithSettings
 
     /**
      * @return object
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function export()
     {
@@ -196,11 +190,10 @@ class DirectorJob extends DbObjectWithSettings
 
     /**
      * @return IcingaTimePeriod
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function timeperiod()
     {
-        return IcingaTimePeriod::loadWithAutoIncId($this->timeperiod_id, $this->connection);
+        return IcingaTimePeriod::loadWithAutoIncId($this->get('timeperiod_id'), $this->connection);
     }
 }
