@@ -6,7 +6,6 @@ use Icinga\Module\Director\Forms\SyncCheckForm;
 use Icinga\Module\Director\Forms\SyncPropertyForm;
 use Icinga\Module\Director\Forms\SyncRuleForm;
 use Icinga\Module\Director\Forms\SyncRunForm;
-use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
@@ -21,9 +20,6 @@ use dipl\Html\Link;
 class SyncruleController extends ActionController
 {
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function indexAction()
@@ -106,7 +102,6 @@ class SyncruleController extends ActionController
 
     /**
      * @param SyncRule $rule
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function addPropertyHint(SyncRule $rule)
     {
@@ -122,7 +117,6 @@ class SyncruleController extends ActionController
 
     /**
      * @param $msg
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function warning($msg)
     {
@@ -131,28 +125,17 @@ class SyncruleController extends ActionController
 
     /**
      * @param $msg
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function error($msg)
     {
         $this->content()->add(Html::tag('p', ['class' => 'error'], $msg));
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     */
     public function addAction()
     {
         $this->editAction();
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     */
     public function editAction()
     {
         $form = SyncRuleForm::load()
@@ -160,7 +143,7 @@ class SyncruleController extends ActionController
             ->setDb($this->db());
 
         if ($id = $this->params->get('id')) {
-            $form->loadObject($id);
+            $form->loadObject((int) $id);
             /** @var SyncRule $rule */
             $rule = $form->getObject();
             $this->tabs(new SyncRuleTabs($rule))->activate('edit');
@@ -190,11 +173,8 @@ class SyncruleController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Exception\MissingParameterException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
      */
     public function cloneAction()
     {
@@ -225,8 +205,7 @@ class SyncruleController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function propertyAction()
     {
@@ -247,9 +226,7 @@ class SyncruleController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function editpropertyAction()
     {
@@ -257,9 +234,7 @@ class SyncruleController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function addpropertyAction()
     {
@@ -269,7 +244,7 @@ class SyncruleController extends ActionController
 
         $form = SyncPropertyForm::load()->setDb($db);
         if ($id = $this->params->get('id')) {
-            $form->loadObject($id);
+            $form->loadObject((int) $id);
             $this->addTitle(
                 $this->translate('Sync "%s": %s'),
                 $form->getObject()->get('destination_field'),
@@ -299,9 +274,6 @@ class SyncruleController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function historyAction()
@@ -321,13 +293,11 @@ class SyncruleController extends ActionController
     /**
      * @param string $key
      * @return SyncRule
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function requireSyncRule($key = 'id')
     {
         $id = $this->params->get($key);
-        return SyncRule::load($id, $this->db());
+        return SyncRule::loadWithAutoIncId($id, $this->db());
     }
 }
