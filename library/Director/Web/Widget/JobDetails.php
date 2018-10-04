@@ -14,7 +14,6 @@ class JobDetails extends HtmlDocument
     /**
      * JobDetails constructor.
      * @param DirectorJob $job
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function __construct(DirectorJob $job)
