@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Data\Db;
 
-use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -103,27 +102,27 @@ abstract class DbObject
         return $this->table;
     }
 
+    /************************************************************************\
+     * When extending this class one might want to override any of the      *
+     * following hooks. Try to use them whenever possible, especially       *
+     * instead of overriding other essential methods like store().          *
+    \************************************************************************/
+
     /**
-     * Kann überschrieben werden, um Kreuz-Checks usw vor dem Speichern durch-
-     * zuführen - die Funktion ist aber public und erlaubt jederzeit, die Kon-
-     * sistenz eines Objektes bei bedarf zu überprüfen.
+     * One can override this to allow for cross checks and more before storing
+     * the object. Please note that the method is public and allows to check
+     * object consistence at any time.
      *
-     * @return boolean  Ob der Wert gültig ist
+     * @return boolean  Whether this object is valid
      */
     public function validate()
     {
         return true;
     }
 
-    /************************************************************************\
-     * Nachfolgend finden sich ein paar Hooks, die bei Bedarf überschrieben *
-     * werden können. Wann immer möglich soll darauf verzichtet werden,     *
-     * andere Funktionen (wie z.B. store()) zu überschreiben.               *
-    \************************************************************************/
-
     /**
-     * Wird ausgeführt, bevor die eigentlichen Initialisierungsoperationen
-     * (laden von Datenbank, aus Array etc) starten
+     * This is going to be executed before any initialization method takes *
+     * (load from DB, populate from Array...) takes place
      *
      * @return void
      */
@@ -132,18 +131,8 @@ abstract class DbObject
     }
 
     /**
-     * Wird ausgeführt, nachdem mittels ::factory() ein neues Objekt erstellt
-     * worden ist.
-     *
-     * @return void
-     */
-    protected function onFactory()
-    {
-    }
-
-    /**
-     * Wird ausgeführt, nachdem mittels ::factory() ein neues Objekt erstellt
-     * worden ist.
+     * Will be executed every time an object has successfully been loaded from
+     * Database
      *
      * @return void
      */
@@ -152,8 +141,9 @@ abstract class DbObject
     }
 
     /**
-     * Wird ausgeführt, bevor ein Objekt abgespeichert wird. Die Operation
-     * wird aber auf jeden Fall durchgeführt, außer man wirft eine Exception
+     * Will be executed before an Object is going to be stored. In case you
+     * want to prevent the store() operation from taking place, please throw
+     * an Exception.
      *
      * @return void
      */
@@ -537,7 +527,7 @@ abstract class DbObject
      *
      * // TODO: may conflict with ->id
      *
-     * @throws IcingaException When key can not be calculated
+     * @throws InvalidArgumentException When key can not be calculated
      *
      * @return string|array
      */
@@ -552,7 +542,7 @@ abstract class DbObject
             }
 
             if (empty($id)) {
-                throw new IcingaException('Could not evaluate id for multi-column object!');
+                throw new InvalidArgumentException('Could not evaluate id for multi-column object!');
             }
 
             return $id;
@@ -780,7 +770,6 @@ abstract class DbObject
         $this->beforeStore();
         $table = $this->table;
         $id = $this->getId();
-        $result = false;
 
         try {
             if ($this->hasBeenLoadedFromDb()) {
