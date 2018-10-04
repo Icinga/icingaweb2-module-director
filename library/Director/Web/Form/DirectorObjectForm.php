@@ -990,7 +990,11 @@ abstract class DirectorObjectForm extends DirectorForm
     {
         /** @var DbObject $class */
         $class = $this->getObjectClassname();
-        $this->object = $class::load($id, $this->db);
+        if (is_int($id)) {
+            $this->object = $class::loadWithAutoIncId($id, $this->db);
+        } else {
+            $this->object = $class::load($id, $this->db);
+        }
 
         // TODO: hmmmm...
         if (! is_array($id) && $this->object->getKeyName() === 'id') {
