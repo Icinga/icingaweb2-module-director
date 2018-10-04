@@ -1439,6 +1439,7 @@ CREATE TABLE import_source (
 );
 
 CREATE INDEX import_source_search_idx ON import_source (key_column);
+CREATE UNIQUE INDEX import_source_name ON import_source (source_name);
 
 
 CREATE TABLE import_source_setting (
@@ -1594,6 +1595,7 @@ CREATE TABLE sync_rule (
   PRIMARY KEY (id)
 );
 
+CREATE UNIQUE INDEX sync_rule_name ON sync_rule (rule_name);
 
 CREATE TABLE sync_property (
   id serial,
@@ -2025,4 +2027,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (151, NOW());
+  VALUES (152, NOW());

@@ -1296,6 +1296,7 @@ CREATE TABLE import_source (
   last_attempt DATETIME DEFAULT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX source_name (source_name),
   INDEX search_idx (key_column)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1441,7 +1442,8 @@ CREATE TABLE sync_rule (
   last_error_message TEXT DEFAULT NULL,
   last_attempt DATETIME DEFAULT NULL,
   description TEXT DEFAULT NULL,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE INDEX rule_name (rule_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE sync_property (
@@ -1730,4 +1732,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (151, NOW());
+  VALUES (152, NOW());
