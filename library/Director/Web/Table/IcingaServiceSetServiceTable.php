@@ -165,14 +165,24 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
                     'name' => $this->host->getObjectName()
                 ])
             );
-            $hostId = $this->host->get('id');
-            $setName = $this->set->getObjectName();
-            $db = $this->set->getConnection();
-            $deleteLink->runOnSuccess(function () use ($db, $hostId, $setName) {
-                IcingaServiceSet::load([
-                    'host_id' => $hostId,
-                    'object_name' => $setName
-                ], $db)->delete();
+            $deleteLink->runOnSuccess(function () {
+                $conn = $this->set->getConnection();
+                $db = $conn->getDbAdapter();
+                $query = $db->select()->from(
+                    ['ss' => 'icinga_service_set'],
+                    'ss.id'
+                )->join(
+                    ['ssih' => 'icinga_service_set_inheritance'],
+                    'ssih.service_set_id = ss.id',
+                    []
+                )->where(
+                    'ssih.parent_service_set_id = ?',
+                    $this->set->get('id')
+                )->where('ss.host_id = ?', $this->host->get('id'));
+                IcingaServiceSet::loadWithAutoIncId(
+                    $db->fetchOne($query),
+                    $conn
+                )->delete();
             });
             $deleteLink->handleRequest();
         }
