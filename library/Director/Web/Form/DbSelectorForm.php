@@ -24,6 +24,9 @@ class DbSelectorForm extends Form
 
     protected function assemble()
     {
+        $this->addElement('DbSelector', 'hidden', [
+            'value' => 'sent'
+        ]);
         $this->addElement('db_resource', 'select', [
             'options' => $this->allowedNames,
             'class'   => 'autosubmit',
@@ -38,7 +41,7 @@ class DbSelectorForm extends Form
      */
     public function hasBeenSubmitted()
     {
-        return $this->hasBeenSent() && $this->getValue('db_resource');
+        return $this->hasBeenSent() && $this->getRequest()->get('DbSelector') === 'sent';
     }
 
     public function onSuccess()
