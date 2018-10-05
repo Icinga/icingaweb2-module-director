@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Cli;
 
+use Icinga\Cli\Params;
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
@@ -159,6 +160,11 @@ class ObjectCommand extends Command
      *
      *   --<key> <value>   Provide all properties as single command line
      *                     options
+     *   --append-<key> <value> Appends to array values, like `imports`,
+     *                     `groups` or `vars.system_owners`
+     *   --remove-<key> [<value>] Remove a specific property, eventually only
+     *                     when matching `value`. In case the property is an
+     *                     array it will remove just `value` when given
      *   --json            Otherwise provide all options as a JSON string
      *   --replace         Replace all object properties with the given ones
      *   --auto-create     Create the object in case it does not exist
@@ -184,6 +190,9 @@ class ObjectCommand extends Command
             $object = $this->getObject();
         }
 
+        $appends = $this->stripPrefixedProperties($this->params, 'append-');
+        $remove = $this->stripPrefixedProperties($this->params, 'remove-');
+
         if ($this->params->shift('replace')) {
             $new = $this->create($name)->setProperties($this->remainingParams());
             $object->replaceWith($new);
@@ -191,6 +200,8 @@ class ObjectCommand extends Command
             $object->setProperties($this->remainingParams());
         }
 
+        $this->appendToArrayProperties($object, $appends);
+        $this->removeProperties($object, $remove);
         if ($object->hasBeenModified() && $object->store()) {
             printf("%s '%s' has been %s\n", $this->getType(), $this->name, $action);
             exit(0);
@@ -313,6 +324,75 @@ class ObjectCommand extends Command
         }
 
         exit(0);
+    }
+
+    protected function appendToArrayProperties(IcingaObject $object, $properties)
+    {
+        foreach ($properties as $key => $value) {
+            $current = $object->$key;
+            if ($current === null) {
+                $current = [$value];
+            } elseif (is_array($current)) {
+                $current[] = $value;
+            } else {
+                throw new InvalidArgumentException(sprintf(
+                    'I can only append to arrays, %s is %s',
+                    $key,
+                    var_export($current, 1)
+                ));
+            }
+
+            $object->$key = $current;
+        }
+    }
+
+    protected function removeProperties(IcingaObject $object, $properties)
+    {
+        foreach ($properties as $key => $value) {
+            if ($value === true) {
+                $object->$key = null;
+            }
+            $current = $object->$key;
+            if ($current === null) {
+                continue;
+            } elseif (is_array($current)) {
+                $new = [];
+                foreach ($current as $item) {
+                    if ($item !== $value) {
+                        $new[] = $item;
+                    }
+                }
+                $object->$key = $new;
+            } elseif (is_string($current)) {
+                if ($current === $value) {
+                    $object->$key = null;
+                }
+            } else {
+                throw new InvalidArgumentException(sprintf(
+                    'I can only remove strings or from arrays, %s is %s',
+                    $key,
+                    var_export($current, 1)
+                ));
+            }
+        }
+    }
+
+    protected function stripPrefixedProperties(Params $params, $prefix = 'append-')
+    {
+        $appends = [];
+        $len = strlen($prefix);
+
+        foreach ($params->getParams() as $key => $value) {
+            if (substr($key, 0, $len) === $prefix) {
+                $appends[substr($key, $len)] = $value;
+            }
+        }
+
+        foreach ($appends as $key => $value) {
+            $params->shift("$prefix$key");
+        }
+
+        return $appends;
     }
 
     protected function shiftOneOrMoreNames()

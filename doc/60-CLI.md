@@ -129,6 +129,11 @@ Use this command to modify specific properties of an existing Icinga object.
 | Option            | Description                                           |
 |-------------------|-------------------------------------------------------|
 | `--<key> <value>` | Provide all properties as single command line options |
+| `--append-<key> <value>` | Appends to array values, like `imports`,       |
+|                   | `groups` or `vars.system_owners`                      |
+| `--remove-<key> [<value>]` | Remove a specific property, eventually only  |
+|                   | when matching `value`. In case the property is an     |
+|                   | array it will remove just `value` when given          |
 | `--json`          | Otherwise provide all options as a JSON string        |
 | `--replace`       | Replace all object properties with the given ones     |
 | `--auto-create`   | Create the object in case it does not exist           |
