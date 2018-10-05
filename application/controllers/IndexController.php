@@ -11,10 +11,6 @@ class IndexController extends DashboardController
 {
     protected $hasDeploymentEndpoint;
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     public function indexAction()
     {
         if ($this->Config()->get('db', 'resource')) {

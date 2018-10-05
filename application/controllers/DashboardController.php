@@ -25,10 +25,6 @@ class DashboardController extends ActionController
         }
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     public function indexAction()
     {
         if ($this->getRequest()->isGet()) {

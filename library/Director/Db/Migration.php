@@ -24,8 +24,14 @@ class Migration
         $this->sql     = $sql;
     }
 
+    /**
+     * @param DbConnection $connection
+     * @return $this
+     * @throws IcingaException
+     */
     public function apply(DbConnection $connection)
     {
+        /** @var \Zend_Db_Adapter_Pdo_Abstract $db */
         $db = $connection->getDbAdapter();
 
         // TODO: this is fagile and depends on accordingly written schema files:

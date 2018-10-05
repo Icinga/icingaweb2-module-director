@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Db;
 use DirectoryIterator;
 use Exception;
 use Icinga\Application\Icinga;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbConnection;
 use RuntimeException;
 
@@ -67,6 +68,9 @@ class Migrations
         return count($this->listPendingMigrations());
     }
 
+    /**
+     * @return Migration[]
+     */
     public function getPendingMigrations()
     {
         $migrations = array();
@@ -80,6 +84,10 @@ class Migrations
         return $migrations;
     }
 
+    /**
+     * @return $this
+     * @throws \Icinga\Exception\IcingaException
+     */
     public function applyPendingMigrations()
     {
         foreach ($this->getPendingMigrations() as $migration) {
@@ -171,7 +179,15 @@ class Migrations
 
     protected function getSchemaDir($sub = null)
     {
-        $dir = $this->getModuleDir('/schema');
+        try {
+            $dir = $this->getModuleDir('/schema');
+        } catch (ProgrammingError $e) {
+            throw new RuntimeException(
+                'Unable to detect the schema directory for this module',
+                0,
+                $e
+            );
+        }
         if ($sub === null) {
             return $dir;
         } else {
@@ -179,6 +195,11 @@ class Migrations
         }
     }
 
+    /**
+     * @param string $sub
+     * @return string
+     * @throws ProgrammingError
+     */
     protected function getModuleDir($sub = '')
     {
         return Icinga::app()->getModuleManager()->getModuleDir(
