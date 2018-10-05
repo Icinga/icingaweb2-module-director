@@ -31,6 +31,16 @@ class DbSelectorForm extends Form
         ]);
     }
 
+    /**
+     * A base class should handle this, based on hidden fields
+     *
+     * @return bool
+     */
+    public function hasBeenSubmitted()
+    {
+        return $this->hasBeenSent() && $this->getValue('db_resource');
+    }
+
     public function onSuccess()
     {
         $this->getSession()->set('db_resource', $this->getValue('db_resource'));
