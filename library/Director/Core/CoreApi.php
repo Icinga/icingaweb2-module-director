@@ -581,9 +581,12 @@ constants
     public function collectLogFiles(Db $db)
     {
         $existing = $this->listPackageStages($this->getPackageName());
+        $missing = [];
+        $empty = [];
         foreach (DirectorDeploymentLog::getUncollected($db) as $deployment) {
             $stage = $deployment->get('stage_name');
             if (! in_array($stage, $existing)) {
+                $missing[] = $deployment;
                 continue;
             }
 
@@ -607,11 +610,28 @@ constants
                 ));
             } else {
                 // Stage seems to be incomplete, let's try again next time
+                $empty[] = $deployment;
                 continue;
             }
             $deployment->set('stage_collected', 'y');
 
             $deployment->store();
+        }
+
+        foreach ($missing as $deployment) {
+            $deployment->set('stage_collected', 'n');
+            $deployment->store();
+        }
+
+        $running = DirectorDeploymentLog::getRelatedToActiveStage($this, $db);
+        if ($running !== null) {
+            foreach ($empty as $deployment) {
+                if ($deployment->get('start_time') < $running->get('start_time')) {
+                    $deployment->set('stage_collected', 'n');
+                    $deployment->store();
+                    $this->deleteStage($this->getPackageName(), $deployment->get('stage_name'));
+                }
+            }
         }
     }
 
@@ -680,10 +700,11 @@ constants
 
     public function deleteStage($packageName, $stageName)
     {
-        return $this->client->delete('config/stages', [
-            'module' => $packageName,
-            'stage'  => $stageName
-        ])->succeeded();
+        $this->client->delete(sprintf(
+            'config/stages/%s/%s',
+            rawurlencode($packageName),
+            rawurlencode($stageName)
+        ))->succeeded();
     }
 
     /**

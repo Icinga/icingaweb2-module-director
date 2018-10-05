@@ -2,10 +2,14 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Exception;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Util;
+use RuntimeException;
 
 class DirectorDeploymentLog extends DbObject
 {
@@ -100,6 +104,42 @@ class DirectorDeploymentLog extends DbObject
             array('l' => 'director_deployment_log'),
             array('id' => 'MAX(l.id)')
         );
+
+        return static::load($db->fetchOne($query), $connection);
+    }
+
+    /**
+     * @param CoreApi $api
+     * @param Db $connection
+     * @return DirectorDeploymentLog
+     */
+    public static function getRelatedToActiveStage(CoreApi $api, Db $connection)
+    {
+        try {
+            return static::requireRelatedToActiveStage($api, $connection);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param CoreApi $api
+     * @param Db $connection
+     * @return DirectorDeploymentLog
+     * @throws NotFoundError
+     */
+    public static function requireRelatedToActiveStage(CoreApi $api, Db $connection)
+    {
+        $stage = $api->getActiveStageName();
+
+        if (! strlen($stage)) {
+            throw new NotFoundError('Got no active stage name');
+        }
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            ['l' => 'director_deployment_log'],
+            ['id' => 'MAX(l.id)']
+        )->where('l.stage_name = ?', $stage);
 
         return static::load($db->fetchOne($query), $connection);
     }

@@ -59,7 +59,15 @@ class RestApiClient
         return sprintf('https://%s:%d/%s/%s', $this->peer, $this->port, $this->version, $url);
     }
 
-    // protected function request($method, $url, $body = null, $raw = false)
+    /**
+     * @param $method
+     * @param $url
+     * @param null $body
+     * @param bool $raw
+     * @param bool $stream
+     * @return RestApiResponse
+     * @throws ConfigurationError
+     */
     public function request($method, $url, $body = null, $raw = false, $stream = false)
     {
         if (function_exists('curl_version')) {
