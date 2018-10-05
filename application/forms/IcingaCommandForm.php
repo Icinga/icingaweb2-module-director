@@ -43,8 +43,12 @@ class IcingaCommandForm extends DirectorObjectForm
             'class'       => 'autosubmit'
         ));
 
+        $nameLabel = $this->isTemplate()
+            ? $this->translate('Name')
+            : $this->translate('Command name');
+
         $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Command name'),
+            'label'       => $nameLabel,
             'required'    => true,
             'description' => $this->translate('Identifier for the Icinga command you are going to create')
         ));

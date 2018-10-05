@@ -34,8 +34,12 @@ class IcingaHostForm extends DirectorObjectForm
             }
         }
 
+        $nameLabel = $this->isTemplate()
+            ? $this->translate('Name')
+            : $this->translate('Hostname');
+
         $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Hostname'),
+            'label'       => $nameLabel,
             'required'    => true,
             'spellcheck'  => 'false',
             'description' => $this->translate(
