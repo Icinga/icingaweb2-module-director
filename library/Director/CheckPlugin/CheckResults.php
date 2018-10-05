@@ -28,6 +28,11 @@ class CheckResults
         $this->state = new PluginState(0);
     }
 
+    public function getName()
+    {
+        return $this->name;
+    }
+
     public function add(CheckResult $result)
     {
         $this->results[] = $result;
@@ -37,7 +42,26 @@ class CheckResults
         return $this;
     }
 
-    protected function getStateSummaryString()
+    public function getStateCounters()
+    {
+        return $this->stateCounters;
+    }
+
+    public function getProblemSummary()
+    {
+        $summary = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $count = $this->stateCounters[$i];
+            if ($count === 0) {
+                continue;
+            }
+            $summary[PluginState::create($i)->getName()] = $count;
+        }
+
+        return $summary;
+    }
+
+    public function getStateSummaryString()
     {
         $summary = [sprintf(
             '%d tests OK',

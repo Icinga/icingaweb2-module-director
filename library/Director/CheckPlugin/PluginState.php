@@ -30,6 +30,11 @@ class PluginState
         $this->set($state);
     }
 
+    public function isProblem()
+    {
+        return $this->state > 0;
+    }
+
     public function set($state)
     {
         $this->state = $this->getNumericStateFor($state);

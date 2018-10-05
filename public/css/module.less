@@ -599,6 +599,26 @@ a {
         color: @color-pending;
     }
 }
+ul.tabs a.state-critical {
+  background-color: @colorCritical;
+  font-weight: bold;
+  color: white;
+}
+ul.tabs a.state-warning {
+  background-color: @colorWarning;
+  font-weight: bold;
+  color: white;
+}
+ul.tabs a.state-ok {
+  background-color: @colorOk;
+  font-weight: bold;
+  color: white;
+}
+ul.tabs a.state-unknown {
+  background-color: @colorUnknown;
+  font-weight: bold;
+  color: white;
+}
 
 a:hover::before {
   text-decoration: none;
@@ -1033,6 +1053,25 @@ form div.hint {
 
 /* END of Forms */
 
+ul.health-check-result {
+  list-style-type: none;
+  padding-left: 2em;
+  margin-bottom: 2em;
+  li {
+    line-height: 2em;
+  }
+  .badge {
+    font-weight: bold;
+  }
+}
+
+.title-badges {
+  .badge {
+    font-size: 0.75em;
+    margin-left: 0.5em;
+  }
+}
+
 span.error {
   color: @colorCritical;
 
@@ -1040,6 +1079,7 @@ span.error {
     color: inherit;
   }
 }
+
 p.error {
     color: white;
     padding: 1em 2em;
