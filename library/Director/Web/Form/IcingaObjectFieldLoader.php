@@ -537,7 +537,7 @@ class IcingaObjectFieldLoader
         }
 
         foreach ($this->loadHookedDataFieldForObject($object) as $id => $fields) {
-            if (array_key_exists($id, $fields)) {
+            if (array_key_exists($id, $result)) {
                 foreach ($fields as $varName => $field) {
                     $result[$id]->$varName = $field;
                 }
