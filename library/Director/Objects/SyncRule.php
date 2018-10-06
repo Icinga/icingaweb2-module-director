@@ -6,16 +6,17 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Import\PurgeStrategy\PurgeStrategy;
 use Icinga\Module\Director\Import\Sync;
 use Exception;
 
-class SyncRule extends DbObject
+class SyncRule extends DbObject implements ExportInterface
 {
     protected $table = 'sync_rule';
 
-    protected $keyName = 'id';
+    protected $keyName = 'rule_name';
 
     protected $autoincKeyName = 'id';
 
@@ -58,6 +59,8 @@ class SyncRule extends DbObject
 
     private $newSyncProperties;
 
+    private $originalId;
+
     public function listInvolvedSourceIds()
     {
         if (! $this->hasBeenLoadedFromDb()) {
@@ -81,7 +84,7 @@ class SyncRule extends DbObject
         $sources = [];
 
         foreach ($this->listInvolvedSourceIds() as $sourceId) {
-            $sources[$sourceId] = ImportSource::load($sourceId, $this->getConnection());
+            $sources[$sourceId] = ImportSource::loadWithAutoIncId($sourceId, $this->getConnection());
         }
 
         return $sources;
@@ -246,16 +249,17 @@ class SyncRule extends DbObject
 
     public function export()
     {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
+        $plain = $this->getProperties();
+        $plain['originalId'] = $plain['id'];
+        unset($plain['id']);
 
         foreach ($this->stateProperties as $key) {
-            unset($plain->$key);
+            unset($plain[$key]);
         }
-        $plain->properties = $this->exportSyncProperties();
+        $plain['properties'] = $this->exportSyncProperties();
+        ksort($plain);
 
-        return $plain;
+        return (object) $plain;
     }
 
     /**
@@ -269,15 +273,21 @@ class SyncRule extends DbObject
     public static function import($plain, Db $db, $replace = false)
     {
         $properties = (array) $plain;
-        $id = $properties['originalId'];
-        unset($properties['originalId']);
+        if (isset($properties['originalId'])) {
+            $id = $properties['originalId'];
+            unset($properties['originalId']);
+        } else {
+            $id = null;
+        }
         $name = $properties['rule_name'];
 
         if ($replace && static::existsWithNameAndId($name, $id, $db)) {
             $object = static::loadWithAutoIncId($id, $db);
+        } elseif ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
         } elseif (static::existsWithName($name, $db)) {
             throw new DuplicateKeyException(
-                'Import Source %s already exists',
+                'Sync Rule %s already exists',
                 $name
             );
         } else {
@@ -287,8 +297,17 @@ class SyncRule extends DbObject
         $object->newSyncProperties = $properties['properties'];
         unset($properties['properties']);
         $object->setProperties($properties);
+        if ($id !== null && (int) $id !== (int) $object->get('id')) {
+            $object->originalId = $object->get('id');
+            $object->reallySet('id', $id);
+        }
 
         return $object;
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->get('rule_name');
     }
 
     /**
@@ -301,9 +320,15 @@ class SyncRule extends DbObject
             $connection = $this->getConnection();
             $db = $connection->getDbAdapter();
             $myId = $this->get('id');
+            if ($this->originalId === null) {
+                $originalId = $myId;
+            } else {
+                $originalId = $this->originalId;
+                $this->originalId = null;
+            }
             if ($this->hasBeenLoadedFromDb()) {
                 $db->delete(
-                    'sync_rule_property',
+                    'sync_property',
                     $db->quoteInto('rule_id = ?', $myId)
                 );
             }
@@ -331,6 +356,7 @@ class SyncRule extends DbObject
             unset($properties['id']);
             unset($properties['rule_id']);
             unset($properties['source_id']);
+            ksort($properties);
             $all[] = (object) $properties;
         }
 
