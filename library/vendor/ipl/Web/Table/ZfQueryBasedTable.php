@@ -12,6 +12,7 @@ use dipl\Html\Link;
 use dipl\Web\Widget\ControlsAndContent;
 use dipl\Web\Url;
 use LogicException;
+use RuntimeException;
 use Zend_Db_Adapter_Abstract as DbAdapter;
 
 abstract class ZfQueryBasedTable extends QueryBasedTable
@@ -25,6 +26,8 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
     private $query;
 
     private $paginationAdapter;
+
+    private $search;
 
     public function __construct($db)
     {
@@ -67,9 +70,20 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
         return $this;
     }
 
+    public function hasSearch()
+    {
+        return $this->search !== null;
+    }
+
     public function search($search)
     {
+        if ($this->hasSearch()) {
+            throw new RuntimeException(
+                'It is not allowed to call search twice on this table'
+            );
+        }
         if (! empty($search)) {
+            $this->search = $search;
             $query = $this->getQuery();
             $columns = $this->getSearchColumns();
             if (strpos($search, ' ') === false) {
