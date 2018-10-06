@@ -9,6 +9,10 @@ use Icinga\Module\Director\Web\Widget\JobDetails;
 
 class JobController extends ActionController
 {
+    /**
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function indexAction()
     {
         $job = $this->requireJob();
@@ -31,6 +35,10 @@ class JobController extends ActionController
             );
     }
 
+    /**
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function editAction()
     {
         $job = $this->requireJob();
@@ -48,6 +56,8 @@ class JobController extends ActionController
 
     /**
      * @return DirectorJob
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\MissingParameterException
      */
     protected function requireJob()
     {
@@ -56,7 +66,7 @@ class JobController extends ActionController
 
     protected function addJobTabs(DirectorJob $job, $active)
     {
-        $id = $job->getId();
+        $id = $job->get('id');
 
         $this->tabs()->add('show', [
             'url'       => 'director/job',
