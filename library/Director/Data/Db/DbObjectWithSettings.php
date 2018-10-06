@@ -51,6 +51,8 @@ abstract class DbObjectWithSettings extends DbObject
 
     public function getSettings()
     {
+        // Sort them, important only for new objects
+        ksort($this->settings);
         return $this->settings;
     }
 
