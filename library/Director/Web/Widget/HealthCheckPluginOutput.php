@@ -32,7 +32,7 @@ class HealthCheckPluginOutput extends HtmlDocument
 
         foreach ($checks as $check) {
             $this->add([
-                $title = Html::tag('h2', $check->getName()),
+                $title = Html::tag('h1', $check->getName()),
                 $ul = Html::tag('ul', ['class' => 'health-check-result'])
             ]);
 
@@ -42,17 +42,21 @@ class HealthCheckPluginOutput extends HtmlDocument
                 foreach ($problems as $state => $count) {
                     $badges->add(Html::tag('span', [
                         'class' => ['badge', 'state-' . strtolower($state)],
-                        'title' => $this->translate('Critical Checks'),
+                        'title' => sprintf(
+                            $this->translate('%s: %d'),
+                            $this->translate($state),
+                            $count
+                        ),
                     ], $count));
                 }
                 $title->add($badges);
             }
 
             foreach ($check->getResults() as $result) {
+                $state = $result->getState()->getName();
                 $ul->add(Html::tag('li', [
-                    $this->colorizeState($result->getState()->getName()),
-                    $this->colorizeStates($result->getOutput())
-                ])->setSeparator(' '));
+                    'class' => 'state state-' . strtolower($state)
+                ], $this->highlightNames($result->getOutput()))->setSeparator(' '));
             }
             $this->state->raise($check->getState());
         }
@@ -63,30 +67,22 @@ class HealthCheckPluginOutput extends HtmlDocument
         return $this->state;
     }
 
-    protected function colorizeStates($string)
-    {
-        $string = Html::escape($string);
-        $string = preg_replace_callback(
-            "/'([^']+)'/",
-            [$this, 'highlightNames'],
-            $string
-        );
-
-        $string = preg_replace_callback(
-            '/(OK|WARNING|CRITICAL|UNKNOWN)/',
-            [$this, 'getColorized'],
-            $string
-        );
-
-        return new HtmlString($string);
-    }
-
     protected function colorizeState($state)
     {
         return Html::tag('span', ['class' => 'badge state-' . strtolower($state)], $state);
     }
 
-    protected function highlightNames($match)
+    protected function highlightNames($string)
+    {
+        $string = Html::escape($string);
+        return new HtmlString(preg_replace_callback(
+            "/'([^']+)'/",
+            [$this, 'highlightName'],
+            $string
+        ));
+    }
+
+    protected function highlightName($match)
     {
         return '"' . Html::tag('strong', $match[1]) . '"';
     }

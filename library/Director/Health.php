@@ -58,10 +58,10 @@ class Health
             return $checks;
         }
 
-        $checks[] = $this->checkSyncRules();
-        $checks[] = $this->checkImportSources();
-        $checks[] = $this->checkDirectorJobs();
         $checks[] = $this->checkDeployments();
+        $checks[] = $this->checkImportSources();
+        $checks[] = $this->checkSyncRules();
+        $checks[] = $this->checkDirectorJobs();
 
         return $checks;
     }

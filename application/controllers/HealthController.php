@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Controllers;
 
 use dipl\Html\Html;
-use dipl\Html\Icon;
 use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;
 use Icinga\Module\Director\Health;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -12,6 +11,7 @@ class HealthController extends ActionController
 {
     public function indexAction()
     {
+        $this->setAutorefreshInterval(10);
         $this->tabs()->add('main', [
             'label' => $this->translate('Overview'),
             'url' => 'director'
@@ -20,7 +20,7 @@ class HealthController extends ActionController
             'url' => 'director/health'
         ])->activate('health');
 
-        $this->addTitle($this->translate('Director Health'));
+        $this->setTitle($this->translate('Director Health'));
         $health = new Health();
         $health->setDbResourceName($this->getDbResourceName());
         $output = new HealthCheckPluginOutput($health);

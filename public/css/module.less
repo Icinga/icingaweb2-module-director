@@ -1064,7 +1064,7 @@ form div.hint {
 
 ul.health-check-result {
   list-style-type: none;
-  padding-left: 2em;
+  padding: 0;
   margin-bottom: 2em;
   li {
     line-height: 2em;
@@ -1078,6 +1078,27 @@ ul.health-check-result {
   .badge {
     font-size: 0.75em;
     margin-left: 0.5em;
+  }
+}
+
+li.state {
+  border-left: 0.5em solid transparent;
+  margin-bottom: 0.5em;
+  padding-left: 1em;
+  &.state-ok {
+    border-color: @color-ok;
+  }
+  &.state-warning {
+    border-color: @color-warning;
+  }
+  &.state-critical {
+    border-color: @color-critical;
+  }
+  &.state-unknown {
+    border-color: @color-unknown;
+  }
+  &.state-pending {
+    border-color: @color-pending;
   }
 }
 
