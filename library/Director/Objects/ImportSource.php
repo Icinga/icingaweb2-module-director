@@ -7,17 +7,18 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\SyncUtils;
 use Exception;
 
-class ImportSource extends DbObjectWithSettings
+class ImportSource extends DbObjectWithSettings implements ExportInterface
 {
     protected $table = 'import_source';
 
-    protected $keyName = 'id';
+    protected $keyName = 'source_name';
 
     protected $autoincKeyName = 'id';
 
@@ -51,29 +52,44 @@ class ImportSource extends DbObjectWithSettings
      */
     public function export()
     {
-        $plain = (object) $this->getProperties();
-        $plain->originalId = $plain->id;
-        unset($plain->id);
+        $plain = $this->getProperties();
+        $plain['originalId'] = $plain['id'];
+        unset($plain['id']);
 
         foreach ($this->stateProperties as $key) {
-            unset($plain->$key);
+            unset($plain[$key]);
         }
 
-        $plain->settings = (object) $this->getSettings();
-        $plain->modifiers = $this->exportRowModifiers();
+        $plain['settings'] = (object) $this->getSettings();
+        $plain['modifiers'] = $this->exportRowModifiers();
+        ksort($plain);
 
-        return $plain;
+        return (object) $plain;
     }
 
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return ImportSource
+     * @throws DuplicateKeyException
+     * @throws NotFoundError
+     */
     public static function import($plain, Db $db, $replace = false)
     {
         $properties = (array) $plain;
-        $id = $properties['originalId'];
-        unset($properties['originalId']);
+        if (isset($properties['originalId'])) {
+            $id = $properties['originalId'];
+            unset($properties['originalId']);
+        } else {
+            $id = null;
+        }
         $name = $properties['source_name'];
 
         if ($replace && static::existsWithNameAndId($name, $id, $db)) {
             $object = static::loadWithAutoIncId($id, $db);
+        } elseif ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
         } elseif (static::existsWithName($name, $db)) {
             throw new DuplicateKeyException(
                 'Import Source %s already exists',
@@ -86,8 +102,16 @@ class ImportSource extends DbObjectWithSettings
         $object->newRowModifiers = $properties['modifiers'];
         unset($properties['modifiers']);
         $object->setProperties($properties);
+        if ($id !== null) {
+            $object->reallySet('id', $id);
+        }
 
         return $object;
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->get('source_name');
     }
 
     public static function loadByName($name, Db $connection)
