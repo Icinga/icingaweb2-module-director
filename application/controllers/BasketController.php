@@ -150,7 +150,7 @@ class BasketController extends ActionController
                 null,
                 ['class' => 'icon-rewind']
             )
-        ]   );
+        ]);
 
         if ($this->params->get('action') === 'restore') {
             $form = new RestoreBasketForm();
@@ -187,7 +187,7 @@ class BasketController extends ActionController
                     if ($current === null) {
                         $table->addNameValueRow(
                             $key,
-                                Link::create(
+                            Link::create(
                                 Html::tag('strong', ['style' => 'color: green'], $this->translate('new')),
                                 'director/basket/snapshotobject',
                                 $linkParams
