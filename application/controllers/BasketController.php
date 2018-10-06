@@ -45,9 +45,7 @@ class BasketController extends ActionController
                 $this->translate('Back'),
                 'director/baskets',
                 null,
-                [
-                    'class' => 'icon-left-big'
-                ]
+                ['class' => 'icon-left-big']
             )
         );
         $uuid = hex2bin($this->params->get('uuid'));
@@ -71,9 +69,7 @@ class BasketController extends ActionController
                 $this->translate('back'),
                 'director/baskets',
                 null,
-                [
-                    'class' => 'icon-left-big'
-                ]
+                ['class' => 'icon-left-big']
             )
         );
         $this->addSingleTab($this->translate('Create Basket'));
@@ -84,6 +80,9 @@ class BasketController extends ActionController
         $this->content()->add($form);
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function snapshotsAction()
     {
         $uuid = $this->params->get('uuid');
