@@ -86,7 +86,6 @@ class Migrations
 
     /**
      * @return $this
-     * @throws \Icinga\Exception\IcingaException
      */
     public function applyPendingMigrations()
     {
