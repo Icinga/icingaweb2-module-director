@@ -72,6 +72,10 @@ class BasketSnapshotTable extends ZfQueryBasedTable
             );
         }
 
+        if (empty($result)) {
+            return '-';
+        }
+
         return implode(', ', $result);
     }
 
