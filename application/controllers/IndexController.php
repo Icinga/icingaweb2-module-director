@@ -20,8 +20,6 @@ class IndexController extends DashboardController
                 if (!$this->hasDeploymentEndpoint()) {
                     $this->showKickstartForm(false);
                 }
-            } else {
-                $this->showKickstartForm();
             }
 
             if ($migrations->hasPendingMigrations()) {
