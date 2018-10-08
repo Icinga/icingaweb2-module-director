@@ -45,15 +45,18 @@ class DashboardController extends ActionController
             $this->tabs()->add('main', [
                 'label' => $this->translate('Overview'),
                 'url' => 'director'
-            ])->add('health', [
-                'label' => $this->translate('Health'),
-                'url' => 'director/health'
             ])->activate('main');
-            $state = $this->getHealthState();
-            if ($state->isProblem()) {
-                $this->tabs()->get('health')->setTagParams([
-                    'class' => 'state-' . strtolower($state->getName())
+            if ($this->hasPermission('director/admin')) {
+                $this->tabs()->add('health', [
+                    'label' => $this->translate('Health'),
+                    'url' => 'director/health'
                 ]);
+                $state = $this->getHealthState();
+                if ($state->isProblem()) {
+                    $this->tabs()->get('health')->setTagParams([
+                        'class' => 'state-' . strtolower($state->getName())
+                    ]);
+                }
             }
         }
 
