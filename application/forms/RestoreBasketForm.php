@@ -23,13 +23,21 @@ class RestoreBasketForm extends QuickForm
         return $this;
     }
 
+    /**
+     * @codingStandardsIgnoreStart
+     * @return Auth
+     */
     protected function Auth()
     {
         return Auth::getInstance();
     }
 
+    /**
+     * @return Config
+     */
     protected function Config()
     {
+        // @codingStandardsIgnoreEnd
         return Config::module('director');
     }
 
