@@ -27,7 +27,11 @@ abstract class Html
      */
     public static function tag($name, $attributes = null, $content = null)
     {
-        if ($attributes instanceof ValidHtml || is_string($attributes)) {
+        if ($attributes instanceof ValidHtml
+            || is_string($attributes)
+            || is_int($attributes)
+            || is_float($attributes)
+        ) {
             $content = $attributes;
             $attributes = null;
         } elseif (is_array($attributes)) {
