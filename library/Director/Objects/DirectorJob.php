@@ -2,19 +2,23 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Hook\JobHook;
 use Exception;
 use InvalidArgumentException;
 
-class DirectorJob extends DbObjectWithSettings
+class DirectorJob extends DbObjectWithSettings implements ExportInterface
 {
     /** @var JobHook */
     protected $job;
 
     protected $table = 'director_job';
 
-    protected $keyName = 'id';
+    protected $keyName = 'job_name';
 
     protected $autoincKeyName = 'id';
 
@@ -41,6 +45,11 @@ class DirectorJob extends DbObjectWithSettings
     protected $settingsTable = 'director_job_setting';
 
     protected $settingsRemoteId = 'job_id';
+
+    public function getUniqueIdentifier()
+    {
+        return $this->get('job_name');
+    }
 
     /**
      * @return JobHook
@@ -186,6 +195,71 @@ class DirectorJob extends DbObjectWithSettings
         $plain->settings = $this->job()->exportSettings();
 
         return $plain;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return DirectorJob
+     * @throws DuplicateKeyException
+     * @throws NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $dummy = new static;
+        $idCol = $dummy->autoincKeyName;
+        $keyCol = $dummy->keyName;
+        $properties = (array) $plain;
+        if (isset($properties['originalId'])) {
+            $id = $properties['originalId'];
+            unset($properties['originalId']);
+        } else {
+            $id = null;
+        }
+        $name = $properties[$keyCol];
+
+        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
+            $object = static::loadWithAutoIncId($id, $db);
+        } elseif ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
+        } elseif (static::exists($name, $db)) {
+            throw new DuplicateKeyException(
+                'Director Job "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->setProperties($properties);
+        if ($id !== null) {
+            $object->reallySet($idCol, $id);
+        }
+
+        return $object;
+    }
+
+    /**
+     * @param string $name
+     * @param int $id
+     * @param Db $connection
+     * @api internal
+     * @return bool
+     */
+    protected static function existsWithNameAndId($name, $id, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $dummy = new static;
+        $idCol = $dummy->autoincKeyName;
+        $keyCol = $dummy->keyName;
+
+        return (string) $id === (string) $db->fetchOne(
+            $db->select()
+                ->from($dummy->table, $idCol)
+                ->where("$idCol = ?", $id)
+                ->where("$keyCol = ?", $name)
+        );
     }
 
     /**
