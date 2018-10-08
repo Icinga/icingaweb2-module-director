@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use RuntimeException;
@@ -23,6 +24,7 @@ class BasketSnapshot extends DbObject
     ];
 
     protected $restoreOrder = [
+        'Datafield',
         'Command',
         'HostGroup',
         'IcingaTemplateChoiceHost',
@@ -48,6 +50,7 @@ class BasketSnapshot extends DbObject
     public static function getClassForType($type)
     {
         $types = [
+            'Datafield'       => '\\Icinga\\Module\\Director\\Objects\\DirectorDatafield',
             'Command'         => '\\Icinga\\Module\\Director\\Objects\\IcingaCommand',
             'HostGroup'       => '\\Icinga\\Module\\Director\\Objects\\IcingaHostGroup',
             'IcingaTemplateChoiceHost' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceHost',
@@ -73,8 +76,37 @@ class BasketSnapshot extends DbObject
             'basket_uuid' => $basket->get('uuid')
         ], $db);
         $snapshot->addObjectsChosenByBasket($basket);
+        $snapshot->resolveRequiredFields();
 
         return $snapshot;
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function resolveRequiredFields()
+    {
+        $requiredIds = [];
+        foreach ($this->objects as $typeName => $objects) {
+            foreach ($objects as $key => $object) {
+                if (isset($object->fields)) {
+                    foreach ($object->fields as $field) {
+                        $requiredIds[$field->datafield_id] = true;
+                    }
+                }
+            }
+        }
+
+        $connection = $this->getConnection();
+        if (! isset($this->objects['Datafield'])) {
+            $this->objects['Datafield'] = [];
+        }
+        $fields = & $this->objects['Datafield'];
+        foreach ($requiredIds as $id) {
+            if (! isset($fields[$id])) {
+                $fields[$id] = DirectorDatafield::loadWithAutoIncId((int) $id, $connection)->export();
+            }
+        }
     }
 
     protected function addObjectsChosenByBasket(Basket $basket)
