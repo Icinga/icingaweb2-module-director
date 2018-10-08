@@ -671,7 +671,18 @@
 
         rendered: function(ev) {
             var iid;
+            var icinga = this.module.icinga;
             var $container = $(ev.currentTarget);
+            if ($container.children('div.controls').first().data('directorWindowId') === '_UNDEFINED_') {
+                var $url = $container.data('icingaUrl');
+                if (typeof $url !== 'undefined') {
+                    icinga.loader.loadUrl($url, $container).autorefresh = true;
+                }
+
+                $container.children('div.controls').children().hide();
+                $container.children('div.content').hide();
+                return;
+            }
             this.restoreContainerFieldsets($container);
             this.backupAllExtensibleSetDefaultValues($container);
             this.highlightFormErrors($container);

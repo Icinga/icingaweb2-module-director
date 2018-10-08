@@ -7,6 +7,7 @@ use dipl\Web\Widget\Content;
 use dipl\Web\Widget\Controls;
 use dipl\Web\Widget\Tabs;
 use dipl\Web\Url;
+use Icinga\Web\Window;
 
 trait ControlsAndContentHelper
 {
@@ -33,7 +34,16 @@ trait ControlsAndContentHelper
     public function controls()
     {
         if ($this->controls === null) {
+            /** @var Window $window */
+            $window = $this->Window();
+            $id = $window->getId();
+            if ($id === null || $id === Window::UNDEFINED) {
+                $id = '_UNDEFINED_';
+            }
             $this->view->controls = $this->controls = new Controls();
+            $this->controls->addAttributes([
+                'data-director-window-id' => $id,
+            ]);
         }
 
         return $this->controls;
