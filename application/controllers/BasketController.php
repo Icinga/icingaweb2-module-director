@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use dipl\Html\Link;
 use dipl\Web\Widget\NameValueTable;
 use Exception;
+use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
@@ -130,11 +131,12 @@ class BasketController extends ActionController
             'basket_uuid' => $binUuid,
             'ts_create'   => $this->params->getRequired('ts'),
         ], $this->db());
+        $snapSum = bin2hex($snapshot->get('content_checksum'));
 
         $this->addTitle(
             $this->translate('%s: %s (Snapshot)'),
             $basket->get('basket_name'),
-            substr($hexUuid, 0, 7)
+            substr($snapSum, 0, 7)
         );
 
         $this->actions()->add([
@@ -151,6 +153,13 @@ class BasketController extends ActionController
                 ['class' => 'icon-rewind']
             )
         ]);
+
+        $properties = new NameValueTable();
+        $properties->addNameValuePairs([
+            $this->translate('Created') => DateFormatter::formatDateTime($snapshot->get('ts_create') / 1000),
+            $this->translate('Content Checksum') => bin2hex($snapshot->get('content_checksum')),
+        ]);
+        $this->content()->add($properties);
 
         if ($this->params->get('action') === 'restore') {
             $form = new RestoreBasketForm();
@@ -272,12 +281,12 @@ class BasketController extends ActionController
         } else {
             $connection = Db::fromResourceName($targetDbName);
         }
-        $object = $objects->$type->$key;
+        $objectFromBasket = $objects->$type->$key;
         $current = BasketSnapshot::instanceByIdentifier($type, $key, $connection);
         $this->content()->add(
             ConfigDiff::create(
-                Json::encode($object, JSON_PRETTY_PRINT),
-                Json::encode($current->export(), JSON_PRETTY_PRINT)
+                Json::encode($current->export(), JSON_PRETTY_PRINT),
+                Json::encode($objectFromBasket, JSON_PRETTY_PRINT)
             )->setHtmlRenderer('Inline')
         );
     }
