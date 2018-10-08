@@ -3,9 +3,12 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
-class IcingaTemplateChoice extends IcingaObject
+class IcingaTemplateChoice extends IcingaObject implements ExportInterface
 {
     protected $objectTable;
 
@@ -26,6 +29,47 @@ class IcingaTemplateChoice extends IcingaObject
     public function getObjectShortTableName()
     {
         return substr(substr($this->table, 0, -16), 7);
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return IcingaTemplateChoice
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        if (isset($properties['originalId'])) {
+            $id = $properties['originalId'];
+            unset($properties['originalId']);
+        } else {
+            $id = null;
+        }
+        $name = $properties['object_name'];
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Template Choice "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->setProperties($properties);
+
+        return $object;
     }
 
     public function export()

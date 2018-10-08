@@ -6,6 +6,7 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use InvalidArgumentException;
 
 class IcingaServiceSet extends IcingaObject
@@ -108,6 +109,39 @@ class IcingaServiceSet extends IcingaObject
         }
 
         return $services;
+    }
+
+    public function export()
+    {
+        if ($this->get('host_id')) {
+            return $this->exportSetOnHost();
+        } else {
+            return $this->exportTemplate();
+        }
+    }
+
+    protected function exportSetOnHost()
+    {
+        // TODO.
+        throw new \RuntimeException('Not yet');
+    }
+
+    protected function exportTemplate()
+    {
+        $props = $this->getProperties();
+        unset($props['id'], $props['host_id']);
+        $props['services'] = [];
+        $props['service_templates'] = [];
+        foreach ($this->getServiceObjects() as $serviceObject) {
+            $props['services'][$serviceObject->getObjectName()] = $serviceObject->export();
+            foreach ($serviceObject->imports()->getObjects() as $import) {
+                $name = $import->getObjectName();
+                $props['service_templates'][$name] = $import->export();
+            }
+        }
+        ksort($props);
+
+        return (object) $props;
     }
 
     public function onDelete()
