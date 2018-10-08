@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Import;
 
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\Db\DbObject;
+use InvalidArgumentException;
 
 class SyncUtils
 {
@@ -73,7 +73,6 @@ class SyncUtils
      * @param  string $var  Variable/property name
      *
      * @return mixed
-     * @throws IcingaException
      */
     public static function getSpecificValue($row, $var)
     {
@@ -94,7 +93,11 @@ class SyncUtils
             }
 
             if (! is_object($row->$main)) {
-                throw new IcingaException('Data is not nested, cannot access %s: %s', $var, var_export($row, 1));
+                throw new InvalidArgumentException(sprintf(
+                    'Data is not nested, cannot access %s: %s',
+                    $var,
+                    var_export($row, 1)
+                ));
             }
 
             return static::getDeepValue($row->$main, $parts);
