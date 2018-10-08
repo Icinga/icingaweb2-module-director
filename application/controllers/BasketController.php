@@ -283,9 +283,15 @@ class BasketController extends ActionController
         }
         $objectFromBasket = $objects->$type->$key;
         $current = BasketSnapshot::instanceByIdentifier($type, $key, $connection);
+        if ($current === null) {
+            $current = '';
+        } else {
+            $current = Json::encode($current->export(), JSON_PRETTY_PRINT);
+        }
+
         $this->content()->add(
             ConfigDiff::create(
-                Json::encode($current->export(), JSON_PRETTY_PRINT),
+                $current,
                 Json::encode($objectFromBasket, JSON_PRETTY_PRINT)
             )->setHtmlRenderer('Inline')
         );
