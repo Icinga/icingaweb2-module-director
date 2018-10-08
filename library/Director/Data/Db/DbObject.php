@@ -450,8 +450,12 @@ abstract class DbObject
     {
         $props = array();
         foreach (array_keys($this->modifiedProperties) as $key) {
-            if ($this->protectAutoinc && $key === $this->autoincKeyName) {
-                continue;
+            if ($key === $this->autoincKeyName) {
+                if ($this->protectAutoinc) {
+                    continue;
+                } elseif ($this->properties[$key] === null) {
+                    continue;
+                }
             }
 
             $props[$key] = $this->properties[$key];
@@ -730,8 +734,10 @@ abstract class DbObject
     protected function insertIntoDb()
     {
         $properties = $this->getPropertiesForDb();
-        if ($this->autoincKeyName !== null && $this->protectAutoinc) {
-            unset($properties[$this->autoincKeyName]);
+        if ($this->autoincKeyName !== null) {
+            if ($this->protectAutoinc || $properties[$this->autoincKeyName] === null) {
+                unset($properties[$this->autoincKeyName]);
+            }
         }
         // TODO: Remove this!
         if ($this->connection->isPgsql()) {
