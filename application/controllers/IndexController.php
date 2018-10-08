@@ -22,7 +22,6 @@ class IndexController extends DashboardController
                 }
             } else {
                 $this->showKickstartForm();
-                return;
             }
 
             if ($migrations->hasPendingMigrations()) {
@@ -45,7 +44,11 @@ class IndexController extends DashboardController
             $this->addSingleTab($this->translate('Kickstart'));
         }
 
-        $this->content()->prepend(KickstartForm::load()->handleRequest());
+        $form = KickstartForm::load();
+        if ($name = $this->getPreferredDbResourceName()) {
+            $form->setDbResourceName($name);
+        }
+        $this->content()->prepend($form->handleRequest());
     }
 
     protected function hasDeploymentEndpoint()

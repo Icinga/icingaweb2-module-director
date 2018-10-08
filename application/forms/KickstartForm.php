@@ -26,8 +26,9 @@ class KickstartForm extends DirectorForm
     /** @var IcingaEndpoint */
     private $endpoint;
 
+    private $dbResourceName;
+
     /**
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Zend_Form_Exception
      */
     public function setup()
@@ -36,12 +37,14 @@ class KickstartForm extends DirectorForm
         $this->createDbLabel    = $this->translate('Create database schema');
         $this->migrateDbLabel   = $this->translate('Apply schema migrations');
 
-        $this->addResourceConfigElements();
-        $this->addResourceDisplayGroup();
+        if ($this->dbResourceName === null) {
+            $this->addResourceConfigElements();
+            $this->addResourceDisplayGroup();
 
-        if (!$this->config()->get('db', 'resource')
-            || ($this->config()->get('db', 'resource') !== $this->getResourceName())) {
-            return;
+            if (!$this->config()->get('db', 'resource')
+                || ($this->config()->get('db', 'resource') !== $this->getResourceName())) {
+                return;
+            }
         }
 
         if (!$this->migrations()->hasSchema()) {
@@ -266,6 +269,10 @@ class KickstartForm extends DirectorForm
      */
     protected function addResourceDisplayGroup()
     {
+        if ($this->dbResourceName !== null) {
+            return;
+        }
+
         $elements = array(
             'HINT_no_resource',
             'resource',
@@ -353,7 +360,6 @@ class KickstartForm extends DirectorForm
     }
 
     /**
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\ProgrammingError
      * @throws \Zend_Form_Exception
      */
@@ -385,8 +391,19 @@ class KickstartForm extends DirectorForm
         parent::onSuccess();
     }
 
+    public function setDbResourceName($name)
+    {
+        $this->dbResourceName = $name;
+
+        return $this;
+    }
+
     protected function getResourceName()
     {
+        if ($this->dbResourceName !== null) {
+            return $this->dbResourceName;
+        }
+
         if ($this->hasBeenSent()) {
             $resource = $this->getSentValue('resource');
             $resources = $this->enumResources();
@@ -412,7 +429,6 @@ class KickstartForm extends DirectorForm
 
     /**
      * @return Migrations
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function migrations()
     {
