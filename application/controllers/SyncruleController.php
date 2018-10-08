@@ -179,7 +179,7 @@ class SyncruleController extends ActionController
     public function cloneAction()
     {
         $id = $this->params->getRequired('id');
-        $rule = SyncRule::load($id, $this->db());
+        $rule = SyncRule::loadWithAutoIncId((int) $id, $this->db());
         $this->tabs()->add('show', [
             'url'       => 'director/syncrule',
             'urlParams' => ['id' => $id],

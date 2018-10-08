@@ -125,7 +125,10 @@ class ImportsourceCommand extends Command
      */
     protected function getImportSource()
     {
-        return ImportSource::load($this->params->getRequired('id'), $this->db());
+        return ImportSource::loadWithAutoIncId(
+            (int) $this->params->getRequired('id'),
+            $this->db()
+        );
     }
 
     /**
