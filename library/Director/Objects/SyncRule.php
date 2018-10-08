@@ -79,6 +79,10 @@ class SyncRule extends DbObject implements ExportInterface
         ));
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function fetchInvolvedImportSources()
     {
         $sources = [];
@@ -133,6 +137,11 @@ class SyncRule extends DbObject implements ExportInterface
         return $this->filter()->matches($row);
     }
 
+    /**
+     * @param bool $apply
+     * @return bool
+     * @throws DuplicateKeyException
+     */
     public function checkForChanges($apply = false)
     {
         $hadChanges = false;
@@ -173,12 +182,17 @@ class SyncRule extends DbObject implements ExportInterface
 
     /**
      * @return IcingaObject[]
+     * @throws Exception
      */
     public function getExpectedModifications()
     {
         return $this->sync()->getExpectedModifications();
     }
 
+    /**
+     * @return bool
+     * @throws DuplicateKeyException
+     */
     public function applyChanges()
     {
         return $this->checkForChanges(true);
@@ -517,8 +531,6 @@ class SyncRule extends DbObject implements ExportInterface
     }
 
     /**
-     * TODO: idem
-     *
      * @param string $name
      * @param int $id
      * @param Db $connection
@@ -528,12 +540,15 @@ class SyncRule extends DbObject implements ExportInterface
     protected static function existsWithNameAndId($name, $id, Db $connection)
     {
         $db = $connection->getDbAdapter();
+        $dummy = new static;
+        $idCol = $dummy->autoincKeyName;
+        $keyCol = $dummy->keyName;
 
         return (string) $id === (string) $db->fetchOne(
             $db->select()
-                ->from('sync_rule', 'id')
-                ->where('id = ?', $id)
-                ->where('rule_name = ?', $name)
+                ->from($dummy->table, $idCol)
+                ->where("$idCol = ?", $id)
+                ->where("$keyCol = ?", $name)
         );
     }
 }

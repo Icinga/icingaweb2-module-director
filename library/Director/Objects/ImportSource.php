@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
-use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
@@ -12,6 +11,7 @@ use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Import\SyncUtils;
+use InvalidArgumentException;
 use Exception;
 
 class ImportSource extends DbObjectWithSettings implements ExportInterface
@@ -114,12 +114,24 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         return $this->get('source_name');
     }
 
+    /**
+     * @param $name
+     * @param Db $connection
+     * @return ImportSource
+     * @throws NotFoundError
+     */
     public static function loadByName($name, Db $connection)
     {
         $db = $connection->getDbAdapter();
         $properties = $db->fetchRow(
             $db->select()->from('import_source')->where('source_name = ?', $name)
         );
+        if ($properties === false) {
+            throw new NotFoundError(sprintf(
+                'There is no such Import Source: "%s"',
+                $name
+            ));
+        }
 
         return static::create([], $connection)->setDbProperties($properties);
     }
@@ -135,15 +147,25 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         );
     }
 
+    /**
+     * @param string $name
+     * @param int $id
+     * @param Db $connection
+     * @api internal
+     * @return bool
+     */
     protected static function existsWithNameAndId($name, $id, Db $connection)
     {
         $db = $connection->getDbAdapter();
+        $dummy = new static;
+        $idCol = $dummy->autoincKeyName;
+        $keyCol = $dummy->keyName;
 
         return (string) $id === (string) $db->fetchOne(
             $db->select()
-                ->from('import_source', 'id')
-                ->where('id = ?', $id)
-                ->where('source_name = ?', $name)
+                ->from($dummy->table, $idCol)
+                ->where("$idCol = ?", $id)
+                ->where("$keyCol = ?", $name)
         );
     }
 
@@ -160,6 +182,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     /**
      * @param bool $required
      * @return ImportRun|null
+     * @throws NotFoundError
      */
     public function fetchLastRun($required = false)
     {
@@ -195,6 +218,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
      * @param $timestamp
      * @param bool $required
      * @return ImportRun|null
+     * @throws NotFoundError
      */
     public function fetchLastRunBefore($timestamp, $required = false)
     {
@@ -210,7 +234,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         $query = $db->select()->from(
             ['ir' => 'import_run'],
             'ir.id'
-        )->where('ir.source_id = ?', $this->id)
+        )->where('ir.source_id = ?', $this->get('id'))
         ->where('ir.start_time < ?', date('Y-m-d H:i:s', $timestamp))
         ->order('ir.start_time DESC')
         ->limit(1);
@@ -224,12 +248,17 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         }
     }
 
+    /**
+     * @param $required
+     * @return null
+     * @throws NotFoundError
+     */
     protected function nullUnlessRequired($required)
     {
         if ($required) {
             throw new NotFoundError(
                 'No data has been imported for "%s" yet',
-                $this->source_name
+                $this->get('source_name')
             );
         }
 
@@ -291,7 +320,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
         $target = $modifier->getTargetProperty($key);
         if (strpos($target, '.') !== false) {
-            throw new ConfigurationError(
+            throw new InvalidArgumentException(
                 'Cannot set value for nested key "%s"',
                 $target
             );
@@ -333,7 +362,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
             $this->getConnection(),
             $db->select()
                ->from('import_row_modifier')
-               ->where('source_id = ?', $this->id)
+               ->where('source_id = ?', $this->get('id'))
                ->order('priority ASC')
         );
 
@@ -344,7 +373,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     {
         $mods = [];
         foreach ($this->fetchRowModifiers() as $mod) {
-            $mods[] = [$mod->property_name, $mod->getInstance()];
+            $mods[] = [$mod->get('property_name'), $mod->getInstance()];
         }
 
         return $mods;
@@ -355,11 +384,12 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         $modifiers = [];
 
         foreach ($this->fetchRowModifiers() as $mod) {
-            if (! array_key_exists($mod->property_name, $modifiers)) {
-                $modifiers[$mod->property_name] = [];
+            $name = $mod->get('property_name');
+            if (! array_key_exists($name, $modifiers)) {
+                $modifiers[$name] = [];
             }
 
-            $modifiers[$mod->property_name][] = $mod->getInstance();
+            $modifiers[$name][] = $mod->getInstance();
         }
 
         $this->rowModifiers = $modifiers;
@@ -380,32 +410,38 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         return array_keys($list);
     }
 
+    /**
+     * @param bool $runImport
+     * @return bool
+     * @throws DuplicateKeyException
+     */
     public function checkForChanges($runImport = false)
     {
         $hadChanges = false;
 
-        Benchmark::measure('Starting with import ' . $this->source_name);
+        $name = $this->get('source_name');
+        Benchmark::measure("Starting with import $name");
         try {
             $import = new Import($this);
-            $this->last_attempt = date('Y-m-d H:i:s');
+            $this->set('last_attempt', date('Y-m-d H:i:s'));
             if ($import->providesChanges()) {
-                Benchmark::measure('Found changes for ' . $this->source_name);
+                Benchmark::measure("Found changes for $name");
                 $hadChanges = true;
-                $this->import_state = 'pending-changes';
+                $this->set('import_state', 'pending-changes');
 
                 if ($runImport && $import->run()) {
-                    Benchmark::measure('Import succeeded for ' . $this->source_name);
-                    $this->import_state = 'in-sync';
+                    Benchmark::measure("Import succeeded for $name");
+                    $this->set('import_state', 'in-sync');
                 }
             } else {
-                $this->import_state = 'in-sync';
+                $this->set('import_state', 'in-sync');
             }
 
-            $this->last_error_message = null;
+            $this->set('last_error_message', null);
         } catch (Exception $e) {
-            $this->import_state = 'failing';
-            Benchmark::measure('Import failed for ' . $this->source_name);
-            $this->last_error_message = $e->getMessage();
+            $this->set('import_state', 'failing');
+            Benchmark::measure("Import failed for $name");
+            $this->set('last_error_message', $e->getMessage());
         }
 
         if ($this->hasBeenModified()) {
@@ -415,6 +451,10 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         return $hadChanges;
     }
 
+    /**
+     * @return bool
+     * @throws DuplicateKeyException
+     */
     public function runImport()
     {
         return $this->checkForChanges(true);
