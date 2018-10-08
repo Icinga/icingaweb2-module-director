@@ -231,14 +231,6 @@ class BasketSnapshot extends DbObject
         }
     }
 
-    protected static function classWantsTemplate($class)
-    {
-        return strpos($class, '\\Icinga\\Module\\Director\\Objects\\Icinga') === 0
-            && strpos($class, 'Choice') === false
-            && strpos($class, 'Group') === false
-            && strpos($class, 'Command') === false;
-    }
-
     protected function addAll($typeName)
     {
         $class = static::getClassForType($typeName);
@@ -279,9 +271,7 @@ class BasketSnapshot extends DbObject
     public static function instanceByIdentifier($typeName, $identifier, Db $connection)
     {
         $class = static::getClassForType($typeName);
-        if (static::classWantsTemplate($class)
-            && strpos($class, 'IcingaHost') === false
-        ) {
+        if (substr($class, -13) === 'IcingaService') {
             $identifier = [
                 'object_type' => 'template',
                 'object_name' => $identifier,
