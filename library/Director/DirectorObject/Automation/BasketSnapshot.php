@@ -9,6 +9,7 @@ use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use RuntimeException;
+use Zend_Db_Adapter_Abstract as ZfDbAdapter;
 
 class BasketSnapshot extends DbObject
 {
@@ -70,6 +71,12 @@ class BasketSnapshot extends DbObject
         return $types[$type];
     }
 
+    /**
+     * @param Basket $basket
+     * @param Db $db
+     * @return BasketSnapshot
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public static function createForBasket(Basket $basket, Db $db)
     {
         $snapshot = static::create([
@@ -102,7 +109,7 @@ class BasketSnapshot extends DbObject
             $this->objects['Datafield'] = [];
         }
         $fields = & $this->objects['Datafield'];
-        foreach ($requiredIds as $id) {
+        foreach (array_keys($requiredIds) as $id) {
             if (! isset($fields[$id])) {
                 $fields[$id] = DirectorDatafield::loadWithAutoIncId((int) $id, $connection)->export();
             }
@@ -148,19 +155,21 @@ class BasketSnapshot extends DbObject
      * @param bool $replace
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Icinga\Exception\NotFoundError
+     * @throws \Zend_Db_Adapter_Exception
      */
     public function restoreTo(Db $connection, $replace = true)
     {
         $all = Json::decode($this->getJsonDump());
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
+        $fieldMap = [];
         foreach ($this->restoreOrder as $typeName) {
             if (isset($all->$typeName)) {
                 $objects = $all->$typeName;
                 $class = static::getClassForType($typeName);
 
                 $changed = [];
-                foreach ($objects as $object) {
+                foreach ($objects as $key => $object) {
                     /** @var DbObject $new */
                     $new = $class::import($object, $connection, $replace);
                     if ($new->hasBeenModified()) {
@@ -169,6 +178,13 @@ class BasketSnapshot extends DbObject
                         } else {
                             $new->store();
                         }
+                    }
+                    if ($new instanceof DirectorDatafield) {
+                        $fieldMap[(int) $key] = (int) $new->get('id');
+                    }
+
+                    if ($new instanceof IcingaObject) {
+                        $this->relinkObjectFields($db, $new, $object, $fieldMap);
                     }
                 }
 
@@ -179,6 +195,53 @@ class BasketSnapshot extends DbObject
             }
         }
         $db->commit();
+    }
+
+    /**
+     * @param ZfDbAdapter $db
+     * @param IcingaObject $new
+     * @param $object
+     * @param $fieldMap
+     * @throws \Zend_Db_Adapter_Exception
+     */
+    protected function relinkObjectFields(ZfDbAdapter $db, IcingaObject $new, $object, $fieldMap)
+    {
+        if (! $new->supportsFields() || ! isset($object->fields)) {
+            return;
+        }
+
+        $objectId = (int) $new->get('id');
+        $table = $new->getTableName() . '_field';
+        $objectKey = $new->getShortTableName() . '_id';
+        $existingFields = [];
+
+        foreach ($db->fetchAll(
+            $db->select()->from($table)->where("$objectKey = ?", $objectId)
+        ) as $mapping) {
+            $existingFields[(int) $mapping->datafield_id] = $mapping;
+        }
+        foreach ($object->fields as $field) {
+            $id = $fieldMap[(int) $field->datafield_id];
+            if (isset($existingFields[$id])) {
+                unset($existingFields[$id]);
+            } else {
+                $db->insert($table, [
+                    $objectKey     => $objectId,
+                    'datafield_id' => $id,
+                    'is_required'  => $field->is_required,
+                    'var_filter'   => $field->var_filter,
+                ]);
+            }
+        }
+        if (! empty($existingFields)) {
+            $db->delete(
+                $table,
+                $db->quoteInto(
+                    "$objectKey = $objectId AND datafield_id IN (?)",
+                    array_keys($existingFields)
+                )
+            );
+        }
     }
 
     /**

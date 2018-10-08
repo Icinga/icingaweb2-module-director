@@ -93,14 +93,29 @@ class DirectorDatafield extends DbObjectWithSettings
             $id = null;
         }
 
+        $encoded = Json::encode($properties);
         if ($id) {
             if (static::exists($id, $db)) {
                 $existing = static::loadWithAutoIncId($id, $db);
                 $existingProperties = (array) $existing->export();
                 unset($existingProperties['originalId']);
-                if (Json::encode($properties) === Json::encode($existingProperties)) {
+                if ($encoded === Json::encode($existingProperties)) {
                     return $existing;
                 }
+            }
+        }
+
+        $dba = $db->getDbAdapter();
+        $query = $dba->select()
+            ->from('director_datafield')
+            ->where('varname = ?', $plain->varname);
+        $candidates = DirectorDatafield::loadAll($db, $query);
+
+        foreach ($candidates as $candidate) {
+            $export = $candidate->export();
+            unset($export->originalId);
+            if (Json::encode($export) === $encoded) {
+                return $candidate;
             }
         }
 

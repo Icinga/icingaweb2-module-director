@@ -178,6 +178,10 @@ class BasketController extends ActionController
         $this->addSingleTab($this->translate('Snapshot'));
         $all = Json::decode($json);
         foreach ($all as $type => $objects) {
+            if ($type === 'Datafield') {
+                // $this->content()->add(Html::tag('h2', sprintf('+%d Datafield(s)', count($objects))));
+                continue;
+            }
             $table = new NameValueTable();
             $table->setAttribute('data-base-target', '_next');
             foreach ($objects as $key => $object) {
@@ -225,6 +229,7 @@ class BasketController extends ActionController
             $this->content()->add(Html::tag('h2', $type));
             $this->content()->add($table);
         }
+        $this->content()->add(Html::tag('div', ['style' => 'height: 5em']));
     }
 
     /**
