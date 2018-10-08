@@ -14,12 +14,19 @@ class BasketForm extends DirectorObjectForm
     protected function getAvailableTypes()
     {
         return [
+            'Command'            => $this->translate('Command Definitions'),
+            'HostGroup'          => $this->translate('Host Group'),
+            'IcingaTemplateChoiceHost' => $this->translate('Host Template Choice'),
+            'HostTemplate'       => $this->translate('Host Templates'),
+            'ServiceGroup'       => $this->translate('Service Groups'),
+            'IcingaTemplateChoiceService' => $this->translate('Service Template Choice'),
+            'ServiceTemplate'    => $this->translate('Service Templates'),
+            'ServiceSet'         => $this->translate('Service Sets'),
+            'Notification'       => $this->translate('Notifications'),
+            'Dependency'         => $this->translate('Dependencies'),
             'ImportSource'       => $this->translate('Import Sources'),
             'SyncRule'           => $this->translate('Sync Rules'),
-            'Job'                => $this->translate('Job Definitions'),
-            'HostTemplate'       => $this->translate('Host Templates'),
-            'ServiceSet'         => $this->translate('Service Sets'),
-            'ServiceTemplate'    => $this->translate('Service Templates'),
+            'DirectorJob'        => $this->translate('Job Definitions'),
             'Basket'             => $this->translate('Basket Definitions'),
         ];
     }
