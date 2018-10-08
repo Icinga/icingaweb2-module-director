@@ -45,7 +45,6 @@ class JobController extends ActionController
         $form = DirectorJobForm::load()
             ->setListUrl('director/jobs')
             ->setObject($job)
-            ->loadObject($this->params->getRequired('id'))
             ->handleRequest();
 
         $this
@@ -61,7 +60,7 @@ class JobController extends ActionController
      */
     protected function requireJob()
     {
-        return DirectorJob::load($this->params->getRequired('id'), $this->db());
+        return DirectorJob::loadWithAutoIncId((int) $this->params->getRequired('id'), $this->db());
     }
 
     protected function addJobTabs(DirectorJob $job, $active)
