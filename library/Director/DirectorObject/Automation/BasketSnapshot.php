@@ -21,6 +21,23 @@ class BasketSnapshot extends DbObject
         'ts_create',
     ];
 
+    protected $restoreOrder = [
+        'Command',
+        'HostGroup',
+        'IcingaTemplateChoiceHost',
+        'HostTemplate',
+        'ServiceGroup',
+        'IcingaTemplateChoiceService',
+        'ServiceTemplate',
+        'ServiceSet',
+        'Notification',
+        'Dependency',
+        'ImportSource',
+        'SyncRule',
+        'DirectorJob',
+        'Basket',
+    ];
+
     protected $defaultProperties = [
         'basket_uuid'      => null,
         'content_checksum' => null,
@@ -30,12 +47,19 @@ class BasketSnapshot extends DbObject
     public static function getClassForType($type)
     {
         $types = [
+            'Command'         => '\\Icinga\\Module\\Director\\Objects\\IcingaCommand',
+            'HostGroup'       => '\\Icinga\\Module\\Director\\Objects\\IcingaHostGroup',
+            'IcingaTemplateChoiceHost' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceHost',
+            'HostTemplate'    => '\\Icinga\\Module\\Director\\Objects\\IcingaHost',
+            'ServiceGroup'    => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceGroup',
+            'IcingaTemplateChoiceService' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceService',
+            'ServiceTemplate' => '\\Icinga\\Module\\Director\\Objects\\IcingaService',
+            'ServiceSet'      => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceSet',
+            'Notification'    => '\\Icinga\\Module\\Director\\Objects\\IcingaNotification',
+            'Dependency'      => '\\Icinga\\Module\\Director\\Objects\\IcingaDependency',
             'ImportSource'    => '\\Icinga\\Module\\Director\\Objects\\ImportSource',
             'SyncRule'        => '\\Icinga\\Module\\Director\\Objects\\SyncRule',
             'DirectorJob'     => '\\Icinga\\Module\\Director\\Objects\\DirectorJob',
-            'ServiceSet'      => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceSet',
-            'HostTemplate'    => '\\Icinga\\Module\\Director\\Objects\\IcingaHost',
-            'ServiceTemplate' => '\\Icinga\\Module\\Director\\Objects\\IcingaService',
             'Basket'          => '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Automation',
         ];
 
@@ -65,6 +89,7 @@ class BasketSnapshot extends DbObject
 
     /**
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function beforeStore()
     {
@@ -89,23 +114,54 @@ class BasketSnapshot extends DbObject
      * @param Db $connection
      * @param bool $replace
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function restoreTo(Db $connection, $replace = true)
     {
         $all = Json::decode($this->getJsonDump());
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
-        foreach ($all as $typeName => $objects) {
-            $class = static::getClassForType($typeName);
-            foreach ($objects as $object) {
-                /** @var DbObject $new */
-                $new = $class::import($object, $connection, $replace);
-                if ($new->hasBeenModified()) {
-                    $new->store();
+        foreach ($this->restoreOrder as $typeName) {
+            if (isset($all->$typeName)) {
+                $objects = $all->$typeName;
+                $class = static::getClassForType($typeName);
+
+                $changed = [];
+                foreach ($objects as $object) {
+                    /** @var DbObject $new */
+                    $new = $class::import($object, $connection, $replace);
+                    if ($new->hasBeenModified()) {
+                        if ($new instanceof IcingaObject && $new->supportsImports()) {
+                            $changed[$new->getObjectName()] = $new;
+                        } else {
+                            $new->store();
+                        }
+                    }
+                }
+
+                /** @var IcingaObject $object */
+                foreach ($changed as $object) {
+                    $this->recursivelyStore($object, $changed);
                 }
             }
         }
         $db->commit();
+    }
+
+    /**
+     * @param IcingaObject $object
+     * @param $list
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
+    protected function recursivelyStore(IcingaObject $object, & $list)
+    {
+        foreach ($object->listImportNames() as $parent) {
+            if (array_key_exists($parent, $list)) {
+                $this->recursivelyStore($list[$parent], $list);
+            }
+        }
+
+        $object->store();
     }
 
     /**
@@ -130,6 +186,10 @@ class BasketSnapshot extends DbObject
         );
     }
 
+    /**
+     * @return string
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function getJsonSummary()
     {
         if ($this->hasBeenLoadedFromDb()) {
@@ -139,6 +199,10 @@ class BasketSnapshot extends DbObject
         }
     }
 
+    /**
+     * @return array|mixed
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function getSummary()
     {
         if ($this->hasBeenLoadedFromDb()) {
@@ -153,6 +217,10 @@ class BasketSnapshot extends DbObject
         }
     }
 
+    /**
+     * @return string
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function getJsonDump()
     {
         if ($this->hasBeenLoadedFromDb()) {
@@ -164,7 +232,10 @@ class BasketSnapshot extends DbObject
 
     protected static function classWantsTemplate($class)
     {
-        return strpos($class, '\\Icinga\\Module\\Director\\Objects\\Icinga') === 0;
+        return strpos($class, '\\Icinga\\Module\\Director\\Objects\\Icinga') === 0
+            && strpos($class, 'Choice') === false
+            && strpos($class, 'Group') === false
+            && strpos($class, 'Command') === false;
     }
 
     protected function addAll($typeName)
@@ -196,12 +267,15 @@ class BasketSnapshot extends DbObject
     /**
      * @param $typeName
      * @param $identifier
-     * @return ExportInterface
+     * @param Db $connection
+     * @return ExportInterface|null
      */
     public static function instanceByIdentifier($typeName, $identifier, Db $connection)
     {
         $class = static::getClassForType($typeName);
-        if (static::classWantsTemplate($class)) {
+        if (static::classWantsTemplate($class)
+            && strpos($class, 'IcingaHost') === false
+        ) {
             $identifier = [
                 'object_type' => 'template',
                 'object_name' => $identifier,
@@ -217,12 +291,18 @@ class BasketSnapshot extends DbObject
         return $object;
     }
 
+    /**
+     * @param $typeName
+     * @param $identifier
+     */
     protected function addByIdentifier($typeName, $identifier)
     {
+        /** @var Db $connection */
+        $connection = $this->getConnection();
         $object = static::instanceByIdentifier(
             $typeName,
             $identifier,
-            $this->getConnection()
+            $connection
         );
         $this->objects[$typeName][$identifier] = $object->export();
     }
