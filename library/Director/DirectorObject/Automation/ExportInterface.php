@@ -11,5 +11,5 @@ interface ExportInterface
 
     // TODO:
     // public function getXyzChecksum();
-    // public function getUniqueIdentifier();
+    public function getUniqueIdentifier();
 }
