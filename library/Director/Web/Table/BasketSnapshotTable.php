@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\Html;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
 use Icinga\Date\DateFormatter;
@@ -13,6 +14,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
 {
     protected $searchColumns = [
         'basket_name',
+        'summary'
     ];
 
     /** @var Basket */
@@ -28,23 +30,28 @@ class BasketSnapshotTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
+        $this->splitByDay($row->ts_create_seconds);
+
         $hexUuid = bin2hex($row->uuid);
         $link = $this->linkToSnapshot($this->renderSummary($row->summary), $row);
 
         if ($this->basket === null) {
             $columns = [
-                $link,
-                new Link(
-                    $row->basket_name,
-                    'director/basket',
-                    ['uuid' => $hexUuid]
-                ),
-                DateFormatter::formatDateTime($row->ts_create / 1000),
+                [
+                    new Link(
+                        Html::tag('strong', $row->basket_name),
+                        'director/basket',
+                        ['uuid' => $hexUuid]
+                    ),
+                    Html::tag('br'),
+                    $link,
+                ],
+                DateFormatter::formatTime($row->ts_create / 1000),
             ];
         } else {
             $columns = [
                 $link,
-                DateFormatter::formatDateTime($row->ts_create / 1000),
+                DateFormatter::formatTime($row->ts_create / 1000),
             ];
         }
         return $this::row($columns);
@@ -88,22 +95,6 @@ class BasketSnapshotTable extends ZfQueryBasedTable
         ]);
     }
 
-    public function getColumnsToBeRendered()
-    {
-        if ($this->basket === null) {
-            return [
-                $this->translate('Content'),
-                $this->translate('Basket'),
-                $this->translate('Created'),
-            ];
-        } else {
-            return [
-                $this->translate('Content'),
-                $this->translate('Created'),
-            ];
-        }
-    }
-
     public function prepareQuery()
     {
         $query = $this->db()->select()->from([
@@ -112,6 +103,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
             'b.uuid',
             'b.basket_name',
             'bs.ts_create',
+            'ts_create_seconds' => '(bs.ts_create / 1000)',
             'bs.content_checksum',
             'bc.summary',
         ])->join(
