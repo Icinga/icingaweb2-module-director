@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use RuntimeException;
 
@@ -241,13 +242,18 @@ class BasketSnapshot extends DbObject
     protected function addAll($typeName)
     {
         $class = static::getClassForType($typeName);
+        /** @var IcingaObject $dummy */
+        $dummy = $class::create();
         /** @var ExportInterface $object */
-        if (static::classWantsTemplate($class)) {
-            /** @var IcingaObject $dummy */
-            $dummy = $class::create();
+        if ($dummy instanceof IcingaObject && $dummy->supportsImports()) {
             $db = $this->getDb();
-            $select = $db->select()->from($dummy->getTableName())
-                ->where('object_type = ?', 'template');
+            if ($dummy instanceof IcingaCommand) {
+                $select = $db->select()->from($dummy->getTableName())
+                    ->where('object_type != ?', 'external_object');
+            } else {
+                $select = $db->select()->from($dummy->getTableName())
+                    ->where('object_type = ?', 'template');
+            }
             $all = $class::loadAll($this->getConnection(), $select);
         } else {
             $all = $class::loadAll($this->getConnection());
