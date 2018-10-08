@@ -147,7 +147,7 @@ class Health
         $check = new CheckResults('Sync Rules');
         $rules = SyncRule::loadAll($this->getConnection(), null, 'rule_name');
         if (empty($rules)) {
-            $check->warn('No Sync Rules have been defined');
+            $check->succeed('No Sync Rules have been defined');
             return $check;
         }
         ksort($rules);
@@ -175,7 +175,7 @@ class Health
         $check = new CheckResults('Import Sources');
         $sources = ImportSource::loadAll($this->getConnection(), null, 'source_name');
         if (empty($sources)) {
-            $check->warn('No Import Sources have been defined');
+            $check->succeed('No Import Sources have been defined');
             return $check;
         }
 
@@ -203,7 +203,7 @@ class Health
         $check = new CheckResults('Director Jobs');
         $jobs = DirectorJob::loadAll($this->getConnection(), null, 'job_name');
         if (empty($jobs)) {
-            $check->warn('No Jobs have been defined');
+            $check->succeed('No Jobs have been defined');
             return $check;
         }
         ksort($jobs);
