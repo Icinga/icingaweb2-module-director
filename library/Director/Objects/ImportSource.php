@@ -22,6 +22,8 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
     protected $autoincKeyName = 'id';
 
+    protected $protectAutoinc = false;
+
     protected $defaultProperties = [
         'id'                 => null,
         'source_name'        => null,

@@ -22,6 +22,8 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     protected $autoincKeyName = 'id';
 
+    protected $protectAutoinc = false;
+
     protected $defaultProperties = [
         'id'                     => null,
         'job_name'               => null,

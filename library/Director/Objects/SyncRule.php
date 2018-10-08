@@ -20,6 +20,8 @@ class SyncRule extends DbObject implements ExportInterface
 
     protected $autoincKeyName = 'id';
 
+    protected $protectAutoinc = false;
+
     protected $defaultProperties = [
         'id'                 => null,
         'rule_name'          => null,
