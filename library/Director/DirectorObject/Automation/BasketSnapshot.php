@@ -114,6 +114,10 @@ class BasketSnapshot extends DbObject
                 $fields[$id] = DirectorDatafield::loadWithAutoIncId((int) $id, $connection)->export();
             }
         }
+
+        if (empty($this->objects['Datafield'])) {
+            unset($this->objects['Datafield']);
+        }
     }
 
     protected function addObjectsChosenByBasket(Basket $basket)
@@ -159,7 +163,32 @@ class BasketSnapshot extends DbObject
      */
     public function restoreTo(Db $connection, $replace = true)
     {
-        $all = Json::decode($this->getJsonDump());
+        static::restoreJson(
+            $this->getJsonDump(),
+            $connection,
+            $replace
+        );
+    }
+
+    public static function restoreJson($string, Db $connection, $replace = true)
+    {
+        $snapshot = new static();
+        $snapshot->restoreObjects(
+            Json::decode($string),
+            $connection,
+            $replace
+        );
+    }
+
+    /**
+     * @param $all
+     * @param Db $connection
+     * @param bool $replace
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
+    protected function restoreObjects($all, Db $connection, $replace = true)
+    {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
         $fieldMap = [];

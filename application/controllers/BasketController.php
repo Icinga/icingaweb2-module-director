@@ -129,6 +129,12 @@ class BasketController extends ActionController
         ], $this->db());
         $snapSum = bin2hex($snapshot->get('content_checksum'));
 
+        if ($this->params->get('action') === 'download') {
+            $this->getResponse()->setHeader('Content-Type', 'application/json', true);
+            echo $snapshot->getJsonDump();
+            return;
+        }
+
         $this->addTitle(
             $this->translate('%s: %s (Snapshot)'),
             $basket->get('basket_name'),
@@ -147,7 +153,16 @@ class BasketController extends ActionController
                 $this->url()->with('action', 'restore'),
                 null,
                 ['class' => 'icon-rewind']
-            )
+            ),
+            Link::create(
+                $this->translate('Download'),
+                $this->url()->with('action', 'download'),
+                null,
+                [
+                    'class'  => 'icon-download',
+                    'target' => '_blank'
+                ]
+            ),
         ]);
 
         $properties = new NameValueTable();
@@ -251,7 +266,7 @@ class BasketController extends ActionController
             $type,
             $key,
             Link::create(
-                substr(bin2hex( $snapshot->get('content_checksum')), 0, 7),
+                substr(bin2hex($snapshot->get('content_checksum')), 0, 7),
                 $snapshotUrl,
                 null,
                 ['data-base-target' => '_next']
