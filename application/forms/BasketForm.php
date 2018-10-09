@@ -133,7 +133,7 @@ class BasketForm extends DirectorObjectForm
         $basket = $this->object();
         $this->setSuccessUrl(
             'director/basket',
-            ['name' => $basket->get('name')]
+            ['name' => $basket->get('basket_name')]
         );
     }
 }
