@@ -133,7 +133,7 @@ class BasketForm extends DirectorObjectForm
         $basket = $this->object();
         $this->setSuccessUrl(
             'director/basket',
-            ['uuid' => $basket->getHexUuid()]
+            ['name' => $basket->get('name')]
         );
     }
 }
