@@ -18,7 +18,7 @@ class BasketTable extends ZfQueryBasedTable
             new Link(
                 $row->basket_name,
                 'director/basket',
-                ['uuid' => $hexUuid]
+                ['name' => $row->basket_name]
             ),
             $row->cnt_snapshots
         ]);

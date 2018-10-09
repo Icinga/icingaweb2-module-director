@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
 
 /**
  * Class Basket
@@ -28,7 +29,7 @@ class Basket extends DbObject
 
     protected $table = 'director_basket';
 
-    protected $keyName = 'uuid';
+    protected $keyName = 'basket_name';
 
     protected $chosenObjects = [];
 

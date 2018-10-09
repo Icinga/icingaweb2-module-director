@@ -31,8 +31,6 @@ class BasketSnapshotTable extends ZfQueryBasedTable
     public function renderRow($row)
     {
         $this->splitByDay($row->ts_create_seconds);
-
-        $hexUuid = bin2hex($row->uuid);
         $link = $this->linkToSnapshot($this->renderSummary($row->summary), $row);
 
         if ($this->basket === null) {
@@ -41,7 +39,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
                     new Link(
                         Html::tag('strong', $row->basket_name),
                         'director/basket',
-                        ['uuid' => $hexUuid]
+                        ['name' => $row->basket_name]
                     ),
                     Html::tag('br'),
                     $link,
@@ -91,7 +89,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
         return new Link($caption, 'director/basket/snapshot', [
             'checksum' => bin2hex($row->content_checksum),
             'ts'       => $row->ts_create,
-            'uuid'     => bin2hex($row->uuid),
+            'name'     => $row->basket_name,
         ]);
     }
 

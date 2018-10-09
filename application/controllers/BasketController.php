@@ -24,15 +24,15 @@ class BasketController extends ActionController
 
     protected function basketTabs()
     {
-        $uuid = $this->params->get('uuid');
+        $name = $this->params->get('name');
         return $this->tabs()->add('show', [
             'label' => $this->translate('Basket'),
             'url'   => 'director/basket',
-            'urlParams' => ['uuid' => $uuid]
+            'urlParams' => ['name' => $name]
         ])->add('snapshots', [
             'label' => $this->translate('Snapshots'),
             'url' => 'director/basket/snapshots',
-            'urlParams' => ['uuid' => $uuid]
+            'urlParams' => ['name' => $name]
         ]);
     }
 
@@ -49,8 +49,7 @@ class BasketController extends ActionController
                 ['class' => 'icon-left-big']
             )
         );
-        $uuid = hex2bin($this->params->get('uuid'));
-        $basket = Basket::load($uuid, $this->db());
+        $basket = $this->requireBasket();
         $this->basketTabs()->activate('show');
         $this->addTitle($basket->get('basket_name'));
         if ($basket->isEmpty()) {
@@ -86,12 +85,11 @@ class BasketController extends ActionController
      */
     public function snapshotsAction()
     {
-        $uuid = $this->params->get('uuid');
-        if ($uuid === null || $uuid === '') {
+        $name = $this->params->get('name');
+        if ($name === null || $name === '') {
             $basket = null;
         } else {
-            $uuid = hex2bin($uuid);
-            $basket = Basket::load($uuid, $this->db());
+            $basket = Basket::load($name, $this->db());
         }
         if ($basket === null) {
             $this->addTitle($this->translate('Basket Snapshots'));
@@ -124,11 +122,9 @@ class BasketController extends ActionController
      */
     public function snapshotAction()
     {
-        $hexUuid = $this->params->getRequired('uuid');
-        $binUuid = hex2bin($hexUuid);
-        $basket = Basket::load($binUuid, $this->db());
+        $basket = $this->requireBasket();
         $snapshot = BasketSnapshot::load([
-            'basket_uuid' => $binUuid,
+            'basket_uuid' => $basket->get('uuid'),
             'ts_create'   => $this->params->getRequired('ts'),
         ], $this->db());
         $snapSum = bin2hex($snapshot->get('content_checksum'));
@@ -143,7 +139,7 @@ class BasketController extends ActionController
             Link::create(
                 $this->translate('Show Basket'),
                 'director/basket',
-                ['uuid' => $hexUuid],
+                ['name' => $basket->get('basket_name')],
                 ['data-base-target' => '_next']
             ),
             Link::create(
@@ -186,7 +182,7 @@ class BasketController extends ActionController
             $table->setAttribute('data-base-target', '_next');
             foreach ($objects as $key => $object) {
                 $linkParams = [
-                    'uuid'     => $hexUuid,
+                    'name'     => $basket->get('basket_name'),
                     'checksum' => $this->params->get('checksum'),
                     'ts'       => $this->params->get('ts'),
                     'type'     => $type,
@@ -238,10 +234,9 @@ class BasketController extends ActionController
      */
     public function snapshotobjectAction()
     {
-        $hexUuid = $this->params->getRequired('uuid');
-        $binUuid = hex2bin($hexUuid);
+        $basket = $this->requireBasket();
         $snapshot = BasketSnapshot::load([
-            'basket_uuid' => $binUuid,
+            'basket_uuid' => $basket->get('uuid'),
             'ts_create'   => $this->params->getRequired('ts'),
         ], $this->db());
         $snapshotUrl = $this->url()->without('type')->without('key')->setPath('director/basket/snapshot');
@@ -256,7 +251,7 @@ class BasketController extends ActionController
             $type,
             $key,
             Link::create(
-                substr($hexUuid, 0, 7),
+                substr(bin2hex( $snapshot->get('content_checksum')), 0, 7),
                 $snapshotUrl,
                 null,
                 ['data-base-target' => '_next']
@@ -300,5 +295,10 @@ class BasketController extends ActionController
                 Json::encode($objectFromBasket, JSON_PRETTY_PRINT)
             )->setHtmlRenderer('Inline')
         );
+    }
+
+    protected function requireBasket()
+    {
+        return Basket::load($this->params->getRequired('name'), $this->db());
     }
 }
