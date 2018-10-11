@@ -80,7 +80,6 @@ class DirectorDatafield extends DbObjectWithSettings
      * @param Db $db
      * @param bool $replace
      * @return DirectorDatafield
-     * @throws DuplicateKeyException
      * @throws \Icinga\Exception\NotFoundError
      */
     public static function import($plain, Db $db, $replace = false)
@@ -91,6 +90,15 @@ class DirectorDatafield extends DbObjectWithSettings
             unset($properties['originalId']);
         } else {
             $id = null;
+        }
+
+        if (isset($properties['settings']->datalist)) {
+            $list = DirectorDatalist::load(
+                $properties['settings']->datalist,
+                $db
+            );
+            $properties['settings']->datalist_id = $list->get('id');
+            unset($properties['settings']->datalist);
         }
 
         $encoded = Json::encode($properties);

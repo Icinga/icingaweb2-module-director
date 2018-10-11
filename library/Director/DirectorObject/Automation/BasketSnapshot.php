@@ -25,7 +25,6 @@ class BasketSnapshot extends DbObject
     ];
 
     protected $restoreOrder = [
-        'Datafield',
         'Command',
         'HostGroup',
         'IcingaTemplateChoiceHost',
@@ -93,30 +92,17 @@ class BasketSnapshot extends DbObject
      */
     protected function resolveRequiredFields()
     {
-        $requiredIds = [];
-        foreach ($this->objects as $typeName => $objects) {
-            foreach ($objects as $key => $object) {
-                if (isset($object->fields)) {
-                    foreach ($object->fields as $field) {
-                        $requiredIds[$field->datafield_id] = true;
-                    }
-                }
+        /** @var Db $db */
+        $db = $this->getConnection();
+        $fieldResolver = new BasketSnapshotFieldResolver($this->objects, $db);
+        /** @var DirectorDatafield[] $fields */
+        $fields = $fieldResolver->loadCurrentFields($db);
+        if (! empty($fields)) {
+            $plain = [];
+            foreach ($fields as $id => $field) {
+                $plain[$id] = $field->export();
             }
-        }
-
-        $connection = $this->getConnection();
-        if (! isset($this->objects['Datafield'])) {
-            $this->objects['Datafield'] = [];
-        }
-        $fields = & $this->objects['Datafield'];
-        foreach (array_keys($requiredIds) as $id) {
-            if (! isset($fields[$id])) {
-                $fields[$id] = DirectorDatafield::loadWithAutoIncId((int) $id, $connection)->export();
-            }
-        }
-
-        if (empty($this->objects['Datafield'])) {
-            unset($this->objects['Datafield']);
+            $this->objects['Datafield'] = $plain;
         }
     }
 
@@ -157,9 +143,7 @@ class BasketSnapshot extends DbObject
     /**
      * @param Db $connection
      * @param bool $replace
-     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Zend_Db_Adapter_Exception
      */
     public function restoreTo(Db $connection, $replace = true)
     {
@@ -186,12 +170,14 @@ class BasketSnapshot extends DbObject
      * @param bool $replace
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function restoreObjects($all, Db $connection, $replace = true)
     {
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
-        $fieldMap = [];
+        $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
+        $fieldResolver->storeNewFields();
         foreach ($this->restoreOrder as $typeName) {
             if (isset($all->$typeName)) {
                 $objects = $all->$typeName;
@@ -208,12 +194,9 @@ class BasketSnapshot extends DbObject
                             $new->store();
                         }
                     }
-                    if ($new instanceof DirectorDatafield) {
-                        $fieldMap[(int) $key] = (int) $new->get('id');
-                    }
 
                     if ($new instanceof IcingaObject) {
-                        $this->relinkObjectFields($db, $new, $object, $fieldMap);
+                        $fieldResolver->relinkObjectFields($new, $object);
                     }
                 }
 
@@ -224,53 +207,6 @@ class BasketSnapshot extends DbObject
             }
         }
         $db->commit();
-    }
-
-    /**
-     * @param ZfDbAdapter $db
-     * @param IcingaObject $new
-     * @param $object
-     * @param $fieldMap
-     * @throws \Zend_Db_Adapter_Exception
-     */
-    protected function relinkObjectFields(ZfDbAdapter $db, IcingaObject $new, $object, $fieldMap)
-    {
-        if (! $new->supportsFields() || ! isset($object->fields)) {
-            return;
-        }
-
-        $objectId = (int) $new->get('id');
-        $table = $new->getTableName() . '_field';
-        $objectKey = $new->getShortTableName() . '_id';
-        $existingFields = [];
-
-        foreach ($db->fetchAll(
-            $db->select()->from($table)->where("$objectKey = ?", $objectId)
-        ) as $mapping) {
-            $existingFields[(int) $mapping->datafield_id] = $mapping;
-        }
-        foreach ($object->fields as $field) {
-            $id = $fieldMap[(int) $field->datafield_id];
-            if (isset($existingFields[$id])) {
-                unset($existingFields[$id]);
-            } else {
-                $db->insert($table, [
-                    $objectKey     => $objectId,
-                    'datafield_id' => $id,
-                    'is_required'  => $field->is_required,
-                    'var_filter'   => $field->var_filter,
-                ]);
-            }
-        }
-        if (! empty($existingFields)) {
-            $db->delete(
-                $table,
-                $db->quoteInto(
-                    "$objectKey = $objectId AND datafield_id IN (?)",
-                    array_keys($existingFields)
-                )
-            );
-        }
     }
 
     /**

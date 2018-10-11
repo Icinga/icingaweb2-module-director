@@ -65,6 +65,9 @@ class RestoreBasketForm extends QuickForm
         return Db::fromResourceName($this->getValue('target_db'));
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function onSuccess()
     {
         $this->snapshot->restoreTo($this->getDb());

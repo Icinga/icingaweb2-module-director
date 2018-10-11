@@ -11,6 +11,7 @@ use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
+use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
 use Icinga\Module\Director\Forms\BasketCreateSnapshotForm;
 use Icinga\Module\Director\Forms\BasketForm;
 use Icinga\Module\Director\Forms\RestoreBasketForm;
@@ -38,6 +39,7 @@ class BasketController extends ActionController
 
     /**
      * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Exception\MissingParameterException
      */
     public function indexAction()
     {
@@ -188,8 +190,11 @@ class BasketController extends ActionController
         $json = $snapshot->getJsonDump();
         $this->addSingleTab($this->translate('Snapshot'));
         $all = Json::decode($json);
+        $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
         foreach ($all as $type => $objects) {
             if ($type === 'Datafield') {
+                // TODO: we should now be able to show all fields and link
+                //       to a "diff" for the ones that should be created
                 // $this->content()->add(Html::tag('h2', sprintf('+%d Datafield(s)', count($objects))));
                 continue;
             }
@@ -219,7 +224,9 @@ class BasketController extends ActionController
                         );
                         continue;
                     }
-                    $hasChanged = Json::encode($current->export()) !== Json::encode($object);
+                    $currentExport = $current->export();
+                    $fieldResolver->tweakTargetIds($currentExport);
+                    $hasChanged = Json::encode($currentExport) !== Json::encode($object);
                     $table->addNameValueRow(
                         $key,
                         $hasChanged
@@ -296,12 +303,15 @@ class BasketController extends ActionController
         } else {
             $connection = Db::fromResourceName($targetDbName);
         }
+        $fieldResolver = new BasketSnapshotFieldResolver($objects, $connection);
         $objectFromBasket = $objects->$type->$key;
         $current = BasketSnapshot::instanceByIdentifier($type, $key, $connection);
         if ($current === null) {
             $current = '';
         } else {
-            $current = Json::encode($current->export(), JSON_PRETTY_PRINT);
+            $exported = $current->export();
+            $fieldResolver->tweakTargetIds($exported);
+            $current = Json::encode($exported, JSON_PRETTY_PRINT);
         }
 
         $this->content()->add(
@@ -312,6 +322,11 @@ class BasketController extends ActionController
         );
     }
 
+    /**
+     * @return Basket
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function requireBasket()
     {
         return Basket::load($this->params->getRequired('name'), $this->db());

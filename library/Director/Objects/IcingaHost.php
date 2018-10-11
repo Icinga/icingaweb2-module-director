@@ -339,6 +339,9 @@ class IcingaHost extends IcingaObject
         if (empty($res)) {
             return [];
         } else {
+            foreach ($res as $field) {
+                $field->datafield_id = (int) $field->datafield_id;
+            }
             return $res;
         }
     }
