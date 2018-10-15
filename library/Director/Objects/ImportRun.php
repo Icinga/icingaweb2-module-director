@@ -145,7 +145,10 @@ class ImportRun extends DbObject
     public function importSource()
     {
         if ($this->importSource === null) {
-            $this->importSource = ImportSource::load($this->get('source_id'), $this->connection);
+            $this->importSource = ImportSource::loadWithAutoIncId(
+                (int) $this->get('source_id'),
+                $this->connection
+            );
         }
         return $this->importSource;
     }

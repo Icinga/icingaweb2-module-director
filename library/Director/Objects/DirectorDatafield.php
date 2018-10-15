@@ -2,10 +2,13 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Hook\DataTypeHook;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use InvalidArgumentException;
 use Zend_Form_Element as ZfElement;
 
 class DirectorDatafield extends DbObjectWithSettings
@@ -50,6 +53,10 @@ class DirectorDatafield extends DbObjectWithSettings
         return $obj;
     }
 
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function export()
     {
         $plain = (object) $this->getProperties();
@@ -66,6 +73,61 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         return $plain;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return DirectorDatafield
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        if (isset($properties['originalId'])) {
+            $id = $properties['originalId'];
+            unset($properties['originalId']);
+        } else {
+            $id = null;
+        }
+
+        if (isset($properties['settings']->datalist)) {
+            $list = DirectorDatalist::load(
+                $properties['settings']->datalist,
+                $db
+            );
+            $properties['settings']->datalist_id = $list->get('id');
+            unset($properties['settings']->datalist);
+        }
+
+        $encoded = Json::encode($properties);
+        if ($id) {
+            if (static::exists($id, $db)) {
+                $existing = static::loadWithAutoIncId($id, $db);
+                $existingProperties = (array) $existing->export();
+                unset($existingProperties['originalId']);
+                if ($encoded === Json::encode($existingProperties)) {
+                    return $existing;
+                }
+            }
+        }
+
+        $dba = $db->getDbAdapter();
+        $query = $dba->select()
+            ->from('director_datafield')
+            ->where('varname = ?', $plain->varname);
+        $candidates = DirectorDatafield::loadAll($db, $query);
+
+        foreach ($candidates as $candidate) {
+            $export = $candidate->export();
+            unset($export->originalId);
+            if (Json::encode($export) === $encoded) {
+                return $candidate;
+            }
+        }
+
+        return static::create($properties, $db);
     }
 
     protected function setObject(IcingaObject $object)

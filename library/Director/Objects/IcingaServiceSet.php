@@ -4,11 +4,14 @@ namespace Icinga\Module\Director\Objects;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use InvalidArgumentException;
+use RuntimeException;
 
-class IcingaServiceSet extends IcingaObject
+class IcingaServiceSet extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_service_set';
 
@@ -108,6 +111,119 @@ class IcingaServiceSet extends IcingaObject
         }
 
         return $services;
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
+    {
+        if ($this->get('host_id')) {
+            return $this->exportSetOnHost();
+        } else {
+            return $this->exportTemplate();
+        }
+    }
+
+    protected function exportSetOnHost()
+    {
+        // TODO.
+        throw new RuntimeException('Not yet');
+    }
+
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function exportTemplate()
+    {
+        $props = $this->getProperties();
+        unset($props['id'], $props['host_id']);
+        $props['services'] = [];
+        foreach ($this->getServiceObjects() as $serviceObject) {
+            $props['services'][$serviceObject->getObjectName()] = $serviceObject->export();
+        }
+        ksort($props);
+
+        return (object) $props;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return IcingaServiceSet
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        if (isset($properties['services'])) {
+            $services = $properties['services'];
+            unset($properties['services']);
+        } else {
+            $services = [];
+        }
+
+        if ($properties['object_type'] !== 'template') {
+            throw new InvalidArgumentException(sprintf(
+                'Can import only Templates, got "%s" for "%s"',
+                $properties['object_type'],
+                $name
+            ));
+        }
+        if ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
+        } elseif (static::exists($name, $db)) {
+            throw new DuplicateKeyException(
+                'Service Set "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->setProperties($properties);
+
+        // This is not how other imports work, but here we need an ID
+        if (! $object->hasBeenLoadedFromDb()) {
+            $object->store();
+        }
+
+        $setId = $object->get('id');
+        $sQuery = $db->getDbAdapter()->select()->from(
+            ['s' => 'icinga_service'],
+            's.*'
+        )->where('service_set_id = ?', $setId);
+        $existingServices = IcingaService::loadAll($db, $sQuery, 'object_name');
+        foreach ($services as $service) {
+            if (isset($service->fields)) {
+                unset($service->fields);
+            }
+            $name = $service->object_name;
+            if (isset($existingServices[$name])) {
+                $existing = $existingServices[$name];
+                $existing->setProperties((array) $service);
+                $existing->set('service_set_id', $setId);
+                if ($existing->hasBeenModified()) {
+                    $existing->store();
+                }
+            } else {
+                $new = IcingaService::create((array) $service, $db);
+                $new->set('service_set_id', $setId);
+                $new->store();
+            }
+        }
+
+        return $object;
     }
 
     public function onDelete()

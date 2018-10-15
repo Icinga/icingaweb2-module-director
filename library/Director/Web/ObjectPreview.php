@@ -29,8 +29,7 @@ class ObjectPreview
 
     /**
      * @param ControlsAndContent $cc
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function renderTo(ControlsAndContent $cc)
     {

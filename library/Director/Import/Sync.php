@@ -210,7 +210,10 @@ class Sync
         foreach ($this->syncProperties as $p) {
             $id = $p->source_id;
             if (! array_key_exists($id, $this->sources)) {
-                $this->sources[$id] = ImportSource::load($id, $this->db);
+                $this->sources[$id] = ImportSource::loadWithAutoIncId(
+                    (int) $id,
+                    $this->db
+                );
             }
         }
 

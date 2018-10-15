@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
@@ -115,6 +116,18 @@ abstract class TemplateController extends CompatController
                 ['class' => 'icon-edit']
             )
         ]);
+        if ($template instanceof ExportInterface) {
+            $this->actions()->add(Link::create(
+                $this->translate('Add to Basket'),
+                'director/basket/add',
+                [
+                    'type'  => ucfirst($this->getType()) . 'Template',
+                    'names' => $template->getUniqueIdentifier()
+                ],
+                ['class' => 'icon-tag']
+            ));
+        }
+
         $list = new UnorderedList([], [
             'class' => 'vertical-action-list'
         ]);

@@ -183,7 +183,8 @@ abstract class ActionController extends Controller implements ControlsAndContent
             $viewRenderer = null;
         }
 
-        if ($this->getRequest()->isApiRequest()) {
+        $cType = $this->getResponse()->getHeader('Content-Type', true);
+        if ($this->getRequest()->isApiRequest() || ($cType !== null && $cType !== 'text/html')) {
             $this->_helper->layout()->disableLayout();
             if ($viewRenderer) {
                 $viewRenderer->disable();
