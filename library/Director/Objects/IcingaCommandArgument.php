@@ -121,6 +121,12 @@ class IcingaCommandArgument extends IcingaObject
 
         unset($plain->id);
         unset($plain->argument_name);
+        if (! isset($plain->argument_value)) {
+            unset($plain->argument_format);
+        }
+        if (! isset($plain->set_if)) {
+            unset($plain->set_if_format);
+        }
 
         $this->transformPlainArgumentValue($plain);
 
