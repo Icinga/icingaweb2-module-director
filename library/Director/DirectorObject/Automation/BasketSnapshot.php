@@ -194,7 +194,7 @@ class BasketSnapshot extends DbObject
         $fieldResolver->storeNewFields();
         foreach ($this->restoreOrder as $typeName) {
             if (isset($all->$typeName)) {
-                $objects = $all->$typeName;
+                $objects = (array) $all->$typeName;
                 $class = static::getClassForType($typeName);
 
                 $changed = [];
