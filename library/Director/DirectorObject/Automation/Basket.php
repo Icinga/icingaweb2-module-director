@@ -63,7 +63,16 @@ class Basket extends DbObject
 
     protected function onLoadFromDb()
     {
-        $this->chosenObjects = Json::decode($this->get('objects'));
+        $this->chosenObjects = (array) Json::decode($this->get('objects'));
+    }
+
+    public function supportsCustomSelectionFor($type)
+    {
+        if (! array_key_exists($type, $this->chosenObjects)) {
+            return false;
+        }
+
+        return is_array($this->chosenObjects[$type]);
     }
 
     public function setObjects($objects)
@@ -81,17 +90,28 @@ class Basket extends DbObject
     }
 
     /**
+     * This is a weird method, as it is required to deal with raw form data
+     *
      * @param $type
      * @param ExportInterface[]|bool $objects
      */
     public function addObjects($type, $objects = true)
     {
+        BasketSnapshot::assertValidType($type);
+
         // '1' -> from Form!
         if ($objects === 'ALL') {
             $objects = true;
         } elseif ($objects === null || $objects === 'IGNORE') {
             return;
         } elseif ($objects === '[]') {
+            if (isset($this->chosenObjects[$type])) {
+                if (! is_array($this->chosenObjects[$type])) {
+                    $this->chosenObjects[$type] = [];
+                }
+            } else {
+                $this->chosenObjects[$type] = [];
+            }
             $objects = [];
         }
 
@@ -112,14 +132,42 @@ class Basket extends DbObject
         $this->reallySet('objects', Json::encode($this->chosenObjects));
     }
 
+    public function hasObject($type, $object)
+    {
+        if (! $this->hasType($type)) {
+            return false;
+        }
+
+        if ($this->chosenObjects[$type] === true) {
+            return true;
+        }
+
+        if ($object instanceof ExportInterface) {
+            $object = $object->getUniqueIdentifier();
+        }
+
+        if (is_array($this->chosenObjects[$type])) {
+            return in_array($object, $this->chosenObjects[$type]);
+        } else {
+            return false;
+        }
+    }
+
     /**
      * @param $type
      * @param string $object
      */
     public function addObject($type, $object)
     {
-        // TODO: make sure array exists - and is not boolean
-        $this->chosenObjects[$type][] = $object;
+        if (is_array($this->chosenObjects[$type])) {
+            $this->chosenObjects[$type][] = $object;
+        } else {
+            throw new \InvalidArgumentException(sprintf(
+                'The Basket "%s" has not been configured for single objects of type "%s"',
+                $this->get('basket_name'),
+                $type
+            ));
+        }
     }
 
     public function hasType($type)

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Web\Table\Extension\MultiSelect;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
@@ -17,6 +18,8 @@ use Zend_Db_Select as ZfSelect;
 
 class TemplatesTable extends ZfQueryBasedTable
 {
+    use MultiSelect;
+
     protected $searchColumns = ['o.object_name'];
 
     private $type;
@@ -26,6 +29,16 @@ class TemplatesTable extends ZfQueryBasedTable
         $table = new static($db);
         $table->type = strtolower($type);
         return $table;
+    }
+
+    protected function assemble()
+    {
+        $type = $this->type;
+        $this->enableMultiSelect(
+            "director/${type}s/edittemplates",
+            "director/${type}template",
+            ['name']
+        );
     }
 
     public function getType()

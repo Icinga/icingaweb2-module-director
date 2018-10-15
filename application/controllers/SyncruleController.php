@@ -45,6 +45,15 @@ class SyncruleController extends ActionController
             $this->addPropertyHint($rule);
             return;
         }
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            'director/basket/add',
+            [
+                'type'  => 'SyncRule',
+                'names' => $rule->getUniqueIdentifier()
+            ],
+            ['class' => 'icon-tag']
+        ));
 
         if (! $run) {
             $this->warning($this->translate('This Sync Rule has never been run before.'));
@@ -159,6 +168,15 @@ class SyncruleController extends ActionController
                     ['class' => 'icon-paste']
                 )
             );
+            $this->actions()->add(Link::create(
+                $this->translate('Add to Basket'),
+                'director/basket/add',
+                [
+                    'type'  => 'SyncRule',
+                    'names' => $rule->getUniqueIdentifier()
+                ],
+                ['class' => 'icon-tag']
+            ));
 
             if (! $rule->hasSyncProperties()) {
                 $this->addPropertyHint($rule);

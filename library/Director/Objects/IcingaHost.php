@@ -6,6 +6,7 @@ use Icinga\Data\Db\DbConnection;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
@@ -13,7 +14,7 @@ use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use InvalidArgumentException;
 use RuntimeException;
 
-class IcingaHost extends IcingaObject
+class IcingaHost extends IcingaObject implements ExportInterface
 {
     use FlappingSupport;
 

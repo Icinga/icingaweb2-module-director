@@ -8,13 +8,13 @@ class BasketDashlet extends Dashlet
 
     public function getTitle()
     {
-        return $this->translate('Object Basket');
+        return $this->translate('Configuration Baskets');
     }
 
     public function getSummary()
     {
         return $this->translate(
-            'Preserve specific objects in a specific state'
+            'Preserve specific configuration objects in a specific state'
         );
     }
 

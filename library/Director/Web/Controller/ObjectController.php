@@ -6,6 +6,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
@@ -79,6 +80,9 @@ abstract class ObjectController extends ActionController
         }
     }
 
+    /**
+     * @throws NotFoundError
+     */
     public function indexAction()
     {
         if (! $this->getRequest()->isApiRequest()) {
@@ -111,6 +115,9 @@ abstract class ObjectController extends ActionController
         $this->content()->add($form);
     }
 
+    /**
+     * @throws NotFoundError
+     */
     public function editAction()
     {
         $object = $this->requireObject();
@@ -118,9 +125,14 @@ abstract class ObjectController extends ActionController
         $this->addObjectTitle()
              ->addObjectForm($object)
              ->addActionClone()
-             ->addActionUsage();
+             ->addActionUsage()
+             ->addActionBasket();
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     */
     public function renderAction()
     {
         $this->assertTypePermission()
@@ -133,6 +145,9 @@ abstract class ObjectController extends ActionController
         $preview->renderTo($this);
     }
 
+    /**
+     * @throws NotFoundError
+     */
     public function cloneAction()
     {
         $this->assertTypePermission();
@@ -151,6 +166,10 @@ abstract class ObjectController extends ActionController
             ->content()->add($form);
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     */
     public function fieldsAction()
     {
         $this->assertPermission('director/admin');
@@ -187,6 +206,10 @@ abstract class ObjectController extends ActionController
         $table->renderTo($this);
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     */
     public function historyAction()
     {
         $this
@@ -206,6 +229,9 @@ abstract class ObjectController extends ActionController
             ->renderTo($this);
     }
 
+    /**
+     * @throws NotFoundError
+     */
     public function membershipAction()
     {
         $object = $this->requireObject();
@@ -224,6 +250,10 @@ abstract class ObjectController extends ActionController
             ->renderTo($this);
     }
 
+    /**
+     * @return $this
+     * @throws NotFoundError
+     */
     protected function addObjectTitle()
     {
         $object = $this->requireObject();
@@ -267,6 +297,37 @@ abstract class ObjectController extends ActionController
             $this->object->getUrlParams(),
             array('class' => 'icon-paste')
         ));
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    protected function addActionBasket()
+    {
+        if ($this->hasBasketSupport()) {
+            $object = $this->object;
+            if ($object instanceof ExportInterface) {
+                if ($object->isTemplate()) {
+                    $type = $this->getType() . 'Template';
+                } elseif ($object->isGroup()) {
+                    $type = ucfirst($this->getType());
+                } else {
+                    // Command? Sure?
+                    $type = ucfirst($this->getType());
+                }
+                $this->actions()->add(Link::create(
+                    $this->translate('Add to Basket'),
+                    'director/basket/add',
+                    [
+                        'type'  => $type,
+                        'names' => $object->getUniqueIdentifier()
+                    ],
+                    ['class' => 'icon-tag']
+                ));
+            }
+        }
 
         return $this;
     }
@@ -450,10 +511,20 @@ abstract class ObjectController extends ActionController
         return $form;
     }
 
+    protected function hasBasketSupport()
+    {
+        return $this->object->isTemplate() || $this->object->isGroup();
+    }
+
     protected function onObjectFormLoaded(DirectorObjectForm $form)
     {
     }
 
+    /**
+     * @return IcingaObject
+     * @throws NotFoundError
+     * @throws \Zend_Controller_Response_Exception
+     */
     protected function requireObject()
     {
         if (! $this->object) {

@@ -7,6 +7,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
@@ -16,7 +17,7 @@ use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
 use RuntimeException;
 
-class IcingaService extends IcingaObject
+class IcingaService extends IcingaObject implements ExportInterface
 {
     use FlappingSupport;
 

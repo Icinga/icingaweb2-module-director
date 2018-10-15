@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use dipl\Html\Link;
 use Icinga\Module\Director\Forms\DirectorJobForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\DirectorJob;
@@ -19,6 +20,7 @@ class JobController extends ActionController
         $this
             ->addJobTabs($job, 'show')
             ->addTitle($this->translate('Job: %s'), $job->get('job_name'))
+            ->addToBasketLink()
             ->content()->add(new JobDetails($job));
     }
 
@@ -50,6 +52,7 @@ class JobController extends ActionController
         $this
             ->addJobTabs($job, 'edit')
             ->addTitle($this->translate('Job: %s'), $job->get('job_name'))
+            ->addToBasketLink()
             ->content()->add($form);
     }
 
@@ -61,6 +64,27 @@ class JobController extends ActionController
     protected function requireJob()
     {
         return DirectorJob::loadWithAutoIncId((int) $this->params->getRequired('id'), $this->db());
+    }
+
+    /**
+     * @return $this
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function addToBasketLink()
+    {
+        $job = $this->requireJob();
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            'director/basket/add',
+            [
+                'type'  => 'DirectorJob',
+                'names' => $job->getUniqueIdentifier()
+            ],
+            ['class' => 'icon-tag']
+        ));
+
+        return $this;
     }
 
     protected function addJobTabs(DirectorJob $job, $active)

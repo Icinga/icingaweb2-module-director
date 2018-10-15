@@ -8,11 +8,29 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 use RuntimeException;
-use Zend_Db_Adapter_Abstract as ZfDbAdapter;
 
 class BasketSnapshot extends DbObject
 {
+    protected static $typeClasses = [
+        'Datafield'       => '\\Icinga\\Module\\Director\\Objects\\DirectorDatafield',
+        'Command'         => '\\Icinga\\Module\\Director\\Objects\\IcingaCommand',
+        'HostGroup'       => '\\Icinga\\Module\\Director\\Objects\\IcingaHostGroup',
+        'IcingaTemplateChoiceHost' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceHost',
+        'HostTemplate'    => '\\Icinga\\Module\\Director\\Objects\\IcingaHost',
+        'ServiceGroup'    => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceGroup',
+        'IcingaTemplateChoiceService' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceService',
+        'ServiceTemplate' => '\\Icinga\\Module\\Director\\Objects\\IcingaService',
+        'ServiceSet'      => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceSet',
+        'Notification'    => '\\Icinga\\Module\\Director\\Objects\\IcingaNotification',
+        'Dependency'      => '\\Icinga\\Module\\Director\\Objects\\IcingaDependency',
+        'ImportSource'    => '\\Icinga\\Module\\Director\\Objects\\ImportSource',
+        'SyncRule'        => '\\Icinga\\Module\\Director\\Objects\\SyncRule',
+        'DirectorJob'     => '\\Icinga\\Module\\Director\\Objects\\DirectorJob',
+        'Basket'          => '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Automation',
+    ];
+
     protected $objects = [];
 
     protected $content;
@@ -47,27 +65,23 @@ class BasketSnapshot extends DbObject
         'ts_create'        => null,
     ];
 
+    public static function supports($type)
+    {
+        return isset(self::$typeClasses[$type]);
+    }
+
+    public static function assertValidType($type)
+    {
+        if (! static::supports($type)) {
+            throw new InvalidArgumentException("Basket does not support '$type'");
+        }
+    }
+
     public static function getClassForType($type)
     {
-        $types = [
-            'Datafield'       => '\\Icinga\\Module\\Director\\Objects\\DirectorDatafield',
-            'Command'         => '\\Icinga\\Module\\Director\\Objects\\IcingaCommand',
-            'HostGroup'       => '\\Icinga\\Module\\Director\\Objects\\IcingaHostGroup',
-            'IcingaTemplateChoiceHost' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceHost',
-            'HostTemplate'    => '\\Icinga\\Module\\Director\\Objects\\IcingaHost',
-            'ServiceGroup'    => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceGroup',
-            'IcingaTemplateChoiceService' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceService',
-            'ServiceTemplate' => '\\Icinga\\Module\\Director\\Objects\\IcingaService',
-            'ServiceSet'      => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceSet',
-            'Notification'    => '\\Icinga\\Module\\Director\\Objects\\IcingaNotification',
-            'Dependency'      => '\\Icinga\\Module\\Director\\Objects\\IcingaDependency',
-            'ImportSource'    => '\\Icinga\\Module\\Director\\Objects\\ImportSource',
-            'SyncRule'        => '\\Icinga\\Module\\Director\\Objects\\SyncRule',
-            'DirectorJob'     => '\\Icinga\\Module\\Director\\Objects\\DirectorJob',
-            'Basket'          => '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Automation',
-        ];
+        static::assertValidType($type);
 
-        return $types[$type];
+        return self::$typeClasses[$type];
     }
 
     /**
@@ -189,20 +203,35 @@ class BasketSnapshot extends DbObject
                     $new = $class::import($object, $connection, $replace);
                     if ($new->hasBeenModified()) {
                         if ($new instanceof IcingaObject && $new->supportsImports()) {
-                            $changed[$new->getObjectName()] = $new;
+                            /** @var ExportInterface $new */
+                            $changed[$new->getUniqueIdentifier()] = $new;
                         } else {
                             $new->store();
+                            // Linking fields right now, as we're not in $changed
+                            if ($new instanceof IcingaObject) {
+                                $fieldResolver->relinkObjectFields($new, $object);
+                            }
+                        }
+                    } else {
+                        // No modification on the object, still, fields might have
+                        // been changed
+                        if ($new instanceof IcingaObject) {
+                            $fieldResolver->relinkObjectFields($new, $object);
                         }
                     }
-
-                    if ($new instanceof IcingaObject) {
-                        $fieldResolver->relinkObjectFields($new, $object);
-                    }
+                    $allObjects[spl_object_hash($new)] = $object;
                 }
 
                 /** @var IcingaObject $object */
                 foreach ($changed as $object) {
                     $this->recursivelyStore($object, $changed);
+                }
+                foreach ($changed as $key => $new) {
+                    // Store related fields. As objects might have formerly been
+                    // unstored, let's to it right here
+                    if ($new instanceof IcingaObject) {
+                        $fieldResolver->relinkObjectFields($new, $objects[$key]);
+                    }
                 }
             }
         }
@@ -302,9 +331,11 @@ class BasketSnapshot extends DbObject
             if ($dummy instanceof IcingaCommand) {
                 $select = $db->select()->from($dummy->getTableName())
                     ->where('object_type != ?', 'external_object');
-            } else {
+            } elseif (! $dummy->isGroup()) {
                 $select = $db->select()->from($dummy->getTableName())
                     ->where('object_type = ?', 'template');
+            } else {
+                $select = $db->select()->from($dummy->getTableName());
             }
             $all = $class::loadAll($this->getConnection(), $select);
         } else {

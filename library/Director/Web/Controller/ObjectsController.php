@@ -56,7 +56,6 @@ abstract class ObjectsController extends ActionController
 
     /**
      * @return IcingaObjectsHandler
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws NotFoundError
      */
     protected function apiRequestHandler()
@@ -82,7 +81,6 @@ abstract class ObjectsController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws NotFoundError
      */
@@ -124,7 +122,6 @@ abstract class ObjectsController extends ActionController
 
     /**
      * @return ObjectsTable
-     * @throws \Icinga\Exception\ConfigurationError
      */
     protected function getTable()
     {
@@ -134,9 +131,24 @@ abstract class ObjectsController extends ActionController
 
     /**
      * @throws NotFoundError
-     * @throws \Icinga\Exception\ConfigurationError
+     */
+    public function edittemplatesAction()
+    {
+        $this->commonForEdit();
+    }
+
+    /**
+     * @throws NotFoundError
      */
     public function editAction()
+    {
+        $this->commonForEdit();
+    }
+
+    /**
+     * @throws NotFoundError
+     */
+    public function commonForEdit()
     {
         $type = ucfirst($this->getType());
 
@@ -293,7 +305,7 @@ abstract class ObjectsController extends ActionController
 
     /**
      * @return array
-     * @throws \Icinga\Exception\ConfigurationError
+     * @throws NotFoundError
      */
     protected function loadMultiObjectsFromParams()
     {
@@ -341,7 +353,6 @@ abstract class ObjectsController extends ActionController
     /**
      * @param ZfQueryBasedTable $table
      * @return ZfQueryBasedTable
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws NotFoundError
      */
     protected function eventuallyFilterCommand(ZfQueryBasedTable $table)

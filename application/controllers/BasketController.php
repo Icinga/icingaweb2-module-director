@@ -12,6 +12,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
+use Icinga\Module\Director\Forms\AddToBasketForm;
 use Icinga\Module\Director\Forms\BasketCreateSnapshotForm;
 use Icinga\Module\Director\Forms\BasketForm;
 use Icinga\Module\Director\Forms\RestoreBasketForm;
@@ -62,6 +63,18 @@ class BasketController extends ActionController
         $this->content()->add(
             (new BasketForm())->setObject($basket)->handleRequest()
         );
+    }
+
+    public function addAction()
+    {
+        $this->addSingleTab($this->translate('Add to Basket'));
+        $this->addTitle($this->translate('Add chosen objects to a Configuration Basket'));
+        $form = new AddToBasketForm();
+        $form->setDb($this->db())
+            ->setType($this->params->getRequired('type'))
+            ->setNames($this->url()->getParams()->getValues('names'))
+            ->handleRequest();
+        $this->content()->add($form);
     }
 
     public function createAction()

@@ -49,6 +49,17 @@ class ImportsourceController extends ActionController
         $this->actions(new AutomationObjectActionBar(
             $this->getRequest()
         ));
+        $source = $this->getImportSource();
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            'director/basket/add',
+            [
+                'type'  => 'ImportSource',
+                'names' => $source->getUniqueIdentifier()
+            ],
+            ['class' => 'icon-tag']
+        ));
     }
 
     /**
