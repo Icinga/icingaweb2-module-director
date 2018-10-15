@@ -237,11 +237,15 @@ abstract class ObjectController extends ActionController
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws NotFoundError
+     */
     protected function addActionUsage()
     {
         $type = $this->getType();
         $object = $this->requireObject();
-        if ($object->isTemplate() && ! $type === 'serviceSet') {
+        if ($object->isTemplate() && $type !== 'serviceSet') {
             $this->actions()->add([
                 Link::create(
                     $this->translate('Usage'),
