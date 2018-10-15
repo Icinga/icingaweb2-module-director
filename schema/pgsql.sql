@@ -2068,4 +2068,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (153, NOW());
+  VALUES (154, NOW());
