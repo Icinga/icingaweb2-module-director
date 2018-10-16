@@ -79,15 +79,52 @@ class HostApplyMatchesTest extends BaseTestCase
         );
     }
 
+    public function testMatchesIsSet()
+    {
+        $matcher = HostApplyMatches::prepare($this->sampleHost());
+        $this->assertTrue(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('host.vars.tags')
+            )
+        );
+        $this->assertTrue(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('host.vars.location=*&host.name')
+            )
+        );
+        $this->assertTrue(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('host.name')
+            )
+        );
+        $this->assertTrue(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('host.vars.trueVar')
+            )
+        );
+        $this->assertFalse(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('host.vars.falseVar')
+            )
+        );
+        $this->assertFalse(
+            $matcher->matchesFilter(
+                Filter::fromQueryString('!host.name')
+            )
+        );
+    }
+
     protected function sampleHost()
     {
-        return IcingaHost::create(array(
+        return IcingaHost::create([
             'object_type' => 'object',
             'object_name' => 'aha',
-            'vars' => array(
+            'vars' => [
                 'location' => 'Nuremberg',
-                'tags' => array('Special', 'Amazing'),
-            )
-        ), $this->getDb());
+                'tags'     => ['Special', 'Amazing'],
+                'trueVar'  => true,
+                'falseVar' => false,
+            ]
+        ], $this->getDb());
     }
 }
