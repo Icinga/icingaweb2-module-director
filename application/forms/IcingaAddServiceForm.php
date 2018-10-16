@@ -82,7 +82,14 @@ class IcingaAddServiceForm extends DirectorObjectForm
                     $this->addError($this->translate('No service has been chosen'));
                 } else {
                     if ($this->hasPermission('director/admin')) {
-                        $html = $this->translate('Please define a Service Template first');
+                        $html = sprintf(
+                            $this->translate('Please define a %s first'),
+                            Link::create(
+                                $this->translate('Service Template'),
+                                'director/service/add',
+                                ['type' => 'template']
+                            )
+                        );
                     } else {
                         $html = $this->translate('No Service Templates have been provided yet');
                     }
