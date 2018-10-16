@@ -1,6 +1,5 @@
 <?php
 
-use Exception;
 use Icinga\Application\Icinga;
 use Icinga\Web\Window;
 
