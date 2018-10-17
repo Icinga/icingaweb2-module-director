@@ -15,6 +15,8 @@ class RemoveLinkForm extends DirectorForm
 
     public function __construct($label, $title, $action, $params = [])
     {
+        // Required to detect the right instance
+        $this->formName = 'RemoveSet' . sha1(json_encode($params));
         parent::__construct([
             'style' => 'float: right',
             'data-base-target' => '_self'
@@ -39,8 +41,8 @@ class RemoveLinkForm extends DirectorForm
         $this->setAttrib('class', 'inline');
         $this->addHtml(Icon::create('cancel'));
         $this->addSubmitButton($this->label, [
-            'class'            => 'link-button',
-            'title'            => $this->title,
+            'class' => 'link-button',
+            'title' => $this->title,
         ]);
     }
 

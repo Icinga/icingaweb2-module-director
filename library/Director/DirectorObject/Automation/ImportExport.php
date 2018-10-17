@@ -8,6 +8,7 @@ use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaServiceGroup;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
@@ -19,6 +20,21 @@ class ImportExport
     public function __construct(Db $connection)
     {
         $this->connection = $connection;
+    }
+
+    public function serializeAllServiceSets()
+    {
+        // TODO: Export host templates in Inheritance order
+        $res = [];
+        $related = [];
+        foreach (IcingaServiceSet::loadAll($this->connection) as $object) {
+            $res[] = $object->export();
+            foreach ($object->exportRelated() as $key => $relatedObject) {
+                $related[$key] = $relatedObject;
+            }
+        }
+
+        return $res;
     }
 
     public function serializeAllHostTemplateChoices()

@@ -2945,6 +2945,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    public function listFlatResolvedImportNames()
+    {
+        return $this->templateTree()->getAncestorsFor($this);
+    }
+
     public function listImportIds()
     {
         return $this->templateTree()->listParentIdsFor($this);

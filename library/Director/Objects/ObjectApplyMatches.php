@@ -212,9 +212,8 @@ abstract class ObjectApplyMatches
         $this->object = $object;
         $this->flatObject = $object->toPlainObject(true, false);
         // Sure, we are flat - but we might still want to match templates.
-        // TODO: Flatten the whole tree
         unset($this->flatObject->imports);
-        $this->flatObject->templates = $object->imports()->listImportNames();
+        $this->flatObject->templates = $object->listFlatResolvedImportNames();
         static::flattenVars($this->flatObject);
     }
 }

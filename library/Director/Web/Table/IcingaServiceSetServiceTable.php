@@ -160,10 +160,14 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         } else {
             $deleteLink = new RemoveLinkForm(
                 $this->translate('Remove'),
-                $this->translate('Remove this set from this host'),
+                sprintf(
+                    $this->translate('Remove "%s" from this host'),
+                    $this->getTitle()
+                ),
                 Url::fromPath('director/host/services', [
                     'name' => $this->host->getObjectName()
-                ])
+                ]),
+                ['title' => $this->getTitle()]
             );
             $deleteLink->runOnSuccess(function () {
                 $conn = $this->set->getConnection();

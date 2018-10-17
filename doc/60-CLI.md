@@ -342,6 +342,34 @@ specific type:
 This feature is available since v1.5.0.
 
 
+Director Configuration Basket
+-----------------------------
+
+A basket contains a set of Director Configuration objects (like Templates,
+Commands, Import/Sync definitions - but not single Hosts or Services). This
+CLI command allows you to integrate them into your very own workflows
+
+## Available Actions
+
+| Action     | Description                                       |
+|------------|---------------------------------------------------|
+| `dump`     | JSON-dump for objects related to the given Basket |
+| `list`     | List configured Baskets                           |
+| `restore`  | Restore a Basket from JSON dump provided on STDIN |
+| `snapshot` | Take a snapshot for the given Basket              |
+
+### Options
+
+| Option   | Description                                          |
+|----------|------------------------------------------------------|
+| `--name` | `dump` and `snapshot` require a specific object name |
+
+Use `icingacli director basket restore < exported-basket.json` to restore objects
+from a specific basket. Take a snapshot or a backup first to be on the safe side.
+
+This feature is available since v1.6.0.
+
+
 Health Check Plugin
 -------------------
 

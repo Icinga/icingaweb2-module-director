@@ -69,6 +69,9 @@ abstract class DbObject
      */
     protected $autoincKeyName;
 
+    /** @var bool forbid updates to autoinc values */
+    protected $protectAutoinc = true;
+
     /**
      * Filled with object instances when prefetchAll is used
      */
@@ -448,7 +451,11 @@ abstract class DbObject
         $props = array();
         foreach (array_keys($this->modifiedProperties) as $key) {
             if ($key === $this->autoincKeyName) {
-                continue;
+                if ($this->protectAutoinc) {
+                    continue;
+                } elseif ($this->properties[$key] === null) {
+                    continue;
+                }
             }
 
             $props[$key] = $this->properties[$key];
@@ -728,7 +735,9 @@ abstract class DbObject
     {
         $properties = $this->getPropertiesForDb();
         if ($this->autoincKeyName !== null) {
-            unset($properties[$this->autoincKeyName]);
+            if ($this->protectAutoinc || $properties[$this->autoincKeyName] === null) {
+                unset($properties[$this->autoincKeyName]);
+            }
         }
         // TODO: Remove this!
         if ($this->connection->isPgsql()) {
@@ -785,15 +794,20 @@ abstract class DbObject
                 }
             } else {
                 if ($id && $this->existsInDb()) {
+                    $logId = '"' . $this->getLogId() . '"';
+
+                    if ($autoId = $this->getAutoincId()) {
+                        $logId .= sprintf(', %s=%s', $this->autoincKeyName, $autoId);
+                    }
                     throw new DuplicateKeyException(
                         'Trying to recreate %s (%s)',
                         $table,
-                        $this->getLogId()
+                        $logId
                     );
                 }
 
                 if ($this->insertIntoDb()) {
-                    if ($this->autoincKeyName) {
+                    if ($this->autoincKeyName && $this->getProperty($this->autoincKeyName) === null) {
                         if ($this->connection->isPgsql()) {
                             $this->properties[$this->autoincKeyName] = $this->db->lastInsertId(
                                 $table,
@@ -885,6 +899,12 @@ abstract class DbObject
     public function createWhere()
     {
         if ($id = $this->getAutoincId()) {
+            if ($originalId = $this->getOriginalProperty($this->autoincKeyName)) {
+                return $this->db->quoteInto(
+                    sprintf('%s = ?', $this->autoincKeyName),
+                    $originalId
+                );
+            }
             return $this->db->quoteInto(
                 sprintf('%s = ?', $this->autoincKeyName),
                 $id

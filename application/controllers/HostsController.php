@@ -2,9 +2,11 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use dipl\Web\Url;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Forms\IcingaAddServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -44,6 +46,31 @@ class HostsController extends ObjectsController
             $urlSet,
             null,
             ['class' => 'icon-plus']
+        ));
+    }
+
+    public function edittemplatesAction()
+    {
+        parent::editAction();
+
+        $objects = $this->loadMultiObjectsFromParams();
+        $names = [];
+        /** @var ExportInterface $object */
+        foreach ($objects as $object) {
+            $names[] = $object->getUniqueIdentifier();
+        }
+
+        $url = Url::fromPath('director/basket/add', [
+            'type'  => 'HostTemplate',
+        ]);
+
+        $url->getParams()->addValues('names', $names);
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            $url,
+            null,
+            ['class' => 'icon-tag']
         ));
     }
 

@@ -2,12 +2,15 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\Arguments;
 use Zend_Db_Select as DbSelect;
 
-class IcingaCommand extends IcingaObject implements ObjectWithArguments
+class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportInterface
 {
     use Arguments;
 
@@ -195,6 +198,59 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments
     public function isInUse()
     {
         return $this->countDirectUses() > 0;
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
+    {
+        $object = $this->toPlainObject();
+        if (property_exists($object, 'arguments')) {
+            foreach ($object->arguments as $key => $argument) {
+                if (property_exists($argument, 'command_id')) {
+                    unset($argument->command_id);
+                }
+            }
+        }
+
+        return $object;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return IcingaCommand
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Command "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->setProperties($properties);
+
+        return $object;
     }
 
     protected function renderCommand()

@@ -1,5 +1,8 @@
 <?php
 
+use Icinga\Application\Icinga;
+use Icinga\Web\Window;
+
 $this->providePermission('director/api', $this->translate('Allow to access the director API'));
 $this->providePermission('director/audit', $this->translate('Allow to access the full audit log'));
 $this->providePermission(
@@ -73,9 +76,34 @@ $this->provideConfigTab('config', array(
     'title' => 'Configuration',
     'url'   => 'settings'
 ));
+$mainTitle = N_('Icinga Director');
+
+try {
+    $app = Icinga::app();
+    if ($app->isWeb()) {
+        $request = $app->getRequest();
+        $id = $request->getHeader('X-Icinga-WindowId');
+        if ($id !== false) {
+            $window = new Window($id);
+            /** @var \Icinga\Web\Session\SessionNamespace $session */
+            $session = $window->getSessionNamespace('director');
+            $dbName = $session->get('db_resource');
+            if ($dbName && $dbName !== $this->getConfig()->get('db', 'resource')) {
+                $dbName = ucfirst(str_replace('_', ' ', $dbName));
+                if (stripos($dbName, 'Director') === false) {
+                    $dbName = 'Director: ' . $dbName;
+                }
+                $mainTitle = $dbName;
+            }
+        }
+    }
+} catch (\Exception $e) {
+    // There isn't much we can do, we don't want to break the menu
+    $mainTitle .= ' (?!)';
+}
 
 $section = $this->menuSection(
-    N_('Icinga Director')
+    $mainTitle
 )->setUrl('director')->setPriority(60)->setIcon(
     'cubes'
 )->setRenderer(array(

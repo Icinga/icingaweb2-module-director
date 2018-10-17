@@ -95,7 +95,10 @@ class SyncruleCommand extends Command
      */
     protected function getSyncRule()
     {
-        return SyncRule::load($this->params->getRequired('id'), $this->db());
+        return SyncRule::loadWithAutoIncId(
+            (int) $this->params->getRequired('id'),
+            $this->db()
+        );
     }
 
     /**

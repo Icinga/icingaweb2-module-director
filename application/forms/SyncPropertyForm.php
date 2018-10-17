@@ -368,10 +368,11 @@ class SyncPropertyForm extends DirectorObjectForm
     {
         if ($this->importSource === null) {
             if ($this->hasObject()) {
-                $this->importSource = ImportSource::load($this->object->get('source_id'), $this->db);
+                $id = (int) $this->object->get('source_id');
             } else {
-                $this->importSource = ImportSource::load($this->getSentValue('source_id'), $this->db);
+                $id = (int) $this->getSentValue('source_id');
             }
+            $this->importSource = ImportSource::loadWithAutoIncId($id, $this->db);
         }
 
         return $this->importSource;
