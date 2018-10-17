@@ -12,7 +12,6 @@ use Icinga\Module\Director\Web\Table\IcingaServiceSetHostTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetAppliedHostsTable;
 use dipl\Html\Link;
-use dipl\Html\Table;
 
 class ServicesetController extends ObjectController
 {
