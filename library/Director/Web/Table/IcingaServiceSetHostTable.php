@@ -35,7 +35,7 @@ class IcingaServiceSetHostTable extends ZfQueryBasedTable
     public function getColumnsToBeRendered()
     {
         return [
-            $this->translate('Hostname'),
+            $this->translate('Directly Assigned Hosts'),
         ];
     }
 

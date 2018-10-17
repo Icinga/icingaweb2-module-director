@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
@@ -9,7 +10,9 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetHostTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
+use Icinga\Module\Director\Web\Table\IcingaServiceSetAppliedHostsTable;
 use dipl\Html\Link;
+use dipl\Html\Table;
 
 class ServicesetController extends ObjectController
 {
@@ -70,19 +73,35 @@ class ServicesetController extends ObjectController
         ));
 
         IcingaServiceSetServiceTable::load($set)->renderTo($this);
+
     }
 
     public function hostsAction()
     {
         /** @var IcingaServiceSet $set */
         $set = $this->object;
+        $content = $this->content();
         $this->tabs()->activate('hosts');
         $this->addTitle(
             $this->translate('Hosts using this set: %s'),
             $set->getObjectName()
         );
 
-        IcingaServiceSetHostTable::load($set)->renderTo($this);
+        $direct_assign = IcingaServiceSetHostTable::load($set);
+
+        if(count($direct_assign)){
+            $content->add($direct_assign);
+        }
+
+        $apply_filter = IcingaServiceSetAppliedHostsTable::load($set);
+
+        if(count($apply_filter)){
+            $content->add($apply_filter);
+        }
+
+        if(count($direct_assign) + count($apply_filter) == 0){
+            $content->add($this->translate('No hosts are currently assigned this serviceset.'));
+        }
     }
 
     protected function addServiceSetTabs()
