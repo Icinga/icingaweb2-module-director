@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
@@ -72,7 +71,6 @@ class ServicesetController extends ObjectController
         ));
 
         IcingaServiceSetServiceTable::load($set)->renderTo($this);
-
     }
 
     public function hostsAction()
@@ -88,17 +86,17 @@ class ServicesetController extends ObjectController
 
         $direct_assign = IcingaServiceSetHostTable::load($set);
 
-        if(count($direct_assign)){
+        if (count($direct_assign)) {
             $content->add($direct_assign);
         }
 
         $apply_filter = IcingaServiceSetAppliedHostsTable::load($set);
 
-        if(count($apply_filter)){
+        if (count($apply_filter)) {
             $content->add($apply_filter);
         }
 
-        if(count($direct_assign) + count($apply_filter) == 0){
+        if (count($direct_assign) + count($apply_filter) == 0) {
             $content->add($this->translate('No hosts are currently assigned this serviceset.'));
         }
     }

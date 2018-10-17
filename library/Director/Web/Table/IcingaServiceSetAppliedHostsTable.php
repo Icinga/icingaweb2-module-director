@@ -44,7 +44,8 @@ class IcingaServiceSetAppliedHostsTable extends SimpleQueryBasedTable
         return $this;
     }
 
-    public function setServiceSet($set){
+    public function setServiceSet($set)
+    {
         $this->set = $set;
         return $this;
     }
