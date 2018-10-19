@@ -350,9 +350,10 @@ abstract class GroupMembershipResolver
 
     protected function getGroupId($name)
     {
+        $type = $this->type;
         if ($this->groupMap === null) {
             $this->groupMap = $this->db->fetchPairs(
-                $this->db->select()->from('icinga_hostgroup', ['object_name', 'id'])
+                $this->db->select()->from("icinga_${type}group", ['object_name', 'id'])
             );
         }
 
@@ -527,7 +528,8 @@ abstract class GroupMembershipResolver
             $id = $object->get('id');
 
             // TODO: fix this last hard host dependency
-            $resolver = HostApplyMatches::prepare($object);
+            DynamicApplyMatches::setType($this->type);
+            $resolver = DynamicApplyMatches::prepare($object);
             foreach ($groups as $groupId => $filter) {
                 if ($resolver->matchesFilter($filter)) {
                     if (! array_key_exists($groupId, $mappings)) {
@@ -565,7 +567,8 @@ abstract class GroupMembershipResolver
         }
 
         Benchmark::measure(sprintf(
-            'Hostgroup apply recalculated: objects=%d groups=%d min=%d max=%d avg=%d (in ms)',
+            '%sgroup apply recalculated: objects=%d groups=%d min=%d max=%d avg=%d (in ms)',
+            $this->type,
             $count,
             count($groups),
             $min,
