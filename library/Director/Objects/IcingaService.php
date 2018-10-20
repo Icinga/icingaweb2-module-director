@@ -117,6 +117,9 @@ class IcingaService extends IcingaObject implements ExportInterface
         'apply_for'
     ];
 
+    /** @var ServiceGroupMembershipResolver */
+    protected $servicegroupMembershipResolver;
+
     /**
      * @return IcingaCommand
      * @throws IcingaException
@@ -729,5 +732,31 @@ class IcingaService extends IcingaObject implements ExportInterface
                 'Cannot store a Service object without a related host'
             );
         }
+    }
+
+    protected function notifyResolvers()
+    {
+        $resolver = $this->getServiceGroupMembershipResolver();
+        $resolver->addObject($this);
+        $resolver->refreshDb();
+
+        return $this;
+    }
+
+    protected function getServiceGroupMembershipResolver()
+    {
+        if ($this->servicegroupMembershipResolver === null) {
+            $this->servicegroupMembershipResolver = new ServiceGroupMembershipResolver(
+                $this->getConnection()
+            );
+        }
+
+        return $this->servicegroupMembershipResolver;
+    }
+
+    public function setServiceGroupMembershipResolver(ServiceGroupMembershipResolver $resolver)
+    {
+        $this->servicegroupMembershipResolver = $resolver;
+        return $this;
     }
 }
