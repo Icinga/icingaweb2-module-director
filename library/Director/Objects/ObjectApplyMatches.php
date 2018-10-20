@@ -169,7 +169,7 @@ abstract class ObjectApplyMatches
         $type = static::$type;
 
         if (substr($col, 0, strlen($type) + 1) === "${type}.") {
-            $filter->setColumn($col = substr($col, 5));
+            $filter->setColumn($col = substr($col, strlen($type) + 1));
         }
 
         if (array_key_exists($col, self::$columnMap)) {
