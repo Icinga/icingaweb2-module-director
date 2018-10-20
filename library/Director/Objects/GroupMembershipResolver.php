@@ -85,7 +85,6 @@ abstract class GroupMembershipResolver
         $this->recheckAllObjects($this->getAppliedGroups());
         if (empty($this->objects)) {
             Benchmark::measure('Nothing to check, got no qualified object');
-
             return $this;
         }
 
@@ -509,10 +508,10 @@ abstract class GroupMembershipResolver
         $staticGroups = [];
 
         if ($this->objects === null) {
-            $objects = $this->fetchAllObjects();
-        } else {
-            $objects = & $this->objects;
+            $this->objects = $this->fetchAllObjects();
         }
+
+        $objects = & $this->objects;
 
         $times = array();
 
@@ -527,7 +526,6 @@ abstract class GroupMembershipResolver
             $mt = microtime(true);
             $id = $object->get('id');
 
-            // TODO: fix this last hard host dependency
             DynamicApplyMatches::setType($this->type);
             $resolver = DynamicApplyMatches::prepare($object);
             foreach ($groups as $groupId => $filter) {
@@ -535,7 +533,6 @@ abstract class GroupMembershipResolver
                     if (! array_key_exists($groupId, $mappings)) {
                         $mappings[$groupId] = [];
                     }
-
                     $mappings[$groupId][$id] = $id;
                 }
             }
