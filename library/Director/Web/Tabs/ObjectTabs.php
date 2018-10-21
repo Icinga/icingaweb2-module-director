@@ -105,7 +105,9 @@ class ObjectTabs extends Tabs
         }
 
         // TODO: remove table check once we resolve all group types
-        if ($object->isGroup() && ($object->getShortTableName() === 'hostgroup' || $object->getShortTableName() === 'servicegroup')) {
+        if ($object->isGroup() &&
+            ($object->getShortTableName() === 'hostgroup' || $object->getShortTableName() === 'servicegroup')
+        ) {
             $this->add('membership', [
                 'url'       => sprintf('director/%s/membership', $type),
                 'urlParams' => $params,
