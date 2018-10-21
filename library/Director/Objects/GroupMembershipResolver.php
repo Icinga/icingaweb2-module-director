@@ -83,7 +83,7 @@ abstract class GroupMembershipResolver
 
         Benchmark::measure('Rechecking all objects');
         $this->recheckAllObjects($this->getAppliedGroups());
-        if (empty($this->objects)) {
+        if (empty($this->objects) && empty($this->groups)) {
             Benchmark::measure('Nothing to check, got no qualified object');
             return $this;
         }
@@ -106,7 +106,7 @@ abstract class GroupMembershipResolver
         if ($force || ! $this->isDeferred()) {
             $this->checkDb();
 
-            if (empty($this->objects)) {
+            if (empty($this->objects) && empty($this->groups)) {
                 Benchmark::measure('Nothing to check, got no qualified object');
 
                 return $this;
@@ -508,10 +508,10 @@ abstract class GroupMembershipResolver
         $staticGroups = [];
 
         if ($this->objects === null) {
-            $this->objects = $this->fetchAllObjects();
+            $objects = $this->fetchAllObjects();
+        } else {
+            $objects = & $this->objects;
         }
-
-        $objects = & $this->objects;
 
         $times = array();
 
