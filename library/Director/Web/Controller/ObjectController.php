@@ -12,6 +12,7 @@ use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -309,7 +310,9 @@ abstract class ObjectController extends ActionController
         if ($this->hasBasketSupport()) {
             $object = $this->object;
             if ($object instanceof ExportInterface) {
-                if ($object->isTemplate()) {
+                if ($object instanceof IcingaServiceSet) {
+                    $type = 'ServiceSet';
+                } elseif ($object->isTemplate()) {
                     $type = $this->getType() . 'Template';
                 } elseif ($object->isGroup()) {
                     $type = ucfirst($this->getType());

@@ -266,7 +266,6 @@ abstract class ObjectsController extends ActionController
 
     /**
      * @throws NotFoundError
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Security\SecurityException
      */
