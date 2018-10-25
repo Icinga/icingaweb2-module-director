@@ -2921,7 +2921,7 @@ msgstr "Zusammenführungsrichtlinie"
 
 #: application/forms/IcingaTimePeriodRangeForm.php:23
 msgid ""
-"Might by, monday, tuesday, 2016-01-28 - have a look at the documentation for "
+"Might be, monday, tuesday, 2016-01-28 - have a look at the documentation for "
 "more examples"
 msgstr ""
 "z.B. monday, tuesday, 2016-01-28 - Mehr Beispiele finden sich in der "
