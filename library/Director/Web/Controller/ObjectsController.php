@@ -322,7 +322,15 @@ abstract class ObjectsController extends ActionController
                 if ($ex->isExpression()) {
                     if ($col === 'name') {
                         $name = $ex->getExpression();
-                        $objects[$name] = IcingaObject::loadByType($type, $name, $db);
+                        if ($type === 'service') {
+                            $key = [
+                                'object_type' => 'template',
+                                'object_name' => $name
+                            ];
+                        } else {
+                            $key = $name;
+                        }
+                        $objects[$name] = IcingaObject::loadByType($type, $key, $db);
                     } elseif ($col === 'id') {
                         $name = $ex->getExpression();
                         $objects[$name] = IcingaObject::loadByType($type, ['id' => $name], $db);
