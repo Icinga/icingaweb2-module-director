@@ -32,6 +32,8 @@ class ServiceController extends ObjectController
     {
         if ($host = $this->params->get('host')) {
             $this->host = IcingaHost::load($host, $this->db());
+        } elseif ($hostId = $this->params->get('host_id')) {
+            $this->host = IcingaHost::loadWithAutoIncId($hostId, $this->db());
         } elseif ($set = $this->params->get('set')) {
             $this->set = IcingaServiceSet::load(['object_name' => $set], $this->db());
         } elseif ($apply = $this->params->get('apply')) {

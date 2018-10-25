@@ -6,7 +6,6 @@ class DynamicApplyMatches extends ObjectApplyMatches
 {
     protected static $type = '';
 
-
     public static function setType($type)
     {
         static::$type = $type;
