@@ -25,7 +25,7 @@ class BasketsController extends ActionController
         ]);
         $this->addTitle($this->translate('Configuration Baskets'));
         $this->content()->add(Html::tag('p', $this->translate(
-            'A Configuration Basket references a specific Configuration'
+            'A Configuration Basket references specific Configuration'
             . ' Objects or all objects of a specific type. It has been'
             . ' designed to share Templates, Import/Sync strategies and'
             . ' other base Configuration Objects. It is not a tool to'
