@@ -16,7 +16,7 @@ use dipl\Web\Table\ZfQueryBasedTable;
 use dipl\Web\Url;
 use Zend_Db_Select as ZfSelect;
 
-class TemplatesTable extends ZfQueryBasedTable
+class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
 {
     use MultiSelect;
 
@@ -94,6 +94,24 @@ class TemplatesTable extends ZfQueryBasedTable
         );
 
         return $this;
+    }
+
+    public function showOnlyUsed()
+    {
+        $type = $this->getType();
+        $this->getQuery()->where(
+            "(EXISTS (SELECT ${type}_id FROM icinga_${type}_inheritance"
+            . " WHERE parent_${type}_id = o.id))"
+        );
+    }
+
+    public function showOnlyUnUsed()
+    {
+        $type = $this->getType();
+        $this->getQuery()->where(
+            "(NOT EXISTS (SELECT ${type}_id FROM icinga_${type}_inheritance"
+            . " WHERE parent_${type}_id = o.id))"
+        );
     }
 
     protected function applyRestrictions(ZfSelect $query)

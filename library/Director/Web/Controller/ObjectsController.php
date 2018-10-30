@@ -181,7 +181,6 @@ abstract class ObjectsController extends ActionController
      * Loads the TemplatesTable or the TemplateTreeRenderer
      *
      * Passing render=tree switches to the tree view.
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Security\SecurityException
      * @throws NotFoundError
@@ -210,6 +209,8 @@ abstract class ObjectsController extends ActionController
             $table = TemplatesTable::create($shortType, $this->db());
             $this->eventuallyFilterCommand($table);
             $table->renderTo($this);
+            (new AdditionalTableActions($this->getAuth(), $this->url(), $table))
+                ->appendTo($this->actions());
         }
     }
 
@@ -223,7 +224,6 @@ abstract class ObjectsController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
      * @throws \Icinga\Exception\Http\HttpNotFoundException
      * @throws \Icinga\Security\SecurityException
      * @throws NotFoundError

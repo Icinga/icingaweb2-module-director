@@ -12,6 +12,8 @@ master (will be 1.6.0)
 
 ### User Interface
 * FIX: link startup log warning even for non-standard package names (#1633)
+* FEATURE: allow to filter templates by usage (#1339)
+* FEATURE: allow to show SQL used for template tables
 
 ### Import and Sync
 * FEATURE: new Property Modifier allows to extract specific Array values (#473)
