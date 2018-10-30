@@ -313,7 +313,7 @@ abstract class ObjectController extends ActionController
                 if ($object instanceof IcingaServiceSet) {
                     $type = 'ServiceSet';
                 } elseif ($object->isTemplate()) {
-                    $type = $this->getType() . 'Template';
+                    $type = ucfirst($this->getType()) . 'Template';
                 } elseif ($object->isGroup()) {
                     $type = ucfirst($this->getType());
                 } else {
@@ -526,7 +526,6 @@ abstract class ObjectController extends ActionController
     /**
      * @return IcingaObject
      * @throws NotFoundError
-     * @throws \Zend_Controller_Response_Exception
      */
     protected function requireObject()
     {
