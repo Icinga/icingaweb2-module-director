@@ -15,12 +15,17 @@ class IcingaFlatVar extends DbObject
         'flatname_checksum'
     );
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'var_checksum'      => null,
         'flatname_checksum' => null,
         'flatname'          => null,
         'flatvalue'         => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'var_checksum',
+        'flatname_checksum',
+    ];
 
     public static function generateForCustomVar(CustomVariable $var, Db $db)
     {

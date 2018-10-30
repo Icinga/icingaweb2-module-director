@@ -17,4 +17,8 @@ class BasketContent extends DbObject
         'summary'  => null,
         'content'  => null,
     ];
+
+    protected $binaryProperties = [
+        'checksum'
+    ];
 }

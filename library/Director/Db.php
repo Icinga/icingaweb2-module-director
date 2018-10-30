@@ -11,7 +11,6 @@ use Icinga\Module\Director\Data\Db\DbConnection;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
 use RuntimeException;
-use Zend_Db_Expr;
 use Zend_Db_Select;
 
 class Db extends DbConnection
@@ -709,15 +708,6 @@ class Db extends DbConnection
         } else {
             return sprintf("LOWER(HEX(%s))", $column);
         }
-    }
-
-    public function quoteBinary($binary)
-    {
-        if ($this->isPgsql()) {
-            return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
-        }
-
-        return $binary;
     }
 
     public function enumDeployedConfigs()

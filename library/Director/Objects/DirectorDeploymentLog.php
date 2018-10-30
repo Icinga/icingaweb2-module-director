@@ -9,7 +9,6 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Util;
-use RuntimeException;
 
 class DirectorDeploymentLog extends DbObject
 {
@@ -21,7 +20,7 @@ class DirectorDeploymentLog extends DbObject
 
     protected $config;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                     => null,
         'config_checksum'        => null,
         'last_activity_checksum' => null,
@@ -38,7 +37,12 @@ class DirectorDeploymentLog extends DbObject
         'startup_succeeded'      => null,
         'username'               => null,
         'startup_log'            => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'config_checksum',
+        'last_activity_checksum'
+    ];
 
     public function getConfigHexChecksum()
     {
@@ -97,6 +101,11 @@ class DirectorDeploymentLog extends DbObject
         return $db->fetchOne($query, $stage);
     }
 
+    /**
+     * @param Db $connection
+     * @return DirectorDeploymentLog
+     * @throws NotFoundError
+     */
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();

@@ -9,6 +9,7 @@ use Icinga\Exception\NotImplementedError;
 use Icinga\Exception\ProgrammingError;
 use dipl\Html\Html;
 use dipl\Html\Link;
+use RuntimeException;
 use Zend_Db_Expr;
 
 class Util
@@ -19,6 +20,10 @@ class Util
 
     public static function pgBinEscape($binary)
     {
+        if ($binary instanceof Zend_Db_Expr) {
+            throw new RuntimeException('Trying to escape binary twice');
+        }
+
         return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
     }
 

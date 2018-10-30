@@ -31,6 +31,10 @@ class Basket extends DbObject implements ExportInterface
         'owner_value' => null,
     ];
 
+    protected $binaryProperties = [
+        'uuid'
+    ];
+
     public function getHexUuid()
     {
         return bin2hex($this->get('uuid'));

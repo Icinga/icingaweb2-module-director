@@ -13,7 +13,6 @@ class BasketTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
-        $hexUuid = bin2hex($row->uuid);
         $tr = $this::row([
             new Link(
                 $row->basket_name,

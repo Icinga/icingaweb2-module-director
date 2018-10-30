@@ -4,7 +4,6 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\CustomVariable\CustomVariable;
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\Db;
 
 class IcingaVar extends DbObject
@@ -16,13 +15,18 @@ class IcingaVar extends DbObject
     /** @var CustomVariable */
     protected $var;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'checksum'          => null,
         'rendered_checksum' => null,
         'varname'           => null,
         'varvalue'          => null,
         'rendered'          => null
-    );
+    ];
+
+    protected $binaryProperties = [
+        'checksum',
+        'rendered_checksum',
+    ];
 
     /**
      * @param CustomVariable $var
@@ -48,10 +52,11 @@ class IcingaVar extends DbObject
     }
 
     /**
-     * @param CustomVariable $var
+     * @param CustomVariable $customVar
      * @param Db $db
      *
      * @return static
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     public static function generateForCustomVar(CustomVariable $customVar, Db $db)
     {

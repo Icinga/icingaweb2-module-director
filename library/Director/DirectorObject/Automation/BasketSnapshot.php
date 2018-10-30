@@ -65,6 +65,11 @@ class BasketSnapshot extends DbObject
         'ts_create'        => null,
     ];
 
+    protected $binaryProperties = [
+        'basket_uuid',
+        'content_checksum',
+    ];
+
     public static function supports($type)
     {
         return isset(self::$typeClasses[$type]);

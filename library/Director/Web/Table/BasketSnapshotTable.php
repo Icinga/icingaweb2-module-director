@@ -12,6 +12,8 @@ use RuntimeException;
 
 class BasketSnapshotTable extends ZfQueryBasedTable
 {
+    use DbHelper;
+
     protected $searchColumns = [
         'basket_name',
         'summary'
@@ -87,7 +89,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
     protected function linkToSnapshot($caption, $row)
     {
         return new Link($caption, 'director/basket/snapshot', [
-            'checksum' => bin2hex($row->content_checksum),
+            'checksum' => bin2hex($this->wantBinaryValue($row->content_checksum)),
             'ts'       => $row->ts_create,
             'name'     => $row->basket_name,
         ]);
@@ -115,7 +117,7 @@ class BasketSnapshotTable extends ZfQueryBasedTable
         )->order('bs.ts_create DESC');
 
         if ($this->basket !== null) {
-            $query->where('b.uuid = ?', $this->basket->get('uuid'));
+            $query->where('b.uuid = ?', $this->quoteBinary($this->basket->get('uuid')));
         }
 
         return $query;

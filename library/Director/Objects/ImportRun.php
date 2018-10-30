@@ -16,7 +16,7 @@ class ImportRun extends DbObject
     /** @var ImportSource */
     protected $importSource = null;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'              => null,
         'source_id'       => null,
         'rowset_checksum' => null,
@@ -24,7 +24,11 @@ class ImportRun extends DbObject
         'end_time'        => null,
         // TODO: Check whether succeeded could be dropped
         'succeeded'       => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'rowset_checksum',
+    ];
 
     public function prepareImportedObjectQuery($columns = array('object_name'))
     {

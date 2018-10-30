@@ -17,7 +17,7 @@ class DirectorActivityLog extends DbObject
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'              => null,
         'object_name'     => null,
         'action_name'     => null,
@@ -28,7 +28,12 @@ class DirectorActivityLog extends DbObject
         'change_time'     => null,
         'checksum'        => null,
         'parent_checksum' => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'checksum',
+        'parent_checksum'
+    ];
 
     /**
      * @param $name
@@ -82,7 +87,7 @@ class DirectorActivityLog extends DbObject
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $query = $db->select()->from('director_activity_log', array('id' => 'MAX(id)'));
+        $query = $db->select()->from('director_activity_log', ['id' => 'MAX(id)']);
 
         return static::load($db->fetchOne($query), $connection);
     }

@@ -72,6 +72,8 @@ abstract class DbObject
     /** @var bool forbid updates to autoinc values */
     protected $protectAutoinc = true;
 
+    protected $binaryProperties = [];
+
     /**
      * Filled with object instances when prefetchAll is used
      */
@@ -742,13 +744,18 @@ abstract class DbObject
         // TODO: Remove this!
         if ($this->connection->isPgsql()) {
             foreach ($properties as $key => $value) {
-                if (preg_match('/checksum$/', $key)) {
+                if ($this->isBinaryColumn($key)) {
                     $properties[$key] = Util::pgBinEscape($value);
                 }
             }
         }
 
         return $this->db->insert($this->table, $properties);
+    }
+
+    protected function isBinaryColumn($column)
+    {
+        return in_array($column, $this->binaryProperties);
     }
 
     /**
@@ -920,19 +927,13 @@ abstract class DbObject
                     if ($this->loadedProperties[$k] === null) {
                         $where[] = sprintf('%s IS NULL', $k);
                     } else {
-                        $where[] = $this->db->quoteInto(
-                            sprintf('%s = ?', $k),
-                            $this->loadedProperties[$k]
-                        );
+                        $where[] = $this->createQuotedWhere($k, $this->loadedProperties[$k]);
                     }
                 } else {
                     if ($this->properties[$k] === null) {
                         $where[] = sprintf('%s IS NULL', $k);
                     } else {
-                        $where[] = $this->db->quoteInto(
-                            sprintf('%s = ?', $k),
-                            $this->properties[$k]
-                        );
+                        $where[] = $this->createQuotedWhere($k, $this->properties[$k]);
                     }
                 }
             }
@@ -940,16 +941,27 @@ abstract class DbObject
             return implode(' AND ', $where);
         } else {
             if ($this->hasBeenLoadedFromDb()) {
-                return $this->db->quoteInto(
-                    sprintf('%s = ?', $key),
-                    $this->loadedProperties[$key]
-                );
+                return $this->createQuotedWhere($key, $this->loadedProperties[$key]);
             } else {
-                return $this->db->quoteInto(
-                    sprintf('%s = ?', $key),
-                    $this->properties[$key]
-                );
+                return $this->createQuotedWhere($key, $this->properties[$key]);
             }
+        }
+    }
+
+    protected function createQuotedWhere($column, $value)
+    {
+        return $this->db->quoteInto(
+            sprintf('%s = ?', $column),
+            $this->eventuallyQuoteBinary($value, $column)
+        );
+    }
+
+    protected function eventuallyQuoteBinary($value, $column)
+    {
+        if ($this->isBinaryColumn($column)) {
+            return $this->connection->quoteBinary($value);
+        } else {
+            return $value;
         }
     }
 
