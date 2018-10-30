@@ -12,6 +12,7 @@ master (will be 1.6.0)
 
 ### User Interface
 * FIX: link startup log warning even for non-standard package names (#1633)
+* FIX: changing an argument type from String to DSL didn't work (#1640)
 * FEATURE: allow to filter templates by usage (#1339)
 * FEATURE: allow to show SQL used for template tables
 * FEATURE: allow to defined Service Groups for Set members and for Services
