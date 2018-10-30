@@ -107,7 +107,7 @@ class ConfigController extends ActionController
         // TODO: require POST
         $checksum = $this->params->get('checksum');
         if ($checksum) {
-            $config = IcingaConfig::load(Util::hex2binary($checksum), $this->db());
+            $config = IcingaConfig::load(hex2bin($checksum), $this->db());
         } else {
             $config = IcingaConfig::generate($this->db());
             $checksum = $config->getHexChecksum();
@@ -237,7 +237,7 @@ class ConfigController extends ActionController
         }
         $this->assertPermission('director/showconfig');
         $config = IcingaConfig::load(
-            Util::hex2binary($this->params->getRequired('checksum')),
+            hex2bin($this->params->getRequired('checksum')),
             $this->db()
         );
         $deploymentId = $this->params->get('deployment_id');
@@ -296,7 +296,7 @@ class ConfigController extends ActionController
             $this->addBackLink('director/config/files', $params);
         }
 
-        $config = IcingaConfig::load(Util::hex2binary($this->params->get('config_checksum')), $this->db());
+        $config = IcingaConfig::load(hex2bin($this->params->get('config_checksum')), $this->db());
         $this->addTitle($this->translate('Config file "%s"'), $filename);
         $this->content()->add(new ShowConfigFile(
             $config->getFile($filename),
@@ -389,8 +389,8 @@ class ConfigController extends ActionController
         $rightSum = $p->getRequired('right');
         $filename = $p->getRequired('file_path');
 
-        $left = IcingaConfig::load(Util::hex2binary($leftSum), $db);
-        $right = IcingaConfig::load(Util::hex2binary($rightSum), $db);
+        $left = IcingaConfig::load(hex2bin($leftSum), $db);
+        $right = IcingaConfig::load(hex2bin($rightSum), $db);
 
         $this
             ->addTitle($this->translate('Config file "%s"'), $filename)

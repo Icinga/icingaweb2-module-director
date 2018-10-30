@@ -301,7 +301,7 @@ class Db extends DbConnection
         $result = $this->db()->fetchOne($sql);
 
         if ($binary) {
-            return Util::hex2binary($result);
+            return hex2bin($result);
         } else {
             return $result;
         }
@@ -332,7 +332,7 @@ class Db extends DbConnection
         );
 
         return $db->fetchRow(
-            $db->quoteInto($sql, $this->quoteBinary(Util::hex2binary($checksum)))
+            $db->quoteInto($sql, $this->quoteBinary(hex2bin($checksum)))
         );
     }
 

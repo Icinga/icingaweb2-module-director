@@ -138,7 +138,7 @@ class IcingaConfig
 
     public function getHexChecksum()
     {
-        return Util::binary2hex($this->checksum);
+        return bin2hex($this->checksum);
     }
 
     /**
@@ -204,7 +204,7 @@ class IcingaConfig
             array('checksum' => $connection->dbHexFunc('c.checksum'))
         )->where(
             'checksum = ?',
-            $connection->quoteBinary(Util::hex2binary($checksum))
+            $connection->quoteBinary(hex2bin($checksum))
         );
 
         return $db->fetchOne($query) === $checksum;
@@ -222,7 +222,7 @@ class IcingaConfig
             array()
         )->where(
             'last_activity_checksum = ?',
-            $connection->quoteBinary(Util::hex2binary($checksum))
+            $connection->quoteBinary(hex2bin($checksum))
         )->order('l.id DESC')->limit(1);
 
         return self::load($db->fetchOne($query), $connection);
@@ -240,7 +240,7 @@ class IcingaConfig
             array()
         )->where(
             'last_activity_checksum = ?',
-            $connection->quoteBinary(Util::hex2binary($checksum))
+            $connection->quoteBinary(hex2bin($checksum))
         )->order('l.id DESC')->limit(1);
 
         return $db->fetchOne($query) === $checksum;
@@ -648,7 +648,7 @@ apply Service for (title => params in host.vars["%s"]) {
         $result = $this->db->fetchRow($query);
 
         if (empty($result)) {
-            throw new NotFoundError('Got no config for %s', Util::binary2hex($checksum));
+            throw new NotFoundError('Got no config for %s', bin2hex($checksum));
         }
 
         $this->checksum = $this->binFromDb($result->checksum);
@@ -785,7 +785,7 @@ apply Service for (title => params in host.vars["%s"]) {
 
     public function getLastActivityHexChecksum()
     {
-        return Util::binary2hex($this->getLastActivityChecksum());
+        return bin2hex($this->getLastActivityChecksum());
     }
 
     /**

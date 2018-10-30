@@ -339,7 +339,7 @@ class Import
     protected function lastRowsetIs($checksum)
     {
         return $this->connection->getLatestImportedChecksum($this->source->get('id'))
-            === Util::binary2hex($checksum);
+            === bin2hex($checksum);
     }
 
     /**
@@ -391,7 +391,7 @@ class Import
         // ...
         // return array_diff($checksums, $existing);
 
-        $hexed = array_map('Icinga\Module\Director\Util::binary2hex', $checksums);
+        $hexed = array_map('bin2hex', $checksums);
 
         $conn = $this->connection;
         $query = $db
@@ -407,7 +407,7 @@ class Import
         $existing = $db->fetchCol($query);
         $new = array_diff($hexed, $existing);
 
-        return array_map('Icinga\Module\Director\Util::hex2binary', $new);
+        return array_map('hex2bin', $new);
     }
 
     /**

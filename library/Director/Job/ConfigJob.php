@@ -65,7 +65,7 @@ class ConfigJob extends JobHook
         $db = $this->db();
 
         return IcingaConfig::existsForActivityChecksum(
-            Util::binary2hex(DirectorActivityLog::loadLatest($db)->checksum),
+            bin2hex(DirectorActivityLog::loadLatest($db)->checksum),
             $db
         );
     }

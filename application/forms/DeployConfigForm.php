@@ -77,7 +77,7 @@ class DeployConfigForm extends DirectorForm
 
         $isApiRequest = $this->getRequest()->isApiRequest();
         if ($this->checksum) {
-            $config = IcingaConfig::load(Util::hex2binary($this->checksum), $db);
+            $config = IcingaConfig::load(hex2bin($this->checksum), $db);
         } else {
             $config = IcingaConfig::generate($db);
         }

@@ -94,7 +94,7 @@ class ConfigCommand extends Command
 
         $checksum = $this->params->get('checksum');
         if ($checksum) {
-            $config = IcingaConfig::load(Util::hex2binary($checksum), $db);
+            $config = IcingaConfig::load(hex2bin($checksum), $db);
         } else {
             $config = IcingaConfig::generate($db);
             $checksum = $config->getHexChecksum();

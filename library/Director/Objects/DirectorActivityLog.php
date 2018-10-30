@@ -105,7 +105,7 @@ class DirectorActivityLog extends DbObject
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
         static::audit($db, array(
             'action'      => 'create',
@@ -136,7 +136,7 @@ class DirectorActivityLog extends DbObject
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
         static::audit($db, array(
             'action'      => 'modify',
@@ -166,7 +166,7 @@ class DirectorActivityLog extends DbObject
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
         static::audit($db, array(
             'action'      => 'remove',

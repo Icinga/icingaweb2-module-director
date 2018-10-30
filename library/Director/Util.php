@@ -22,16 +22,6 @@ class Util
         return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
     }
 
-    public static function hex2binary($bin)
-    {
-        return pack('H*', $bin);
-    }
-
-    public static function binary2hex($hex)
-    {
-        return current(unpack('H*', $hex));
-    }
-
     /**
      * PBKDF2 - Password-Based Cryptography Specification (RFC2898)
      *
