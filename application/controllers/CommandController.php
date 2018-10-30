@@ -12,7 +12,9 @@ use Icinga\Module\Director\Web\Table\IcingaCommandArgumentTable;
 class CommandController extends ObjectController
 {
     /**
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\AuthenticationException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
      */
     public function init()
     {
@@ -28,7 +30,8 @@ class CommandController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Zend_Db_Select_Exception
      */
     public function indexAction()
     {
@@ -39,7 +42,9 @@ class CommandController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     * @throws \Zend_Db_Select_Exception
      */
     public function renderAction()
     {
@@ -51,7 +56,7 @@ class CommandController extends ObjectController
     }
 
     /**
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Zend_Db_Select_Exception
      */
     protected function showUsage()
     {
@@ -75,10 +80,6 @@ class CommandController extends ObjectController
         }
     }
 
-    /**
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\ProgrammingError
-     */
     public function argumentsAction()
     {
         $p = $this->params;
@@ -96,5 +97,10 @@ class CommandController extends ObjectController
         $form->handleRequest();
         $this->content()->add([$form]);
         IcingaCommandArgumentTable::create($o)->renderTo($this);
+    }
+
+    protected function hasBasketSupport()
+    {
+        return ! $this->object->isExternal();
     }
 }
