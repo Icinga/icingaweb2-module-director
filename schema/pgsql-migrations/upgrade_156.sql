@@ -1,6 +1,5 @@
-ALTER TABLE icinga_command
-  DROP INDEX object_name,
-  ADD UNIQUE INDEX object_name (object_name);
+DROP INDEX command_object_name;
+CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
