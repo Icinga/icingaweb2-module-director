@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
@@ -100,6 +101,9 @@ abstract class TemplateController extends CompatController
     public function usageAction()
     {
         $template = $this->requireTemplate();
+        if (! $template->isTemplate() && $template instanceof IcingaCommand) {
+            $this->redirectNow($this->url()->setPath('director/command'));
+        }
         $templateName = $template->getObjectName();
 
         $type = $this->getType();
