@@ -73,7 +73,7 @@ class ServiceController extends ObjectController
             $tabs->add('set', [
                 'url'       => 'director/serviceset',
                 'urlParams' => ['name' => $setName],
-                'label'     => $this->translate('Serviceset'),
+                'label'     => $this->translate('ServiceSet'),
             ])->add('services', [
                 'url'       => 'director/serviceset/services',
                 'urlParams' => ['name' => $setName],
