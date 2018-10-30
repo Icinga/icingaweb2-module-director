@@ -14,7 +14,7 @@ master (will be 1.6.0)
 * FIX: link startup log warning even for non-standard package names (#1633)
 * FIX: searching for fields assigned to a template was broken (#1670)
 * FIX: changing an argument type from String to DSL didn't work (#1640)
-# FIX: incorrect links from template-tree to non-template commands (#1544)
+* FIX: incorrect links from template-tree to non-template commands (#1544)
 * FEATURE: allow to filter templates by usage (#1339)
 * FEATURE: allow to show SQL used for template tables
 * FEATURE: allow to defined Service Groups for Set members and for Services
