@@ -277,18 +277,38 @@
          */
         refreshSuggestionList: function($suggestions, $el)
         {
-            $suggestions.load(this.module.icinga.config.baseUrl + '/director/suggest', {
-                value: $el.val(),
-                context: $el.data('suggestion-context'),
-                for_host: $el.data('suggestion-for-host')
-            }, function (responseText, textStatus, jqXHR) {
+            // Not sure whether we need this Accept-header
+            var headers = { 'X-Icinga-Accept': 'text/html' };
+            var icinga = this.module.icinga;
+
+            // Ask for a new window id in case we don't already have one
+            if (icinga.ui.hasWindowId()) {
+                headers['X-Icinga-WindowId'] = icinga.ui.getWindowId();
+            } else {
+                headers['X-Icinga-WindowId'] = 'undefined';
+            }
+
+            var onResponse =  function (data, textStatus, req) {
+                $suggestions.html(data);
                 var $li = $suggestions.find('li');
                 if ($li.length) {
                     $suggestions.show();
                 } else {
                     $suggestions.hide();
                 }
+            };
+
+            var req = $.ajax({
+                type: 'POST',
+                url: this.module.icinga.config.baseUrl + '/director/suggest',
+                data: {
+                    value: $el.val(),
+                    context: $el.data('suggestion-context'),
+                    for_host: $el.data('suggestion-for-host')
+                },
+                headers: headers
             });
+            req.done(onResponse);
 
             return $suggestions;
         },
