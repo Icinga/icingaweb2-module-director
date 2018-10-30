@@ -89,14 +89,22 @@ abstract class ZfQueryBasedTable extends QueryBasedTable
             if (strpos($search, ' ') === false) {
                 $filter = Filter::matchAny();
                 foreach ($columns as $column) {
-                    $filter->addFilter(Filter::expression($column, '=', "*$search*"));
+                    if (strpos($search, '*') === false) {
+                        $filter->addFilter(Filter::expression($column, '=', "*$search*"));
+                    } else {
+                        $filter->addFilter(Filter::expression($column, '=', $search));
+                    }
                 }
             } else {
                 $filter = Filter::matchAll();
                 foreach (explode(' ', $search) as $s) {
                     $sub = Filter::matchAny();
                     foreach ($columns as $column) {
-                        $sub->addFilter(Filter::expression($column, '=', "*$s*"));
+                        if (strpos($search, '*') === false) {
+                            $sub->addFilter(Filter::expression($column, '=', "*$s*"));
+                        } else {
+                            $sub->addFilter(Filter::expression($column, '=', $s));
+                        }
                     }
                     $filter->addFilter($sub);
                 }
