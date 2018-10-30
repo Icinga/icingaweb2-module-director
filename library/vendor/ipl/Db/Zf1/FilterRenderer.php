@@ -8,6 +8,7 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Data\Filter\FilterNot;
 use Icinga\Data\Filter\FilterOr;
+use Icinga\Data\SimpleQuery;
 use InvalidArgumentException;
 use RuntimeException;
 use Zend_Db_Adapter_Abstract as DbAdapter;
@@ -44,12 +45,16 @@ class FilterRenderer
         return new DbExpr($this->render());
     }
 
-    public static function applyToQuery(Filter $filter, DbSelect $query)
+    public static function applyToQuery(Filter $filter, $query)
     {
         if (! $filter->isEmpty()) {
-            $renderer = new static($filter, $query->getAdapter());
-            $renderer->extractColumnMap($query);
-            $query->where($renderer->toDbExpression());
+            if ($query instanceof DbSelect) {
+                $renderer = new static($filter, $query->getAdapter());
+                $renderer->extractColumnMap($query);
+                $query->where($renderer->toDbExpression());
+            } elseif ($query instanceof SimpleQuery) {
+                $query->applyFilter($filter);
+            }
         }
 
         return $query;
