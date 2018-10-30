@@ -1,67 +1,148 @@
+<#
+.Synopsis
+   Icinga 2 PowerShell Module - the most flexible and easy way to configure and install Icinga 2 Agents on Windows.
+.DESCRIPTION
+   More Information on https://github.com/Icinga/icinga2-powershell-module
+.EXAMPLE
+       exit $icinga = Icinga2AgentModule `
+                   -AgentName        'windows-host-name' `
+                   -Ticket           '3459843583450834508634856383459' `
+                   -ParentZone       'icinga-master' `
+                   -ParentEndpoints  'icinga2a', 'icinga2b' `
+                   -CAServer         'icinga-master' `
+                   -RunInstaller;
+ .NOTES
+
+#>
 function Icinga2AgentModule {
+
     #
     # Setup parameters which can be accessed
     # with -<ParamName>
     #
+    [CmdletBinding()]
     param(
-        # Agent setup
-        [string]$AgentName,
-        [string]$Ticket,
-        [string]$InstallAgentVersion,
-        [bool]$FetchAgentName             = $FALSE,
-        [bool]$FetchAgentFQDN             = $FALSE,
-        [int]$TransformHostname           = 0,
 
-        # Agent configuration
-        [int]$AgentListenPort             = 5665,
-        [string]$ParentZone,
-        [bool]$AcceptConfig               = $TRUE,
-        [bool]$IcingaEnableDebugLog       = $FALSE,
-        [bool]$AgentAddFirewallRule       = $FALSE,
+        # This is in general the name of your Windows host. It will have to match with your Icinga configuration, as it is part of the Icinga 2 Ticket and Certificate handling to ensure a valid certificate is generated
+        [string]$AgentName,
+        # The Ticket you will receive from your Icinga 2 CA. In combination with the Icinga Director, it will tell you which Ticket you will require for your host
+        [string]$Ticket,
+        # You can either leave this parameter or add it to allow the module to install or update the Icinga 2 Agent on your system
+        [string]$InstallAgentVersion,
+        # Instead of setting the Agent Name with -AgentName, the PowerShell module is capable of retreiving the information automaticly from Windows. Please note this is not the FQDN
+        [switch]$FetchAgentName             = $FALSE,
+        # Like -FetchAgentName, this argument will ensure the hostname is set inside the script, will however include the domain to provide the FQDN internally.
+        [switch]$FetchAgentFQDN             = $FALSE,
+        # Allows to transform the hostname to either lower or upper case if required. 0: Do nothing 1: To lower case 2: To upper case
+        [int]$TransformHostname             = 0,
+
+        # This variable allows to specify on which port the Icinga 2 Agent will listen on
+        [int]$AgentListenPort               = 5665,
+        # Each Icinga 2 Agent is in general forwarding it's check results to a parent master or satellite zone. Here you will have to specify the name of the parent zone
+        [string]$ParentZone,#
+        # Icinga 2 internals to make it configurable if the Agent is accepting configuration from the Icinga config master.
+        [bool]$AcceptConfig                 = $TRUE,
+        # This argument will define if the Icinga 2 debug log will be enabled or disabled.
+        [switch]$IcingaEnableDebugLog       = $FALSE,
+        # Allows to specify if the PowerShell Module will add a firewall rule, allowing Icinga 2 masters or Satellites to connect to the Icinga 2 Agent on the defined port
+        [switch]$AgentAddFirewallRule       = $FALSE,
+        # This parameter requires an array of string values, to which endpoints the Agent should in general connect to. If you are only having one endpoint, only add one. You will have to specify all endpoints the Agent requires to connect to
         [array]$ParentEndpoints,
+        # While -ParentEndpoints will define the name of endpoints by an array, this parameter will allow to assign IP address and port configuration, allowing the Icinga 2 Agent to directly connect to parent Icinga 2 instances. To specify IP address and port, you will have to seperate these entries by using ';' without blank spaces. The order of the config has to match the assignment of -ParentEndpoints. You can specify the IP address only without a port definition by just leaving the last part. If you wish to not specify a config for a specific endpoint, simply add an empty string to the correct location.
         [array]$EndpointsConfig,
-        [array]$GlobalZones               = @( 'director-global' ),
+        # Allows to specify global zones, which will be added into the icinga2.conf. Note: In case no global zone will be defined, director-global will be added by default. If you specify zones by yourself, please ensure to add director-global as this is not done automaticly when adding custom global-zones.
+        [array]$GlobalZones                 = @( 'director-global' ),
 
         # Agent installation / update
-        [string]$IcingaServiceUser,
-        [string]$DownloadUrl              = 'https://packages.icinga.com/windows/',
-        [string]$AgentInstallDirectory,
-        [bool]$AllowUpdates               = $FALSE,
-        [array]$InstallerHashes,
-        [bool]$FlushApiDirectory          = $FALSE,
+        <# This argument will allow to override the user the Icinga 2 service is running with. Windows provides some basic users already which can be configured:
 
-        # Agent signing
+        LocalSystem
+        NT AUTHORITY\NetworkService (Icinga default)
+        NT AUTHORITY\LocalService
+        If you require an own user, you can add that one as well for the argument. If a password is required for the user to login, seperate username and password with a ':'.
+
+        Example: jdoe:mysecretpassword
+
+        Furthermore you can also use domains in combination and pass them over.
+
+        Example: icinga\jdoe:mysecretpassword[string]$IcingaServiceUser,
+        #>
+        [string]$IcingaServiceUser,
+        #With this parameter you can define a download Url or local directory from which the module will download/install a specific Icinga 2 Agent MSI Installer package. Please ensure to only define the base download Url / Directory, as the Module will generate the MSI file name based on your operating system architecture and the version to install. The Icinga 2 MSI Installer name is internally build as follows: Icinga2-v[InstallAgentVersion]-[OSArchitecture].msi
+
+        # Full example: Icinga2-v2.8.0-x86_64.msi
+        [string]$DownloadUrl                = 'https://packages.icinga.com/windows/',
+        # Allows to specify in which directory the Icinga 2 Agent will be installed into. In case of an Agent update you can specify with this argument a new directory the new Agent will be installed into. The old directory will be removed caused by the required uninstaller process.
+        [string]$AgentInstallDirectory,
+        # In case the Icinga 2 Agent is already installed on the system, this parameter will allow you to configure if you wish to upgrade / downgrade to a specified version with the -InstallAgentVersion parameter as well. If none of both parameters is defined, the module will not update or downgrade the agent.
+        # If argument -AgentInstallDirectory is not specified, the Icinga 2 Agent will be installed into the same directory as before. In case defined, the PowerShell Module will use the new directory as installation target.
+        [switch]$AllowUpdates               = $FALSE,
+        # To ensure downloaded packages are build by the Icinga Team and not compromised by third parties, you will be able to provide an array of SHA1 hashes here. In case you have defined any hashses, the module will not continue with updating / installing the Agent in case the SHA1 hash of the downloaded MSI package is not matching one of the provided hashes of this parameter.
+        [array]$InstallerHashes,
+        # In case the Icinga Agent will accept configuration from the parent Icinga 2 system, it will possibly write data to /var/lib/icinga2/api/* By adding this parameter to your script call, all content inside the api directory will be flushed once a change is detected by the module which requires a restart of the Icinga 2 Agent
+        [switch]$FlushApiDirectory          = $FALSE,
+
+        # Here you can provide a string to the Icinga 2 CA or any other CA responsible to generate the required certificates for the SSL communication between the Icinga 2 Agent and it's parent
         [string]$CAServer,
-        [int]$CAPort                      = 5665,
-        [bool]$ForceCertificateGeneration = $FALSE,
+        # TODO
+        [string]$CACertificatePath,
+        # Here you can specify a custom port in case your CA Server is not listening on 5665
+        [int]$CAPort                        = 5665,
+        # The module will generate the certificates in general only if one of the required files is missing. By adding this parameter to your call, the module will force the re-creation of the certificates.
+        [switch]$ForceCertificateGeneration = $FALSE,
+        # This option will allow the validation of the trusted-master.crt generated during certificate generation, to ensure we are connected to the correct endpoint to prevent possible man-in-the-middle attacks.
         [string]$CAFingerprint,
+        # Use this switch to enable the CAProxy feature Introduced with Icinga 2.8
+        [switch]$CAProxy                    = $FALSE,
 
         # Director communication
+        #This argument will tell the PowerShell where the Icinga Director can be found. Please specify the entire path to the Icinga Director! Example: https://example.com/icingaweb2/director/
         [string]$DirectorUrl,
+        #To fetch the Ticket for a host, creating host objects or deploying the configuration you will have to authenticate against the Icinga Director. This parameter allows to set the User we shall use to login.
         [string]$DirectorUser,
+        # To fetch the Ticket for a host, creating host objects or deploying the configuration you will have to authenticate against the Icinga Director. This parameter allows to set the Password we shall use to login.
         [string]$DirectorPassword,
+        # TODO
         [string]$DirectorDomain,
+        # API key for specific host templates, allowing the configuration and creation of host objects within the Icinga Director without password authentication. This is the API token assigned to a host template. Hosts created with this token, will automaticly receive the Host-Template assigned to the API key. Furthermore this token allows to access the Icinga Director Self-Service API to fetch basic arguments for the module.
+        # Note: This argument requires Icinga Director API Version 1.4.0 or higher
         [string]$DirectorAuthToken,
+        # This argument allows you to parse either a valid JSON-String or an hashtable / array, containing all informations for the host object to create. Please note that using arrays or hashtable objects for this argument will require PowerShell version 3 and above.
         [System.Object]$DirectorHostObject,
-        [bool]$DirectorDeployConfig       = $FALSE,
+        # If you add this parameter to your script call, the PowerShell module will tell the Icinga Director to deploy outstanding configurations. This parameter can be used in combination with -DirectorHostObject, to create objects and deploy them right away. This argument requires the user and password argument and will not work with the Self Service api.
+        # Caution: If set, all outstanding deployments inside the Icinga Director will be deployed. Use with caution!!!
+        [switch]$DirectorDeployConfig       = $FALSE,
 
         # NSClient Installer
-        [bool]$InstallNSClient            = $FALSE,
-        [bool]$NSClientAddDefaults        = $FALSE,
-        [bool]$NSClientEnableFirewall     = $FALSE,
-        [bool]$NSClientEnableService      = $FALSE,
+        [switch]$InstallNSClient            = $FALSE,
+        [switch]$NSClientAddDefaults        = $FALSE,
+        [switch]$NSClientEnableFirewall     = $FALSE,
+        [switch]$NSClientEnableService      = $FALSE,
         [string]$NSClientDirectory,
         [string]$NSClientInstallerPath,
 
         # Uninstaller arguments
-        [bool]$FullUninstallation         = $FALSE,
-        [bool]$RemoveNSClient             = $FALSE,
+        # This argument is only used by the function 'uninstall' and will remove the remaining content from 'C:\Program Data\icinga2' to prepare a clean setup of the Icinga 2 infrastrucure.
+        [switch]$FullUninstallation         = $FALSE,
+        # When this argument is set, the installed NSClient++ will be removed from the system as well. This argument is only used by calling the function 'uninstall'
+        [switch]$RemoveNSClient             = $FALSE,
+
+        # Dump Icinga Config
+        [switch]$DumpIcingaConfig           = $FALSE,
+        # Dump Icinga Objects
+        [switch]$DumpIcingaObjects          = $FALSE,
 
         #Internal handling
-        [switch]$RunInstaller             = $FALSE,
-        [switch]$RunUninstaller           = $FALSE,
-        [switch]$IgnoreSSLErrors          = $FALSE,
-        [bool]$DebugMode                  = $FALSE,
+        # This argument allows to shorten the entire call of the module, not requiring to define a custom variable and executing the installation function of the monitoring components.
+        [switch]$RunInstaller               = $FALSE,
+        # This argument allows to shorten the entire call of the module, not requiring to define a custom variable and executing the uninstallation function of the monitoring components.
+        [switch]$RunUninstaller             = $FALSE,
+        #In certain cases it could be required to ingore SSL certificate validations from the Icinga Web 2 installation (for example in case self-signed certificates are used). By default the PowerShell Module is validating SSL certificates and throws an error if the validation fails.
+        #In case self-signed certificates are used and not included to the local certificate store of the Windows machine, the module will fail. By providing this argument, validation will always be valid and the script will execute as if the certificate was valid.
+        [switch]$IgnoreSSLErrors            = $FALSE,
+
+        [switch]$DebugMode                  = $FALSE,
+        # Specify a path to either a directory or a file to write all output from the PowerShell module into a file for later debugging. In case a directory is specified, the script will automaticly create a new file with a unique name into it. If a file is specified which is not yet present, it will be created.
         [string]$ModuleLogFile
     );
 
@@ -93,9 +174,11 @@ function Icinga2AgentModule {
         installer_hashes        = $InstallerHashes;
         flush_api_directory     = $FlushApiDirectory;
         ca_server               = $CAServer;
+        ca_certificate_path     = $CACertificatePath;
         ca_port                 = $CAPort;
         force_cert              = $ForceCertificateGeneration;
         ca_fingerprint          = $CAFingerprint;
+        caproxy                 = $CAProxy;
         director_url            = $DirectorUrl;
         director_user           = $DirectorUser;
         director_password       = $DirectorPassword;
@@ -202,7 +285,8 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'dumpProperties' -value {
         [string]$dumpData = $this.properties | Out-String;
-        write-host $dumpData;
+        $this.debug('Dumping properties...');
+        $this.debug($dumpData);
     }
 
     #
@@ -210,7 +294,8 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'dumpConfig' -value {
         [string]$dumpData = $this.cfg | Out-String;
-        write-host $dumpData;
+        $this.debug('Dumping config...');
+        $this.debug($dumpData);
     }
 
     #
@@ -273,6 +358,9 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'getScriptExitCode' -value {
         [array]$exceptions = $this.getProperty('exception_messages');
+
+        $this.dumpProperties();
+        $this.dumpConfig();
 
         if ($exceptions -eq $null) {
             return 0;
@@ -343,6 +431,15 @@ function Icinga2AgentModule {
     }
 
     #
+    # Return a output message with wrhite text
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'output' -value {
+        param([string] $message, [array] $args);
+        Write-Host '' $message -ForegroundColor white;
+        $this.writeLogFile('', $message);
+    }
+
+    #
     # Return a debug message with blue text
     # in case debug mode is enabled
     #
@@ -363,6 +460,7 @@ function Icinga2AgentModule {
         # Set the default config dir
         $this.setProperty('config_dir', (Join-Path -Path $Env:ProgramData -ChildPath 'icinga2\etc\icinga2\'));
         $this.setProperty('api_dir', (Join-Path -Path $Env:ProgramData -ChildPath 'icinga2\var\lib\icinga2\api'));
+        $this.setProperty('cert_dir', (Join-Path -Path $Env:ProgramData -ChildPath 'icinga2\var\lib\icinga2\certs'));
         $this.setProperty('icinga_ticket', $this.config('ticket'));
         $this.setProperty('local_hostname', $this.config('agent_name'));
         # Ensure we generate the required configuration content
@@ -412,12 +510,12 @@ function Icinga2AgentModule {
 
         # Write the host data from the first array position
         if ($configObject[0]) {
-            $config_string += '  host = "' + $configObject[0] +'"';
+            $config_string += [string]::Format('  host = "{0}"', $configObject[0]);
         }
 
         # Write the port data from the second array position
         if ($configObject[1]) {
-            $config_string += "`n"+'  port = ' + $configObject[1];
+            $config_string += [string]::Format('{0}  port = {1}', "`n", $configObject[1]);
         }
 
         # Return the host and possible port configuration for this endpoint
@@ -436,10 +534,10 @@ function Icinga2AgentModule {
             [int]$endpoint_index = 0;
 
             foreach ($endpoint in $this.config('parent_endpoints')) {
-                $endpoint_objects += 'object Endpoint "' + "$endpoint" +'" {'+"`n";
+                $endpoint_objects += [string]::Format('object Endpoint "{0}" {1}{2}', $endpoint, '{', "`n");
                 $endpoint_objects += $this.getEndpointConfigurationByArrayIndex($endpoint_index);
-                $endpoint_objects += "`n" + '}' + "`n";
-                $endpoint_nodes += '"' + "$endpoint" + '", ';
+                $endpoint_objects += [string]::Format('{0}{1}{2}', "`n", '}', "`n");
+                $endpoint_nodes += [string]::Format('"{0}", ', $endpoint);
                 $endpoint_index += 1;
             }
             # Remove the last blank and , from the string
@@ -472,7 +570,7 @@ function Icinga2AgentModule {
         # Loop through all given zones and add them to our configuration
         foreach ($zone in $global_zones) {
             if ($zone -ne '') {
-                $zones = $zones + 'object Zone "' + $zone + '" {' + "`n" + ' global = true' + "`n" + '}' + "`n";
+                $zones += [string]::Format('object Zone "{0}" {1}{2} global = true{3}{4}{5}', $zone, '{', "`n", "`n", '}', "`n");
             }
         }
         $this.setProperty('global_zones', $zones);
@@ -533,8 +631,8 @@ function Icinga2AgentModule {
         }
 
         if ($this.config('director_user') -And $this.config('director_password')) {
-            [string]$credentials = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($this.config('director_user') + ':' + $this.config('director_password')));
-            $httpRequest.Headers.add('Authorization: Basic ' + $credentials);
+            [string]$credentials = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes([string]::Format('{0}:{1}', $this.config('director_user'), $this.config('director_password'))));
+            $httpRequest.Headers.add([string]::Format('Authorization: Basic {0}', $credentials));
         }
 
         # Only send data in case we want to send some data
@@ -588,7 +686,7 @@ function Icinga2AgentModule {
             return $result;
         }
 
-        $this.exception('Could not retreive response from remote server. Response is null');
+        $this.exception('Could not retreive response from remote server. Response is null. This might be caused by SSL errors. Please try using -IgnoreSSLErrors as argument and try again.');
         return 'No response from remote server';
     }
 
@@ -621,7 +719,7 @@ function Icinga2AgentModule {
             return $FALSE;
         }
 
-        $this.info('Current Icinga 2 Agent Version (' + $this.getProperty('agent_version') + ') is not matching server version (' + $this.config('agent_version') + '). Downloading new version...');
+        $this.info([string]::Format('Current Icinga 2 Agent Version ({0}) is not matching server version ({1}). Downloading new version...'), $this.getProperty('agent_version'), $this.config('agent_version'));
 
         return $TRUE;
     }
@@ -648,17 +746,17 @@ function Icinga2AgentModule {
             $this.info('Installing Icinga 2 Agent from local directory');
         } else {
             $url = $this.config('download_url') + $this.getProperty('install_msi_package');
-            $this.info('Downloading Icinga 2 Agent Binary from ' + $url + '  ...');
+            $this.info([string]::Format('Downloading Icinga 2 Agent Binary from "{0}"', $url));
 
             Try {
                 [System.Object]$client = New-Object System.Net.WebClient;
                 $client.DownloadFile($url, $this.getInstallerPath());
 
                 if (-Not $this.installerExists()) {
-                    $this.exception('Unable to locate downloaded Icinga 2 Agent installer file from ' + $url + '. Download destination: ' + $this.getInstallerPath());
+                    $this.exception([string]::Format('Unable to locate downloaded Icinga 2 Agent installer file from {0}. Download destination: {1}', $url, $this.getInstallerPath()));
                 }
             } catch {
-                $this.exception('Unable to download Icinga 2 Agent from ' + $url + '. Please ensure the link does exist and access is possible. Error: ' + $_.Exception.Message);
+                $this.exception([string]::Format('Unable to download Icinga 2 Agent from {0}. Please ensure the link does exist and access is possible. Error: {1}', $url, $_.Exception.Message));
             }
         }
     }
@@ -711,12 +809,18 @@ function Icinga2AgentModule {
         if (-Not $this.config('download_url') -Or -Not $this.getProperty('install_msi_package')) {
             return '';
         }
-        $installerPath = Join-Path -Path $this.config('download_url') -ChildPath $this.getProperty('install_msi_package')
+        [string]$installerPath = '';
+        if (Test-Path ($this.config('download_url'))) {
+            $installerPath = Join-Path -Path $this.config('download_url') -ChildPath $this.getProperty('install_msi_package');
+        } else {
+            $installerPath = [string]::Format('{0}/{1}', $this.config('download_url'), $this.getProperty('install_msi_package'));
+        }
+
         if ($this.isDownloadPathLocal()) {
             if (Test-Path $installerPath) {
                 return $installerPath;
             } else {
-                $this.exception('Failed to locate local Icinga 2 Agent installer at ' + $installerPath);
+                $this.exception([string]::Format('Failed to locate local Icinga 2 Agent installer at {0}', $installerPath));
                 return '';
             }
         } else {
@@ -826,7 +930,7 @@ function Icinga2AgentModule {
             return;
         }
         $this.verifyInstallerChecksumAndThrowException();
-        $this.info('Installing Icinga 2 Agent...');
+        $this.info('Installing Icinga 2 Agent');
 
         # Start the installer process
         $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
@@ -838,6 +942,10 @@ function Icinga2AgentModule {
         } else {
             $this.info('Icinga 2 Agent installed.');
         }
+
+        # Update the Icinga 2 Agent Directories in case of a version change
+        # Required by updating from older versions to 2.8.0. and newer
+        $return = $this.isAgentInstalled();
 
         $this.setProperty('require_restart', 'true');
     }
@@ -858,7 +966,7 @@ function Icinga2AgentModule {
             return;
         }
 
-        $this.info('Removing previous Icinga 2 Agent version...');
+        $this.info('Removing previous Icinga 2 Agent version');
         # Start the uninstaller process
         $result = $this.startProcess('MsiExec.exe', $TRUE, $this.getProperty('uninstall_id') +' /q');
 
@@ -873,18 +981,21 @@ function Icinga2AgentModule {
         $this.checkForIcingaMigrationRequirement();
         $this.applyPossibleAgentMigration();
 
-        $this.info('Installing new Icinga 2 Agent version...');
+        $this.info('Installing new Icinga 2 Agent version');
         # Start the installer process
         $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
 
         # Exit Code 0 means the Agent was removed successfully
         # Otherwise we require to throw an error
         if ($result.Get_Item('exitcode') -ne 0) {
-            $this.exception('Failed to install new Icinga 2 Agent. ' + $result.Get_Item('message'));
+            $this.exception([string]::Format('Failed to install new Icinga 2 Agent. {0}', $result.Get_Item('message')));
         } else {
             $this.info('Icinga 2 Agent successfully updated.');
         }
 
+        # Update the Icinga 2 Agent Directories in case of a version change
+        # Required by updating from older versions to 2.8.0. and newer
+        $return = $this.isAgentInstalled();
         $this.setProperty('require_restart', 'true');
     }
 
@@ -980,9 +1091,27 @@ function Icinga2AgentModule {
         $this.setProperty('agent_version', $localData.DisplayVersion);
         $this.setProperty('install_msi_package', 'Icinga2-v' + $this.config('agent_version') + '-' + $architecture + '.msi');
         $this.setProperty('system_architecture', $architecture);
+        $this.setIcinga2AgentVersion($localData.DisplayVersion);
+
+        if (-Not $this.validateVersions('2.8.0', $this.getProperty('icinga2_agent_version'))) {
+            $this.setProperty('cert_dir', (Join-Path -Path $this.getProperty('config_dir') -ChildPath 'pki'));
+            if ($this.getProperty('use_new_cert_dir')) {
+                $this.setProperty('require_cert_migration', $TRUE);
+                $this.info('You are downgrading from a newer Icinga 2 Version to a older one. This will require a certificate migration.');
+            }
+        } else {
+            $this.setProperty('cert_dir', (Join-Path -Path $Env:ProgramData -ChildPath 'icinga2\var\lib\icinga2\certs'));
+            $this.setProperty('use_new_cert_dir', $TRUE);
+        }
+
+        $this.info([string]::Format('Using Icinga version "{0}", setting certificate directory to "{1}"',
+                                    $localData.DisplayVersion,
+                                    $this.getProperty('cert_dir')
+                                    )
+                    );
 
         if ($localData.InstallLocation) {
-            $this.info('Found Icinga 2 Agent version ' + $localData.DisplayVersion + ' installed at ' + $localData.InstallLocation);
+            $this.info([string]::Format('Found Icinga 2 Agent version {0} installed at "{1}"', $localData.DisplayVersion, $localData.InstallLocation));
             return $TRUE;
         } else {
             $this.warn('Icinga 2 Agent does not seem to be installed on the system');
@@ -1002,7 +1131,7 @@ function Icinga2AgentModule {
             return;
         }
 
-        $this.info('Trying to install Icinga 2 Agent Firewall Rule for port ' + $this.config('agent_listen_port'));
+        $this.info([string]::Format('Trying to install Icinga 2 Agent Firewall Rule for port {0}', $this.config('agent_listen_port')));
 
         $result = $this.startProcess('netsh', $FALSE, 'advfirewall firewall show rule name="Icinga 2 Agent Inbound by PS-Module"');
         if ($result.Get_Item('exitcode') -eq 0) {
@@ -1012,31 +1141,32 @@ function Icinga2AgentModule {
             $result = $this.startProcess('netsh', $TRUE, 'advfirewall firewall delete rule name="Icinga 2 Agent Inbound by PS-Module"');
 
             if ($result.Get_Item('exitcode') -ne 0) {
-                $this.error('Failed to remove Icinga 2 Agent Firewall rule before adding it again: ' + $result.Get_Item('message'));
+                $this.error([string]::Format('Failed to remove Icinga 2 Agent Firewall rule before adding it again: {0}', $result.Get_Item('message')));
                 return;
             } else {
                 $this.info('Icinga 2 Agent Firewall Rule has been removed. Re-Adding now...');
             }
         }
 
+        [string]$binaryPath = Join-Path $this.getInstallPath() -ChildPath 'sbin\icinga2.exe';
         [string]$argument = 'advfirewall firewall add rule'
-        $argument = $argument + ' dir=in action=allow program="' + $this.getInstallPath() + 'sbin\icinga2.exe"';
-        $argument = $argument + ' name="Icinga 2 Agent Inbound by PS-Module"';
-        $argument = $argument + ' description="Inbound Firewall Rule to allow Icinga 2 masters/satellites to connect to the Icinga 2 Agent installed on this system."';
-        $argument = $argument + ' enable=yes';
-        $argument = $argument + ' remoteip=any';
-        $argument = $argument + ' localip=any';
-        $argument = $argument + ' localport=' + $this.config('agent_listen_port');
-        $argument = $argument + ' protocol=tcp';
+        $argument += [string]::Format(' dir=in action=allow program="{0}"', $binaryPath);
+        $argument += ' name="Icinga 2 Agent Inbound by PS-Module"';
+        $argument += ' description="Inbound Firewall Rule to allow Icinga 2 masters/satellites to connect to the Icinga 2 Agent installed on this system."';
+        $argument += ' enable=yes';
+        $argument += ' remoteip=any';
+        $argument += ' localip=any';
+        $argument += [string]::Format(' localport={0}', $this.config('agent_listen_port'));
+        $argument += ' protocol=tcp';
 
         $result = $this.startProcess('netsh', $FALSE, $argument);
         if ($result.Get_Item('exitcode') -ne 0) {
             # Firewall rule was not added -> print error
-            $this.error('Failed to install Icinga 2 Agent Firewall: ' + $result.Get_Item('message'));
+            $this.error([string]::Format('Failed to install Icinga 2 Agent Firewall: {0}', $result.Get_Item('message')));
             return;
         }
 
-        $this.info('Icinga 2 Agent Firewall Rule successfully installed for port ' + $this.config('agent_listen_port'));
+        $this.info([string]::Format('Icinga 2 Agent Firewall Rule successfully installed for port {0}', $this.config('agent_listen_port')));
     }
 
     #
@@ -1104,7 +1234,7 @@ function Icinga2AgentModule {
         if (-Not ($this.isDownloadPathLocal())) {
             if ($this.getInstallerPath() -And (Test-Path $this.getInstallerPath())) {
                 $this.info('Removing downloaded Icinga 2 Agent installer');
-                Remove-Item $this.getInstallerPath() | out-null;
+                Remove-Item $this.getInstallerPath() | Out-Null;
             }
         }
     }
@@ -1131,9 +1261,11 @@ function Icinga2AgentModule {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'flushIcingaApiDirectory' -value {
         if ((Test-Path $this.getApiDirectory()) -And $this.shouldFlushIcingaApiDirectory()) {
-            $this.info('Flushing content of ' + $this.getApiDirectory());
+            $this.info([string]::Format('Flushing content of "{0}"', $this.getApiDirectory()));
+            $this.stopIcingaService();
             [System.Object]$folder = New-Object -ComObject Scripting.FileSystemObject;
             $folder.DeleteFolder($this.getApiDirectory());
+            $this.setProperty('require_restart', 'true');
         }
     }
 
@@ -1150,7 +1282,7 @@ function Icinga2AgentModule {
         [System.Object]$currentUser = Get-WMIObject win32_service -Filter "Name='icinga2'";
         [string]$credentials = $this.config('icinga_service_user');
         [string]$newUser = '';
-        [string]$password = 'dummy';
+        [string]$password = '';
 
         if ($currentUser -eq $null) {
             $this.warn('Unable to modify Icinga service user: Service not found.');
@@ -1162,7 +1294,7 @@ function Icinga2AgentModule {
         if ($credentials.Contains(':')) {
             [int]$delimeter = $credentials.IndexOf(':');
             $newUser = $credentials.Substring(0, $delimeter);
-            $password = $credentials.Substring($delimeter + 1, $credentials.Length - 1 - $delimeter);
+            $password = [string]::Format(' password= {0}', $credentials.Substring($delimeter + 1, $credentials.Length - 1 - $delimeter));
         } else {
             $newUser = $credentials;
         }
@@ -1175,8 +1307,8 @@ function Icinga2AgentModule {
 
         # Try to update the service name and return an error in case of a failure
         # In the error case we do not have to deal with cleanup, as no change was made anyway
-        $this.info('Updating Icinga 2 service user to ' + $newUser);
-        $result = $this.startProcess('sc.exe', $TRUE, 'config icinga2 obj="' + $newUser + '" ' + 'password=' + $password);
+        $this.info([string]::Format('Updating Icinga 2 service user to {0}', $newUser));
+        $result = $this.startProcess('sc.exe', $TRUE, [string]::Format('config icinga2 obj= "{0}"{1}', $newUser, $password));
 
         if ($result.Get_Item('exitcode') -ne 0) {
             $this.error($result.Get_Item('message'));
@@ -1190,24 +1322,24 @@ function Icinga2AgentModule {
         $result = $this.restartService('icinga2');
 
         # In case of an error try to rollback to the previous assigned user of the service
-        # If this fails aswell, set the user to 'LocalSystem' and restart the service to
+        # If this fails aswell, set the user to 'NT AUTHORITY\NetworkService' and restart the service to
         # ensure that the agent is atleast running and collecting some data.
         # Of course we throw plenty of errors to notify the user about problems
         if ($result.Get_Item('exitcode') -ne 0) {
             $this.error($result.Get_Item('message'));
-            $this.info('Reseting user to previous working user ' + $currentUser.StartName);
-            $result = $this.startProcess('sc.exe', $TRUE, 'config icinga2 obj="' + $currentUser.StartName + '" ' + 'password=' + $password);
+            $this.info([string]::Format('Reseting user to previous working user {0}', $currentUser.StartName));
+            $result = $this.startProcess('sc.exe', $TRUE, [string]::Format('config icinga2 obj= "{0}"{1}', $currentUser.StartName, $password));
             $result = $this.restartService('icinga2');
             if ($result.Get_Item('exitcode') -ne 0) {
-                $this.error('Failed to reset Icinga 2 service user to the previous user ' + $currentUser.StartName + '. Setting user to "LocalSystem" now to ensure the service integrity');
-                $result = $this.startProcess('sc.exe', $TRUE, 'config icinga2 obj="LocalSystem" password=dummy');
+                $this.error([string]::Format('Failed to reset Icinga 2 service user to the previous user "{0}". Setting user to "NT AUTHORITY\NetworkService" now to ensure the service integrity', $currentUser.StartName));
+                $result = $this.startProcess('sc.exe', $TRUE, 'config icinga2 obj= "NT AUTHORITY\NetworkService" password=dummy');
                 $this.info($result.Get_Item('message'));
                 $result = $this.restartService('icinga2');
                 if ($result.Get_Item('exitcode') -eq 0) {
-                    $this.info('Reseting Icinga 2 service user to "LocalSystem" successfull.');
+                    $this.info('Reseting Icinga 2 service user to "NT AUTHORITY\NetworkService" successfull.');
                     return;
                 } else {
-                    $this.error('Failed to rollback Icinga 2 service user to "LocalSystem": ' + $result.Get_Item('message'));
+                    $this.error([string]::Format('Failed to rollback Icinga 2 service user to "NT AUTHORITY\NetworkService": {0}', $result.Get_Item('message')));
                     return;
                 }
             }
@@ -1222,7 +1354,7 @@ function Icinga2AgentModule {
     $installer | Add-Member -membertype ScriptMethod -name 'restartService' -value {
         param([string]$service);
 
-        $this.info('Restarting service ' + $service + '...');
+        $this.info([string]::Format('Restarting service {0}', $service));
 
         # Stop the current service
         $result = $this.startProcess("sc.exe", $TRUE, "stop $service");
@@ -1235,11 +1367,24 @@ function Icinga2AgentModule {
 
         # Wait until the service is started
         if ($this.waitForServiceToReachState($service, 'Running') -eq $FALSE) {
-            $result.Set_Item('message', 'Failed to restart service ' + $service + '.');
+            $result.Set_Item('message', [string]::Format('Failed to restart service {0}.', $service));
             $result.Set_Item('exitcode', '1');
         }
 
         return $result;
+    }
+
+    #
+    # Function to stop the Icinga 2 service
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'stopIcingaService' -value {
+        # Stop the Icinga 2 Service
+        $this.info('Stopping the Icinga 2 Service...')
+        $result = $this.startProcess("sc.exe", $TRUE, "stop icinga2");
+
+        # Wait until the service is stopped
+        $serviceResult = $this.waitForServiceToReachState('icinga2', 'Stopped');
+        $this.info('Icinga 2 service has been stopped.')
     }
 
     #
@@ -1266,7 +1411,7 @@ function Icinga2AgentModule {
 
             # After 20 seconds break with an error. It look's like the service does not respond
             if ($counter -gt 200) {
-                $this.error('Timeout reached while waiting for ' + $service + ' to reach state ' + $state + '. Service is not responding.');
+                $this.error([string]::Format('Timeout reached while waiting for "{0}" to reach state "{1}". Service is not responding.', $service, $state));
                 return $FALSE;
             }
         }
@@ -1334,6 +1479,40 @@ function Icinga2AgentModule {
         }
     }
 
+    #
+    # This function will determine if and how we create the
+    # API-Listener configuration
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'getApiListenerConfiguration' -value {
+        if (-Not $this.hasCertificates() -And -Not $this.getProperty('certs_created')) {
+            $this.warn('Configuring Icinga 2 Agent without ApiListener, as certificates have not been generated.');
+            return [string]::Format('{0}/* ApiListener has not been configured, as certificates have not been generated. */', "`n`n");
+        }
+
+        [string]$apiListenerConfig = '';
+        [string]$certificateConfig = '';
+        # Icinga 2 Agent Versions below 2.8.0 will require cert_path, key_path and ca_path
+        if (-Not $this.validateVersions('2.8.0', $this.getProperty('icinga2_agent_version'))) {
+            $certificateConfig = '
+  cert_path = SysconfDir + "/icinga2/pki/' + $this.getProperty('local_hostname') + '.crt"
+  key_path = SysconfDir + "/icinga2/pki/' + $this.getProperty('local_hostname') + '.key"
+  ca_path = SysconfDir + "/icinga2/pki/ca.crt"';
+        }
+
+        $apiListenerConfig = '
+object ApiListener "api" {' + $certificateConfig + '
+  accept_commands = true
+  accept_config = ' + $this.convertBoolToString($this.config('accept_config')) + '
+  bind_host = "::"
+  bind_port = ' + [int]$this.config('agent_listen_port') + '
+}';
+
+        return $apiListenerConfig;
+    }
+
+    #
+    # Generate the new configuration for Icinga 2
+    #
     $installer | Add-Member -membertype ScriptMethod -name 'generateIcingaConfiguration' -value {
         if ($this.getProperty('generate_config') -eq 'true') {
 
@@ -1355,6 +1534,9 @@ include <itl>
 include <plugins>
 include <nscp>
 include <windows-plugins>
+
+/* Required for Icinga 2.8.0 and above */
+const NodeName = "' + $this.getProperty('local_hostname') + '"
 
 /* Define our block required to enable or disable Icinga 2 debug log
  * Enable or disable it by using the PowerShell Module with
@@ -1415,16 +1597,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
  * This will include the certificates, if we accept configurations which
  * can be changed with argument -AcceptConfig and the bind informations.
  * The bind_port can be modified with argument -AgentListenPort.
- */
-object ApiListener "api" {
-  cert_path = SysconfDir + "/icinga2/pki/' + $this.getProperty('local_hostname') + '.crt"
-  key_path = SysconfDir + "/icinga2/pki/' + $this.getProperty('local_hostname') + '.key"
-  ca_path = SysconfDir + "/icinga2/pki/ca.crt"
-  accept_commands = true
-  accept_config = ' + $this.convertBoolToString($this.config('accept_config')) + '
-  bind_host = "::"
-  bind_port = ' + [int]$this.config('agent_listen_port') + '
-}';
+ */' + $this.getApiListenerConfiguration();
 
             $this.setProperty('new_icinga_config', $icingaNewConfig);
             $this.setProperty('old_icinga_config', $icingaCurrentConfig);
@@ -1447,7 +1620,7 @@ object ApiListener "api" {
         [string]$oldConfigHash = $this.getHashFromString($this.getProperty('old_icinga_config'));
         [string]$newConfigHash = $this.getHashFromString($this.getProperty('new_icinga_config'));
 
-        $this.debug('Old Config Hash: "' + $oldConfigHash + '" New Hash: "' + $newConfigHash + '"');
+        $this.debug([string]::Format('Old Config Hash: "{0}" New Hash: "{1}"', $oldConfigHash, $newConfigHash));
 
         if ($oldConfigHash -eq $newConfigHash) {
             return $FALSE;
@@ -1461,7 +1634,7 @@ object ApiListener "api" {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'getHashFromString' -value {
         param([string]$text);
-        [System.Object]$algorithm = New-Object System.Security.Cryptography.SHA1Managed;
+        [System.Object]$algorithm = New-Object System.Security.Cryptography.SHA1CryptoServiceProvider;
         $hash = [System.Text.Encoding]::UTF8.GetBytes($text);
         $hashInBytes = $algorithm.ComputeHash($hash);
         [string]$result = '';
@@ -1491,7 +1664,7 @@ object ApiListener "api" {
         }
 
         # Write new configuration to file
-        $this.info('Writing icinga2.conf to ' + $this.getProperty('config_dir'));
+        $this.info([string]::Format('Writing icinga2.conf to "{0}"', $this.getProperty('config_dir')));
         [System.IO.File]::WriteAllText($this.getIcingaConfigFile(), $configData);
         $this.setProperty('require_restart', 'true');
     }
@@ -1502,7 +1675,7 @@ object ApiListener "api" {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'rollbackConfig' -value {
         # Write new configuration to file
-        $this.info('Rolling back previous icinga2.conf to ' + $this.getProperty('config_dir'));
+        $this.info([string]::Format('Rolling back previous icinga2.conf to "{0}"', $this.getProperty('config_dir')));
         [System.IO.File]::WriteAllText($this.getIcingaConfigFile(), $this.getProperty('old_icinga_config'));
         $this.setProperty('require_restart', 'true');
     }
@@ -1528,46 +1701,121 @@ object ApiListener "api" {
     }
 
     #
+    # Create Host-Certificates for Icinga 2
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'createHostCertificates' -value {
+        param([string]$hostname, [string]$certDir);
+
+        $this.info('Generating Host certificates required by Icinga 2');
+        [string]$icingaBinary = Join-Path -Path $this.getInstallPath() -ChildPath 'sbin\icinga2.exe';
+        $result = $this.startProcess($icingaBinary, $FALSE, [string]::Format('pki new-cert --cn {0} --key {1}{0}.key --cert {1}{0}.crt',
+                                                                            $hostname,
+                                                                            $certDir
+                                                                            )
+        );
+
+        if ($result.Get_Item('exitcode') -ne 0) {
+            throw $result.Get_Item('message');
+        }
+        $this.info($result.Get_Item('message'));
+    }
+
+    #
+    # Fix certificate naming for upper / lower case changes
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'fixCertificateNames' -value {
+        param([string]$hostname, [string]$certDir);
+        # Rename the certificates to apply possible upper / lower case naming changes
+        # which is not done by Windows by default
+        Move-Item (Join-Path -Path $certDir -ChildPath ($hostname + '.key')) (Join-Path -Path $certDir -ChildPath ($hostname + '.key'))
+        Move-Item (Join-Path -Path $certDir -ChildPath ($hostname + '.crt')) (Join-Path -Path $certDir -ChildPath ($hostname + '.crt'))
+    }
+
+    #
     # Generate the Icinga 2 SSL certificate to ensure the communication between the
     # Agent and the Master can be established in first place
     #
     $installer | Add-Member -membertype ScriptMethod -name 'generateCertificates' -value {
 
-        if ($this.getProperty('local_hostname') -And $this.config('ca_server') -And $this.getProperty('icinga_ticket')) {
-            [string]$icingaPkiDir = Join-Path -Path $this.getProperty('config_dir') -ChildPath 'pki\';
-            [string]$icingaBinary = Join-Path -Path $this.getInstallPath() -ChildPath 'sbin\icinga2.exe';
-            [string]$agentName = $this.getProperty('local_hostname');
+        [string]$icingaCertDir = Join-Path $this.getProperty('cert_dir') -ChildPath '\';
+        [string]$icingaBinary = Join-Path -Path $this.getInstallPath() -ChildPath 'sbin\icinga2.exe';
+        [string]$agentName = $this.getProperty('local_hostname');
 
-            if (-Not (Test-Path $icingaBinary)) {
-                $this.warn('Unable to generate Icinga 2 certificates. Icinga 2 executable not found. It looks like the Icinga 2 Agent is not installed.');
+        if (-Not (Test-Path $icingaBinary)) {
+            $this.warn('Unable to generate Icinga 2 certificates. Icinga 2 executable not found. It looks like the Icinga 2 Agent is not installed.');
+            return;
+        }
+
+        if (-Not $this.getProperty('local_hostname')) {
+            $this.info('Skipping function for generating certificates, as hostname is not specified within the module.');
+            return;
+        }
+
+        # Handling for Icinga 2.8.0 and above: CA-Proxy support
+        if ($this.config('caproxy')) {
+            if (-Not $this.validateVersions('2.8.0', $this.getProperty('icinga2_agent_version'))) {
+                throw 'The argument "-CAProxy" is only supported by Icinga Version 2.8.0 and above.';
                 return;
             }
 
-            # Generate the certificate
-            $this.info('Generating Icinga 2 certificates');
-
-            $result = $this.startProcess($icingaBinary, $FALSE, 'pki new-cert --cn ' + $this.getProperty('local_hostname') + ' --key ' + $icingaPkiDir + $agentName + '.key --cert ' + $icingaPkiDir + $agentName + '.crt');
-            if ($result.Get_Item('exitcode') -ne 0) {
-                throw $result.Get_Item('message');
+            if (-Not $this.config('ca_certificate_path')) {
+                throw 'You will require to specify a source path of your CA certificate with -CACertificatePath in order to use CA proxy certificate generation.';
             }
-            $this.info($result.Get_Item('message'));
+
+            # Generate the certificate
+            [string]$caDestPath = (Join-Path $icingaCertDir -ChildPath '\ca.crt');
+            $this.createHostCertificates($agentName, $icingaCertDir);
+            $this.fixCertificateNames($agentName, $icingaCertDir);
+            $this.setProperty('require_restart', 'true');
+            $this.info('Your host certificate has been generated. Please review the request on your Icinga CA with "icinga2 ca list" and sign it with "icinga2 ca sign <request_id>".');
+            $this.info([string]::Format('Trying to copy your specified CA certificate "{0}" to "{1}".',
+                                        $this.config('ca_certificate_path'),
+                                        $caDestPath
+                                        ));
+            if (-Not (Test-Path $this.config('ca_certificate_path'))) {
+                throw [string]::Format('Failed to copy your CA certificate from "{0}" to "{1}". Your source destination does not exist.',
+                                                $this.config('ca_certificate_path'),
+                                                $caDestPath
+                                                );
+                return;
+            }
+            Copy-Item $this.config('ca_certificate_path') $caDestPath;
+            $this.setProperty('certs_created', $TRUE);
+            return;
+        }
+
+        if ($this.config('ca_server') -And $this.getProperty('icinga_ticket')) {
+            # Generate the certificate
+            $this.createHostCertificates($agentName, $icingaCertDir);
 
             # Save Certificate
             $this.info("Storing Icinga 2 certificates");
-            $result = $this.startProcess($icingaBinary, $FALSE, 'pki save-cert --key ' + $icingaPkiDir + $agentName + '.key --trustedcert ' + $icingaPkiDir + 'trusted-master.crt --host ' + $this.config('ca_server'));
+            $result = $this.startProcess($icingaBinary, $FALSE, [string]::Format('pki save-cert --key {0}{1}.key --trustedcert {0}trusted-master.crt --host {2}',
+                                                                                $icingaCertDir,
+                                                                                $agentName,
+                                                                                $this.config('ca_server')
+                                                                                )
+                                        );
             if ($result.Get_Item('exitcode') -ne 0) {
                 throw $result.Get_Item('message');
             }
             $this.info($result.Get_Item('message'));
 
             # Validate if set against a given fingerprint for the CA
-            if (-Not $this.validateCertificate($icingaPkiDir + 'trusted-master.crt')) {
+            if (-Not $this.validateCertificate([string]::Format('{0}trusted-master.crt', $icingaCertDir))) {
                 throw 'Failed to validate against CA authority';
             }
 
             # Request certificate
             $this.info("Requesting Icinga 2 certificates");
-            $result = $this.startProcess($icingaBinary, $FALSE, 'pki request --host ' + $this.config('ca_server') + ' --port ' + $this.config('ca_port') + ' --ticket ' + $this.getProperty('icinga_ticket') + ' --key ' + $icingaPkiDir + $agentName + '.key --cert ' + $icingaPkiDir + $agentName + '.crt --trustedcert ' + $icingaPkiDir + 'trusted-master.crt --ca ' + $icingaPkiDir + 'ca.crt');
+            $result = $this.startProcess($icingaBinary, $FALSE, [string]::Format('pki request --host {0} --port {1} --ticket {2} --key {3}{4}.key --cert {3}{4}.crt --trustedcert {3}trusted-master.crt --ca {3}ca.crt',
+                                                                                $this.config('ca_server'),
+                                                                                $this.config('ca_port'),
+                                                                                $this.getProperty('icinga_ticket'),
+                                                                                $icingaCertDir,
+                                                                                $agentName
+                                                                                )
+                                        );
             if ($result.Get_Item('exitcode') -ne 0) {
                 if ($this.getProperty('agent_name_change')) {
                     $this.exception('You have changed the naming of the Agent (upper / lower case) and therefor your certificates are no longer valid. Certificate generation failed because of a possible wrong ticket. Please ensure to set the "hostname" within the Icinga 2 configuration correctly and re-run this script.');
@@ -1575,15 +1823,11 @@ object ApiListener "api" {
                 throw $result.Get_Item('message');
             }
             $this.info($result.Get_Item('message'));
-
-            # Rename the certificates to apply possible upper / lower case naming chanes
-            # which is not done by Windows by default
-            Move-Item (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.key')) (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.key'))
-            Move-Item (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.crt')) (Join-Path -Path $icingaPkiDir -ChildPath ($agentName + '.crt'))
-
+            $this.fixCertificateNames($agentName, $icingaCertDir);
             $this.setProperty('require_restart', 'true');
+            $this.setProperty('certs_created', $TRUE);
         } else  {
-            $this.info('Skipping certificate generation. One or more of the following arguments is not set: -AgentName <name> -CAServer <server> -Ticket <ticket>');
+            $this.info('Skipping certificate generation. One or more of the following arguments is not set: -CAServer <server> -Ticket <ticket>');
         }
     }
 
@@ -1595,11 +1839,15 @@ object ApiListener "api" {
 
         [System.Object]$certFingerprint = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2;
         $certFingerprint.Import($certificate);
-        $this.info('Certificate fingerprint: ' + $certFingerprint.Thumbprint);
+        $this.info([string]::Format('Certificate fingerprint: "{0}"', $certFingerprint.Thumbprint));
 
         if ($this.config('ca_fingerprint')) {
             if (-Not ($this.config('ca_fingerprint') -eq $certFingerprint.Thumbprint)) {
-                $this.error('CA fingerprint does not match! Expected: ' + $this.config('ca_fingerprint') + ', given: ' + $certFingerprint.Thumbprint);
+                $this.error([string]::Format('CA fingerprint does not match! Expected: "{0}", given: "{1}"',
+                                            $certFingerprint.Thumbprint,
+                                            $this.config('ca_fingerprint')
+                                            )
+                            );
                 return $FALSE;
             } else {
                 $this.info('CA fingerprint validation successfull');
@@ -1612,19 +1860,53 @@ object ApiListener "api" {
     }
 
     #
+    # In case we migrate from an Icinga 2 Version with the new certificate path to
+    # a version with the old one, we require to migrate the certificates
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'migrateCertificates' -value {
+        if (-Not $this.getProperty('require_cert_migration')) {
+            return;
+        }
+
+        [string]$agentName = $this.getProperty('local_hostname');
+
+        [string]$caPath = Join-Path -Path $Env:ProgramData -ChildPath 'icinga2\var\lib\icinga2\certs\ca.crt';
+        [string]$newCA = Join-Path -Path $this.getProperty('config_dir') -ChildPath 'pki\ca.crt';
+        [string]$certPath = Join-Path -Path $Env:ProgramData -ChildPath ([string]::Format('icinga2\var\lib\icinga2\certs\{0}.crt', $agentName));
+        [string]$newCertPath = Join-Path -Path $this.getProperty('config_dir') -ChildPath ([string]::Format('pki\{0}.crt', $agentName));
+        [string]$keyPath = Join-Path -Path $Env:ProgramData -ChildPath ([string]::Format('icinga2\var\lib\icinga2\certs\{0}.key', $agentName));
+        [string]$newKeyPath = Join-Path -Path $this.getProperty('config_dir') -ChildPath ([string]::Format('pki\{0}.key', $agentName));
+
+        if (Test-Path $caPath) {
+            Copy-Item $caPath $newCA;
+            $this.info([string]::Format('Migrating ca.crt from "{0}" to "{1}".', $caPath, $newCA));
+        }
+
+        if (Test-Path $certPath) {
+            Copy-Item $certPath $newCertPath;
+            $this.info([string]::Format('Migrating {0}.crt from "{1}" to "{2}".', $agentName, $certPath, $newCertPath));
+        }
+
+        if (Test-Path $keyPath) {
+            Copy-Item $keyPath $newKeyPath;
+            $this.info([string]::Format('Migrating {0}.crt from "{1}" to "{2}".', $agentName, $keyPath, $newKeyPath));
+        }
+    }
+
+    #
     # Check the Icinga install directory and determine
     # if the certificates are both available for the
     # Agent. If not, return FALSE
     #
     $installer | Add-Member -membertype ScriptMethod -name 'hasCertificates' -value {
-        [string]$icingaPkiDir = Join-Path -Path $this.getProperty('config_dir') -ChildPath 'pki';
+        [string]$icingaCertDir = Join-Path -Path $this.getProperty('cert_dir') -ChildPath '\';
         [string]$agentName = $this.getProperty('local_hostname');
         [bool]$filesExist = $FALSE;
         # First check if the files in generell exist
         if (
-            ((Test-Path ((Join-Path -Path $icingaPkiDir -ChildPath $agentName) + '.key'))) `
-            -And (Test-Path ((Join-Path -Path $icingaPkiDir -ChildPath $agentName) + '.crt')) `
-            -And (Test-Path (Join-Path -Path $icingaPkiDir -ChildPath 'ca.crt'))
+            ((Test-Path ((Join-Path -Path $icingaCertDir -ChildPath $agentName) + '.key'))) `
+            -And (Test-Path ((Join-Path -Path $icingaCertDir -ChildPath $agentName) + '.crt')) `
+            -And (Test-Path (Join-Path -Path $icingaCertDir -ChildPath 'ca.crt'))
         ) {
             $filesExist = $TRUE;
         }
@@ -1632,14 +1914,14 @@ object ApiListener "api" {
         # In case they do, check if the characters (upper / lowercase) are matching as well
         if ($filesExist -eq $TRUE) {
 
-            [string]$hostCRT = $agentName + '.crt';
-            [string]$hostKEY = $agentName + '.key';
+            [string]$hostCRT = [string]::Format('{0}.crt', $agentName);
+            [string]$hostKEY = [string]::Format('{0}.key', $agentName);
 
-            # Get all files inside your PKIU directory
-            $certificates = Get-ChildItem -Path $icingaPkiDir;
+            # Get all files inside your certificate directory
+            $certificates = Get-ChildItem -Path $icingaCertDir;
             # Now loop each file and match their name with our hostname
             foreach ($cert in $certificates) {
-                if($cert.Name.toLower() -eq $hostCRT.toLower() -Or $cert.Name.toLower() -eq $hostKEY.toLower()) {
+                if ($cert.Name.toLower() -eq $hostCRT.toLower() -Or $cert.Name.toLower() -eq $hostKEY.toLower()) {
                     $file = $cert.Name.Replace('.key', '').Replace('.crt', '');
                     if (-Not ($file -clike $agentName)) {
                         $this.warn([string]::Format('Certificate file {0} is not matching the hostname {1}. Certificate generation is required.', $cert.Name, $agentName));
@@ -1678,7 +1960,11 @@ object ApiListener "api" {
     # and intended version of the Agent
     #
     $installer | Add-Member -membertype ScriptMethod -name 'printAgentUpdateMessage' -value {
-        $this.info('Current Icinga 2 Agent Version (' + $this.getProperty('agent_version') + ') is not matching intended version (' + $this.config('agent_version') + '). Downloading new version...');
+        $this.info([string]::Format('Current Icinga 2 Agent Version ({0}) is not matching intended version ({1}). Downloading new version...',
+                                    $this.getProperty('agent_version'),
+                                    $this.config('agent_version')
+                                    )
+                );
     }
 
     #
@@ -1771,8 +2057,6 @@ object ApiListener "api" {
             $this.backupDefaultConfig();
             $this.writeConfig($this.getProperty('new_icinga_config'));
 
-            $this.flushIcingaApiDirectory();
-
             # Check if the config is valid and rollback otherwise
             if (-Not $this.isIcingaConfigValid()) {
                 $this.error('Icinga 2 config validation failed. Rolling back to previous version.');
@@ -1789,6 +2073,16 @@ object ApiListener "api" {
                 $this.info('Icinga 2 configuration check successfull.');
             }
         } else {
+            # Throw an exception in case we use a parent zone which is a global zone
+            foreach ($zone in $this.config('global_zones')) {
+                if ($zone -eq $this.config('parent_zone')) {
+                    $this.exception([string]::Format('The zone specified for the Icinga 2 Agent to connect to is set to "{0}". This is a global zone which cannot be used. Please review either your arguments used for this module or the Host-Template within the Icinga Director to use the correct zone for this Agent.', $this.config('parent_zone')));
+                }
+            }
+            # In case no parent endpoints are configured, print a warning as we can't write valid Icinga 2 configuration
+            if (-Not $this.config('parent_endpoints')) {
+                $this.warn('No parent endpoints have been defined within the module call. Either specify them by using the "-ParentEndpoints" argument or ensure you configured your Icinga Director properly in case you are using the Self-Service API. Icinga2.conf has not been generated.');
+            }
             $this.info('icinga2.conf did not change or required parameters not set. Nothing to do');
         }
     }
@@ -1849,17 +2143,23 @@ object ApiListener "api" {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'fetchHostnameOrFQDN' -value {
         if ($this.config('fetch_agent_fqdn') -And (Get-WmiObject win32_computersystem).Domain) {
-            [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName + '.' + (Get-WmiObject win32_computersystem).Domain;
+            [string]$hostname = [string]::Format('{0}.{1}',
+                                                (Get-WmiObject win32_computersystem).DNSHostName,
+                                                (Get-WmiObject win32_computersystem).Domain
+                                                );
             $this.setProperty('local_hostname', $hostname);
-            $this.info('Setting internal Agent Name to ' + $this.getProperty('local_hostname'));
+            $this.info([string]::Format('Setting internal Agent Name to "{0}"', $this.getProperty('local_hostname')));
         } elseif ($this.config('fetch_agent_name')) {
             [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName;
             $this.setProperty('local_hostname', $hostname);
-            $this.info('Setting internal Agent Name to ' + $this.getProperty('local_hostname'));
+            $this.info([string]::Format('Setting internal Agent Name to "{0}"', $this.getProperty('local_hostname')));
         }
 
          # Add additional variables to our config for more user-friendly usage
-        [string]$host_fqdn = (Get-WmiObject win32_computersystem).DNSHostName + '.' + (Get-WmiObject win32_computersystem).Domain;
+        [string]$host_fqdn = [string]::Format('{0}.{1}',
+                                                (Get-WmiObject win32_computersystem).DNSHostName,
+                                                (Get-WmiObject win32_computersystem).Domain
+                                                );
         [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName;
 
         $this.setProperty('fqdn', $host_fqdn);
@@ -1915,10 +2215,10 @@ object ApiListener "api" {
             [bool]$found = $FALSE;
             # Loop through all found IPv4 IP's and try to locate the correct one
             for ($index = 0; $index -lt $ipCount; $index++) {
-                $usedIP = $this.getProperty('ipaddress[' + $index + ']');
+                $usedIP = $this.getProperty([string]::Format('ipaddress[{0}]', $index));
                 if ($this.isIPv4AddressInsideLookup($fqdnLookup, $hostnameLookup, $usedIP)) {
                     # Swap IP values once we found a match and exit this loop
-                    $this.setProperty('ipaddress[' + $index + ']', $this.getProperty('ipaddress'));
+                    $this.setProperty([string]::Format('ipaddress[{0}]', $index), $this.getProperty('ipaddress'));
                     $this.setProperty('ipaddress', $usedIP);
                     $found = $TRUE;
                     break;
@@ -1926,12 +2226,18 @@ object ApiListener "api" {
             }
 
             if ($found -eq $FALSE) {
-                $this.warn([string]::Format('Failed to lookup primary IP for this host. Unable to match nslookup against any IPv4 addresses on this system. Using {0} as default now. Access it with &ipaddress& for all JSON requests.', $this.getProperty('ipaddress')));
+                $this.warn([string]::Format('Failed to lookup primary IP for this host. Unable to match nslookup against any IPv4 addresses on this system. Using {0} as default now. Access it with &ipaddress& for all JSON requests.',
+                                            $this.getProperty('ipaddress')
+                                            )
+                        );
                 return;
             }
         }
 
-        $this.info([string]::Format('Setting IP {0} as primary IP for this host for all requests. Access it with &ipaddress& for all JSON requests.', $usedIP));
+        $this.info([string]::Format('Setting IP {0} as primary IP for this host for all requests. Access it with &ipaddress& for all JSON requests.',
+                                    $usedIP
+                                    )
+                    );
     }
 
     #
@@ -1953,14 +2259,18 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'doLookupIPAddressesForHostname' -value {
         param([string]$hostname);
 
-        $this.info('Trying to fetch Host IP-Address for hostname: ' + $hostname);
+        $this.info([string]::Format('Trying to fetch Host IP-Address for hostname: {0}', $hostname));
         try {
             [array]$ipAddressArray = [Net.DNS]::GetHostEntry($hostname).AddressList;
             $this.addHostIPAddressToProperties($ipAddressArray);
             return $TRUE;
         } catch {
             # Write an error in case something went wrong
-            $this.warn('Failed to lookup IP-Address with DNS-Lookup for ' + $hostname + ': ' + $_.Exception.Message);
+            $this.warn([string]::Format('Failed to lookup IP-Address with DNS-Lookup for "{0}": {1}',
+                                        $hostname,
+                                        $_.Exception.Message
+                                        )
+                    );
         }
         return $FALSE;
     }
@@ -1982,7 +2292,7 @@ object ApiListener "api" {
                     $this.setProperty('ipaddress', $address);
                 }
                 # Now add the IP's with an array like construct
-                $this.setProperty('ipaddress[' + $ipV4Index + ']', $address);
+                $this.setProperty([string]::Format('ipaddress[{0}]', $ipV4Index), $address);
                 $ipV4Index += 1;
             } else { #IPv6
                 # If the first entry of our default ipaddress is empty -> add it
@@ -1990,7 +2300,7 @@ object ApiListener "api" {
                     $this.setProperty('ipaddressV6', $address);
                 }
                 # Now add the IP's with an array like construct
-                $this.setProperty('ipaddressV6[' + $ipV6Index + ']', $address);
+                $this.setProperty([string]::Format('ipaddressV6[{0}]', $ipV6Index), $address);
                 $ipV6Index += 1;
             }
         }
@@ -2014,7 +2324,7 @@ object ApiListener "api" {
         }
 
         if ($hostname -cne $this.getProperty('local_hostname')) {
-            $this.info('Transforming Agent Name to ' + $hostname);
+            $this.info([string]::Format('Transforming Agent Name to {0}', $hostname));
         }
 
         $this.setProperty('local_hostname', $hostname);
@@ -2085,37 +2395,14 @@ object ApiListener "api" {
             $jsonString = $jsonString.Replace('&' + $ipAddressString + '&', $this.getProperty($ipAddressString));
         } else {
             # If something goes wrong we require to notify our user
-            $this.error('Failed to replace IP-Address placeholder. Invalid format for IP-Type ' + $ipType);
+            $this.error([string]::Format('Failed to replace IP-Address placeholder. Invalid format for IP-Type {0}',
+                                        $ipType
+                                        )
+                    );
         }
 
         # Return our new JSON-String
         return $jsonString;
-    }
-
-    #
-    # Check if the local host key is still valid
-    #
-    $installer | Add-Member -membertype ScriptMethod -name 'isHostAPIKeyValid' -value {
-
-        # If no API key is yet defined, we will require to fetch one
-        if (-Not $this.getProperty('director_host_token')) {
-            return $FALSE;
-        }
-
-        # Check against the powershell-parameter URL if our host API key is valid
-        # If we receive content -> everything is ok
-        # If we receive any 4xx code, propably the API Key is invalid and we require to fetch a new one
-        [string]$url = $this.config('director_url') + 'self-service/powershell-parameters?key=' + $this.getProperty('director_host_token');
-        [string]$response = $this.createHTTPRequest($url, '', 'POST', 'application/json', $TRUE, $FALSE);
-        if ($this.isHTTPResponseCode($response)) {
-            if ($response[0] -eq '4') {
-                $this.info('Target host is already present inside Icinga Director without API-Key. Re-Creating key...');
-                return $FALSE;
-            }
-        }
-
-        $this.info('Host API-Key validation successfull.');
-        return $TRUE;
     }
 
     #
@@ -2126,40 +2413,55 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'createHostInsideIcingaDirector' -value {
 
         if ($this.config('director_url') -And $this.getProperty('local_hostname')) {
-            if ($this.config('director_auth_token')) {
-                if ($this.requireIcingaDirectorAPIVersion('1.4.0', '[Function::createHostInsideIcingaDirector]')) {
+            if ($this.getProperty('use_self_service_api')) {
 
-                    # Check if our API Host-Key is present and valid
-                    if ($this.isHostAPIKeyValid()) {
-                        return;
-                    }
+                if ($this.getProperty('icinga_host_exist')) {
+                    $this.info('Host is already registered within Icinga Director.');
+                    return;
+                }
 
-                    # If not, try to create the host and fetch the API key
-                    [string]$apiKey = $this.config('director_auth_token');
-                    [string]$url = $this.config('director_url') + 'self-service/register-host?name=' + $this.getProperty('local_hostname') + '&key=' + $apiKey;
-                    [string]$json = '';
-                    # If no JSON Object is defined (should be default), we shall create one
-                    if (-Not $this.config('director_host_object')) {
-                        [string]$hostname = $this.getProperty('local_hostname');
-                        $json = '{ "address": "' + $hostname + '", "display_name": "' + $hostname + '" }';
+                if ($this.getProperty('no_valid_api_token')) {
+                    $this.info('Skipping host creation over Icinga Director Self-Service API, as no valid token has been specified.');
+                    return;
+                }
+
+                # If not, try to create the host and fetch the API key
+                [string]$apiKey = $this.config('director_auth_token');
+                [string]$url = [string]::Format('{0}self-service/register-host?name={1}&key={2}',
+                                                $this.config('director_url'),
+                                                $this.getProperty('local_hostname'),
+                                                $apiKey
+                                                );
+                [string]$json = '';
+                # If no JSON Object is defined (should be default), we shall create one
+                if (-Not $this.config('director_host_object')) {
+                    [string]$hostname = $this.getProperty('local_hostname');
+                    $json = [string]::Format('{ "address": "{0}", "display_name": "{0}" }',
+                                            $hostname
+                                            );
+                } else {
+                    # Otherwise use the specified one and replace the host object placeholders
+                    $json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
+                }
+
+                $this.info([string]::Format('Creating host "{0}" over API token inside Icinga Director.', $this.getProperty('local_hostname')));
+
+                [string]$httpResponse = $this.createHTTPRequest($url, $json, 'POST', 'application/json', $TRUE, $TRUE);
+
+                if ($this.isHTTPResponseCode($httpResponse) -eq $FALSE) {
+                    $this.setProperty('director_host_token', $httpResponse);
+                    $this.writeHostAPIKeyToDisk();
+                    [string]$response = $this.fetchIcingaDirectorSelfServiceAPIConfig($httpResponse, $FALSE);
+                    if ($response -ne '200') {
+                        $this.error([string]::Format('Failed to fetch config arguments of Icinga Director Self-Service API after adding new host to Icinga Director. Response was "{0}"', $httpResponse));
                     } else {
-                        # Otherwise use the specified one and replace the host object placeholders
-                        $json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
+                        $this.info('Successfully fetched configuration for this host over Self-Service API.')
                     }
-
-                    $this.info('Creating host ' + $this.getProperty('local_hostname') + ' over API token inside Icinga Director.');
-
-                    [string]$httpResponse = $this.createHTTPRequest($url, $json, 'POST', 'application/json', $TRUE, $TRUE);
-
-                    if ($this.isHTTPResponseCode($httpResponse) -eq $FALSE) {
-                        $this.setProperty('director_host_token', $httpResponse);
-                        $this.writeHostAPIKeyToDisk();
+                } else {
+                    if ($httpResponse -eq '400') {
+                        throw [string]::Format("Received response 400 from Icinga Director. In general this means you tried to re-create an existing host inside the Icinga Director with a host template API key, but the host itself has already a key assigned. Please drop the API key for the host '{0}' and re-run this script to claim ownership. This error usually occures in case the host token was removed manually from the host.", $this.getProperty('local_hostname'));
                     } else {
-                        if ($httpResponse -eq '400') {
-                            $this.warn('Received response 400 from Icinga Director. Possibly you tried to re-create the host ' + $this.getProperty('local_hostname') + '. In case the host already exists, please remove the Host-Api-Key inside the Icinga Director and try again.');
-                        } else {
-                            $this.warn('Failed to create host. Response code ' + $httpResponse);
-                        }
+                        $this.warn([string]::Format('Failed to create host. Response code {0}', $httpResponse));
                     }
                 }
             } elseif ($this.config('director_host_object'))  {
@@ -2168,22 +2470,30 @@ object ApiListener "api" {
                 # Replace the host object placeholders
                 [string]$host_object_json = $this.doReplaceJSONPlaceholders($this.config('director_host_object'));
                 # Create the host object inside the director
-                [string]$httpResponse = $this.createHTTPRequest($url, $host_object_json, 'PUT', 'application/json', $FALSE, $FALSE);
+                [string]$httpResponse = $this.createHTTPRequest($url, $host_object_json, 'PUT', 'application/json', $FALSE, $this.config('debug_mode'));
 
                 if ($this.isHTTPResponseCode($httpResponse) -eq $FALSE) {
-                    $this.info('Placed query for creating host ' + $this.getProperty('local_hostname') + ' inside Icinga Director. Config: ' + $httpResponse);
+                    $this.info([string]::Format('Placed query for creating host "{0}" inside Icinga Director. Config: {1}',
+                                                $this.getProperty('local_hostname'),
+                                                $httpResponse
+                                                )
+                                );
                 } else {
                     if ($httpResponse -eq '422') {
-                        $this.warn('Failed to create host ' + $this.getProperty('local_hostname') + ' inside Icinga Director. The host seems to already exist.');
+                        $this.warn([string]::Format('Failed to create host "{0}" inside Icinga Director. The host seems to already exist.', $this.getProperty('local_hostname')));
                     } else {
-                        $this.error('Failed to create host ' + $this.getProperty('local_hostname') + ' inside Icinga Director. Error response ' + $httpResponse);
+                        $this.error([string]::Format('Failed to create host "{0}" inside Icinga Director. Error response {1}',
+                                                    $this.getProperty('local_hostname'),
+                                                    $httpResponse
+                                                    )
+                                );
                     }
                 }
                 # Shall we deploy the config for the generated host?
                 if ($this.config('director_deploy_config')) {
                     $url = $this.config('director_url') + 'config/deploy';
                     [string]$httpResponse = $this.createHTTPRequest($url, '', 'POST', 'application/json', $FALSE, $TRUE);
-                    $this.info('Deploying configuration from Icinga Director to Icinga. Result: ' + $httpResponse);
+                    $this.info([string]::Format('Deploying configuration from Icinga Director to Icinga. Result: {0}', $httpResponse));
                 }
             }
         }
@@ -2195,7 +2505,11 @@ object ApiListener "api" {
     $installer | Add-Member -membertype ScriptMethod -name 'writeHostAPIKeyToDisk' -value {
         if (Test-Path ($this.getProperty('config_dir'))) {
             [string]$apiFile = Join-Path -Path $this.getProperty('config_dir') -ChildPath 'icingadirector.token';
-            $this.info('Writing host API-Key "' + $this.getProperty('director_host_token') + '" to "' + $apiFile + '"');
+            $this.info([string]::Format('Writing host API-Key "{0}" to "{1}"',
+                                        $this.getProperty('director_host_token'),
+                                        $apiFile
+                                        )
+                        );
             [System.IO.File]::WriteAllText($apiFile, $this.getProperty('director_host_token'));
         }
     }
@@ -2208,7 +2522,11 @@ object ApiListener "api" {
         if (Test-Path ($apiFile)) {
             [string]$hostToken = [System.IO.File]::ReadAllText($apiFile);
             $this.setProperty('director_host_token', $hostToken);
-            $this.info('Reading host api token ' + $hostToken + ' from ' + $apiFile);
+            $this.info([string]::Format('Reading host api token "{0}" from "{1}"',
+                                        $hostToken,
+                                        $apiFile
+                                        )
+                        );
         } else {
             $this.setProperty('director_host_token', '');
         }
@@ -2225,7 +2543,7 @@ object ApiListener "api" {
             # would result in making this request quite useless
 
             [string]$url = $this.config('director_url') + 'self-service/api-version';
-            [string]$versionString = $this.createHTTPRequest($url, '', 'POST', 'application/json', $FALSE, $FALSE);
+            [string]$versionString = $this.createHTTPRequest($url, '', 'POST', 'application/json', $FALSE, $this.config('debug_mode'));
 
             if ($this.isHTTPResponseCode($versionString) -eq $FALSE) {
                 # Remove all characters we do not need inside the string
@@ -2234,12 +2552,56 @@ object ApiListener "api" {
                 $this.setProperty('icinga_director_api_version', $versionString);
                 return;
             } else {
+                if ($versionString -eq '900') {
+                    throw 'Failed to query Icinga Director API. Received error code 900. Please enable debug mode with -DebugMode for the script run to reteive additional information regarding this error.';
+                }
                 $this.warn('You seem to use an older Version of the Icinga Director, as no API version could be retreived.');
                 $this.setProperty('icinga_director_api_version', '0.0.0');
                 return;
             }
         }
         $this.setProperty('icinga_director_api_version', 'false');
+    }
+
+    #
+    # Set Icinga 2 Agent Version based no the installed Agent
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'setIcinga2AgentVersion' -value {
+        param([string]$versionString)
+
+        if (-Not $versionString) {
+            return;
+        }
+
+        $this.setProperty('icinga2_agent_version', $versionString.Split('.'));
+    }
+
+    #
+    # Compare Version-Strings and check if we are running a higher or lower version
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'validateVersions' -value {
+        param([string]$requiredVersion, [array]$providedVersion);
+
+        if (-Not $requiredVersion -Or -Not $providedVersion) {
+            return $FALSE;
+        }
+
+        [array]$requiredVersion = $requiredVersion.Split('.');
+        $currentVersion = $providedVersion;
+
+        if ([int]$requiredVersion[0] -gt [int]$currentVersion[0]) {
+            return $FALSE;
+        }
+
+        if ([int]$requiredVersion[1] -gt [int]$currentVersion[1]) {
+            return $FALSE;
+        }
+
+        if ([int]$requiredVersion[1] -ge [int]$currentVersion[1] -And [int]$requiredVersion[2] -gt [int]$currentVersion[2]) {
+            return $FALSE;
+        }
+
+        return $TRUE;
     }
 
     #
@@ -2254,28 +2616,23 @@ object ApiListener "api" {
         }
 
         if ($this.getProperty('icinga_director_api_version') -eq '0.0.0') {
-            $this.error('The feature ' + $functionName + ' requires Icinga Director API-Version ' + $version + '. Your Icinga Director version does not support the API.');
+            $this.error([string]::Format('The feature "{0}" requires Icinga Director API-Version {1}. Your Icinga Director version does not support the API.',
+                                        $functionName,
+                                        $version
+                                        )
+                        );
             return $FALSE;
         }
 
-        [bool]$versionValid = $TRUE;
-        [array]$requiredVersion = $version.Split('.');
-        $currentVersion = $this.getProperty('icinga_director_api_version');
-
-        if ($requiredVersion[0] -gt $currentVersion[0]) {
-            $versionValid = $FALSE;
-        }
-
-        if ($requiredVersion[1] -gt $currentVersion[2]) {
-            $versionValid = $FALSE;
-        }
-
-        if ($requiredVersion[1] -ge $currentVersion[2] -And $requiredVersion[2] -gt $currentVersion[4]) {
-            $versionValid = $FALSE;
-        }
+        [bool]$versionValid = $this.validateVersions($version, $this.getProperty('icinga_director_api_version').Split('.'));
 
         if ($versionValid -eq $FALSE) {
-            $this.error('The feature ' + $functionName + ' requires Icinga Director API-Version ' + $version + '. Got version ' + $currentVersion[0] + '.' + $currentVersion[2] + '.' + $currentVersion[4]);
+            $this.error([string]::Format('The feature "{0}" requires Icinga Director API-Version {1}. Got version {2}',
+                                        $functionName,
+                                        $version,
+                                        $this.getProperty('icinga_director_api_version')
+                                        )
+                        );
             return $FALSE;
         }
 
@@ -2323,38 +2680,111 @@ object ApiListener "api" {
     }
 
     #
-    # This function will fetch all arguments configured inside the Icinga Director
-    # to allow an entire auto configuration of the Icinga 2 Agent
+    # This function will connect to the Icinga Director Self-Service API
+    # and try to fetch the configuration for our host or the global
+    # configuraton, depending if the Host-Token does exist and is valid
+    # or in case it does not exist or is invalid if the API-tiken is
+    # specified
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'fetchArgumentsFromIcingaDirector' -value {
-        param([bool]$globalConfig);
-
-        # By default we will use the Host-Api-Key stored on the disk (if written on)
-        [string]$key = $this.getProperty('director_host_token');
-
-        # In case we are not having the Host-Api-Key already, use the value from the argument
-        if ($globalConfig -eq $TRUE) {
-             $key = $this.config('director_auth_token');
-        }
-
-        # If no key is specified, we are not having set one and should leave this function
-        if ($key -eq '') {
+    $installer | Add-Member -membertype ScriptMethod -name 'connectToIcingaDirectorSelfServiceAPI' -value {
+        if (-Not $this.config('director_url')) {
             return;
         }
 
-        if ($this.requireIcingaDirectorAPIVersion('1.4.0', '[Function::fetchArgumentsFromIcingaDirector]')) {
-            [string]$url = $this.config('director_url') + 'self-service/powershell-parameters?key=' + $key;
-            [string]$argumentString = $this.createHTTPRequest($url, '', 'POST', 'application/json', $TRUE, $FALSE);
+        if ($this.config('director_user') -And $this.config('director_password')) {
+            $this.info('User and Password for Icinga Director have been specified, Self-Service API will not be used.');
+            $this.setProperty('use_password_auth', $TRUE);
+            return;
+        }
 
-            if ($this.isHTTPResponseCode($argumentString) -eq $FALSE) {
-                # First split the entire result based in new-lines into an array
-                [array]$arguments = $argumentString.Split("`n");
+        $this.setProperty('icinga_host_exist', $FALSE);
 
-                # Now loop all elements and construct a dictionary for all values
-                foreach ($item in $arguments) {
-                    if ($item.Contains(':')) {
-                        [int]$argumentPos = $item.IndexOf(":");
-                        [string]$argument = $item.Substring(0, $argumentPos)
+        [string]$response = $this.fetchIcingaDirectorSelfServiceAPIConfig($this.getProperty('director_host_token'), $FALSE);
+        switch ($response) {
+            '200' {
+                $this.info('Connected successfully to Icinga Director Self-Service API over stored host token.');
+                $this.setProperty('icinga_host_exist', $TRUE);
+                $this.setProperty('use_self_service_api', $TRUE);
+                return;
+            };
+            '404' {
+                $this.warn('The local host token could not be found inside the Icinga Director.');
+            };
+            '500' {
+                $this.warn('An internal server error occured while processing your local host token against the Icinga Director Self-Service API.');
+            };
+        }
+
+        if ($this.config('director_auth_token') -eq '' -And $this.getProperty('director_host_token')) {
+            $this.error('No template API token has been specified and the host token seems no longer valid.')
+            $this.setProperty('no_valid_api_token', $TRUE);
+            return;
+        }
+
+        # In case no host-token is set or no longer valid, use our API token if
+        # specified to fetch the global configuration from the API
+        $response = $this.fetchIcingaDirectorSelfServiceAPIConfig($this.config('director_auth_token'), $FALSE);
+        switch ($response) {
+            '200' {
+                $this.info('Connected successfully to Icinga Director Self-Service API over API token.');
+                $this.setProperty('use_self_service_api', $TRUE);
+                return;
+            };
+            '404' {
+                $this.warn('Failed to query Icinga Director Self-Service API.');
+            };
+            '500' {
+                $this.warn('An internal server error occured while processing your API token against the Icinga Director Self-Service API.');
+            };
+            '900' {
+                # Nothing to do
+                return;
+            };
+        }
+
+        if ($this.getProperty('director_host_token') -Or $this.config('director_auth_token')) {
+            $this.error(
+                [string]::Format('Failed to connect to Icinga Director Self-Service API. Tokens were specified but informations could not be fetched. Please review your tokens: Host: "{0}", API: "{1}".',
+                                    $this.getProperty('director_host_token'),
+                                    $this.config('director_auth_token')
+                                    ));
+            $this.setProperty('no_valid_api_token', $TRUE);
+        }
+    }
+
+    #
+    # This function will try to call the Icinga Director API
+    # with either a host-token or our API-token and retreive
+    # our arguments for processing with the configuration of
+    # our Icinga 2 Agent Setup
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'fetchIcingaDirectorSelfServiceAPIConfig' -value {
+        param([string]$token, [bool]$writeError);
+        if (-Not $this.config('director_url') -Or $token -eq '') {
+            return '900';
+        }
+
+        if (-Not $this.requireIcingaDirectorAPIVersion('1.4.0', '[Function::fetchIcingaDirectorSelfServiceAPIConfig]')) {
+            return '900';
+        }
+
+        [string]$url = [string]::Format('{0}self-service/powershell-parameters?key={1}',
+                                        $this.config('director_url'),
+                                        $token
+                                        );
+        [string]$argumentString = $this.createHTTPRequest($url, '', 'POST', 'application/json', $TRUE, $this.config('debug_mode'));
+
+        if ($this.isHTTPResponseCode($argumentString) -eq $FALSE) {
+            # First split the entire result based in new-lines into an array
+            [array]$arguments = $argumentString.Split("`n");
+
+            # Now loop all elements and construct a dictionary for all values
+            foreach ($item in $arguments) {
+                if ($item.Contains(':')) {
+                    $this.debug([string]::Format('Processing Director API config argument "{0}"', $item));
+                    [int]$argumentPos = $item.IndexOf(":");
+                    [string]$argument = $item.Substring(0, $argumentPos);
+                    if (($argumentPos + 2) -le $item.Length) {
                         [string]$value = $item.Substring($argumentPos + 2, $item.Length - 2 - $argumentPos);
                         $value = $value.Replace("`r", '');
                         $value = $value.Replace("`n", '');
@@ -2371,14 +2801,21 @@ object ApiListener "api" {
                                 $this.overrideConfig($argument, $value);
                             }
                         }
+                    } else {
+                        $this.debug([string]::Format('Got key argument "{0}" without a value.', $argument));
                     }
                 }
-            } else {
-                $this.error('Received ' + $argumentString + ' from Icinga Director. Possibly your API token is no longer valid or the object does not exist.');
             }
-            # Ensure we generate the required configuration content
-            $this.generateConfigContent();
+        } else {
+            if ($writeError) {
+                $this.error([string]::Format('Received "{0}" from Icinga Director. Possibly your API token is no longer valid or the object does not exist.', $argumentString));
+            }
+            return $argumentString;
         }
+
+        # Ensure we generate the required configuration content
+        $this.generateConfigContent();
+        return '200';
     }
 
     #
@@ -2388,14 +2825,22 @@ object ApiListener "api" {
     #
     $installer | Add-Member -membertype ScriptMethod -name 'fetchTicketFromIcingaDirector' -value {
 
-        if ($this.getProperty('director_host_token')) {
+        if ($this.getProperty('director_host_token') -And -Not $this.getProperty('use_password_auth')) {
+            if ($this.getProperty('no_valid_api_token')) {
+                $this.info('Skipping fetching of SSL ticket, as no valid API token has been specified.');
+                return;
+            }
             if ($this.requireIcingaDirectorAPIVersion('1.4.0', '[Function::fetchTicketFromIcingaDirector]')) {
-                [string]$url = $this.config('director_url') + 'self-service/ticket?key=' + $this.getProperty('director_host_token');
+                [string]$url = [string]::Format('{0}self-service/ticket?key={1}',
+                                                $this.config('director_url'),
+                                                $this.getProperty('director_host_token')
+                                                );
                 [string]$httpResponse = $this.createHTTPRequest($url, '', 'POST', 'application/json', $TRUE, $TRUE);
                 if ($this.isHTTPResponseCode($httpResponse) -eq $FALSE) {
                     $this.setProperty('icinga_ticket', $httpResponse);
+                    $this.info([string]::Format('Fetched ticket "{0}" from Icinga Director', $httpResponse));
                 } else {
-                    $this.error('Failed to fetch Ticket from Icinga Director. Error response ' + $httpResponse);
+                    $this.error([string]::Format('Failed to fetch Ticket from Icinga Director. Error response {0}', $httpResponse));
                 }
             }
         } else {
@@ -2410,14 +2855,25 @@ object ApiListener "api" {
                     # If we only got two ", we should have received a valid ticket
                     # Otherwise we need to throw an error
                     if ($quotes.Matches.Count -ne 2) {
-                        throw 'Failed to fetch ticket for host ' + $this.getProperty('local_hostname') +'. Got ' + $httpResponse + ' as ticket.';
+                        throw [string]::Format('Failed to fetch ticket for host "{0}". Got "{1}" as ticket.',
+                                                $this.getProperty('local_hostname'),
+                                                $httpResponse
+                                                );
                     } else {
                         $httpResponse = $httpResponse.subString(1, $httpResponse.length - 3);
-                        $this.info('Fetched ticket ' + $httpResponse + ' for host ' + $this.getProperty('local_hostname') + '.');
+                        $this.info([string]::Format('Fetched ticket "{0}" for host "{1}".',
+                                                    $httpResponse,
+                                                    $this.getProperty('local_hostname')
+                                                    )
+                                );
                         $this.setProperty('icinga_ticket', $httpResponse);
                     }
                 } else {
-                    $this.error('Failed to fetch Ticket from Icinga Director. Error response ' + $httpResponse);
+                    if ($httpResponse -eq '404') {
+                        $this.error('Unable to fetch host ticket from Icinga Director. The Host object could not be found. Ensure the object is already present or created by specifying the -DirectorHostObject argument of this script.');
+                    } else {
+                        $this.error([string]::Format('Failed to fetch Ticket from Icinga Director. Error response {0}', $httpResponse));
+                    }
                 }
             }
         }
@@ -2448,7 +2904,7 @@ object ApiListener "api" {
         if ($this.config('install_nsclient')) {
 
             [string]$installerPath = $this.getNSClientInstallerPath();
-            $this.info('Trying to install and configure NSClient++ from ' + $installerPath);
+            $this.info([string]::Format('Trying to install and configure NSClient++ from "{0}"', $installerPath));
 
             # First check if the package does exist
             if (Test-Path ($installerPath)) {
@@ -2458,12 +2914,12 @@ object ApiListener "api" {
                     [string]$NSClientArguments = $this.getNSClientInstallerArguments();
 
                     # Start the installer process
-                    $result = $this.startProcess('MsiExec.exe', $TRUE, '/quiet /i "' + $installerPath + '" ' + $NSClientArguments);
+                    $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $installerPath, $NSClientArguments));
 
                     # Exit Code 0 means the NSClient was installed successfully
                     # Otherwise we require to throw an error
                     if ($result.Get_Item('exitcode') -ne 0) {
-                        $this.exception('Failed to install NSClient++. ' + $result.Get_Item('message'));
+                        $this.exception([string]::Format('Failed to install NSClient++. {0}', $result.Get_Item('message')));
                     } else {
                         $this.info('NSClient++ successfully installed.');
 
@@ -2483,7 +2939,7 @@ object ApiListener "api" {
                 # Add the default NSClient config if we want to do more
                 $this.addNSClientDefaultConfig();
             } else {
-                $this.error('Failed to locate NSClient++ Installer at ' + $installerPath);
+                $this.error([string]::Format('Failed to locate NSClient++ Installer at "{0}"', $installerPath));
             }
         } else {
             $this.info('NSClient++ will not be installed on the system.');
@@ -2504,7 +2960,7 @@ object ApiListener "api" {
                 return $this.config('nsclient_installer_path');
             }
 
-            $this.info('Trying to download NSClient++ from ' + $this.config('nsclient_installer_path'));
+            $this.info([string]::Format('Trying to download NSClient++ from "{0}"', $this.config('nsclient_installer_path')));
             [System.Object]$client = New-Object System.Net.WebClient;
             $client.DownloadFile($this.config('nsclient_installer_path'), (Join-Path -Path $Env:temp -ChildPath 'NSCP.msi'));
 
@@ -2526,7 +2982,7 @@ object ApiListener "api" {
         [string]$NSClientArguments = '';
 
         if ($this.config('nsclient_directory')) {
-            $NSClientArguments += ' INSTALLLOCATION=' + $this.config('nsclient_directory');
+            $NSClientArguments += [string]::Format(' INSTALLLOCATION={0}', $this.config('nsclient_directory'));
         }
 
         return $NSClientArguments;
@@ -2546,12 +3002,12 @@ object ApiListener "api" {
                 return;
             }
 
-            $this.info('Trying to remove NSClient++ Firewall Rule...');
+            $this.info('Trying to remove NSClient++ Firewall Rule');
 
             $result = $this.startProcess('netsh', $TRUE, 'advfirewall firewall delete rule name="NSClient++ Monitoring Agent"');
 
             if ($result.Get_Item('exitcode') -ne 0) {
-                $this.error('Failed to remove NSClient++ Firewall rule: ' + $result.Get_Item('message'));
+                $this.error([string]::Format('Failed to remove NSClient++ Firewall rule: {0}', $result.Get_Item('message')));
             } else {
                 $this.info('NSClient++ Firewall Rule has been successfully removed');
             }
@@ -2566,7 +3022,7 @@ object ApiListener "api" {
         if ($this.config('nsclient_service') -eq $FALSE) {
             $NSClientService = Get-WmiObject -Class Win32_Service -Filter "Name='nscp'";
             if ($NSClientService -ne $null) {
-                $this.info('Trying to remove NSClient++ service...');
+                $this.info('Trying to remove NSClient++ service');
                 # Before we remove the service, stop it (to prevent ghosts)
                 Stop-Service 'nscp';
                 # Now remove it
@@ -2604,7 +3060,7 @@ object ApiListener "api" {
                     $this.error($result.Get_Item('message'));
                 }
             } else {
-                $this.error('Failed to generate NSClient++ defaults config. Path to executable is not valid: ' + $NSClientBinary);
+                $this.error([string]::Format('Failed to generate NSClient++ defaults config. Path to executable is not valid: {0}', $NSClientBinary));
             }
         }
     }
@@ -2640,11 +3096,11 @@ object ApiListener "api" {
             $this.getIcingaDirectorVersion();
             # Convert our DirectorHostObject argument from Object to String if required
             $this.convertDirectorHostObjectArgument();
-            # Read arguments for auto config from the Icinga Director
-            # At first only with our public key for global config attributes
-            $this.fetchArgumentsFromIcingaDirector($TRUE);
             # Read the Host-API Key in case it exists
             $this.readHostAPIKeyFromDisk();
+            # Establish connection to Icinga Director Self-Service API if required
+            # and fetch basic / host configuration if tokens are set
+            $this.connectToIcingaDirectorSelfServiceAPI();
             # Get host name or FQDN if required
             $this.fetchHostnameOrFQDN();
             # Get IP-Address of host
@@ -2653,13 +3109,11 @@ object ApiListener "api" {
             $this.lookupPrimaryIPv4Address();
             # Transform the hostname if required
             $this.doTransformHostname();
-            # Try to create a host object inside the Icinga Director
-            $this.createHostInsideIcingaDirector();
-            # Load the configuration again, but this time with our
-            # Host key to fetch additional informations like endpoints
-            $this.fetchArgumentsFromIcingaDirector($FALSE);
-            # First check if we should get some parameters from the Icinga Director
-            $this.fetchTicketFromIcingaDirector();
+            # Before we continue, flush the API Directory if specified. This will require
+            # us to stop the Icinga 2 Agent, but should prevent any false positive in
+            # case dependencies within the API Director are no longer pressent and will
+            # ensure a possible config rollback is working as intended as well
+            $this.flushIcingaApiDirectory();
 
             # Try to locate the current
             # Installation data from the Agent
@@ -2677,13 +3131,18 @@ object ApiListener "api" {
                 if ($this.canInstallAgent()) {
                     $this.installAgent();
                     $this.cleanupAgentInstaller();
-                    # In case we have an API key assigned, write it to disk
-                    $this.writeHostAPIKeyToDisk();
                 } else {
                     $this.warn('Icinga 2 Agent is not installed and not allowed of beeing installed.');
                 }
             }
 
+            # Try to create a host object inside the Icinga Director
+            $this.createHostInsideIcingaDirector();
+            # First check if we should get some parameters from the Icinga Director
+            $this.fetchTicketFromIcingaDirector();
+
+            # In case we downgrade from Icinga 2.8.0 or above to a older version (like Icinga 2.7.2)
+            $this.migrateCertificates();
             if (-Not $this.hasCertificates() -Or $this.forceCertificateGeneration()) {
                 $this.generateCertificates();
             } else {
@@ -2732,8 +3191,8 @@ object ApiListener "api" {
         $this.info('Trying to locate Icinga 2 Agent...');
 
         if ($this.isAgentInstalled()) {
-            $this.info('Removing Icinga 2 Agent from the system...');
-            $result = $this.startProcess('MsiExec.exe', $TRUE, $this.getProperty('uninstall_id') + ' /q');
+            $this.info('Removing Icinga 2 Agent from the system');
+            $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('{0} /q', $this.getProperty('uninstall_id')));
 
             if ($result.Get_Item('exitcode') -ne 0) {
                 $this.error($result.Get_Item('message'));
@@ -2751,7 +3210,7 @@ object ApiListener "api" {
                     [void]$folder.DeleteFolder((Join-Path -Path $Env:ProgramData -ChildPath 'icinga2'));
                     $this.info('Remaining Icinga 2 configuration successfully removed.');
                 } catch {
-                    $this.exception('Failed to delete Icinga 2 Program Data Directory: ' + $_.Exception.Message);
+                    $this.exception([string]::Format('Failed to delete Icinga 2 Program Data Directory: {0}', $_.Exception.Message));
                 }
             } else {
                 $this.warn('Icinga 2 Agent program directory not present.');
@@ -2778,9 +3237,56 @@ object ApiListener "api" {
         return $this.getScriptExitCode();
     }
 
+    #
+    # Locate the current installation of Icinga 2 and dump the icinga2.conf to the window
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'dumpIcinga2Conf' -value {
+        if (-Not $this.isAgentInstalled()) {
+            $this.info('Icinga 2 Agent is not installed on the system. No configuration to dump.');
+            return $this.getScriptExitCode();
+        }
+
+        [string]$icingaConfig = '';
+        if (Test-Path $this.getIcingaConfigFile()) {
+            $icingaConfig = [System.IO.File]::ReadAllText($this.getIcingaConfigFile());
+            $this.info([string]::Format('Dumping content of the Icinga 2 configuration from "{0}".', $this.getIcingaConfigFile()));
+            $this.output($icingaConfig);
+
+        } else {
+            $this.exception([string]::Format('Failed to lookup Icinga 2 configuration at "{0}". File does not exist.', $this.getIcingaConfigFile()));
+        }
+    }
+
+    #
+    # Locate the current installation of Icinga 2 and dump all Icinga 2 objects
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'dumpIcinga2Objects' -value {
+        if (-Not $this.isAgentInstalled()) {
+            $this.info('Icinga 2 Agent is not installed on the system. No objects to dump.');
+            return $this.getScriptExitCode();
+        }
+
+        [string]$icingaBinary = Join-Path -Path $this.getInstallPath() -ChildPath 'sbin\icinga2.exe';
+
+        if (-Not (Test-Path $icingaBinary)) {
+            $this.exception([string]::Format('Failed to query Icinga 2 objects. Executable at "{0}" does not exist.', $icingaBinary));
+            return $this.getScriptExitCode();
+        }
+
+        $result = $this.startProcess($icingaBinary, $FALSE, 'object list');
+        if ($result.Get_Item('exitcode') -ne 0) {
+            $this.exception($result.Get_Item('message'));
+        } else {
+            $this.info('Dumping all objects from Icinga 2');
+            $this.output($result.Get_Item('message'));
+        }
+    }
+
     # Make the installation / uninstallation of the script easier and shorter
     [int]$installerExitCode = 0;
     [int]$uninstallerExitCode = 0;
+    [int]$dumpConfigExitCode = 0;
+    [int]$dumpObjectsExitCode = 0;
     # If flag RunUninstaller is set, do the uninstallation of the components
     if ($RunUninstaller) {
         $uninstallerExitCode = $installer.uninstall();
@@ -2789,8 +3295,15 @@ object ApiListener "api" {
     if ($RunInstaller) {
         $installerExitCode = $installer.install();
     }
-    if ($RunInstaller -Or $RunUninstaller) {
-        if ($installerExitCode -ne 0 -Or $uninstallerExitCode -ne 0) {
+    # If flag DumpIcingaConfig is set, print the current Icinga 2 configuration
+    if ($DumpIcingaConfig) {
+        $dumpConfigExitCode = $installer.dumpIcinga2Conf();
+    }
+    if ($DumpIcingaObjects) {
+        $dumpObjectsExitCode = $installer.dumpIcinga2Objects();
+    }
+    if ($RunInstaller -Or $RunUninstaller -Or $DumpIcingaConfig -Or $DumpIcingaObjects) {
+        if ($installerExitCode -ne 0 -Or $uninstallerExitCode -ne 0 -Or $dumpConfigExitCode -ne 0 -Or $dumpObjectsExitCode -ne 0) {
             return 1;
         }
     }
