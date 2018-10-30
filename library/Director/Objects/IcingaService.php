@@ -405,7 +405,9 @@ class IcingaService extends IcingaObject implements ExportInterface
             && $this->get('host_id')
             && $this->getRelated('host')->isDisabled()
         ) {
-            return "/* --- This services host has been disabled ---\n$str*/\n";
+            return "/* --- This services host has been disabled ---\n"
+                // Do not allow strings to break our comment
+                . str_replace('*/', "* /", $str) . "*/\n";
         } else {
             return $str;
         }

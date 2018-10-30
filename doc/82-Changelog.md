@@ -27,6 +27,9 @@ master (will be 1.6.0)
 * FEATURE: It's now possible to dump data as fetched by an Import Source (#1626)
 * FIX: Director Health Check no longer warns about no Imports/Syncs/Jobs (#1607)
 
+### Icinga Configuration
+* FIX: rendering of disabled objects containing `*/` has been fixed (#1263)
+
 ### Icinga Agent handling
 * FEATURE: Ship latest PowerShell module (#1632 )
 
