@@ -16,6 +16,14 @@ before switching to a new version.
 ### REST API
 * FIX: No more invalid JSON in some special circumstances (#1314)
 
+### User Interface
+* FIX: Hostgroup assignment cache has been fixed (#1574, #1618)
+
+### DB Schema
+* FIX: missing user/timeperiod constraint. We usually do not touch the schema
+  in minor versions, this has been cherry-picked by accident. However, don't
+  worry - the migration has been tested intensively.
+
 1.5.1
 -----
 ### Fixed issues
