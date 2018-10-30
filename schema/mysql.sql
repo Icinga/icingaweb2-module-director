@@ -325,7 +325,7 @@ CREATE TABLE icinga_command (
   timeout SMALLINT UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
-  UNIQUE INDEX object_name (object_name, zone_id),
+  UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_command_zone
     FOREIGN KEY zone (zone_id)
     REFERENCES icinga_zone (id)
@@ -1787,4 +1787,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (155, NOW());
+  VALUES (156, NOW());

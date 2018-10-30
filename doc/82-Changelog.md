@@ -31,7 +31,10 @@ master (will be 1.6.0)
 * FIX: rendering of disabled objects containing `*/` has been fixed (#1263)
 
 ### Icinga Agent handling
-* FEATURE: Ship latest PowerShell module (#1632 )
+* FEATURE: ship latest PowerShell module (#1632)
+
+### DB Schema
+* FIX: enforce strict object_name uniqueness on commands (#1496)
 
 1.5.2
 -----

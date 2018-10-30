@@ -426,7 +426,7 @@ CREATE TABLE icinga_command (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name, zone_id);
+CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 CREATE INDEX command_zone ON icinga_command (zone_id);
 COMMENT ON COLUMN icinga_command.object_type IS 'external_object is an attempt to work with existing commands';
 
@@ -2087,4 +2087,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (155, NOW());
+  VALUES (156, NOW());
