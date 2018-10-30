@@ -177,6 +177,7 @@ class SelfServiceController extends ActionController
         } else {
             $this->sendJsonError($this->getResponse(), $error);
         }
+        exit;
     }
 
     /**
