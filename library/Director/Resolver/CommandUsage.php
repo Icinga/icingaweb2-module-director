@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Resolver;
 
-use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\Objects\IcingaCommand;
 use dipl\Html\Link;
 use dipl\Translation\TranslationHelper;
+use Icinga\Module\Director\Objects\IcingaCommand;
+use InvalidArgumentException;
 
 class CommandUsage
 {
@@ -20,12 +20,11 @@ class CommandUsage
     /**
      * CommandUsageTable constructor.
      * @param IcingaCommand $command
-     * @throws ProgrammingError
      */
     public function __construct(IcingaCommand $command)
     {
         if ($command->isTemplate()) {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(
                 'CommandUsageTable expects object or external_object, got a template'
             );
         }
@@ -36,7 +35,6 @@ class CommandUsage
 
     /**
      * @return array
-     * @throws ProgrammingError
      */
     public function getLinks()
     {
