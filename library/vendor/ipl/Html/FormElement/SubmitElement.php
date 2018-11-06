@@ -44,4 +44,9 @@ class SubmitElement extends InputElement
     {
         return $this->getButtonLabel() === $this->getValue();
     }
+
+    public function isIgnored()
+    {
+        return true;
+    }
 }
