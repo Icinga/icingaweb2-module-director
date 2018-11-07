@@ -6,6 +6,7 @@ use Icinga\Module\Director\Forms\SyncCheckForm;
 use Icinga\Module\Director\Forms\SyncPropertyForm;
 use Icinga\Module\Director\Forms\SyncRuleForm;
 use Icinga\Module\Director\Forms\SyncRunForm;
+use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
@@ -45,16 +46,7 @@ class SyncruleController extends ActionController
             $this->addPropertyHint($rule);
             return;
         }
-        $this->actions()->add(Link::create(
-            $this->translate('Add to Basket'),
-            'director/basket/add',
-            [
-                'type'  => 'SyncRule',
-                'names' => $rule->getUniqueIdentifier()
-            ],
-            ['class' => 'icon-tag']
-        ));
-
+        $this->addMainActions();
         if (! $run) {
             $this->warning($this->translate('This Sync Rule has never been run before.'));
         }
@@ -160,23 +152,7 @@ class SyncruleController extends ActionController
                 $this->translate('Sync rule: %s'),
                 $rule->rule_name
             ));
-            $this->actions()->add(
-                Link::create(
-                    $this->translate('Clone'),
-                    'director/syncrule/clone',
-                    ['id' => $id],
-                    ['class' => 'icon-paste']
-                )
-            );
-            $this->actions()->add(Link::create(
-                $this->translate('Add to Basket'),
-                'director/basket/add',
-                [
-                    'type'  => 'SyncRule',
-                    'names' => $rule->getUniqueIdentifier()
-                ],
-                ['class' => 'icon-tag']
-            ));
+            $this->addMainActions();
 
             if (! $rule->hasSyncProperties()) {
                 $this->addPropertyHint($rule);
@@ -306,6 +282,27 @@ class SyncruleController extends ActionController
             $this->content()->add(new SyncRunDetails($run));
         }
         SyncRunTable::create($rule)->renderTo($this);
+    }
+
+    protected function addMainActions()
+    {
+        $this->actions(new AutomationObjectActionBar(
+            $this->getRequest()
+        ));
+        $source = $this->requireSyncRule();
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            'director/basket/add',
+            [
+                'type'  => 'SyncRule',
+                'names' => $source->getUniqueIdentifier()
+            ],
+            [
+                'class' => 'icon-tag',
+                'data-base-target' => '_next',
+            ]
+        ));
     }
 
     /**

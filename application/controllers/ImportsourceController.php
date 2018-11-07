@@ -58,7 +58,10 @@ class ImportsourceController extends ActionController
                 'type'  => 'ImportSource',
                 'names' => $source->getUniqueIdentifier()
             ],
-            ['class' => 'icon-tag']
+            [
+                'class' => 'icon-tag',
+                'data-base-target' => '_next'
+            ]
         ));
     }
 
