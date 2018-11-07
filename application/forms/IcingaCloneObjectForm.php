@@ -55,6 +55,17 @@ class IcingaCloneObjectForm extends DirectorForm
             ], 'y');
         }
 
+        if ($this->object instanceof IcingaService && $this->object->get('service_set_id') !== null) {
+            $this->addElement('select', 'target_service_set', [
+                'label'       => $this->translate('Target Service Set'),
+                'description' => $this->translate(
+                    'Clone this service to the very same or to another Service Set'
+                ),
+                'multiOptions' => $this->enumServiceSets(),
+                'value' => $this->object->get('service_set_id')
+            ]);
+        }
+
         if ($this->object->isTemplate() && $this->object->supportsFields()) {
             $this->addBoolean('clone_fields', [
                 'label'       => $this->translate('Clone Template Fields'),
@@ -170,6 +181,16 @@ class IcingaCloneObjectForm extends DirectorForm
 
             $this->redirectOnSuccess($msg);
         }
+    }
+
+    protected function enumServiceSets()
+    {
+        $db = $this->object->getConnection()->getDbAdapter();
+        return $db->fetchPairs(
+            $db->select()
+                ->from('icinga_service_set', ['id', 'object_name'])
+                ->order('object_name')
+        );
     }
 
     public function setObject(IcingaObject $object)

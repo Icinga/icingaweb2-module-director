@@ -19,6 +19,8 @@ master (will be 1.6.0)
 * FEATURE: allow to show SQL used for template tables
 * FEATURE: allow to defined Service Groups for Set members and for Services
   assigned to Host Templates (#619)
+* FEATURE: it's now possible to choose another target Service Set when cloning
+  a member service (#886)
 
 ### Import and Sync
 * FEATURE: new Property Modifier allows to extract specific Array values (#473)
