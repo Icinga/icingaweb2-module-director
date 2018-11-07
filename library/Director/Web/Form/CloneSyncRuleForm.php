@@ -52,6 +52,8 @@ class CloneSyncRuleForm extends Form
         $export = $this->rule->export();
         $newName = $this->getValue('rule_name');
         $export->rule_name = $newName;
+        unset($export->originalId);
+
         if (SyncRule::existsWithName($newName, $this->getTargetDb())) {
             $this->getElement('rule_name')->addMessage('Name already exists');
         }

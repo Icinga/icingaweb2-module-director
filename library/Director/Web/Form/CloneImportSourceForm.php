@@ -51,6 +51,7 @@ class CloneImportSourceForm extends Form
         $export = $this->source->export();
         $newName = $this->getValue('source_name');
         $export->source_name = $newName;
+        unset($export->originalId);
 
         if (ImportSource::existsWithName($newName, $this->source->getConnection())) {
             $this->getElement('source_name')->addMessage('Name already exists');
