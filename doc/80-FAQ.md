@@ -59,6 +59,17 @@ it could happen that the default conservative max package size of your MySQL
 server bites you. Raise `max packet size` to a reasonable value, this willi
 usually fix this issue.
 
+Commands are not imported with Kickstart
+-------------------------------
+
+If after running kickstart you can't see imported check commands, try to run kickstart process manually from CLI.
+
+```sh
+icingacli director kickstart run
+```
+See "03-Automation.md" for more information.
+
+
 Import succeeded but nothing happened
 -------------------------------------
 
