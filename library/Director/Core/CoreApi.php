@@ -515,7 +515,7 @@ constants
 
     public function getHostObjects()
     {
-        return $this->getDirectorObjects('Host', 'hosts', [
+        $params = [
             'display_name'          => 'display_name',
             'address'               => 'address',
             'address6'              => 'address6',
@@ -534,7 +534,6 @@ constants
             'enable_flapping'       => 'enable_flapping',
             'enable_perfdata'       => 'enable_perfdata',
             'event_command'         => 'event_command',
-            'flapping_threshold'    => 'flapping_threshold',
             'volatile'              => 'volatile',
             'zone'                  => 'zone',
             'command_endpoint'      => 'command_endpoint',
@@ -543,7 +542,14 @@ constants
             'action_url'            => 'action_url',
             'icon_image'            => 'icon_image',
             'icon_image_alt'        => 'icon_image_alt',
-        ]);
+        ];
+
+        if (version_compare($this->getVersion(), '2.8.0', '>=')) {
+            $params['flapping_threshold_high'] = 'flapping_threshold_high';
+            $params['flapping_threshold_low'] = 'flapping_threshold_low';
+        }
+
+        return $this->getDirectorObjects('Host', 'hosts', $params);
     }
 
     public function getHostGroupObjects()
