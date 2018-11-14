@@ -47,6 +47,7 @@ class RestApiClient
     {
         $this->onEventWantsRaw = $raw;
         $this->onEvent = $callback;
+
         return $this;
     }
 
@@ -150,6 +151,9 @@ class RestApiClient
         }
 
         Benchmark::measure('Rest Api, got response');
+        if (! $this->keepAlive) {
+            $this->disconnect();
+        }
 
         if ($stream) {
             return $this;

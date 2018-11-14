@@ -16,6 +16,8 @@ class CoreApi implements DeploymentApiInterface
 {
     protected $client;
 
+    protected $initialized = false;
+
     /** @var Db */
     protected $db;
 
@@ -39,13 +41,25 @@ class CoreApi implements DeploymentApiInterface
         return $this->parseVersion($this->getRawVersion());
     }
 
+    public function enableWorkaroundForConnectionIssues()
+    {
+        $version = $this->getVersion();
+
+        if (version_compare($version, '2.8.2', '>=')
+            && version_compare($version, '2.10.2', '<')
+        ) {
+            $this->client->disconnect();
+            $this->client->setKeepAlive(false);
+        }
+    }
+
     /**
      * @return string|null
      */
     public function getRawVersion()
     {
         try {
-            return $this->client->get('')->getRaw('version');
+            return $this->client()->get('')->getRaw('version');
         } catch (Exception $exception) {
             return null;
         }
@@ -79,7 +93,7 @@ class CoreApi implements DeploymentApiInterface
             $params->attrs = $attrs;
         }
 
-        return $this->client->get(
+        return $this->client()->get(
             'objects/' . urlencode(strtolower($pluralType)),
             $params
         )->getResult('name');
@@ -88,6 +102,7 @@ class CoreApi implements DeploymentApiInterface
     public function onEvent($callback, $raw = false)
     {
         $this->client->onEvent($callback, $raw);
+
         return $this;
     }
 
@@ -100,7 +115,7 @@ class CoreApi implements DeploymentApiInterface
             $params->attrs = $attrs;
         }
         $url = 'objects/' . urlencode(strtolower($pluraltype)) . '/' . rawurlencode($name) . '?all_joins=1';
-        $res = $this->client->get($url, $params)->getResult('name');
+        $res = $this->client()->get($url, $params)->getResult('name');
 
         // TODO: check key, throw
         return $res[$name];
@@ -120,7 +135,8 @@ class CoreApi implements DeploymentApiInterface
     public function checkHostNow($host)
     {
         $filter = 'host.name == "' . $host . '"';
-        return $this->client->post(
+
+        return $this->client()->post(
             'actions/reschedule-check?filter=' . rawurlencode($filter),
             (object) array(
                 'type' => 'Host'
@@ -131,7 +147,7 @@ class CoreApi implements DeploymentApiInterface
     public function checkServiceNow($host, $service)
     {
         $filter = 'host.name == "' . $host . '" && service.name == "' . $service . '"';
-        $this->client->post(
+        $this->client()->post(
             'actions/reschedule-check?filter=' . rawurlencode($filter),
             (object) array(
                 'type' => 'Service'
@@ -142,7 +158,7 @@ class CoreApi implements DeploymentApiInterface
     public function acknowledgeHostProblem($host, $author, $comment)
     {
         $filter = 'host.name == "' . $host . '"';
-        return $this->client->post(
+        return $this->client()->post(
             'actions/acknowledge-problem?type=Host&filter=' . rawurlencode($filter),
             (object) array(
                 'author'  => $author,
@@ -154,7 +170,7 @@ class CoreApi implements DeploymentApiInterface
     public function removeHostAcknowledgement($host)
     {
         $filter = 'host.name == "' . $host . '"';
-        return $this->client->post(
+        return $this->client()->post(
             'actions/remove-acknowledgement?type=Host&filter=' . rawurlencode($filter)
         );
     }
@@ -162,7 +178,7 @@ class CoreApi implements DeploymentApiInterface
     public function reloadNow()
     {
         try {
-            $this->client->post('actions/restart-process');
+            $this->client()->post('actions/restart-process');
 
             return true;
         } catch (Exception $e) {
@@ -330,7 +346,7 @@ constants
 
     public function runConsoleCommand($command)
     {
-        return $this->client->post(
+        return $this->client()->post(
             'console/execute-script',
             array('command' => $command)
         );
@@ -348,18 +364,18 @@ constants
 
     public function getTypes()
     {
-        return $this->client->get('types')->getResult('name');
+        return $this->client()->get('types')->getResult('name');
     }
 
     public function getType($type)
     {
-        $res = $this->client->get('types', array('name' => $type))->getResult('name');
+        $res = $this->client()->get('types', array('name' => $type))->getResult('name');
         return $res[$type]; // TODO: error checking
     }
 
     public function getStatus()
     {
-        return $this->client->get('status')->getResult('name');
+        return $this->client()->get('status')->getResult('name');
     }
 
     public function listObjects($type, $pluralType)
@@ -367,7 +383,7 @@ constants
         // TODO: more abstraction needed
         // TODO: autofetch and cache pluraltypes
         try {
-            $result = $this->client->get(
+            $result = $this->client()->get(
                 'objects/' . $pluralType,
                 array(
                     'attrs' => array('__name')
@@ -382,7 +398,7 @@ constants
 
     public function getPackages()
     {
-        return $this->client->get('config/packages')->getResult('name');
+        return $this->client()->get('config/packages')->getResult('name');
     }
 
     public function getActiveStageName()
@@ -680,14 +696,14 @@ constants
             if (array_key_exists($stage, $uncollected)) {
                 continue;
             }
-            $this->client->delete('config/stages/' . $packageName . '/' . $stage);
+            $this->client()->delete('config/stages/' . $packageName . '/' . $stage);
         }
     }
 
     public function listStageFiles($stage)
     {
         return array_keys(
-            $this->client->get(sprintf(
+            $this->client()->get(sprintf(
                 'config/stages/%s/%s',
                 urlencode($this->getPackageName()),
                 urlencode($stage)
@@ -697,7 +713,7 @@ constants
 
     public function getStagedFile($stage, $file)
     {
-        return $this->client->getRaw(sprintf(
+        return $this->client()->getRaw(sprintf(
             'config/files/%s/%s/%s',
             urlencode($this->getPackageName()),
             urlencode($stage),
@@ -713,12 +729,12 @@ constants
 
     public function createPackage($name)
     {
-        return $this->client->post('config/packages/' . urlencode($name))->succeeded();
+        return $this->client()->post('config/packages/' . urlencode($name))->succeeded();
     }
 
     public function deletePackage($name)
     {
-        return $this->client->delete('config/packages/' . urlencode($name))->succeeded();
+        return $this->client()->delete('config/packages/' . urlencode($name))->succeeded();
     }
 
     public function assertPackageExists($name)
@@ -737,7 +753,7 @@ constants
 
     public function deleteStage($packageName, $stageName)
     {
-        $this->client->delete(sprintf(
+        $this->client()->delete(sprintf(
             'config/stages/%s/%s',
             rawurlencode($packageName),
             rawurlencode($stageName)
@@ -766,7 +782,7 @@ constants
 
         $url = sprintf('events?queue=%s&types=%s', $queue, implode('&types=', $allTypes));
 
-        $this->client->request('post', $url, null, false, true);
+        $this->client()->request('post', $url, null, false, true);
     }
 
     /**
@@ -796,7 +812,7 @@ constants
 
         $this->assertPackageExists($packageName);
 
-        $response = $this->client->post('config/stages/' . urlencode($packageName), [
+        $response = $this->client()->post('config/stages/' . urlencode($packageName), [
             'files' => $config->getFileContents()
         ]);
 
@@ -841,5 +857,15 @@ constants
             '[..] %d bytes removed by Director [..]',
             $logLen - (strlen($begin) + strlen($end))
         ) . $end;
+    }
+
+    protected function client()
+    {
+        if ($this->initialized === false) {
+            $this->initialized = true;
+            $this->enableWorkaroundForConnectionIssues();
+        }
+
+        return $this->client;
     }
 }
