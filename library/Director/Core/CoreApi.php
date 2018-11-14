@@ -31,6 +31,43 @@ class CoreApi implements DeploymentApiInterface
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
+    public function getVersion()
+    {
+        return $this->parseVersion($this->getRawVersion());
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getRawVersion()
+    {
+        try {
+            return $this->client->get('')->getRaw('version');
+        } catch (Exception $exception) {
+            return null;
+        }
+    }
+
+    /**
+     * @param $version
+     * @return string|null
+     */
+    protected function parseVersion($version)
+    {
+        if ($version === null) {
+            return null;
+        }
+
+        if (preg_match('/^v?(\d\.\d+\.\d+)/', $version, $match)) {
+            return $match[1];
+        } else {
+            return null;
+        }
+    }
+
     public function getObjects($pluralType, $attrs = array(), $ignorePackage = null)
     {
         $params = (object) [];
