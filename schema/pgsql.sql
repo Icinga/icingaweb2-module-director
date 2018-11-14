@@ -86,7 +86,7 @@ CREATE UNIQUE INDEX basket_basket_name ON director_basket (basket_name);
 
 CREATE TABLE director_basket_content (
   checksum bytea CHECK(LENGTH(checksum) = 20) NOT NULL,
-  summary VARCHAR(255) NOT NULL, -- json
+  summary VARCHAR(500) NOT NULL, -- json
   content text NOT NULL, -- json
   PRIMARY KEY (checksum)
 );
@@ -2087,4 +2087,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (156, NOW());
+  VALUES (157, NOW());
