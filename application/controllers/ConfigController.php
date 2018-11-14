@@ -346,7 +346,8 @@ class ConfigController extends ActionController
             }
         }
 
-        $this->content()->add(Html::tag('form', ['action' => $this->url(), 'method' => 'GET'], [
+        $baseUrl = $this->url()->without(['left', 'right']);
+        $this->content()->add(Html::tag('form', ['action' => (string) $baseUrl, 'method' => 'GET'], [
             new HtmlString($this->view->formSelect(
                 'left',
                 $leftSum,
@@ -355,7 +356,7 @@ class ConfigController extends ActionController
             )),
             Link::create(
                 Icon::create('flapping'),
-                $this->url(),
+                $baseUrl,
                 ['left' => $rightSum, 'right' => $leftSum]
             ),
             new HtmlString($this->view->formSelect(
