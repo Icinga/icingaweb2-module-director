@@ -2,9 +2,8 @@
 
 namespace Icinga\Module\Director\Core;
 
+use http\Exception\RuntimeException;
 use Icinga\Application\Benchmark;
-use Icinga\Exception\ConfigurationError;
-use Exception;
 
 class RestApiClient
 {
@@ -25,6 +24,8 @@ class RestApiClient
     protected $onEvent;
 
     protected $onEventWantsRaw;
+
+    protected $keepAlive = true;
 
     public function __construct($peer, $port = 5665, $cn = null)
     {
@@ -54,6 +55,13 @@ class RestApiClient
         return $this->peer;
     }
 
+    public function setKeepAlive($keepAlive = true)
+    {
+        $this->keepAlive = (bool) $keepAlive;
+
+        return $this;
+    }
+
     protected function url($url)
     {
         return sprintf('https://%s:%d/%s/%s', $this->peer, $this->port, $this->version, $url);
@@ -66,83 +74,28 @@ class RestApiClient
      * @param bool $raw
      * @param bool $stream
      * @return RestApiResponse
-     * @throws ConfigurationError
      */
     public function request($method, $url, $body = null, $raw = false, $stream = false)
     {
         if (function_exists('curl_version')) {
             return $this->curlRequest($method, $url, $body, $raw, $stream);
-        /*
-        // Completely disabled fallback method, caused too many issues
-        // with hanging connections on specific PHP versions
-        } elseif (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            // TODO: fail if stream
-            return $this->phpRequest($method, $url, $body, $raw);
-        */
         } else {
-            throw new Exception(
+            throw new RuntimeException(
                 'No CURL extension detected, it must be installed and enabled'
             );
-        }
-    }
-
-    protected function phpRequest($method, $url, $body = null, $raw = false)
-    {
-        $auth = base64_encode(sprintf('%s:%s', $this->user, $this->pass));
-        $headers = array(
-            'Host: ' . $this->getPeerIdentity(),
-            'Authorization: Basic ' . $auth,
-            'Connection: close'
-        );
-
-        if (! $raw) {
-            $headers[] = 'Accept: application/json';
-        }
-
-        if ($body !== null) {
-            $body = json_encode($body);
-            $headers[] = 'Content-Type: application/json';
-        }
-
-        $opts = array(
-            'http' => array(
-                'protocol_version' => '1.1',
-                'user_agent'       => 'Icinga Web 2.0 - Director',
-                'method'           => strtoupper($method),
-                'content'          => $body,
-                'header'           => $headers,
-                'ignore_errors' => true
-            ),
-            'ssl' => array(
-                // TODO: Fix this!
-                'verify_peer'   => false,
-                // 'cafile'        => $dir . 'cacert.pem',
-                // 'verify_depth'  => 5,
-                // 'CN_match'      => $peerName // != peer
-            )
-        );
-        $context = stream_context_create($opts);
-
-        Benchmark::measure('Rest Api, sending ' . $url);
-        $res = file_get_contents($this->url($url), false, $context);
-        if (substr(array_shift($http_response_header), 0, 10) !== 'HTTP/1.1 2') {
-            throw new Exception($res);
-        }
-        Benchmark::measure('Rest Api, got response');
-        if ($raw) {
-            return $res;
-        } else {
-            return RestApiResponse::fromJsonResult($res);
         }
     }
 
     protected function curlRequest($method, $url, $body = null, $raw = false, $stream = false)
     {
         $auth = sprintf('%s:%s', $this->user, $this->pass);
-        $headers = array(
+        $headers = [
             'Host: ' . $this->getPeerIdentity(),
-            // 'Connection: close'
-        );
+        ];
+
+        if (! $this->keepAlive) {
+            $headers[] = 'Connection: close';
+        }
 
         if (! $raw) {
             $headers[] = 'Accept: application/json';
@@ -154,7 +107,7 @@ class RestApiClient
         }
 
         $curl = $this->curl();
-        $opts = array(
+        $opts = [
             CURLOPT_URL            => $this->url($url),
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_USERPWD        => $auth,
@@ -165,14 +118,14 @@ class RestApiClient
             // TODO: Fix this!
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
-        );
+        ];
 
         if ($body !== null) {
             $opts[CURLOPT_POSTFIELDS] = $body;
         }
 
         if ($stream) {
-            $opts[CURLOPT_WRITEFUNCTION] = array($this, 'readPart');
+            $opts[CURLOPT_WRITEFUNCTION] = [$this, 'readPart'];
             $opts[CURLOPT_TCP_NODELAY] = 1;
         }
 
@@ -182,12 +135,16 @@ class RestApiClient
         Benchmark::measure('Rest Api, sending ' . $url);
         $res = curl_exec($curl);
         if ($res === false) {
-            throw new Exception('CURL ERROR: ' . curl_error($curl));
+            $error = curl_error($curl);
+            $this->disconnect();
+
+            throw new RuntimeException("CURL ERROR: $error");
         }
 
         $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         if ($statusCode === 401) {
-            throw new ConfigurationError(
+            $this->disconnect();
+            throw new RuntimeException(
                 'Unable to authenticate, please check your API credentials'
             );
         }
@@ -244,8 +201,6 @@ class RestApiClient
     }
 
     /**
-     * @throws Exception
-     *
      * @return resource
      */
     protected function curl()
@@ -253,7 +208,7 @@ class RestApiClient
         if ($this->curl === null) {
             $this->curl = curl_init(sprintf('https://%s:%d', $this->peer, $this->port));
             if (! $this->curl) {
-                throw new Exception('CURL INIT ERROR: ' . curl_error($this->curl));
+                throw new RuntimeException('CURL INIT ERROR: ' . curl_error($this->curl));
             }
         }
 
@@ -294,19 +249,23 @@ class RestApiClient
         if ($this->onEventWantsRaw) {
             $func($str);
         } else {
-            $decoded = json_decode($str);
-            if ($decoded === false) {
-                throw new Exception('Got invalid JSON: ' . $str);
+            $func(Json::decode($str));
+        }
+    }
+
+    public function disconnect()
+    {
+        if ($this->curl !== null) {
+            if (is_resource($this->curl)) {
+                @curl_close($this->curl);
             }
 
-            $func($decoded);
+            $this->curl = null;
         }
     }
 
     public function __destruct()
     {
-        if ($this->curl !== null && is_resource($this->curl)) {
-            curl_close($this->curl);
-        }
+        $this->disconnect();
     }
 }

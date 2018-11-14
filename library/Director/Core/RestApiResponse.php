@@ -25,12 +25,24 @@ class RestApiResponse
     {
         $response = new static;
         $response->errorMessage = $error;
+
         return $response;
     }
 
     public function getResult($desiredKey, $filter = array())
     {
         return $this->extractResult($this->results, $desiredKey, $filter);
+    }
+
+    public function getRaw($key = null, $default = null)
+    {
+        if ($key === null) {
+            return $this->results;
+        } elseif (isset($this->results[0]) && property_exists($this->results[0], $key)) {
+            return $this->results[0]->$key;
+        } else {
+            return $default;
+        }
     }
 
     public function getSingleResult()
