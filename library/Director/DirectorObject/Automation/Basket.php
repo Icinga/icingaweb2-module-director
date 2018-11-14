@@ -12,20 +12,10 @@ use Icinga\Module\Director\Db;
  * TODO
  * - create a UUID like in RFC4122
  */
-class Basket extends DbObject
+class Basket extends DbObject implements ExportInterface
 {
     const SELECTION_ALL = true;
     const SELECTION_NONE = false;
-
-    protected $validTypes = [
-        'host_template',
-        'host_object',
-        'service_template',
-        'service_object',
-        'service_apply',
-        'import_source',
-        'sync_rule'
-    ];
 
     protected $table = 'director_basket';
 
@@ -64,6 +54,21 @@ class Basket extends DbObject
     protected function onLoadFromDb()
     {
         $this->chosenObjects = (array) Json::decode($this->get('objects'));
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->get('basket_name');
+    }
+
+    public function export()
+    {
+        $result = $this->getProperties();
+        unset($result['uuid']);
+        $result['objects'] = Json::decode($result['objects']);
+        ksort($result);
+
+        return (object) $result;
     }
 
     public function supportsCustomSelectionFor($type)

@@ -2,10 +2,11 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use RuntimeException;
 
-class IcingaNotification extends IcingaObject
+class IcingaNotification extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_notification';
 
@@ -112,6 +113,47 @@ class IcingaNotification extends IcingaObject
         ];
 
         return c::renderKeyValue('times', c::renderDictionary($times));
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    public function export()
+    {
+        // TODO: ksort in toPlainObject?
+        $props = (array) $this->toPlainObject();
+        $props['fields'] = $this->loadFieldReferences();
+        ksort($props);
+
+        return (object) $props;
+    }
+
+    protected function loadFieldReferences()
+    {
+        $db = $this->getDb();
+
+        $res = $db->fetchAll(
+            $db->select()->from([
+                'nf' => 'icinga_notification_field'
+            ], [
+                'nf.datafield_id',
+                'nf.is_required',
+                'nf.var_filter',
+            ])->join(['df' => 'director_datafield'], 'df.id = nf.datafield_id', [])
+                ->where('notification_id = ?', $this->get('id'))
+                ->order('varname ASC')
+        );
+
+        if (empty($res)) {
+            return [];
+        } else {
+            foreach ($res as $field) {
+                $field->datafield_id = (int) $field->datafield_id;
+            }
+            return $res;
+        }
     }
 
     /**

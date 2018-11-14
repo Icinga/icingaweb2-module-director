@@ -28,7 +28,7 @@ class BasketSnapshot extends DbObject
         'ImportSource'    => '\\Icinga\\Module\\Director\\Objects\\ImportSource',
         'SyncRule'        => '\\Icinga\\Module\\Director\\Objects\\SyncRule',
         'DirectorJob'     => '\\Icinga\\Module\\Director\\Objects\\DirectorJob',
-        'Basket'          => '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Automation',
+        'Basket'          => '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Basket',
     ];
 
     protected $objects = [];
