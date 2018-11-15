@@ -33,6 +33,7 @@
             this.module.on('mousedown', '.director-suggestions li', this.clickSuggestion);
             this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
+            this.module.on('click', 'div.content ul.tree li span.handle', this.setTreeState);
             this.module.icinga.logger.debug('Director module initialized');
         },
 
@@ -647,6 +648,25 @@
             $container.find('dd').not('.active').find('p.description').hide();
         },
 
+        setTreeState: function(ev) {
+            var btn = ev.currentTarget;
+            var tree = jQuery(btn).parents('.tree');
+            var treeStatus = {};
+
+            treeStatus = setStatusForTreeChildren(tree, treeStatus);
+            localStorage['treeUrl'] = document.location.href;
+            localStorage['treeStatus'] = JSON.stringify(treeStatus);
+        },
+
+        loadTreeStatus: function(tree) {
+            var treeCached = localStorage['treeStatus'];
+            var url = localStorage['treeUrl'];
+            if(typeof treeCached != 'undefined' && typeof url != 'undefined' && url === document.location.href) {
+                var treeStatusObj = JSON.parse(treeCached);
+                setTreeStatusFromCache(tree, treeStatusObj);
+            }
+        },
+
         beforeRender: function(ev) {
             var $container = $(ev.currentTarget);
             var id = $container.attr('id');
@@ -714,6 +734,11 @@
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
+
+            if($container.find('.content ul.tree').length !== 0) {
+                this.loadTreeStatus($container.find('.content ul.tree'));
+            }
+
             // Disabled for now
             // this.alignDetailLinks();
             if (! this.containerIsAutorefreshed($container) && ! this.containerIsAutoSubmitted($container)) {
@@ -844,6 +869,46 @@
                 .attr('spellcheck', 'false');
         }
     };
+
+    function setStatusForTreeChildren(tree, treeStatus) {
+        var children = jQuery(tree).children();
+
+        $.each(children, function(index, el) {
+            if (jQuery(el).is('li')) {
+                var liClass = '';
+                if (typeof jQuery(el).attr('class') != 'undefined') {
+                    liClass = jQuery(el).attr('class');
+                }
+                treeStatus[index] = {};
+                treeStatus[index]['li'] = liClass;
+
+                if (jQuery(el).children('ul').length > 0) {
+                    treeStatus[index]['ul'] = {};
+                    treeStatus[index]['ul'] = setStatusForTreeChildren(el, treeStatus[index]['ul']);
+                }
+            } else if (jQuery(el).is('ul')) {
+                treeStatus = setStatusForTreeChildren(el, treeStatus);
+            }
+        });
+
+        return treeStatus;
+    }
+
+    function setTreeStatusFromCache(tree, treeStatus) {
+        var children = jQuery(tree).children();
+
+        $.each(children, function(index, el) {
+            if (jQuery(el).is('li')) {
+                jQuery(el).attr('class', treeStatus[index]['li']);
+
+                if (jQuery(el).children('ul').length > 0) {
+                    setTreeStatusFromCache(el, treeStatus[index]['ul']);
+                }
+            } else if (jQuery(el).is('ul')) {
+                setTreeStatusFromCache(el, treeStatus);
+            }
+        });
+    }
 
     Icinga.availableModules.director = Director;
 
