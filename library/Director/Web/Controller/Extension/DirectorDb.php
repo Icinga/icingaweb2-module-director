@@ -13,10 +13,33 @@ trait DirectorDb
 
     protected function getDbResourceName()
     {
-        if ($name = $this->getPreferredDbResourceName()) {
+        if ($name = $this->getDbResourceNameFromRequest()) {
+            return $name;
+        } elseif ($name = $this->getPreferredDbResourceName()) {
             return $name;
         } else {
             return $this->getFirstDbResourceName();
+        }
+    }
+
+    protected function getDbResourceNameFromRequest()
+    {
+        $param = 'dbResourceName';
+        // We shouldn't access _POST and _GET. However, this trait is used
+        // in various places - and our Request is going to be replaced anyways.
+        // So, let's not over-engineer things, this is quick & dirty:
+        if (isset($_POST[$param])) {
+            $name = $_POST[$param];
+        } elseif (isset($_GET[$param])) {
+            $name = $_GET[$param];
+        } else {
+            return null;
+        }
+
+        if (in_array($name, $this->listAllowedDbResourceNames())) {
+            return $name;
+        } else {
+            return null;
         }
     }
 

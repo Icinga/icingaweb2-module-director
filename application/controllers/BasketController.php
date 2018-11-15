@@ -171,7 +171,11 @@ class BasketController extends ActionController
             ),
             Link::create(
                 $this->translate('Download'),
-                $this->url()->with('action', 'download'),
+                $this->url()
+                    ->with([
+                        'action' => 'download',
+                        'dbResourceName' => $this->getDbResourceName()
+                    ]),
                 null,
                 [
                     'class'  => 'icon-download',
