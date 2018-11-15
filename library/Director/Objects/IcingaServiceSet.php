@@ -51,7 +51,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     protected function setKey($key)
     {
         if (is_int($key)) {
-            $this->id = $key;
+            $this->set('id', $key);
         } elseif (is_string($key)) {
             $keyComponents = preg_split('~!~', $key);
             if (count($keyComponents) === 1) {
@@ -72,6 +72,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     /**
      * @return IcingaService[]
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function getServiceObjects()
     {
@@ -86,6 +87,11 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         }
     }
 
+    /**
+     * @param IcingaServiceSet $set
+     * @return array
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function getServiceObjectsForSet(IcingaServiceSet $set)
     {
         if ($set->get('id') === null) {
@@ -226,6 +232,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         return $object;
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function onDelete()
     {
         $hostId = $this->get('host_id');
@@ -250,6 +259,10 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         parent::onDelete();
     }
 
+    /**
+     * @param IcingaConfig $config
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function renderToConfig(IcingaConfig $config)
     {
         if ($this->get('assign_filter') === null && $this->isTemplate()) {
@@ -325,6 +338,10 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         return $this;
     }
 
+    /**
+     * @param IcingaConfig $config
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function renderToLegacyConfig(IcingaConfig $config)
     {
         if ($this->get('assign_filter') === null && $this->isTemplate()) {
@@ -343,7 +360,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
             $hostnames = HostApplyMatches::forFilter($filter, $conn);
         } else {
-            $hostnames = array($this->getRelated('host')->object_name);
+            $hostnames = array($this->getRelated('host')->getObjectName());
         }
 
         $blacklists = [];
@@ -353,7 +370,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $file->addContent($this->getConfigHeaderComment($config));
 
             foreach ($this->getServiceObjects() as $service) {
-                $object_name = $service->object_name;
+                $object_name = $service->getObjectName();
 
                 if (! array_key_exists($object_name, $blacklists)) {
                     $blacklists[$object_name] = $service->getBlacklistedHostnames();
@@ -422,7 +439,8 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function fetchHostSets()
     {
-        if ($this->id === null) {
+        $id = $this->get('id');
+        if ($id === null) {
             return [];
         }
 
@@ -435,12 +453,16 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
                 []
             )->where(
                 'ssi.parent_service_set_id = ?',
-                $this->id
+                $id
             );
 
         return static::loadAll($this->connection, $query);
     }
 
+    /**
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function beforeStore()
     {
         parent::beforeStore();

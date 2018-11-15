@@ -48,10 +48,7 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
     {
         $properties = (array) $plain;
         if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
             unset($properties['originalId']);
-        } else {
-            $id = null;
         }
         $name = $properties['object_name'];
         $key = $name;
@@ -107,6 +104,13 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         return substr($this->table, 0, -16);
     }
 
+    /**
+     * @param QuickForm $form
+     * @param array $imports
+     * @param string $namePrefix
+     * @return \Zend_Form_Element
+     * @throws \Zend_Form_Exception
+     */
     public function createFormElement(QuickForm $form, $imports = [], $namePrefix = 'choice')
     {
         $required = $this->isRequired() && !$this->isTemplate();
@@ -141,12 +145,12 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
 
     public function isRequired()
     {
-        return (int) $this->min_required > 0;
+        return (int) $this->get('min_required') > 0;
     }
 
     public function allowsMultipleChoices()
     {
-        return (int) $this->max_allowed > 1;
+        return (int) $this->get('max_allowed') > 1;
     }
 
     public function hasBeenModified()
@@ -217,6 +221,9 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         return array_combine($choices, $choices);
     }
 
+    /**
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function onStore()
     {
         parent::onStore();
@@ -225,6 +232,9 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         }
     }
 
+    /**
+     * @throws \Zend_Db_Adapter_Exception
+     */
     protected function storeChoices()
     {
         $id = $this->getProperty('id');

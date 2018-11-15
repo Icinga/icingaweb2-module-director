@@ -2,7 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use RuntimeException;
 
@@ -120,6 +122,10 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         return $this->getObjectName();
     }
 
+    /**
+     * @return \stdClass
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function export()
     {
         // TODO: ksort in toPlainObject?
@@ -128,6 +134,38 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         ksort($props);
 
         return (object) $props;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Notification "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        // $object->newFields = $properties['fields'];
+        unset($properties['fields']);
+        $object->setProperties($properties);
+
+        return $object;
     }
 
     protected function loadFieldReferences()

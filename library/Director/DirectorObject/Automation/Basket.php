@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\DirectorObject\Automation;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 
 /**
  * Class Basket
@@ -75,6 +76,34 @@ class Basket extends DbObject implements ExportInterface
         return (object) $result;
     }
 
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['basket_name'];
+
+        if ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
+        } elseif (static::exists($name, $db)) {
+            throw new DuplicateKeyException(
+                'Basket "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+        $object->setProperties($properties);
+
+        return $object;
+    }
+
     public function supportsCustomSelectionFor($type)
     {
         if (! array_key_exists($type, $this->chosenObjects)) {
@@ -113,7 +142,7 @@ class Basket extends DbObject implements ExportInterface
             $objects = true;
         } elseif ($objects === null || $objects === 'IGNORE') {
             return;
-        } elseif ($objects === '[]') {
+        } elseif ($objects === '[]'  || is_array($objects)) {
             if (isset($this->chosenObjects[$type])) {
                 if (! is_array($this->chosenObjects[$type])) {
                     $this->chosenObjects[$type] = [];
