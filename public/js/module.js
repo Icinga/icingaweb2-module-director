@@ -24,6 +24,7 @@
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
+            this.module.on('click', 'ul.filter-root input[type=submit]', this.setAutoSubmitted);
             this.module.on('focus', 'form input, form textarea, form select', this.formElementFocus);
             this.module.on('keyup', '.director-suggest', this.autoSuggest);
             this.module.on('keydown', '.director-suggest', this.suggestionKeyDown);
