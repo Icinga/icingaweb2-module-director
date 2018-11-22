@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Core;
 
-use http\Exception\RuntimeException;
 use Icinga\Application\Benchmark;
+use RuntimeException;
 
 class RestApiClient
 {
