@@ -389,9 +389,15 @@ class Sync
                 $this->db
             ) as $object) {
                 if ($object instanceof IcingaService) {
-                    if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
-                        continue;
-                    } elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
+                    if (strstr($destinationKeyPattern, '${host}')) {
+                        if ($object->host_id === null) {
+                            continue;
+                        }
+                    } elseif (strstr($destinationKeyPattern, '${service_set}')) {
+                        if ($object->service_set_id === null) {
+                            continue;
+                        }
+                    } elseif ($object->host_id !== null || $object->service_set_id !== null) {
                         continue;
                     }
                 }
