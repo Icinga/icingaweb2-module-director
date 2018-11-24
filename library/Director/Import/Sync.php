@@ -18,8 +18,8 @@ use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
-use Icinga\Module\Director\Util;
 use Icinga\Exception\IcingaException;
+use InvalidArgumentException;
 
 class Sync
 {
@@ -168,20 +168,21 @@ class Sync
     {
         $this->syncProperties = $this->rule->getSyncProperties();
         foreach ($this->syncProperties as $key => $prop) {
-            if ($prop->destination_field === 'vars' && $prop->merge_policy === 'override') {
+            $destinationField = $prop->get('destination_field');
+            if ($destinationField === 'vars' && $prop->get('merge_policy') === 'override') {
                 $this->replaceVars = true;
             }
 
-            if ($prop->destination_field === 'disabled') {
+            if ($destinationField === 'disabled') {
                 $this->hasPropertyDisabled = true;
             }
 
-            if (! strlen($prop->filter_expression)) {
+            if (! strlen($prop->get('filter_expression'))) {
                 continue;
             }
 
             $this->columnFilters[$key] = Filter::fromQueryString(
-                $prop->filter_expression
+                $prop->get('filter_expression')
             );
         }
 
@@ -208,7 +209,7 @@ class Sync
     {
         $this->sources = [];
         foreach ($this->syncProperties as $p) {
-            $id = $p->source_id;
+            $id = $p->get('source_id');
             if (! array_key_exists($id, $this->sources)) {
                 $this->sources[$id] = ImportSource::loadWithAutoIncId(
                     (int) $id,
@@ -231,12 +232,12 @@ class Sync
         $this->sourceColumns = [];
 
         foreach ($this->syncProperties as $p) {
-            $sourceId = $p->source_id;
+            $sourceId = $p->get('source_id');
             if (! array_key_exists($sourceId, $this->sourceColumns)) {
                 $this->sourceColumns[$sourceId] = [];
             }
 
-            foreach (SyncUtils::extractVariableNames($p->source_expression) as $varname) {
+            foreach (SyncUtils::extractVariableNames($p->get('source_expression')) as $varname) {
                 $this->sourceColumns[$sourceId][$varname] = $varname;
                 // -> ? $fieldMap[
             }
@@ -253,7 +254,7 @@ class Sync
     protected function fetchImportedData()
     {
         Benchmark::measure('Begin loading imported data');
-        if ($this->rule->object_type === 'host') {
+        if ($this->rule->get('object_type') === 'host') {
             $this->serviceOverrideKeyName = $this->db->settings()->override_services_varname;
         }
 
@@ -264,7 +265,7 @@ class Sync
 
         foreach ($this->sources as $source) {
             /** @var ImportSource $source */
-            $sourceId = $source->id;
+            $sourceId = $source->get('id');
 
             // Provide an alias column for our key. TODO: double-check this!
             $key = $source->key_column;
@@ -301,22 +302,22 @@ class Sync
                     $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
 
                     if (array_key_exists($key, $this->imported[$sourceId])) {
-                        throw new IcingaException(
+                        throw new InvalidArgumentException(sprintf(
                             'Trying to import row "%s" (%s) twice: %s VS %s',
                             $key,
                             $sourceKeyPattern,
                             json_encode($this->imported[$sourceId][$key]),
                             json_encode($row)
-                        );
+                        ));
                     }
                 } else {
                     if (! property_exists($row, $key)) {
-                        throw new IcingaException(
+                        throw new InvalidArgumentException(sprintf(
                             'There is no key column "%s" in this row from "%s": %s',
                             $key,
                             $source->source_name,
                             json_encode($row)
-                        );
+                        ));
                     }
                 }
 
@@ -341,27 +342,25 @@ class Sync
 
     /**
      * TODO: This is rubbish, we need to filter at fetch time
-     *
-     * @throws IcingaException
      */
     protected function removeForeignListEntries()
     {
         $listId = null;
         foreach ($this->syncProperties as $prop) {
-            if ($prop->destination_field === 'list_id') {
-                $listId = (int) $prop->source_expression;
+            if ($prop->get('destination_field') === 'list_id') {
+                $listId = (int) $prop->get('source_expression');
             }
         }
 
         if ($listId === null) {
-            throw new IcingaException(
+            throw new InvalidArgumentException(
                 'Cannot sync datalist entry without list_ist'
             );
         }
 
         $no = [];
         foreach ($this->objects as $k => $o) {
-            if ((int) $o->list_id !== (int) $listId) {
+            if ((int) $o->get('list_id') !== (int) $listId) {
                 $no[] = $k;
             }
         }
@@ -373,25 +372,29 @@ class Sync
 
     /**
      * @return $this
-     * @throws IcingaException
      */
     protected function loadExistingObjects()
     {
         Benchmark::measure('Begin loading existing objects');
 
+        $ruleObjectType = $this->rule->get('object_type');
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->rule->hasCombinedKey()) {
             $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
 
             foreach (IcingaObject::loadAllByType(
-                $this->rule->object_type,
+                $ruleObjectType,
                 $this->db
             ) as $object) {
                 if ($object instanceof IcingaService) {
-                    if (strstr($destinationKeyPattern, '${host}') && $object->host_id === null) {
+                    if (strstr($destinationKeyPattern, '${host}')
+                        && $object->get('host_id') === null
+                    ) {
                         continue;
-                    } elseif (strstr($destinationKeyPattern, '${service_set}') && $object->service_set_id === null) {
+                    } elseif (strstr($destinationKeyPattern, '${service_set}')
+                        && $object->get('service_set_id') === null
+                    ) {
                         continue;
                     }
                 }
@@ -402,24 +405,24 @@ class Sync
                 );
 
                 if (array_key_exists($key, $this->objects)) {
-                    throw new IcingaException(
+                    throw new InvalidArgumentException(sprintf(
                         'Combined destination key "%s" is not unique, got "%s" twice',
                         $destinationKeyPattern,
                         $key
-                    );
+                    ));
                 }
 
                 $this->objects[$key] = $object;
             }
         } else {
             $this->objects = IcingaObject::loadAllByType(
-                $this->rule->object_type,
+                $ruleObjectType,
                 $this->db
             );
         }
 
         // TODO: should be obsoleted by a better "loadFiltered" method
-        if ($this->rule->object_type === 'datalistEntry') {
+        if ($ruleObjectType === 'datalistEntry') {
             $this->removeForeignListEntries();
         }
 
@@ -437,6 +440,7 @@ class Sync
     protected function prepareNewObjects()
     {
         $objects = [];
+        $ruleObjectType = $this->rule->get('object_type');
 
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
@@ -444,7 +448,7 @@ class Sync
             foreach ($this->imported[$sourceId] as $key => $row) {
                 if (! array_key_exists($key, $objects)) {
                     // Safe default values for object_type and object_name
-                    if ($this->rule->object_type === 'datalistEntry') {
+                    if ($ruleObjectType === 'datalistEntry') {
                         $props = [];
                     } else {
                         $props = [
@@ -454,7 +458,7 @@ class Sync
                     }
 
                     $objects[$key] = IcingaObject::createByType(
-                        $this->rule->object_type,
+                        $ruleObjectType,
                         $props,
                         $this->db
                     );
@@ -479,7 +483,7 @@ class Sync
     protected function prepareNewObject($row, DbObject $object, $sourceId)
     {
         foreach ($this->syncProperties as $propertyKey => $p) {
-            if ($p->source_id !== $sourceId) {
+            if ($p->get('source_id') !== $sourceId) {
                 continue;
             }
 
@@ -487,9 +491,9 @@ class Sync
                 continue;
             }
 
-            $prop = $p->destination_field;
+            $prop = $p->get('destination_field');
 
-            $val = SyncUtils::fillVariables($p->source_expression, $row);
+            $val = SyncUtils::fillVariables($p->get('source_expression'), $row);
 
             if ($object instanceof IcingaObject) {
                 if ($prop === 'import') {
@@ -527,7 +531,6 @@ class Sync
 
     /**
      * @return $this
-     * @throws IcingaException
      */
     protected function deferResolvers()
     {
@@ -542,7 +545,6 @@ class Sync
     /**
      * @param DbObject $object
      * @return $this
-     * @throws IcingaException
      */
     protected function setResolver($object)
     {
@@ -558,7 +560,7 @@ class Sync
 
     /**
      * @return $this
-     * @throws IcingaException
+     * @throws \Zend_Db_Adapter_Exception
      */
     protected function notifyResolvers()
     {
@@ -571,7 +573,6 @@ class Sync
 
     /**
      * @return bool|HostGroupMembershipResolver
-     * @throws IcingaException
      */
     protected function getHostGroupMembershipResolver()
     {
@@ -663,7 +664,6 @@ class Sync
      * @param $key
      * @param DbObject|IcingaObject $object
      * @throws IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function processObject($key, $object)
     {
@@ -678,7 +678,6 @@ class Sync
      * @param $key
      * @param DbObject|IcingaObject $object
      * @throws IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
      */
     protected function refreshObject($key, $object)
     {
@@ -745,7 +744,8 @@ class Sync
             $created = 0;
             $modified = 0;
             $deleted = 0;
-            $failed = 0;
+            // TODO: Count also failed ones, once we allow such
+            // $failed = 0;
             foreach ($objects as $object) {
                 $this->setResolver($object);
                 if ($object->shouldBeRemoved()) {
@@ -806,16 +806,17 @@ class Sync
             }
         }
 
-        return $this->run->id;
+        return $this->run->get('id');
     }
 
     protected function prepareCache()
     {
         PrefetchCache::initialize($this->db);
+        $ruleObjectType = $this->rule->get('object_type');
 
-        $dummy = IcingaObject::createByType($this->rule->object_type);
+        $dummy = IcingaObject::createByType($ruleObjectType);
         if ($dummy instanceof IcingaObject) {
-            IcingaObject::prefetchAllRelationsByType($this->rule->object_type, $this->db);
+            IcingaObject::prefetchAllRelationsByType($ruleObjectType, $this->db);
         }
 
         return $this;
