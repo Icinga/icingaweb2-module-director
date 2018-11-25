@@ -136,7 +136,6 @@ class Basket extends DbObject implements ExportInterface
     public function addObjects($type, $objects = true)
     {
         BasketSnapshot::assertValidType($type);
-
         // '1' -> from Form!
         if ($objects === 'ALL') {
             $objects = true;
@@ -150,7 +149,9 @@ class Basket extends DbObject implements ExportInterface
             } else {
                 $this->chosenObjects[$type] = [];
             }
-            $objects = [];
+            if ($objects === '[]') {
+                $objects = [];
+            }
         }
 
         if ($objects === true) {
