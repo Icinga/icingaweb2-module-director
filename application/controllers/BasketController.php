@@ -65,8 +65,19 @@ class BasketController extends ActionController
         );
     }
 
+    /**
+     * @throws \Icinga\Exception\MissingParameterException
+     */
     public function addAction()
     {
+        $this->actions()->add(
+            Link::create(
+                $this->translate('Baskets'),
+                'director/baskets',
+                null,
+                ['class' => 'icon-tag']
+            )
+        );
         $this->addSingleTab($this->translate('Add to Basket'));
         $this->addTitle($this->translate('Add chosen objects to a Configuration Basket'));
         $form = new AddToBasketForm();
