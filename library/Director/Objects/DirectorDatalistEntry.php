@@ -2,30 +2,28 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
+use http\Exception\RuntimeException;
 use Icinga\Module\Director\Data\Db\DbObject;
 
 class DirectorDatalistEntry extends DbObject
 {
-    protected $keyName = array('list_id', 'entry_name');
+    protected $keyName = ['list_id', 'entry_name'];
 
     protected $table = 'director_datalist_entry';
 
     private $shouldBeRemoved = false;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'list_id'       => null,
         'entry_name'    => null,
         'entry_value'   => null,
         'format'        => null,
         'allowed_roles' => null,
-    );
+    ];
 
     /**
      * @param DirectorDatalist $list
      * @return static[]
-     * @throws IcingaException
      */
     public static function loadAllForList(DirectorDatalist $list)
     {
@@ -40,7 +38,6 @@ class DirectorDatalistEntry extends DbObject
 
     /**
      * @param $roles
-     * @throws IcingaException
      * @codingStandardsIgnoreStart
      */
     public function setAllowed_roles($roles)
@@ -52,7 +49,7 @@ class DirectorDatalistEntry extends DbObject
         } elseif (null === $roles) {
             $this->reallySet($key, null);
         } else {
-            throw new ProgrammingError(
+            throw new RuntimeException(
                 'Expected array or null for allowed_roles, got %s',
                 var_export($roles, 1)
             );
@@ -76,9 +73,9 @@ class DirectorDatalistEntry extends DbObject
 
     public function replaceWith(DirectorDatalistEntry $object)
     {
-        $this->entry_value = $object->entry_value;
-        if ($object->format) {
-            $this->format = $object->format;
+        $this->set('entry_value', $object->get('entry_value'));
+        if ($object->get('format')) {
+            $this->set('format', $object->get('format'));
         }
 
         return $this;
@@ -92,6 +89,7 @@ class DirectorDatalistEntry extends DbObject
     public function markForRemoval($remove = true)
     {
         $this->shouldBeRemoved = $remove;
+
         return $this;
     }
 

@@ -22,7 +22,7 @@ class DatalistTable extends ZfQueryBasedTable
         return $this::tr($this::td(Link::create(
             $row->list_name,
             'director/data/listentry',
-            array('list_id' => $row->id)
+            array('list' => $row->list_name)
         )));
     }
 
