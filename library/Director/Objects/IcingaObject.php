@@ -1086,16 +1086,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getVars()
     {
-        $vars = (object) array();
+        $vars = [];
         foreach ($this->vars() as $key => $var) {
             if ($var->hasBeenDeleted()) {
                 continue;
             }
 
-            $vars->$key = $var->getValue();
+            $vars[$key] = $var->getValue();
         }
+        ksort($vars);
 
-        return $vars;
+        return (object) $vars;
     }
 
     /**

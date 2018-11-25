@@ -44,7 +44,12 @@ abstract class DbObjectWithSettings extends DbObject
 
     public function setSettings($settings)
     {
-        $this->settings = (array) $settings;
+        $settings = (array) $settings;
+        ksort($settings);
+        if ($settings !== $this->settings) {
+            $this->settings = $settings;
+            $this->hasBeenModified = true;
+        }
 
         return $this;
     }
