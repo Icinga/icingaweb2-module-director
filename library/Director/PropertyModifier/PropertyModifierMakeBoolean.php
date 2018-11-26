@@ -49,7 +49,7 @@ class PropertyModifierMakeBoolean extends PropertyModifierHook
 
     public function transform($value)
     {
-        if ($value === false || $value === true || $value === null) {
+        if ($value === false || $value === true) {
             return $value;
         }
 
