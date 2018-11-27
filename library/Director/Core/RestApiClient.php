@@ -95,7 +95,8 @@ class RestApiClient
         ];
 
         if (! $this->keepAlive) {
-            $headers[] = 'Connection: close';
+            // This fails on Icinga 2.9:
+            // $headers[] = 'Connection: close';
         }
 
         if (! $raw) {
