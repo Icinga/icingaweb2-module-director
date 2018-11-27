@@ -22,8 +22,8 @@ class DataController extends ActionController
             Link::create($this->translate('Add'), 'director/data/list', null, [
                 'class' => 'icon-plus',
                 'data-base-target' => '_next'
-            ]
-        ));
+            ])
+        );
 
         $this->tabs(new DataTabs())->activate('datalist');
         (new DatalistTable($this->db()))->renderTo($this);
