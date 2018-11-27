@@ -26,6 +26,20 @@ class PropertyModifierMakeBoolean extends PropertyModifierHook
 
     public static function addSettingsFormFields(QuickForm $form)
     {
+        $form->addElement('select', 'null_values', array(
+            'label'       => 'Null values',
+            'required'    => true,
+            'description' => $form->translate(
+                'Your import source may contain null values. You can specifiy'
+                . ' here wether your want to keep them or treat them as invalid'
+            ),
+            'value'        => 'keep',
+            'multiOptions' => $form->optionalEnum(array(
+              'keep'  => $form->translate('Keep'),
+              'invalid'  => $form->translate('Are invalid'),
+            )),
+        ));
+
         $form->addElement('select', 'on_invalid', array(
             'label'       => 'Invalid properties',
             'required'    => true,
@@ -49,7 +63,7 @@ class PropertyModifierMakeBoolean extends PropertyModifierHook
 
     public function transform($value)
     {
-        if ($value === false || $value === true) {
+        if ($value === false || $value === true || ($value === null && $this->getSetting('null_values') == 'keep')) {
             return $value;
         }
 
