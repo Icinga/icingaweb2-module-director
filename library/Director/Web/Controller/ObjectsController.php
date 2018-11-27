@@ -240,23 +240,23 @@ abstract class ObjectsController extends ActionController
                 $this->translate('All your %s Apply Rules'),
                 $tType
             );
-        $this->actions()/*->add(
-            $this->getBackToDashboardLink()
-        )*/->add(
-            Link::create(
-                $this->translate('Add'),
-                "director/$type/add",
-                ['type' => 'apply'],
-                [
-                    'title' => sprintf(
-                        $this->translate('Create a new %s Apply Rule'),
-                        $tType
-                    ),
-                    'class' => 'icon-plus',
-                    'data-base-target' => '_next'
-                ]
-            )
-        );
+        $this->actions()
+            //->add($this->getBackToDashboardLink())
+            ->add(
+                Link::create(
+                    $this->translate('Add'),
+                    "director/$type/add",
+                    ['type' => 'apply'],
+                    [
+                        'title' => sprintf(
+                            $this->translate('Create a new %s Apply Rule'),
+                            $tType
+                        ),
+                        'class' => 'icon-plus',
+                        'data-base-target' => '_next'
+                    ]
+                )
+            );
 
         $table = new ApplyRulesTable($this->db());
         $table->setType($this->getType());
