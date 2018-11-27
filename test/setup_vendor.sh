@@ -2,13 +2,13 @@
 
 set -ex
 
-MODULE_HOME=${MODULE_HOME:="$(dirname "$(readlink -f $(dirname "$0"))")"}
+MODULE_HOME=${MODULE_HOME:="$(dirname "$(readlink -f "$(dirname "$0")")")"}
 PHP_VERSION="$(php -r 'echo phpversion();')"
 
-ICINGAWEB_VERSION=${ICINGAWEB_VERSION:=2.5.0}
+ICINGAWEB_VERSION=${ICINGAWEB_VERSION:=2.6.2}
 ICINGAWEB_GITREF=${ICINGAWEB_GITREF:=}
 
-PHPCS_VERSION=${PHPCS_VERSION:=2.9.1}
+PHPCS_VERSION=${PHPCS_VERSION:=3.3.2}
 
 if [ "$PHP_VERSION" '<' 5.6.0 ]; then
   PHPUNIT_VERSION=${PHPUNIT_VERSION:=4.8}
@@ -16,7 +16,7 @@ else
   PHPUNIT_VERSION=${PHPUNIT_VERSION:=5.7}
 fi
 
-cd ${MODULE_HOME}
+cd "${MODULE_HOME}"
 
 test -d vendor || mkdir vendor
 cd vendor/
@@ -48,8 +48,8 @@ else
   rm -f icingaweb2
   ln -svf "${icingaweb_path}" icingaweb2
 fi
-ln -svf "${icingaweb_path}"/library/Icinga
-ln -svf "${icingaweb_path}"/library/vendor/Zend
+ln -svf "${icingaweb_path}"/library/Icinga Icinga
+ln -svf "${icingaweb_path}"/library/vendor/Zend Zend
 
 # phpunit
 phpunit_path="phpunit-${PHPUNIT_VERSION}"
