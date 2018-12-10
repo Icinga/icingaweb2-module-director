@@ -47,15 +47,13 @@ class RestoreBasketForm extends QuickForm
     public function setup()
     {
         $allowedDbs = $this->listAllowedDbResourceNames();
-        if (count($allowedDbs) > 1) {
-            $this->addElement('select', 'target_db', [
-                'label'        => $this->translate('Target DB'),
-                'description'  => $this->translate('Restore to this target Director DB'),
-                'multiOptions' => $allowedDbs,
-                'value'        => $this->getRequest()->getParam('target_db', $this->getFirstDbResourceName()),
-                'class'        => 'autosubmit',
-            ]);
-        }
+        $this->addElement('select', 'target_db', [
+            'label'        => $this->translate('Target DB'),
+            'description'  => $this->translate('Restore to this target Director DB'),
+            'multiOptions' => $allowedDbs,
+            'value'        => $this->getRequest()->getParam('target_db', $this->getFirstDbResourceName()),
+            'class'        => 'autosubmit',
+        ]);
 
         $this->setSubmitLabel($this->translate('Restore'));
     }
