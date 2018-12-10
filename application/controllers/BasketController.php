@@ -141,7 +141,7 @@ class BasketController extends ActionController
             $this->addSingleTab($this->translate('Snapshots'));
         } else {
             $this->addTitle(sprintf(
-                $this->translate('%: Snapshots'),
+                $this->translate('%s: Snapshots'),
                 $basket->get('basket_name')
             ));
             $this->basketTabs()->activate('snapshots');
