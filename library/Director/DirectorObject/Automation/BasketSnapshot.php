@@ -175,6 +175,21 @@ class BasketSnapshot extends DbObject
         );
     }
 
+    /**
+     * @param Basket $basket
+     * @param $string
+     * @return BasketSnapshot
+     */
+    public static function forBasketFromJson(Basket $basket, $string)
+    {
+        $snapshot = static::create([
+            'basket_uuid' => $basket->get('uuid')
+        ]);
+        $snapshot->objects = Json::decode($string);
+
+        return $snapshot;
+    }
+
     public static function restoreJson($string, Db $connection, $replace = true)
     {
         $snapshot = new static();

@@ -9,7 +9,7 @@ use Icinga\Module\Director\Web\Table\BasketTable;
 
 class BasketsController extends ActionController
 {
-    protected $isApified = true;
+    protected $isApified = false;
 
     public function indexAction()
     {
@@ -21,7 +21,13 @@ class BasketsController extends ActionController
                 'director/basket/create',
                 null,
                 ['class' => 'icon-plus']
-            )
+            ),
+            Link::create(
+                $this->translate('Upload'),
+                'director/basket/upload',
+                null,
+                ['class' => 'icon-upload']
+            ),
         ]);
         $this->addTitle($this->translate('Configuration Baskets'));
         $this->content()->add(Html::tag('p', $this->translate(

@@ -15,6 +15,7 @@ use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver
 use Icinga\Module\Director\Forms\AddToBasketForm;
 use Icinga\Module\Director\Forms\BasketCreateSnapshotForm;
 use Icinga\Module\Director\Forms\BasketForm;
+use Icinga\Module\Director\Forms\BasketUploadForm;
 use Icinga\Module\Director\Forms\RestoreBasketForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use dipl\Html\Html;
@@ -106,6 +107,24 @@ class BasketController extends ActionController
         $this->content()->add($form);
     }
 
+    public function uploadAction()
+    {
+        $this->actions()->add(
+            Link::create(
+                $this->translate('back'),
+                'director/baskets',
+                null,
+                ['class' => 'icon-left-big']
+            )
+        );
+        $this->addSingleTab($this->translate('Upload a Basket'));
+        $this->addTitle($this->translate('Upload a Configuration Basket'));
+        $form = (new BasketUploadForm())
+            ->setDb($this->db())
+            ->handleRequest();
+        $this->content()->add($form);
+    }
+
     /**
      * @throws \Icinga\Exception\NotFoundError
      */
@@ -157,6 +176,15 @@ class BasketController extends ActionController
 
         if ($this->params->get('action') === 'download') {
             $this->getResponse()->setHeader('Content-Type', 'application/json', true);
+            $this->getResponse()->setHeader('Content-Disposition', sprintf(
+                'attachment; filename=Director-Basket_%s_%s.json',
+                str_replace([' ', '"'], ['_', '_'], iconv(
+                    'UTF-8',
+                    'ISO-8859-11//IGNORE',
+                    $basket->get('basket_name')
+                )),
+                substr($snapSum, 0, 7)
+            ));
             echo $snapshot->getJsonDump();
             return;
         }
