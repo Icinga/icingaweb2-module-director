@@ -4,8 +4,8 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-master (will be 1.6.0)
-----------------------
+1.6.0
+-----
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/15?closed=1)
@@ -15,28 +15,57 @@ master (will be 1.6.0)
 * FIX: searching for fields assigned to a template was broken (#1670)
 * FIX: changing an argument type from String to DSL didn't work (#1640)
 * FIX: incorrect links from template-tree to non-template commands (#1544)
+* FIX: drop useless object-type field for Time Periods (#788)
+* FIX: clean up naming for some tabs (#1312)
+* FIX: "remove" now removes the correct Service Set on a Host (#1619)
+* FIX: do not fail when "inspecting" a pending service (#1641)
+* FIX: a problem when selecting multiple host has been fixed (#1647)
+* FIX: allow to remove renamed Service Sets (#1664)
+* FIX: resolved a side-effect triggered by hooked Custom Fields (#1667)
+* FIX: config diff URL behavior has been corrected (#1704)
 * FEATURE: allow to filter templates by usage (#1339)
 * FEATURE: allow to show SQL used for template tables
 * FEATURE: allow to defined Service Groups for Set members and for Services
   assigned to Host Templates (#619)
 * FEATURE: it's now possible to choose another target Service Set when cloning
   a member service (#886)
+* FEATURE: Configuration Baskets with snapshot/import/export capabilities (#1630)
+* FEATURE: Allow to clone a Service from one Set to another one (#886)
+* FEATURE: form descriptions are now shown directly below the field, reverting
+  a change from v1.4.0 (#1510)
+* FEATURE: show sub-sets in Config Preview (#1623)
+* FEATURE: show live Health-Check in the frontend (#1669)
 
 ### Import and Sync
+* FIX: Core Api imports flapping only for 2.8+ (#1652) 
 * FEATURE: new Property Modifier allows to extract specific Array values (#473)
 
 ### CLI
-* FEATURE: It's now possible to dump data as fetched by an Import Source (#1626)
 * FIX: Director Health Check no longer warns about no Imports/Syncs/Jobs (#1607)
+* FEATURE: It's now possible to dump data as fetched by an Import Source (#1626)
+* FEATURE: CLI implementation for Configuration Basket features (#1630)
+* FEATURE: allow to append to or remove from array properties (#1666)
 
 ### Icinga Configuration
 * FIX: rendering of disabled objects containing `*/` has been fixed (#1263)
+* FEATURE: support for Timeperiod include/exclude (#1639)
+* FEATURE: improve legacy v1.x configuration rendering (#1624)
+
+### Icinga API
+* FIX: ship workarounds for issues with specific Icinga 2 versions
+* FIX: clean up deployed incomplete stages lost by Icinga (#1696)
+* FEATURE: allow to behave differently based on Icinga 2 version (#1695)
 
 ### Icinga Agent handling
 * FEATURE: ship latest PowerShell module (#1632)
+* FIX: PowerShell module runs in FIPS enforced mode (#1274)
 
 ### DB Schema
 * FIX: enforce strict object_name uniqueness on commands (#1496)
+
+### Documentation
+* FEATURE: improve installation docs, fix URLs (#1656, #1655)
+
 
 1.5.2
 -----
