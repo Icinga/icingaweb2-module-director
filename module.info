@@ -1,5 +1,5 @@
 Name: Icinga Director
-Version: master
+Version: 1.6.0
 Depends: monitoring
 Description: Director - Config tool for Icinga 2
  Icinga Director is a configuration tool that has been designed to make
