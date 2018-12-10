@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.6.1 (unreleased)
+------------------
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/19?closed=1)
+
+### User Interface
+* FIX: restoring a basket fails when there is only one configured DB (#1716)
+
+
 1.6.0
 -----
 ### Fixed issues
