@@ -342,12 +342,14 @@ class BasketController extends ActionController
                 null,
                 ['class' => 'icon-left-big']
             ),
+            /*
             Link::create(
                 $this->translate('Restore'),
                 $this->url()->with('action', 'restore'),
                 null,
                 ['class' => 'icon-rewind']
             )
+            */
         ]);
 
         $json = $snapshot->getJsonDump();
