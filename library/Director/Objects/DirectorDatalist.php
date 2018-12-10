@@ -21,6 +21,9 @@ class DirectorDatalist extends DbObject implements ExportInterface
         'owner'         => null
     );
 
+    /** @var DirectorDatalistEntry[] */
+    protected $storedEntries;
+
     public function getUniqueIdentifier()
     {
         return $this->get('list_name');
@@ -38,7 +41,6 @@ class DirectorDatalist extends DbObject implements ExportInterface
     {
         $properties = (array) $plain;
         if (isset($properties['originalId'])) {
-            $id = $properties['originalId'];
             unset($properties['originalId']);
         } else {
             $id = null;
@@ -56,11 +58,81 @@ class DirectorDatalist extends DbObject implements ExportInterface
             $object = static::create([], $db);
         }
         $object->setProperties($properties);
-        if ($id !== null) {
-            $object->reallySet('id', $id);
-        }
 
         return $object;
+    }
+
+    public function setEntries($entries)
+    {
+        $existing = $this->getStoredEntries();
+
+        $new = [];
+        $seen = [];
+        $modified = false;
+
+        foreach ($entries as $entry) {
+            $name = $entry->entry_name;
+            $entry = DirectorDatalistEntry::create((array) $entry);
+            $seen[$name] = true;
+            if (isset($existing[$name])) {
+                $existing[$name]->replaceWith($entry);
+                if (! $modified && $existing[$name]->hasBeenModified()) {
+                    $modified = true;
+                }
+            } else {
+                $modified = true;
+                $new[] = $entry;
+            }
+        }
+
+        foreach (array_keys($existing) as $key) {
+            if (! isset($seen[$key])) {
+                $existing[$key]->markForRemoval();
+                $modified = true;
+            }
+        }
+
+        foreach ($new as $entry) {
+            $existing[$entry->get('entry_name')] = $entry;
+        }
+
+        if ($modified) {
+            $this->hasBeenModified = true;
+        }
+
+        $this->storedEntries = $existing;
+        ksort($this->storedEntries);
+
+        return $this;
+    }
+
+    /**
+     * @throws DuplicateKeyException
+     */
+    public function onStore()
+    {
+        if ($this->storedEntries) {
+            $db = $this->getConnection();
+            $removedKeys = [];
+            $myId = $this->get('id');
+
+            foreach ($this->storedEntries as $key => $entry) {
+                if ($entry->shouldBeRemoved()) {
+                    $entry->delete();
+                    $removedKeys[] = $key;
+                } else {
+                    if (! $entry->hasBeenLoadedFromDb()) {
+                        $entry->set('list_id', $myId);
+                    }
+                    $entry->set('list_id', $myId);
+                    $entry->store($db);
+                }
+            }
+
+            foreach ($removedKeys as $key) {
+                unset($this->storedEntries[$key]);
+            }
+        }
     }
 
     public function export()
@@ -70,8 +142,10 @@ class DirectorDatalist extends DbObject implements ExportInterface
         unset($plain->id);
 
         $plain->entries = [];
-        $entries = DirectorDatalistEntry::loadAllForList($this);
-        foreach ($entries as $key => $entry) {
+        foreach ($this->getStoredEntries() as $key => $entry) {
+            if ($entry->shouldBeRemoved()) {
+                continue;
+            }
             $plainEntry = (object) $entry->getProperties();
             unset($plainEntry->list_id);
 
@@ -79,5 +153,19 @@ class DirectorDatalist extends DbObject implements ExportInterface
         }
 
         return $plain;
+    }
+
+    protected function getStoredEntries()
+    {
+        if ($this->storedEntries === null) {
+            if ($id = $this->get('id')) {
+                $this->storedEntries = DirectorDatalistEntry::loadAllForList($this);
+                ksort($this->storedEntries);
+            } else {
+                $this->storedEntries = [];
+            }
+        }
+
+        return $this->storedEntries;
     }
 }

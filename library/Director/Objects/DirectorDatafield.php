@@ -93,12 +93,13 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         if (isset($properties['settings']->datalist)) {
+            // Just try to load the list, import should fail if missing
             $list = DirectorDatalist::load(
                 $properties['settings']->datalist,
                 $db
             );
-            $properties['settings']->datalist_id = $list->get('id');
-            unset($properties['settings']->datalist);
+        } else {
+            $list = null;
         }
 
         $encoded = Json::encode($properties);
@@ -111,6 +112,11 @@ class DirectorDatafield extends DbObjectWithSettings
                     return $existing;
                 }
             }
+        }
+
+        if ($list) {
+            unset($properties['settings']->datalist);
+            $properties['settings']->datalist_id = $list->get('id');
         }
 
         $dba = $db->getDbAdapter();

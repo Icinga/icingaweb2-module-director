@@ -282,6 +282,14 @@ class BasketController extends ActionController
                     }
                     $currentExport = $current->export();
                     $fieldResolver->tweakTargetIds($currentExport);
+
+                    // Ignore originalId
+                    if (isset($currentExport->originalId)) {
+                        unset($currentExport->originalId);
+                    }
+                    if (isset($object->originalId)) {
+                        unset($object->originalId);
+                    }
                     $hasChanged = Json::encode($currentExport) !== Json::encode($object);
                     $table->addNameValueRow(
                         $key,

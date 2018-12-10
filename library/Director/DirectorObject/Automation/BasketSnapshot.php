@@ -54,7 +54,6 @@ class BasketSnapshot extends DbObject
         'ServiceSet',
         'Notification',
         'Dependency',
-        'DataList',
         'ImportSource',
         'SyncRule',
         'DirectorJob',
@@ -213,51 +212,74 @@ class BasketSnapshot extends DbObject
         $db = $connection->getDbAdapter();
         $db->beginTransaction();
         $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
+        $this->restoreType($all, 'DataList', $fieldResolver, $connection, $replace);
         $fieldResolver->storeNewFields();
         foreach ($this->restoreOrder as $typeName) {
-            if (isset($all->$typeName)) {
-                $objects = (array) $all->$typeName;
-                $class = static::getClassForType($typeName);
-
-                $changed = [];
-                foreach ($objects as $key => $object) {
-                    /** @var DbObject $new */
-                    $new = $class::import($object, $connection, $replace);
-                    if ($new->hasBeenModified()) {
-                        if ($new instanceof IcingaObject && $new->supportsImports()) {
-                            /** @var ExportInterface $new */
-                            $changed[$new->getUniqueIdentifier()] = $new;
-                        } else {
-                            $new->store();
-                            // Linking fields right now, as we're not in $changed
-                            if ($new instanceof IcingaObject) {
-                                $fieldResolver->relinkObjectFields($new, $object);
-                            }
-                        }
-                    } else {
-                        // No modification on the object, still, fields might have
-                        // been changed
-                        if ($new instanceof IcingaObject) {
-                            $fieldResolver->relinkObjectFields($new, $object);
-                        }
-                    }
-                    $allObjects[spl_object_hash($new)] = $object;
-                }
-
-                /** @var IcingaObject $object */
-                foreach ($changed as $object) {
-                    $this->recursivelyStore($object, $changed);
-                }
-                foreach ($changed as $key => $new) {
-                    // Store related fields. As objects might have formerly been
-                    // unstored, let's to it right here
-                    if ($new instanceof IcingaObject) {
-                        $fieldResolver->relinkObjectFields($new, $objects[$key]);
-                    }
-                }
-            }
+            $this->restoreType($all, $typeName, $fieldResolver, $connection, $replace);
         }
         $db->commit();
+    }
+
+    /**
+     * @param $all
+     * @param $typeName
+     * @param BasketSnapshotFieldResolver $fieldResolver
+     * @param Db $connection
+     * @param $replace
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
+    protected function restoreType(
+        & $all,
+        $typeName,
+        BasketSnapshotFieldResolver $fieldResolver,
+        Db $connection,
+        $replace
+    ) {
+        if (isset($all->$typeName)) {
+            $objects = (array) $all->$typeName;
+        } else {
+            return;
+        }
+        $class = static::getClassForType($typeName);
+
+        $changed = [];
+        foreach ($objects as $key => $object) {
+            /** @var DbObject $new */
+            $new = $class::import($object, $connection, $replace);
+            if ($new->hasBeenModified()) {
+                if ($new instanceof IcingaObject && $new->supportsImports()) {
+                    /** @var ExportInterface $new */
+                    $changed[$new->getUniqueIdentifier()] = $new;
+                } else {
+                    $new->store();
+                    // Linking fields right now, as we're not in $changed
+                    if ($new instanceof IcingaObject) {
+                        $fieldResolver->relinkObjectFields($new, $object);
+                    }
+                }
+            } else {
+                // No modification on the object, still, fields might have
+                // been changed
+                if ($new instanceof IcingaObject) {
+                    $fieldResolver->relinkObjectFields($new, $object);
+                }
+            }
+            $allObjects[spl_object_hash($new)] = $object;
+        }
+
+        /** @var IcingaObject $object */
+        foreach ($changed as $object) {
+            $this->recursivelyStore($object, $changed);
+        }
+        foreach ($changed as $key => $new) {
+            // Store related fields. As objects might have formerly been
+            // un-stored, let's to it right here
+            if ($new instanceof IcingaObject) {
+                $fieldResolver->relinkObjectFields($new, $objects[$key]);
+            }
+        }
     }
 
     /**

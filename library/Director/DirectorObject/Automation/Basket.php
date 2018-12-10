@@ -24,6 +24,8 @@ class Basket extends DbObject implements ExportInterface
 
     protected $chosenObjects = [];
 
+    protected $protectedFormerChosenObjects;
+
     protected $defaultProperties = [
         'uuid'        => null,
         'basket_name' => null,
@@ -118,6 +120,7 @@ class Basket extends DbObject implements ExportInterface
         if (empty($objects)) {
             $this->chosenObjects = [];
         } else {
+            $this->protectedFormerChosenObjects = $this->chosenObjects;
             $this->chosenObjects = [];
             foreach ((array) $objects as $type => $object) {
                 $this->addObjects($type, $object);
@@ -141,14 +144,18 @@ class Basket extends DbObject implements ExportInterface
             $objects = true;
         } elseif ($objects === null || $objects === 'IGNORE') {
             return;
-        } elseif ($objects === '[]'  || is_array($objects)) {
-            if (isset($this->chosenObjects[$type])) {
-                if (! is_array($this->chosenObjects[$type])) {
-                    $this->chosenObjects[$type] = [];
-                }
-            } else {
+        } elseif ($objects === '[]' || is_array($objects)) {
+            if (! is_array($this->chosenObjects[$type])) {
                 $this->chosenObjects[$type] = [];
             }
+            if (isset($this->protectedFormerChosenObjects[$type])) {
+                if (is_array($this->protectedFormerChosenObjects[$type])) {
+                    $this->chosenObjects[$type] = $this->protectedFormerChosenObjects;
+                } else {
+                    $this->chosenObjects[$type] = [];
+                }
+            }
+
             if ($objects === '[]') {
                 $objects = [];
             }
