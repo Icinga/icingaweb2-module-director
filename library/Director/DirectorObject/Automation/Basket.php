@@ -145,7 +145,7 @@ class Basket extends DbObject implements ExportInterface
         } elseif ($objects === null || $objects === 'IGNORE') {
             return;
         } elseif ($objects === '[]' || is_array($objects)) {
-            if (! is_array($this->chosenObjects[$type])) {
+            if (! isset($this->chosenObjects[$type]) || ! is_array($this->chosenObjects[$type])) {
                 $this->chosenObjects[$type] = [];
             }
             if (isset($this->protectedFormerChosenObjects[$type])) {
