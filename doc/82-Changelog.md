@@ -12,6 +12,7 @@ before switching to a new version.
 
 ### User Interface
 * FIX: restoring a basket fails when there is only one configured DB (#1716)
+* FIX: creating a new Basket with a "Custom Selection" failed with an error (#1733)
 
 
 1.6.0
