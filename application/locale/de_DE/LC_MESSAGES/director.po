@@ -5019,7 +5019,7 @@ msgid "There are no pending changes"
 msgstr "Es gibt keine anstehenden Änderungen"
 
 #: application/forms/DeployConfigForm.php:36
-msgid "There are no pending changes. Deploy anyways"
+msgid "There are no pending changes. Deploy anyway"
 msgstr "Es gibt keine anstehenden Änderungen. Dennoch ausrollen"
 
 #: library/Director/Web/Widget/ImportSourceDetails.php:58
