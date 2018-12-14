@@ -33,7 +33,7 @@ class DeployConfigForm extends DirectorForm
         if ($this->deploymentId) {
             $label = $this->translate('Re-deploy now');
         } elseif ($activities === 0) {
-            $label = $this->translate('There are no pending changes. Deploy anyways');
+            $label = $this->translate('There are no pending changes. Deploy anyway');
         } else {
             $label = sprintf(
                 $this->translate('Deploy %d pending changes'),
