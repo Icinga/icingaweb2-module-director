@@ -301,12 +301,20 @@ class Import
             }
 
             foreach ($newRows as $row) {
-                $db->insert('imported_row', $rows[$row]);
-                foreach ($this->rowProperties[$row] as $property) {
-                    $db->insert('imported_row_property', array(
-                        'row_checksum'      => $this->quoteBinary($row),
-                        'property_checksum' => $property
-                    ));
+                try {
+                    $db->insert('imported_row', $rows[$row]);
+                    foreach ($this->rowProperties[$row] as $property) {
+                        $db->insert('imported_row_property', array(
+                            'row_checksum'      => $this->quoteBinary($row),
+                            'property_checksum' => $property
+                        ));
+                    }
+                } catch (Exception $e) {
+                    throw new IcingaException(
+                        "Error while storing a row for '%s' into database: %s",
+                        $rows[$row]['object_name'],
+                        $e->getMessage()
+                    );
                 }
             }
 
