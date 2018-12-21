@@ -53,6 +53,7 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierUpperCaseFirst');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierRejectOrSelect');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierArrayElementByPosition');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierParseURL');
 
 $this->provideHook('director/Job', $prefix . 'Job\\HousekeepingJob');
 $this->provideHook('director/Job', $prefix . 'Job\\ConfigJob');
