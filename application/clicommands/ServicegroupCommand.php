@@ -1,6 +1,8 @@
 <?php
 namespace Icinga\Module\Director\Clicommands;
+
 use Icinga\Module\Director\Cli\ObjectCommand;
+
 /**
  * Manage Icinga Servicegroups
  *
