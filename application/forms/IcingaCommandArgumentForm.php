@@ -27,6 +27,11 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             'description' => $this->translate('e.g. -H or --hostname, empty means "skip_key"')
         ));
 
+        $this->addElement('text', 'description', array(
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate('Description of the argument')
+        ));
+
         $this->addElement('select', 'argument_format', array(
             'label' => $this->translate('Value type'),
             'multiOptions' => array(
