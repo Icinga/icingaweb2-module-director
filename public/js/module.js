@@ -1,7 +1,7 @@
 
-(function(Icinga) {
+(function (Icinga) {
 
-    var Director = function(module) {
+    var Director = function (module) {
         this.module = module;
 
         this.initialize();
@@ -13,8 +13,7 @@
 
     Director.prototype = {
 
-        initialize: function()
-        {
+        initialize: function () {
             /**
              * Tell Icinga about our event handlers
              */
@@ -37,7 +36,7 @@
             this.module.icinga.logger.debug('Director module initialized');
         },
 
-        tabWantsFullscreen: function(ev) {
+        tabWantsFullscreen: function (ev) {
             var icinga = this.module.icinga;
             var $a, $container, id;
 
@@ -67,14 +66,13 @@
          * Autocomplete/suggestion eventhandler
          *
          * Triggered when pressing a key in a form element with suggestions
-         *
          * @param ev
          */
-        suggestionKeyDown: function(ev) {
-            var $suggestions, $active;
+        suggestionKeyDown: function (ev) {
             var $el = $(ev.currentTarget);
+            var key = ev.which;
 
-            if (ev.keyCode === 13) {
+            if (key === 13) {
                 /**
                  * RETURN key pressed. In case there are any suggestions:
                  * - let's choose the active one (if set)
@@ -82,18 +80,22 @@
                  *
                  * This let's return bubble up in case there is no suggestion list shown
                  */
-                if (this.hasSuggestions($el)) {
+                if (this.hasActiveSuggestion($el)) {
                     this.chooseActiveSuggestion($el);
                     ev.stopPropagation();
                     ev.preventDefault();
                 } else {
                     this.removeSuggestionList($el);
-                    $el.trigger('change');
+                    if ($el.closest('.extensible-set')) {
+                        $el.trigger('change');
+                    } else {
+                        $el.closest('form').submit();
+                    }
                 }
-            } else if (ev.keyCode === 27) {
+            } else if (key === 27) {
                 // ESC key pressed. Remove suggestions if any
                 this.removeSuggestionList($el);
-            } else if (ev.keyCode === 39) {
+            } else if (key === 39) {
                 /**
                  * RIGHT ARROW key pressed. In case there are any suggestions:
                  * - let's choose the active one (if set)
@@ -107,7 +109,7 @@
                         ev.preventDefault();
                     }
                 }
-            } else if (ev.keyCode === 38 ) {
+            } else if (key === 38 ) {
                 /**
                  * UP ARROW key pressed. In any case:
                  * - stop the event
@@ -116,7 +118,7 @@
                 ev.stopPropagation();
                 ev.preventDefault();
                 this.activatePrevSuggestion($el);
-            } else if (ev.keyCode === 40 ) { // down
+            } else if (key === 40 ) { // down
                 /**
                  * DOWN ARROW key pressed. In any case:
                  * - stop the event
@@ -128,8 +130,7 @@
             }
         },
 
-        suggestionDoubleClick: function (ev)
-        {
+        suggestionDoubleClick: function (ev) {
             var $el = $(ev.currentTarget);
             this.getSuggestionList($el);
         },
@@ -141,20 +142,20 @@
          *
          * @param ev
          */
-        autoSuggest: function(ev)
-        {
+        autoSuggest: function (ev) {
             // Ignore special keys, most of them have already been handled on 'keydown'
-            if (ev.keyCode === 9 || // TAB
-                ev.keyCode === 13 || // RETURN
-                ev.keyCode === 27 || // ESC
-                ev.keyCode === 37 || // LEFT ARROW
-                ev.keyCode === 38 || // UP ARROW
-                ev.keyCode === 39 ) { // RIGHT ARROW
+            var key = ev.which;
+            if (key === 9 || // TAB
+                key === 13 || // RETURN
+                key === 27 || // ESC
+                key === 37 || // LEFT ARROW
+                key === 38 || // UP ARROW
+                key === 39 ) { // RIGHT ARROW
                 return;
             }
 
             var $el = $(ev.currentTarget);
-            if (ev.keyCode === 40) { // DOWN ARROW
+            if (key === 40) { // DOWN ARROW
                 this.getSuggestionList($el);
             } else {
                 this.getSuggestionList($el, true);
@@ -169,8 +170,7 @@
          *
          * @param $el
          */
-        activateNextSuggestion: function($el)
-        {
+        activateNextSuggestion: function ($el) {
             var $list = this.getSuggestionList($el);
             var $next;
             var $active = $list.find('li.active');
@@ -199,8 +199,7 @@
          *
          * @param $el
          */
-        activatePrevSuggestion: function($el)
-        {
+        activatePrevSuggestion: function ($el) {
             var $list = this.getSuggestionList($el);
             var $prev;
             var $active = $list.find('li.active');
@@ -226,7 +225,7 @@
          * @param $input
          * @returns {boolean}
          */
-        hasSuggestionList: function($input) {
+        hasSuggestionList: function ($input) {
             var $ul = $input.siblings('ul.director-suggestions');
             return $ul.length > 0;
         },
@@ -237,7 +236,7 @@
          * @param $input
          * @returns {boolean}
          */
-        hasSuggestions: function($input) {
+        hasSuggestions: function ($input) {
             var $ul = $input.siblings('ul.director-suggestions');
             return $ul.length > 0 && $ul.is(':visible');
         },
@@ -250,8 +249,7 @@
          *
          * @returns {jQuery}
          */
-        getSuggestionList: function($input, $forceRefresh)
-        {
+        getSuggestionList: function ($input, $forceRefresh) {
             var $ul = $input.siblings('ul.director-suggestions');
             if ($ul.length) {
                 if ($forceRefresh) {
@@ -276,8 +274,7 @@
          * @param $el
          * @returns {jQuery}
          */
-        refreshSuggestionList: function($suggestions, $el)
-        {
+        refreshSuggestionList: function ($suggestions, $el) {
             // Not sure whether we need this Accept-header
             var headers = { 'X-Icinga-Accept': 'text/html' };
             var icinga = this.module.icinga;
@@ -289,7 +286,8 @@
                 headers['X-Icinga-WindowId'] = 'undefined';
             }
 
-            var onResponse =  function (data, textStatus, req) {
+            // var onResponse =  function (data, textStatus, req) {
+            var onResponse =  function (data) {
                 $suggestions.html(data);
                 var $li = $suggestions.find('li');
                 if ($li.length) {
@@ -319,7 +317,7 @@
          *
          * @param ev
          */
-        clickSuggestion: function(ev) {
+        clickSuggestion: function (ev) {
             this.chooseSuggestion($(ev.currentTarget));
         },
 
@@ -328,8 +326,7 @@
 
          * @param $suggestion
          */
-        chooseSuggestion: function($suggestion)
-        {
+        chooseSuggestion: function ($suggestion) {
             var $el = $suggestion.closest('ul').siblings('.director-suggest');
             var val = $suggestion.text();
 
@@ -360,8 +357,7 @@
          * @param $el
          * @returns {boolean}
          */
-        chooseActiveSuggestion: function($el)
-        {
+        chooseActiveSuggestion: function ($el) {
             var $list = this.getSuggestionList($el);
             var $active = $list.find('li.active');
             if ($active.length === 0) {
@@ -376,13 +372,25 @@
             }
         },
 
+        hasActiveSuggestion: function ($el) {
+            if (this.hasSuggestions($el)) {
+                var $list = this.getSuggestionList($el);
+                var $active = $list.find('li.active');
+                if ($active.length === 0) {
+                    $active = $list.find('li:hover');
+                }
+                return $active.length > 0;
+            } else {
+                return false;
+            }
+        },
+
         /**
          * Remove related suggestion list if any
          *
          * @param $el
          */
-        removeSuggestionList: function($el)
-        {
+        removeSuggestionList: function ($el) {
             if (this.hasSuggestionList($el)) {
                 this.getSuggestionList($el).remove();
             }
@@ -393,12 +401,15 @@
          *
          * @param ev
          */
-        enterSuggestionField: function(ev) {
-            return;
-            var $el = $(ev.currentTarget);
-            if ($el.val() === '' || $el.val().match(/\.$/)) {
-                this.getSuggestionList($el)
-            }
+        enterSuggestionField: function (ev) {
+            // Has been disabled long time ago, as we do not want to open
+            // extensible Sets on focus. Should we re-enable this and just
+            // blacklist extensible sets?
+            //
+            // var $el = $(ev.currentTarget);
+            // if ($el.val() === '' || $el.val().match(/\.$/)) {
+            //     this.getSuggestionList($el)
+            // }
         },
 
         /**
@@ -406,10 +417,10 @@
          *
          * @param ev
          */
-        leaveSuggestionField: function(ev) {
+        leaveSuggestionField: function (ev) {
 //            return;
             var _this = this;
-            setTimeout(function() {
+            setTimeout(function () {
                 _this.removeSuggestionList($(ev.currentTarget));
             }, 100);
         },
@@ -422,7 +433,7 @@
          *
          * @param ev
          */
-        setAutoSubmitted: function(ev) {
+        setAutoSubmitted: function (ev) {
             $(ev.currentTarget).closest('.container').data('directorAutosubmit', 'yes');
         },
 
@@ -431,8 +442,7 @@
          *
          * @deprecated
          */
-        detailTabClick: function(ev)
-        {
+        detailTabClick: function (ev) {
             var $a = $(ev.currentTarget);
             if ($a.closest('#col2').length === 0) {
                 return;
@@ -446,8 +456,7 @@
          *
          * @deprecated
          */
-        alignDetailLinks: function()
-        {
+        alignDetailLinks: function () {
             var self = this;
             var $a = $('#col2').find('div.controls ul.tabs li.active a');
             if ($a.length !== 1) {
@@ -461,7 +470,7 @@
 
             var tabPath = self.pathFromHref($a);
 
-            $leftTable.find('tr').each(function(idx, tr) {
+            $leftTable.find('tr').each(function (idx, tr) {
                 var $tr = $(tr);
                 if ($tr.is('[href]')) {
                     self.setHrefPath($tr, tabPath);
@@ -479,27 +488,24 @@
                 }
             });
 
-            $leftTable.find('tr[href]').each(function(idx, tr) {
+            $leftTable.find('tr[href]').each(function (idx, tr) {
                 var $tr = $(tr);
                 self.setHrefPath($tr, tabPath);
             });
         },
 
-        pathFromHref: function($el)
-        {
+        pathFromHref: function ($el) {
             return this.module.icinga.utils.parseUrl($el.attr('href')).path
         },
 
-        setHrefPath: function($el, path)
-        {
+        setHrefPath: function ($el, path) {
             var a = this.module.icinga.utils.getUrlHelper();
             a.href = $el.attr('href');
             a.pathname = path;
             $el.attr('href', a.href);
         },
 
-        extensibleSetAction: function(ev)
-        {
+        extensibleSetAction: function (ev) {
             var iid, $li, $prev, $next;
             var el = ev.currentTarget;
             if (el.name.match(/__MOVE_UP$/)) {
@@ -507,7 +513,8 @@
                 $prev = $li.prev();
                 // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
-                    if (iid = $prev.find('input[type=text]').attr('id')) {
+                    iid = $prev.find('input[type=text]').attr('id');
+                    if (iid) {
                         $li.closest('.container').data('activeExtensibleEntry', iid);
                     } else {
                         return true;
@@ -525,7 +532,8 @@
                 $next = $li.next();
                 // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
-                    if (iid = $next.find('input[type=text]').attr('id')) {
+                    iid = $next.find('input[type=text]').attr('id');
+                    if (iid) {
                         $li.closest('.container').data('activeExtensibleEntry', iid);
                     } else {
                         return true;
@@ -559,8 +567,7 @@
             }
         },
 
-        fixRelatedActions: function($ul)
-        {
+        fixRelatedActions: function ($ul) {
             var $uls = $ul.find('li');
             var last = $uls.length - 1;
             if ($ul.find('.extend-set').length) {
@@ -586,11 +593,10 @@
             });
         },
 
-        formElementFocus: function(ev)
-        {
+        formElementFocus: function (ev) {
             var $input = $(ev.currentTarget);
             if ($input.closest('form.editor').length) {
-               return;
+                return;
             }
             var $set = $input.closest('.extensible-set');
             if ($set.length) {
@@ -614,9 +620,8 @@
             $dd.addClass('active');
         },
 
-        highlightFormErrors: function($container)
-        {
-            $container.find('dd ul.errors').each(function(idx, ul) {
+        highlightFormErrors: function ($container) {
+            $container.find('dd ul.errors').each(function (idx, ul) {
                 var $ul = $(ul);
                 var $dd = $ul.closest('dd');
                 var $dt = $dd.prev();
@@ -634,7 +639,7 @@
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
         },
 
-        beforeRender: function(ev) {
+        beforeRender: function (ev) {
             var $container = $(ev.currentTarget);
             var id = $container.attr('id');
             var requests = this.module.icinga.loader.requests;
@@ -660,8 +665,7 @@
          * @param $container
          * @returns {boolean}
          */
-        containerIsAutoSubmitted: function($container)
-        {
+        containerIsAutoSubmitted: function ($container) {
             return $container.data('directorAutosubmitted') === 'yes';
         },
 
@@ -671,12 +675,11 @@
          * @param $container
          * @returns {boolean}
          */
-        containerIsAutorefreshed: function($container)
-        {
+        containerIsAutorefreshed: function ($container) {
             return $container.data('director-autorefreshed') === 'yes';
         },
 
-        rendered: function(ev) {
+        rendered: function (ev) {
             var iid;
             var icinga = this.module.icinga;
             var $container = $(ev.currentTarget);
@@ -696,7 +699,8 @@
             this.scrollHighlightIntoView($container);
             this.scrollActiveRowIntoView($container);
             this.highlightActiveDashlet($container);
-            if (iid = $container.data('activeExtensibleEntry')) {
+            iid = $container.data('activeExtensibleEntry');
+            if (iid) {
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
@@ -710,8 +714,7 @@
             $container.find('input.director-suggest').each(this.disableAutocomplete);
         },
 
-        highlightActiveDashlet: function($container)
-        {
+        highlightActiveDashlet: function ($container) {
             if (this.module.icinga.ui.isOneColLayout()) {
                 return;
             }
@@ -736,14 +739,12 @@
             }
         },
 
-        restoreContainerFieldsets: function($container)
-        {
+        restoreContainerFieldsets: function ($container) {
             var self = this;
             $container.find('form').each(self.restoreFieldsets.bind(self));
         },
 
-        putFocusOnFirstFormElement: function($container)
-        {
+        putFocusOnFirstFormElement: function ($container) {
             $container.find('form.autofocus').find('label').first().focus();
         },
 
@@ -752,9 +753,9 @@
             var $content = $container.find('> div.content');
 
             if ($hl.length) {
-              $container.animate({
-                scrollTop: $hl.offset().top - $content.offset().top
-              }, 700);
+                $container.animate({
+                    scrollTop: $hl.offset().top - $content.offset().top
+                }, 700);
             }
         },
 
@@ -768,7 +769,7 @@
             }
         },
 
-        backupAllExtensibleSetDefaultValues: function($container) {
+        backupAllExtensibleSetDefaultValues: function ($container) {
             var self = this;
             $container.find('.extensible-set').each(function (idx, eSet) {
                 $(eSet).find('input[type=text]').each(self.backupDefaultValue);
@@ -776,16 +777,16 @@
             });
         },
 
-        backupDefaultValue: function(idx, el) {
+        backupDefaultValue: function (idx, el) {
             $(el).data('originalvalue', el.value);
         },
 
-        restoreFieldsets: function(idx, form) {
+        restoreFieldsets: function (idx, form) {
             var $form = $(form);
             var self = this;
             var $sets = $('fieldset', $form);
 
-            $sets.each(function(idx, fieldset) {
+            $sets.each(function (idx, fieldset) {
                 var $fieldset = $(fieldset);
                 if ($fieldset.attr('id') === 'fieldset-assign') {
                     return;
@@ -801,7 +802,7 @@
             }
         },
 
-        fieldsetWasOpened: function($fieldset) {
+        fieldsetWasOpened: function ($fieldset) {
             var id = $fieldset.attr('id');
             if (typeof this.openedFieldsets[id] === 'undefined') {
                 return false;
@@ -809,7 +810,7 @@
             return this.openedFieldsets[id];
         },
 
-        fixFieldsetInfo: function($fieldset) {
+        fixFieldsetInfo: function ($fieldset) {
             if ($fieldset.hasClass('collapsed')) {
                 if ($fieldset.find('legend span.element-count').length === 0) {
                     var cnt = $fieldset.find('dt, li').not('.extensible-set li').length;
@@ -822,7 +823,7 @@
             }
         },
 
-        disableAutocomplete: function() {
+        disableAutocomplete: function () {
             $(this)
                 .attr('autocomplete', 'off')
                 .attr('autocorrect', 'off')
