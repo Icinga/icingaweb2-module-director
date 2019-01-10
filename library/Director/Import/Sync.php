@@ -98,7 +98,8 @@ class Sync
      * Retrieve modifications a given SyncRule would apply
      *
      * @return array  Array of IcingaObject elements
-     * @throws Exception
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     public function getExpectedModifications()
     {
@@ -202,7 +203,6 @@ class Sync
      * Instantiates all related ImportSource objects
      *
      * @return self
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function prepareRelatedImportSources()
@@ -249,7 +249,7 @@ class Sync
     /**
      * Fetch latest imported data rows from all involved import sources
      * @return Sync
-     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function fetchImportedData()
     {
@@ -433,9 +433,8 @@ class Sync
 
     /**
      * @return array
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function prepareNewObjects()
     {
@@ -476,9 +475,8 @@ class Sync
      * @param $row
      * @param DbObject $object
      * @param $sourceId
-     * @throws IcingaException
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function prepareNewObject($row, DbObject $object, $sourceId)
     {
@@ -598,7 +596,8 @@ class Sync
      * TODO: Split this into smaller methods
      *
      * @return DbObject|IcingaObject[] List of modified IcingaObjects
-     * @throws Exception
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function prepare()
     {
@@ -663,7 +662,7 @@ class Sync
     /**
      * @param $key
      * @param DbObject|IcingaObject $object
-     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function processObject($key, $object)
     {
@@ -677,7 +676,7 @@ class Sync
     /**
      * @param $key
      * @param DbObject|IcingaObject $object
-     * @throws IcingaException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function refreshObject($key, $object)
     {

@@ -5,12 +5,12 @@ namespace Icinga\Module\Director\Objects;
 use Countable;
 use Exception;
 use Icinga\Exception\NotFoundError;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Iterator;
+use RuntimeException;
 
 class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -85,6 +85,11 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return null;
     }
 
+    /**
+     * @param $group
+     * @return $this
+     * @throws NotFoundError
+     */
     public function set($group)
     {
         if (! is_array($group)) {
@@ -155,6 +160,13 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $this->idx = array_keys($this->groups);
     }
 
+    /**
+     * @param $group
+     * @param string $onError
+     * @return $this
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     public function add($group, $onError = 'fail')
     {
         // TODO: only one query when adding array
@@ -204,7 +216,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                 }
             }
         } else {
-            throw new ProgrammingError(
+            throw new RuntimeException(
                 'Invalid group object: %s',
                 var_export($group, 1)
             );
