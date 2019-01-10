@@ -3,11 +3,14 @@
 namespace Icinga\Module\Director\Controllers;
 
 use dipl\Web\Widget\UnorderedList;
+use Icinga\Module\Director\ConfigDiff;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Forms\SyncCheckForm;
 use Icinga\Module\Director\Forms\SyncPropertyForm;
 use Icinga\Module\Director\Forms\SyncRuleForm;
 use Icinga\Module\Director\Forms\SyncRunForm;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Import\Sync;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -17,7 +20,6 @@ use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Module\Director\Web\Form\CloneSyncRuleForm;
-use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Module\Director\Web\Table\SyncpropertyTable;
 use Icinga\Module\Director\Web\Table\SyncRunTable;
 use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
@@ -139,6 +141,9 @@ class SyncruleController extends ActionController
         $this->content()->add(Html::tag('p', ['class' => 'error'], $msg));
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function addAction()
     {
         $this->editAction();
@@ -248,8 +253,8 @@ class SyncruleController extends ActionController
                     $this->translate('%d object(s) will be modified'),
                     count($modify)
                 )),
+                $this->listModifiedProperties($modifiedProperties),
                 $this->objectList($modify),
-                $this->listModifiedProperties($modifiedProperties)
             ]);
         }
         if (! empty($create)) {
@@ -266,6 +271,7 @@ class SyncruleController extends ActionController
     /**
      * @param IcingaObject[] $objects
      * @return \dipl\Html\HtmlElement
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function objectList($objects)
     {
@@ -273,28 +279,132 @@ class SyncruleController extends ActionController
     }
 
     /**
+     * Lots of duplicated code, this whole diff logic should be mouved to a
+     * dedicated class
+     *
      * @param IcingaObject[] $objects
      * @param int $max
      * @return string
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function firstNames($objects, $max = 50)
     {
         $names = [];
+        $list = new UnorderedList();
+        $list->addAttributes([
+            'style' => 'list-style-type: none; marign: 0; padding: 0',
+        ]);
         $total = count($objects);
         $i = 0;
+        PrefetchCache::forget();
+        IcingaHost::clearAllPrefetchCaches(); // why??
+        IcingaService::clearAllPrefetchCaches();
         foreach ($objects as $object) {
             $i++;
-            $names[] = $this->getObjectNameString($object);
+            $name = $this->getObjectNameString($object);
+            if ($object->hasBeenLoadedFromDb()) {
+                if ($object instanceof IcingaHost) {
+                    $names[$name] = Link::create(
+                        $name,
+                        'director/host',
+                        ['name' => $name],
+                        ['data-base-target' => '_next']
+                    );
+                    $oldObject = IcingaHost::load($object->getObjectName(), $this->db());
+                    $cfgNew = new IcingaConfig($this->db());
+                    $cfgOld = new IcingaConfig($this->db());
+                    $oldObject->renderToConfig($cfgOld);
+                    $object->renderToConfig($cfgNew);
+                    foreach ($this->getConfigDiffs($cfgOld, $cfgNew) as $file => $diff) {
+                        $names[$name . '___PRETITLE___' . $file] = Html::tag('h3', $file);
+                        $names[$name . '___PREVIEW___' . $file] = $diff;
+                    }
+                } elseif ($object instanceof IcingaService && $object->isObject()) {
+                    $host = $object->getRelated('host');
+
+                    $names[$name] = Link::create(
+                        $name,
+                        'director/service/edit',
+                        [
+                            'name' => $object->getObjectName(),
+                            'host' => $host->getObjectName()
+                        ],
+                        ['data-base-target' => '_next']
+                    );
+                    $oldObject = IcingaService::load([
+                        'host_id' => $host->get('id'),
+                        'object_name' => $object->getObjectName()
+                    ], $this->db());
+
+                    $cfgNew = new IcingaConfig($this->db());
+                    $cfgOld = new IcingaConfig($this->db());
+                    $oldObject->renderToConfig($cfgOld);
+                    $object->renderToConfig($cfgNew);
+                    foreach ($this->getConfigDiffs($cfgOld, $cfgNew) as $file => $diff) {
+                        $names[$name . '___PRETITLE___' . $file] = Html::tag('h3', $file);
+                        $names[$name . '___PREVIEW___' . $file] = $diff;
+                    }
+                } else {
+                    $names[$name] = $name;
+                }
+            } else {
+                $names[$name] = $name;
+            }
             if ($i === $max) {
                 break;
             }
         }
+        ksort($names);
+
+        foreach ($names as $name) {
+            $list->addItem($name);
+        }
 
         if ($total > $max) {
-            return implode(', ', $names) . $this->translate('and %d more');
-        } else {
-            return implode(', ', $names);
+            $list->add(sprintf(
+                $this->translate('...and %d more'),
+                $total - $max
+            ));
         }
+
+        return $list;
+    }
+
+    /**
+     * Stolen from elsewhere, should be de-duplicated
+     *
+     * @param IcingaConfig $oldConfig
+     * @param IcingaConfig $newConfig
+     * @return ConfigDiff[]
+     */
+    protected function getConfigDiffs(IcingaConfig $oldConfig, IcingaConfig $newConfig)
+    {
+        $oldFileNames = $oldConfig->getFileNames();
+        $newFileNames = $newConfig->getFileNames();
+
+        $fileNames = array_merge($oldFileNames, $newFileNames);
+
+        $diffs = [];
+        foreach ($fileNames as $filename) {
+            if (in_array($filename, $oldFileNames)) {
+                $left = $oldConfig->getFile($filename)->getContent();
+            } else {
+                $left = '';
+            }
+
+            if (in_array($filename, $newFileNames)) {
+                $right = $newConfig->getFile($filename)->getContent();
+            } else {
+                $right = '';
+            }
+            if ($left === $right) {
+                continue;
+            }
+
+            $diffs[$filename] = ConfigDiff::create($left, $right);
+        }
+
+        return $diffs;
     }
 
     protected function listModifiedProperties($properties)
@@ -309,11 +419,16 @@ class SyncruleController extends ActionController
 
     protected function getObjectNameString($object)
     {
-        if ($object instanceof ExportInterface && (
-            $object instanceof IcingaService || (
-                $object instanceof IcingaObject && $object->isTemplate()
-            )
-        )) {
+        if ($object instanceof IcingaService) {
+            if ($object->isObject()) {
+                return $object->getRelated('host')->getObjectName()
+                    . ': ' . $object->getObjectName();
+            } else {
+                return $object->getObjectName();
+            }
+        } elseif ($object instanceof IcingaHost) {
+            return $object->getObjectName();
+        } elseif ($object instanceof ExportInterface) {
             return $object->getUniqueIdentifier();
         } elseif ($object instanceof IcingaObject) {
             return $object->getObjectName();
@@ -323,6 +438,9 @@ class SyncruleController extends ActionController
         }
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function editAction()
     {
         $form = SyncRuleForm::load()
@@ -336,7 +454,7 @@ class SyncruleController extends ActionController
             $this->tabs(new SyncRuleTabs($rule))->activate('edit');
             $this->addTitle(sprintf(
                 $this->translate('Sync rule: %s'),
-                $rule->rule_name
+                $rule->get('rule_name')
             ));
             $this->addMainActions();
 
@@ -461,7 +579,7 @@ class SyncruleController extends ActionController
         $this->setAutoRefreshInterval(30);
         $rule = $this->requireSyncRule();
         $this->tabs(new SyncRuleTabs($rule))->activate('history');
-        $this->addTitle($this->translate('Sync history') . ': ' . $rule->rule_name);
+        $this->addTitle($this->translate('Sync history') . ': ' . $rule->get('rule_name'));
 
         if ($runId = $this->params->get('run_id')) {
             $run = SyncRun::load($runId, $this->db());
@@ -470,6 +588,9 @@ class SyncruleController extends ActionController
         SyncRunTable::create($rule)->renderTo($this);
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function addMainActions()
     {
         $this->actions(new AutomationObjectActionBar(
