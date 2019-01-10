@@ -27,6 +27,10 @@ class SyncRuleTabs extends Tabs
                 'url'       => 'director/syncrule',
                 'urlParams' => ['id' => $id],
                 'label'     => $this->translate('Sync rule'),
+            ])->add('preview', [
+                'url'       => 'director/syncrule/preview',
+                'urlParams' => ['id' => $id],
+                'label'     => $this->translate('Preview'),
             ])->add('edit', [
                 'url'       => 'director/syncrule/edit',
                 'urlParams' => ['id' => $id],

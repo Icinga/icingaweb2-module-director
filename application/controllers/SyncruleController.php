@@ -6,6 +6,8 @@ use Icinga\Module\Director\Forms\SyncCheckForm;
 use Icinga\Module\Director\Forms\SyncPropertyForm;
 use Icinga\Module\Director\Forms\SyncRuleForm;
 use Icinga\Module\Director\Forms\SyncRunForm;
+use Icinga\Module\Director\Import\Sync;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
@@ -135,6 +137,159 @@ class SyncruleController extends ActionController
     public function addAction()
     {
         $this->editAction();
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Exception
+     */
+    public function previewAction()
+    {
+        $rule = $this->requireSyncRule();
+        // $rule->set('update_policy', 'replace');
+        $this->tabs(new SyncRuleTabs($rule))->activate('preview');
+        $this->addTitle('Sync Preview');
+        $sync = new Sync($rule);
+        $modifications = $sync->getExpectedModifications();
+
+        $create = [];
+        $modify = [];
+        $delete = [];
+        $modifiedProperties = [];
+
+        /** @var IcingaObject $object */
+        foreach ($modifications as $object) {
+            if ($object->hasBeenLoadedFromDb()) {
+                if ($object->shouldBeRemoved()) {
+                    $delete[] = $object;
+                } else {
+                    $modify[] = $object;
+                    foreach ($object->getModifiedProperties() as $property => $value) {
+                        if (isset($modifiedProperties[$property])) {
+                            $modifiedProperties[$property]++;
+                        } else {
+                            $modifiedProperties[$property] = 1;
+                        }
+                    }
+                    if (! $object instanceof IcingaObject) {
+                        continue;
+                    }
+                    if ($object->hasModifiedGroups()) {
+                        if (isset($modifiedProperties['groups'])) {
+                            $modifiedProperties['groups']++;
+                        } else {
+                            $modifiedProperties['groups'] = 1;
+                        }
+                    }
+                    if ($object->supportsCustomVars()) {
+                        if ($object->vars()->hasBeenModified()) {
+                            foreach ($object->vars() as $var) {
+                                if ($var->isNew()) {
+                                    $varName = 'add vars.' . $var->getKey();
+                                } elseif ($var->hasBeenDeleted()) {
+                                    $varName = 'remove vars.' . $var->getKey();
+                                } elseif ($var->hasBeenModified()) {
+                                    $varName = 'vars.' . $var->getKey();
+                                } else {
+                                    continue;
+                                }
+                                if (isset($modifiedProperties[$varName])) {
+                                    $modifiedProperties[$varName]++;
+                                } else {
+                                    $modifiedProperties[$varName] = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                $create[] = $object;
+            }
+        }
+
+        $content = $this->content();
+        if (! empty($delete)) {
+            $content->add([
+                Html::tag('h2', ['class' => 'icon-cancel action-delete'], sprintf(
+                    $this->translate('%d object(s) will be deleted'),
+                    count($delete)
+                )),
+                $this->objectList($delete)
+            ]);
+        }
+        if (! empty($modify)) {
+            $content->add([
+                Html::tag('h2', ['class' => 'icon-wrench action-modify'], sprintf(
+                    $this->translate('%d object(s) will be modified'),
+                    count($modify)
+                )),
+                $this->objectList($modify),
+                $this->listModifiedProperties($modifiedProperties)
+            ]);
+        }
+        if (! empty($create)) {
+            $content->add([
+                Html::tag('h2', ['class' => 'icon-plus action-create'], sprintf(
+                    $this->translate('%d object(s) will be created'),
+                    count($create)
+                )),
+                $this->objectList($create)
+            ]);
+        }
+    }
+
+    /**
+     * @param IcingaObject[] $objects
+     * @return \dipl\Html\HtmlElement
+     */
+    protected function objectList($objects)
+    {
+        return Html::tag('p', $this->firstNames($objects));
+    }
+
+    /**
+     * @param IcingaObject[] $objects
+     * @param int $max
+     * @return string
+     */
+    protected function firstNames($objects, $max = 50)
+    {
+        $names = [];
+        $total = count($objects);
+        $i = 0;
+        foreach ($objects as $object) {
+            $i++;
+            $names[] = $this->getObjectNameString($object);
+            if ($i === $max) {
+                break;
+            }
+        }
+
+        if ($total > $max) {
+            return implode(', ', $names) . $this->translate('and %d more');
+        } else {
+            return implode(', ', $names);
+        }
+    }
+
+    protected function listModifiedProperties($properties)
+    {
+        $parts = [];
+        foreach ($properties as $property => $cnt) {
+            $parts[] = "${cnt}x $property";
+        }
+
+        return implode(', ', $parts);
+    }
+
+    protected function getObjectNameString($object)
+    {
+        if ($object instanceof IcingaObject) {
+            return $object->getObjectName();
+        } else {
+            /** @var \Icinga\Module\Director\Data\Db\DbObject $object */
+            return json_encode($object->getKeyParams());
+        }
     }
 
     public function editAction()
