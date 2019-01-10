@@ -2,17 +2,22 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use dipl\Web\Widget\UnorderedList;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Forms\SyncCheckForm;
 use Icinga\Module\Director\Forms\SyncPropertyForm;
 use Icinga\Module\Director\Forms\SyncRuleForm;
 use Icinga\Module\Director\Forms\SyncRunForm;
 use Icinga\Module\Director\Import\Sync;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Module\Director\Web\Form\CloneSyncRuleForm;
+use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Module\Director\Web\Table\SyncpropertyTable;
 use Icinga\Module\Director\Web\Table\SyncRunTable;
 use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
@@ -152,6 +157,14 @@ class SyncruleController extends ActionController
         $sync = new Sync($rule);
         $modifications = $sync->getExpectedModifications();
 
+        if (empty($modifications)) {
+            $this->content()->add(Html::tag('p', [
+                'class' => 'information'
+            ], $this->translate('This Sync Rule is in sync and would currently not apply any changes')));
+
+            return;
+        }
+
         $create = [];
         $modify = [];
         $delete = [];
@@ -174,11 +187,23 @@ class SyncruleController extends ActionController
                     if (! $object instanceof IcingaObject) {
                         continue;
                     }
-                    if ($object->hasModifiedGroups()) {
-                        if (isset($modifiedProperties['groups'])) {
-                            $modifiedProperties['groups']++;
-                        } else {
-                            $modifiedProperties['groups'] = 1;
+                    if ($object->supportsGroups()) {
+                        if ($object->hasModifiedGroups()) {
+                            if (isset($modifiedProperties['groups'])) {
+                                $modifiedProperties['groups']++;
+                            } else {
+                                $modifiedProperties['groups'] = 1;
+                            }
+                        }
+                    }
+
+                    if ($object->supportsImports()) {
+                        if ($object->imports()->hasBeenModified()) {
+                            if (isset($modifiedProperties['imports'])) {
+                                $modifiedProperties['imports']++;
+                            } else {
+                                $modifiedProperties['grouimportsps'] = 1;
+                            }
                         }
                     }
                     if ($object->supportsCustomVars()) {
@@ -274,17 +299,23 @@ class SyncruleController extends ActionController
 
     protected function listModifiedProperties($properties)
     {
-        $parts = [];
+        $list = new UnorderedList();
         foreach ($properties as $property => $cnt) {
-            $parts[] = "${cnt}x $property";
+            $list->addItem("${cnt}x $property");
         }
 
-        return implode(', ', $parts);
+        return $list;
     }
 
     protected function getObjectNameString($object)
     {
-        if ($object instanceof IcingaObject) {
+        if ($object instanceof ExportInterface && (
+            $object instanceof IcingaService || (
+                $object instanceof IcingaObject && $object->isTemplate()
+            )
+        )) {
+            return $object->getUniqueIdentifier();
+        } elseif ($object instanceof IcingaObject) {
             return $object->getObjectName();
         } else {
             /** @var \Icinga\Module\Director\Data\Db\DbObject $object */
