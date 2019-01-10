@@ -1616,6 +1616,16 @@ div.exception {
   margin: 1em;
 }
 
+h2.action-create::before {
+  color: @color-pending;
+}
+h2.action-modify::before {
+  color: @color-ok;
+}
+h2.action-delete::before {
+  color: @color-critical;
+}
+
 /** php-diff **/
 
 .Differences {
