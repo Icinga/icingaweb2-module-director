@@ -113,6 +113,19 @@ class ActivityLogTable extends ZfQueryBasedTable
         return $this;
     }
 
+    public function filterHost($name)
+    {
+        $db = $this->db();
+        $filter = '%"host":' . json_encode($name) . '%';
+        $this->filters[] = ['('
+            . $db->quoteInto('l.old_properties LIKE ?', $filter)
+            . ' OR '
+            . $db->quoteInto('l.new_properties LIKE ?', $filter)
+            . ')', null];
+
+        return $this;
+    }
+
     public function getColumns()
     {
         return [

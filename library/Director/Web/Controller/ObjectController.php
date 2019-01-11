@@ -224,10 +224,13 @@ abstract class ObjectController extends ActionController
 
         $db = $this->db();
         $type = $this->getType();
-        (new ActivityLogTable($db))
+        $table = (new ActivityLogTable($db))
             ->setLastDeployedId($db->getLastDeploymentActivityLogId())
-            ->filterObject('icinga_' . $type, $name)
-            ->renderTo($this);
+            ->filterObject('icinga_' . $type, $name);
+        if ($host = $this->params->get('host')) {
+            $table->filterHost($host);
+        }
+        $table->renderTo($this);
     }
 
     /**
