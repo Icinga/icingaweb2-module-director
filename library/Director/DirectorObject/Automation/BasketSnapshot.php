@@ -184,7 +184,7 @@ class BasketSnapshot extends DbObject
         $snapshot = static::create([
             'basket_uuid' => $basket->get('uuid')
         ]);
-        $snapshot->objects = Json::decode($string);
+        $snapshot->objects = (array) Json::decode($string);
 
         return $snapshot;
     }
