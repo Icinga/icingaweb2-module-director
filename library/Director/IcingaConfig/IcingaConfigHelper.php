@@ -8,7 +8,7 @@ class IcingaConfigHelper
 {
     /**
      * Reserved words according to
-     * https://docs.icinga.com/icinga2/snapshot/doc/module/icinga2/chapter/language-reference#reserved-keywords
+     * https://icinga.com/docs/icinga2/latest/doc/17-language-reference/#reserved-keywords
      */
     protected static $reservedWords = [
         'object',
@@ -38,6 +38,18 @@ class IcingaConfigHelper
         'in',
         'current_filename',
         'current_line',
+        'include_zones',
+        'globals',
+        'locals',
+        'default',
+        'break',
+        'continue',
+        'while',
+        'throw',
+        'try',
+        'except',
+        'using',
+        'namespace',
     ];
 
     public static function renderKeyValue($key, $value, $prefix = '    ')
