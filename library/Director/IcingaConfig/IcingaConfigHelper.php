@@ -38,6 +38,7 @@ class IcingaConfigHelper
         'in',
         'current_filename',
         'current_line',
+        'default',
     ];
 
     public static function renderKeyValue($key, $value, $prefix = '    ')
