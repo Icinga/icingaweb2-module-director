@@ -6,52 +6,6 @@ use InvalidArgumentException;
 
 class IcingaConfigHelper
 {
-    /**
-     * Reserved words according to
-     * https://icinga.com/docs/icinga2/latest/doc/17-language-reference/#reserved-keywords
-     */
-    protected static $reservedWords = [
-        'object',
-        'template',
-        'include',
-        'include_recursive',
-        'ignore_on_error',
-        'library',
-        'null',
-        'true',
-        'false',
-        'const',
-        'var',
-        'this',
-        'use',
-        'apply',
-        'to',
-        'where',
-        'import',
-        'assign',
-        'ignore',
-        'function',
-        'return',
-        'for',
-        'if',
-        'else',
-        'in',
-        'current_filename',
-        'current_line',
-        'include_zones',
-        'globals',
-        'locals',
-        'default',
-        'break',
-        'continue',
-        'while',
-        'throw',
-        'try',
-        'except',
-        'using',
-        'namespace',
-    ];
-
     public static function renderKeyValue($key, $value, $prefix = '    ')
     {
         return self::renderKeyOperatorValue($key, '=', $value, $prefix);
@@ -165,15 +119,6 @@ class IcingaConfigHelper
         }
     }
 
-    public static function renderDictionaryKey($key)
-    {
-        if (preg_match('/^[a-z_]+[a-z0-9_]*$/i', $key)) {
-            return static::escapeIfReserved($key);
-        } else {
-            return static::renderString($key);
-        }
-    }
-
     // Requires an array
     public static function renderArray($array)
     {
@@ -207,7 +152,7 @@ class IcingaConfigHelper
         foreach ($dictionary as $key => $value) {
             $vals[$key] = rtrim(
                 self::renderKeyValue(
-                    self::renderDictionaryKey($key),
+                    self::renderString($key),
                     $value
                 )
             );
@@ -230,20 +175,6 @@ class IcingaConfigHelper
     public static function alreadyRendered($string)
     {
         return new IcingaConfigRendered($string);
-    }
-
-    public static function isReserved($string)
-    {
-        return in_array($string, self::$reservedWords, true);
-    }
-
-    public static function escapeIfReserved($string)
-    {
-        if (self::isReserved($string)) {
-            return '@' . $string;
-        } else {
-            return $string;
-        }
     }
 
     public static function isValidInterval($interval)
