@@ -486,7 +486,7 @@ abstract class ObjectController extends ActionController
                 'name'  => $this->object->getObjectName(),
                 'host'  => ($this->getAllParams())['host']
                 //wp-end IMD-40
-                //changed url of the back-link to point to the edit page related to the object
+                //changed url to point to the edit page related to the object
             ],
             ['class' => 'icon-left-big']
         ));
