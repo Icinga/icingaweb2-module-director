@@ -480,13 +480,11 @@ abstract class ObjectController extends ActionController
     {
         $this->actions()->add(Link::create(
             $this->translate('back'),
-            //wp-start IMD-40
+
             'director/' . strtolower($this->getType()) . '/edit',
             [
                 'name'  => $this->object->getObjectName(),
                 'host'  => ($this->getAllParams())['host']
-                //wp-end IMD-40
-                //changed url to point to the edit page related to the object
             ],
             ['class' => 'icon-left-big']
         ));
