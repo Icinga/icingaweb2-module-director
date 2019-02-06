@@ -596,6 +596,8 @@ class IcingaService extends IcingaObject implements ExportInterface
     {
         if ($this->get('host_id')) {
             return 'director/host/services?name=' . rawurlencode($this->get('host'));
+        } elseif ($this->get('service_set_id')) {
+            return 'director/serviceset/services?name=' . rawurlencode($this->get('service_set'));
         } else {
             return parent::getOnDeleteUrl();
         }
