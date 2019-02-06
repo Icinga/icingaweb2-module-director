@@ -480,7 +480,6 @@ abstract class ObjectController extends ActionController
     {
         $this->actions()->add(Link::create(
             $this->translate('back'),
-
             'director/' . strtolower($this->getType()) . '/edit',
             [
                 'name'  => $this->object->getObjectName(),
