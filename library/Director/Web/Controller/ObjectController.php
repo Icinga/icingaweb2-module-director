@@ -481,7 +481,10 @@ abstract class ObjectController extends ActionController
         $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/' . strtolower($this->getType()),
-            ['name'  => $this->object->getObjectName()],
+            [
+                'name'  => $this->object->getObjectName(),
+                'host'  => ($this->getAllParams())['host']
+            ],
             ['class' => 'icon-left-big']
         ));
 
