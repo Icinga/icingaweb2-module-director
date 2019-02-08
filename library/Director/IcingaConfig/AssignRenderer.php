@@ -17,6 +17,7 @@ use Icinga\Data\Filter\FilterMatch;
 use Icinga\Data\Filter\FilterMatchNot;
 use Icinga\Data\Filter\FilterNotEqual;
 use Icinga\Exception\QueryException;
+use InvalidArgumentException;
 
 class AssignRenderer
 {
@@ -49,6 +50,14 @@ class AssignRenderer
 
     protected function renderFilter(Filter $filter)
     {
+        if ($filter instanceof FilterNot) {
+            $parts = [];
+            foreach ($filter->filters() as $sub) {
+                $parts[] = $this->renderFilter($sub);
+            }
+
+            return '!(' . implode(' && ', $parts) . ')';
+        }
         if ($filter->isChain()) {
             /** @var FilterChain $filter */
             return $this->renderFilterChain($filter);
@@ -235,31 +244,23 @@ class AssignRenderer
         } elseif ($filter instanceof FilterOr) {
             $op = ' || ';
         } elseif ($filter instanceof FilterNot) {
-            $op = ' !'; // TODO -> different
+            throw new InvalidArgumentException('renderFilterChain should never get a FilterNot instance');
         } else {
-            throw new QueryException('Cannot render filter: %s', $filter);
+            throw new InvalidArgumentException('Cannot render filter: %s', $filter);
         }
 
         $parts = array();
         if (! $filter->isEmpty()) {
             /** @var Filter $f */
             foreach ($filter->filters() as $f) {
-                if ($f->isChain()) {
-                    if ($f instanceof FilterNot) {
-                        $parts[] = '! (' . $this->renderFilter($f) . ')';
-                    } else {
-                        $parts[] = '(' . $this->renderFilter($f) . ')';
-                    }
+                if ($f instanceof FilterChain && $f->count() > 1) {
+                    $parts[] = '(' . $this->renderFilter($f) . ')';
                 } else {
                     $parts[] = $this->renderFilter($f);
                 }
             }
         }
 
-        if ($filter instanceof FilterNot) {
-            return implode(' && ', $parts);
-        } else {
-            return implode($op, $parts);
-        }
+        return implode($op, $parts);
     }
 }
