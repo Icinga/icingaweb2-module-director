@@ -14,6 +14,7 @@ before switching to a new version.
 * FIX: restoring a basket fails when there is only one configured DB (#1716)
 * FIX: creating a new Basket with a "Custom Selection" failed with an error (#1733)
 * FIX: some new reserved keywords are now escaped correctly (#1765)
+* FIX: correctly render NOT used in apply rules (fixes #1777)
 
 1.6.0
 -----

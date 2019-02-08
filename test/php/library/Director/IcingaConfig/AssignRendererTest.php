@@ -18,6 +18,26 @@ class AssignRendererTest extends BaseTestCase
         );
     }
 
+    public function testNegationIsRenderedCorrectlyOnRootLevel()
+    {
+        $string = '!(host.name="one"&host.name="two")';
+        $expected = 'assign where !(host.name == "one" && host.name == "two")';
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
+    public function testNegationIsRenderedCorrectlyOnDeeperLevel()
+    {
+        $string = 'host.address="127.*"&!host.name="localhost"';
+        $expected = 'assign where match("127.*", host.address) && !(host.name == "localhost")';
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
     public function testWildcardsRenderAMatchMethod()
     {
         $string = 'host.address="127.0.0.*"';
