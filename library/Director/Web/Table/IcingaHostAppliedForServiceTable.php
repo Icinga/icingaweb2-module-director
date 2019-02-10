@@ -21,6 +21,9 @@ class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
         'service',
     ];
 
+    /** @var bool */
+    protected $readonly = false;
+
     /**
      * @param IcingaHost $host
      * @param CustomVariableDictionary $dict
@@ -51,8 +54,26 @@ class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
         return $this;
     }
 
+    /**
+     * Show no related links
+     *
+     * @param bool $readonly
+     * @return $this
+     */
+    public function setReadonly($readonly = true)
+    {
+        $this->readonly = (bool) $readonly;
+
+        return $this;
+    }
+
     public function renderRow($row)
     {
+        if ($this->readonly) {
+            return $this::row([
+                $row->service
+            ]);
+        }
         return $this::row([
             Link::create(
                 $row->service,

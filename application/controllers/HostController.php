@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use dipl\Html\Html;
 use dipl\Html\Link;
 use dipl\Web\Url;
+use dipl\Web\Widget\Tabs;
 use Exception;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
@@ -28,7 +29,11 @@ class HostController extends ObjectController
 {
     protected function checkDirectorPermissions()
     {
-        $this->assertPermission('director/hosts');
+        if (in_array($this->getRequest()->getActionName(), ['servicesro', 'findservice'])) {
+            $this->assertPermission('director/monitoring/services-ro');
+        } else {
+            $this->assertPermission('director/hosts');
+        }
     }
 
     /**
@@ -92,14 +97,22 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
      */
     public function findserviceAction()
     {
         $host = $this->getHostObject();
-        $redirector = new HostServiceRedirector($host);
-        $this->redirectNow(
-            $redirector->getRedirectionUrl($this->params->get('service'))
-        );
+        $redirector = new HostServiceRedirector($host, $this->getAuth());
+        if ($this->hasPermission('director/hosts')) {
+            $this->redirectNow(
+                $redirector->getRedirectionUrl($this->params->get('service'))
+            );
+            return;
+        } elseif ($this->hasPermission('director/monitoring/services-ro')) {
+            $this->redirectNow($this->url()->setPath('director/host/servicesro'));
+        } else {
+            $this->assertPermission('director/hosts');
+        }
     }
 
     /**
@@ -185,10 +198,87 @@ class HostController extends ObjectController
     }
 
     /**
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     * @throws \Icinga\Exception\MissingParameterException
+     */
+    public function servicesroAction()
+    {
+        $this->assertPermission('director/monitoring/services-ro');
+        $host = $this->getHostObject();
+        $service = $this->params->getRequired('service');
+        $db = $this->db();
+        $this->controls()->setTabs(new Tabs());
+        $this->addSingleTab($this->translate('Configuration: Services'));
+        $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
+        $content = $this->content();
+        $table = IcingaHostServiceTable::load($host)
+            ->setReadonly()
+            ->setTitle($this->translate('Individual Service objects'));
+
+        if (count($table)) {
+            $content->add($table);
+        }
+
+        if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
+            if ($applied instanceof CustomVariableDictionary) {
+                $table = IcingaHostAppliedForServiceTable::load($host, $applied)
+                    ->setReadonly()
+                    ->setTitle($this->translate('Generated from host vars'));
+                if (count($table)) {
+                    $content->add($table);
+                }
+            }
+        }
+
+        /** @var IcingaHost[] $parents */
+        $parents = IcingaTemplateRepository::instanceByObject($this->object)
+            ->getTemplatesFor($this->object, true);
+        foreach ($parents as $parent) {
+            $table = IcingaHostServiceTable::load($parent)
+                ->setReadonly()
+                ->setInheritedBy($host);
+            if (count($table)) {
+                $content->add(
+                    $table->setTitle(sprintf(
+                        'Inherited from %s',
+                        $parent->getObjectName()
+                    ))
+                );
+            }
+        }
+
+        $this->addHostServiceSetTables($host);
+        foreach ($parents as $parent) {
+            $this->addHostServiceSetTables($parent, $host, $service);
+        }
+
+        $appliedSets = AppliedServiceSetLoader::fetchForHost($host);
+        foreach ($appliedSets as $set) {
+            $title = sprintf($this->translate('%s (Applied Service set)'), $set->getObjectName());
+
+            $content->add(
+                IcingaServiceSetServiceTable::load($set)
+                    // ->setHost($host)
+                    ->setAffectedHost($host)
+                    ->setReadonly()
+                    ->setTitle($title)
+            );
+        }
+
+        $table = IcingaHostAppliedServicesTable::load($host)
+            ->setTitle($this->translate('Applied services'));
+
+        if (count($table)) {
+            $content->add($table);
+        }
+    }
+
+    /**
      * @param IcingaHost $host
      * @param IcingaHost|null $affectedHost
      */
-    protected function addHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null)
+    protected function addHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null, $roService = null)
     {
         $db = $this->db();
         if ($affectedHost === null) {
@@ -213,12 +303,14 @@ class HostController extends ObjectController
         /** @var IcingaServiceSet $set*/
         foreach ($sets as $name => $set) {
             $title = sprintf($this->translate('%s (Service set)'), $name);
-            $this->content()->add(
-                IcingaServiceSetServiceTable::load($set)
-                    ->setHost($host)
-                    ->setAffectedHost($affectedHost)
-                    ->setTitle($title)
-            );
+            $table = IcingaServiceSetServiceTable::load($set)
+                ->setHost($host)
+                ->setAffectedHost($affectedHost)
+                ->setTitle($title);
+            if ($roService) {
+                $table->setReadonly();
+            }
+            $this->content()->add($table);
         }
     }
 
