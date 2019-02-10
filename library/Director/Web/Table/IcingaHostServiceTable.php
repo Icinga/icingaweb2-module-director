@@ -16,6 +16,9 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
     /** @var IcingaHost */
     protected $inheritedBy;
 
+    /** @var bool */
+    protected $readonly = false;
+
     protected $searchColumns = [
         'service',
     ];
@@ -50,6 +53,19 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
+    /**
+     * Show no related links
+     *
+     * @param bool $readonly
+     * @return $this
+     */
+    public function setReadonly($readonly = true)
+    {
+        $this->readonly = (bool) $readonly;
+
+        return $this;
+    }
+
     public function renderRow($row)
     {
         $classes = [];
@@ -69,6 +85,10 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
 
     protected function getServiceLink($row)
     {
+        if ($this->readonly) {
+            return $row->service;
+        }
+
         if ($target = $this->inheritedBy) {
             $params = array(
                 'name'          => $target->object_name,

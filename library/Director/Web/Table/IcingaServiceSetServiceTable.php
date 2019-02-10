@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\Html;
 use Icinga\Module\Director\Forms\RemoveLinkForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
@@ -26,6 +27,9 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     protected $searchColumns = [
         'service',
     ];
+
+    /** @var bool */
+    protected $readonly = false;
 
     /**
      * @param IcingaServiceSet $set
@@ -69,6 +73,19 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
+    /**
+     * Show no related links
+     *
+     * @param bool $readonly
+     * @return $this
+     */
+    public function setReadonly($readonly = true)
+    {
+        $this->readonly = (bool) $readonly;
+
+        return $this;
+    }
+
     protected function addHeaderColumnsTo(HtmlElement $parent)
     {
         if ($this->host || $this->affectedHost) {
@@ -86,6 +103,10 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
      */
     protected function getServiceLink($row)
     {
+        if ($this->readonly) {
+            return $row->service;
+        }
+
         if ($this->affectedHost) {
             $params = [
                 'name'    => $this->affectedHost->getObjectName(),
@@ -141,6 +162,11 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     {
         if (! $this->host) {
             $deleteLink = '';
+        } elseif ($this->readonly) {
+            $deleteLink = Html::tag('span', [
+                'class' => 'icon-paste',
+                'style' => 'float: right; font-weight: normal',
+            ], $this->host->getObjectName());
         } elseif ($this->affectedHost->get('id') !== $this->host->get('id')) {
             $host = $this->host;
             $deleteLink = Link::create(
