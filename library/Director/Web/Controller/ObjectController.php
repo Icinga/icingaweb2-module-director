@@ -478,16 +478,14 @@ abstract class ObjectController extends ActionController
 
     protected function addBackToObjectLink()
     {
+        $params = $this->getAllParams();
+        unset($params['module'], $params['action'], $params['controller']);
         $this->actions()->add(Link::create(
             $this->translate('back'),
-            'director/' . strtolower($this->getType()),
-            [
-                'name'  => $this->object->getObjectName(),
-                'host'  => ($this->getAllParams())['host']
-            ],
+            'director/' . strtolower($this->getType()) . '/edit',
+            $params,
             ['class' => 'icon-left-big']
         ));
-
         return $this;
     }
 
