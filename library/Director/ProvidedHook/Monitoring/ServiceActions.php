@@ -48,8 +48,16 @@ class ServiceActions extends ServiceActionsHook
             ]);
         }
 
+        if (Util::hasPermission('director/hosts')) {
+            $title = mt('director', 'Modify');
+        } elseif (Util::hasPermission('director/monitoring/services-ro')) {
+            $title = mt('director', 'Configuration');
+        } else {
+            return $actions;
+        }
+
         if (IcingaHost::exists($hostname, $db)) {
-            $actions['Modify'] = Url::fromPath('director/host/findservice', [
+            $actions[$title] = Url::fromPath('director/host/findservice', [
                 'name'    => $hostname,
                 'service' => $service->service_description
             ]);
