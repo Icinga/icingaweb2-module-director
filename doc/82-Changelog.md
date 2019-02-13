@@ -17,6 +17,7 @@ before switching to a new version.
 * FIX: correctly render NOT used in apply rules (fixes #1777)
 * FIX: Activity Log used to ignore Host filters (#1613)
 * FIX: Basket failed to restore depending on PHP version (#1782)
+* FIX: Loop detection works again (#1631)
 * FEATURE: RO users could want to see where a configured service originated (#1785)
 
 ### Icinga Configuration

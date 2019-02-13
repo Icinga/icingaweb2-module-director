@@ -1241,6 +1241,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             throw new RuntimeException($e->getMessage(), 0, $e);
         }
 
+        // Eventually trigger loop detection
+        $this->listAncestorIds();
+
         foreach ($imports as $object) {
             $v = $object->getSingleResolvedProperty($key);
             if (null !== $v) {
@@ -1783,6 +1786,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
                     return $this->getNameForZoneId($zoneId, $config);
                 }
+            } catch (NestingError $e) {
+                throw $e;
             } catch (Exception $e) {
                 return self::RESOLVE_ERROR;
             }
