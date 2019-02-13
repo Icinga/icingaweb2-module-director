@@ -110,6 +110,19 @@ class IcingaServiceSet extends IcingaObject
         return $services;
     }
 
+    public function beforeDelete()
+    {
+        // check if this is a template, or directly assigned to a host
+        if ($this->get('host_id') === null) {
+            // find all host sets and delete them
+            foreach ($this->fetchHostSets() as $set) {
+                $set->delete();
+            }
+        }
+
+        parent::beforeDelete();
+    }
+
     public function onDelete()
     {
         $hostId = $this->get('host_id');
