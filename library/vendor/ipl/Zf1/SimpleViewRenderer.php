@@ -49,7 +49,7 @@ class SimpleViewRenderer extends Helper implements ValidHtml
     {
         if (null === $name) {
             $name = null; // $this->getResponseSegment();
-	}
+        }
         // Compat.
         if (isset($this->_actionController)
             && get_class($this->_actionController) === 'Icinga\\Controllers\\ErrorController'
