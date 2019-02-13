@@ -313,7 +313,12 @@ class ConfigController extends ActionController
     public function storeAction()
     {
         $this->assertPermission('director/deploy');
-        $config = IcingaConfig::generate($this->db());
+        try {
+            $config = IcingaConfig::generate($this->db());
+        } catch (Exception $e) {
+            Notification::error($e->getMessage());
+            $this->redirectNow('director/config/deployments');
+        }
         $this->redirectNow(
             Url::fromPath(
                 'director/config/files',

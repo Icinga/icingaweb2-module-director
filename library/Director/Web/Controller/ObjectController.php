@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use dipl\Html\Html;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
@@ -182,7 +184,15 @@ abstract class ObjectController extends ActionController
             $object->getObjectName()
         );
         $this->tabs()->activate('fields');
+        try {
+            $this->addFieldsFormAndTable($object, $type);
+        } catch (NestingError $e) {
+            $this->content()->add(Html::tag('p', ['class' => 'error'], $e->getMessage()));
+        }
+    }
 
+    protected function addFieldsFormAndTable($object, $type)
+    {
         $form = IcingaObjectFieldForm::load()
             ->setDb($this->db())
             ->setIcingaObject($object);

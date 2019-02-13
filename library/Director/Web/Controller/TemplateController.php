@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
@@ -182,9 +183,13 @@ abstract class TemplateController extends CompatController
             Html::tag('h2', null, $this->translate('Current Template Usage'))
         );
 
-        $this->content()->add(
-            TemplateUsageTable::forTemplate($template)
-        );
+        try {
+            $this->content()->add(
+                TemplateUsageTable::forTemplate($template)
+            );
+        } catch (NestingError $e) {
+            $this->content()->add(Html::tag('p', ['class' => 'error'], $e->getMessage()));
+        }
     }
 
     protected function getType()

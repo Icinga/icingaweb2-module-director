@@ -4,7 +4,9 @@ namespace Icinga\Module\Director\Resolver;
 
 use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
+use InvalidArgumentException;
 use RuntimeException;
 
 class TemplateTree
@@ -152,7 +154,7 @@ class TemplateTree
         foreach ($object->imports() as $import) {
             $name = $import->getObjectName();
             if ($import->hasBeenLoadedFromDb()) {
-                $pid = $import->get('id');
+                $pid = (int) $import->get('id');
             } else {
                 if (! array_key_exists($name, $this->templateNameToId)) {
                     continue;
@@ -208,10 +210,70 @@ class TemplateTree
         }
     }
 
-    public function getAncestorsById($id, & $ancestors = [])
+    /**
+     * @param $id
+     * @param $list
+     * @throws NestingError
+     */
+    protected function assertNotInList($id, & $list)
     {
+        if (array_key_exists($id, $list)) {
+            $list = array_keys($list);
+            array_push($list, $id);
+
+            if (is_int($id)) {
+                throw new NestingError(
+                    'Loop detected: %s',
+                    implode(' -> ', $this->getNamesForIds($list, true))
+                );
+            } else {
+                throw new NestingError(
+                    'Loop detected: %s',
+                    implode(' -> ', $list)
+                );
+            }
+        }
+    }
+
+    protected function getNamesForIds($ids, $ignoreErrors = false)
+    {
+        $names = [];
+        foreach ($ids as $id) {
+            $names[] = $this->getNameForId($id, $ignoreErrors);
+        }
+
+        return $names;
+    }
+
+    protected function getNameForId($id, $ignoreErrors = false)
+    {
+        if (! array_key_exists($id, $this->names)) {
+            if ($ignoreErrors) {
+                return "id=$id";
+            } else {
+                throw new InvalidArgumentException("Got no name for $id");
+            }
+        }
+
+        return $this->names[$id];
+    }
+
+    /**
+     * @param $id
+     * @param array $ancestors
+     * @param array $path
+     * @return array
+     * @throws NestingError
+     */
+    public function getAncestorsById($id, & $ancestors = [], $path = [])
+    {
+        $path[$id] = true;
         foreach ($this->getParentsById($id) as $pid => $name) {
-            $this->getAncestorsById($pid, $ancestors);
+            $this->assertNotInList($pid, $path);
+            $path[$pid] = true;
+
+            $this->getAncestorsById($pid, $ancestors, $path);
+            unset($path[$pid]);
 
             // Hint: inheritance order matters
             if (false !== ($key = array_search($name, $ancestors))) {
@@ -219,6 +281,7 @@ class TemplateTree
             }
             $ancestors[$pid] = $name;
         }
+        unset($path[$id]);
 
         return $ancestors;
     }
@@ -262,12 +325,17 @@ class TemplateTree
         }
     }
 
-    public function getDescendantsById($id, & $children = [])
+    public function getDescendantsById($id, & $children = [], & $path = [])
     {
+        $path[$id] = true;
         foreach ($this->getChildrenById($id) as $pid => $name) {
-            $this->getDescendantsById($pid, $children);
+            $this->assertNotInList($pid, $path);
+            $path[$pid] = true;
+            $this->getDescendantsById($pid, $children, $path);
+            unset($path[$pid]);
             $children[$pid] = $name;
         }
+        unset($path[$id]);
 
         return $children;
     }
@@ -406,7 +474,6 @@ class TemplateTree
                 'template'
             );
         }
-        // echo '<pre style="padding-top: 6em">' . $query . '</pre>';
 
         return $db->fetchAll($query);
     }
