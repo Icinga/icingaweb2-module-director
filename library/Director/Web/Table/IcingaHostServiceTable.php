@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\Html;
 use Icinga\Module\Director\Objects\IcingaHost;
 use dipl\Html\Link;
 use dipl\Web\Table\ZfQueryBasedTable;
@@ -18,6 +19,9 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
 
     /** @var bool */
     protected $readonly = false;
+
+    /** @var string|null */
+    protected $highlightedService;
 
     protected $searchColumns = [
         'service',
@@ -66,6 +70,13 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
+    public function highlightService($service)
+    {
+        $this->highlightedService = $service;
+
+        return $this;
+    }
+
     public function renderRow($row)
     {
         $classes = [];
@@ -86,7 +97,11 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
     protected function getServiceLink($row)
     {
         if ($this->readonly) {
-            return $row->service;
+            if ($this->highlightedService === $row->service) {
+                return Html::tag('span', ['class' => 'icon-right-big'], $row->service);
+            } else {
+                return $row->service;
+            }
         }
 
         if ($target = $this->inheritedBy) {

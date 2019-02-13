@@ -15,6 +15,7 @@ before switching to a new version.
 * FIX: creating a new Basket with a "Custom Selection" failed with an error (#1733)
 * FIX: some new reserved keywords are now escaped correctly (#1765)
 * FIX: correctly render NOT used in apply rules (fixes #1777)
+* FEATURE: RO users could want to see where a configured service originated (#1785)
 
 1.6.0
 -----

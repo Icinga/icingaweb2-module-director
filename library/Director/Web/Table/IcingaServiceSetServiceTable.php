@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\BaseHtmlElement;
 use dipl\Html\Html;
 use Icinga\Module\Director\Forms\RemoveLinkForm;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -30,6 +31,9 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
     /** @var bool */
     protected $readonly = false;
+
+    /** @var string|null */
+    protected $highlightedService;
 
     /**
      * @param IcingaServiceSet $set
@@ -86,6 +90,13 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
+    public function highlightService($service)
+    {
+        $this->highlightedService = $service;
+
+        return $this;
+    }
+
     protected function addHeaderColumnsTo(HtmlElement $parent)
     {
         if ($this->host || $this->affectedHost) {
@@ -99,12 +110,16 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
     /**
      * @param $row
-     * @return Link
+     * @return BaseHtmlElement
      */
     protected function getServiceLink($row)
     {
         if ($this->readonly) {
-            return $row->service;
+            if ($this->highlightedService === $row->service) {
+                return Html::tag('span', ['class' => 'icon-right-big'], $row->service);
+            } else {
+                return $row->service;
+            }
         }
 
         if ($this->affectedHost) {
