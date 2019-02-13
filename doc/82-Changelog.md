@@ -15,7 +15,12 @@ before switching to a new version.
 * FIX: creating a new Basket with a "Custom Selection" failed with an error (#1733)
 * FIX: some new reserved keywords are now escaped correctly (#1765)
 * FIX: correctly render NOT used in apply rules (fixes #1777)
+* FIX: Activity Log used to ignore Host filters (#1613)
+* FIX: Basket failed to restore depending on PHP version (#1782)
 * FEATURE: RO users could want to see where a configured service originated (#1785)
+
+### Icinga Configuration
+* FIX: escape newly introduced Icinga 2 keywords (#1765)
 
 1.6.0
 -----
