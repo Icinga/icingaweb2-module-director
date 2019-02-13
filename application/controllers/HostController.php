@@ -29,7 +29,11 @@ class HostController extends ObjectController
 {
     protected function checkDirectorPermissions()
     {
-        if (in_array($this->getRequest()->getActionName(), ['servicesro', 'findservice'])) {
+        if (in_array($this->getRequest()->getActionName(), [
+            'servicesro',
+            'findservice',
+            'invalidservice'
+        ])) {
             $this->assertPermission('director/monitoring/services-ro');
         } else {
             $this->assertPermission('director/hosts');
@@ -97,22 +101,14 @@ class HostController extends ObjectController
 
     /**
      * @throws \Icinga\Exception\NotFoundError
-     * @throws \Icinga\Security\SecurityException
      */
     public function findserviceAction()
     {
         $host = $this->getHostObject();
         $redirector = new HostServiceRedirector($host, $this->getAuth());
-        if ($this->hasPermission('director/hosts')) {
-            $this->redirectNow(
-                $redirector->getRedirectionUrl($this->params->get('service'))
-            );
-            return;
-        } elseif ($this->hasPermission('director/monitoring/services-ro')) {
-            $this->redirectNow($this->url()->setPath('director/host/servicesro'));
-        } else {
-            $this->assertPermission('director/hosts');
-        }
+        $this->redirectNow(
+            $redirector->getRedirectionUrl($this->params->get('service'))
+        );
     }
 
     /**
@@ -198,6 +194,10 @@ class HostController extends ObjectController
     }
 
     /**
+     * Hint: this duplicates quite some logic from servicesAction. We might want
+     *       to clean this up, but as soon as we store fully resolved Services this
+     *       will be obsolete anyways
+     *
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Security\SecurityException
      * @throws \Icinga\Exception\MissingParameterException
@@ -209,11 +209,12 @@ class HostController extends ObjectController
         $service = $this->params->getRequired('service');
         $db = $this->db();
         $this->controls()->setTabs(new Tabs());
-        $this->addSingleTab($this->translate('Configuration: Services'));
-        $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
+        $this->addSingleTab($this->translate('Configuration (read-only)'));
+        $this->addTitle($this->translate('Services on %s'), $host->getObjectName());
         $content = $this->content();
         $table = IcingaHostServiceTable::load($host)
             ->setReadonly()
+            ->highlightService($service)
             ->setTitle($this->translate('Individual Service objects'));
 
         if (count($table)) {
@@ -224,6 +225,7 @@ class HostController extends ObjectController
             if ($applied instanceof CustomVariableDictionary) {
                 $table = IcingaHostAppliedForServiceTable::load($host, $applied)
                     ->setReadonly()
+                    ->highlightService($service)
                     ->setTitle($this->translate('Generated from host vars'));
                 if (count($table)) {
                     $content->add($table);
@@ -237,6 +239,7 @@ class HostController extends ObjectController
         foreach ($parents as $parent) {
             $table = IcingaHostServiceTable::load($parent)
                 ->setReadonly()
+                ->highlightService($service)
                 ->setInheritedBy($host);
             if (count($table)) {
                 $content->add(
@@ -262,11 +265,14 @@ class HostController extends ObjectController
                     // ->setHost($host)
                     ->setAffectedHost($host)
                     ->setReadonly()
+                    ->highlightService($service)
                     ->setTitle($title)
             );
         }
 
         $table = IcingaHostAppliedServicesTable::load($host)
+            ->setReadonly()
+            ->highlightService($service)
             ->setTitle($this->translate('Applied services'));
 
         if (count($table)) {
@@ -308,7 +314,7 @@ class HostController extends ObjectController
                 ->setAffectedHost($affectedHost)
                 ->setTitle($title);
             if ($roService) {
-                $table->setReadonly();
+                $table->setReadonly()->highlightService($roService);
             }
             $this->content()->add($table);
         }

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\Html;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
@@ -18,6 +19,12 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
     /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
+
+   /** @var bool */
+    protected $readonly = false;
+
+    /** @var string|null */
+    protected $highlightedService;
 
     private $allApplyRules;
 
@@ -50,6 +57,26 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         return $this;
     }
 
+    /**
+     * Show no related links
+     *
+     * @param bool $readonly
+     * @return $this
+     */
+    public function setReadonly($readonly = true)
+    {
+        $this->readonly = (bool) $readonly;
+
+        return $this;
+    }
+
+    public function highlightService($service)
+    {
+        $this->highlightedService = $service;
+
+        return $this;
+    }
+
     public function renderRow($row)
     {
         $classes = [];
@@ -62,20 +89,24 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 
         $attributes = empty($classes) ? null : ['class' => $classes];
 
-        return $this::row([
-            Link::create(
-                sprintf(
-                    $this->translate('%s (where %s)'),
-                    $row->name,
-                    $row->filter
-                ),
-                'director/host/appliedservice',
-                [
-                    'name'       => $this->host->getObjectName(),
-                    'service_id' => $row->id,
-                ]
-            )
-        ], $attributes);
+        if ($this->readonly) {
+            if ($this->highlightedService === $row->name) {
+                $link = Html::tag('a', ['class' => 'icon-right-big'], $row->name);
+            } else {
+                $link = Html::tag('a', $row->name);
+            }
+        } else {
+            $link = Link::create(sprintf(
+                $this->translate('%s (where %s)'),
+                $row->name,
+                $row->filter
+            ), 'director/host/appliedservice', [
+                'name'       => $this->host->getObjectName(),
+                'service_id' => $row->id,
+            ]);
+        }
+
+        return $this::row([$link], $attributes);
     }
 
     /**
