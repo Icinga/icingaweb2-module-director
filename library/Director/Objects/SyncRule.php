@@ -404,17 +404,21 @@ class SyncRule extends DbObject
             } elseif ($this->get('object_type') === 'serviceSet') {
                 $hasHost = false;
                 $hasObjectName = false;
+                $hasType = false;
 
                 foreach ($this->getSyncProperties() as $key => $property) {
                     if ($property->destination_field === 'host') {
                         $hasHost = $property->source_expression;
-                    }
-                    if ($property->destination_field === 'object_name') {
+                    } else if ($property->destination_field === 'object_name') {
                         $hasObjectName = $property->source_expression;
+                    } else if ($property->destination_field === 'object_type') {
+                        $hasType = $property->source_expression;
                     }
-                }
+            }
 
-                if ($hasHost !== false && $hasObjectName !== false) {
+                if ($hasObjectName === false) {
+                    throw new MissingParameterException('You need to explicitly set object_name for service sets');
+                } else if ($hasHost !== false) {
                     $this->hasCombinedKey = true;
                     $this->sourceKeyPattern = sprintf(
                         '%s!%s',
@@ -423,6 +427,19 @@ class SyncRule extends DbObject
                     );
 
                     $this->destinationKeyPattern = '${host}!${object_name}';
+                } elseif ($hasType !== false) {
+                    $this->hasCombinedKey = true;
+                    $this->sourceKeyPattern = sprintf(
+                        '%s!%s',
+                        $hasType,
+                        $hasObjectName
+                    );
+
+                    $this->destinationKeyPattern = '${object_type}!${object_name}';
+                } else {
+                    throw new MissingParameterException(
+                        'Can not sync service sets without object_name and host or object_type'
+                    );
                 }
             } elseif ($this->get('object_type') === 'datalistEntry') {
                 $hasList = false;

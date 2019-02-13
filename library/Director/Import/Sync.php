@@ -13,6 +13,7 @@ use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\SyncProperty;
@@ -394,6 +395,12 @@ class Sync
                         continue;
                     } elseif ($hasTypeName && $object->object_type === 'object') {
                         // don't load objects in type mode (which are apply and templates)
+                        continue;
+                    }
+                } else if ($object instanceof IcingaServiceSet) {
+                    if ($hasHostKey && $object->host_id === null) {
+                        continue;
+                    } else if ($hasTypeName && $object->host_id !== null) {
                         continue;
                     }
                 }
