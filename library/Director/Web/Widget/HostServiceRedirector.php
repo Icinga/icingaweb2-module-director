@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Widget;
 
 use dipl\Web\Url;
+use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -14,6 +15,9 @@ class HostServiceRedirector
     /** @var IcingaHost */
     protected $host;
 
+    /** @var Auth */
+    protected $auth;
+
     /** @var IcingaHost[] */
     protected $parents;
 
@@ -23,9 +27,10 @@ class HostServiceRedirector
     /** @var \Icinga\Module\Director\Db */
     protected $db;
 
-    public function __construct(IcingaHost $host)
+    public function __construct(IcingaHost $host, Auth $auth)
     {
         $this->host = $host;
+        $this->auth = $auth;
         $this->db = $host->getConnection();
     }
 
@@ -36,16 +41,23 @@ class HostServiceRedirector
      */
     public function getRedirectionUrl($serviceName)
     {
-        if ($url = $this->getSingleServiceUrl($serviceName)) {
-            return $url;
-        } elseif ($url = $this->getParentServiceUrl($serviceName)) {
-            return $url;
-        } elseif ($url = $this->getAppliedServiceUrl($serviceName)) {
-            return $url;
-        } elseif ($url = $this->getServiceSetServiceUrl($serviceName)) {
-            return $url;
-        } elseif ($url = $this->getAppliedServiceSetUrl($serviceName)) {
-            return $url;
+        if ($this->auth->hasPermission('director/host')) {
+            if ($url = $this->getSingleServiceUrl($serviceName)) {
+                return $url;
+            } elseif ($url = $this->getParentServiceUrl($serviceName)) {
+                return $url;
+            } elseif ($url = $this->getAppliedServiceUrl($serviceName)) {
+                return $url;
+            } elseif ($url = $this->getServiceSetServiceUrl($serviceName)) {
+                return $url;
+            } elseif ($url = $this->getAppliedServiceSetUrl($serviceName)) {
+                return $url;
+            }
+        } elseif ($this->auth->hasPermission('director/monitoring/services-ro')) {
+            return Url::fromPath('director/host/servicesro', [
+                'name'    => $this->host->getObjectName(),
+                'service' => $serviceName
+            ]);
         }
 
         return Url::fromPath('director/host/invalidservice', [

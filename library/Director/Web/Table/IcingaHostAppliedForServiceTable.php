@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use dipl\Html\Html;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -23,6 +24,9 @@ class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
 
     /** @var bool */
     protected $readonly = false;
+
+    /** @var string|null */
+    protected $highlightedService;
 
     /**
      * @param IcingaHost $host
@@ -67,23 +71,29 @@ class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
         return $this;
     }
 
+    public function highlightService($service)
+    {
+        $this->highlightedService = $service;
+
+        return $this;
+    }
+
     public function renderRow($row)
     {
         if ($this->readonly) {
-            return $this::row([
-                $row->service
+            if ($this->highlightedService === $row->service) {
+                $link = Html::tag('span', ['class' => 'icon-right-big'], $row->service);
+            } else {
+                $link = $row->service;
+            }
+        } else {
+            $link = Link::create($row->service, 'director/host/appliedservice', [
+                'name'    => $this->host->object_name,
+                'service' => $row->service,
             ]);
         }
-        return $this::row([
-            Link::create(
-                $row->service,
-                'director/host/appliedservice',
-                [
-                    'name'    => $this->host->object_name,
-                    'service' => $row->service,
-                ]
-            )
-        ]);
+
+        return $this::row([$link]);
     }
 
     public function getColumnsToBeRendered()

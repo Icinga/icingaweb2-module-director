@@ -26,6 +26,10 @@ $this->providePermission(
         'Allow to inspect objects through the Icinga 2 API (could contain sensitive information)'
     )
 );
+$this->providePermission(
+    'director/monitoring/services-ro',
+    $this->translate('Allow readonly users to see where a Service came from')
+);
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
 $this->provideRestriction(
