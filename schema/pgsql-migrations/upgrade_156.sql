@@ -1,4 +1,4 @@
-DROP INDEX command_object_name;
+DROP INDEX IF EXISTS command_object_name;
 CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 
 INSERT INTO director_schema_migration
