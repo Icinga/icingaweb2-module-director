@@ -122,7 +122,9 @@ class BasketUploadForm extends DirectorObjectForm
         $basket = $this->object();
 
         foreach ($this->upload as $type => $content) {
-            $basket->addObjects($type, array_keys((array) $content));
+            if ($type !== 'Datafield') {
+                $basket->addObjects($type, array_keys((array) $content));
+            }
         }
         if ($basket->isEmpty()) {
             $this->addError($this->translate("It's not allowed to store an empty basket"));
