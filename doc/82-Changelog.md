@@ -20,6 +20,10 @@ before switching to a new version.
 * FIX: Loop detection works again (#1631)
 * FEATURE: RO users could want to see where a configured service originated (#1785)
 
+### DB Schema
+* FIX: it wasn't possible to use the same custom var in multiple notification
+  definitions on PostgreSQL (#1762)
+
 ### Icinga Configuration
 * FIX: escape newly introduced Icinga 2 keywords (#1765)
 

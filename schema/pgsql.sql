@@ -1748,9 +1748,8 @@ CREATE TABLE icinga_notification_var (
 );
 
 CREATE INDEX notification_var_command ON icinga_notification_var (notification_id);
-CREATE UNIQUE INDEX notification_var_search_idx ON icinga_notification_var (varname);
+CREATE INDEX notification_var_search_idx ON icinga_notification_var (varname);
 CREATE INDEX notification_var_checksum ON icinga_notification_var (checksum);
-
 
 CREATE TABLE icinga_notification_field (
   notification_id integer NOT NULL,
@@ -2087,4 +2086,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (157, NOW());
+  VALUES (158, NOW());
