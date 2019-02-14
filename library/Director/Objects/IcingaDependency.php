@@ -93,7 +93,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
             $object = static::load($key, $db);
         } elseif (static::exists($key, $db)) {
             throw new DuplicateKeyException(
-                'Service Template "%s" already exists',
+                'Dependency "%s" already exists',
                 $name
             );
         } else {

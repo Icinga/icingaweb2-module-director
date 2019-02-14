@@ -9,6 +9,7 @@ use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaDependency;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaTimePeriod;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -16,6 +17,7 @@ class BasketSnapshot extends DbObject
 {
     protected static $typeClasses = [
         'Datafield'       => '\\Icinga\\Module\\Director\\Objects\\DirectorDatafield',
+        'TimePeriod'      => '\\Icinga\\Module\\Director\\Objects\\IcingaTimePeriod',
         'Command'         => '\\Icinga\\Module\\Director\\Objects\\IcingaCommand',
         'HostGroup'       => '\\Icinga\\Module\\Director\\Objects\\IcingaHostGroup',
         'IcingaTemplateChoiceHost' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceHost',
@@ -46,6 +48,7 @@ class BasketSnapshot extends DbObject
 
     protected $restoreOrder = [
         'Command',
+        'TimePeriod',
         'HostGroup',
         'IcingaTemplateChoiceHost',
         'HostTemplate',
@@ -379,7 +382,11 @@ class BasketSnapshot extends DbObject
             if ($dummy instanceof IcingaCommand) {
                 $select = $db->select()->from($dummy->getTableName())
                     ->where('object_type != ?', 'external_object');
-            } elseif (! $dummy->isGroup() && ! $dummy instanceof IcingaDependency) {
+            } elseif (! $dummy->isGroup()
+                // TODO: this is ugly.
+                && ! $dummy instanceof IcingaDependency
+                && ! $dummy instanceof IcingaTimePeriod
+            ) {
                 $select = $db->select()->from($dummy->getTableName())
                     ->where('object_type = ?', 'template');
             } else {

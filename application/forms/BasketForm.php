@@ -23,6 +23,7 @@ class BasketForm extends DirectorObjectForm
             'ServiceTemplate'    => $this->translate('Service Templates'),
             'ServiceSet'         => $this->translate('Service Sets'),
             'Notification'       => $this->translate('Notifications'),
+            'TimePeriod'         => $this->translate('Time Periods'),
             'Dependency'         => $this->translate('Dependencies'),
             'DataList'           => $this->translate('Data Lists'),
             'ImportSource'       => $this->translate('Import Sources'),
