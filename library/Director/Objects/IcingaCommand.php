@@ -211,16 +211,18 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
      */
     public function export()
     {
-        $object = $this->toPlainObject();
-        if (property_exists($object, 'arguments')) {
-            foreach ($object->arguments as $key => $argument) {
+        $props = (array) $this->toPlainObject();
+        if (isset($props['arguments'])) {
+            foreach ($props['arguments'] as $key => $argument) {
                 if (property_exists($argument, 'command_id')) {
-                    unset($argument->command_id);
+                    unset($props['arguments'][$key]->command_id);
                 }
             }
         }
+        $props['fields'] = $this->loadFieldReferences();
+        ksort($props);
 
-        return $object;
+        return (object) $props;
     }
 
     /**
@@ -248,9 +250,37 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
             $object = static::create([], $db);
         }
 
+        unset($properties['fields']);
         $object->setProperties($properties);
 
         return $object;
+    }
+
+    protected function loadFieldReferences()
+    {
+        $db = $this->getDb();
+
+        $res = $db->fetchAll(
+            $db->select()->from([
+                'cf' => 'icinga_command_field'
+            ], [
+                'cf.datafield_id',
+                'cf.is_required',
+                'cf.var_filter',
+            ])->join(['df' => 'director_datafield'], 'df.id = cf.datafield_id', [])
+                ->where('command_id = ?', $this->get('id'))
+                ->order('varname ASC')
+        );
+
+        if (empty($res)) {
+            return [];
+        } else {
+            foreach ($res as $field) {
+                $field->datafield_id = (int) $field->datafield_id;
+            }
+
+            return $res;
+        }
     }
 
     protected function renderCommand()
