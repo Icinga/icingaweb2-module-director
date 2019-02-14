@@ -3,11 +3,14 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Exception\ConfigurationError;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
 
-class IcingaDependency extends IcingaObject
+class IcingaDependency extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_dependency';
 
@@ -54,6 +57,53 @@ class IcingaDependency extends IcingaObject
         'disable_notifications' => 'disable_notifications',
         'ignore_soft_states'    => 'ignore_soft_states'
     ];
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
+    {
+        $props = (array) $this->toPlainObject();
+        ksort($props);
+
+        return (object) $props;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Service Template "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->setProperties($properties);
+
+        return $object;
+    }
 
     /**
      * Do not render internal property apply_to
