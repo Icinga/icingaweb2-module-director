@@ -114,6 +114,13 @@ class IcingaCloneObjectForm extends DirectorForm
             $new->set('object_type', 'object');
         }
 
+        if ($set = $this->getValue('target_service_set')) {
+            $new->set(
+                'service_set_id',
+                IcingaServiceSet::loadWithAutoIncId((int) $set, $connection)->get('id')
+            );
+        }
+
         $services = [];
         $sets = [];
         if ($object instanceof IcingaHost) {
