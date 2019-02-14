@@ -5,9 +5,11 @@ namespace Icinga\Module\Director\Objects;
 use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -289,8 +291,10 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
                 $service->set('object_type', 'apply');
                 $service->set('assign_filter', $filter);
             } elseif ($hostId = $this->get('host_id')) {
-                $service->set('object_type', 'object');
-                $service->set('use_var_overrides', 'y');
+                $host = $this->getRelatedObject('host', $hostId)->getObjectName();
+                if (in_array($host, $this->getBlacklistedHostnames($service))) {
+                    continue;
+                }
                 $service->set('host_id', $this->get('host_id'));
             } else {
                 // Service set template without assign filter or host
@@ -300,6 +304,23 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $this->copyVarsToService($service);
             $file->addObject($service);
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function getBlacklistedHostnames($service)
+    {
+        // Hint: if ($this->isApplyRule()) would be nice, but apply rules are
+        // not enough, one might want to blacklist single services from Sets
+        // assigned to single Hosts.
+        if (PrefetchCache::shouldBeUsed()) {
+            $lookup = PrefetchCache::instance()->hostServiceBlacklist();
+        } else {
+            $lookup = new HostServiceBlacklist($this->getConnection());
+        }
+
+        return $lookup->getBlacklistedHostnamesForService($service);
     }
 
     protected function getConfigFileWithHeader(IcingaConfig $config)
