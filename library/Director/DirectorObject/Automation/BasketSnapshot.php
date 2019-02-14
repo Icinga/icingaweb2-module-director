@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\IcingaDependency;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 use RuntimeException;
@@ -378,7 +379,7 @@ class BasketSnapshot extends DbObject
             if ($dummy instanceof IcingaCommand) {
                 $select = $db->select()->from($dummy->getTableName())
                     ->where('object_type != ?', 'external_object');
-            } elseif (! $dummy->isGroup()) {
+            } elseif (! $dummy->isGroup() && ! $dummy instanceof IcingaDependency) {
                 $select = $db->select()->from($dummy->getTableName())
                     ->where('object_type = ?', 'template');
             } else {
