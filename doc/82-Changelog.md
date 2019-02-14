@@ -19,6 +19,7 @@ before switching to a new version.
 * FIX: Basket failed to restore depending on PHP version (#1782)
 * FIX: Loop detection works again (#1631)
 * FIX: Snapshots for Baskets with Dependencies are now possible (#1739)
+* FIX: Commands snapshots now carry fields in your Basket (#1747)
 * FEATURE: Add TimePeriod support to Configuration Baskets (#1735)
 * FEATURE: RO users could want to see where a configured service originated (#1785)
 
