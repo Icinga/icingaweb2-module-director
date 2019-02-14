@@ -497,6 +497,7 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     /**
      * @return string
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function renderCustomExtensions()
     {
@@ -513,16 +514,31 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
 
         $blacklist = $this->getBlacklistedHostnames();
-        if (! empty($blacklist)) {
-            if (count($blacklist) === 1) {
+        $blacklistedTemplates = [];
+        $blacklistedHosts = [];
+        foreach ($blacklist as $hostname) {
+            if (IcingaHost::load($hostname, $this->connection)->isTemplate()) {
+                $blacklistedTemplates[] = $hostname;
+            } else {
+                $blacklistedHosts[] = $hostname;
+            }
+        }
+        foreach ($blacklistedTemplates as $template) {
+            $output .= sprintf(
+                "    ignore where %s in host.templates\n",
+                c::renderString($template)
+            );
+        }
+        if (! empty($blacklistedHosts)) {
+            if (count($blacklistedHosts) === 1) {
                 $output .= sprintf(
                     "    ignore where host.name == %s\n",
-                    c::renderString($blacklist[0])
+                    c::renderString($blacklistedHosts[0])
                 );
             } else {
                 $output .= sprintf(
                     "    ignore where host.name in %s\n",
-                    c::renderArray($blacklist)
+                    c::renderArray($blacklistedHosts)
                 );
             }
         }
