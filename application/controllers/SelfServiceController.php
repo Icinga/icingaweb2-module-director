@@ -265,6 +265,10 @@ class SelfServiceController extends ActionController
             'transform_hostname'  => $transform,
             'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
         ];
+        $username = $settings->get('self-service/icinga_service_user');
+        if (strlen($username)) {
+            $params['icinga_service_user'] = $username;
+        }
 
         if ($transform === '2') {
             $transformMethod = '.upperCase';
