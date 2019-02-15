@@ -161,7 +161,8 @@ class IcingaCommandArgument extends IcingaObject
         $resolved = false,
         $skipDefaults = false,
         array $chosenProperties = null,
-        $resolveIds = true
+        $resolveIds = true,
+        $keepId = false
     ) {
         if ($resolved) {
             throw new RuntimeException(
@@ -172,6 +173,12 @@ class IcingaCommandArgument extends IcingaObject
         if ($chosenProperties) {
             throw new RuntimeException(
                 'IcingaCommandArgument does not support chosenProperties[]'
+            );
+        }
+
+        if ($keepId) {
+            throw new RuntimeException(
+                'IcingaCommandArgument does not support $keepId'
             );
         }
 
