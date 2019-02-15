@@ -25,6 +25,7 @@ before switching to a new version.
 * FIX: Services from a Set assigned to a single Host can be blacklisted (#1616)
 * FEATURE: Add TimePeriod support to Configuration Baskets (#1735)
 * FEATURE: RO users could want to see where a configured service originated (#1785)
+* FEATURE: introduce director/serviceapplyrules REST API endpoint (#1755)
 
 ### REST API
 * FIX: Self Service API now ships optional Service User parameter (#1297)

@@ -487,6 +487,15 @@ Content-Type: application/json
 }
 ```
 
+### Service Apply Rules
+
+Please note that Service Apply Rule names are not unique in Icinga 2. They are
+not real objects, they are creating other objects in a loop. This makes it
+impossible to distinct them by name. Therefore, a dedicated REST API endpoint
+`director/serviceapplyrules` ships all Service Apply Rules combined with their
+internal ID. This ID can then be used to modify or delete a Rule via
+`director/service`.
+
 ### Agent Tickets
 
 The Director is very helpful when it goes to manage your Icinga Agents. In

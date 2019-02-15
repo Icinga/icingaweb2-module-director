@@ -7,6 +7,7 @@ use Icinga\Application\Benchmark;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Web\Table\ApplyRulesTable;
 use Icinga\Module\Director\Web\Table\ObjectsTable;
 use Zend_Db_Select as ZfSelect;
 
@@ -25,7 +26,11 @@ class IcingaObjectsHandler extends RequestHandler
         }
     }
 
-    public function setTable(ObjectsTable $table)
+    /**
+     * @param ObjectsTable|ApplyRulesTable $table
+     * @return $this
+     */
+    public function setTable($table)
     {
         $this->table = $table;
         return $this;
@@ -63,12 +68,13 @@ class IcingaObjectsHandler extends RequestHandler
             ->columns('*')
             ->reset(ZfSelect::LIMIT_COUNT)
             ->reset(ZfSelect::LIMIT_OFFSET);
-
+        $type = $table->getType();
+        $serviceApply = $type === 'service' && $table instanceof ApplyRulesTable;
         echo '{ "objects": [ ';
         $cnt = 0;
         $objects = [];
 
-        $dummy = IcingaObject::createByType($table->getType(), [], $connection);
+        $dummy = IcingaObject::createByType($type, [], $connection);
         $dummy->prefetchAllRelatedTypes();
 
         Benchmark::measure('Pre-fetching related objects');
@@ -100,7 +106,9 @@ class IcingaObjectsHandler extends RequestHandler
             $objects[] = json_encode($object->toPlainObject(
                 $resolved,
                 $withNull,
-                $properties
+                $properties,
+                true,
+                $serviceApply
             ), JSON_PRETTY_PRINT);
             if ($first) {
                 Benchmark::measure('Got first row');
