@@ -2773,6 +2773,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @param bool $skipDefaults
      * @param array|null $chosenProperties
      * @param bool $resolveIds
+     * @param bool $keepId
      * @return object
      * @throws NotFoundError
      */
@@ -2780,7 +2781,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $resolved = false,
         $skipDefaults = false,
         array $chosenProperties = null,
-        $resolveIds = true
+        $resolveIds = true,
+        $keepId = false
     ) {
         $props = array();
 
@@ -2799,7 +2801,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($p as $k => $v) {
             // Do not ship ids for IcingaObjects:
             if ($resolveIds) {
-                if ($k === 'id' && $this->hasProperty('object_name')) {
+                if ($k === 'id' && $keepId === false && $this->hasProperty('object_name')) {
                     continue;
                 }
 
