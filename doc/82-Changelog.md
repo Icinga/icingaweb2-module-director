@@ -18,6 +18,9 @@ before switching to a new version.
 ### CLI
 * FEATURE: Service Groups are now available on CLI (#1745)
 
+### Icinga Configuration
+* FIX: Allow to render single configuration files larger than 16MB (#1787)
+
 1.6.2
 -----
 ### Fixed issues

@@ -84,7 +84,7 @@ CREATE TABLE director_generated_config (
 
 CREATE TABLE director_generated_file (
   checksum VARBINARY(20) NOT NULL COMMENT 'SHA1(content)',
-  content MEDIUMTEXT NOT NULL,
+  content LONGTEXT NOT NULL,
   cnt_object INT(10) UNSIGNED NOT NULL DEFAULT 0,
   cnt_template INT(10) UNSIGNED NOT NULL DEFAULT 0,
   cnt_apply INT(10) UNSIGNED NOT NULL DEFAULT 0,
@@ -1787,4 +1787,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (157, NOW());
+  VALUES (159, NOW());
