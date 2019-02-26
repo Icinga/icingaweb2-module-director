@@ -4,8 +4,17 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-1.6.1 (unreleased)
-------------------
+1.6.2
+-----
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/20?closed=1)
+
+### Icinga Configuration
+* FIX: rendering for Service Sets on single Hosts has been fixed (#1788, #1789)
+
+1.6.1
+-----
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/19?closed=1)
