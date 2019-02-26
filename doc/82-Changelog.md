@@ -4,6 +4,20 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.7.0 (unreleased)
+------------------
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/18?closed=1)
+
+### Import and Sync
+* FEATURE: When fetching invalid data, Import refers erroneous rows (#1741)
+* FEATURE: Sync now offers a preview, showing what would happen (#1754)
+* FEATURE: ParseURL property modifier has been added (#1746)
+
+### CLI
+* FEATURE: Service Groups are now available on CLI (#1745)
+
 1.6.2
 -----
 ### Fixed issues
