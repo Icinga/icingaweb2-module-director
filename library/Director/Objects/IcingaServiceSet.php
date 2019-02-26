@@ -295,7 +295,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
                 if (in_array($host, $this->getBlacklistedHostnames($service))) {
                     continue;
                 }
-                $service->set('host_id', $this->get('host_id'));
+                $service->set('object_type', 'object');
+                $service->set('use_var_overrides', 'y');
+                $service->set('host_id', $hostId);
             } else {
                 // Service set template without assign filter or host
                 continue;
