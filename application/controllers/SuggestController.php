@@ -92,15 +92,24 @@ class SuggestController extends ActionController
         return $db->fetchCol($query);
     }
 
-    protected function suggestHostnames()
+    protected function suggestHostnames($type = 'object')
     {
         $this->assertPermission('director/hosts');
         $db = $this->db()->getDbAdapter();
         $query = $db->select()
             ->from('icinga_host', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'object'");
+            ->order('object_name');
+
+        if ($type !== null) {
+            $query->where('object_type = ?', $type);
+        }
+
         return $db->fetchCol($query);
+    }
+
+    protected function suggestHostsAndTemplates()
+    {
+        return $this->suggestHostnames(null);
     }
 
     protected function suggestServicenames()

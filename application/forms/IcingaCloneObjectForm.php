@@ -26,8 +26,8 @@ class IcingaCloneObjectForm extends DirectorForm
 
         if (Acl::instance()->hasPermission('director/admin')) {
             $this->addElement('select', 'clone_type', array(
-                'label'    => 'Clone type',
-                'required' => true,
+                'label'        => 'Clone type',
+                'required'     => true,
                 'multiOptions' => array(
                     'equal' => $this->translate('Clone the object as is, preserving imports'),
                     'flat'  => $this->translate('Flatten all inherited properties, strip imports'),
@@ -39,7 +39,7 @@ class IcingaCloneObjectForm extends DirectorForm
             || $this->object instanceof IcingaServiceSet
         ) {
             $this->addBoolean('clone_services', [
-                'label' => $this->translate('Clone Services'),
+                'label'       => $this->translate('Clone Services'),
                 'description' => $this->translate(
                     'Also clone single Services defined for this Host'
                 )
@@ -55,15 +55,27 @@ class IcingaCloneObjectForm extends DirectorForm
             ], 'y');
         }
 
-        if ($this->object instanceof IcingaService && $this->object->get('service_set_id') !== null) {
-            $this->addElement('select', 'target_service_set', [
-                'label'       => $this->translate('Target Service Set'),
-                'description' => $this->translate(
-                    'Clone this service to the very same or to another Service Set'
-                ),
-                'multiOptions' => $this->enumServiceSets(),
-                'value' => $this->object->get('service_set_id')
-            ]);
+        if ($this->object instanceof IcingaService) {
+            if ($this->object->get('service_set_id') !== null) {
+                $this->addElement('select', 'target_service_set', [
+                    'label'        => $this->translate('Target Service Set'),
+                    'description'  => $this->translate(
+                        'Clone this service to the very same or to another Service Set'
+                    ),
+                    'multiOptions' => $this->enumServiceSets(),
+                    'value'        => $this->object->get('service_set_id')
+                ]);
+            } elseif ($this->object->get('host_id') !== null) {
+                $this->addElement('text', 'target_host', [
+                    'label'                   => $this->translate('Target Host'),
+                    'description'             => $this->translate(
+                        'Clone this service to the very same or to another Host'
+                    ),
+                    'value'                   => $this->object->get('host'),
+                    'class'                   => "autosubmit director-suggest",
+                    'data-suggestion-context' => 'HostsAndTemplates',
+                ]);
+            }
         }
 
         if ($this->object->isTemplate() && $this->object->supportsFields()) {
@@ -119,6 +131,8 @@ class IcingaCloneObjectForm extends DirectorForm
                 'service_set_id',
                 IcingaServiceSet::loadWithAutoIncId((int) $set, $connection)->get('id')
             );
+        } elseif ($host = $this->getValue('target_host')) {
+            $new->set('host', $host);
         }
 
         $services = [];
