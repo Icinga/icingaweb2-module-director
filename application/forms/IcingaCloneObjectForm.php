@@ -55,15 +55,26 @@ class IcingaCloneObjectForm extends DirectorForm
             ], 'y');
         }
 
-        if ($this->object instanceof IcingaService && $this->object->get('service_set_id') !== null) {
-            $this->addElement('select', 'target_service_set', [
-                'label'       => $this->translate('Target Service Set'),
-                'description' => $this->translate(
-                    'Clone this service to the very same or to another Service Set'
-                ),
-                'multiOptions' => $this->enumServiceSets(),
-                'value' => $this->object->get('service_set_id')
-            ]);
+        if ($this->object instanceof IcingaService) {
+            if ($this->object->get('service_set_id') !== null) {
+                $this->addElement('select', 'target_service_set', [
+                    'label'        => $this->translate('Target Service Set'),
+                    'description'  => $this->translate(
+                        'Clone this service to the very same or to another Service Set'
+                    ),
+                    'multiOptions' => $this->enumServiceSets(),
+                    'value'        => $this->object->get('service_set_id')
+                ]);
+            } elseif ($this->object->get('host_id') !== null) {
+                $this->addElement('select', 'target_host', [
+                    'label'        => $this->translate('Target Host'),
+                    'description'  => $this->translate(
+                        'Clone this service to the very same or to another Host'
+                    ),
+                    'multiOptions' => $this->optionalEnum($this->enumHostsAndTemplates()),
+                    'value'        => $this->object->get('host_id')
+                ]);
+            }
         }
 
         if ($this->object->isTemplate() && $this->object->supportsFields()) {
@@ -79,6 +90,16 @@ class IcingaCloneObjectForm extends DirectorForm
             $this->translate('Clone "%s"'),
             $name
         );
+    }
+
+    protected function enumHostsAndTemplates()
+    {
+        $db = $this->object->getConnection();
+
+        return [
+            $this->translate('Templates') => $db->enumHostTemplates(),
+            $this->translate('Hosts')     => $db->enumHosts(),
+        ];
     }
 
     public function onSuccess()
@@ -118,6 +139,11 @@ class IcingaCloneObjectForm extends DirectorForm
             $new->set(
                 'service_set_id',
                 IcingaServiceSet::loadWithAutoIncId((int) $set, $connection)->get('id')
+            );
+        } elseif ($host = $this->getValue('target_host')) {
+            $new->set(
+                'host_id',
+                IcingaHost::loadWithAutoIncId((int) $host, $connection)->get('id')
             );
         }
 
