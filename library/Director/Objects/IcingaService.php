@@ -256,13 +256,22 @@ class IcingaService extends IcingaObject
         $this->set('object_type', 'object');
 
         foreach ($this->mapHostsToZones($hostnames) as $zone => $names) {
-            $this->set('host_id', $names);
-
             $blacklisted = $this->getBlacklistedHostnames();
             $zoneNames = array_diff($names, $blacklisted);
+
+            $disabled = [];
+            foreach ($zoneNames as $name) {
+                if (IcingaHost::load($name, $this->getConnection())->isDisabled()) {
+                    $disabled[] = $name;
+                }
+            }
+            $zoneNames = array_diff($zoneNames, $disabled);
+
             if (empty($zoneNames)) {
                 continue;
             }
+
+            $this->set('host_id', $zoneNames);
 
             $config->configFile('director/' . $zone . '/service_apply', '.cfg')
                 ->addLegacyObject($this);
