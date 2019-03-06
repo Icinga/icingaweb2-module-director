@@ -401,6 +401,15 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
                 // check if all hosts in the zone ignore this service
                 $zoneNames = array_diff($names, $blacklists[$object_name]);
+
+                $disabled = [];
+                foreach ($zoneNames as $name) {
+                    if (IcingaHost::load($name, $this->getConnection())->isDisabled()) {
+                        $disabled[] = $name;
+                    }
+                }
+                $zoneNames = array_diff($zoneNames, $disabled);
+
                 if (empty($zoneNames)) {
                     continue;
                 }
