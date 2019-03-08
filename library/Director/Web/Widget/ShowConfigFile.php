@@ -61,8 +61,10 @@ class ShowConfigFile extends HtmlDocument
         if ($match[2] === 'Service') {
             return $match[0];
         }
+        $controller = $match[2];
+
         if ($match[2] === 'CheckCommand') {
-            $match[2] = 'command';
+            $controller = 'command';
         }
 
         $name = $this->decode($match[3]);
@@ -72,7 +74,7 @@ class ShowConfigFile extends HtmlDocument
             $match[2],
             Link::create(
                 $name,
-                'director/' . $match[2],
+                'director/' . $controller,
                 ['name' => $name],
                 ['data-base-target' => '_next']
             )
