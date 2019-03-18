@@ -1154,7 +1154,7 @@ abstract class DirectorObjectForm extends DirectorForm
             return $this;
         }
 
-        if (in_array($this->getObjectShortClassName(), ['TimePeriod'])) {
+        if (in_array($this->getObjectShortClassName(), ['TimePeriod', 'ScheduledDowntime'])) {
             $required = false;
         } else {
             $required = $required !== null ? $required : !$this->isTemplate();
