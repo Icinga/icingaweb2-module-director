@@ -496,7 +496,7 @@ abstract class ObjectController extends ActionController
         if ($this->object instanceof IcingaService) {
             if (($host = $this->object->get('host')) !== null) {
                 $params['host'] = $host;
-            } else if (($set = $this->object->get('service_set')) !== null) {
+            } elseif (($set = $this->object->get('service_set')) !== null) {
                 $params['set'] = $set;
             }
         }
