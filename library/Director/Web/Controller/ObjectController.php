@@ -14,6 +14,7 @@ use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\RestApi\IcingaObjectHandler;
 use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
@@ -488,10 +489,22 @@ abstract class ObjectController extends ActionController
 
     protected function addBackToObjectLink()
     {
+        $params = [
+            'name' => $this->object->getObjectName(),
+        ];
+
+        if ($this->object instanceof IcingaService) {
+            if (($host = $this->object->get('host')) !== null) {
+                $params['host'] = $host;
+            } else if (($set = $this->object->get('service_set')) !== null) {
+                $params['set'] = $set;
+            }
+        }
+
         $this->actions()->add(Link::create(
             $this->translate('back'),
             'director/' . strtolower($this->getType()),
-            ['name'  => $this->object->getObjectName()],
+            $params,
             ['class' => 'icon-left-big']
         ));
 
