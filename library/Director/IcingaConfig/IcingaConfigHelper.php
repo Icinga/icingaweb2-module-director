@@ -406,6 +406,10 @@ class IcingaConfigHelper
             $parts[] = static::renderString(substr($string, $offset, $i - $offset));
         }
 
-        return implode(' + ', $parts);
+        if (! empty($parts)) {
+            return implode(' + ', $parts);
+        } else {
+            return '""';
+        }
     }
 }
