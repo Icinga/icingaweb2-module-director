@@ -322,10 +322,10 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
         $target = $modifier->getTargetProperty($key);
         if (strpos($target, '.') !== false) {
-            throw new InvalidArgumentException(
+            throw new InvalidArgumentException(sprintf(
                 'Cannot set value for nested key "%s"',
                 $target
-            );
+            ));
         }
 
         if (is_array($value) && ! $modifier->hasArraySupport()) {
