@@ -76,8 +76,9 @@ class IcingaCommandForm extends DirectorObjectForm
 
         $descIsString = [
             $this->translate('Render the command as a plain string instead of an array.'),
-            $this->translate('This can not be used together with arguments.'),
-            $this->translate('It is disabled by default and should only be used in rare cases.'),
+            $this->translate('If enabled you can not define arguments.'),
+            $this->translate('Disabled by default, and should only be used in rare cases.'),
+            $this->translate('WARNING, this can allow shell script injection via custom variables used in command.'),
         ];
 
         $this->addBoolean(
