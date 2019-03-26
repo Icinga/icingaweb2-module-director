@@ -99,17 +99,23 @@ class ObjectPreview
                 $classes[] = 'logfile';
             }
 
+            $type = $object->getShortTableName();
+
             $plain = Html::wantHtml($file->getContent())->render();
             $plain = preg_replace_callback(
                 '/^(\s+import\s+\&quot\;)(.+)(\&quot\;)/m',
                 [$this, 'linkImport'],
                 $plain
             );
-            $plain = preg_replace_callback(
-                '/^(\s+(?:check_|event_)?command\s+=\s+\&quot\;)(.+)(\&quot\;)/m',
-                [$this, 'linkCommand'],
-                $plain
-            );
+
+            if ($type !== 'command') {
+                $plain = preg_replace_callback(
+                    '/^(\s+(?:check_|event_)?command\s+=\s+\&quot\;)(.+)(\&quot\;)/m',
+                    [$this, 'linkCommand'],
+                    $plain
+                );
+            }
+
             $plain = preg_replace_callback(
                 '/^(\s+host_name\s+=\s+\&quot\;)(.+)(\&quot\;)/m',
                 [$this, 'linkHost'],

@@ -415,6 +415,7 @@ CREATE TABLE icinga_command (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   methods_execute character varying(64) DEFAULT NULL,
   command text DEFAULT NULL,
+  is_string enum_boolean NULL,
 -- env text DEFAULT NULL,
   timeout smallint DEFAULT NULL,
   zone_id integer DEFAULT NULL,
@@ -2086,4 +2087,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (158, NOW());
+  VALUES (160, NOW());

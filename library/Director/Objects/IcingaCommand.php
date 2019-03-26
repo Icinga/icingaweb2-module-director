@@ -19,14 +19,19 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
     protected $type = 'CheckCommand';
 
     protected $defaultProperties = [
-        'id'                    => null,
-        'object_name'           => null,
-        'object_type'           => null,
-        'disabled'              => 'n',
-        'methods_execute'       => null,
-        'command'               => null,
-        'timeout'               => null,
-        'zone_id'               => null,
+        'id'              => null,
+        'object_name'     => null,
+        'object_type'     => null,
+        'disabled'        => 'n',
+        'methods_execute' => null,
+        'command'         => null,
+        'timeout'         => null,
+        'zone_id'         => null,
+        'is_string'       => null,
+    ];
+
+    protected $booleans = [
+        'is_string' => 'is_string',
     ];
 
     protected $supportsCustomVars = true;
@@ -288,16 +293,33 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
         $command = $this->get('command');
         $prefix = '';
         if (preg_match('~^([A-Z][A-Za-z0-9_]+\s\+\s)(.+?)$~', $command, $m)) {
-            $prefix  = $m[1];
+            $prefix = $m[1];
             $command = $m[2];
         } elseif (! $this->isAbsolutePath($command)) {
             $prefix = 'PluginDir + ';
             $command = '/' . $command;
         }
-        $parts = preg_split('/\s+/', $command, -1, PREG_SPLIT_NO_EMPTY);
-        array_unshift($parts, c::alreadyRendered($prefix . c::renderString(array_shift($parts))));
-        
-        return c::renderKeyValue('command', c::renderArray($parts));
+
+        $inherited = $this->getInheritedProperties();
+
+        if ($this->get('is_string') === 'y' || ($this->get('is_string') === null
+                && property_exists($inherited, 'is_string') && $inherited->is_string === 'y')) {
+            return c::renderKeyValue('command', $prefix . c::renderString($command));
+        } else {
+            $parts = preg_split('/\s+/', $command, -1, PREG_SPLIT_NO_EMPTY);
+            array_unshift($parts, c::alreadyRendered($prefix . c::renderString(array_shift($parts))));
+
+            return c::renderKeyValue('command', c::renderArray($parts));
+        }
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    protected function renderIs_string()
+    {
+        // @codingStandardsIgnoreEnd
+        return '';
     }
 
     protected function isAbsolutePath($path)

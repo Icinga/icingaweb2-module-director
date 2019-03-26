@@ -73,6 +73,22 @@ class IcingaCommandForm extends DirectorObjectForm
                 . ' specific unit (e.g. 1m or also 3m 30s).'
             )
         ));
+
+        $descIsString = [
+            $this->translate('Render the command as a plain string instead of an array.'),
+            $this->translate('If enabled you can not define arguments.'),
+            $this->translate('Disabled by default, and should only be used in rare cases.'),
+            $this->translate('WARNING, this can allow shell script injection via custom variables used in command.'),
+        ];
+
+        $this->addBoolean(
+            'is_string',
+            array(
+                'label'       => $this->translate('Render as string'),
+                'description' => join(' ', $descIsString),
+            )
+        );
+
         $this->addDisabledElement();
         $this->addZoneSection();
         $this->setButtons();
