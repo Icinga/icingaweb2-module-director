@@ -320,6 +320,7 @@ CREATE TABLE icinga_command (
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   methods_execute VARCHAR(64) DEFAULT NULL,
   command TEXT DEFAULT NULL,
+  is_string ENUM('y', 'n') NULL,
   -- env text DEFAULT NULL,
   -- vars text DEFAULT NULL,
   timeout SMALLINT UNSIGNED DEFAULT NULL,
@@ -1787,4 +1788,4 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (159, NOW());
+  VALUES (160, NOW());
