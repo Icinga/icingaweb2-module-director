@@ -57,18 +57,21 @@ class IcingaObjectInspection extends BaseHtmlElement
     {
         $this->add(Html::tag('h2', null, $this->translate('Last Check Result')));
         $this->renderCheckResultDetails($result);
-        if (property_exists($result, 'command') && is_array($result->command)) {
+        if (property_exists($result, 'command')) {
             $this->renderExecutedCommand($result->command);
         }
     }
 
     /**
-     * @param array $command
+     * @param array|string $command
+     *
      * @throws \Icinga\Exception\IcingaException
      */
-    protected function renderExecutedCommand(array $command)
+    protected function renderExecutedCommand($command)
     {
-        $command = implode(' ', array_map('escapeshellarg', $command));
+        if (is_array($command)) {
+            $command = implode(' ', array_map('escapeshellarg', $command));
+        }
         $this->add([
             Html::tag('h3', null, 'Executed Command'),
             $this->formatConsole($command)
