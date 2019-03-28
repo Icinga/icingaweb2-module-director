@@ -417,13 +417,38 @@ class ActivityLogInfo extends HtmlDocument
         );
     }
 
+    protected function objectToConfig(IcingaObject $object)
+    {
+        if ($object instanceof IcingaService) {
+            return $this->previewService($object);
+        } else {
+            return $object->toSingleIcingaConfig();
+        }
+    }
+
+    protected function previewService(IcingaService $service)
+    {
+        if (($set = $service->get('service_set')) !== null) {
+            // simulate rendering of service in set
+            $set = IcingaServiceSet::load($set, $this->db);
+
+            $service->set('service_set_id', null);
+            if (($assign = $set->get('assign_filter')) !== null) {
+                $service->set('object_type', 'apply');
+                $service->set('assign_filter', $assign);
+            }
+        }
+
+        return $service->toSingleIcingaConfig();
+    }
+
     /**
      * @return IcingaConfig
      * @throws \Icinga\Exception\IcingaException
      */
     protected function newConfig()
     {
-        return $this->newObject()->toSingleIcingaConfig();
+        return $this->objectToConfig($this->newObject());
     }
 
     /**
@@ -432,7 +457,7 @@ class ActivityLogInfo extends HtmlDocument
      */
     protected function oldConfig()
     {
-        return $this->oldObject()->toSingleIcingaConfig();
+        return $this->objectToConfig($this->oldObject());
     }
 
     protected function getLinkToObject()
