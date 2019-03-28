@@ -141,13 +141,19 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
                 }
             }
             if (property_exists($value, 'type')) {
+                // argument is directly set as function, no further properties
                 if ($value->type === 'Function') {
                     $attrs['argument_value'] = '/* Unable to fetch function body through API */';
                     $attrs['argument_format'] = 'expression';
                 }
             } elseif (property_exists($value, 'value')) {
+                // argument is a dictionary with further settings
                 if (is_object($value->value)) {
-                    if ($value->value->type === 'Function') {
+                    if ($value->value->type === 'Function' && property_exists($value->value, 'body')) {
+                        // likely an export from Baskets that contains the actual function body
+                        $attrs['argument_value'] = $value->value->body;
+                        $attrs['argument_format'] = 'expression';
+                    } elseif ($value->value->type === 'Function') {
                         $attrs['argument_value'] = '/* Unable to fetch function body through API */';
                         $attrs['argument_format'] = 'expression';
                     } else {
