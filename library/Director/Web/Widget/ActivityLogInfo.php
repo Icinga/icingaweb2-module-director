@@ -11,6 +11,8 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\RestoreObjectForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
 use dipl\Html\Html;
 use dipl\Html\Icon;
 use dipl\Html\Link;
@@ -38,6 +40,10 @@ class ActivityLogInfo extends HtmlDocument
     protected $name;
 
     protected $entry;
+
+    protected $oldProperties;
+
+    protected $newProperties;
 
     protected $oldObject;
 
@@ -200,6 +206,7 @@ class ActivityLogInfo extends HtmlDocument
 
     /**
      * @return bool
+     * @deprecated No longer used?
      */
     public function objectStillExists()
     {
@@ -210,6 +217,75 @@ class ActivityLogInfo extends HtmlDocument
         );
     }
 
+    protected function oldProperties()
+    {
+        if ($this->oldProperties === null) {
+            if (property_exists($this->entry, 'old_properties')) {
+                $this->oldProperties = json_decode($this->entry->old_properties);
+            }
+            if ($this->oldProperties === null) {
+                $this->oldProperties = new \stdClass;
+            }
+        }
+
+        return $this->oldProperties;
+    }
+
+    protected function newProperties()
+    {
+        if ($this->newProperties === null) {
+            if (property_exists($this->entry, 'new_properties')) {
+                $this->newProperties = json_decode($this->entry->new_properties);
+            } else {
+                $this->newProperties = new \stdClass;
+            }
+        }
+
+        return $this->newProperties;
+    }
+
+    protected function getEntryProperty($key)
+    {
+        $entry = $this->entry;
+
+        if (property_exists($entry, $key)) {
+            return $entry->{$key};
+        } elseif (property_exists($this->newProperties(), $key)) {
+            return $this->newProperties->{$key};
+        } elseif (property_exists($this->oldProperties(), $key)) {
+            return $this->oldProperties->{$key};
+        } else {
+            return null;
+        }
+    }
+
+    protected function objectLinkParams()
+    {
+        $entry = $this->entry;
+
+        $params = ['name' => $entry->object_name];
+
+        if ($entry->object_type === 'icinga_service') {
+            if (($set = $this->getEntryProperty('service_set')) !== null) {
+                $params['set'] = $set;
+                return $params;
+            } elseif (($host = $this->getEntryProperty('host')) !== null) {
+                $params['host'] = $host;
+                return $params;
+            } else {
+                return $params;
+            }
+        } elseif ($entry->object_type === 'icinga_service_set') {
+            return $params;
+        } else {
+            return $params;
+        }
+    }
+
+    /**
+     * @return array
+     * @deprecated No longer used?
+     */
     protected function objectKey()
     {
         $entry = $this->entry;
@@ -363,10 +439,16 @@ class ActivityLogInfo extends HtmlDocument
     {
         $entry = $this->entry;
         $name = $entry->object_name;
+        $controller = preg_replace('/^icinga_/', '', $entry->object_type);
+
+        if ($controller === 'service_set') {
+            $controller = 'serviceset';
+        }
+
         return Link::create(
             $name,
-            'director/' . preg_replace('/^icinga_/', '', $entry->object_type),
-            ['name' => $name],
+            'director/' . $controller,
+            $this->objectLinkParams(),
             ['data-base-target' => '_next']
         );
     }
