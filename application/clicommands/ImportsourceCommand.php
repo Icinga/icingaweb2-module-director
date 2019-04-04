@@ -88,6 +88,7 @@ class ImportsourceCommand extends Command
         $hook = ImportSourceHook::forImportSource($source);
         Benchmark::measure('Ready to fetch data');
         $data = $hook->fetchData();
+        $source->applyModifiers($this);
         Benchmark::measure(sprintf('Got %d rows, ready to dump JSON', count($data)));
         echo json_encode($data, JSON_PRETTY_PRINT);
     }
