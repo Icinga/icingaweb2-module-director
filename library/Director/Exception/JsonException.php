@@ -9,24 +9,24 @@ class JsonException extends IcingaException
     public static function forLastJsonError($msg = null)
     {
         if ($msg === null) {
-            return new static(static::getJsonErrorMessage(json_last_error()));
+            return new static(static::getJsonErrorMessage(\json_last_error()));
         } else {
-            $args = func_get_args();
-            $args[0] = $msg . ': ' . static::getJsonErrorMessage(json_last_error());
-            return call_user_func_array('static::__construct', $args);
+            $args = \func_get_args();
+            $args[0] = $msg . ': ' . static::getJsonErrorMessage(\json_last_error());
+            return \call_user_func_array('static::__construct', $args);
         }
     }
 
     public static function getJsonErrorMessage($code)
     {
         $map = [
-            JSON_ERROR_DEPTH => 'The maximum stack depth has been exceeded',
-            JSON_ERROR_CTRL_CHAR => 'Control character error, possibly incorrectly encoded',
+            JSON_ERROR_DEPTH          => 'The maximum stack depth has been exceeded',
+            JSON_ERROR_CTRL_CHAR      => 'Control character error, possibly incorrectly encoded',
             JSON_ERROR_STATE_MISMATCH => 'Invalid or malformed JSON',
-            JSON_ERROR_SYNTAX => 'Syntax error',
-            JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded'
+            JSON_ERROR_SYNTAX         => 'JSON Syntax error',
+            JSON_ERROR_UTF8           => 'Malformed UTF-8 characters, possibly incorrectly encoded'
         ];
-        if (array_key_exists($code, $map)) {
+        if (\array_key_exists($code, $map)) {
             return $map[$code];
         }
 
@@ -36,7 +36,7 @@ class JsonException extends IcingaException
                 JSON_ERROR_INF_OR_NAN => 'One or more NAN or INF values in the value to be encoded',
                 JSON_ERROR_UNSUPPORTED_TYPE => 'A value of a type that cannot be encoded was given',
             ];
-            if (array_key_exists($code, $map)) {
+            if (\array_key_exists($code, $map)) {
                 return $map[$code];
             }
         }
@@ -47,7 +47,7 @@ class JsonException extends IcingaException
                 JSON_ERROR_UTF16 => 'Malformed UTF-16 characters, possibly incorrectly encoded',
             ];
 
-            if (array_key_exists($code, $map)) {
+            if (\array_key_exists($code, $map)) {
                 return $map[$code];
             }
         }
