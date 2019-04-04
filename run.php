@@ -17,6 +17,7 @@ $this->provideHook('monitoring/ServiceActions');
 $this->provideHook('director/ImportSource', $prefix . 'Import\\ImportSourceSql');
 $this->provideHook('director/ImportSource', $prefix . 'Import\\ImportSourceLdap');
 $this->provideHook('director/ImportSource', $prefix . 'Import\\ImportSourceCoreApi');
+$this->provideHook('director/ImportSource', $prefix . 'Import\\ImportSourceRestApi');
 
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeArray');
 $this->provideHook('director/DataType', $prefix . 'DataType\\DataTypeBoolean');
