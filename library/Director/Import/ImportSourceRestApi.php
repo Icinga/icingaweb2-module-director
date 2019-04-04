@@ -45,6 +45,27 @@ class ImportSourceRestApi extends ImportSourceHook
             $api->setPort($parts['port']);
         }
 
+        if ($api->getScheme() === 'HTTPS') {
+            if ($this->getSetting('ssl_verify_peer', 'y') === 'n') {
+                $api->disableSslPeerVerification();
+            }
+            if ($this->getSetting('ssl_verify_host', 'y') === 'n') {
+                $api->disableSslHostVerification();
+            }
+        }
+
+        if ($proxy = $this->getSetting('proxy')) {
+            if ($proxyType = $this->getSetting('proxy_type')) {
+                $api->setProxy($proxy, $proxyType);
+            } else {
+                $api->setProxy($proxy);
+            }
+
+            if ($user = $this->getSetting('proxy_user')) {
+                $api->setProxyAuth($user, $this->getSetting('proxy_pass'));
+            }
+        }
+
         $result = $api->get($url);
         if ($property = $this->getSetting('extract_property')) {
             if (\property_exists($result, $property)) {
@@ -165,7 +186,6 @@ class ImportSourceRestApi extends ImportSourceHook
                 'Often the expected result is provided in a property like "objects".'
                 . ' Please specify this if required'
             ),
-            'required' => false,
         ));
     }
 
@@ -180,12 +200,10 @@ class ImportSourceRestApi extends ImportSourceHook
             'description' => $form->translate(
                 'Will be used for SOAP authentication against your vCenter'
             ),
-            'required' => true,
         ));
 
         $form->addElement('password', 'password', array(
             'label' => $form->translate('Password'),
-            'required' => true,
         ));
     }
 
