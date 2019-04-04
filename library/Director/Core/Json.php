@@ -8,7 +8,7 @@ class Json
 {
     public static function encode($mixed, $flags = null)
     {
-        $result = json_encode($mixed, $flags);
+        $result = \json_encode($mixed, $flags);
 
         if ($result === false && json_last_error() !== JSON_ERROR_NONE) {
             throw JsonEncodeException::forLastJsonError();
@@ -19,7 +19,7 @@ class Json
 
     public static function decode($string)
     {
-        $result = json_decode($string);
+        $result = \json_decode($string);
 
         if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
             throw JsonEncodeException::forLastJsonError();

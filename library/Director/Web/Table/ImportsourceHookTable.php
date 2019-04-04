@@ -65,12 +65,15 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
         if ($row === null) {
             return null;
         }
+        if (\is_array($row)) {
+            $row = (object) $row;
+        }
         $tr = $this::tr();
 
         foreach ($this->getColumnsToBeRendered() as $column) {
             $td = $this::td();
-            if (property_exists($row, $column)) {
-                if (is_string($row->$column) || $row->$column instanceof ValidHtml) {
+            if (\property_exists($row, $column)) {
+                if (\is_string($row->$column) || $row->$column instanceof ValidHtml) {
                     $td->setContent($row->$column);
                 } else {
                     $html = Html::tag('pre', null, PlainObjectRenderer::render($row->$column));
