@@ -16,57 +16,7 @@ class ImportSourceRestApi extends ImportSourceHook
 
     public function fetchData()
     {
-        $url = $this->getSetting('url');
-        $parts = \parse_url($url);
-        if (isset($parts['host'])) {
-            $host = $parts['host'];
-        } else {
-            throw new InvalidArgumentException("URL '$url' has no host");
-        }
-
-        $api = new RestApiClient(
-            $host,
-            $this->getSetting('username'),
-            $this->getSetting('password')
-        );
-        if (isset($parts['path'])) {
-            $path = $parts['path'];
-        } else {
-            $path = '/';
-        }
-        if (isset($parts['query'])) {
-            $url = "$path?" . $parts['query'];
-        } else {
-            $url = $path;
-        }
-
-        $api->setScheme($this->getSetting('scheme'));
-        if (isset($parts['port'])) {
-            $api->setPort($parts['port']);
-        }
-
-        if ($api->getScheme() === 'HTTPS') {
-            if ($this->getSetting('ssl_verify_peer', 'y') === 'n') {
-                $api->disableSslPeerVerification();
-            }
-            if ($this->getSetting('ssl_verify_host', 'y') === 'n') {
-                $api->disableSslHostVerification();
-            }
-        }
-
-        if ($proxy = $this->getSetting('proxy')) {
-            if ($proxyType = $this->getSetting('proxy_type')) {
-                $api->setProxy($proxy, $proxyType);
-            } else {
-                $api->setProxy($proxy);
-            }
-
-            if ($user = $this->getSetting('proxy_user')) {
-                $api->setProxyAuth($user, $this->getSetting('proxy_pass'));
-            }
-        }
-
-        $result = $api->get($url);
+        $result = $this->getRestApi()->get($this->getUrl());
         if ($property = $this->getSetting('extract_property')) {
             if (\property_exists($result, $property)) {
                 $result = $result->$property;
@@ -253,6 +203,70 @@ class ImportSourceRestApi extends ImportSourceHook
                 ]);
             }
         }
+    }
+
+    protected function getUrl()
+    {
+        $url = $this->getSetting('url');
+        $parts = \parse_url($url);
+        if (isset($parts['path'])) {
+            $path = $parts['path'];
+        } else {
+            $path = '/';
+        }
+
+        if (isset($parts['query'])) {
+            $url = "$path?" . $parts['query'];
+        } else {
+            $url = $path;
+        }
+
+        return $url;
+    }
+
+    protected function getRestApi()
+    {
+        $url = $this->getSetting('url');
+        $parts = \parse_url($url);
+        if (isset($parts['host'])) {
+            $host = $parts['host'];
+        } else {
+            throw new InvalidArgumentException("URL '$url' has no host");
+        }
+
+        $api = new RestApiClient(
+            $host,
+            $this->getSetting('username'),
+            $this->getSetting('password')
+        );
+
+        $api->setScheme($this->getSetting('scheme'));
+        if (isset($parts['port'])) {
+            $api->setPort($parts['port']);
+        }
+
+        if ($api->getScheme() === 'HTTPS') {
+            if ($this->getSetting('ssl_verify_peer', 'y') === 'n') {
+                $api->disableSslPeerVerification();
+            }
+            if ($this->getSetting('ssl_verify_host', 'y') === 'n') {
+                $api->disableSslHostVerification();
+            }
+        }
+
+        if ($proxy = $this->getSetting('proxy')) {
+            if ($proxyType = $this->getSetting('proxy_type')) {
+                $api->setProxy($proxy, $proxyType);
+            } else {
+                $api->setProxy($proxy);
+            }
+
+            if ($user = $this->getSetting('proxy_user')) {
+                $api->setProxyAuth($user, $this->getSetting('proxy_pass'));
+            }
+        }
+
+        return $api;
     }
 
     /**
