@@ -16,8 +16,6 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
     /** @var  ImportSource */
     protected $source;
 
-    protected $dataCache;
-
     protected $columnCache;
 
     protected $sourceHook;
@@ -97,19 +95,12 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
         return $this->sourceHook;
     }
 
-    public function fetchQueryRows()
-    {
-        if ($this->dataCache === null) {
-            $this->dataCache = parent::fetchQueryRows();
-            $this->source->applyModifiers($this->dataCache);
-        }
-
-        return $this->dataCache;
-    }
-
     public function prepareQuery()
     {
-        $ds = new ArrayDatasource($this->sourceHook()->fetchData());
+        $data = $this->sourceHook()->fetchData();
+        $this->source->applyModifiers($data);
+
+        $ds = new ArrayDatasource($data);
         return $ds->select();
     }
 }
