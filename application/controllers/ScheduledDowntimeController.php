@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use Icinga\Module\Director\Forms\IcingaScheduledDowntimeRangeForm;
 use Icinga\Module\Director\Objects\IcingaScheduledDowntime;
 use Icinga\Module\Director\Web\Controller\ObjectController;
-use Icinga\Module\Director\Web\Table\IcingaScheduledDowntimeTable;
+use Icinga\Module\Director\Web\Table\IcingaScheduledDowntimeRangeTable;
 
 class ScheduledDowntimeController extends ObjectController
 {
@@ -16,7 +16,7 @@ class ScheduledDowntimeController extends ObjectController
         $this->tabs()->activate('ranges');
         $this->addTitle($this->translate('Time period ranges'));
         $form = IcingaScheduledDowntimeRangeForm::load()
-            ->setTimePeriod($object);
+            ->setScheduledDowntime($object);
 
         if (null !== ($name = $this->params->get('range'))) {
             $this->addBackLink($this->url()->without('range'));
@@ -28,7 +28,7 @@ class ScheduledDowntimeController extends ObjectController
         }
 
         $this->content()->add($form->handleRequest());
-        IcingaScheduledDowntimeTable::load($object)->renderTo($this);
+        IcingaScheduledDowntimeRangeTable::load($object)->renderTo($this);
     }
 
     public function getType()
