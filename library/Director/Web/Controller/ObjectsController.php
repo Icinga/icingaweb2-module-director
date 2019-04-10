@@ -134,6 +134,20 @@ abstract class ObjectsController extends ActionController
     }
 
     /**
+     * @return ApplyRulesTable
+     * @throws NotFoundError
+     */
+    protected function getApplyRulesTable()
+    {
+        $table = new ApplyRulesTable($this->db());
+        $table->setType($this->getType())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
+        $this->eventuallyFilterCommand($table);
+
+        return $table;
+    }
+
+    /**
      * @throws NotFoundError
      */
     public function edittemplatesAction()
@@ -263,11 +277,7 @@ abstract class ObjectsController extends ActionController
                 )
             );
 
-        $table = new ApplyRulesTable($this->db());
-        $table->setType($this->getType())
-            ->setBaseObjectUrl($this->getBaseObjectUrl());
-        $this->eventuallyFilterCommand($table);
-        $table->renderTo($this);
+        $this->getApplyRulesTable()->renderTo($this);
     }
 
     /**
