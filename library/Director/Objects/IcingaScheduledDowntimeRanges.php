@@ -224,7 +224,7 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
     {
         $db = $this->object->getConnection();
         foreach ($this->ranges as $range) {
-            $range->timeperiod_id = $this->object->id;
+            $range->scheduled_downtime_id = $this->object->id;
             $range->store($db);
         }
 
