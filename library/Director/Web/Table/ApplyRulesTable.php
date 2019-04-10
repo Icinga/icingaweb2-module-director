@@ -30,6 +30,8 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     protected $baseObjectUrl;
 
+    protected $linkWithName = false;
+
     public static function create($type, Db $db)
     {
         $table = new static($db);
@@ -51,6 +53,13 @@ class ApplyRulesTable extends ZfQueryBasedTable
         return $this;
     }
 
+    public function createLinksWithNames($linksWithName = true)
+    {
+        $this->linkWithName = (bool) $linksWithName;
+
+        return $this;
+    }
+
     public function getType()
     {
         return $this->type;
@@ -63,9 +72,12 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
-        $url = Url::fromPath("director/{$this->type}/edit", [
-            'id' => $row->id,
-        ]);
+        if ($this->linkWithName) {
+            $params = ['name' => $row->object_name];
+        } else {
+            $params = ['id' => $row->id];
+        }
+        $url = Url::fromPath("director/{$this->baseObjectUrl}/edit", $params);
 
         $tr = static::tr([
             static::td(Link::create($row->object_name, $url)),
@@ -80,6 +92,14 @@ class ApplyRulesTable extends ZfQueryBasedTable
         return $tr;
     }
 
+    /**
+     * Should be triggered from renderRow, still unused.
+     *
+     * @param IcingaObject $template
+     * @param string $inheritance
+     * @return $this
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     public function filterTemplate(
         IcingaObject $template,
         $inheritance = IcingaObjectFilterHelper::INHERIT_DIRECT

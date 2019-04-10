@@ -13,6 +13,17 @@ class ScheduledDowntimesController extends ObjectsController
         return $res;
     }
 
+    protected function getTable()
+    {
+        return parent::getTable()
+            ->setBaseObjectUrl('director/scheduled-downtime');
+    }
+
+    protected function getApplyRulesTable()
+    {
+        return parent::getApplyRulesTable()->createLinksWithNames();
+    }
+
     public function getType()
     {
         return 'scheduledDowntime';
