@@ -22,33 +22,43 @@ class IcingaScheduledDowntimeForm extends DirectorObjectForm
                 'required' => true,
             ]);
         }
-
-        $this->addElement('text', 'display_name', array(
-            'label' => $this->translate('Display Name'),
-            'description' => $this->translate('the display name')
-        ));
-
         $this->addImportsElement();
-
-        $this->addDisabledElement();
         $this->addElement('text', 'author', [
-            'label'    => $this->translate('Author'),
-            'required' => ! $this->isTemplate()
+            'label'       => $this->translate('Author'),
+            'description' => $this->translate(
+                'This name will show up as the author for ever related downtime'
+                . ' comment'
+            ),
+            'required'    => ! $this->isTemplate()
         ]);
         $this->addElement('textarea', 'comment', [
             'label'    => $this->translate('Comment'),
+            'description' => $this->translate(
+                'Every related downtime will show this comment'
+            ),
             'required' => ! $this->isTemplate(),
             'rows'     => 4,
         ]);
         $this->addBoolean('fixed', [
-            'label'    => $this->translate('Fixed'),
-            'required' => ! $this->isTemplate(),
+            'label'       => $this->translate('Fixed'),
+            'description' => $this->translate(
+                'Whether this downtime is fixed or flexible. If unsure please'
+                . ' check the related documentation:'
+                . ' https://icinga.com/docs/icinga2/latest/doc/08-advanced-topics/#downtimes'
+            ),
+            'required'    => ! $this->isTemplate(),
         ]);
         $this->addElement('text', 'duration', [
-            'label'    => $this->translate('Duration'),
-            'required' => ! $this->isTemplate(),
+            'label'       => $this->translate('Duration'),
+            'description' => $this->translate(
+                'How long the downtime lasts. Only has an effect for flexible'
+                . ' (non-fixed) downtimes. Time in seconds, supported suffixes'
+                . ' include ms (milliseconds), s (seconds), m (minutes),'
+                . ' h (hours) and d (days). To express "90 minutes" you might'
+                . ' want to write 1h 30m'
+            )
         ]);
-
+        $this->addDisabledElement();
         $this->addAssignmentElements();
         $this->setButtons();
     }
