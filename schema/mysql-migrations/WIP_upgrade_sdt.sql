@@ -1,7 +1,6 @@
 CREATE TABLE icinga_scheduled_downtime (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   object_name VARCHAR(255) NOT NULL,
-  display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -56,4 +55,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 -- INSERT INTO director_schema_migration
 --   (schema_version, migration_time)
---   VALUES (149, NOW());
+--   VALUES (161, NOW());

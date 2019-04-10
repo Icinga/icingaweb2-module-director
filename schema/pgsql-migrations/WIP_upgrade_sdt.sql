@@ -1,7 +1,6 @@
 CREATE TABLE icinga_scheduled_downtime (
   id serial,
   object_name character varying(255) NOT NULL,
-  display_name character varying(255) DEFAULT NULL,
   zone_id integer DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -68,4 +67,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 -- INSERT INTO director_schema_migration
 --   (schema_version, migration_time)
---   VALUES (149, NOW());
+--   VALUES (161, NOW());
