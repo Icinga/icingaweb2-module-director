@@ -282,6 +282,48 @@ class ActivityLogInfo extends HtmlDocument
         }
     }
 
+    protected function getActionExtraHtml()
+    {
+        $entry = $this->entry;
+
+        $info = '';
+        $host = null;
+
+        if ($entry->object_type === 'icinga_service') {
+            if (($set = $this->getEntryProperty('service_set')) !== null) {
+                $info = Html::sprintf(
+                    '%s "%s"',
+                    $this->translate('on service set'),
+                    Link::create(
+                        $set,
+                        'director/serviceset',
+                        ['name' => $set],
+                        ['data-base-target' => '_next']
+                    )
+                );
+            } else {
+                $host = $this->getEntryProperty('host');
+            }
+        } elseif ($entry->object_type === 'icinga_service_set') {
+            $host = $this->getEntryProperty('host');
+        }
+
+        if ($host !== null) {
+            $info = Html::sprintf(
+                '%s "%s"',
+                $this->translate('on host'),
+                Link::create(
+                    $host,
+                    'director/host',
+                    ['name' => $host],
+                    ['data-base-target' => '_next']
+                )
+            );
+        }
+
+        return $info;
+    }
+
     /**
      * @return array
      * @deprecated No longer used?
@@ -497,10 +539,11 @@ class ActivityLogInfo extends HtmlDocument
             $table->addNameValueRow(
                 $this->translate('Action'),
                 Html::sprintf(
-                    '%s %s "%s"',
+                    '%s %s "%s" %s',
                     $entry->action_name,
                     $entry->object_type,
-                    $this->getLinkToObject()
+                    $this->getLinkToObject(),
+                    $this->getActionExtraHtml()
                 )
             );
         } else {
