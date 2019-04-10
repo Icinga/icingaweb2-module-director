@@ -15,7 +15,6 @@ class IcingaScheduledDowntime extends IcingaObject
         'object_name'       => null,
         'object_type'       => null,
         'disabled'          => 'n',
-        'display_name'      => null,
         'author'            => null,
         'comment'           => null,
         'fixed'             => null,
@@ -40,6 +39,13 @@ class IcingaScheduledDowntime extends IcingaObject
 
     protected $intervalProperties = [
         'duration' => 'duration',
+    ];
+
+    protected $propertiesNotForRendering = [
+        'id',
+        'apply_to',
+        'object_name',
+        'object_type',
     ];
 
     /**
