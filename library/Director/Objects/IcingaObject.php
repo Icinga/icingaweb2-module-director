@@ -2558,6 +2558,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'templateChoiceHost';
         } elseif ($type === 'service_template_choice') {
             $type = 'TemplateChoiceService';
+        } elseif ($type === 'scheduled_downtime') {
+            $type = 'ScheduledDowntime';
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
@@ -3013,7 +3015,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $params = array();
 
-        if ($this->isApplyRule()) {
+        if ($this->isApplyRule() && ! $this instanceof IcingaScheduledDowntime) {
             $params['id'] = $this->get('id');
         } else {
             $params = array('name' => $this->getObjectName());
