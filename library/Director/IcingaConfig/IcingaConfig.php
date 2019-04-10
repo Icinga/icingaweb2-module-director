@@ -470,6 +470,7 @@ class IcingaConfig
             ->createFileFromDb('user')
             ->createFileFromDb('notification')
             ->createFileFromDb('dependency')
+            ->createFileFromDb('scheduledDowntime')
             ;
 
         PrefetchCache::forget();
