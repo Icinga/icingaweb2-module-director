@@ -78,6 +78,12 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function getServiceObjects()
     {
+        // don't try to resolve services for unstored objects - as in getServiceObjectsForSet()
+        // also for diff in activity log
+        if ($this->get('id') === null) {
+            return [];
+        }
+
         if ($this->get('host_id')) {
             $imports = $this->imports()->getObjects();
             if (empty($imports)) {
@@ -280,6 +286,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function renderToConfig(IcingaConfig $config)
     {
+        // always print the header, so you have minimal info present
+        $file = $this->getConfigFileWithHeader($config);
+
         if ($this->get('assign_filter') === null && $this->isTemplate()) {
             return;
         }
@@ -293,7 +302,6 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         if (empty($services)) {
             return;
         }
-        $file = $this->getConfigFileWithHeader($config);
 
         // Loop over all services belonging to this set
         // add our assign rules and then add the service to the config
@@ -350,17 +358,38 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     protected function getConfigHeaderComment(IcingaConfig $config)
     {
+        $name = $this->getObjectName();
+        $assign = $this->get('assign_filter');
+
         if ($config->isLegacy()) {
-            if ($this->get('assign_filter')) {
-                $comment = "## applied Service Set '%s'\n\n";
+            if ($assign !== null) {
+                return "## applied Service Set '${name}'\n\n";
             } else {
-                $comment = "## Service Set '%s' on this host\n\n";
+                return "## Service Set '${name}' on this host\n\n";
             }
         } else {
-            $comment = "/** Service Set '%s' **/\n\n";
-        }
+            $comment = [
+                "Service Set: ${name}",
+            ];
 
-        return sprintf($comment, $this->getObjectName());
+            if (($host = $this->get('host')) !== null) {
+                $comment[] = 'on host ' . $host;
+            }
+
+            if (($description = $this->get('description')) !== null) {
+                $comment[] = '';
+                foreach (preg_split('~\\n~', $description) as $line) {
+                    $comment[] = $line;
+                }
+            }
+
+            if ($assign !== null) {
+                $comment[] = '';
+                $comment[] = trim($this->renderAssign_Filter());
+            }
+
+            return "/**\n * " . join("\n * ", $comment) . "\n */\n\n";
+        }
     }
 
     public function copyVarsToService(IcingaService $service)
