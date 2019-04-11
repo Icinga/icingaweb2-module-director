@@ -53,6 +53,6 @@ CREATE TABLE icinga_scheduled_downtime_range (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- INSERT INTO director_schema_migration
---   (schema_version, migration_time)
---   VALUES (161, NOW());
+INSERT INTO director_schema_migration
+  (schema_version, migration_time)
+  VALUES (161, NOW());

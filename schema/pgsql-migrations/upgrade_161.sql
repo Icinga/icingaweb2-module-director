@@ -65,6 +65,6 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.range_type IS 'include -> rang
 COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {}, add -> += {}, substract -> -= {}';
 
 
--- INSERT INTO director_schema_migration
---   (schema_version, migration_time)
---   VALUES (161, NOW());
+INSERT INTO director_schema_migration
+  (schema_version, migration_time)
+  VALUES (161, NOW());
