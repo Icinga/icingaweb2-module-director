@@ -73,6 +73,17 @@ class IcingaScheduledDowntime extends IcingaObject
         }
     }
 
+    public function getOnDeleteUrl()
+    {
+        if ($this->isApplyRule()) {
+            return 'director/scheduled-downtimes/applyrules';
+        } elseif ($this->isTemplate()) {
+            return 'director/scheduled-downtimes/templates';
+        } else {
+            return 'director/scheduled-downtimes';
+        }
+    }
+
     public function isActive($now = null)
     {
         if ($now === null) {

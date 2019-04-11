@@ -105,4 +105,12 @@ class IcingaScheduledDowntimeForm extends DirectorObjectForm
 
         return $this;
     }
+
+    protected function setObjectSuccessUrl()
+    {
+        $this->setSuccessUrl(
+            'director/scheduled-downtime',
+            $this->object()->getUrlParams()
+        );
+    }
 }
