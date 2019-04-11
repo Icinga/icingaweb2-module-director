@@ -504,12 +504,15 @@ class ActivityLogInfo extends HtmlDocument
 
     protected function getLinkToObject()
     {
+        // TODO: This logic is redundant and should be centralized
         $entry = $this->entry;
         $name = $entry->object_name;
         $controller = preg_replace('/^icinga_/', '', $entry->object_type);
 
         if ($controller === 'service_set') {
             $controller = 'serviceset';
+        } elseif ($controller === 'scheduled_downtime') {
+            $controller = 'scheduled-downtime';
         }
 
         return Link::create(

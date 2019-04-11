@@ -11,14 +11,14 @@ class ObjectsTabs extends Tabs
 {
     use TranslationHelper;
 
-    public function __construct($type, Auth $auth)
+    public function __construct($type, Auth $auth, $typeUrl)
     {
         $object = IcingaObject::createByType($type);
         if ($object->isGroup()) {
-            $object = IcingaObject::createByType(substr($type, 0, -5));
+            $object = IcingaObject::createByType(substr($typeUrl, 0, -5));
         }
 
-        $plType = strtolower(preg_replace('/cys$/', 'cies', $type . 's'));
+        $plType = strtolower(preg_replace('/cys$/', 'cies', $typeUrl . 's'));
         if ($auth->hasPermission("director/${plType}")) {
             $this->add('index', array(
                 'url'   => sprintf('director/%s', $plType),
@@ -56,7 +56,7 @@ class ObjectsTabs extends Tabs
 
             if ($object->supportsGroups()) {
                 $this->add('groups', array(
-                    'url' => sprintf('director/%sgroups', $type),
+                    'url' => sprintf('director/%sgroups', $typeUrl),
                     'label' => $this->translate('Groups')
                 ));
             }
@@ -65,12 +65,12 @@ class ObjectsTabs extends Tabs
         if ($auth->hasPermission('director/admin')) {
             if ($object->supportsChoices()) {
                 $this->add('choices', array(
-                    'url' => sprintf('director/templatechoices/%s', $type),
+                    'url' => sprintf('director/templatechoices/%s', $typeUrl),
                     'label' => $this->translate('Choices')
                 ));
             }
         }
-        if ($object->supportsSets() && $auth->hasPermission("director/${type}sets")) {
+        if ($object->supportsSets() && $auth->hasPermission("director/${typeUrl}sets")) {
             $this->add('sets', array(
                 'url'    => sprintf('director/%s/sets', $plType),
                 'label' => $this->translate('Sets')

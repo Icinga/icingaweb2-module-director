@@ -48,8 +48,11 @@ abstract class ObjectsController extends ActionController
         if (substr($this->getType(), -5) === 'Group') {
             $tabName = 'groups';
         }
-        $this->tabs(new ObjectsTabs($this->getBaseType(), $this->Auth()))
-            ->activate($tabName);
+        $this->tabs(new ObjectsTabs(
+            $this->getBaseType(),
+            $this->Auth(),
+            $this->getBaseObjectUrl()
+        ))->activate($tabName);
 
         return $this;
     }
@@ -106,7 +109,7 @@ abstract class ObjectsController extends ActionController
             ->addObjectsTabs()
             ->setAutorefreshInterval(10)
             ->addTitle($this->translate(ucfirst($this->getPluralType())))
-            ->actions(new ObjectsActionBar($type, $this->url()));
+            ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
 
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
             $this->tabs()->activate('external');
@@ -126,7 +129,22 @@ abstract class ObjectsController extends ActionController
     protected function getTable()
     {
         return ObjectsTable::create($this->getType(), $this->db())
-            ->setAuth($this->getAuth());
+            ->setAuth($this->getAuth())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
+    }
+
+    /**
+     * @return ApplyRulesTable
+     * @throws NotFoundError
+     */
+    protected function getApplyRulesTable()
+    {
+        $table = new ApplyRulesTable($this->db());
+        $table->setType($this->getType())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
+        $this->eventuallyFilterCommand($table);
+
+        return $table;
     }
 
     /**
@@ -240,12 +258,13 @@ abstract class ObjectsController extends ActionController
                 $this->translate('All your %s Apply Rules'),
                 $tType
             );
+        $baseUrl = 'director/' . $this->getBaseObjectUrl();
         $this->actions()
             //->add($this->getBackToDashboardLink())
             ->add(
                 Link::create(
                     $this->translate('Add'),
-                    "director/$type/add",
+                    "${baseUrl}/add",
                     ['type' => 'apply'],
                     [
                         'title' => sprintf(
@@ -258,10 +277,7 @@ abstract class ObjectsController extends ActionController
                 )
             );
 
-        $table = new ApplyRulesTable($this->db());
-        $table->setType($this->getType());
-        $this->eventuallyFilterCommand($table);
-        $table->renderTo($this);
+        $this->getApplyRulesTable()->renderTo($this);
     }
 
     /**
@@ -427,6 +443,11 @@ abstract class ObjectsController extends ActionController
         } else {
             return $type;
         }
+    }
+
+    protected function getBaseObjectUrl()
+    {
+        return $this->getType();
     }
 
     /**

@@ -2,9 +2,10 @@
 
 namespace Icinga\Module\Director\Db;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\TemplateTree;
+use InvalidArgumentException;
+use RuntimeException;
 use Zend_Db_Select as ZfSelect;
 
 class IcingaObjectFilterHelper
@@ -16,7 +17,6 @@ class IcingaObjectFilterHelper
     /**
      * @param IcingaObject|int|string $id
      * @return int
-     * @throws ProgrammingError
      */
     public static function wantId($id)
     {
@@ -27,11 +27,11 @@ class IcingaObjectFilterHelper
         } elseif (is_string($id) && ctype_digit($id)) {
             return (int) $id;
         } else {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(sprintf(
                 'Numeric ID or IcingaObject expected, got %s',
                 // TODO: just type/class info?
                 var_export($id, 1)
-            );
+            ));
         }
     }
 
@@ -41,7 +41,6 @@ class IcingaObjectFilterHelper
      * @param string $tableAlias
      * @param string $inheritanceType
      * @return ZfSelect
-     * @throws ProgrammingError
      */
     public static function filterByTemplate(
         ZfSelect $query,
@@ -76,10 +75,10 @@ class IcingaObjectFilterHelper
                 $sub->where("$i.parent_${type}_id IN (?)", $ids);
             }
         } else {
-            throw new ProgrammingError(
+            throw new RuntimeException(sprintf(
                 'Unable to understand "%s" inheritance',
                 $inheritanceType
-            );
+            ));
         }
 
         return $query->where('EXISTS ?', $sub);

@@ -3,12 +3,12 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
 use Icinga\Web\Url;
 use Exception;
+use RuntimeException;
 
 /**
  * QuickForm wants to be a base class for simple forms
@@ -225,7 +225,7 @@ abstract class QuickForm extends QuickBaseForm
     {
         if ($this->isApiRequest === null) {
             if ($this->request === null) {
-                throw new ProgrammingError(
+                throw new RuntimeException(
                     'Early acess to isApiRequest(). This is not possible, sorry'
                 );
             }
@@ -510,7 +510,7 @@ abstract class QuickForm extends QuickBaseForm
     public function setRequest(Request $request)
     {
         if ($this->request !== null) {
-            throw new ProgrammingError('Unable to set request twice');
+            throw new RuntimeException('Unable to set request twice');
         }
 
         $this->request = $request;

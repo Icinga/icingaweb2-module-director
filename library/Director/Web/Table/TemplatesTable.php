@@ -54,7 +54,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
     public function renderRow($row)
     {
         $name = $row->object_name;
-        $type = $this->getType();
+        $type = str_replace('_', '-', $this->getType());
         $caption = $row->is_used === 'y' ? $name : [
             $name,
             Html::tag(

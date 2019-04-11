@@ -8,7 +8,7 @@ class TemplateActionBar extends DirectorBaseActionBar
 {
     protected function assemble()
     {
-        $type = $this->type;
+        $type = str_replace('_', '-', $this->type);
         $plType = preg_replace('/cys$/', 'cies', $type . 's');
         $renderTree = $this->url->getParam('render') === 'tree';
         $renderParams = $renderTree ? null : ['render' => 'tree'];

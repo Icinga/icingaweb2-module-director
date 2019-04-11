@@ -79,6 +79,8 @@ class SuggestController extends ActionController
      * TODO: Should not remain here
      *
      * @return array
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Security\SecurityException
      */
     protected function suggestLocations()
     {
@@ -152,39 +154,22 @@ class SuggestController extends ActionController
         return $r;
     }
 
-
     protected function suggestHosttemplates()
     {
         $this->assertPermission('director/hosts');
-        $db = $this->db()->getDbAdapter();
-        $query = $db->select()
-            ->from('icinga_host', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'template'")
-            ->where('template_choice_id IS NULL');
-        return $db->fetchCol($query);
+        return $this->fetchTemplateNames('icinga_host', 'template_choice_id IS NULL');
     }
 
     protected function suggestServicetemplates()
     {
         $this->assertPermission('director/services');
-        $db = $this->db()->getDbAdapter();
-        $query = $db->select()
-            ->from('icinga_service', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'template'");
-        return $db->fetchCol($query);
+        return $this->fetchTemplateNames('icinga_service', 'template_choice_id IS NULL');
     }
 
     protected function suggestNotificationtemplates()
     {
         $this->assertPermission('director/notifications');
-        $db = $this->db()->getDbAdapter();
-        $query = $db->select()
-            ->from('icinga_notification', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'template'");
-        return $db->fetchCol($query);
+        return $this->fetchTemplateNames('icinga_notification');
     }
 
     protected function suggestCommandtemplates()
@@ -200,12 +185,19 @@ class SuggestController extends ActionController
     protected function suggestUsertemplates()
     {
         $this->assertPermission('director/users');
-        $db = $this->db()->getDbAdapter();
-        $query = $db->select()
-            ->from('icinga_user', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'template'");
-        return $db->fetchCol($query);
+        return $this->fetchTemplateNames('icinga_user');
+    }
+
+    /**
+     * @return array
+     * @throws \Icinga\Security\SecurityException
+     * @codingStandardsIgnoreStart
+     */
+    protected function suggestScheduled_downtimetemplates()
+    {
+        // @codingStandardsIgnoreEnd
+        $this->assertPermission('director/scheduled-downtimes');
+        return $this->fetchTemplateNames('icinga_scheduled_downtime');
     }
 
     protected function suggestCheckcommandnames()
@@ -215,6 +207,21 @@ class SuggestController extends ActionController
             ->from('icinga_command', 'object_name')
             ->where('object_type != ?', 'template')
             ->order('object_name');
+
+        return $db->fetchCol($query);
+    }
+
+    protected function fetchTemplateNames($table, $where = null)
+    {
+        $db = $this->db()->getDbAdapter();
+        $query = $db->select()
+            ->from($table, 'object_name')
+            ->where('object_type = ?', 'template')
+            ->order('object_name');
+
+        if ($where !== null) {
+            $query->where('template_choice_id IS NULL');
+        }
 
         return $db->fetchCol($query);
     }
@@ -322,12 +329,7 @@ class SuggestController extends ActionController
     protected function suggestDependencytemplates()
     {
         $this->assertPermission('director/hosts');
-        $db = $this->db()->getDbAdapter();
-        $query = $db->select()
-            ->from('icinga_dependency', 'object_name')
-            ->order('object_name')
-            ->where("object_type = 'template'");
-        return $db->fetchCol($query);
+        return $this->fetchTemplateNames('icinga_dependency');
     }
 
     protected function highlight($val, $search)

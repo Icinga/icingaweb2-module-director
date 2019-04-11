@@ -79,7 +79,11 @@ abstract class ObjectController extends ActionController
                     'add'
                 );
             } else {
-                $this->tabs(new ObjectTabs($this->getType(), $this->getAuth(), $this->object));
+                $this->tabs(new ObjectTabs(
+                    $this->getRequest()->getControllerName(),
+                    $this->getAuth(),
+                    $this->object
+                ));
             }
         }
     }

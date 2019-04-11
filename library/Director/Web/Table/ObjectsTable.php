@@ -33,6 +33,8 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected $type;
 
+    protected $baseObjectUrl;
+
     /** @var IcingaObject */
     protected $dummyObject;
 
@@ -60,6 +62,17 @@ class ObjectsTable extends ZfQueryBasedTable
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * @param string $url
+     * @return $this
+     */
+    public function setBaseObjectUrl($url)
+    {
+        $this->baseObjectUrl = $url;
+
+        return $this;
     }
 
     /**
@@ -119,7 +132,7 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function renderObjectNameColumn($row)
     {
-        $type = $this->getType();
+        $type = $this->baseObjectUrl;
         $url = Url::fromPath("director/${type}", [
             'name' => $row->object_name
         ]);
