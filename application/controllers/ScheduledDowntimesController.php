@@ -10,6 +10,7 @@ class ScheduledDowntimesController extends ObjectsController
     {
         $res = parent::addObjectsTabs();
         $this->tabs()->remove('index');
+        $this->tabs()->remove('templates');
         return $res;
     }
 
