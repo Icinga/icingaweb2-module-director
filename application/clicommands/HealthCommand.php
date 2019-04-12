@@ -26,7 +26,7 @@ class HealthCommand extends Command
      * OPTIONS
      *
      *   --check <name>     Run only a specific set of checks
-     *                      valid names: config, sync, import, job, deployment
+     *                      valid names: config, sync, import, jobs, deployment
      *   --db <name>        Use a specific Icinga Web DB resource
      *   --watch <seconds>  Refresh every <second>. For interactive use only
      */
