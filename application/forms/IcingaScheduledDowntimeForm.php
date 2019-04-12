@@ -93,6 +93,16 @@ class IcingaScheduledDowntimeForm extends DirectorObjectForm
             return $this;
         }
 
+        if ($applyTo === 'host') {
+            $this->addBoolean('with_services', [
+                'label'       => $this->translate('With Services'),
+                'description' => $this->translate(
+                    'Whether Downtimes should also explicitly be scheduled for'
+                    . ' all Services belonging to affected Hosts'
+                )
+            ]);
+        }
+
         $suggestionContext = ucfirst($applyTo) . 'FilterColumns';
         $this->addAssignFilter([
             'suggestionContext' => $suggestionContext,

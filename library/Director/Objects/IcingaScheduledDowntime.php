@@ -21,6 +21,7 @@ class IcingaScheduledDowntime extends IcingaObject
         'duration'          => null,
         'apply_to'          => null,
         'assign_filter'     => null,
+        'with_services'     => null,
     ];
 
     protected $supportsImports = true;
@@ -46,6 +47,7 @@ class IcingaScheduledDowntime extends IcingaObject
         'apply_to',
         'object_name',
         'object_type',
+        'with_services',
     ];
 
     /**
@@ -101,8 +103,30 @@ class IcingaScheduledDowntime extends IcingaObject
         return false;
     }
 
+    /**
+     * @return string
+     */
+    protected function renderSuffix()
+    {
+        if ($this->get('with_services') === 'y' && $this->get('apply_to') === 'host') {
+            return parent::renderSuffix() . $this->renderCloneForServices();
+        } else {
+            return parent::renderSuffix();
+        }
+    }
+
     protected function prefersGlobalZone()
     {
         return false;
+    }
+
+    protected function renderCloneForServices()
+    {
+        $services = clone($this);
+        $services
+            ->set('with_services', 'n')
+            ->set('apply_to', 'service');
+
+        return $services->toConfigString();
     }
 }
