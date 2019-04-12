@@ -58,7 +58,7 @@ class HostController extends ObjectController
     {
         $host = $this->getHostObject();
         $this->addServicesHeader();
-        $this->addTitle($this->translate('Add Service: %s'), $host->getObjectName());
+        $this->addTitle($this->translate('Add Service to %s'), $host->getObjectName());
         $this->content()->add(
             IcingaAddServiceForm::load()
                 ->setHost($host)
@@ -71,7 +71,7 @@ class HostController extends ObjectController
     {
         $host = $this->getHostObject();
         $this->addServicesHeader();
-        $this->addTitle($this->translate('Add Service Set: %s'), $host->getObjectName());
+        $this->addTitle($this->translate('Add Service Set to %s'), $host->getObjectName());
         $this->content()->add(
             IcingaServiceSetForm::load()
                 ->setHost($host)
