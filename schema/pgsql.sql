@@ -2098,6 +2098,7 @@ CREATE TABLE icinga_scheduled_downtime (
   comment text DEFAULT NULL,
   fixed enum_boolean DEFAULT NULL,
   duration int DEFAULT NULL,
+  with_services enum_boolean NULL DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_scheduled_downtime_zone
   FOREIGN KEY (zone_id)
@@ -2155,4 +2156,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (161, NOW());
+  VALUES (162, NOW());

@@ -1798,6 +1798,7 @@ CREATE TABLE icinga_scheduled_downtime (
   comment TEXT DEFAULT NULL,
   fixed ENUM('y', 'n') DEFAULT NULL,
   duration INT(10) UNSIGNED DEFAULT NULL,
+  with_services ENUM('y', 'n') NULL DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_scheduled_downtime_zone
@@ -1843,4 +1844,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (161, NOW());
+  VALUES (162, NOW());
