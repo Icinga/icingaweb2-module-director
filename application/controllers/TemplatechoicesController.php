@@ -31,7 +31,7 @@ class TemplatechoicesController extends ActionController
 
     protected function prepare($type, $title)
     {
-        $this->tabs(new ObjectsTabs($type, $this->Auth()))->activate('choices');
+        $this->tabs(new ObjectsTabs($type, $this->Auth(), $type))->activate('choices');
         $this->setAutorefreshInterval(10)->addTitle($title);
         $this->actions(new ChoicesActionBar($type, $this->url()));
         ChoicesTable::create($type, $this->db())->renderTo($this);

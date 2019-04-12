@@ -17,8 +17,9 @@ class ObjectsTabs extends Tabs
         if ($object->isGroup()) {
             $object = IcingaObject::createByType(substr($typeUrl, 0, -5));
         }
+        $shortName = $object->getShortTableName();
 
-        $plType = strtolower(preg_replace('/cys$/', 'cies', $typeUrl . 's'));
+        $plType = strtolower(preg_replace('/cys$/', 'cies', $shortName . 's'));
         if ($auth->hasPermission("director/${plType}")) {
             $this->add('index', array(
                 'url'   => sprintf('director/%s', $plType),
@@ -65,7 +66,7 @@ class ObjectsTabs extends Tabs
         if ($auth->hasPermission('director/admin')) {
             if ($object->supportsChoices()) {
                 $this->add('choices', array(
-                    'url' => sprintf('director/templatechoices/%s', $typeUrl),
+                    'url' => sprintf('director/templatechoices/%s', $shortName),
                     'label' => $this->translate('Choices')
                 ));
             }
