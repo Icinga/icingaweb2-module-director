@@ -190,18 +190,8 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return $attrs;
     }
 
-    // TODO -> UNFINISHED!!!
     public function setArguments($arguments)
     {
-        if (empty($arguments)) {
-            if (count($this->arguments)) {
-                $this->arguments = [];
-                $this->modified = true;
-            }
-
-            return $this;
-        }
-
         $arguments = (array) $arguments;
 
         foreach ($arguments as $arg => $val) {
