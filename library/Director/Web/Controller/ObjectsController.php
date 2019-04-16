@@ -74,6 +74,8 @@ abstract class ObjectsController extends ActionController
 
         if ($request->getActionName() === 'templates') {
             $table->filterObjectType('template');
+        } else if ($request->getActionName() === 'applyrules') {
+            $table->filterObjectType('apply');
         }
 
         return (new IcingaObjectsHandler(
@@ -210,6 +212,17 @@ abstract class ObjectsController extends ActionController
             return;
         }
         $type = $this->getType();
+
+        if ($this->params->get('format') === 'json') {
+            $filename = sprintf(
+                "director-${type}-templates_%s.json",
+                date('YmdHis')
+            );
+            $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
+
         $shortType = IcingaObject::createByType($type)->getShortTableName();
         $this
             ->assertPermission('director/admin')
@@ -248,7 +261,23 @@ abstract class ObjectsController extends ActionController
      */
     public function applyrulesAction()
     {
+        if ($this->getRequest()->isApiRequest()) {
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
+
         $type = $this->getType();
+
+        if ($this->params->get('format') === 'json') {
+            $filename = sprintf(
+                "director-${type}-applyrules_%s.json",
+                date('YmdHis')
+            );
+            $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
+
         $tType = $this->translate(ucfirst($type));
         $this
             ->assertApplyRulePermission()
@@ -277,7 +306,10 @@ abstract class ObjectsController extends ActionController
                 )
             );
 
-        $this->getApplyRulesTable()->renderTo($this);
+        $table = $this->getApplyRulesTable();
+        $table->renderTo($this);
+        (new AdditionalTableActions($this->getAuth(), $this->url(), $table))
+            ->appendTo($this->actions());
     }
 
     /**
