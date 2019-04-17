@@ -19,6 +19,7 @@ use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use InvalidArgumentException;
 
 class Sync
@@ -811,6 +812,8 @@ class Sync
     protected function prepareCache()
     {
         PrefetchCache::initialize($this->db);
+        IcingaTemplateRepository::clear();
+
         $ruleObjectType = $this->rule->get('object_type');
 
         $dummy = IcingaObject::createByType($ruleObjectType);
