@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Db\Cache;
 
 use Icinga\Module\Director\CustomVariable\CustomVariable;
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
@@ -36,6 +37,7 @@ class PrefetchCache
 
     public static function initialize(Db $db)
     {
+        self::forget();
         self::$instance = new static($db);
     }
 
@@ -60,6 +62,7 @@ class PrefetchCache
 
     public static function forget()
     {
+        DbObject::clearAllPrefetchCaches();
         self::$instance = null;
     }
 
