@@ -259,6 +259,9 @@
                 }
             } else {
                 $ul = $('<ul class="director-suggestions"></ul>');
+                $input.parent().css({
+                    position: 'relative'
+                });
                 $ul.insertAfter($input);
                 var suggestionWidth = (parseInt($input.css('width')) * 2) + 'px';
                 $ul.css({width: suggestionWidth});
