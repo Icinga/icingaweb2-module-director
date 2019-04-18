@@ -74,7 +74,7 @@ abstract class ObjectsController extends ActionController
 
         if ($request->getActionName() === 'templates') {
             $table->filterObjectType('template');
-        } else if ($request->getActionName() === 'applyrules') {
+        } elseif ($request->getActionName() === 'applyrules') {
             $table->filterObjectType('apply');
         }
 
