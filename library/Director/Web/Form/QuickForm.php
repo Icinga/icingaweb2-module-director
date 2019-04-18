@@ -7,6 +7,7 @@ use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
 use Icinga\Web\Url;
+use InvalidArgumentException;
 use Exception;
 use RuntimeException;
 
@@ -62,6 +63,10 @@ abstract class QuickForm extends QuickBaseForm
     protected $didSetup = false;
 
     protected $isApiRequest = false;
+
+    protected $successCallbacks = [];
+
+    protected $calledSuccessCallbacks = false;
 
     public function __construct($options = null)
     {
@@ -379,6 +384,7 @@ abstract class QuickForm extends QuickBaseForm
                 if ($this->isValid($post)) {
                     try {
                         $this->onSuccess();
+                        $this->callOnSuccessCallables();
                     } catch (Exception $e) {
                         $this->addException($e);
                         $this->onFailure();
@@ -441,6 +447,32 @@ abstract class QuickForm extends QuickBaseForm
         $this->redirectOnSuccess();
     }
 
+    /**
+     * @param callable $callable
+     * @return $this
+     */
+    public function callOnSucess($callable)
+    {
+        if (! is_callable($callable)) {
+            throw new InvalidArgumentException(
+                'callOnSuccess() expects a callable'
+            );
+        }
+        $this->successCallbacks[] = $callable;
+
+        return $this;
+    }
+
+    protected function callOnSuccessCallables()
+    {
+        if (! $this->calledSuccessCallbacks) {
+            $this->calledSuccessCallbacks = true;
+            foreach ($this->successCallbacks as $callable) {
+                $callable($this);
+            }
+        }
+    }
+
     public function setSuccessMessage($message)
     {
         $this->successMessage = $message;
@@ -463,10 +495,12 @@ abstract class QuickForm extends QuickBaseForm
         if ($this->isApiRequest()) {
             // TODO: Set the status line message?
             $this->successMessage = $this->getSuccessMessage($message);
+            $this->callOnSuccessCallables();
             return;
         }
 
         $url = $this->getSuccessUrl();
+        $this->callOnSuccessCallables();
         $this->notifySuccess($this->getSuccessMessage($message));
         $this->redirectAndExit($url);
     }
