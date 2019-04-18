@@ -258,6 +258,22 @@ class SuggestController extends ActionController
         ]);
     }
 
+    protected function suggestDataListValuesForListId($id)
+    {
+        $db = $this->db()->getDbAdapter();
+        $select = $db->select()
+            ->from('director_datalist_entry', ['entry_name', 'entry_value'])
+            ->where('list_id = ?', $id)
+            ->order('entry_value ASC');
+
+        $result = $db->fetchPairs($select);
+        if ($result) {
+            return $result;
+        } else {
+            return [];
+        }
+    }
+
     protected function suggestDataListValues($field = null)
     {
         if ($field === null) {
