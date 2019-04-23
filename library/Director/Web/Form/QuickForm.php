@@ -68,6 +68,10 @@ abstract class QuickForm extends QuickBaseForm
 
     protected $calledSuccessCallbacks = false;
 
+    protected $onRequestCallbacks = [];
+
+    protected $calledOnRequestCallbacks = false;
+
     public function __construct($options = null)
     {
         parent::__construct($options);
@@ -451,6 +455,32 @@ abstract class QuickForm extends QuickBaseForm
      * @param callable $callable
      * @return $this
      */
+    public function callOnRequest($callable)
+    {
+        if (! is_callable($callable)) {
+            throw new InvalidArgumentException(
+                'callOnRequest() expects a callable'
+            );
+        }
+        $this->onRequestCallbacks[] = $callable;
+
+        return $this;
+    }
+
+    protected function callOnRequestCallables()
+    {
+        if (! $this->calledOnRequestCallbacks) {
+            $this->calledOnRequestCallbacks = true;
+            foreach ($this->onRequestCallbacks as $callable) {
+                $callable($this);
+            }
+        }
+    }
+
+    /**
+     * @param callable $callable
+     * @return $this
+     */
     public function callOnSucess($callable)
     {
         if (! is_callable($callable)) {
@@ -539,6 +569,7 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function onRequest()
     {
+        $this->callOnRequestCallables();
     }
 
     public function setRequest(Request $request)
@@ -550,6 +581,8 @@ abstract class QuickForm extends QuickBaseForm
         $this->request = $request;
         $this->prepareElements();
         $this->onRequest();
+        $this->callOnRequestCallables();
+
         return $this;
     }
 

@@ -38,7 +38,7 @@ abstract class DirectorForm extends QuickForm
         ]);
     }
 
-    protected function addBoolean($key, $options, $default = null)
+    public function addBoolean($key, $options, $default = null)
     {
         if ($default === null) {
             return $this->addElement('OptionalYesNo', $key, $options);
