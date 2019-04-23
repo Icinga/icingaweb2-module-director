@@ -8,6 +8,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
@@ -772,14 +773,18 @@ abstract class DirectorObjectForm extends DirectorForm
             $this->setDefaultsFromObject($this->object);
         }
         $this->prepareFields($this->object());
+        IcingaObjectFormHook::callOnSetup($this);
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
         try {
             $this->loadInheritedProperties();
             $this->addFields();
+            $this->callOnRequestCallables();
         } catch (Exception $e) {
             $this->addUniqueException($e);
+
+            return;
         }
 
         if ($this->shouldBeDeleted()) {
@@ -918,7 +923,7 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->getSentValue($name) === $this->getElement($name)->getLabel();
     }
 
-    protected function abortDeletion()
+    public function abortDeletion()
     {
         if ($this->hasDeleteButton()) {
             $this->setSentValue($this->deleteButtonName, 'ABORTED');
