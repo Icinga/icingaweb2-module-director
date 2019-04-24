@@ -17,7 +17,7 @@ CREATE TABLE director_activity_log (
   old_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   new_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   author VARCHAR(64) NOT NULL,
-  change_time DATETIME NOT NULL,
+  change_time TIMESTAMP NOT NULL,
   checksum VARBINARY(20) NOT NULL,
   parent_checksum VARBINARY(20) DEFAULT NULL,
   PRIMARY KEY (id),
@@ -114,9 +114,9 @@ CREATE TABLE director_deployment_log (
   config_checksum VARBINARY(20) DEFAULT NULL,
   last_activity_checksum VARBINARY(20) NOT NULL,
   peer_identity VARCHAR(64) NOT NULL,
-  start_time DATETIME NOT NULL,
-  end_time DATETIME DEFAULT NULL,
-  abort_time DATETIME DEFAULT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP NULL DEFAULT NULL,
+  abort_time TIMESTAMP NULL DEFAULT NULL,
   duration_connection INT(10) UNSIGNED DEFAULT NULL
     COMMENT 'The time it took to connect to an Icinga node (ms)',
   duration_dump INT(10) UNSIGNED DEFAULT NULL
@@ -184,7 +184,7 @@ CREATE TABLE director_datafield_setting (
 
 CREATE TABLE director_schema_migration (
   schema_version SMALLINT UNSIGNED NOT NULL,
-  migration_time DATETIME NOT NULL,
+  migration_time TIMESTAMP NOT NULL,
   PRIMARY KEY(schema_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -288,8 +288,8 @@ CREATE TABLE director_job (
   run_interval INT(10) UNSIGNED NOT NULL, -- seconds
   timeperiod_id INT(10) UNSIGNED DEFAULT NULL,
   last_attempt_succeeded ENUM('y', 'n') DEFAULT NULL,
-  ts_last_attempt DATETIME DEFAULT NULL,
-  ts_last_error DATETIME DEFAULT NULL,
+  ts_last_attempt TIMESTAMP NULL DEFAULT NULL,
+  ts_last_error TIMESTAMP NULL DEFAULT NULL,
   last_error_message TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY (job_name),
@@ -1349,7 +1349,7 @@ CREATE TABLE import_source (
     'failing'
   ) NOT NULL DEFAULT 'unknown',
   last_error_message TEXT DEFAULT NULL,
-  last_attempt DATETIME DEFAULT NULL,
+  last_attempt TIMESTAMP NULL DEFAULT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX source_name (source_name),
@@ -1406,8 +1406,8 @@ CREATE TABLE import_run (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_id INT(10) UNSIGNED NOT NULL,
   rowset_checksum VARBINARY(20) DEFAULT NULL,
-  start_time DATETIME NOT NULL,
-  end_time DATETIME DEFAULT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP NULL DEFAULT NULL,
   succeeded ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT import_run_source
@@ -1496,7 +1496,7 @@ CREATE TABLE sync_rule (
     'failing'
   ) NOT NULL DEFAULT 'unknown',
   last_error_message TEXT DEFAULT NULL,
-  last_attempt DATETIME DEFAULT NULL,
+  last_attempt TIMESTAMP NULL DEFAULT NULL,
   description TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX rule_name (rule_name)
@@ -1528,7 +1528,7 @@ CREATE TABLE sync_run (
   id BIGINT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   rule_id INT(10) UNSIGNED DEFAULT NULL,
   rule_name VARCHAR(255) NOT NULL,
-  start_time DATETIME NOT NULL,
+  start_time TIMESTAMP NOT NULL,
   duration_ms INT(10) UNSIGNED DEFAULT NULL,
   objects_deleted INT(10) UNSIGNED DEFAULT 0,
   objects_created INT(10) UNSIGNED DEFAULT 0,
@@ -1844,4 +1844,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (162, NOW());
+  VALUES (163, NOW());
