@@ -688,6 +688,24 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->object !== null;
     }
 
+    public function isIcingaObject()
+    {
+        if ($this->object !== null) {
+            return $this->object instanceof IcingaObject;
+        }
+
+        /** @var DbObject $class */
+        $class = $this->getObjectClassname();
+        $instance = $class::create();
+
+        return $instance instanceof IcingaObject;
+    }
+
+    public function isMultiObjectForm()
+    {
+        return false;
+    }
+
     public function setObject(DbObject $object)
     {
         $this->object = $object;

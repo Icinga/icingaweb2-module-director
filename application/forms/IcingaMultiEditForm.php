@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -26,6 +27,11 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $this->object = current($this->objects);
         $this->db = $this->object()->getConnection();
         return $this;
+    }
+
+    public function isMultiObjectForm()
+    {
+        return true;
     }
 
     public function pickElementsFrom(QuickForm $form, $properties)
@@ -97,6 +103,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
      */
     protected function onRequest()
     {
+        IcingaObjectFormHook::callOnSetup($this);
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
@@ -104,6 +111,7 @@ class IcingaMultiEditForm extends DirectorObjectForm
 
     protected function handlePost()
     {
+        $this->callOnRequestCallables();
         if ($this->shouldBeDeleted()) {
             $this->deleteObjects();
         }
@@ -278,9 +286,14 @@ class IcingaMultiEditForm extends DirectorObjectForm
         return $this->db;
     }
 
-    protected function getObjects($names)
+    public function getObjects($names = null)
     {
+        if ($names === null) {
+            return $this->objects;
+        }
+
         $res = array();
+
         foreach ($names as $name) {
             $res[$name] = $this->objects[$name];
         }
