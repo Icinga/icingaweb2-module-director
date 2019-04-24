@@ -315,7 +315,7 @@ class CoreApi implements DeploymentApiInterface
             "f = function() {\n"
             . '  existing = get_%s("%s")'
             . "\n  if (existing) { return false }"
-            . "\n%s\n}\n__run_with_activation_context(f)\n",
+            . "\n%s\n}\nInternal.run_with_activation_context(f)\n",
             $key,
             $object->get('object_name'),
             (string) $object
