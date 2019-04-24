@@ -5,11 +5,13 @@ namespace Icinga\Module\Director\Core;
 use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Hook\DeploymentHook;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\IcingaZone;
+use Icinga\Web\Hook;
 use RuntimeException;
 
 class CoreApi implements DeploymentApiInterface
@@ -816,6 +818,12 @@ constants
             // 'module_name'    => $moduleName,
         ));
 
+        /** @var DeploymentHook[] $hooks */
+        $hooks = Hook::all('director/Deployment');
+        foreach ($hooks as $hook) {
+            $hook->beforeDeploy($deployment);
+        }
+
         $this->assertPackageExists($packageName);
 
         $response = $this->client()->post('config/stages/' . urlencode($packageName), [
@@ -826,20 +834,23 @@ constants
         // $deployment->duration_ms = $duration;
         $deployment->set('duration_dump', $duration);
 
+        $succeeded = 'n';
         if ($response->succeeded()) {
             if ($stage = $response->getResult('stage', ['package' => $packageName])) { // Status?
                 $deployment->set('stage_name', key($stage));
-                $deployment->set('dump_succeeded', 'y');
-            } else {
-                $deployment->set('dump_succeeded', 'n');
+                $succeeded = 'y';
             }
-        } else {
-            $deployment->set('dump_succeeded', 'n');
         }
-
+        $deployment->set('dump_succeeded', $succeeded);
         $deployment->store($db);
 
-        return $deployment->set('dump_succeeded', 'y');
+        if ($succeeded === 'y') {
+            foreach ($hooks as $hook) {
+                $hook->onSuccessfullDump($deployment);
+            }
+        }
+
+        return $deployment;
     }
 
     protected function shortenStartupLog($log)
