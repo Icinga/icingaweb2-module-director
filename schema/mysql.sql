@@ -114,7 +114,7 @@ CREATE TABLE director_deployment_log (
   config_checksum VARBINARY(20) DEFAULT NULL,
   last_activity_checksum VARBINARY(20) NOT NULL,
   peer_identity VARCHAR(64) NOT NULL,
-  start_time TIMESTAMP NOT NULL,
+  start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   end_time TIMESTAMP NULL DEFAULT NULL,
   abort_time TIMESTAMP NULL DEFAULT NULL,
   duration_connection INT(10) UNSIGNED DEFAULT NULL
@@ -184,7 +184,7 @@ CREATE TABLE director_datafield_setting (
 
 CREATE TABLE director_schema_migration (
   schema_version SMALLINT UNSIGNED NOT NULL,
-  migration_time TIMESTAMP NOT NULL,
+  migration_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY(schema_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1406,7 +1406,7 @@ CREATE TABLE import_run (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   source_id INT(10) UNSIGNED NOT NULL,
   rowset_checksum VARBINARY(20) DEFAULT NULL,
-  start_time TIMESTAMP NOT NULL,
+  start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   end_time TIMESTAMP NULL DEFAULT NULL,
   succeeded ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
@@ -1528,7 +1528,7 @@ CREATE TABLE sync_run (
   id BIGINT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
   rule_id INT(10) UNSIGNED DEFAULT NULL,
   rule_name VARCHAR(255) NOT NULL,
-  start_time TIMESTAMP NOT NULL,
+  start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   duration_ms INT(10) UNSIGNED DEFAULT NULL,
   objects_deleted INT(10) UNSIGNED DEFAULT 0,
   objects_created INT(10) UNSIGNED DEFAULT 0,
