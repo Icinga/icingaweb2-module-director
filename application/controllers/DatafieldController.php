@@ -26,7 +26,6 @@ class DatafieldController extends ActionController
         }
 
         $form = DirectorDatafieldForm::load()
-            ->setSuccessUrl('director/data/fields')
             ->setDb($this->db());
 
         if ($edit) {

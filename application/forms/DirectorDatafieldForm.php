@@ -13,6 +13,8 @@ class DirectorDatafieldForm extends DirectorObjectForm
 {
     protected $objectName = 'Data field';
 
+    protected $listUrl = 'director/data/fields';
+
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {

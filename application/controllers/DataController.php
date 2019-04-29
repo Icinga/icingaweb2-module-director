@@ -58,13 +58,17 @@ class DataController extends ActionController
 
     public function fieldsAction()
     {
+        $this->setAutorefreshInterval(10);
         $this->tabs(new DataTabs())->activate('datafield');
         $this->addTitle($this->translate('Data Fields'));
         $this->actions()->add(Link::create(
             $this->translate('Add'),
             'director/datafield/add',
             null,
-            ['class' => 'icon-plus']
+            [
+                'class' => 'icon-plus',
+                'data-base-target' => '_next',
+            ]
         ));
 
         (new DatafieldTable($this->db()))->renderTo($this);
