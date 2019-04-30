@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form\Element;
 
-use Icinga\Exception\ProgrammingError;
+use InvalidArgumentException;
 
 /**
  * Input control for extensible sets
@@ -21,12 +21,12 @@ class ExtensibleSet extends FormElement
     {
         $value = parent::getValue();
         if (is_string($value)) {
-            $value = array($value);
+            $value = [$value];
         } elseif ($value === null) {
             return $value;
         }
         if (! is_array($value)) {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(
                 'ExtensibleSet expects to work with Arrays, got %s',
                 var_export($value, 1)
             );
@@ -69,7 +69,7 @@ class ExtensibleSet extends FormElement
     public function isValid($value, $context = null)
     {
         if ($value === null) {
-            $value = array();
+            $value = [];
         }
 
         $value = array_filter($value, 'strlen');
@@ -84,6 +84,6 @@ class ExtensibleSet extends FormElement
             return false;
         }
 
-        return true;
+        return parent::isValid($value, $context);
     }
 }
