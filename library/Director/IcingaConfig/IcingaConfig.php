@@ -509,7 +509,7 @@ class IcingaConfig
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
             . $this->renderFlappingLogHelper()
             . $this->renderHostOverridableVars()
-            . $this->renderMagicApplyFor()
+            . $this->renderMagicApplyFor() /* @deprecated Will be removed in 1.8.0 - #1850 #1851 */
         );
 
         return $this;
@@ -575,6 +575,10 @@ if (! globals.contains(DirectorOverrideTemplate)) {
         );
     }
 
+    /**
+     * @deprecated Will be removed in 1.8.0 - #1850 #1851
+     * @return string
+     */
     protected function renderMagicApplyFor()
     {
         if (! $this->usesMagicApplyFor()) {
@@ -585,8 +589,10 @@ if (! globals.contains(DirectorOverrideTemplate)) {
 
         return sprintf(
             '
-/* Warning: this is experimental and might be removed */
+/* DEPRECATED: This feature always was experimental and will be removed in 1.8.0 (see issue #1850 #1851) */
 apply Service for (title => params in host.vars["%s"]) {
+  log(LogWarning, "config", "Director: Magic Apply For was used on Host \"" +
+    host.name + "\", it is now deprecated and will be removed in Director 1.8.0 (see issue #1850 #1851)")
 
   var override = host.vars["%s_vars"][title]
 
@@ -614,11 +620,19 @@ apply Service for (title => params in host.vars["%s"]) {
         );
     }
 
+    /**
+     * @deprecated Will be removed in 1.8.0 - #1850 #1851
+     * @return mixed|null
+     */
     protected function getMagicApplyVarName()
     {
         return $this->connection->settings()->magic_apply_for;
     }
 
+    /**
+     * @deprecated Will be removed in 1.8.0 - #1850 #1851
+     * @return string
+     */
     protected function usesMagicApplyFor()
     {
         $db = $this->db;
