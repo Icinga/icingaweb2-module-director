@@ -45,7 +45,7 @@ class FilterRenderer
         return new DbExpr($this->render());
     }
 
-    public static function applyToQuery(Filter $filter, $query)
+    public static function applyToQuery(Filter $filter, \Zend_Db_Select $query)
     {
         if (! $filter->isEmpty()) {
             if ($query instanceof DbSelect) {

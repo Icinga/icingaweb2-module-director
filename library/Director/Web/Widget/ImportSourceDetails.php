@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use dipl\Html\HtmlDocument;
+use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Forms\ImportCheckForm;
 use Icinga\Module\Director\Forms\ImportRunForm;
 use Icinga\Module\Director\Objects\ImportSource;
-use dipl\Html\Html;
-use dipl\Translation\TranslationHelper;
+use ipl\Html\Html;
+use gipfl\Translation\TranslationHelper;
 
 class ImportSourceDetails extends HtmlDocument
 {

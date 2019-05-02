@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use dipl\Html\Html;
-use dipl\Html\HtmlDocument;
-use dipl\Html\Link;
+use ipl\Html\Html;
+use ipl\Html\HtmlDocument;
+use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 

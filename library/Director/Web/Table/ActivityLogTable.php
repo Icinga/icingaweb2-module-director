@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Util;
-use dipl\Html\BaseHtmlElement;
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
+use ipl\Html\BaseHtmlElement;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 
 class ActivityLogTable extends ZfQueryBasedTable
 {

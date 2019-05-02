@@ -9,9 +9,9 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Restriction\ObjectRestriction;
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
-use dipl\Web\Url;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Url;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable

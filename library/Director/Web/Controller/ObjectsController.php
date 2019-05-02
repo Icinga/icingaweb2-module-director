@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use dipl\Web\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
@@ -21,7 +21,7 @@ use Icinga\Module\Director\Web\Table\ObjectsTable;
 use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
-use dipl\Html\Link;
+use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
 
 abstract class ObjectsController extends ActionController

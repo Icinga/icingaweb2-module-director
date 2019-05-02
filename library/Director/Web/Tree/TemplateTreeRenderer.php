@@ -4,11 +4,11 @@ namespace Icinga\Module\Director\Web\Tree;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Resolver\TemplateTree;
-use dipl\Html\BaseHtmlElement;
-use dipl\Html\Html;
-use dipl\Html\Link;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Widget\ControlsAndContent;
+use ipl\Html\BaseHtmlElement;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Link;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Widget\ControlsAndContent;
 
 class TemplateTreeRenderer extends BaseHtmlElement
 {

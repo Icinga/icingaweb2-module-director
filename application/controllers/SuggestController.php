@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use dipl\Html\Html;
+use ipl\Html\Html;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\IcingaHost;

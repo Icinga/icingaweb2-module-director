@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 
 class BasketTable extends ZfQueryBasedTable
 {

@@ -2,15 +2,15 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\Html;
+use ipl\Html\Html;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
-use dipl\Html\Link;
-use dipl\Web\Table\SimpleQueryBasedTable;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\SimpleQueryBasedTable;
 
 class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
 {

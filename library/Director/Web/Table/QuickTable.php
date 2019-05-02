@@ -15,11 +15,11 @@ use Icinga\Exception\QueryException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Web\Request;
-use dipl\Web\Url;
+use gipfl\IcingaWeb2\Url;
 use Icinga\Web\View;
 use Icinga\Web\Widget;
 use Icinga\Web\Widget\Paginator;
-use dipl\Html\ValidHtml;
+use ipl\Html\ValidHtml;
 use stdClass;
 use Zend_Db_Select as ZfDbSelect;
 
