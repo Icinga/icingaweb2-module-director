@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use dipl\Html\HtmlDocument;
+use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Objects\DirectorJob;
-use dipl\Html\Html;
-use dipl\Translation\TranslationHelper;
+use ipl\Html\Html;
+use gipfl\Translation\TranslationHelper;
 
 class JobDetails extends HtmlDocument
 {

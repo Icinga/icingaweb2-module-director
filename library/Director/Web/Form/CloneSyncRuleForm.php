@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use dipl\Html\Form;
-use dipl\Html\FormDecorator\DdDtDecorator;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Url;
+use ipl\Html\Form;
+use ipl\Html\FormDecorator\DdDtDecorator;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\SyncRule;
 
 class CloneSyncRuleForm extends Form

@@ -2,18 +2,18 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Web\Table\Extension\MultiSelect;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
-use dipl\Db\Zf1\FilterRenderer;
-use dipl\Html\Html;
-use dipl\Html\Icon;
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
-use dipl\Web\Url;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Icon;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Url;
+use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
 use Zend_Db_Select as ZfSelect;
 
 class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage

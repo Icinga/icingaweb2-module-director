@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use dipl\Html\Link;
-use dipl\Web\Widget\NameValueTable;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Widget\NameValueTable;
 use Exception;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\ConfigDiff;
@@ -18,7 +18,7 @@ use Icinga\Module\Director\Forms\BasketForm;
 use Icinga\Module\Director\Forms\BasketUploadForm;
 use Icinga\Module\Director\Forms\RestoreBasketForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
-use dipl\Html\Html;
+use ipl\Html\Html;
 use Icinga\Module\Director\Web\Table\BasketSnapshotTable;
 
 class BasketController extends ActionController

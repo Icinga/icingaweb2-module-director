@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\Html;
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;

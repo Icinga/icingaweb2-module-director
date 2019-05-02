@@ -2,15 +2,15 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\BaseHtmlElement;
-use dipl\Html\Html;
+use ipl\Html\BaseHtmlElement;
+use ipl\Html\Html;
 use Icinga\Module\Director\Forms\RemoveLinkForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use dipl\Html\HtmlElement;
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
-use dipl\Web\Url;
+use ipl\Html\HtmlElement;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Url;
 
 class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 {

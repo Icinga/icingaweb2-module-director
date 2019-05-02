@@ -3,7 +3,7 @@
 namespace Icinga\Module\Director;
 
 use Diff;
-use dipl\Html\ValidHtml;
+use ipl\Html\ValidHtml;
 use InvalidArgumentException;
 
 class ConfigDiff implements ValidHtml

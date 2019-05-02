@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\Html;
-use dipl\Html\ValidHtml;
-use dipl\Web\Table\SimpleQueryBasedTable;
+use ipl\Html\Html;
+use ipl\Html\ValidHtml;
+use gipfl\IcingaWeb2\Table\SimpleQueryBasedTable;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Objects\ImportRun;
 use Icinga\Module\Director\PlainObjectRenderer;

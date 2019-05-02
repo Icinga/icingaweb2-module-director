@@ -6,10 +6,10 @@ use Error;
 use Exception;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
-use dipl\Html\Link;
-use dipl\Web\Table\Extension\ZfSortablePriority;
-use dipl\Web\Table\ZfQueryBasedTable;
-use dipl\Web\Url;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\Extension\ZfSortablePriority;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Url;
 
 class PropertymodifierTable extends ZfQueryBasedTable
 {

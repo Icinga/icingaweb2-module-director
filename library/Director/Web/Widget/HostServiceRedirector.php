@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use dipl\Web\Url;
+use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;

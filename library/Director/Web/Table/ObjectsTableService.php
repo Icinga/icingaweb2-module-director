@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\Html;
-use dipl\Web\Table\Extension\MultiSelect;
-use dipl\Html\Link;
-use dipl\Web\Url;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Url;
 
 class ObjectsTableService extends ObjectsTable
 {

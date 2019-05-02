@@ -10,8 +10,8 @@ use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\DirectorForm;
-use dipl\Html\Html;
-use dipl\Html\Link;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Link;
 
 class KickstartForm extends DirectorForm
 {

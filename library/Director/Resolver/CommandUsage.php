@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Resolver;
 
-use dipl\Html\Link;
-use dipl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Link;
+use gipfl\Translation\TranslationHelper;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use InvalidArgumentException;
 

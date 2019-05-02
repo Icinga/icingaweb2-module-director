@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use dipl\Html\Html;
-use dipl\Html\HtmlDocument;
-use dipl\Html\HtmlString;
-use dipl\Translation\TranslationHelper;
+use ipl\Html\Html;
+use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlString;
+use gipfl\Translation\TranslationHelper;
 use Icinga\Module\Director\CheckPlugin\PluginState;
 use Icinga\Module\Director\Health;
 

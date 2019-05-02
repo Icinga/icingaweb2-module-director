@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use dipl\Html\Html;
 use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;
 use Icinga\Module\Director\Dashboard\Dashboard;
 use Icinga\Module\Director\Health;
@@ -19,9 +18,13 @@ class DashboardController extends ActionController
     protected function addDbSelection()
     {
         if ($this->isMultiDbSetup()) {
-            $form = new DbSelectorForm($this->Window(), $this->listAllowedDbResourceNames());
+            $form = new DbSelectorForm(
+                $this->getResponse(),
+                $this->Window(),
+                $this->listAllowedDbResourceNames()
+            );
             $this->content()->add($form);
-            $form->handleRequest($this->getRequest());
+            $form->handleRequest($this->getServerRequest());
         }
     }
 
