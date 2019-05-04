@@ -2,16 +2,24 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use Countable;
+use dipl\Html\HtmlDocument;
 use Exception;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Web\View;
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
+use Icinga\Web\Widget\Tab;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
 
-abstract class Dashboard implements Countable
+abstract class Dashboard extends HtmlDocument
 {
+    use TranslationHelper;
+
     protected $name;
 
     /** @var  Dashlet[] */
@@ -22,9 +30,6 @@ abstract class Dashboard implements Countable
     /** @var  Db */
     protected $db;
 
-    /** @var View */
-    protected $view;
-
     final private function __construct()
     {
     }
@@ -32,20 +37,66 @@ abstract class Dashboard implements Countable
     /**
      * @param $name
      * @param Db $db
-     * @param View $view
      *
      * @return self
      */
-    public static function loadByName($name, Db $db, View $view)
+    public static function loadByName($name, Db $db)
     {
         $class = __NAMESPACE__ . '\\' . ucfirst($name) . 'Dashboard';
         $dashboard = new $class();
         $dashboard->db = $db;
         $dashboard->name = $name;
-        $dashboard->view = $view;
         return $dashboard;
     }
 
+    public static function exists($name)
+    {
+        return class_exists(__NAMESPACE__ . '\\' . ucfirst($name) . 'Dashboard');
+    }
+
+    /**
+     * @param $description
+     * @return $this
+     */
+    protected function addDescription($description)
+    {
+        if ($description !== null) {
+            $this->add(Html::tag(
+                'p',
+                null,
+                HtmlString::create(nl2br(Html::escape($description)))
+            ));
+        }
+
+        return $this;
+    }
+
+    public function render()
+    {
+        $this
+            ->setSeparator("\n")
+            ->add(Html::tag('h1', null, $this->getTitle()))
+            ->addDescription($this->getDescription())
+            ->add($this->renderDashlets());
+
+        return parent::render();
+    }
+
+    public function renderDashlets()
+    {
+        $ul = Html::tag('ul', [
+            'class' => 'main-actions',
+            'data-base-target' => '_next'
+        ]);
+
+        foreach ($this->dashlets() as $dashlet) {
+            if ($dashlet->shouldBeShown()) {
+                $ul->add($dashlet);
+            }
+        }
+
+        return $ul;
+    }
 
     public function getName()
     {
@@ -57,6 +108,42 @@ abstract class Dashboard implements Countable
     public function getDescription()
     {
         return null;
+    }
+
+    public function getTabs()
+    {
+        $lName = $this->getName();
+        $tabs = new Tabs();
+        $tabs->add($lName, new Tab([
+            'label' => $this->translate(ucfirst($this->getName())),
+            'url'   => 'director/dashboard',
+            'urlParams' => ['name' => $lName]
+        ]));
+
+        return $tabs;
+    }
+
+    protected function createTabsForDashboards($names)
+    {
+        $tabs = new Tabs();
+        foreach ($names as $name) {
+            $dashboard = Dashboard::loadByName($name, $this->getDb());
+            if ($dashboard->isAvailable()) {
+                $tabs->add($name, $this->createTabForDashboard($dashboard));
+            }
+        }
+
+        return $tabs;
+    }
+
+    protected function createTabForDashboard(Dashboard $dashboard)
+    {
+        $name = $dashboard->getName();
+        return new Tab([
+            'label' => $this->translate(ucfirst($name)),
+            'url'   => 'director/dashboard',
+            'urlParams' => ['name' => $name]
+        ]);
     }
 
     public function count()
@@ -72,16 +159,6 @@ abstract class Dashboard implements Countable
     public function getDb()
     {
         return $this->db;
-    }
-
-    public function getView()
-    {
-        return $this->view;
-    }
-
-    protected function translate($msg)
-    {
-        return $this->view->translate($msg);
     }
 
     public function dashlets()
@@ -183,10 +260,39 @@ abstract class Dashboard implements Countable
             }
         }
 
-        return $this->db->getDbAdapter()->select()->from(
+        $query = $this->db->getDbAdapter()->select()->from(
             array('o' => 'icinga_' . $type),
             $columns
         );
+
+        return $this->applyRestrictions($type, $query);
+    }
+
+    protected function applyRestrictions($type, $query)
+    {
+        switch ($type) {
+            case 'hostgroup':
+                $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
+                $r->applyToQuery($query);
+                break;
+            case 'host':
+                $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
+                $r->applyToQuery($query);
+                break;
+        }
+
+        return $query;
+    }
+
+    protected function applyHostgroupRestrictions($query)
+    {
+        $restrictions = new HostgroupRestriction($this->getDb(), $this->getAuth());
+        $restrictions->applyToHostGroupsQuery($query);
+    }
+
+    protected function getAuth()
+    {
+        return Auth::getInstance();
     }
 
     protected function getCntSql($objectType)

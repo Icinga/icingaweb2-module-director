@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Db\Cache;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\CustomVariable\CustomVariable;
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaTemplateResolver;
+use Icinga\Module\Director\Resolver\HostServiceBlacklist;
+use Icinga\Module\Director\Resolver\TemplateTree;
+use LogicException;
 
 /**
  * Central prefetch cache
@@ -29,8 +31,13 @@ class PrefetchCache
 
     protected $renderedVars = array();
 
+    protected $templateTrees = array();
+
+    protected $hostServiceBlacklist;
+
     public static function initialize(Db $db)
     {
+        self::forget();
         self::$instance = new static($db);
     }
 
@@ -40,14 +47,14 @@ class PrefetchCache
     }
 
     /**
-     * @throws ProgrammingError
+     * @throws LogicException
      *
      * @return self
      */
     public static function instance()
     {
         if (static::$instance === null) {
-            throw new ProgrammingError('Prefetch cache has not been loaded');
+            throw new LogicException('Prefetch cache has not been loaded');
         }
 
         return static::$instance;
@@ -55,6 +62,7 @@ class PrefetchCache
 
     public static function forget()
     {
+        DbObject::clearAllPrefetchCaches();
         self::$instance = null;
     }
 
@@ -71,11 +79,6 @@ class PrefetchCache
     public function groups(IcingaObject $object)
     {
         return $this->groupsCache($object)->getGroupsForObject($object);
-    }
-
-    public function imports(IcingaObject $object)
-    {
-        return $this->templateResolver($object)->setObject($object)->fetchParents();
     }
 
     /* Hint: not implemented, this happens in DbObject right now
@@ -95,6 +98,7 @@ class PrefetchCache
         if (null === $checksum) {
             return $var->toConfigString($renderExpressions);
         } else {
+            $checksum .= (int) $renderExpressions;
             if (! array_key_exists($checksum, $this->renderedVars)) {
                 $this->renderedVars[$checksum] = $var->toConfigString($renderExpressions);
             }
@@ -103,6 +107,20 @@ class PrefetchCache
         }
     }
 
+    public function hostServiceBlacklist()
+    {
+        if ($this->hostServiceBlacklist === null) {
+            $this->hostServiceBlacklist = new HostServiceBlacklist($this->db);
+            $this->hostServiceBlacklist->preloadMappings();
+        }
+
+        return $this->hostServiceBlacklist;
+    }
+
+    /**
+     * @param IcingaObject $object
+     * @return CustomVariableCache
+     */
     protected function varsCache(IcingaObject $object)
     {
         $key = $object->getShortTableName();
@@ -114,17 +132,6 @@ class PrefetchCache
         return $this->varsCaches[$key];
     }
 
-    protected function templateResolver(IcingaObject $object)
-    {
-        $key = $object->getShortTableName();
-
-        if (! array_key_exists($key, $this->templateResolvers)) {
-            $this->templateResolvers[$key] = new IcingaTemplateResolver($object);
-        }
-
-        return $this->templateResolvers[$key];
-    }
-
     protected function groupsCache(IcingaObject $object)
     {
         $key = $object->getShortTableName();
@@ -134,6 +141,19 @@ class PrefetchCache
         }
 
         return $this->groupsCaches[$key];
+    }
+
+    protected function templateTree(IcingaObject $object)
+    {
+        $key = $object->getShortTableName();
+        if (! array_key_exists($key, $this->templateTrees)) {
+            $this->templateTrees[$key] = new TemplateTree(
+                $key,
+                $object->getConnection()
+            );
+        }
+
+        return $this->templateTrees[$key];
     }
 
     public function __destruct()

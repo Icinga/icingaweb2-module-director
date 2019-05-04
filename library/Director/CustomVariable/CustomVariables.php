@@ -23,6 +23,8 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     private $position = 0;
 
+    private $overrideKeyName;
+
     protected $idx = array();
 
     protected static $allTables = array(
@@ -40,15 +42,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $parts = array();
         $where = $db->quoteInto('varname = ?', $varname);
         foreach (static::$allTables as $table) {
-            $parts[] = sprintf(
-                'SELECT COUNT(*) as cnt FROM ' . $table . ' WHERE %s',
-                $where
-            );
+            $parts[] = "SELECT COUNT(*) as cnt FROM $table WHERE $where";
         }
 
-        $query = 'SELECT SUM(cnt) AS cnt FROM ('
-            . implode(' UNION ALL ', $parts)
-            . ') sub';
+        $sub = implode(' UNION ALL ', $parts);
+        $query = "SELECT SUM(sub.cnt) AS cnt FROM ($sub) sub";
+
         return (int) $db->fetchOne($query);
     }
 
@@ -58,6 +57,15 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         $where = $db->quoteInto('varname = ?', $varname);
         foreach (static::$allTables as $table) {
             $db->delete($table, $where);
+        }
+    }
+
+    public static function renameAll($oldname, $newname, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $where = $db->quoteInto('varname = ?', $oldname);
+        foreach (static::$allTables as $table) {
+            $db->update($table, ['varname' => $newname], $where);
         }
     }
 
@@ -101,7 +109,6 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
     {
         return array_key_exists($this->position, $this->idx);
     }
-
 
     /**
      * Generic setter
@@ -268,6 +275,32 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this;
     }
 
+    public function restoreStoredVar($key)
+    {
+        if (array_key_exists($key, $this->storedVars)) {
+            $this->vars[$key] = clone($this->storedVars[$key]);
+            $this->vars[$key]->setUnmodified();
+            $this->recheckForModifications();
+            $this->refreshIndex();
+        } elseif (array_key_exists($key, $this->vars)) {
+            unset($this->vars[$key]);
+            $this->recheckForModifications();
+            $this->refreshIndex();
+        }
+    }
+
+    protected function recheckForModifications()
+    {
+        $this->modified = false;
+        foreach ($this->vars as $var) {
+            if ($var->hasBeenModified()) {
+                $this->modified = true;
+
+                return;
+            }
+        }
+    }
+
     public function getOriginalVars()
     {
         return $this->storedVars;
@@ -291,6 +324,12 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
 
         return sha1(implode('|', $sums), true);
+    }
+
+    public function setOverrideKeyName($name)
+    {
+        $this->overrideKeyName = $name;
+        return $this;
     }
 
     public function toConfigString($renderExpressions = false)
@@ -351,15 +390,23 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
      */
     protected function renderSingleVar($key, $var, $renderExpressions = false)
     {
-        return c::renderKeyValue(
-            $this->renderKeyName($key),
-            $var->toConfigStringPrefetchable($renderExpressions)
-        );
+        if ($key === $this->overrideKeyName) {
+            return c::renderKeyOperatorValue(
+                $this->renderKeyName($key),
+                '+=',
+                $var->toConfigStringPrefetchable($renderExpressions)
+            );
+        } else {
+            return c::renderKeyValue(
+                $this->renderKeyName($key),
+                $var->toConfigStringPrefetchable($renderExpressions)
+            );
+        }
     }
 
     protected function renderKeyName($key)
     {
-        if (preg_match('/^[a-z0-9_]+\d*$/i', $key)) {
+        if (preg_match('/^[a-z][a-z0-9_]*$/i', $key)) {
             return 'vars.' . c::escapeIfReserved($key);
         } else {
             return 'vars[' . c::renderString($key) . ']';

@@ -4,10 +4,7 @@ namespace Icinga\Module\Director\Import;
 
 use Icinga\Application\Config;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Core\CoreApi;
-use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Hook\ImportSourceHook;
-use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ImportSourceCoreApi extends ImportSourceHook

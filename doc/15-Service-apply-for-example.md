@@ -8,7 +8,7 @@ Refer to [Working with fields](14-Fields-example-interfaces-array.md) section to
 You also need to define a `tcp_port` data field of type `String`, we will associate it to a
 `Service Template` later.
 
-Then, please got to the `Dashboard` and choose the `Monitored services` dashlet:
+Then, please go to the `Dashboard` and choose the `Monitored services` dashlet:
 
 ![Dashboard - Monitored services](screenshot/director/15_apply-for-services/151_monitored_services.png)
 

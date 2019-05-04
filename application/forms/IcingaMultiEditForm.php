@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -26,6 +27,11 @@ class IcingaMultiEditForm extends DirectorObjectForm
         $this->object = current($this->objects);
         $this->db = $this->object()->getConnection();
         return $this;
+    }
+
+    public function isMultiObjectForm()
+    {
+        return true;
     }
 
     public function pickElementsFrom(QuickForm $form, $properties)
@@ -97,6 +103,18 @@ class IcingaMultiEditForm extends DirectorObjectForm
      */
     protected function onRequest()
     {
+        IcingaObjectFormHook::callOnSetup($this);
+        if ($this->hasBeenSent()) {
+            $this->handlePost();
+        }
+    }
+
+    protected function handlePost()
+    {
+        $this->callOnRequestCallables();
+        if ($this->shouldBeDeleted()) {
+            $this->deleteObjects();
+        }
     }
 
     protected function setSubmittedMultiValue($key, $value)
@@ -268,13 +286,37 @@ class IcingaMultiEditForm extends DirectorObjectForm
         return $this->db;
     }
 
-    protected function getObjects($names)
+    public function getObjects($names = null)
     {
+        if ($names === null) {
+            return $this->objects;
+        }
+
         $res = array();
+
         foreach ($names as $name) {
             $res[$name] = $this->objects[$name];
         }
 
         return $res;
+    }
+
+    protected function deleteObjects()
+    {
+        $msg = sprintf(
+            '%d objects of type "%s" have been removed',
+            count($this->objects),
+            $this->translate($this->object->getShortTableName())
+        );
+
+        foreach ($this->objects as $object) {
+            $object->delete();
+        }
+
+        if ($this->listUrl) {
+            $this->setSuccessUrl($this->listUrl);
+        }
+
+        $this->redirectOnSuccess($msg);
     }
 }

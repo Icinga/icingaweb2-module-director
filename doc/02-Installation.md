@@ -9,11 +9,20 @@ to the latest version, please [read on here](05-Upgrading.md).
 Requirements
 ------------
 
-* Icinga 2 (&gt;= 2.4.3)
-* Icinga Web 2 (&gt;= 2.2.0 - but &gt;= 2.4.1 is strongly suggested)
-* A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1) database (MariaDB and
-  other forks are also fine)
-* php5-curl
+* Icinga 2 (&gt;= 2.6.0)
+  * It is recommended to use the latest feature release of Icinga 2
+  * All versions since 2.4.3 should also work fine, but
+    we do no longer test and support them.
+  * Some features require newer Icinga 2 releases
+    * Flapping requires 2.8 for the thresholds to work - and at least 2.7 on all
+      nodes
+* Icinga Web 2 (&gt;= 2.6.0). All versions since 2.2 should also work fine, but
+  might show smaller UI bugs and are not actively tested
+* A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
+  MySQL forks are also fine. Mentioned versions are the required minimum,
+  for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
+* PHP (>= 5.4). For best performance please consider use 7.x
+* php-curl
 
 Database
 --------
@@ -25,7 +34,8 @@ HINT: You should replace `some-password` with a secure custom password.
 #### MySQL (or MariaDB)
 
     mysql -e "CREATE DATABASE director CHARACTER SET 'utf8';
-       GRANT ALL ON director.* TO director@localhost IDENTIFIED BY 'some-password';"
+       CREATE USER director@localhost IDENTIFIED BY 'some-password;
+       GRANT ALL ON director.* TO director@localhost;"
 
 In case your MySQL root user is password-protected, please add `-p` to this
 command.
@@ -65,10 +75,57 @@ in `Configuration / Application`. In a typical environment you'll probably drop 
 module to `/usr/share/icingaweb2/modules/director`. Please note that the directory
 name MUST be `director` and not `icingaweb2-module-director` or anything else.
 
+#### Installation from release tarball
+
+Download the [latest version](https://github.com/Icinga/icingaweb2-module-director/releases)
+and extract it to a folder named `director` in one of your Icinga Web 2 module path directories.
+
+You might want to use a script as follows for this task:
+
+    ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
+    REPO_URL="https://github.com/icinga/icingaweb2-module-director"
+    TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
+    MODULE_VERSION="1.6.2"
+    URL="${REPO_URL}/archive/v${MODULE_VERSION}.tar.gz"
+    install -d -m 0755 "${TARGET_DIR}"
+    wget -q -O - "$URL" | tar xfz - -C "${TARGET_DIR}" --strip-components 1
+
+Proceed to enabling the module.
+
+#### Installation from GIT repository
+
+Another convenient method is the installation directly from our GIT repository.
+Just clone the repository to one of your Icinga Web 2 module path directories.
+It will be immediately ready for use:
+
+
+    ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
+    REPO_URL="https://github.com/icinga/icingaweb2-module-director"
+    TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
+    MODULE_VERSION="1.6.2"
+    git clone "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
+
+You can now directly use our current GIT master or check out a specific version.
+
+    cd "${TARGET_DIR}" && git checkout "v${MODULE_VERSION}"
+
+Proceed to enabling the module.
+
+#### Enable the newly installed module
+
+Enable the `director` module either on the CLI by running
+
+    icingacli module enable director
+
+Or go to your Icinga Web 2 frontend, choose `Configuration / Modules`,
+select the `director` module and choose `State: enable`.
 
 ### Run the graphical kickstart wizard
 
-Now go to your web frontend, Configuration, Modules, director - and enable the
-module. Choose either Director directly from the menu or got to the Configuration
-tab. Either way you'll reach the kickstart wizards. Follow the instructions and
+Choose either `Icinga Director` directly from the main menu or
+navigate into `Configuration / Modules / director` and select the `Configuration`
+tab.
+
+Either way you'll reach the kickstart wizards. Follow the instructions and
 you're all done!
+

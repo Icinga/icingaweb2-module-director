@@ -16,26 +16,26 @@ class ServiceCommand extends ObjectCommand
 
     protected function load($name)
     {
-        return parent::load($this->makeServiceKey($this->getName()));
+        return parent::load($this->makeServiceKey($name));
     }
 
     protected function exists($name)
     {
-        return parent::exists($this->makeServiceKey($this->getName()));
+        return parent::exists($this->makeServiceKey($name));
     }
 
     protected function makeServiceKey($name)
     {
         if ($host = $this->params->get('host')) {
-            return array(
+            return [
                 'object_name' => $name,
                 'host_id'     => IcingaHost::load($host, $this->db())->get('id'),
-            );
+            ];
         } else {
-            return array(
+            return [
                 'object_name' => $name,
                 'object_type' => 'template',
-            );
+            ];
         }
     }
 }

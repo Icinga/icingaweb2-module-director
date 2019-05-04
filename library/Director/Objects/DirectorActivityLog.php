@@ -17,7 +17,7 @@ class DirectorActivityLog extends DbObject
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'              => null,
         'object_name'     => null,
         'action_name'     => null,
@@ -28,7 +28,12 @@ class DirectorActivityLog extends DbObject
         'change_time'     => null,
         'checksum'        => null,
         'parent_checksum' => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'checksum',
+        'parent_checksum'
+    ];
 
     /**
      * @param $name
@@ -57,6 +62,10 @@ class DirectorActivityLog extends DbObject
         $auth = Auth::getInstance();
         if ($auth->isAuthenticated()) {
             return $auth->getUser()->getUsername();
+        } elseif (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) {
+            return '<' . $_SERVER['HTTP_X_FORWARDED_FOR'] . '>';
+        } elseif (array_key_exists('REMOTE_ADDR', $_SERVER)) {
+            return '<' . $_SERVER['REMOTE_ADDR'] . '>';
         } else {
             return '<unknown>';
         }
@@ -78,7 +87,7 @@ class DirectorActivityLog extends DbObject
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();
-        $query = $db->select()->from('director_activity_log', array('id' => 'MAX(id)'));
+        $query = $db->select()->from('director_activity_log', ['id' => 'MAX(id)']);
 
         return static::load($db->fetchOne($query), $connection);
     }
@@ -96,12 +105,12 @@ class DirectorActivityLog extends DbObject
             'author'          => static::username(),
             'object_type'     => $type,
             'new_properties'  => $newProps,
-            'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
+            'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
         static::audit($db, array(
             'action'      => 'create',
@@ -127,12 +136,12 @@ class DirectorActivityLog extends DbObject
             'object_type'     => $type,
             'old_properties'  => $oldProps,
             'new_properties'  => $newProps,
-            'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
+            'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
         static::audit($db, array(
             'action'      => 'modify',
@@ -157,12 +166,12 @@ class DirectorActivityLog extends DbObject
             'author'          => static::username(),
             'object_type'     => $type,
             'old_properties'  => $oldProps,
-            'change_time'     => date('Y-m-d H:i:s'), // TODO -> postgres!
+            'change_time'     => date('Y-m-d H:i:s'),
             'parent_checksum' => $db->getLastActivityChecksum()
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
-        $data['parent_checksum'] = Util::hex2binary($data['parent_checksum']);
+        $data['parent_checksum'] = hex2bin($data['parent_checksum']);
 
         static::audit($db, array(
             'action'      => 'remove',

@@ -2,44 +2,105 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use dipl\Html\Html;
+use Icinga\Module\Director\Forms\IcingaCommandArgumentForm;
+use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Resolver\CommandUsage;
 use Icinga\Module\Director\Web\Controller\ObjectController;
-use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Web\Table\IcingaCommandArgumentTable;
 
 class CommandController extends ObjectController
 {
+    /**
+     * @throws \Icinga\Exception\AuthenticationException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     */
     public function init()
     {
         parent::init();
-        if ($this->object && ! $this->object->isExternal()) {
-            $this->getTabs()->add('arguments', array(
+        $o = $this->object;
+        if ($o && ! $o->isExternal()) {
+            $this->tabs()->add('arguments', [
                 'url'       => 'director/command/arguments',
-                'urlParams' => array('name' => $this->object->object_name),
+                'urlParams' => ['name' => $o->getObjectName()],
                 'label'     => 'Arguments'
+            ]);
+        }
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Zend_Db_Select_Exception
+     */
+    public function indexAction()
+    {
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->showUsage();
+        }
+        parent::indexAction();
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     * @throws \Zend_Db_Select_Exception
+     */
+    public function renderAction()
+    {
+        if ($this->object->isExternal()) {
+            $this->showUsage();
+        }
+
+        parent::renderAction();
+    }
+
+    /**
+     * @throws \Zend_Db_Select_Exception
+     */
+    protected function showUsage()
+    {
+        /** @var IcingaCommand $command */
+        $command = $this->object;
+        if ($command->isInUse()) {
+            $usage = new CommandUsage($command);
+            $this->content()->add(Html::tag('p', [
+                'class' => 'information',
+                'data-base-target' => '_next'
+            ], Html::sprintf(
+                $this->translate('This Command is currently being used by %s'),
+                Html::tag('span', null, $usage->getLinks())->setSeparator(', ')
+            )));
+        } else {
+            $this->content()->add(Html::tag(
+                'p',
+                ['class' => 'warning'],
+                $this->translate('This Command is currently not in use')
             ));
         }
     }
 
     public function argumentsAction()
     {
-        $this->gracefullyActivateTab('arguments');
-        $this->view->title = sprintf(
-            $this->translate('Command arguments: %s'),
-            $this->object->object_name
-        );
-
-        $this->view->table = $this
-            ->loadTable('icingaCommandArgument')
-            ->setCommandObject($this->object)
-            ->setFilter(Filter::where('command', $this->params->get('name')));
-
-        $form = $this->view->form = $this
-            ->loadForm('icingaCommandArgument')
-            ->setCommandObject($this->object);
-
-        if ($id = $this->params->shift('argument_id')) {
+        $p = $this->params;
+        /** @var IcingaCommand $o */
+        $o = $this->object;
+        $this->tabs()->activate('arguments');
+        $this->addTitle($this->translate('Command arguments: %s'), $o->getObjectName());
+        $form = IcingaCommandArgumentForm::load()->setCommandObject($o);
+        if ($id = $p->shift('argument_id')) {
+            $this->addBackLink('director/command/arguments', [
+                'name' => $p->get('name')
+            ]);
             $form->loadObject($id);
         }
-
         $form->handleRequest();
+        $this->content()->add([$form]);
+        IcingaCommandArgumentTable::create($o)->renderTo($this);
+    }
+
+    protected function hasBasketSupport()
+    {
+        return ! $this->object->isExternal();
     }
 }

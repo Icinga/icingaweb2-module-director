@@ -55,7 +55,7 @@ class ImportSourceDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/list/importsource';
+        return 'director/importsources';
     }
 
     public function listRequiredPermissions()

@@ -1,7 +1,7 @@
 
-(function(Icinga) {
+(function (Icinga) {
 
-    var Director = function(module) {
+    var Director = function (module) {
         this.module = module;
 
         this.initialize();
@@ -13,8 +13,7 @@
 
     Director.prototype = {
 
-        initialize: function()
-        {
+        initialize: function () {
             /**
              * Tell Icinga about our event handlers
              */
@@ -24,29 +23,56 @@
             // Disabled
             // this.module.on('click', 'div.controls ul.tabs a', this.detailTabClick);
             this.module.on('click', 'input.related-action', this.extensibleSetAction);
+            this.module.on('click', 'ul.filter-root input[type=submit]', this.setAutoSubmitted);
             this.module.on('focus', 'form input, form textarea, form select', this.formElementFocus);
             this.module.on('keyup', '.director-suggest', this.autoSuggest);
             this.module.on('keydown', '.director-suggest', this.suggestionKeyDown);
             this.module.on('dblclick', '.director-suggest', this.suggestionDoubleClick);
             this.module.on('focus', '.director-suggest', this.enterSuggestionField);
             this.module.on('focusout', '.director-suggest', this.leaveSuggestionField);
-            this.module.on('click', '.director-suggestions li', this.clickSuggestion);
+            this.module.on('mousedown', '.director-suggestions li', this.clickSuggestion);
+            this.module.on('dblclick', 'ul.tabs a', this.tabWantsFullscreen);
             this.module.on('change', 'form input.autosubmit, form select.autosubmit', this.setAutoSubmitted);
             this.module.icinga.logger.debug('Director module initialized');
+        },
+
+        tabWantsFullscreen: function (ev) {
+            var icinga = this.module.icinga;
+            var $a, $container, id;
+
+            if (icinga.ui.isOneColLayout()) {
+                return;
+            }
+
+            $a = $(ev.currentTarget);
+            if ($a.hasClass('refresh-container-control')) {
+                return;
+            }
+            $container = $a.closest('.container');
+            id = $container.attr('id');
+
+            icinga.loader.stopPendingRequestsFor($container);
+            if (id === 'col2') {
+                icinga.ui.moveToLeft();
+            }
+
+            icinga.ui.layout1col();
+            icinga.history.pushCurrentState();
+            ev.preventDefault();
+            ev.stopPropagation();
         },
 
         /**
          * Autocomplete/suggestion eventhandler
          *
          * Triggered when pressing a key in a form element with suggestions
-         *
          * @param ev
          */
-        suggestionKeyDown: function(ev) {
-            var $suggestions, $active;
+        suggestionKeyDown: function (ev) {
             var $el = $(ev.currentTarget);
+            var key = ev.which;
 
-            if (ev.keyCode === 13) {
+            if (key === 13) {
                 /**
                  * RETURN key pressed. In case there are any suggestions:
                  * - let's choose the active one (if set)
@@ -54,18 +80,22 @@
                  *
                  * This let's return bubble up in case there is no suggestion list shown
                  */
-                if (this.hasSuggestions($el)) {
+                if (this.hasActiveSuggestion($el)) {
                     this.chooseActiveSuggestion($el);
                     ev.stopPropagation();
                     ev.preventDefault();
                 } else {
                     this.removeSuggestionList($el);
-                    $el.trigger('change');
+                    if ($el.closest('.extensible-set')) {
+                        $el.trigger('change');
+                    } else {
+                        $el.closest('form').submit();
+                    }
                 }
-            } else if (ev.keyCode == 27) {
+            } else if (key === 27) {
                 // ESC key pressed. Remove suggestions if any
                 this.removeSuggestionList($el);
-            } else if (ev.keyCode == 39) {
+            } else if (key === 39) {
                 /**
                  * RIGHT ARROW key pressed. In case there are any suggestions:
                  * - let's choose the active one (if set)
@@ -79,7 +109,7 @@
                         ev.preventDefault();
                     }
                 }
-            } else if (ev.keyCode == 38 ) {
+            } else if (key === 38 ) {
                 /**
                  * UP ARROW key pressed. In any case:
                  * - stop the event
@@ -88,7 +118,7 @@
                 ev.stopPropagation();
                 ev.preventDefault();
                 this.activatePrevSuggestion($el);
-            } else if (ev.keyCode == 40 ) { // down
+            } else if (key === 40 ) { // down
                 /**
                  * DOWN ARROW key pressed. In any case:
                  * - stop the event
@@ -100,10 +130,9 @@
             }
         },
 
-        suggestionDoubleClick: function (ev)
-        {
+        suggestionDoubleClick: function (ev) {
             var $el = $(ev.currentTarget);
-            this.getSuggestionList($el)
+            this.getSuggestionList($el);
         },
 
         /**
@@ -113,20 +142,20 @@
          *
          * @param ev
          */
-        autoSuggest: function(ev)
-        {
+        autoSuggest: function (ev) {
             // Ignore special keys, most of them have already been handled on 'keydown'
-            if (ev.keyCode == 9 || // TAB
-                ev.keyCode == 13 || // RETURN
-                ev.keyCode == 27 || // ESC
-                ev.keyCode == 37 || // LEFT ARROW
-                ev.keyCode == 38 || // UP ARROW
-                ev.keyCode == 39 ) { // RIGHT ARROW
+            var key = ev.which;
+            if (key === 9 || // TAB
+                key === 13 || // RETURN
+                key === 27 || // ESC
+                key === 37 || // LEFT ARROW
+                key === 38 || // UP ARROW
+                key === 39 ) { // RIGHT ARROW
                 return;
             }
 
             var $el = $(ev.currentTarget);
-            if (ev.keyCode == 40) { // DOWN ARROW
+            if (key === 40) { // DOWN ARROW
                 this.getSuggestionList($el);
             } else {
                 this.getSuggestionList($el, true);
@@ -141,8 +170,7 @@
          *
          * @param $el
          */
-        activateNextSuggestion: function($el)
-        {
+        activateNextSuggestion: function ($el) {
             var $list = this.getSuggestionList($el);
             var $next;
             var $active = $list.find('li.active');
@@ -171,8 +199,7 @@
          *
          * @param $el
          */
-        activatePrevSuggestion: function($el)
-        {
+        activatePrevSuggestion: function ($el) {
             var $list = this.getSuggestionList($el);
             var $prev;
             var $active = $list.find('li.active');
@@ -198,7 +225,7 @@
          * @param $input
          * @returns {boolean}
          */
-        hasSuggestionList: function($input) {
+        hasSuggestionList: function ($input) {
             var $ul = $input.siblings('ul.director-suggestions');
             return $ul.length > 0;
         },
@@ -209,7 +236,7 @@
          * @param $input
          * @returns {boolean}
          */
-        hasSuggestions: function($input) {
+        hasSuggestions: function ($input) {
             var $ul = $input.siblings('ul.director-suggestions');
             return $ul.length > 0 && $ul.is(':visible');
         },
@@ -222,8 +249,7 @@
          *
          * @returns {jQuery}
          */
-        getSuggestionList: function($input, $forceRefresh)
-        {
+        getSuggestionList: function ($input, $forceRefresh) {
             var $ul = $input.siblings('ul.director-suggestions');
             if ($ul.length) {
                 if ($forceRefresh) {
@@ -233,7 +259,12 @@
                 }
             } else {
                 $ul = $('<ul class="director-suggestions"></ul>');
+                $input.parent().css({
+                    position: 'relative'
+                });
                 $ul.insertAfter($input);
+                var suggestionWidth = (parseInt($input.css('width')) * 2) + 'px';
+                $ul.css({width: suggestionWidth});
                 return this.refreshSuggestionList($ul, $input);
             }
         },
@@ -246,19 +277,40 @@
          * @param $el
          * @returns {jQuery}
          */
-        refreshSuggestionList: function($suggestions, $el)
-        {
-            $suggestions.load(this.module.icinga.config.baseUrl + '/director/suggest', {
-                value: $el.val(),
-                context: $el.data('suggestion-context')
-            }, function (responseText, textStatus, jqXHR) {
+        refreshSuggestionList: function ($suggestions, $el) {
+            // Not sure whether we need this Accept-header
+            var headers = { 'X-Icinga-Accept': 'text/html' };
+            var icinga = this.module.icinga;
+
+            // Ask for a new window id in case we don't already have one
+            if (icinga.ui.hasWindowId()) {
+                headers['X-Icinga-WindowId'] = icinga.ui.getWindowId();
+            } else {
+                headers['X-Icinga-WindowId'] = 'undefined';
+            }
+
+            // var onResponse =  function (data, textStatus, req) {
+            var onResponse =  function (data) {
+                $suggestions.html(data);
                 var $li = $suggestions.find('li');
                 if ($li.length) {
                     $suggestions.show();
                 } else {
                     $suggestions.hide();
                 }
+            };
+
+            var req = $.ajax({
+                type: 'POST',
+                url: this.module.icinga.config.baseUrl + '/director/suggest',
+                data: {
+                    value: $el.val(),
+                    context: $el.data('suggestion-context'),
+                    for_host: $el.data('suggestion-for-host')
+                },
+                headers: headers
             });
+            req.done(onResponse);
 
             return $suggestions;
         },
@@ -268,7 +320,7 @@
          *
          * @param ev
          */
-        clickSuggestion: function(ev) {
+        clickSuggestion: function (ev) {
             this.chooseSuggestion($(ev.currentTarget));
         },
 
@@ -277,10 +329,17 @@
 
          * @param $suggestion
          */
-        chooseSuggestion: function($suggestion)
-        {
+        chooseSuggestion: function ($suggestion) {
             var $el = $suggestion.closest('ul').siblings('.director-suggest');
             var val = $suggestion.text();
+
+            // extract label and key from key
+            var re = /^(.+) \[(\w+)]$/;
+
+            var withLabel = val.match(re);
+            if (withLabel) {
+                val = withLabel[2];
+            }
 
             if (val.match(/\.$/)) {
                 $el.val(val);
@@ -301,8 +360,7 @@
          * @param $el
          * @returns {boolean}
          */
-        chooseActiveSuggestion: function($el)
-        {
+        chooseActiveSuggestion: function ($el) {
             var $list = this.getSuggestionList($el);
             var $active = $list.find('li.active');
             if ($active.length === 0) {
@@ -317,28 +375,44 @@
             }
         },
 
+        hasActiveSuggestion: function ($el) {
+            if (this.hasSuggestions($el)) {
+                var $list = this.getSuggestionList($el);
+                var $active = $list.find('li.active');
+                if ($active.length === 0) {
+                    $active = $list.find('li:hover');
+                }
+                return $active.length > 0;
+            } else {
+                return false;
+            }
+        },
+
         /**
          * Remove related suggestion list if any
          *
          * @param $el
          */
-        removeSuggestionList: function($el)
-        {
+        removeSuggestionList: function ($el) {
             if (this.hasSuggestionList($el)) {
                 this.getSuggestionList($el).remove();
             }
         },
 
         /**
-         * Show suggestions when arriving to an empte autocompletion field
+         * Show suggestions when arriving to an empty auto-completion field
          *
          * @param ev
          */
-        enterSuggestionField: function(ev) {
-            var $el = $(ev.currentTarget);
-            if ($el.val() === '' || $el.val().match(/\.$/)) {
-                this.getSuggestionList($el)
-            }
+        enterSuggestionField: function (ev) {
+            // Has been disabled long time ago, as we do not want to open
+            // extensible Sets on focus. Should we re-enable this and just
+            // blacklist extensible sets?
+            //
+            // var $el = $(ev.currentTarget);
+            // if ($el.val() === '' || $el.val().match(/\.$/)) {
+            //     this.getSuggestionList($el)
+            // }
         },
 
         /**
@@ -346,10 +420,10 @@
          *
          * @param ev
          */
-        leaveSuggestionField: function(ev) {
-            return;
+        leaveSuggestionField: function (ev) {
+//            return;
             var _this = this;
-            setTimeout(function() {
+            setTimeout(function () {
                 _this.removeSuggestionList($(ev.currentTarget));
             }, 100);
         },
@@ -362,7 +436,7 @@
          *
          * @param ev
          */
-        setAutoSubmitted: function(ev) {
+        setAutoSubmitted: function (ev) {
             $(ev.currentTarget).closest('.container').data('directorAutosubmit', 'yes');
         },
 
@@ -371,8 +445,7 @@
          *
          * @deprecated
          */
-        detailTabClick: function(ev)
-        {
+        detailTabClick: function (ev) {
             var $a = $(ev.currentTarget);
             if ($a.closest('#col2').length === 0) {
                 return;
@@ -386,8 +459,7 @@
          *
          * @deprecated
          */
-        alignDetailLinks: function()
-        {
+        alignDetailLinks: function () {
             var self = this;
             var $a = $('#col2').find('div.controls ul.tabs li.active a');
             if ($a.length !== 1) {
@@ -401,7 +473,7 @@
 
             var tabPath = self.pathFromHref($a);
 
-            $leftTable.find('tr').each(function(idx, tr) {
+            $leftTable.find('tr').each(function (idx, tr) {
                 var $tr = $(tr);
                 if ($tr.is('[href]')) {
                     self.setHrefPath($tr, tabPath);
@@ -419,27 +491,24 @@
                 }
             });
 
-            $leftTable.find('tr[href]').each(function(idx, tr) {
+            $leftTable.find('tr[href]').each(function (idx, tr) {
                 var $tr = $(tr);
                 self.setHrefPath($tr, tabPath);
             });
         },
 
-        pathFromHref: function($el)
-        {
+        pathFromHref: function ($el) {
             return this.module.icinga.utils.parseUrl($el.attr('href')).path
         },
 
-        setHrefPath: function($el, path)
-        {
+        setHrefPath: function ($el, path) {
             var a = this.module.icinga.utils.getUrlHelper();
             a.href = $el.attr('href');
             a.pathname = path;
             $el.attr('href', a.href);
         },
 
-        extensibleSetAction: function(ev)
-        {
+        extensibleSetAction: function (ev) {
             var iid, $li, $prev, $next;
             var el = ev.currentTarget;
             if (el.name.match(/__MOVE_UP$/)) {
@@ -447,7 +516,8 @@
                 $prev = $li.prev();
                 // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
-                    if (iid = $prev.find('input[type=text]').attr('id')) {
+                    iid = $prev.find('input[type=text]').attr('id');
+                    if (iid) {
                         $li.closest('.container').data('activeExtensibleEntry', iid);
                     } else {
                         return true;
@@ -465,7 +535,8 @@
                 $next = $li.next();
                 // TODO: document what's going on here.
                 if ($li.find('input[type=text].autosubmit')) {
-                    if (iid = $next.find('input[type=text]').attr('id')) {
+                    iid = $next.find('input[type=text]').attr('id');
+                    if (iid) {
                         $li.closest('.container').data('activeExtensibleEntry', iid);
                     } else {
                         return true;
@@ -478,21 +549,28 @@
                 ev.preventDefault();
                 ev.stopPropagation();
                 return false;
-            } else if (el.name.match(/__MOVE_REMOVE$/)) {
-                // TODO: skipping for now, wasn't able to prevent web2 form
-                //       submission once removed
-                /*
-                var $li = $(el).closest('li').remove();
+            } else if (el.name.match(/__REMOVE$/)) {
+                $li = $(el).closest('li');
+                if ($li.find('.autosubmit').length) {
+                    // Autosubmit element, let the server handle this
+                    return true;
+                }
+
+                $li.remove();
                 this.fixRelatedActions($li.closest('ul'));
                 ev.preventDefault();
                 ev.stopPropagation();
                 return false;
-                */
+            } else if (el.name.match(/__DROP_DOWN$/)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                var $el = $(ev.currentTarget).closest('li').find('input[type=text]');
+                this.getSuggestionList($el);
+                return false;
             }
         },
 
-        fixRelatedActions: function($ul)
-        {
+        fixRelatedActions: function ($ul) {
             var $uls = $ul.find('li');
             var last = $uls.length - 1;
             if ($ul.find('.extend-set').length) {
@@ -518,14 +596,20 @@
             });
         },
 
-        formElementFocus: function(ev)
-        {
+        formElementFocus: function (ev) {
             var $input = $(ev.currentTarget);
             if ($input.closest('form.editor').length) {
-               return;
+                return;
             }
+            var $set = $input.closest('.extensible-set');
+            if ($set.length) {
+                var $textInputs = $('input[type=text]', $set);
+                if ($textInputs.length > 1) {
+                    $textInputs.not(':first').attr('tabIndex', '-1');
+                }
+            }
+
             var $dd = $input.closest('dd');
-            $dd.find('p.description').show();
             if ($dd.attr('id') && $dd.attr('id').match(/button/)) {
                 return;
             }
@@ -537,24 +621,10 @@
             $li.addClass('active');
             $dt.addClass('active');
             $dd.addClass('active');
-            $dd.find('p.description.fading-out')
-                .stop(true)
-                .removeClass('fading-out')
-                .fadeIn('fast');
-
-            $form.find('dd').not($dd)
-                .find('p.description')
-                .not('.fading-out')
-                .addClass('fading-out')
-                .delay(2000)
-                .fadeOut('slow', function() {
-                    $(this).removeClass('fading-out').hide()
-                });
         },
 
-        highlightFormErrors: function($container)
-        {
-            $container.find('dd ul.errors').each(function(idx, ul) {
+        highlightFormErrors: function ($container) {
+            $container.find('dd ul.errors').each(function (idx, ul) {
                 var $ul = $(ul);
                 var $dd = $ul.closest('dd');
                 var $dt = $dd.prev();
@@ -572,11 +642,7 @@
             this.openedFieldsets[$fieldset.attr('id')] = ! $fieldset.hasClass('collapsed');
         },
 
-        hideInactiveFormDescriptions: function($container) {
-            $container.find('dd').not('.active').find('p.description').hide();
-        },
-
-        beforeRender: function(ev) {
+        beforeRender: function (ev) {
             var $container = $(ev.currentTarget);
             var id = $container.attr('id');
             var requests = this.module.icinga.loader.requests;
@@ -602,8 +668,7 @@
          * @param $container
          * @returns {boolean}
          */
-        containerIsAutoSubmitted: function($container)
-        {
+        containerIsAutoSubmitted: function ($container) {
             return $container.data('directorAutosubmitted') === 'yes';
         },
 
@@ -613,40 +678,76 @@
          * @param $container
          * @returns {boolean}
          */
-        containerIsAutorefreshed: function($container)
-        {
+        containerIsAutorefreshed: function ($container) {
             return $container.data('director-autorefreshed') === 'yes';
         },
 
-        rendered: function(ev) {
+        rendered: function (ev) {
             var iid;
+            var icinga = this.module.icinga;
             var $container = $(ev.currentTarget);
+            if ($container.children('div.controls').first().data('directorWindowId') === '_UNDEFINED_') {
+                var $url = $container.data('icingaUrl');
+                if (typeof $url !== 'undefined') {
+                    icinga.loader.loadUrl($url, $container).autorefresh = true;
+                }
+
+                $container.children('div.controls').children().hide();
+                $container.children('div.content').hide();
+                return;
+            }
             this.restoreContainerFieldsets($container);
             this.backupAllExtensibleSetDefaultValues($container);
             this.highlightFormErrors($container);
             this.scrollHighlightIntoView($container);
             this.scrollActiveRowIntoView($container);
-            this.hideInactiveFormDescriptions($container);
-            if (iid = $container.data('activeExtensibleEntry')) {
+            this.highlightActiveDashlet($container);
+            iid = $container.data('activeExtensibleEntry');
+            if (iid) {
                 $('#' + iid).focus();
                 $container.removeData('activeExtensibleEntry');
             }
-
             // Disabled for now
             // this.alignDetailLinks();
             if (! this.containerIsAutorefreshed($container) && ! this.containerIsAutoSubmitted($container)) {
                 this.putFocusOnFirstFormElement($container);
             }
+
+            // Turn off autocomplete for all suggested fields
+            $container.find('input.director-suggest').each(this.disableAutocomplete);
         },
 
-        restoreContainerFieldsets: function($container)
-        {
+        highlightActiveDashlet: function ($container) {
+            if (this.module.icinga.ui.isOneColLayout()) {
+                return;
+            }
+
+            var url, $actions, $match;
+            var id = $container.attr('id');
+            if (id === 'col1') {
+                url = $('#col2').data('icingaUrl');
+                $actions = $('.main-actions', $container);
+            } else if (id === 'col2') {
+                url = $container.data('icingaUrl');
+                $actions = $('.main-actions', $('#col1'));
+            }
+            if (! $actions.length) {
+                return;
+            }
+
+            $match = $('li a[href*="' + url + '"]', $actions);
+            if ($match.length) {
+                $('li a.active', $actions).removeClass('active');
+                $match.first().addClass('active');
+            }
+        },
+
+        restoreContainerFieldsets: function ($container) {
             var self = this;
             $container.find('form').each(self.restoreFieldsets.bind(self));
         },
 
-        putFocusOnFirstFormElement: function($container)
-        {
+        putFocusOnFirstFormElement: function ($container) {
             $container.find('form.autofocus').find('label').first().focus();
         },
 
@@ -655,9 +756,9 @@
             var $content = $container.find('> div.content');
 
             if ($hl.length) {
-              $container.animate({
-                scrollTop: $hl.offset().top - $content.offset().top
-              }, 700);
+                $container.animate({
+                    scrollTop: $hl.offset().top - $content.offset().top
+                }, 700);
             }
         },
 
@@ -671,7 +772,7 @@
             }
         },
 
-        backupAllExtensibleSetDefaultValues: function($container) {
+        backupAllExtensibleSetDefaultValues: function ($container) {
             var self = this;
             $container.find('.extensible-set').each(function (idx, eSet) {
                 $(eSet).find('input[type=text]').each(self.backupDefaultValue);
@@ -679,16 +780,16 @@
             });
         },
 
-        backupDefaultValue: function(idx, el) {
+        backupDefaultValue: function (idx, el) {
             $(el).data('originalvalue', el.value);
         },
 
-        restoreFieldsets: function(idx, form) {
+        restoreFieldsets: function (idx, form) {
             var $form = $(form);
             var self = this;
             var $sets = $('fieldset', $form);
 
-            $sets.each(function(idx, fieldset) {
+            $sets.each(function (idx, fieldset) {
                 var $fieldset = $(fieldset);
                 if ($fieldset.attr('id') === 'fieldset-assign') {
                     return;
@@ -704,7 +805,7 @@
             }
         },
 
-        fieldsetWasOpened: function($fieldset) {
+        fieldsetWasOpened: function ($fieldset) {
             var id = $fieldset.attr('id');
             if (typeof this.openedFieldsets[id] === 'undefined') {
                 return false;
@@ -712,7 +813,7 @@
             return this.openedFieldsets[id];
         },
 
-        fixFieldsetInfo: function($fieldset) {
+        fixFieldsetInfo: function ($fieldset) {
             if ($fieldset.hasClass('collapsed')) {
                 if ($fieldset.find('legend span.element-count').length === 0) {
                     var cnt = $fieldset.find('dt, li').not('.extensible-set li').length;
@@ -723,10 +824,17 @@
             } else {
                 $fieldset.find('legend span.element-count').remove();
             }
+        },
+
+        disableAutocomplete: function () {
+            $(this)
+                .attr('autocomplete', 'off')
+                .attr('autocorrect', 'off')
+                .attr('autocapitalize', 'off')
+                .attr('spellcheck', 'false');
         }
     };
 
     Icinga.availableModules.director = Director;
 
 }(Icinga));
-

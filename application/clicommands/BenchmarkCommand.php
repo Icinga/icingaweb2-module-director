@@ -7,11 +7,18 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostVar;
 
 class BenchmarkCommand extends Command
 {
+    public function resolvehostgroupsAction()
+    {
+        $resolver = new HostGroupMembershipResolver($this->db());
+        $resolver->refreshDb();
+    }
+
     public function filterAction()
     {
         $flat = array();

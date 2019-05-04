@@ -54,7 +54,7 @@ What you should not try to start with
 Director has not been built to help you with managing existing hand-crafted
 configuration in /etc/icinga2. There are cases where it absolutely would
 make sense to combine the Director with manual configuration. You can also
-use multiple tools owning separare config packages. But these are pretty
+use multiple tools owning separate config packages. But these are pretty
 advanced topics.
 
 

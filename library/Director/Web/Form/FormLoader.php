@@ -5,13 +5,18 @@ namespace Icinga\Module\Director\Web\Form;
 use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
 use Icinga\Exception\ProgrammingError;
+use RuntimeException;
 
 class FormLoader
 {
     public static function load($name, Module $module = null)
     {
         if ($module === null) {
-            $basedir = Icinga::app()->getApplicationDir('forms');
+            try {
+                $basedir = Icinga::app()->getApplicationDir('forms');
+            } catch (ProgrammingError $e) {
+                throw new RuntimeException($e->getMessage(), 0, $e);
+            }
             $ns = '\\Icinga\\Web\\Forms\\';
         } else {
             $basedir = $module->getFormDir();
@@ -32,6 +37,7 @@ class FormLoader
                 return new $class($options);
             }
         }
-        throw new ProgrammingError(sprintf('Cannot load %s (%s), no such form', $name, $file));
+
+        throw new RuntimeException(sprintf('Cannot load %s (%s), no such form', $name, $file));
     }
 }

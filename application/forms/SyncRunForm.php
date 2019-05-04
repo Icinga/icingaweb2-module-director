@@ -1,12 +1,11 @@
 <?php
 
-// TODO: Check whether this can be removed
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\SyncRule;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class SyncRunForm extends QuickForm
+class SyncRunForm extends DirectorForm
 {
     /** @var SyncRule */
     protected $rule;
@@ -36,13 +35,11 @@ class SyncRunForm extends QuickForm
                 $this->translate(('Source has successfully been synchronized'))
             );
         } elseif ($rule->get('sync_state') === 'in-sync') {
-            $this->setSuccessMessage(
+            $this->notifySuccess(
                 $this->translate('Nothing changed, rule is in sync')
             );
         } else {
             $this->addError($this->translate('Synchronization failed'));
         }
-
-        parent::onSuccess();
     }
 }

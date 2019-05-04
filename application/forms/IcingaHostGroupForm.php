@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaHostGroupForm extends DirectorObjectForm
@@ -11,11 +10,11 @@ class IcingaHostGroupForm extends DirectorObjectForm
     {
         $this->addHidden('object_type', 'object');
 
-        $this->addElement('text', 'object_name', array(
+        $this->addElement('text', 'object_name', [
             'label'       => $this->translate('Hostgroup'),
             'required'    => true,
             'description' => $this->translate('Icinga object name for this host group')
-        ));
+        ]);
 
         $this->addGroupDisplayNameElement()
              ->addAssignmentElements()
@@ -24,14 +23,14 @@ class IcingaHostGroupForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        $this->addAssignFilter(array(
-            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+        $this->addAssignFilter([
+           'suggestionContext' => 'HostFilterColumns',
             'required' => false,
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want'
             )
-        ));
+        ]);
 
         return $this;
     }

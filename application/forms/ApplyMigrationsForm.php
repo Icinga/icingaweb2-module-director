@@ -4,9 +4,9 @@ namespace Icinga\Module\Director\Forms;
 
 use Exception;
 use Icinga\Module\Director\Db\Migrations;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class ApplyMigrationsForm extends QuickForm
+class ApplyMigrationsForm extends DirectorForm
 {
     /** @var  Migrations */
     protected $migrations;

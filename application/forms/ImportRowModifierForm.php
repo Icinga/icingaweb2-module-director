@@ -7,9 +7,9 @@ use Icinga\Application\Hook;
 use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
-use Icinga\Module\Director\Import\Import;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use RuntimeException;
 
 class ImportRowModifierForm extends DirectorObjectForm
 {
@@ -19,19 +19,28 @@ class ImportRowModifierForm extends DirectorObjectForm
     /** @var  ImportSourceHook */
     protected $importSource;
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->addHidden('source_id', $this->source->id);
-        $this->addHidden('priority', 1);
 
-        $this->addElement('select', 'property_name', array(
+        $this->addElement('select', 'property_name', [
             'label'        => $this->translate('Property'),
             'description'  => $this->translate('This must be an import source column (property)'),
-            'multiOptions' => $this->optionalEnum($this->enumSourceColumns()),
             'required'     => true,
-        ));
+        ]);
+        try {
+            $sourceColumns = $this->enumSourceColumns();
+            $this->getElement('property_name')->setOptions([
+                'multiOptions' => $this->optionalEnum($sourceColumns)
+            ]);
+        } catch (Exception $e) {
+            $this->getElement('property_name')->addError($e->getMessage());
+        }
 
-        $this->addElement('text', 'target_property', array(
+        $this->addElement('text', 'target_property', [
             'label'        => $this->translate('Target property'),
             'description'  => $this->translate(
                 'You might want to write the modified value to another (new) property.'
@@ -39,17 +48,26 @@ class ImportRowModifierForm extends DirectorObjectForm
                 . ' remain unmodified. Please leave this blank in case you just want to'
                 . ' modify the value of a specific property'
             ),
-        ));
+        ]);
+
+        $this->addElement('textarea', 'description', [
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate(
+                'An extended description for this Import Row Modifier. This should explain'
+                . " it's purpose and why it has been put in place at all."
+            ),
+            'rows'        => '3',
+        ]);
 
         $error = false;
         try {
             $mods = $this->enumModifiers();
         } catch (Exception $e) {
             $error = $e->getMessage();
-            $mods = $this->optionalEnum(array());
+            $mods = $this->optionalEnum([]);
         }
-        
-        $this->addElement('select', 'provider_class', array(
+
+        $this->addElement('select', 'provider_class', [
             'label'        => $this->translate('Modifier'),
             'required'     => true,
             'description'  => $this->translate(
@@ -57,7 +75,7 @@ class ImportRowModifierForm extends DirectorObjectForm
             ),
             'multiOptions' => $this->optionalEnum($mods),
             'class'        => 'autosubmit',
-        ));
+        ]);
         if ($error) {
             $this->getElement('provider_class')->addError($error);
         }
@@ -86,6 +104,10 @@ class ImportRowModifierForm extends DirectorObjectForm
         $this->setButtons();
     }
 
+    /**
+     * @return array
+     * @throws ConfigurationError
+     */
     protected function enumSourceColumns()
     {
         $columns = array_merge(
@@ -94,9 +116,14 @@ class ImportRowModifierForm extends DirectorObjectForm
         );
 
         $columns = array_combine($columns, $columns);
+
         return $columns;
     }
 
+    /**
+     * @return ImportSourceHook
+     * @throws ConfigurationError
+     */
     protected function getImportSource()
     {
         if ($this->importSource === null) {
@@ -113,7 +140,7 @@ class ImportRowModifierForm extends DirectorObjectForm
     {
         /** @var PropertyModifierHook[] $hooks */
         $hooks = Hook::all('Director\\PropertyModifier');
-        $enum = array();
+        $enum = [];
         foreach ($hooks as $hook) {
             $enum[get_class($hook)] = $hook->getName();
         }
@@ -123,6 +150,9 @@ class ImportRowModifierForm extends DirectorObjectForm
         return $enum;
     }
 
+    /**
+     * @param null $class
+     */
     protected function addSettings($class = null)
     {
         if ($class === null) {
@@ -131,7 +161,7 @@ class ImportRowModifierForm extends DirectorObjectForm
 
         if ($class !== null) {
             if (! class_exists($class)) {
-                throw new ConfigurationError(
+                throw new RuntimeException(
                     'The hooked class "%s" for this property modifier does no longer exist',
                     $class
                 );
@@ -144,6 +174,7 @@ class ImportRowModifierForm extends DirectorObjectForm
     public function setSource(ImportSource $source)
     {
         $this->source = $source;
+
         return $this;
     }
 }

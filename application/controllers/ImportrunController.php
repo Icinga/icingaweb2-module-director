@@ -4,33 +4,21 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Objects\ImportRun;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Table\ImportedrowsTable;
 
 class ImportrunController extends ActionController
 {
     public function indexAction()
     {
-        $db = $this->db();
-        $id = $this->getRequest()->getUrl()->getParams()->shift('id');
-        $importRun = ImportRun::load($id, $db);
-        $url = clone($this->getRequest()->getUrl());
-        $chosenColumns = $this->getRequest()->getUrl()->shift('chosenColumns');
+        $importRun = ImportRun::load($this->params->getRequired('id'), $this->db());
+        $this->addTitle($this->translate('Import run'));
+        $this->addSingleTab($this->translate('Import run'));
 
-        $this->view->title = $this->translate('Import run');
-        $this->getTabs()->add('importrun', array(
-            'label' => $this->view->title,
-            'url'   => $url
-        ))->activate('importrun');
-
-        $table = $this
-            ->loadTable('importedrows')
-            ->setConnection($db)
-            ->setImportRun($importRun);
-
-        if ($chosenColumns) {
-            $table->setColumns(preg_split('/,/', $chosenColumns, -1, PREG_SPLIT_NO_EMPTY));
+        $table = ImportedrowsTable::load($importRun);
+        if ($chosen = $this->params->get('chosenColumns')) {
+            $table->setColumns(preg_split('/,/', $chosen, -1, PREG_SPLIT_NO_EMPTY));
         }
 
-        $this->view->table = $this->applyPaginationLimits($table);
-        $this->view->filterEditor = $table->getFilterEditor($this->getRequest());
+        $table->renderTo($this);
     }
 }

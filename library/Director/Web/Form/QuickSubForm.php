@@ -15,7 +15,7 @@ abstract class QuickSubForm extends QuickBaseForm
     /**
      * Load the default decorators
      *
-     * @return Zend_Form_SubForm
+     * @return $this
      */
     public function loadDefaultDecorators()
     {
@@ -30,6 +30,7 @@ abstract class QuickSubForm extends QuickBaseForm
                  ->addDecorator('Fieldset')
                  ->addDecorator('DtDdWrapper');
         }
+
         return $this;
     }
 }

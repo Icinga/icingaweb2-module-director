@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Forms;
 
 use Exception;
 use Icinga\Module\Director\Hook\ImportSourceHook;
+use Icinga\Module\Director\Objects\SyncProperty;
 use Icinga\Module\Director\Objects\SyncRule;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -26,6 +27,9 @@ class SyncPropertyForm extends DirectorObjectForm
 
     const EXPRESSION = '__EXPRESSION__';
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->addHidden('rule_id', $this->rule->get('id'));
@@ -143,6 +147,11 @@ class SyncPropertyForm extends DirectorObjectForm
         return false;
     }
 
+    /**
+     * @param $destination
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addSourceColumnElement($destination)
     {
         $error = false;
@@ -161,17 +170,9 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         if ($destination === 'import') {
-            $funcTemplates = 'enum' . ucfirst($this->rule->get('object_type')) . 'Templates';
-            if (method_exists($this->db, $funcTemplates)) {
-                $templates = $this->db->$funcTemplates();
-                if (! empty($templates)) {
-                    $templates = array_combine($templates, $templates);
-                }
-
-                $importTitle = $this->translate('Existing templates');
-                $columns[$importTitle] = $templates;
-                natsort($columns[$importTitle]);
-            }
+            $this->addIcingaTempateColumns($columns);
+        } elseif ($destination === 'list_id') {
+            $this->addDatalistsColumns($columns);
         }
 
         $xpTitle = $this->translate('Expert mode');
@@ -221,6 +222,33 @@ class SyncPropertyForm extends DirectorObjectForm
         return $this;
     }
 
+    protected function addIcingaTempateColumns(& $columns)
+    {
+        $funcTemplates = 'enum' . ucfirst($this->rule->get('object_type')) . 'Templates';
+        if (method_exists($this->db, $funcTemplates)) {
+            $templates = $this->db->$funcTemplates();
+            if (! empty($templates)) {
+                $templates = array_combine($templates, $templates);
+            }
+
+            $title = $this->translate('Existing templates');
+            $columns[$title] = $templates;
+            natsort($columns[$title]);
+        }
+    }
+
+    protected function addDatalistsColumns(& $columns)
+    {
+        // Clear other columns, we don't allow them right now
+        $columns = [];
+        $db = $this->db->getDbAdapter();
+        $enum = $db->fetchPairs(
+            $db->select()->from('director_datalist', ['id', 'list_name'])->order('list_name')
+        );
+
+        $columns[$this->translate('Existing Data Lists')] = $enum;
+    }
+
     protected function enumImportSource()
     {
         $sources = $this->db->enumImportSource();
@@ -246,6 +274,11 @@ class SyncPropertyForm extends DirectorObjectForm
         );
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function listSourceColumns()
     {
         $columns = array();
@@ -264,8 +297,8 @@ class SyncPropertyForm extends DirectorObjectForm
 
     protected function listDestinationFields()
     {
-        $props = array();
-        $special = array();
+        $props = [];
+        $special = [];
         $dummy = $this->dummyObject();
 
         if ($dummy instanceof IcingaObject) {
@@ -295,9 +328,10 @@ class SyncPropertyForm extends DirectorObjectForm
             // TODO: allow those fields, but munge them (store ids)
             //if (preg_match('~_id$~', $prop)) continue;
             if (substr($prop, -3) === '_id') {
+                $short = substr($prop, 0, -3);
                 if ($dummy instanceof IcingaObject) {
-                    if ($dummy->hasRelation($prop)) {
-                        $prop = substr($prop, 0, -3);
+                    if ($dummy->hasRelation($short)) {
+                        $prop = $short;
                     } else {
                         continue;
                     }
@@ -315,23 +349,30 @@ class SyncPropertyForm extends DirectorObjectForm
 
         ksort($props);
 
-        return array(
-            $this->translate('Special properties') => $special,
-            $this->translate('Object properties') => $props
-        );
+        $result = [];
+        if (! empty($special)) {
+            $result[$this->translate('Special properties')] = $special;
+        }
+        if (! empty($props)) {
+            $result[$this->translate('Object properties')] = $props;
+        }
+
+        return $result;
     }
 
     /**
      * @return ImportSource
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getImportSource()
     {
         if ($this->importSource === null) {
             if ($this->hasObject()) {
-                $this->importSource = ImportSource::load($this->object->get('source_id'), $this->db);
+                $id = (int) $this->object->get('source_id');
             } else {
-                $this->importSource = ImportSource::load($this->getSentValue('source_id'), $this->db);
+                $id = (int) $this->getSentValue('source_id');
             }
+            $this->importSource = ImportSource::loadWithAutoIncId($id, $this->db);
         }
 
         return $this->importSource;
@@ -339,6 +380,8 @@ class SyncPropertyForm extends DirectorObjectForm
 
     /**
      * @return ImportSourceHook
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getImportSourceHook()
     {
@@ -354,6 +397,7 @@ class SyncPropertyForm extends DirectorObjectForm
 
     public function onSuccess()
     {
+        /** @var SyncProperty $object */
         $object = $this->getObject();
         $object->set('rule_id', $this->rule->get('id')); // ?!
 
@@ -362,25 +406,17 @@ class SyncPropertyForm extends DirectorObjectForm
         }
 
         $sourceColumn = $this->getValue('source_column');
-        unset($this->source_column);
         $this->removeElement('source_column');
 
         if ($sourceColumn !== self::EXPRESSION) {
-            $object->source_expression = $sourceColumn;
+            $object->set('source_expression', $sourceColumn);
         }
 
         $destination = $this->getValue('destination_field');
         if ($destination === 'vars.*') {
             $destination = $this->getValue('customvar');
-            $object->destination_field = 'vars.' . $destination;
+            $object->set('destination_field', 'vars.' . $destination);
         }
-
-        if ($object->hasBeenModified()) {
-            if (! $object->hasBeenLoadedFromDb()) {
-                $object->priority = $this->rule->getPriorityForNextProperty();
-            }
-        }
-
 
         return parent::onSuccess();
     }

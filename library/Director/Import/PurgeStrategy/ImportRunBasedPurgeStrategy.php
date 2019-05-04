@@ -58,11 +58,7 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
         $query = $db->select()->from(
             array('a' => $selectA),
             'a.object_name'
-        )->joinLeft(
-            array('b' => $selectB),
-            'a.object_name = b.object_name',
-            array()
-        )->where('b.object_name IS NULL');
+        )->where('a.object_name NOT IN (?)', $selectB);
 
         $result = $db->fetchCol($query);
 
@@ -76,10 +72,12 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
                 SyncUtils::extractVariableNames($pattern)
             );
 
-            $rows = $runA->fetchRows($columns, null, $result);
-            $result = array();
-            foreach ($rows as $row) {
-                $result[] = SyncUtils::fillVariables($pattern, $row);
+            foreach (array_chunk($result, 1000) as $keys) {
+                $rows = $runA->fetchRows($columns, null, $keys);
+                $result = array();
+                foreach ($rows as $row) {
+                    $result[] = SyncUtils::fillVariables($pattern, $row);
+                }
             }
         }
 

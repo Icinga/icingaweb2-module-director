@@ -13,6 +13,8 @@ class DirectorDatafieldForm extends DirectorObjectForm
 {
     protected $objectName = 'Data field';
 
+    protected $listUrl = 'director/data/fields';
+
     protected function onRequest()
     {
         if ($this->hasBeenSent()) {
@@ -21,10 +23,19 @@ class DirectorDatafieldForm extends DirectorObjectForm
                 if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
                     $this->askForVariableDeletion($varname, $cnt);
                 }
+            } elseif ($this->shouldBeRenamed()) {
+                $varname = $this->object()->getOriginalProperty('varname');
+                if ($cnt = CustomVariables::countAll($varname, $this->getDb())) {
+                    $this->askForVariableRename(
+                        $varname,
+                        $this->getSentValue('varname'),
+                        $cnt
+                    );
+                }
             }
         }
 
-        return parent::onRequest();
+        parent::onRequest();
     }
 
     protected function askForVariableDeletion($varname, $cnt)
@@ -65,6 +76,51 @@ class DirectorDatafieldForm extends DirectorObjectForm
                     ),
                     $cnt,
                     $varname
+                )
+            );
+        }
+    }
+
+    protected function askForVariableRename($oldname, $newname, $cnt)
+    {
+        $msg = $this->translate(
+            'Leaving custom variables in place while renaming the related field is'
+            . ' perfectly legal and might be a desired operation. This way you can'
+            . ' no longer modify related custom variables in the Director GUI, but'
+            . ' the variables themselves will stay there and continue to be deployed.'
+            . ' When you re-add a field for the same variable later on, everything'
+            . ' will continue to work as before'
+        );
+
+        $this->addBoolean('rename_vars', array(
+            'label'       => $this->translate('Rename related vars'),
+            'description' => sprintf($msg, $this->getSentValue('varname')),
+            'required'    => true,
+        ));
+
+        if ($wipe = $this->getSentValue('rename_vars')) {
+            if ($wipe === 'y') {
+                CustomVariables::renameAll($oldname, $newname, $this->getDb());
+            }
+        } else {
+            $this->abortDeletion();
+            $this->addError(
+                sprintf(
+                    $this->translate('Also rename all "%s" custom variables to "%s" on %d objects?'),
+                    $oldname,
+                    $newname,
+                    $cnt
+                )
+            );
+            $this->getElement('rename_vars')->addError(
+                sprintf(
+                    $this->translate(
+                        'There are %d objects with a related property. Should I also'
+                        . ' rename the "%s" property to "%s" on them?'
+                    ),
+                    $cnt,
+                    $oldname,
+                    $newname
                 )
             );
         }
@@ -127,12 +183,13 @@ class DirectorDatafieldForm extends DirectorObjectForm
             $this->getElement('datatype')->addError($error);
         }
 
+        $object = $this->object();
         try {
             if ($class = $this->getSentValue('datatype')) {
                 if ($class && array_key_exists($class, $types)) {
                     $this->addSettings($class);
                 }
-            } elseif ($class = $this->object()->get('datatype')) {
+            } elseif ($class = $object->get('datatype')) {
                 $this->addSettings($class);
             }
 
@@ -142,13 +199,20 @@ class DirectorDatafieldForm extends DirectorObjectForm
             $this->getElement('datatype')->addError($e->getMessage());
         }
 
-        foreach ($this->object()->getSettings() as $key => $val) {
+        foreach ($object->getSettings() as $key => $val) {
             if ($el = $this->getElement($key)) {
                 $el->setValue($val);
             }
         }
 
         $this->setButtons();
+    }
+
+    public function shouldBeRenamed()
+    {
+        $object = $this->object();
+        return $object->hasBeenLoadedFromDb()
+            && $object->getOriginalProperty('varname') !== $this->getSentValue('varname');
     }
 
     protected function addSettings($class = null)

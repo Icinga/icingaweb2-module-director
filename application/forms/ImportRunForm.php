@@ -1,12 +1,11 @@
 <?php
 
-// TODO: Check whether this can be removed
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class ImportRunForm extends QuickForm
+class ImportRunForm extends DirectorForm
 {
     /** @var  ImportSource */
     protected $source;
@@ -20,10 +19,10 @@ class ImportRunForm extends QuickForm
     public function setup()
     {
         $this->submitLabel = false;
-        $this->addElement('submit', 'submit', array(
+        $this->addElement('submit', 'submit', [
             'label' => $this->translate('Trigger Import Run'),
-            'decorators' => array('ViewHelper')
-        ));
+            'decorators' => ['ViewHelper']
+        ]);
     }
 
     public function onSuccess()
@@ -42,7 +41,7 @@ class ImportRunForm extends QuickForm
             );
         }
 
-        if ($source->import_state === 'failing') {
+        if ($source->get('import_state') === 'failing') {
             $this->addError($this->translate('Triggering this Import Source failed'));
         } else {
             parent::onSuccess();

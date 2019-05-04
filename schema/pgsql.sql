@@ -42,6 +42,7 @@ CREATE TYPE enum_sync_state AS ENUM(
     'failing'
 );
 CREATE TYPE enum_host_service AS ENUM('host', 'service');
+CREATE TYPE enum_owner_type AS ENUM('user', 'usergroup', 'role');
 
 
 CREATE OR REPLACE FUNCTION unix_timestamp(timestamp with time zone) RETURNS bigint AS '
@@ -69,6 +70,46 @@ CREATE INDEX activity_log_search_idx2 ON director_activity_log (object_type, obj
 CREATE INDEX activity_log_author ON director_activity_log (author);
 COMMENT ON COLUMN director_activity_log.old_properties IS 'Property hash, JSON';
 COMMENT ON COLUMN director_activity_log.new_properties IS 'Property hash, JSON';
+
+
+CREATE TABLE director_basket (
+  uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
+  basket_name VARCHAR(64) NOT NULL,
+  owner_type enum_owner_type NOT NULL,
+  owner_value VARCHAR(255) NOT NULL,
+  objects text NOT NULL, -- json-encoded
+  PRIMARY KEY (uuid)
+);
+
+CREATE UNIQUE INDEX basket_basket_name ON director_basket (basket_name);
+
+
+CREATE TABLE director_basket_content (
+  checksum bytea CHECK(LENGTH(checksum) = 20) NOT NULL,
+  summary VARCHAR(500) NOT NULL, -- json
+  content text NOT NULL, -- json
+  PRIMARY KEY (checksum)
+);
+
+
+CREATE TABLE director_basket_snapshot (
+  basket_uuid bytea CHECK(LENGTH(basket_uuid) = 16) NOT NULL,
+  ts_create bigint NOT NULL,
+  content_checksum bytea CHECK(LENGTH(content_checksum) = 20) NOT NULL,
+  PRIMARY KEY (basket_uuid, ts_create),
+  CONSTRAINT basked_snapshot_basket
+  FOREIGN KEY (basket_uuid)
+    REFERENCES director_basket (uuid)
+    ON DELETE CASCADE
+    ON UPDATE RESTRICT,
+  CONSTRAINT basked_snapshot_content
+  FOREIGN KEY (content_checksum)
+    REFERENCES director_basket_content (checksum)
+    ON DELETE RESTRICT
+    ON UPDATE RESTRICT
+);
+
+CREATE INDEX basket_snapshot_sort_idx ON director_basket_snapshot (ts_create);
 
 
 CREATE TABLE director_generated_config (
@@ -170,6 +211,7 @@ CREATE TABLE director_datalist_entry (
   entry_name character varying(255) NOT NULL,
   entry_value text DEFAULT NULL,
   format enum_property_format,
+  allowed_roles character varying(255) DEFAULT NULL,
   PRIMARY KEY (list_id, entry_name),
   CONSTRAINT director_datalist_entry_datalist
   FOREIGN KEY (list_id)
@@ -272,6 +314,7 @@ CREATE TABLE icinga_timeperiod (
   zone_id integer DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
+  prefer_includes enum_boolean DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_timeperiod_zone
   FOREIGN KEY (zone_id)
@@ -372,6 +415,7 @@ CREATE TABLE icinga_command (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   methods_execute character varying(64) DEFAULT NULL,
   command text DEFAULT NULL,
+  is_string enum_boolean NULL,
 -- env text DEFAULT NULL,
   timeout smallint DEFAULT NULL,
   zone_id integer DEFAULT NULL,
@@ -383,7 +427,7 @@ CREATE TABLE icinga_command (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name, zone_id);
+CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 CREATE INDEX command_zone ON icinga_command (zone_id);
 COMMENT ON COLUMN icinga_command.object_type IS 'external_object is an attempt to work with existing commands';
 
@@ -544,6 +588,20 @@ CREATE INDEX endpoint_inheritance_endpoint ON icinga_endpoint_inheritance (endpo
 CREATE INDEX endpoint_inheritance_endpoint_parent ON icinga_endpoint_inheritance (parent_endpoint_id);
 
 
+CREATE TABLE icinga_host_template_choice (
+  id serial,
+  object_name character varying(64) NOT NULL,
+  description text DEFAULT NULL,
+  min_required smallint NOT NULL DEFAULT 0,
+  max_allowed smallint NOT NULL DEFAULT 1,
+  required_template_id integer DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX host_template_choice_object_name ON icinga_host_template_choice (object_name);
+CREATE INDEX host_template_choice_required_template ON icinga_host_template_choice (required_template_id);
+
 CREATE TABLE icinga_host (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -557,6 +615,7 @@ CREATE TABLE icinga_host (
   check_period_id integer DEFAULT NULL,
   check_interval character varying(8) DEFAULT NULL,
   retry_interval character varying(8) DEFAULT NULL,
+  check_timeout smallint DEFAULT NULL,
   enable_notifications enum_boolean DEFAULT NULL,
   enable_active_checks enum_boolean DEFAULT NULL,
   enable_passive_checks enum_boolean DEFAULT NULL,
@@ -564,7 +623,8 @@ CREATE TABLE icinga_host (
   enable_flapping enum_boolean DEFAULT NULL,
   enable_perfdata enum_boolean DEFAULT NULL,
   event_command_id integer DEFAULT NULL,
-  flapping_threshold smallint default null,
+  flapping_threshold_high smallint default null,
+  flapping_threshold_low smallint default null,
   volatile enum_boolean DEFAULT NULL,
   zone_id integer DEFAULT NULL,
   command_endpoint_id integer DEFAULT NULL,
@@ -577,6 +637,7 @@ CREATE TABLE icinga_host (
   master_should_connect enum_boolean DEFAULT NULL,
   accept_config enum_boolean DEFAULT NULL,
   api_key character varying(40) DEFAULT NULL,
+  template_choice_id int DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_host_zone
   FOREIGN KEY (zone_id)
@@ -602,8 +663,14 @@ CREATE TABLE icinga_host (
   FOREIGN KEY (command_endpoint_id)
     REFERENCES icinga_endpoint (id)
     ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_template_choice
+    FOREIGN KEY (template_choice_id)
+    REFERENCES icinga_host_template_choice (id)
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
+
 
 CREATE UNIQUE INDEX object_name_host ON icinga_host (object_name, zone_id);
 CREATE UNIQUE INDEX host_api_key ON icinga_host (api_key);
@@ -612,6 +679,7 @@ CREATE INDEX host_timeperiod ON icinga_host (check_period_id);
 CREATE INDEX host_check_command ON icinga_host (check_command_id);
 CREATE INDEX host_event_command ON icinga_host (event_command_id);
 CREATE INDEX host_command_endpoint ON icinga_host (command_endpoint_id);
+CREATE INDEX host_template_choice ON icinga_host (template_choice_id);
 
 
 CREATE TABLE icinga_host_inheritance (
@@ -679,6 +747,14 @@ CREATE INDEX host_var_host ON icinga_host_var (host_id);
 CREATE INDEX host_var_checksum ON icinga_host_var (checksum);
 
 
+ALTER TABLE icinga_host_template_choice
+  ADD CONSTRAINT host_template_choice_required_template
+    FOREIGN KEY (required_template_id)
+    REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE;
+
+
 CREATE TABLE icinga_service_set (
   id serial,
   host_id integer DEFAULT NULL,
@@ -698,6 +774,21 @@ CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id
 CREATE INDEX service_set_host ON icinga_service_set (host_id);
 
 
+CREATE TABLE icinga_service_template_choice (
+  id serial,
+  object_name character varying(64) NOT NULL,
+  description text DEFAULT NULL,
+  min_required smallint NOT NULL DEFAULT 0,
+  max_allowed smallint NOT NULL DEFAULT 1,
+  required_template_id integer DEFAULT NULL,
+  allowed_roles character varying(255) DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX service_template_choice_object_name ON icinga_service_template_choice (object_name);
+CREATE INDEX service_template_choice_required_template ON icinga_service_template_choice (required_template_id);
+
+
 CREATE TABLE icinga_service (
   id serial,
   object_name character varying(255) NOT NULL,
@@ -711,6 +802,7 @@ CREATE TABLE icinga_service (
   check_period_id integer DEFAULT NULL,
   check_interval character varying(8) DEFAULT NULL,
   retry_interval character varying(8) DEFAULT NULL,
+  check_timeout smallint DEFAULT NULL,
   enable_notifications enum_boolean DEFAULT NULL,
   enable_active_checks enum_boolean DEFAULT NULL,
   enable_passive_checks enum_boolean DEFAULT NULL,
@@ -718,7 +810,8 @@ CREATE TABLE icinga_service (
   enable_flapping enum_boolean DEFAULT NULL,
   enable_perfdata enum_boolean DEFAULT NULL,
   event_command_id integer DEFAULT NULL,
-  flapping_threshold smallint DEFAULT NULL,
+  flapping_threshold_high smallint DEFAULT NULL,
+  flapping_threshold_low smallint DEFAULT NULL,
   volatile enum_boolean DEFAULT NULL,
   zone_id integer DEFAULT NULL,
   command_endpoint_id integer DEFAULT NULL,
@@ -731,6 +824,7 @@ CREATE TABLE icinga_service (
   apply_for character varying(255) DEFAULT NULL,
   use_var_overrides enum_boolean DEFAULT NULL,
   assign_filter text DEFAULT NULL,
+  template_choice_id int DEFAULT NULL,
   PRIMARY KEY (id),
 -- UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_service_host
@@ -767,6 +861,11 @@ CREATE TABLE icinga_service (
     FOREIGN KEY (service_set_id)
     REFERENCES icinga_service_set (id)
     ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_service_template_choice
+    FOREIGN KEY (template_choice_id)
+    REFERENCES icinga_service_template_choice (id)
+    ON DELETE SET NULL
     ON UPDATE CASCADE
 );
 
@@ -775,6 +874,7 @@ CREATE INDEX service_timeperiod ON icinga_service (check_period_id);
 CREATE INDEX service_check_command ON icinga_service (check_command_id);
 CREATE INDEX service_event_command ON icinga_service (event_command_id);
 CREATE INDEX service_command_endpoint ON icinga_service (command_endpoint_id);
+CREATE INDEX service_template_choice ON icinga_service (template_choice_id);
 
 
 CREATE TABLE icinga_service_inheritance (
@@ -842,6 +942,14 @@ CREATE INDEX service_field_datafield ON icinga_service_field (datafield_id);
 COMMENT ON COLUMN icinga_service_field.service_id IS 'Makes only sense for templates';
 
 
+ALTER TABLE icinga_service_template_choice
+  ADD CONSTRAINT service_template_choice_required_template
+    FOREIGN KEY (required_template_id)
+    REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE;
+
+
 CREATE TABLE icinga_host_service (
   host_id integer NOT NULL,
   service_id integer NOT NULL,
@@ -860,6 +968,26 @@ CREATE TABLE icinga_host_service (
 
 CREATE INDEX host_service_host ON icinga_host_service (host_id);
 CREATE INDEX host_service_service ON icinga_host_service (service_id);
+
+
+CREATE TABLE icinga_host_service_blacklist(
+  host_id integer NOT NULL,
+  service_id integer NOT NULL,
+  PRIMARY KEY (host_id, service_id),
+  CONSTRAINT icinga_host_service__bl_host
+  FOREIGN KEY (host_id)
+  REFERENCES icinga_host (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_host_service_bl_service
+  FOREIGN KEY (service_id)
+  REFERENCES icinga_service (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX host_service_bl_host ON icinga_host_service_blacklist (host_id);
+CREATE INDEX host_service_bl_service ON icinga_host_service_blacklist (service_id);
 
 
 CREATE TABLE icinga_service_set_inheritance (
@@ -953,6 +1081,25 @@ CREATE TABLE icinga_servicegroup (
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);
 CREATE INDEX servicegroup_search_idx ON icinga_servicegroup (display_name);
 
+CREATE TABLE icinga_servicegroup_service_resolved (
+  servicegroup_id integer NOT NULL,
+  service_id integer NOT NULL,
+  PRIMARY KEY (servicegroup_id, service_id),
+  CONSTRAINT icinga_servicegroup_service_resolved_service
+  FOREIGN KEY (service_id)
+    REFERENCES icinga_service (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_servicegroup_service_resolved_servicegroup
+  FOREIGN KEY (servicegroup_id)
+    REFERENCES icinga_servicegroup (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX servicegroup_service_resolved_service ON icinga_servicegroup_service_resolved (service_id);
+CREATE INDEX servicegroup_service_resolved_servicegroup ON icinga_servicegroup_service_resolved (servicegroup_id);
+
 
 CREATE TABLE icinga_servicegroup_inheritance (
   servicegroup_id integer NOT NULL,
@@ -1016,6 +1163,26 @@ CREATE INDEX hostgroup_host_host ON icinga_hostgroup_host (host_id);
 CREATE INDEX hostgroup_host_hostgroup ON icinga_hostgroup_host (hostgroup_id);
 
 
+CREATE TABLE icinga_hostgroup_host_resolved (
+  hostgroup_id integer NOT NULL,
+  host_id integer NOT NULL,
+  PRIMARY KEY (hostgroup_id, host_id),
+  CONSTRAINT icinga_hostgroup_host_resolved_host
+  FOREIGN KEY (host_id)
+    REFERENCES icinga_host (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_hostgroup_host_resolved_hostgroup
+  FOREIGN KEY (hostgroup_id)
+    REFERENCES icinga_hostgroup (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX hostgroup_host_resolved_host ON icinga_hostgroup_host_resolved (host_id);
+CREATE INDEX hostgroup_host_resolved_hostgroup ON icinga_hostgroup_host_resolved (hostgroup_id);
+
+
 CREATE TABLE icinga_hostgroup_parent (
   hostgroup_id integer NOT NULL,
   parent_hostgroup_id integer NOT NULL,
@@ -1051,6 +1218,11 @@ CREATE TABLE icinga_user (
   CONSTRAINT icinga_user_zone
   FOREIGN KEY (zone_id)
     REFERENCES icinga_zone (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_user_period
+  FOREIGN KEY (period_id)
+    REFERENCES icinga_timeperiod (id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
@@ -1162,11 +1334,18 @@ CREATE TABLE icinga_usergroup (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
-  PRIMARY KEY (id)
+  zone_id integer DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_usergroup_zone
+    FOREIGN KEY (zone_id)
+    REFERENCES icinga_zone (id)
+      ON DELETE RESTRICT
+      ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
 CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name);
+CREATE INDEX usergroup_zone ON icinga_usergroup (zone_id);
 
 
 CREATE TABLE icinga_usergroup_inheritance (
@@ -1312,14 +1491,16 @@ CREATE TABLE import_source (
   id serial,
   source_name character varying(64) NOT NULL,
   key_column character varying(64) NOT NULL,
-  provider_class character varying(72) NOT NULL,
+  provider_class character varying(128) NOT NULL,
   import_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
 CREATE INDEX import_source_search_idx ON import_source (key_column);
+CREATE UNIQUE INDEX import_source_name ON import_source (source_name);
 
 
 CREATE TABLE import_source_setting (
@@ -1342,8 +1523,9 @@ CREATE TABLE import_row_modifier (
   source_id integer NOT NULL,
   property_name character varying(255) NOT NULL,
   target_property character varying(255) DEFAULT NULL,
-  provider_class character varying(72) NOT NULL,
+  provider_class character varying(128) NOT NULL,
   priority integer NOT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT row_modifier_import_source
     FOREIGN KEY (source_id)
@@ -1353,6 +1535,8 @@ CREATE TABLE import_row_modifier (
 );
 
 CREATE INDEX import_row_modifier_search_idx ON import_row_modifier (property_name);
+CREATE UNIQUE INDEX import_row_modifier_prio
+  ON import_row_modifier (source_id, priority);
 
 
 CREATE TABLE import_row_modifier_setting (
@@ -1385,8 +1569,8 @@ CREATE TABLE import_run (
   CONSTRAINT import_run_source
   FOREIGN KEY (source_id)
   REFERENCES import_source (id)
-  ON DELETE RESTRICT
-  ON UPDATE CASCADE,
+  ON DELETE CASCADE
+  ON UPDATE RESTRICT,
   CONSTRAINT import_run_rowset
   FOREIGN KEY (rowset_checksum)
   REFERENCES imported_rowset (checksum)
@@ -1468,9 +1652,11 @@ CREATE TABLE sync_rule (
   sync_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
   last_attempt timestamp with time zone NULL DEFAULT NULL,
+  description text DEFAULT NULL,
   PRIMARY KEY (id)
 );
 
+CREATE UNIQUE INDEX sync_rule_name ON sync_rule (rule_name);
 
 CREATE TABLE sync_property (
   id serial,
@@ -1563,9 +1749,8 @@ CREATE TABLE icinga_notification_var (
 );
 
 CREATE INDEX notification_var_command ON icinga_notification_var (notification_id);
-CREATE UNIQUE INDEX notification_var_search_idx ON icinga_notification_var (varname);
+CREATE INDEX notification_var_search_idx ON icinga_notification_var (varname);
 CREATE INDEX notification_var_checksum ON icinga_notification_var (checksum);
-
 
 CREATE TABLE icinga_notification_field (
   notification_id integer NOT NULL,
@@ -1773,6 +1958,202 @@ CREATE INDEX user_resolved_var_user_id ON icinga_user_resolved_var (user_id);
 CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 
+CREATE TABLE icinga_dependency (
+  id serial,
+  object_name character varying(255) NOT NULL,
+  object_type enum_object_type_all NOT NULL,
+  disabled enum_boolean DEFAULT 'n',
+  apply_to enum_host_service NULL DEFAULT NULL,
+  parent_host_id integer DEFAULT NULL,
+  parent_service_id integer DEFAULT NULL,
+  child_host_id integer DEFAULT NULL,
+  child_service_id integer DEFAULT NULL,
+  disable_checks enum_boolean DEFAULT NULL,
+  disable_notifications enum_boolean DEFAULT NULL,
+  ignore_soft_states enum_boolean DEFAULT NULL,
+  period_id integer DEFAULT NULL,
+  zone_id integer DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
+  parent_service_by_name character varying(255),
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_dependency_parent_host
+    FOREIGN KEY (parent_host_id)
+    REFERENCES icinga_host (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_dependency_parent_service
+    FOREIGN KEY (parent_service_id)
+    REFERENCES icinga_service (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_dependency_child_host
+    FOREIGN KEY (child_host_id)
+    REFERENCES icinga_host (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_dependency_child_service
+    FOREIGN KEY (child_service_id)
+    REFERENCES icinga_service (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_dependency_period
+    FOREIGN KEY (period_id)
+    REFERENCES icinga_timeperiod (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_dependency_zone
+    FOREIGN KEY (zone_id)
+    REFERENCES icinga_zone (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX dependency_parent_host ON icinga_dependency (parent_host_id);
+CREATE INDEX dependency_parent_service ON icinga_dependency (parent_service_id);
+CREATE INDEX dependency_child_host ON icinga_dependency (child_host_id);
+CREATE INDEX dependency_child_service ON icinga_dependency (child_service_id);
+CREATE INDEX dependency_period ON icinga_dependency (period_id);
+CREATE INDEX dependency_zone ON icinga_dependency (zone_id);
+
+
+CREATE TABLE icinga_dependency_inheritance (
+  dependency_id integer NOT NULL,
+  parent_dependency_id integer NOT NULL,
+  weight integer DEFAULT NULL,
+  PRIMARY KEY (dependency_id, parent_dependency_id),
+  CONSTRAINT icinga_dependency_inheritance_dependency
+    FOREIGN KEY (dependency_id)
+    REFERENCES icinga_dependency (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_dependency_inheritance_parent_dependency
+    FOREIGN KEY (parent_dependency_id)
+    REFERENCES icinga_dependency (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX dependency_inheritance_unique_order ON icinga_dependency_inheritance (dependency_id, weight);
+CREATE INDEX dependency_inheritance_dependency ON icinga_dependency_inheritance (dependency_id);
+CREATE INDEX dependency_inheritance_dependency_parent ON icinga_dependency_inheritance (parent_dependency_id);
+
+
+CREATE TABLE icinga_dependency_states_set (
+  dependency_id integer NOT NULL,
+  property enum_state_name NOT NULL,
+  merge_behaviour enum_set_merge_behaviour NOT NULL DEFAULT 'override',
+  PRIMARY KEY (dependency_id, property, merge_behaviour),
+  CONSTRAINT icinga_dependency_states_set_dependency
+    FOREIGN KEY (dependency_id)
+    REFERENCES icinga_dependency (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX dependency_states_set_dependency ON icinga_dependency_states_set (dependency_id);
+COMMENT ON COLUMN icinga_dependency_states_set.merge_behaviour IS 'override: = [], extend: += [], blacklist: -= []';
+
+CREATE TABLE icinga_timeperiod_include (
+  timeperiod_id integer NOT NULL,
+  include_id integer NOT NULL,
+  PRIMARY KEY (timeperiod_id, include_id),
+  CONSTRAINT icinga_timeperiod_timeperiod_include
+  FOREIGN KEY (include_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE,
+  CONSTRAINT icinga_timeperiod_include
+  FOREIGN KEY (timeperiod_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
+
+CREATE TABLE icinga_timeperiod_exclude (
+  timeperiod_id integer NOT NULL,
+  exclude_id integer NOT NULL,
+  PRIMARY KEY (timeperiod_id, exclude_id),
+  CONSTRAINT icinga_timeperiod_timeperiod_exclude
+  FOREIGN KEY (exclude_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE RESTRICT
+  ON UPDATE CASCADE,
+  CONSTRAINT icinga_timeperiod_exclude
+  FOREIGN KEY (timeperiod_id)
+  REFERENCES icinga_timeperiod (id)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE
+);
+
+
+CREATE TABLE icinga_scheduled_downtime (
+  id serial,
+  object_name character varying(255) NOT NULL,
+  zone_id integer DEFAULT NULL,
+  object_type enum_object_type_all NOT NULL,
+  disabled enum_boolean NOT NULL DEFAULT 'n',
+  apply_to enum_host_service NULL DEFAULT NULL,
+  assign_filter text DEFAULT NULL,
+  author character varying(255) DEFAULT NULL,
+  comment text DEFAULT NULL,
+  fixed enum_boolean DEFAULT NULL,
+  duration int DEFAULT NULL,
+  with_services enum_boolean NULL DEFAULT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT icinga_scheduled_downtime_zone
+  FOREIGN KEY (zone_id)
+  REFERENCES icinga_zone (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX scheduled_downtime_object_name ON icinga_scheduled_downtime (object_name);
+CREATE INDEX scheduled_downtime_zone ON icinga_scheduled_downtime (zone_id);
+
+
+CREATE TABLE icinga_scheduled_downtime_inheritance (
+  scheduled_downtime_id integer NOT NULL,
+  parent_scheduled_downtime_id integer NOT NULL,
+  weight integer DEFAULT NULL,
+  PRIMARY KEY (scheduled_downtime_id, parent_scheduled_downtime_id),
+  CONSTRAINT icinga_scheduled_downtime_inheritance_scheduled_downtime
+  FOREIGN KEY (scheduled_downtime_id)
+  REFERENCES icinga_scheduled_downtime (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT icinga_scheduled_downtime_inheritance_parent_scheduled_downtime
+  FOREIGN KEY (parent_scheduled_downtime_id)
+  REFERENCES icinga_scheduled_downtime (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX scheduled_downtime_inheritance_unique_order ON icinga_scheduled_downtime_inheritance (scheduled_downtime_id, weight);
+CREATE INDEX scheduled_downtime_inheritance_scheduled_downtime ON icinga_scheduled_downtime_inheritance (scheduled_downtime_id);
+CREATE INDEX scheduled_downtime_inheritance_scheduled_downtime_parent ON icinga_scheduled_downtime_inheritance (parent_scheduled_downtime_id);
+
+
+CREATE TABLE icinga_scheduled_downtime_range (
+  scheduled_downtime_id serial,
+  range_key character varying(255) NOT NULL,
+  range_value character varying(255) NOT NULL,
+  range_type enum_timeperiod_range_type NOT NULL DEFAULT 'include',
+  merge_behaviour enum_merge_behaviour NOT NULL DEFAULT 'set',
+  PRIMARY KEY (scheduled_downtime_id, range_type, range_key),
+  CONSTRAINT icinga_scheduled_downtime_range_scheduled_downtime
+  FOREIGN KEY (scheduled_downtime_id)
+  REFERENCES icinga_scheduled_downtime (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX scheduled_downtime_range_scheduled_downtime ON icinga_scheduled_downtime_range (scheduled_downtime_id);
+COMMENT ON COLUMN icinga_scheduled_downtime_range.range_key IS 'monday, ...';
+COMMENT ON COLUMN icinga_scheduled_downtime_range.range_value IS '00:00-24:00, ...';
+COMMENT ON COLUMN icinga_scheduled_downtime_range.range_type IS 'include -> ranges {}, exclude ranges_ignore {} - not yet';
+COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {}, add -> += {}, substract -> -= {}';
+
+
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (128, NOW());
+  VALUES (162, NOW());

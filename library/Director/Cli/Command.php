@@ -3,10 +3,13 @@
 namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Command as CliCommand;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Application\Config;
+use RuntimeException;
 
 class Command extends CliCommand
 {
@@ -18,46 +21,48 @@ class Command extends CliCommand
 
     protected function renderJson($object, $pretty = true)
     {
-        if ($pretty && version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            return json_encode($object, JSON_PRETTY_PRINT) . "\n";
-        } else {
-            return json_encode($object) . "\n";
-        }
+        return json_encode($object, $pretty ? JSON_PRETTY_PRINT : null) . "\n";
     }
 
+    /**
+     * @param $json
+     * @return mixed
+     */
     protected function parseJson($json)
     {
         $res = json_decode($json);
 
         if ($res === null) {
-            $this->fail(sprintf(
-                'Invalid JSON',
-                $this->getLastJsonError()
-            ));
+            $this->fail('Invalid JSON: %s', $this->getLastJsonError());
         }
 
         return $res;
     }
 
-    // TODO: just return json_last_error_msg() for PHP >= 5.5.0
-    protected function getLastJsonError()
+    public function fail($msg)
     {
-        switch (json_last_error()) {
-            case JSON_ERROR_DEPTH:
-                return 'The maximum stack depth has been exceeded';
-            case JSON_ERROR_CTRL_CHAR:
-                return 'Control character error, possibly incorrectly encoded';
-            case JSON_ERROR_STATE_MISMATCH:
-                return 'Invalid or malformed JSON';
-            case JSON_ERROR_SYNTAX:
-                return 'Syntax error';
-            case JSON_ERROR_UTF8:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            default:
-                return 'An error occured when parsing a JSON string';
+        $args = func_get_args();
+        array_shift($args);
+        if (count($args)) {
+            $msg = vsprintf($msg, $args);
         }
+
+        throw new RuntimeException($msg);
     }
 
+    /**
+     * @return string
+     */
+    protected function getLastJsonError()
+    {
+        return JsonException::getJsonErrorMessage(json_last_error());
+    }
+
+    /**
+     * @param null $endpointName
+     * @return CoreApi|\Icinga\Module\Director\Core\LegacyDeploymentApi
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function api($endpointName = null)
     {
         if ($this->api === null) {
@@ -74,18 +79,39 @@ class Command extends CliCommand
     }
 
     /**
+     * Raise PHP resource limits
+     *
+     * @return self;
+     */
+    protected function raiseLimits()
+    {
+        MemoryLimit::raiseTo('1024M');
+
+        ini_set('max_execution_time', 0);
+        if (version_compare(PHP_VERSION, '7.0.0') < 0) {
+            ini_set('zend.enable_gc', 0);
+        }
+
+        return $this;
+    }
+
+    /**
      * @return Db
      */
     protected function db()
     {
         if ($this->db === null) {
-            // Hint: not using $this->Config() intentionally. This allows
-            // CLI commands in other modules to use this as a base class.
-            $resourceName = Config::module('director')->get('db', 'resource');
+            $resourceName = $this->params->get('dbResourceName');
+
+            if ($resourceName === null) {
+                // Hint: not using $this->Config() intentionally. This allows
+                // CLI commands in other modules to use this as a base class.
+                $resourceName = Config::module('director')->get('db', 'resource');
+            }
             if ($resourceName) {
                 $this->db = Db::fromResourceName($resourceName);
             } else {
-                $this->fail('Director is not configured correctly');
+                throw new RuntimeException('Director is not configured correctly');
             }
         }
 

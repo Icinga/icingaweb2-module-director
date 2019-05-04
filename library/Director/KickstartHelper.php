@@ -86,6 +86,7 @@ class KickstartHelper
 
     /**
      * @return KickstartHelper
+     * @throws ProgrammingError
      */
     public function loadConfigFromFile()
     {
@@ -152,6 +153,7 @@ class KickstartHelper
 
     /**
      * @return IcingaApiUser
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function apiUser()
     {
@@ -179,8 +181,9 @@ class KickstartHelper
     /**
      * @param IcingaObject[] $objects
      * @return IcingaObject[]
+     * @throws NestingError
      */
-    protected function sortByInheritance(array $objects)
+    protected function sortByParent(array $objects)
     {
         $sorted = array();
 
@@ -190,16 +193,14 @@ class KickstartHelper
             if ($cnt > 20) {
                 $this->throwObjectLoop($objects);
             }
+
             $unset = array();
             foreach ($objects as $key => $object) {
-                foreach ($object->getImports() as $parentName) {
-                    if (! array_key_exists($parentName, $sorted)) {
-                        continue 2;
-                    }
+                $parentName = $object->get('parent');
+                if ($parentName === null || array_key_exists($parentName, $sorted)) {
+                    $sorted[$object->getObjectName()] = $object;
+                    $unset[] = $key;
                 }
-
-                $sorted[$object->getObjectName()] = $object;
-                $unset[] = $key;
             }
 
             foreach ($unset as $key) {
@@ -237,11 +238,13 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws NestingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function fetchZones()
     {
         $db = $this->db;
-        $this->loadedZones = $this->sortByInheritance(
+        $this->loadedZones = $this->sortByParent(
             $this->api()->setDb($db)->getZoneObjects()
         );
 
@@ -250,6 +253,7 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeZones()
     {
@@ -284,13 +288,13 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function fetchEndpoints()
     {
         $db = $this->db;
-        $this->loadedEndpoints = $this->sortByInheritance(
-            $this->api()->setDb($db)->getEndpointObjects()
-        );
+        $this->loadedEndpoints = $this->api()->setDb($db)->getEndpointObjects();
 
         $master = $this->getValue('endpoint');
         if (array_key_exists($master, $this->loadedEndpoints)) {
@@ -306,6 +310,7 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeEndpoints()
     {
@@ -389,30 +394,25 @@ class KickstartHelper
      * TODO: remove outdated ones
      *
      * @return $this
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function importCommands()
     {
         $db = $this->db;
         $zdb = $db->getDbAdapter();
         $zdb->beginTransaction();
-        foreach ($this->api()->setDb($db)->getCheckCommandObjects() as $object) {
-            if ($object::exists($object->object_name, $db)) {
-                $new = $object::load($object->object_name, $db)->replaceWith($object);
-            } else {
-                $new = $object;
-            }
-    
-            $new->store();
-        }
+        /** @var IcingaObject $object */
+        foreach (['Check', 'Notification', 'Event'] as $type) {
+            foreach ($this->api()->setDb($db)->getSpecificCommandObjects($type) as $object) {
+                if ($object::exists($object->object_name, $db)) {
+                    $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
+                } else {
+                    $new = $object;
+                }
 
-        foreach ($this->api()->setDb($db)->getNotificationCommandObjects() as $object) {
-            if ($object::exists($object->object_name, $db)) {
-                $new = $object::load($object->object_name, $db)->replaceWith($object);
-            } else {
-                $new = $object;
+                $new->store();
             }
-
-            $new->store();
         }
         $zdb->commit();
 
@@ -447,6 +447,7 @@ class KickstartHelper
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getDeploymentApi()
     {
@@ -467,11 +468,14 @@ class KickstartHelper
         $client->setCredentials($apiuser->object_name, $apiuser->password);
 
         $api = new CoreApi($client);
+        $api->setDb($this->db);
+
         return $api;
     }
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getConfiguredApi()
     {
@@ -485,11 +489,14 @@ class KickstartHelper
         $client->setCredentials($apiuser->object_name, $apiuser->password);
 
         $api = new CoreApi($client);
+        $api->setDb($this->db);
+
         return $api;
     }
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function switchToDeploymentApi()
     {
@@ -498,6 +505,7 @@ class KickstartHelper
 
     /**
      * @return CoreApi
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function api()
     {

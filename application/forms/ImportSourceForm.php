@@ -20,6 +20,15 @@ class ImportSourceForm extends DirectorObjectForm
             'required'    => true,
         ));
 
+        $this->addElement('textarea', 'description', array(
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate(
+                'An extended description for this Import Source. This should explain'
+                . " what kind of data you're going to import from this source."
+            ),
+            'rows'        => '3',
+        ));
+
         $this->addElement('select', 'provider_class', array(
             'label'        => $this->translate('Source Type'),
             'required'     => true,
@@ -54,6 +63,18 @@ class ImportSourceForm extends DirectorObjectForm
         }
     }
 
+    public function hasChangedSetting($name)
+    {
+        if ($this->hasBeenSent() && $this->hasObject()) {
+            /** @var ImportSource $object */
+            $object = $this->getObject();
+            return $object->getStoredSetting($name)
+                !== $this->getSentValue($name);
+        } else {
+            return false;
+        }
+    }
+
     protected function addSettings()
     {
         if (! ($class = $this->getProviderClass())) {
@@ -69,7 +90,10 @@ class ImportSourceForm extends DirectorObjectForm
                 . ' specified this will then be used as the object_name for the syncronized'
                 . ' Icinga object. Especially when getting started with director please make'
                 . ' sure to strictly follow this rule. Duplicate values for this column on different'
-                . ' rows will trigger a failure, your import run will not succeed'
+                . ' rows will trigger a failure, your import run will not succeed. Please pay attention'
+                . ' when synching services, as "purge" will only work correctly with a key_column'
+                . ' corresponding to host!name. Check the "Combine" property modifier in case your'
+                . ' data source cannot provide such a field'
             ),
             'placeholder' => $defaultKeyCol,
             'required'    => $defaultKeyCol === null,

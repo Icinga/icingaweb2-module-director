@@ -2,184 +2,284 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Data\Filter\Filter;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Forms\ImportRowModifierForm;
+use Icinga\Module\Director\Forms\ImportSourceForm;
+use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\ImportSource;
-use Icinga\Module\Director\Import\Import;
-use Icinga\Web\Notification;
-use Icinga\Web\Url;
+use Icinga\Module\Director\Web\Form\CloneImportSourceForm;
+use Icinga\Module\Director\Web\Table\ImportrunTable;
+use Icinga\Module\Director\Web\Table\ImportsourceHookTable;
+use Icinga\Module\Director\Web\Table\PropertymodifierTable;
+use Icinga\Module\Director\Web\Tabs\ImportsourceTabs;
+use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
+use InvalidArgumentException;
+use dipl\Html\Link;
 
 class ImportsourceController extends ActionController
 {
+    /** @var ImportSource|null */
+    private $importSource;
+
+    private $id;
+
+    /**
+     * @throws \Icinga\Exception\AuthenticationException
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Security\SecurityException
+     */
+    public function init()
+    {
+        parent::init();
+        $id = $this->params->get('source_id', $this->params->get('id'));
+        if ($id !== null && is_numeric($id)) {
+            $this->id = (int) $id;
+        }
+
+        $tabs = $this->tabs(new ImportsourceTabs($this->id));
+        $action = $this->getRequest()->getActionName();
+        if ($tabs->has($action)) {
+            $tabs->activate($action);
+        }
+    }
+
+    protected function addMainActions()
+    {
+        $this->actions(new AutomationObjectActionBar(
+            $this->getRequest()
+        ));
+        $source = $this->getImportSource();
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            'director/basket/add',
+            [
+                'type'  => 'ImportSource',
+                'names' => $source->getUniqueIdentifier()
+            ],
+            [
+                'class' => 'icon-tag',
+                'data-base-target' => '_next'
+            ]
+        ));
+    }
+
+    /**
+     * @throws \Icinga\Exception\IcingaException
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function indexAction()
     {
-        $this->setAutorefreshInterval(10);
-        $id = $this->params->get('id');
-        $this->prepareTabs($id)->activate('show');
-        $source = $this->view->source = ImportSource::load($id, $this->db());
-        $this->view->title = sprintf(
+        $this->addMainActions();
+        $source = $this->getImportSource();
+        if ($this->params->get('format') === 'json') {
+            $this->sendJson($this->getResponse(), $source->export());
+            return;
+        }
+        $this->addTitle(
             $this->translate('Import source: %s'),
-            $source->source_name
-        );
-
-        $this->view->checkForm = $this
-            ->loadForm('ImportCheck')
-            ->setImportSource($source)
-            ->handleRequest();
-
-        $this->view->runForm = $this
-            ->loadForm('ImportRun')
-            ->setImportSource($source)
-            ->handleRequest();
+            $source->get('source_name')
+        )->setAutorefreshInterval(10);
+        $this->content()->add(new ImportSourceDetails($source));
     }
 
     public function addAction()
     {
-        $this->editAction();
+        $this->addTitle($this->translate('Add import source'))
+            ->content()->add(
+                ImportSourceForm::load()->setDb($this->db())
+                    ->setSuccessUrl('director/importsources')
+                    ->handleRequest()
+            );
     }
 
+    /**
+     * @throws NotFoundError
+     */
     public function editAction()
     {
-        $id = $this->params->get('id');
+        $this->addMainActions();
+        $this->activateTabWithPostfix($this->translate('Modify'));
+        $form = ImportSourceForm::load()
+            ->setObject($this->getImportSource())
+            ->setListUrl('director/importsources')
+            ->handleRequest();
+        $this->addTitle(
+            $this->translate('Import source: %s'),
+            $form->getObject()->get('source_name')
+        )->setAutorefreshInterval(10);
 
-        $form = $this->view->form = $this->loadForm('importSource')->setDb($this->db());
-
-        if ($id) {
-            $form->loadObject($id)->setListUrl('director/list/importsource');
-            $this->prepareTabs($id)->activate('edit');
-            $this->view->title = $this->translate('Edit import source');
-        } else {
-            $form->setSuccessUrl('director/list/importsource');
-            $this->view->title = $this->translate('Add import source');
-            $this->prepareTabs()->activate('add');
-        }
-
-        $form->handleRequest();
-        $this->setViewScript('object/form');
+        $this->content()->add($form);
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function cloneAction()
+    {
+        $this->addMainActions();
+        $this->activateTabWithPostfix($this->translate('Clone'));
+        $source = $this->getImportSource();
+        $this->addTitle('Clone: %s', $source->get('source_name'));
+        $form = new CloneImportSourceForm($source);
+        $this->content()->add($form);
+        $form->handleRequest($this->getRequest());
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function previewAction()
     {
-        $id = $this->params->get('id');
+        $source = $this->getImportSource();
 
-        $source = ImportSource::load($id, $this->db());
-        $this->prepareTabs($id)->activate('preview');
-
-        $this->view->title = sprintf(
-            $this->translate('Import source preview: "%s"'),
-            $source->source_name
+        $this->addTitle(
+            $this->translate('Import source preview: %s'),
+            $source->get('source_name')
         );
 
-        $this->view->table = $this->applyPaginationLimits(
-            $this->loadTable('importsourceHook')
-                ->setConnection($this->db())
-                ->setImportSource($source)
-        );
-        $this->setViewScript('list/table');
+        $this->actions()->add(Link::create('[..]', '#', null, [
+            'onclick' => 'javascript:$("table.raw-data-table").toggleClass("collapsed");'
+        ]));
+        (new ImportsourceHookTable())->setImportSource($source)->renderTo($this);
     }
 
+    /**
+     * @return ImportSource
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function requireImportSourceAndAddModifierTable()
+    {
+        $source = $this->getImportSource();
+        PropertymodifierTable::load($source, $this->url())
+            ->handleSortPriorityActions($this->getRequest(), $this->getResponse())
+            ->renderTo($this);
+
+        return $source;
+    }
+
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function modifierAction()
     {
-        $this->view->stayHere = true;
-        $id = $this->params->get('source_id');
-        $this->prepareTabs($id)->activate('modifier');
-
-        $this->view->addLink = $this->view->qlink(
+        $source = $this->requireImportSourceAndAddModifierTable();
+        $this->addTitle($this->translate('Property modifiers: %s'), $source->get('source_name'));
+        $this->addAddLink(
             $this->translate('Add property modifier'),
             'director/importsource/addmodifier',
-            array('source_id' => $id),
-            array('class' => 'icon-plus')
+            ['source_id' => $source->get('id')],
+            '_self'
         );
-
-        $this->view->title = $this->translate('Property modifiers');
-        $this->view->table = $this->loadTable('propertymodifier')
-            ->enforceFilter(Filter::where('source_id', $id))
-            ->setConnection($this->db());
-        $this->setViewScript('list/table');
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function historyAction()
     {
-        $url = $this->getRequest()->getUrl();
-        $id = $url->shift('id');
-        if ($url->shift('action') === 'remove') {
-            $this->view->form = $this->loadForm('removeImportrun');
-        }
-
-        $this->prepareTabs($id)->activate('history');
-        $this->view->title = $this->translate('Import run history');
+        $source = $this->getImportSource();
+        $this->addTitle($this->translate('Import run history: %s'), $source->get('source_name'));
 
         // TODO: temporarily disabled, find a better place for stats:
         // $this->view->stats = $this->db()->fetchImportStatistics();
-        $this->prepareTable('importrun');
-        $this->view->table->enforceFilter(Filter::where('source_id', $id));
+        ImportrunTable::load($source)->renderTo($this);
     }
 
-    public function editmodifierAction()
-    {
-        $this->addmodifierAction();
-    }
-
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function addmodifierAction()
     {
-        $this->view->stayHere = true;
-        $edit = false;
+        $source = $this->requireImportSourceAndAddModifierTable();
+        $this->addTitle(
+            $this->translate('%s: add Property Modifier'),
+            $source->get('source_name')
+        )->addBackToModifiersLink($source);
+        $this->tabs()->activate('modifier');
 
-        if ($id = $this->params->get('id')) {
-            $edit = true;
-        }
-
-        $form = $this->view->form = $this->loadForm('importRowModifier')->setDb($this->db());
-
-        if ($edit) {
-            $form->loadObject($id);
-            $source_id = $form->getObject()->source_id;
-            $form->setSource(ImportSource::load($source_id, $this->db()));
-        } elseif ($source_id = $this->params->get('source_id')) {
-            $form->setSource(ImportSource::load($source_id, $this->db()));
-        }
-        $form->setSuccessUrl('director/importsource/modifier', array('source_id' => $source_id));
-
-        $form->handleRequest();
-
-        $tabs = $this->prepareTabs($source_id)->activate('modifier');
-
-        $this->view->title = $this->translate('Modifier'); // add/edit
-        $this->view->table = $this->loadTable('propertymodifier')
-            ->enforceFilter(Filter::where('source_id', $source_id))
-            ->setConnection($this->db());
-
-        $this->setViewScript('list/table');
+        $this->content()->prepend(
+            ImportRowModifierForm::load()->setDb($this->db())
+                ->setSource($source)
+                ->setSuccessUrl(
+                    'director/importsource/modifier',
+                    ['source_id' => $source->get('id')]
+                )->handleRequest()
+        );
     }
 
-    protected function prepareTabs($id = null)
+    /**
+     * @throws \Icinga\Exception\MissingParameterException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function editmodifierAction()
     {
-        $tabs = $this->getTabs();
+        // We need to load the table AFTER adding the title, otherwise search
+        // will not be placed next to the title
+        $source = $this->getImportSource();
 
-        if ($id) {
-            $tabs->add('show', array(
-                'url'       => 'director/importsource' . '?id=' . $id,
-                'label'     => $this->translate('Import source'),
-            ))->add('edit', array(
-                'url'       => 'director/importsource/edit' . '?id=' . $id,
-                'label'     => $this->translate('Modify'),
-            ))->add('modifier', array(
-                'url'       => 'director/importsource/modifier' . '?source_id=' . $id,
-                'label'     => $this->translate('Modifiers'),
-            ))->add('history', array(
-                'url'       => 'director/importsource/history' . '?id=' . $id,
-                'label'     => $this->translate('History'),
-            ))->add('preview', array(
-                'url'       => 'director/importsource/preview' . '?id=' . $id,
-                'label'     => $this->translate('Preview'),
-            ));
-        } else {
-            $tabs->add('add', array(
-                'url'       => 'director/importsource/add',
-                'label'     => $this->translate('New import source'),
-            ))->activate('add');
+        $this->addTitle(
+            $this->translate('%s: Property Modifier'),
+            $source->get('source_name')
+        )->addBackToModifiersLink($source);
+        $source = $this->requireImportSourceAndAddModifierTable();
+        $this->tabs()->activate('modifier');
+
+        $listUrl = 'director/importsource/modifier?source_id='
+            . (int) $source->get('id');
+        $this->content()->prepend(
+            ImportRowModifierForm::load()->setDb($this->db())
+                ->loadObject($this->params->getRequired('id'))
+                ->setListUrl($listUrl)
+                ->setSource($source)
+                ->handleRequest()
+        );
+    }
+
+    /**
+     * @return ImportSource
+     * @throws NotFoundError
+     */
+    protected function getImportSource()
+    {
+        if ($this->importSource === null) {
+            if ($this->id === null) {
+                throw new InvalidArgumentException('Got no ImportSource id');
+            }
+            $this->importSource = ImportSource::loadWithAutoIncId(
+                $this->id,
+                $this->db()
+            );
         }
 
-        return $tabs;
+        return $this->importSource;
+    }
+
+    protected function activateTabWithPostfix($title)
+    {
+        /** @var ImportsourceTabs $tabs */
+        $tabs = $this->tabs();
+        $tabs->activateMainWithPostfix($title);
+
+        return $this;
+    }
+
+    /**
+     * @param ImportSource $source
+     * @return $this
+     */
+    protected function addBackToModifiersLink(ImportSource $source)
+    {
+        $this->actions()->add(
+            Link::create(
+                $this->translate('back'),
+                'director/importsource/modifier',
+                ['source_id' => $source->get('id')],
+                ['class' => 'icon-left-big']
+            )
+        );
+
+        return $this;
     }
 }

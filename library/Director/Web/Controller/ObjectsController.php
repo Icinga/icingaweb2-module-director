@@ -2,171 +2,330 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use dipl\Web\Table\ZfQueryBasedTable;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Forms\IcingaMultiEditForm;
+use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Web\Table\IcingaObjectTable;
-use Icinga\Module\Director\Web\Table\QuickTable;
-use Icinga\Web\Widget\FilterEditor;
+use Icinga\Module\Director\RestApi\IcingaObjectsHandler;
+use Icinga\Module\Director\Web\ActionBar\ObjectsActionBar;
+use Icinga\Module\Director\Web\ActionBar\TemplateActionBar;
+use Icinga\Module\Director\Web\Form\FormLoader;
+use Icinga\Module\Director\Web\Table\ApplyRulesTable;
+use Icinga\Module\Director\Web\Table\ObjectSetTable;
+use Icinga\Module\Director\Web\Table\ObjectsTable;
+use Icinga\Module\Director\Web\Table\TemplatesTable;
+use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
+use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
+use dipl\Html\Link;
+use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
 
 abstract class ObjectsController extends ActionController
 {
-    /** @var IcingaObject */
-    protected $dummy;
-
     protected $isApified = true;
 
-    protected $multiEdit = array();
+    /** @var ObjectsTable */
+    protected $table;
 
-    protected $globalTypes = array(
-        'ApiUser',
-        'Zone',
-        'Endpoint',
-        'TimePeriod',
-    );
-
-    public function init()
+    protected function checkDirectorPermissions()
     {
-        parent::init();
+        if ($this->getRequest()->getActionName() !== 'sets') {
+            $this->assertPermission('director/' . $this->getPluralBaseType());
+        }
+    }
 
-        $tabs = $this->getTabs();
-        $type = $this->getType();
+    /**
+     * @return $this
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     */
+    protected function addObjectsTabs()
+    {
+        $tabName = $this->getRequest()->getActionName();
+        if (substr($this->getType(), -5) === 'Group') {
+            $tabName = 'groups';
+        }
+        $this->tabs(new ObjectsTabs(
+            $this->getBaseType(),
+            $this->Auth(),
+            $this->getBaseObjectUrl()
+        ))->activate($tabName);
 
-        if (in_array(ucfirst($type), $this->globalTypes)) {
-            $ltype = strtolower($type);
+        return $this;
+    }
 
-            foreach ($this->globalTypes as $tabType) {
-                $ltabType = strtolower($tabType);
-                $tabs->add($ltabType, array(
-                    'label' => $this->translate(ucfirst($ltabType) . 's'),
-                    'url'   => sprintf('director/%ss', $ltabType)
-                ));
-            }
-            $tabs->activate($ltype);
+    /**
+     * @return IcingaObjectsHandler
+     * @throws NotFoundError
+     */
+    protected function apiRequestHandler()
+    {
+        $request = $this->getRequest();
+        $table = $this->getTable();
+        if ($request->getControllerName() === 'services'
+            && $host = $this->params->get('host')
+        ) {
+            $host = IcingaHost::load($host, $this->db());
+            $table->getQuery()->where('host_id = ?', $host->get('id'));
+        }
 
+        if ($request->getActionName() === 'templates') {
+            $table->filterObjectType('template');
+        }
+
+        return (new IcingaObjectsHandler(
+            $request,
+            $this->getResponse(),
+            $this->db()
+        ))->setTable($table);
+    }
+
+    /**
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws NotFoundError
+     */
+    public function indexAction()
+    {
+        if ($this->getRequest()->isApiRequest()) {
+            $this->apiRequestHandler()->dispatch();
             return;
         }
 
-        /** @var IcingaObject $object */
-        $object = $this->dummyObject();
-        if ($object->isGroup()) {
-            $type = substr($type, 0, -5);
-            /** @var IcingaObject $baseType */
-            $baseType = $this->getObjectClassname($type);
-            $baseObject = $baseType::create(array());
-        } else {
-            $baseObject = $object;
-        }
-
-        $tabs->add('objects', array(
-            'url'   => sprintf('director/%ss', strtolower($type)),
-            'label' => $this->translate(ucfirst($type) . 's'),
-        ));
-
-        if ($this->hasPermission('director/admin')) {
-            if ($object->supportsImports()) {
-                $tabs->add('templates', array(
-                    'url'   => sprintf('director/%ss/templates', strtolower($type)),
-                    'label' => $this->translate('Templates'),
-                ));
-            }
-
-            if ($baseObject->supportsGroups()) {
-                $tabs->add('objectgroups', array(
-                    'url'   => sprintf('director/%sgroups', $type),
-                    'label' => $this->translate('Groups')
-                ));
-            }
-
-            if ($baseObject->supportsSets()) {
-                 $tabs->add('sets', array(
-                      'url'    => sprintf('director/%ss/sets', $type),
-                      'label' => $this->translate('Sets')
-                 ));
-            }
-
-            $tabs->add('tree', array(
-                'url'   => sprintf('director/%ss/templatetree', $type),
-                'label' => $this->translate('Tree'),
-            ));
-        }
-    }
-
-    public function indexAction()
-    {
-        if (! $this->getRequest()->isApiRequest()) {
-            $this->setAutorefreshInterval(10);
-        }
-
         $type = $this->getType();
-        $ltype = strtolower($type);
-        /** @var IcingaObject $dummy */
-        $dummy = $this->dummyObject();
-
-        if (! in_array(ucfirst($type), $this->globalTypes)) {
-            if ($dummy->isGroup()) {
-                $this->getTabs()->activate('objectgroups');
-                $table = 'icinga' . ucfirst($type);
-            } elseif ($dummy->isTemplate()) {
-                $this->getTabs()->activate('templates');
-                // Trick the autoloader
-                $table = 'icinga' . ucfirst($type);
-                $this->loadTable($table);
-                $table .= 'Template';
-            } else {
-                $this->getTabs()->activate('objects');
-                $table = 'icinga' . ucfirst($type);
-            }
-        } else {
-            $table = 'icinga' . ucfirst($type);
+        if ($this->params->get('format') === 'json') {
+            $filename = sprintf(
+                "director-${type}_%s.json",
+                date('YmdHis')
+            );
+            $this->getResponse()->setHeader('Content-disposition', "attachment; filename=$filename", true);
+            $this->apiRequestHandler()->dispatch();
+            return;
         }
 
-        /** @var IcingaObjectTable $table */
-        $table = $this->loadTable($table)->setConnection($this->db());
+        $this
+            ->addObjectsTabs()
+            ->setAutorefreshInterval(10)
+            ->addTitle($this->translate(ucfirst($this->getPluralType())))
+            ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
 
-        if ($dummy->isTemplate()) {
-            $addParams = array('type' => 'template');
-            $this->getTabs()->activate('templates');
-            $title = $this->translate('Icinga ' . ucfirst($ltype) . ' Templates');
-            $table->enforceFilter(Filter::expression('object_type', '=', 'template'));
-        } else {
-            $addParams = array('type' => 'object');
-            $title = $this->translate('Icinga ' . ucfirst($ltype) . 's');
-            if ($dummy->supportsImports()
-                && array_key_exists('object_type', $table->getColumns())
-                && ! in_array(ucfirst($type), $this->globalTypes)
-            ) {
-                $table->enforceFilter(Filter::expression('object_type', '!=', 'template'));
-            }
+        if ($type === 'command' && $this->params->get('type') === 'external_object') {
+            $this->tabs()->activate('external');
         }
 
-        $this->view->title = $title;
+        // Hint: might be used in controllers extending this
+        $this->table = $this->eventuallyFilterCommand($this->getTable());
 
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add'),
-            'director/' . $ltype .'/add',
-            $addParams,
-            array('class' => 'icon-plus')
-        );
-
-        $this->provideFilterEditorForTable($table, $dummy);
-        $this->setViewScript('objects/table');
+        $this->table->renderTo($this);
+        (new AdditionalTableActions($this->getAuth(), $this->url(), $this->table))
+            ->appendTo($this->actions());
     }
 
+    /**
+     * @return ObjectsTable
+     */
+    protected function getTable()
+    {
+        return ObjectsTable::create($this->getType(), $this->db())
+            ->setAuth($this->getAuth())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
+    }
+
+    /**
+     * @return ApplyRulesTable
+     * @throws NotFoundError
+     */
+    protected function getApplyRulesTable()
+    {
+        $table = new ApplyRulesTable($this->db());
+        $table->setType($this->getType())
+            ->setBaseObjectUrl($this->getBaseObjectUrl());
+        $this->eventuallyFilterCommand($table);
+
+        return $table;
+    }
+
+    /**
+     * @throws NotFoundError
+     */
+    public function edittemplatesAction()
+    {
+        $this->commonForEdit();
+    }
+
+    /**
+     * @throws NotFoundError
+     */
     public function editAction()
+    {
+        $this->commonForEdit();
+    }
+
+    /**
+     * @throws NotFoundError
+     */
+    public function commonForEdit()
     {
         $type = ucfirst($this->getType());
 
         if (empty($this->multiEdit)) {
             throw new NotFoundError('Cannot edit multiple "%s" instances', $type);
         }
-        $formName = 'icinga' . $type;
 
-        $this->singleTab($this->translate('Multiple objects'));
+        $objects = $this->loadMultiObjectsFromParams();
+        $formName = 'icinga' . $type;
+        $form = IcingaMultiEditForm::load()
+            ->setObjects($objects)
+            ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
+        if ($type === 'Service') {
+            $form->setListUrl('director/services');
+        } elseif ($type === 'Host') {
+            $form->setListUrl('director/hosts');
+        }
+
+        $form->handleRequest();
+
+        $this
+            ->addSingleTab($this->translate('Multiple objects'))
+            ->addTitle(
+                $this->translate('Modify %d objects'),
+                count($objects)
+            )->content()->add($form);
+    }
+
+    /**
+     * Loads the TemplatesTable or the TemplateTreeRenderer
+     *
+     * Passing render=tree switches to the tree view.
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Security\SecurityException
+     * @throws NotFoundError
+     */
+    public function templatesAction()
+    {
+        if ($this->getRequest()->isApiRequest()) {
+            $this->apiRequestHandler()->dispatch();
+            return;
+        }
+        $type = $this->getType();
+        $shortType = IcingaObject::createByType($type)->getShortTableName();
+        $this
+            ->assertPermission('director/admin')
+            ->addObjectsTabs()
+            ->setAutorefreshInterval(10)
+            ->addTitle(
+                $this->translate('All your %s Templates'),
+                $this->translate(ucfirst($type))
+            )
+            ->actions(new TemplateActionBar($shortType, $this->url()));
+
+        if ($this->params->get('render') === 'tree') {
+            TemplateTreeRenderer::showType($shortType, $this, $this->db());
+        } else {
+            $table = TemplatesTable::create($shortType, $this->db());
+            $this->eventuallyFilterCommand($table);
+            $table->renderTo($this);
+            (new AdditionalTableActions($this->getAuth(), $this->url(), $table))
+                ->appendTo($this->actions());
+        }
+    }
+
+    /**
+     * @return $this
+     * @throws \Icinga\Security\SecurityException
+     */
+    protected function assertApplyRulePermission()
+    {
+        return $this->assertPermission('director/admin');
+    }
+
+    /**
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Security\SecurityException
+     * @throws NotFoundError
+     */
+    public function applyrulesAction()
+    {
+        $type = $this->getType();
+        $tType = $this->translate(ucfirst($type));
+        $this
+            ->assertApplyRulePermission()
+            ->addObjectsTabs()
+            ->setAutorefreshInterval(10)
+            ->addTitle(
+                $this->translate('All your %s Apply Rules'),
+                $tType
+            );
+        $baseUrl = 'director/' . $this->getBaseObjectUrl();
+        $this->actions()
+            //->add($this->getBackToDashboardLink())
+            ->add(
+                Link::create(
+                    $this->translate('Add'),
+                    "${baseUrl}/add",
+                    ['type' => 'apply'],
+                    [
+                        'title' => sprintf(
+                            $this->translate('Create a new %s Apply Rule'),
+                            $tType
+                        ),
+                        'class' => 'icon-plus',
+                        'data-base-target' => '_next'
+                    ]
+                )
+            );
+
+        $this->getApplyRulesTable()->renderTo($this);
+    }
+
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Exception\Http\HttpNotFoundException
+     * @throws \Icinga\Security\SecurityException
+     */
+    public function setsAction()
+    {
+        $type = $this->getType();
+        $tType = $this->translate(ucfirst($type));
+        $this
+            ->assertPermission('director/' . $this->getBaseType() . 'sets')
+            ->addObjectsTabs()
+            ->requireSupportFor('Sets')
+            ->setAutorefreshInterval(10)
+            ->addTitle(
+                $this->translate('Icinga %s Sets'),
+                $tType
+            );
+
+        $this->actions()->add(
+            Link::create(
+                $this->translate('Add'),
+                "director/${type}set/add",
+                null,
+                [
+                    'title' => sprintf(
+                        $this->translate('Create a new %s Set'),
+                        $tType
+                    ),
+                    'class' => 'icon-plus',
+                    'data-base-target' => '_next'
+                ]
+            )
+        );
+
+        ObjectSetTable::create($type, $this->db(), $this->getAuth())->renderTo($this);
+    }
+
+    /**
+     * @return array
+     * @throws NotFoundError
+     */
+    protected function loadMultiObjectsFromParams()
+    {
         $filter = Filter::fromQueryString($this->params->toString());
-        $dummy = $this->dummyObject();
+        $type = $this->getType();
         $objects = array();
         $db = $this->db();
         /** @var $filter FilterChain */
@@ -174,101 +333,132 @@ abstract class ObjectsController extends ActionController
             /** @var $sub FilterChain */
             foreach ($sub->filters() as $ex) {
                 /** @var $ex FilterChain|FilterExpression */
-                if ($ex->isExpression() && $ex->getColumn() === 'name') {
-                    $name = $ex->getExpression();
-                    $objects[$name] = $dummy::load($name, $db);
+                $col = $ex->getColumn();
+                if ($ex->isExpression()) {
+                    if ($col === 'name') {
+                        $name = $ex->getExpression();
+                        if ($type === 'service') {
+                            $key = [
+                                'object_type' => 'template',
+                                'object_name' => $name
+                            ];
+                        } else {
+                            $key = $name;
+                        }
+                        $objects[$name] = IcingaObject::loadByType($type, $key, $db);
+                    } elseif ($col === 'id') {
+                        $name = $ex->getExpression();
+                        $objects[$name] = IcingaObject::loadByType($type, ['id' => $name], $db);
+                    }
                 }
             }
         }
-        $this->view->title = sprintf(
-            $this->translate('Modify %d objects'),
-            count($objects)
-        );
 
-        $this->view->form = $this->loadForm('IcingaMultiEdit')
-            ->setObjects($objects)
-            ->pickElementsFrom($this->loadForm($formName), $this->multiEdit)
-            ->handleRequest();
-        $this->view->totalUndeployedChanges = $this->db()
-            ->countActivitiesSinceLastDeployedConfig();
-        $this->setViewScript('objects/form');
-    }
-
-    public function templatesAction()
-    {
-        $this->assertPermission('director/admin');
-        $this->indexAction();
-    }
-
-    public function templatetreeAction()
-    {
-        $this->assertPermission('director/admin');
-        $this->setAutorefreshInterval(10);
-        $this->getTabs()->activate('tree');
-        $this->view->tree = $this->db()->fetchTemplateTree(strtolower($this->getType()));
-        $this->view->objectTypeName = $this->getType();
-        $this->setViewScript('objects/tree');
-    }
-
-    public function setsAction()
-    {
-        $this->assertPermission('director/admin');
-
-        $dummy = $this->dummyObject();
-        $type = $this->getType();
-        $Type = ucfirst($type);
-
-        if ($dummy->supportsSets() !== true) {
-            throw new NotFoundError('Sets are not available for %s', $type);
-        }
-
-        $this->view->title = $this->translate('Icinga ' . $Type . ' Sets');
-        $table = $this->loadTable('Icinga' . $Type . 'Set')->setConnection($this->db());
-
-        $this->view->addLink = $this->view->qlink(
-            $this->translate('Add'),
-            'director/' . $type . 'set/add',
-            null,
-            array(
-                'class'            => 'icon-plus',
-                'data-base-target' => '_next'
-            )
-        );
-
-        $this->provideFilterEditorForTable($table);
-        $this->getTabs()->activate('sets');
-        $this->setViewScript('objects/table');
+        return $objects;
     }
 
     /**
-     * @return IcingaObject
+     * @param string $name
+     *
+     * @return \Icinga\Module\Director\Web\Form\QuickForm
      */
-    protected function dummyObject()
+    public function loadForm($name)
     {
-        if ($this->dummy === null) {
-            /** @var IcingaObject $class */
-            $class = $this->getObjectClassname();
-            $this->dummy = $class::create(array());
-            if ($this->dummy->hasProperty('object_type')) {
-                if (strpos($this->getRequest()->getControllerName(), 'template') !== false
-                    || strpos($this->getRequest()->getActionName(), 'templates') !== false
-                ) {
-                    $this->dummy->object_type = 'template';
-                } else {
-                    $this->dummy->object_type = 'object';
-                }
+        $form = FormLoader::load($name, $this->Module());
+        if ($this->getRequest()->isApiRequest()) {
+            // TODO: Ask form for API support?
+            $form->setApiRequest();
+        }
+
+        return $form;
+    }
+
+    /**
+     * @param ZfQueryBasedTable $table
+     * @return ZfQueryBasedTable
+     * @throws NotFoundError
+     */
+    protected function eventuallyFilterCommand(ZfQueryBasedTable $table)
+    {
+        if ($this->params->get('command')) {
+            $command = IcingaCommand::load($this->params->get('command'), $this->db());
+            switch ($this->getBaseType()) {
+                case 'host':
+                case 'service':
+                    $table->getQuery()->where(
+                        $this->db()->getDbAdapter()->quoteInto(
+                            '(o.check_command_id = ? OR o.event_command_id = ?)',
+                            $command->getAutoincId()
+                        )
+                    );
+                    break;
+                case 'notification':
+                    $table->getQuery()->where(
+                        'o.command_id = ?',
+                        $command->getAutoincId()
+                    );
+                    break;
             }
         }
 
-        return $this->dummy;
+        return $table;
     }
 
+    /**
+     * @param $feature
+     * @return $this
+     * @throws NotFoundError
+     */
+    protected function requireSupportFor($feature)
+    {
+        if ($this->supports($feature) !== true) {
+            throw new NotFoundError(
+                '%s does not support %s',
+                $this->getType(),
+                $feature
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param $feature
+     * @return bool
+     */
+    protected function supports($feature)
+    {
+        $func = "supports$feature";
+        return IcingaObject::createByType($this->getType())->$func();
+    }
+
+    /**
+     * @return string
+     */
+    protected function getBaseType()
+    {
+        $type = $this->getType();
+        if (substr($type, -5) === 'Group') {
+            return substr($type, 0, -5);
+        } else {
+            return $type;
+        }
+    }
+
+    protected function getBaseObjectUrl()
+    {
+        return $this->getType();
+    }
+
+    /**
+     * @return string
+     */
     protected function getType()
     {
         // Strip final 's' and upcase an eventual 'group'
         return preg_replace(
-            array('/group$/', '/period$/', '/argument$/', '/apiuser$/'),
-            array('Group', 'Period', 'Argument', 'ApiUser'),
+            array('/group$/', '/period$/', '/argument$/', '/apiuser$/', '/dependencie$/', '/set$/'),
+            array('Group', 'Period', 'Argument', 'ApiUser', 'dependency', 'Set'),
             str_replace(
                 'template',
                 '',
@@ -277,12 +467,19 @@ abstract class ObjectsController extends ActionController
         );
     }
 
-    protected function getObjectClassname($type = null)
+    /**
+     * @return string
+     */
+    protected function getPluralType()
     {
-        if ($type === null) {
-            $type = $this->getType();
-        }
-        return 'Icinga\\Module\\Director\\Objects\\Icinga'
-            . ucfirst($type);
+        return preg_replace('/cys$/', 'cies', $this->getType() . 's');
+    }
+
+    /**
+     * @return string
+     */
+    protected function getPluralBaseType()
+    {
+        return preg_replace('/cys$/', 'cies', $this->getBaseType() . 's');
     }
 }

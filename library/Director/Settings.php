@@ -10,20 +10,29 @@ class Settings
 
     protected $cache;
 
-    protected $defaults = array(
-        'default_global_zone'            => 'director-global',
-        'magic_apply_for'                => '_director_apply_for',
-        'config_format'                  => 'v2',
-        'override_services_varname'      => '_override_servicevars',
-        'override_services_templatename' => 'host var overrides (Director)',
-        'disable_all_jobs'               => 'n', // 'y'
-        'enable_audit_log'               => 'n',
-        'deployment_mode_v1'             => 'active-passive',
-        'deployment_path_v1'             => null,
-        'activation_script_v1'           => null,
+    protected $defaults = [
+        'default_global_zone'             => 'director-global',
+        'icinga_package_name'             => 'director',
+        'magic_apply_for'                 => '_director_apply_for',
+        'config_format'                   => 'v2',
+        'override_services_varname'       => '_override_servicevars',
+        'override_services_templatename'  => 'host var overrides (Director)',
+        'disable_all_jobs'                => 'n', // 'y'
+        'enable_audit_log'                => 'n',
+        'deployment_mode_v1'              => 'active-passive',
+        'deployment_path_v1'              => null,
+        'activation_script_v1'            => null,
+        'self-service/agent_name'         => 'fqdn',
+        'self-service/transform_hostname' => '0',
+        'self-service/global_zones'       => ['director-global'],
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
-    );
+    ];
+
+    protected $jsonEncode = [
+        'self-service/global_zones',
+        'self-service/installer_hashes',
+    ];
 
     public function __construct(Db $connection)
     {
@@ -31,6 +40,27 @@ class Settings
         $this->db = $connection->getDbAdapter();
     }
 
+    /**
+     * @return Db
+     */
+    public function getConnection()
+    {
+        return $this->connection;
+    }
+
+    /**
+     * @return \Zend_Db_Adapter_Abstract
+     */
+    public function getDb()
+    {
+        return $this->db;
+    }
+
+    /**
+     * @param $key
+     * @param null $default
+     * @return mixed|null
+     */
     public function get($key, $default = null)
     {
         if (null === ($value = $this->getStoredValue($key, $default))) {
@@ -40,11 +70,19 @@ class Settings
         }
     }
 
+    /**
+     * @param $key
+     * @param null $default
+     * @return mixed|null
+     */
     public function getStoredValue($key, $default = null)
     {
         if (null === ($value = $this->getSetting($key))) {
             return $default;
         } else {
+            if (in_array($key, $this->jsonEncode)) {
+                $value = json_decode($value);
+            }
             return $value;
         }
     }
@@ -58,6 +96,22 @@ class Settings
         }
     }
 
+    public function getStoredOrDefaultValue($key)
+    {
+        $value = $this->getStoredValue($key);
+        if ($value === null) {
+            return $this->getDefaultValue($key);
+        } else {
+            return $value;
+        }
+    }
+
+    /**
+     * @param $name
+     * @param $value
+     * @return $this
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function set($name, $value)
     {
         $db = $this->db;
@@ -71,6 +125,10 @@ class Settings
             unset($this->cache[$name]);
 
             return $this;
+        }
+
+        if (in_array($name, $this->jsonEncode)) {
+            $value = json_encode(array_values($value));
         }
 
         if ($this->getSetting($name) === $value) {
@@ -131,11 +189,20 @@ class Settings
         $this->cache = (array) $db->fetchPairs($query);
     }
 
+    /**
+     * @param $key
+     * @return mixed|null
+     */
     public function __get($key)
     {
         return $this->get($key);
     }
 
+    /**
+     * @param $key
+     * @param $value
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function __set($key, $value)
     {
         $this->set($key, $value);

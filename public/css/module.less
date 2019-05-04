@@ -1,3 +1,102 @@
+div.action-bar a:focus, .tabs a:focus {
+  outline: none;
+  text-decoration: underline;
+
+  &:before {
+    text-decoration: none;
+  }
+}
+
+div.action-bar a, div.action-bar form i {
+  color: @icinga-blue;
+}
+
+div.action-bar > a {
+  margin-right: 1em;
+}
+
+div.action-bar {
+  .pagination-control {
+    float: none;
+    clear: none;
+    display: inline-block;
+    line-height: inherit;
+    margin: 0;
+    vertical-align: middle;
+  }
+
+  form input {
+    margin: 0;
+  }
+}
+
+div.action-bar ul {
+  padding: 0;
+  margin: 0;
+
+  li {
+    list-style-type: none;
+    a { display: block; }
+  }
+}
+
+div.action-bar > ul {
+  display: inline-block;
+}
+
+div.action-bar > ul ul {
+  padding: 0.5em 0em 1em 0em;
+  min-width: 10em;
+  position: absolute;
+  display: none;
+  color: white;
+  background-color: @icinga-blue;
+
+  a {
+    display: block;
+    padding: 0.3em 2em 0.3em 2em;
+    margin: 0;
+    outline: none;
+    color: white;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  li.active a {
+    font-weight: bold;
+  }
+}
+
+div.action-bar > ul > li:hover ul {
+  display: block;
+}
+div.action-bar > ul > li > a {
+  padding: 0.2em 0.5em;
+}
+div.action-bar > ul > li:hover {
+  background-color: @icinga-blue;
+  & > a {
+    color: white;
+    text-decoration: none;
+  }
+}
+
+#layout.twocols div.action-bar .pagination-control {
+  li {
+    display: none;
+  }
+
+  li:nth-child(1), li.active, li:last-child {
+    display: list-item;
+  }
+
+  li.active a {
+    border-bottom: none;
+  }
+}
+
 .content a {
   color: @icinga-blue;
   &:hover {
@@ -5,19 +104,13 @@
   }
 }
 
-div.controls h1 {
-  padding-top: 0.5em;
-}
-
-h1 {
-  margin-bottom: 0.5em;
-}
-
 p {
-  max-width: 48em;
+  max-width: 56em;
 }
 
 table.common-table {
+  max-width: 68em;
+
   a {
     color: inherit;
     text-decoration: none;
@@ -33,10 +126,18 @@ table.common-table {
   pre {
     margin: 0;
     padding: 0.2em;
-    overflow: hidden;
-    max-height: 12em;
+    max-height: 18em;
     background: @gray-lightest;
+    overflow: auto;
+    word-break: keep-all;
+    white-space: pre;
     display: inline-block;
+  }
+}
+
+table.history {
+  td:last-of-type {
+    text-align: right;
   }
 }
 
@@ -57,6 +158,14 @@ span.disabled {
     margin-right: 1em;
   }
 }
+
+.action-bar {
+  form {
+    display: inline;
+    margin-right: 1em;
+  }
+}
+
 
 pre.disabled {
   color: @gray;
@@ -160,6 +269,10 @@ table.avp th {
 
 .content form.inline {
   margin: 0;
+
+  i.icon::before {
+    color: @icinga-blue;
+  }
 }
 
 .invisible {
@@ -193,7 +306,9 @@ form input[type=submit].link-button {
   color: @icinga-blue;
   background: none;
   border: none;
+  font-weight: normal;
   padding: 0;
+  margin: 0;
 
   text-align: left;
 
@@ -209,10 +324,9 @@ form p.description {
   width: 100%;
 }
 
-input, select, select option, textarea {
-   -webkit-appearance: none;
-   -moz-appearance: none;
-   appearance: none;
+input[type=text], input[type=button], select, select option, textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
 }
 
 form ul.form-errors {
@@ -255,6 +369,10 @@ input[type=text], input[type=password], textarea, select {
     }
 }
 
+textarea {
+  max-width: 100%;
+}
+
 select[multiple] {
     height: auto;
 }
@@ -277,6 +395,14 @@ form dl {
     padding: 0;
 }
 
+.strike-links a, table.common-table .strike-links a {
+  text-decoration: line-through;
+  &:hover {
+    text-decoration: line-through;
+  }
+}
+
+// TODO: figure out whether form.editor and filter-related CSS is still required
 div.filter > form.search, div.filter > a {
     // Duplicated by quicksearch
     display: none;
@@ -289,39 +415,44 @@ div.filter form.editor > ul.tree ul li.active {
 div.filter form.editor {
   padding-top: 1em;
   select, input[type=text] {
-    line-height:auto;
+    line-height: unset;
     height: auto;
   }
 }
 
-
+form.editor {
+  select, input[type=text] {
+    background: white;
+    max-width: unset;
+    min-width: unset;
+    width: auto;
+  }
+  .tree li a {
+    padding: 0;
+  }
+}
 
 form.quicksearch {
-    float: right;
-
-    input.search {
-        width: 8em;
-        min-width: auto;
-        border: none;
-        background-size: 0.75em auto;
-        background-position: 0.5em 0.75em;
-        padding-left: 1.5em;
-        &:focus {
-            width: 16em;
-            .transition(width 0.5s ease);
-            border: none;
-        }
-    }
-}
-
-h1 form.quicksearch {
+  display: block;
+  input.search {
+    width: 8em;
+    min-width: unset;
+    border: none;
+    background-size: 0.75em auto;
+    background-position: 0.5em 0.9em;
+    padding-left: 1.5em;
+    margin-left: 1.5em;
     font-size: 0.75em;
     font-weight: normal;
-    padding-left: 1em;
-    float: none;
+    &:focus {
+      width: 16em;
+      .transition(width 0.5s ease);
+      border: none;
+    }
+  }
 }
 
-#layout.twocols h1 form.quicksearch {
+#layout.twocols form.quicksearch input.search {
     float: right;
 }
 
@@ -408,7 +539,7 @@ dd.active ul.extensible-set, ul.extensible-set.sortable {
 }
 
 dd.active ul.extensible-set {
-    border: 1px solid @gray-lighter;
+    border: 1px solid @icinga-blue;
 
     input[type=submit]:first-of-type {
         border-width: 1px;
@@ -477,19 +608,36 @@ a {
         color: @color-pending;
     }
 }
+ul.tabs a.state-critical {
+  background-color: @colorCritical;
+  font-weight: bold;
+  color: white;
+}
+ul.tabs a.state-warning {
+  background-color: @colorWarning;
+  font-weight: bold;
+  color: white;
+}
+ul.tabs a.state-ok {
+  background-color: @colorOk;
+  font-weight: bold;
+  color: white;
+}
+ul.tabs a.state-unknown {
+  background-color: @colorUnknown;
+  font-weight: bold;
+  color: white;
+}
 
 a:hover::before {
   text-decoration: none;
 }
 
-h1 {
-    min-width: 27em;
-}
-
 ul.main-actions {
   margin: 0;
   padding: 0;
-  min-width: 36em;
+  min-width: 38em;
+  max-width: 64em;
 
   li {
     list-style-type: none;
@@ -498,84 +646,149 @@ ul.main-actions {
     display: inline-block;
     padding: 0;
     clear: both;
-    width: 19em;
+    width: 18em;
+    min-width: 16em;
     vertical-align: top;
 
     a {
-        i {
-            height: 1.6em;
-            font-size: 3em;
-            display: block;
-            height: 100%;
-            float: left;
-            line-height: 1em;
-            margin-right: 0.3em;
-        }
-
-        &.state-critical i {
-            color: @color-critical;
-        }
-
-        &.state-warning i {
-            color: @color-warning;
-        }
-
-        &.state-ok i {
-            color: @color-ok;
-        }
-
-        &.state-unknown i {
-            color: @color-unknown;
-        }
-
-        &.state-pending i {
-            color: @color-pending;
-        }
-
-        padding: 1em;
-        color: #666;
-        font-weight: bold;
+      i {
+        font-size: 3em;
         display: block;
+        float: left;
+        line-height: 1em;
+        margin-right: 0.3em;
+      }
+
+      &.state-critical i {
+        color: @color-critical;
+      }
+
+      &.state-warning i {
+        color: @color-warning;
+      }
+
+      &.state-ok i {
+        color: @color-ok;
+      }
+
+      &.state-unknown i {
+        color: @color-unknown;
+      }
+
+      &.state-pending i {
+        color: @color-pending;
+      }
+
+      border-left: 0.5em solid transparent;
+      padding: 1em;
+      color: #666;
+      font-weight: bold;
+      display: block;
+      text-decoration: none;
+      min-height: 12em;
+
+      overflow: hidden;
+
+      &.active {
+        color: inherit;
+        border-color: @icinga-blue;
+        background-color: @tr-active-color;
+      }
+
+      &:hover {
+        background-color: #666;
+        color: white;
         text-decoration: none;
-        height: 12em;
+      }
 
-        overflow: hidden;
-
-        &:hover {
-            background-color: #666;
-            color: white;
-            text-decoration: none;
-        }
+      &:active, &:focus {
+        color: inherit;
+        background-color: @tr-hover-color;
+        outline: none;
+      }
     }
 
     p {
-        font-weight: normal;
-        margin-bottom: 0.5em;
+      font-weight: normal;
+      margin-bottom: 0.5em;
+      padding-left: 4.5em;
     }
   }
 }
 
-#layout.compact-layout ul.main-actions,
-#layout.poor-layout ul.main-actions {
+#layout.compact-layout.twocols ul.main-actions,
+#layout.minimal-layout ul.main-actions {
+  max-width: unset;
+  min-width: unset;
   li {
-    a { height: 12em; }
-    width: 18em;
-    > a > i {
-      font-size: 2em;
+    width: 100%;
+    a {
+      height: auto;
+      min-height: unset;
     }
+    > a > i {
+      font-size: 3em;
+    }
+
+    > a > p {
+      padding-left: 4.5em;
+    }
+    margin-bottom: 0.5em;
   }
 }
 
-#layout.minimal-layout ul.main-actions,
-#layout.twocols ul.main-actions {
-  max-width: 50em;
-  li {
-    a { height: 12em; }
-    width: 16em;
-    > a > i {
-      font-size: 1.8em;
+#layout.minimal-layout div.content form {
+  dt, dd {
+    display: block;
+    width: auto;
+  }
+  fieldset.collapsed {
+    dd, dt, ul, div {
+      display: none;
     }
   }
+  dt label {
+    color: @text-color;
+  }
+  fieldset {
+    min-width: unset;
+  }
+
+  input[type=text], input[type=password], textarea, select {
+    max-width: unset;
+    min-width: unset;
+    border-color: @gray-light;
+  }
+  dd.active {
+    input[type=text], input[type=password], textarea, select {
+      border-color: @icinga-blue;
+    }
+  }
+  ul.extensible-set {
+    max-width: unset;
+  }
+  dd ul.extensible-set {
+    border: 1px solid @gray-light;
+  }
+  dd.active ul.extensible-set {
+    border: 1px solid @icinga-blue;
+
+    input[type=submit]:first-of-type {
+      border-width: 1px;
+    }
+  }
+
+  dd.active ul.extensible-set, ul.extensible-set.sortable {
+    input[type=text], select {
+      width: 100%;
+    }
+
+    input[type=text] {
+      background-color: white;
+      border: 1px solid white;
+    }
+  }
+
 }
 
 #layout.compact-layout.twocols table.Differences,
@@ -673,11 +886,45 @@ form dd.active li.active input.related-action[type='submit'] {
     display: inline-block;
 }
 
-form dd.active {
+form {
+  p.description {
+    color: @gray;
+    font-style: italic;
+    padding: 0.25em 0.5em;
+    display: none;
+  }
+
+  dd.active {
     p.description {
-        color: inherit;
-        font-style: normal;
+      font-style: normal;
+      display: block;
+      height: auto;
+      color: @text-color;
     }
+  }
+}
+
+form.db-selector {
+  padding: 0;
+  margin: 0;
+  select {
+    float: right;
+    text-align: center;
+    max-width: 20em;
+    margin-top: 0.5em;
+    min-width: 14em;
+    width: auto;
+  }
+}
+
+#layout.twocols &#col1 {
+  width: 50%;
+}
+#layout.twocols &#col2 {
+  width: 50%;
+}
+#layout.twocols &#col1 + #col2 {
+  width: 50%;
 }
 
 form dd {
@@ -763,6 +1010,54 @@ form div.hint {
 
 /* END of Forms */
 
+ul.health-check-result {
+  list-style-type: none;
+  padding: 0;
+  margin-bottom: 2em;
+  li {
+    line-height: 2em;
+  }
+  .badge {
+    font-weight: bold;
+  }
+}
+
+.title-badges {
+  .badge {
+    font-size: 0.6em;
+    margin-left: 0.5em;
+  }
+}
+
+li.state {
+  border-left: 0.5em solid transparent;
+  margin-bottom: 0.5em;
+  padding-left: 1em;
+  &.state-ok {
+    border-color: @color-ok;
+  }
+  &.state-warning {
+    border-color: @color-warning;
+  }
+  &.state-critical {
+    border-color: @color-critical;
+  }
+  &.state-unknown {
+    border-color: @color-unknown;
+  }
+  &.state-pending {
+    border-color: @color-pending;
+  }
+}
+
+span.error {
+  color: @colorCritical;
+
+  a {
+    color: inherit;
+  }
+}
+
 p.error {
     color: white;
     padding: 1em 2em;
@@ -787,27 +1082,16 @@ p.warning {
     }
 }
 
-table.tinystats {
-  font-size: 0.7em;
-  float: right;
-  width: 16em;
+p.information {
+    color: white;
+    padding: 1em 2em;
+    background-color: @colorOk;
+    font-weight: bold;
 
-  thead {
-    th {
-      width: 7em;
-      text-align: right;
+    a {
+        color: inherit;
+        text-decoration: underline;
     }
-
-    th:first-child {
-      width: auto;
-    }
-  }
-
-  tbody {
-    th, td {
-      text-align: right;
-    }
-  }
 }
 
 table th.actions, table td.actions {
@@ -927,41 +1211,6 @@ table.icinga-objects {
 
 }
 
-table.assignment-table {
-    table.apply-rules {
-        margin: 1em 0 1em 0;
-        padding: 0;
-        width: 100%;
-
-        tr {
-            border-bottom: 1px solid @gray-lighter;
-            border-left: 5px solid transparent;
-
-            td {
-                padding: 0.5em 1em;
-            }
-
-            &:hover, &:active, &.active {
-                border-left: 5px solid @icinga-blue;
-            }
-
-            &:hover {
-                background: white;
-            }
-        }
-    }
-    a {
-        color: @icinga-blue;
-        float: right;
-
-        &:first-child {
-            float: none;
-            color: inherit;
-            font-weight: bold;
-        }
-    }
-}
-
 div.content.compact table.icinga-objects thead {
     display: none;
 }
@@ -1014,17 +1263,11 @@ table.deployment-log {
     }
 }
 
-table.endpoints {
-    tr.deployment-endpoint td:first-child::before {
-        color: @color-ok;
-    }
+th.table-header-day {
+  text-align: right;
 }
 
 table.activity-log {
-    thead th {
-        text-align: right;
-    }
-
     tr th:first-child {
         padding-left: 2em;
     }
@@ -1074,7 +1317,7 @@ table.activity-log {
         &.active {
             background-color: @gray-lighter;
         }
-        &:hover {
+        &[href]:hover {
             background-color: @gray-light;
             td, a {
                 color: @text-color;
@@ -1131,11 +1374,34 @@ table.config-diff {
     }
 }
 
+input[type=submit].icon-button {
+  font-family: 'ifont';
+  font-weight: normal;
+  background: none;
+  border: none;
+  padding: 0.2em 0.4em 0.2em 0.4em;
+  margin: 0 0 0 0.2em;
+
+  &:hover {
+    background-color: @icinga-blue;
+  }
+
+  &:disabled {
+    background-color: unset;
+    color: @gray-light;
+    cursor: default;
+  }
+}
+
 ul.filter-root {
     margin-top: 0;
     width: 100%;
     padding-left: 0.5em;
     list-style-type: none;
+    ul {
+      list-style-type:  none;
+      padding-left: 1.5em;
+    }
 
     ul.filter {
         padding-left: 1.5em;
@@ -1208,8 +1474,8 @@ li.filter-chain > select.operator {
 div.filter-expression {
     .column {
         min-width: 7em;
-        max-width: 10em;
-        width: 10em;
+        max-width: 30em;
+        width: auto;
     }
 
     .sign {
@@ -1219,8 +1485,8 @@ div.filter-expression {
         margin: 0 0.3em;
         &.wide {
             min-width: 6em;
-            max-width: 6em;
-            width: 6em;
+            max-width: 8em;
+            width: 8em;
         }
     }
 
@@ -1229,7 +1495,7 @@ div.filter-expression {
         vertical-align: top;
     }
 
-    div.expression-wrapper > input[type=text], 
+    div.expression-wrapper > input[type=text],
     div.expression-wrapper > select {
         min-width: 7em;
         width: 10em;
@@ -1238,12 +1504,17 @@ div.filter-expression {
 }
 
 ul.director-suggestions {
+/*
+  min-width: 18.5em;
+  max-width: 34.65em;
+  width: 100%;
+  */
   width: 20em;
-  max-width: 30em;
   max-height: 25em;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid @gray-light;
+  border: 1px solid @icinga-blue;
+  border-top: none;
   position: absolute;
   z-index: 2000;
   padding: 0;
@@ -1267,61 +1538,40 @@ ul.director-suggestions {
       color: inherit;
     }
   }
-}
 
-.tree li a {
-  display: inline-block;
-  padding-left: 2.4em;
-  line-height: 2em;
-  text-decoration: none;
-  color: #777;
-  outline: 0;
-  background-repeat: no-repeat;
-  background-position: 0.8em 0.4em;
-}
-
-
-
-.tree a.root { background-image: url('../img/director/globe.png'); }
-.tree a.host { background-image: url('../img/director/server.png'); }
-.tree a.service { background-image: url('../img/director/service.png'); }
-.tree a.command { background-image: url('../img/director/script.png'); }
-
-.diff {
+  table.benchmark {
+    font-size: 0.8em;
     font-family: @font-family-fixed;
-    white-space: pre-wrap;
-
-
-    del, ins {
-        text-decoration: none;
-    }
-
-    del {
-        color: @colorCritical;
-        background-color: #fdd;
-    }
-
-    ins {
-        color: @colorOk;
-        background-color: #dfd;
-    }
+  }
 }
 
-div.diff {
-/*    line-height: 1.8em;
-    height: 1.8em;*/
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-}
+table.pivot {
+  width: 100%;
+  table-layout: fixed;
 
+  thead th {
+    text-align: center;
+  }
 
-.diff.old ins {
-  display: none;
-}
-
-.diff.new del {
-  display: none;
+  tbody th {
+    text-align: right;
+    width: 25%;
+  }
+  tbody td {
+    text-align: center;
+  }
+  tbody td > a {
+    display: block;
+    font-size: 2em;
+    line-height: 1.5em;
+    text-decoration: none;
+    color: @icinga-blue;
+    &:hover {
+      background: @icinga-blue;
+      color: white;
+      text-decoration: none;
+    }
+  }
 }
 
 .tree li a {
@@ -1335,20 +1585,45 @@ div.diff {
   background-position: 0.8em 0.4em;
 }
 
-.tree a.root  { background-image: url('../img/director/globe.png'); }
-.tree a.abstract  { background-image: url('../img/director/tree.png'); }
-.tree a.object { background-image: url('../img/director/leaf.gif'); }
+ul.tree li > .handle {
+  background-image: none;
+  &:before {
+    content: '\e806';
+    font-family: 'ifont';
+    position: absolute;
+    font-size: 0.6em;
+    margin-left: 0.25em;
+    margin-top: 0.9em;
+  }
+}
+ul.tree li.collapsed > .handle {
+  background-image: none;
+  &:before {
+    content: '\e805';
+  }
+}
+.tree li a {
+  padding-left: 1em;
+}
 
-form.editor {
-  select, input[type=text] {
-    background: white;
-    max-width: auto;
-    min-width: auto;
-    width: auto;
-  }
-  .tree li a {
-    padding: 0;
-  }
+div.sql-dump {
+  background-color: @gray-lightest;
+  border: 1px solid @gray-light;
+  padding: 1em;
+}
+
+div.exception {
+  margin: 1em;
+}
+
+h2.action-create::before {
+  color: @color-pending;
+}
+h2.action-modify::before {
+  color: @color-ok;
+}
+h2.action-delete::before {
+  color: @color-critical;
 }
 
 /** php-diff **/
@@ -1451,3 +1726,18 @@ form.editor {
     background: #e99;
 }
 /** END of php-diff **/
+
+.DifferencesInline {
+  tr td:last-child {
+    width: 90%;
+  }
+  tr th:first-child {
+    width: 5%;
+  }
+  tr th:nth-child(2) {
+    width: 5%;
+  }
+  ins, del {
+    text-decoration: none;
+  }
+}

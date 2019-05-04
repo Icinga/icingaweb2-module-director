@@ -8,7 +8,7 @@ files and manual configuration, chances are good that the Director will
 change your mind.
 
 Director is here to make your life easier. As an Icinga 2 pro you know
-all the knobs an tricks Icinga2 provides. However, you are not willing
+all the knobs and tricks Icinga2 provides. However, you are not willing
 to do the same work again and again. Someone wants to add a new server,
 tweak some thresholds, adjust notifications? They shouldn't need to
 bother you.

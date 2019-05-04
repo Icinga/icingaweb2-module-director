@@ -2,7 +2,13 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Exception\AuthenticationException;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use dipl\Html\BaseHtmlElement;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class IcingaHostForm extends DirectorObjectForm
 {
@@ -14,9 +20,28 @@ class IcingaHostForm extends DirectorObjectForm
             return;
         }
 
+        $simpleImports = $this->isNew() && ! $this->isTemplate();
+        if ($simpleImports) {
+            if (!$this->addSingleImportElement(true)) {
+                $this->setSubmitLabel(false);
+                return;
+            }
+
+            if (! ($imports = $this->getSentOrObjectValue('imports'))) {
+                $this->setSubmitLabel($this->translate('Next'));
+                $this->groupMainProperties();
+                return;
+            }
+        }
+
+        $nameLabel = $this->isTemplate()
+            ? $this->translate('Name')
+            : $this->translate('Hostname');
+
         $this->addElement('text', 'object_name', array(
-            'label'       => $this->translate('Hostname'),
+            'label'       => $nameLabel,
             'required'    => true,
+            'spellcheck'  => 'false',
             'description' => $this->translate(
                 'Icinga object name for this host. This is usually a fully qualified host name'
                 . ' but it could basically be any kind of string. To make things easier for your'
@@ -25,24 +50,20 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
-        if ($this->isNew() && $this->isObject() && $this->allowsExperimental()) {
-            $this->addBoolean('create_live', array(
-                'label'  => $this->translate('Create immediately'),
-                'ignore' => true,
-            ), 'n');
+        if (! $simpleImports) {
+            $this->addImportsElement();
         }
 
-        $this->addGroupsElement()
-             ->addImportsElement()
+        $this->addChoices('host')
              ->addDisplayNameElement()
              ->addAddressElements()
+             ->addGroupsElement()
              ->addDisabledElement()
-             ->groupMainProperties()
-             ->addClusteringElements();
-
-        $this->addCheckCommandElements()
+             ->groupMainProperties($simpleImports)
+             ->addCheckCommandElements()
              ->addCheckExecutionElements()
              ->addExtraInfoElements()
+             ->addClusteringElements()
              ->setButtons();
     }
 
@@ -52,34 +73,33 @@ class IcingaHostForm extends DirectorObjectForm
     protected function addClusteringElements()
     {
         $this->addZoneElement();
-
-        $this->addBoolean('has_agent', array(
+        $this->addBoolean('has_agent', [
             'label'       => $this->translate('Icinga2 Agent'),
             'description' => $this->translate(
                 'Whether this host has the Icinga 2 Agent installed'
             ),
-            'class'       => 'autosubmit',
-        ));
+            'class' => 'autosubmit',
+        ]);
 
         if ($this->getSentOrResolvedObjectValue('has_agent') === 'y') {
-            $this->addBoolean('master_should_connect', array(
+            $this->addBoolean('master_should_connect', [
                 'label'       => $this->translate('Establish connection'),
                 'description' => $this->translate(
                     'Whether the parent (master) node should actively try to connect to this agent'
                 ),
                 'required'    => true
-            ));
-            $this->addBoolean('accept_config', array(
+            ]);
+            $this->addBoolean('accept_config', [
                 'label'       => $this->translate('Accepts config'),
                 'description' => $this->translate('Whether the agent is configured to accept config'),
                 'required'    => true
-            ));
+            ]);
 
             $this->addHidden('command_endpoint_id', null);
             $this->setSentValue('command_endpoint_id', null);
         } else {
             if ($this->isTemplate()) {
-                $this->addElement('select', 'command_endpoint_id', array(
+                $this->addElement('select', 'command_endpoint_id', [
                     'label' => $this->translate('Command endpoint'),
                     'description' => $this->translate(
                         'Setting a command endpoint allows you to force host checks'
@@ -88,43 +108,86 @@ class IcingaHostForm extends DirectorObjectForm
                         . ' feature'
                     ),
                     'multiOptions' => $this->optionalEnum($this->enumEndpoints())
-                ));
+                ]);
             }
 
-            foreach (array('master_should_connect', 'accept_config') as $key) {
+            foreach (['master_should_connect', 'accept_config'] as $key) {
                 $this->addHidden($key, null);
                 $this->setSentValue($key, null);
             }
         }
 
-        $elements = array(
+        $elements = [
             'zone_id',
             'has_agent',
             'master_should_connect',
             'accept_config',
             'command_endpoint_id',
-        );
-        $this->addDisplayGroup($elements, 'clustering', array(
-            'decorators' => array(
+            'api_key',
+        ];
+        $this->addDisplayGroup($elements, 'clustering', [
+            'decorators' => [
                 'FormElements',
-                array('HtmlTag', array('tag' => 'dl')),
+                ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
-            ),
-            'order' => 80,
+            ],
+            'order'  => 80,
             'legend' => $this->translate('Icinga Agent and zone settings')
-        ));
+        ]);
 
         return $this;
     }
 
-    protected function beforeSuccessfulRedirect()
+    /**
+     * @param bool $required
+     * @return bool
+     */
+    protected function addSingleImportElement($required = null)
     {
-        if ($this->allowsExperimental() && $this->getSentValue('create_live') === 'y') {
-            $host = $this->getObject();
-            if ($this->api()->createObjectAtRuntime($host)) {
-                $this->api()->checkHostNow($host->object_name);
+        $enum = $this->enumHostTemplates();
+        if (empty($enum)) {
+            if ($required) {
+                if ($this->hasBeenSent()) {
+                    $this->addError($this->translate('No Host template has been chosen'));
+                } else {
+                    if ($this->hasPermission('director/admin')) {
+                        $html = sprintf(
+                            $this->translate('Please define a %s first'),
+                            Link::create(
+                                $this->translate('Host Template'),
+                                'director/host/add',
+                                ['type' => 'template']
+                            )
+                        );
+                    } else {
+                        $html = $this->translate('No Host Template has been provided yet');
+                    }
+
+                    $this->addHtml('<p class="warning">' . $html . '</p>');
+                }
             }
+
+            return false;
         }
+
+        $this->addElement('select', 'imports', [
+            'label'        => $this->translate('Host Template'),
+            'description'  => $this->translate(
+                'Choose a Host Template'
+            ),
+            'required'     => true,
+            'multiOptions' => $this->optionalEnum($enum),
+            'class'        => 'autosubmit'
+        ]);
+
+        return true;
+    }
+
+    protected function enumHostTemplates()
+    {
+        $tpl = IcingaTemplateRepository::instanceByType('host', $this->getDb())
+            ->listAllowedTemplateNames();
+        return array_combine($tpl, $tpl);
     }
 
     /**
@@ -132,15 +195,13 @@ class IcingaHostForm extends DirectorObjectForm
      */
     protected function addGroupsElement()
     {
-        $groups = $this->enumHostgroups();
-        if (empty($groups)) {
+        if ($this->hasHostGroupRestriction()) {
             return $this;
         }
 
         $this->addElement('extensibleSet', 'groups', array(
             'label'        => $this->translate('Groups'),
-            'multiOptions' => $this->optionallyAddFromEnum($groups),
-            'positional'   => false,
+            'suggest'      => 'hostgroupnames',
             'description'  => $this->translate(
                 'Hostgroups that should be directly assigned to this node. Hostgroups can be useful'
                 . ' for various reasons. You might assign service checks based on assigned hostgroup.'
@@ -150,7 +211,88 @@ class IcingaHostForm extends DirectorObjectForm
             )
         ));
 
+        $applied = $this->getAppliedGroups();
+        if (! empty($applied)) {
+            $this->addElement('simpleNote', 'applied_groups', [
+                'label'  => $this->translate('Applied groups'),
+                'value'  => $this->createHostgroupLinks($applied),
+                'ignore' => true,
+            ]);
+        }
+
+        $inherited = $this->getInheritedGroups();
+        if (! empty($inherited)) {
+            /** @var BaseHtmlElement $links */
+            $links = $this->createHostgroupLinks($inherited);
+            if (count($this->object()->getGroups())) {
+                $links->addAttributes(['class' => 'strike-links']);
+                /** @var BaseHtmlElement $link */
+                foreach ($links->getContent() as $link) {
+                    $link->addAttributes([
+                        'title' => $this->translate(
+                            'Group has been inherited, but will be overridden'
+                            . ' by locally assigned group(s)'
+                        )
+                    ]);
+                }
+            }
+            $this->addElement('simpleNote', 'inherited_groups', [
+                'label'  => $this->translate('Inherited groups'),
+                'value'  => $links,
+                'ignore' => true,
+            ]);
+        }
+
         return $this;
+    }
+
+    protected function strikeGroupLinks(BaseHtmlElement $links)
+    {
+        /** @var BaseHtmlElement $link */
+        foreach ($links->getContent() as $link) {
+            $link->getAttributes()->add('style', 'text-decoration: strike');
+        }
+        $links->add('aha');
+    }
+
+    protected function getInheritedGroups()
+    {
+        if ($this->hasObject()) {
+            return $this->object->listInheritedGroupNames();
+        } else {
+            return [];
+        }
+    }
+
+    protected function createHostgroupLinks($groups)
+    {
+        $links = [];
+        foreach ($groups as $name) {
+            $links[] = Link::create(
+                $name,
+                'director/hostgroup',
+                ['name' => $name],
+                ['data-base-target' => '_next']
+            );
+        }
+
+        return Html::tag('span', [
+            'style' => 'line-height: 2.5em; padding-left: 0.5em'
+        ], $links)->setSeparator(', ');
+    }
+
+    protected function getAppliedGroups()
+    {
+        if ($this->isNew()) {
+            return [];
+        }
+
+        return $this->object()->getAppliedGroups();
+    }
+
+    protected function hasHostGroupRestriction()
+    {
+        return $this->getAuth()->getRestrictions('director/filter/hostgroups');
     }
 
     /**
@@ -189,6 +331,7 @@ class IcingaHostForm extends DirectorObjectForm
 
         $this->addElement('text', 'display_name', array(
             'label' => $this->translate('Display name'),
+            'spellcheck'  => 'false',
             'description' => $this->translate(
                 'Alternative name for this host. Might be a host alias or and kind'
                 . ' of string helping your users to identify this host'
@@ -201,34 +344,28 @@ class IcingaHostForm extends DirectorObjectForm
     protected function enumEndpoints()
     {
         $db = $this->db->getDbAdapter();
-        $select = $db->select()->from(
-            'icinga_endpoint',
-            array(
-                'id',
-                'object_name'
-            )
-        )->where(
+        $select = $db->select()->from('icinga_endpoint', [
+            'id',
+            'object_name'
+        ])->where(
             'object_type IN (?)',
-            array('object', 'external_object')
+            ['object', 'external_object']
         )->order('object_name');
 
         return $db->fetchPairs($select);
     }
 
-    protected function enumHostgroups()
+    public function onSuccess()
     {
-        $db = $this->db->getDbAdapter();
-        $select = $db->select()->from(
-            'icinga_hostgroup',
-            array(
-                'name'    => 'object_name',
-                'display' => 'COALESCE(display_name, object_name)'
-            )
-        )->where(
-            'object_type IN (?)',
-            array('object', 'external_object')
-        )->order('display');
+        if ($this->hasHostGroupRestriction()) {
+            $restriction = new HostgroupRestriction($this->getDb(), $this->getAuth());
+            if (! $restriction->allowsHost($this->object())) {
+                throw new AuthenticationException($this->translate(
+                    'Unable to store a host with the given properties because of insufficient permissions'
+                ));
+            }
+        }
 
-        return $db->fetchPairs($select);
+        parent::onSuccess();
     }
 }

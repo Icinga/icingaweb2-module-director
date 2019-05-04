@@ -1,11 +1,12 @@
 language: php
 php:
-  - '5.3'
   - '5.4'
   - '5.5'
   - '5.6'
   - '7.0'
   - '7.1'
+  - '7.2'
+  - '7.3'
   - nightly
 
 services:
@@ -18,22 +19,26 @@ cache:
 
 matrix:
   fast_finish: true
+  include:
+    - env: CHECK=phpcs
+      php: nightly # Note: will be allowed failure
+    - env: CHECK=phpcs
+      php: '7.0'
+    - env: CHECK=phpcs
+      php: '5.4'
   allow_failures:
     - php: nightly
+    - php: '7.3'
 
 env:
-  - DB=mysql DIRECTOR_TESTDB_RES="Director MySQL TestDB" DIRECTOR_TESTDB="director_test"
-  - DB=pgsql DIRECTOR_TESTDB_RES="Director PostgreSQL TestDB" DIRECTOR_TESTDB="director_test"
+  - CHECK=phpunit DB=mysql DIRECTOR_TESTDB_RES="Director MySQL TestDB" DIRECTOR_TESTDB="director_test"
+  - CHECK=phpunit DB=pgsql DIRECTOR_TESTDB_RES="Director PostgreSQL TestDB" DIRECTOR_TESTDB="director_test"
     DIRECTOR_TESTDB_USER="director_test"
 
 before_script:
-  - curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
-  - wget https://github.com/Icinga/icingaweb2/archive/v2.4.0.tar.gz
-  - tar xfz v2.4.0.tar.gz
-  - ln -s icingaweb2-2.4.0/library/Icinga
-  - ln -s icingaweb2-2.4.0/library/vendor/Zend
-  - ./test/travis-prepare.sh
+  - ./test/setup_vendor.sh
+  - '[ "$CHECK" != phpunit ] || ./test/travis-prepare.sh'
 
 script:
-  - php phpcs.phar --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ application/ configuration.php run.php test
-  - phpunit --testdox || phpunit --verbose
+  - '[ "$CHECK" != phpcs ] || php vendor/phpcs.phar'
+  - '[ "$CHECK" != phpunit ] || php vendor/phpunit.phar --testdox || php vendor/phpunit.phar --verbose'

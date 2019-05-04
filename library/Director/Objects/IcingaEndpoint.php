@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\LegacyDeploymentApi;
 use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use InvalidArgumentException;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -15,22 +15,22 @@ class IcingaEndpoint extends IcingaObject
 
     protected $supportsImports = true;
 
-    protected $defaultProperties = array(
-        'id'                    => null,
-        'zone_id'               => null,
-        'object_name'           => null,
-        'object_type'           => null,
-        'disabled'              => 'n',
-        'host'                  => null,
-        'port'                  => null,
-        'log_duration'          => null,
-        'apiuser_id'            => null,
-    );
+    protected $defaultProperties = [
+        'id'           => null,
+        'zone_id'      => null,
+        'object_name'  => null,
+        'object_type'  => null,
+        'disabled'     => 'n',
+        'host'         => null,
+        'port'         => null,
+        'log_duration' => null,
+        'apiuser_id'   => null,
+    ];
 
-    protected $relations = array(
+    protected $relations = [
         'zone'    => 'IcingaZone',
         'apiuser' => 'IcingaApiUser',
-    );
+    ];
 
     public function hasApiUser()
     {
@@ -49,18 +49,19 @@ class IcingaEndpoint extends IcingaObject
      * Return a core API, depending on the configuration format
      *
      * @return CoreApi|LegacyDeploymentApi
-     *
-     * @throws ProgrammingError  When configured config_format is unknown
      */
     public function api()
     {
         $format = $this->connection->settings()->config_format;
         if ($format === 'v2') {
-            return new CoreApi($this->getRestApiClient());
+            $api = new CoreApi($this->getRestApiClient());
+            $api->setDb($this->getConnection());
+
+            return $api;
         } elseif ($format === 'v1') {
             return new LegacyDeploymentApi($this->connection);
         } else {
-            throw new ProgrammingError('Unsupported config format: %s', $format);
+            throw new InvalidArgumentException("Unsupported config format: $format");
         }
     }
 
@@ -95,6 +96,29 @@ class IcingaEndpoint extends IcingaObject
         }
 
         return parent::getRenderingZone($config);
+    }
+
+    /**
+     * @return int
+     */
+    public function getResolvedPort()
+    {
+        $port = $this->getSingleResolvedProperty('port');
+        if (null === $port) {
+            return 5665;
+        } else {
+            return (int) $port;
+        }
+    }
+
+    public function getDescriptiveUrl()
+    {
+        return sprintf(
+            'https://%s@%s:%d/v1/',
+            $this->getApiUser()->getObjectName(),
+            $this->getResolvedProperty('host', $this->getObjectName()),
+            $this->getResolvedPort()
+        );
     }
 
     /**

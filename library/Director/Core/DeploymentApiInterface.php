@@ -55,21 +55,21 @@ interface DeploymentApiInterface
     /**
      * Explicitly delete a stage
      *
-     * @param  string  $moduleName
+     * @param  string  $packageName
      * @param  string  $stageName
      *
      * @return bool
      */
-    public function deleteStage($moduleName, $stageName);
+    public function deleteStage($packageName, $stageName);
 
     /**
      * Deploy the config and activate it
      *
      * @param  IcingaConfig  $config
      * @param  Db            $db
-     * @param  string        $moduleName
+     * @param  string        $packageName
      *
      * @return mixed
      */
-    public function dumpConfig(IcingaConfig $config, Db $db, $moduleName = 'director');
+    public function dumpConfig(IcingaConfig $config, Db $db, $packageName = null);
 }

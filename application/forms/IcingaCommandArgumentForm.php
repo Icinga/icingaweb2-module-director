@@ -53,7 +53,7 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             $this->addElement('text', 'argument_value', array(
                 'label'       => $this->translate('Value'),
                 'description' => $this->translate(
-                    'e.g. 5%, $hostname$, $lower$%:$upper$%'
+                    'e.g. 5%, $host.name$, $lower$%:$upper$%'
                 )
             ));
         }
@@ -106,6 +106,15 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             )
         ));
 
+        $this->addBoolean('skip_key', array(
+            'label'       => $this->translate('Skip key'),
+            'description' => $this->translate(
+                'Whether the parameter name should not be passed to the command.'
+                . ' Per default, the parameter name (e.g. -H) will be appended,'
+                . ' so no need to explicitly set this to "No".'
+            )
+        ));
+
         $this->addBoolean('required', array(
             'label'       => $this->translate('Required'),
             'required'    => false,
@@ -139,11 +148,9 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
     {
         $object = $this->object();
         $cmd = $this->commandObject;
-        if (! $object->hasBeenLoadedFromDb()) {
-            if ($object->get('argument_name') === null) {
-                $object->set('skip_key', true);
-                $object->set('argument_name', $cmd->getNextSkippableKeyName());
-            }
+        if ($object->get('argument_name') === null) {
+            $object->set('skip_key', true);
+            $object->set('argument_name', $cmd->getNextSkippableKeyName());
         }
 
         if ($object->hasBeenModified()) {
@@ -157,12 +164,17 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
             );
             $cmd->store($this->db);
         } else {
-            $this->setHttpResponseCode(304);
+            if ($this->isApiRequest()) {
+                $this->setHttpResponseCode(304);
+            }
             $msg = $this->translate('No action taken, object has not been modified');
         }
         $this->setSuccessUrl(
             'director/command/arguments',
-            array('name' => $cmd->getObjectName())
+            [
+                'argument_id' => $object->get('id'),
+                'name' => $cmd->getObjectName()
+            ]
         );
 
         $this->redirectOnSuccess($msg);

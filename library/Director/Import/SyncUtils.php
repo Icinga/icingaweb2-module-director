@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Import;
 
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\Db\DbObject;
+use InvalidArgumentException;
 
 class SyncUtils
 {
@@ -24,6 +24,18 @@ class SyncUtils
     }
 
     /**
+     * Whether the given string contains variable names in the form ${var_name}
+     *
+     * @param  string $string
+     *
+     * @return bool
+     */
+    public static function hasVariables($string)
+    {
+        return preg_match('/\${([^}]+)}/', $string);
+    }
+
+    /**
      * Recursively extract a value from a nested structure
      *
      * For a $val looking like
@@ -34,11 +46,11 @@ class SyncUtils
      * return { size => '255GB' }
      *
      * @param  string $val  The value to extract data from
-     * @param  object $keys A list of nested keys pointing to desired data
+     * @param  array  $keys A list of nested keys pointing to desired data
      *
      * @return mixed
      */
-    public static function getDeepValue($val, $keys)
+    public static function getDeepValue($val, array $keys)
     {
         $key = array_shift($keys);
         if (! property_exists($val, $key)) {
@@ -57,8 +69,8 @@ class SyncUtils
      *
      * Supports also keys pointing to nested structures like vars.disk.sda
      *
-     * @param  object $row    stdClass object providing property values
-     * @param  string $string Variable/property name
+     * @param  object $row  stdClass object providing property values
+     * @param  string $var  Variable/property name
      *
      * @return mixed
      */
@@ -81,7 +93,11 @@ class SyncUtils
             }
 
             if (! is_object($row->$main)) {
-                throw new IcingaException('Data is not nested, cannot access %s: %s', $var, var_export($row, 1));
+                throw new InvalidArgumentException(sprintf(
+                    'Data is not nested, cannot access %s: %s',
+                    $var,
+                    var_export($row, 1)
+                ));
             }
 
             return static::getDeepValue($row->$main, $parts);
@@ -118,11 +134,15 @@ class SyncUtils
     {
         $res = array();
         foreach ($vars as $p) {
-            if (false === ($pos = strpos($p, '.'))) {
+            if (false === ($pos = strpos($p, '.')) || $pos === strlen($p) - 1) {
                 $res[] = $p;
             } else {
                 $res[] = substr($p, 0, $pos);
             }
+        }
+
+        if (empty($res)) {
+            return array();
         }
 
         return array_combine($res, $res);

@@ -18,39 +18,52 @@ class ServiceActions extends ServiceActionsHook
         try {
             return $this->getThem($service);
         } catch (Exception $e) {
-            return array();
+            return [];
         }
     }
 
+    /**
+     * @param Service $service
+     * @return array
+     * @throws \Icinga\Exception\ProgrammingError
+     */
     protected function getThem(Service $service)
     {
-        if (! Util::hasPermission('director/inspect')) {
-            return array();
-        }
-
+        $actions = [];
         $db = $this->db();
         if (! $db) {
-            return array();
+            return [];
         }
 
-        if (IcingaHost::exists($service->host_name, $db)) {
-            return array(
-                'Inspect' => Url::fromPath(
-                    'director/inspect/object',
-                    array(
-                        'type'   => 'service',
-                        'plural' => 'services',
-                        'name'   => sprintf(
-                            '%s!%s',
-                            $service->host_name,
-                            $service->service_description
-                        )
-                    )
+        $hostname = $service->host_name;
+        if (Util::hasPermission('director/inspect')) {
+            $actions['Inspect'] = Url::fromPath('director/inspect/object', [
+                'type'   => 'service',
+                'plural' => 'services',
+                'name'   => sprintf(
+                    '%s!%s',
+                    $hostname,
+                    $service->service_description
                 )
-            );
-        } else {
-            return array();
+            ]);
         }
+
+        if (Util::hasPermission('director/hosts')) {
+            $title = mt('director', 'Modify');
+        } elseif (Util::hasPermission('director/monitoring/services-ro')) {
+            $title = mt('director', 'Configuration');
+        } else {
+            return $actions;
+        }
+
+        if (IcingaHost::exists($hostname, $db)) {
+            $actions[$title] = Url::fromPath('director/host/findservice', [
+                'name'    => $hostname,
+                'service' => $service->service_description
+            ]);
+        }
+
+        return $actions;
     }
 
     protected function db()

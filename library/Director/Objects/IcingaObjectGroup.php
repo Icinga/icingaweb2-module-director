@@ -2,56 +2,71 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Application\Config;
-use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 
-abstract class IcingaObjectGroup extends IcingaObject
+abstract class IcingaObjectGroup extends IcingaObject implements ExportInterface
 {
     protected $supportsImports = true;
 
     protected $supportedInLegacy = true;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'            => null,
         'object_name'   => null,
         'object_type'   => null,
         'disabled'      => 'n',
         'display_name'  => null,
         'assign_filter' => null,
-    );
+    ];
 
-    public function getRenderingZone(IcingaConfig $config = null)
+    public function getUniqueIdentifier()
     {
-        return $this->connection->getDefaultGlobalZoneName();
+        return $this->getObjectName();
     }
 
-    public static function enumForType($type, Db $connection = null)
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
     {
-        if ($connection === null) {
-            // TODO: not nice :(
-            $connection = Db::fromResourceName(
-                Config::module('director')->get('db', 'resource')
+        return $this->toPlainObject();
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return IcingaObjectGroup
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Group "%s" already exists',
+                $name
             );
+        } else {
+            $object = static::create([], $db);
         }
 
-        // Last resort defense against potentiall lousy checks:
-        if (! ctype_alpha($type)) {
-            throw new IcingaException(
-                'Holy shit, you should never have reached this'
-            );
-        }
+        $object->setProperties($properties);
 
-        $db = $connection->getDbAdapter();
-        $select = $db->select()->from(
-            'icinga_' . $type . 'group',
-            array(
-                'name'    => 'object_name',
-                'display' => 'COALESCE(display_name, object_name)'
-            )
-        )->where('object_type = ?', 'object')->order('display');
+        return $object;
+    }
 
-        return $db->fetchPairs($select);
+    protected function prefersGlobalZone()
+    {
+        return true;
     }
 }

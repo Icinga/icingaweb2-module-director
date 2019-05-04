@@ -5,13 +5,13 @@ namespace Icinga\Module\Director\Db;
 use DirectoryIterator;
 use Exception;
 use Icinga\Application\Icinga;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbConnection;
+use RuntimeException;
 
 class Migrations
 {
-    /**
-     * @var \Zend_Db_Adapter_Abstract
-     */
+    /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
     /**
@@ -23,6 +23,13 @@ class Migrations
 
     public function __construct(DbConnection $connection)
     {
+        if (version_compare(PHP_VERSION, '5.4.0') < 0) {
+            throw new RuntimeException(
+                "PHP version 5.4.x is required for Director >= 1.4.0, you're running %s."
+                . ' Please either upgrade PHP or downgrade Icinga Director',
+                PHP_VERSION
+            );
+        }
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
     }
@@ -61,6 +68,9 @@ class Migrations
         return count($this->listPendingMigrations());
     }
 
+    /**
+     * @return Migration[]
+     */
     public function getPendingMigrations()
     {
         $migrations = array();
@@ -74,8 +84,14 @@ class Migrations
         return $migrations;
     }
 
+    /**
+     * @return $this
+     */
     public function applyPendingMigrations()
     {
+        // Ensure we have enough time to migrate
+        ini_set('max_execution_time', 0);
+
         foreach ($this->getPendingMigrations() as $migration) {
             $migration->apply($this->connection);
         }
@@ -165,7 +181,15 @@ class Migrations
 
     protected function getSchemaDir($sub = null)
     {
-        $dir = $this->getModuleDir('/schema');
+        try {
+            $dir = $this->getModuleDir('/schema');
+        } catch (ProgrammingError $e) {
+            throw new RuntimeException(
+                'Unable to detect the schema directory for this module',
+                0,
+                $e
+            );
+        }
         if ($sub === null) {
             return $dir;
         } else {
@@ -173,6 +197,11 @@ class Migrations
         }
     }
 
+    /**
+     * @param string $sub
+     * @return string
+     * @throws ProgrammingError
+     */
     protected function getModuleDir($sub = '')
     {
         return Icinga::app()->getModuleManager()->getModuleDir(

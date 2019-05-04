@@ -4,15 +4,19 @@ namespace Icinga\Module\Director\Web\Navigation\Renderer;
 
 use Exception;
 use Icinga\Application\Config;
-use Icinga\Module\Director\ConfigHealthChecker;
+use Icinga\Application\Icinga;
+use Icinga\Application\Web;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\KickstartHelper;
+use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Web\Navigation\Renderer\BadgeNavigationItemRenderer;
+use Icinga\Web\Window;
 
 class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 {
-    private $db;
+    use DirectorDb;
 
     private $directorState = self::STATE_OK;
 
@@ -20,9 +24,18 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 
     private $count = 0;
 
+    private $window;
+
     protected function hasProblems()
     {
-        $this->checkHealth();
+        try {
+            $this->checkHealth();
+        } catch (Exception $e) {
+            $this->directorState = self::STATE_UNKNOWN;
+            $this->count = 1;
+            $this->message = $e->getMessage();
+        }
+
         return $this->count > 0;
     }
 
@@ -112,11 +125,57 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 
     protected function db()
     {
-        $resourceName = Config::module('director')->get('db', 'resource');
-        if ($resourceName) {
-            return Db::fromResourceName($resourceName);
-        } else {
+        try {
+            $resourceName = Config::module('director')->get('db', 'resource');
+            if ($resourceName) {
+                // Window might have switched to another DB:
+                return Db::fromResourceName($this->getDbResourceName());
+            } else {
+                return false;
+            }
+        } catch (Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * TODO: the following methods are for the DirectorDb trait, we need
+     *       something better in future. It is required to show Health
+     *       related to the DB chosen in the current Window
+     *
+     * @codingStandardsIgnoreStart
+     * @return Auth
+     */
+    protected function Auth()
+    {
+        return Auth::getInstance();
+    }
+
+    /**
+     * @return Window
+     */
+    public function Window()
+    {
+        if ($this->window === null) {
+            try {
+                /** @var $app Web */
+                $app = Icinga::app();
+                $this->window = new Window(
+                    $app->getRequest()->getHeader('X-Icinga-WindowId')
+                );
+            } catch (Exception $e) {
+                $this->window = new Window(Window::UNDEFINED);
+            }
+        }
+        return $this->window;
+    }
+
+    /**
+     * @return Config
+     */
+    protected function Config()
+    {
+        // @codingStandardsIgnoreEnd
+        return Config::module('director');
     }
 }

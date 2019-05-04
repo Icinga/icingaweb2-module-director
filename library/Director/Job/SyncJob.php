@@ -11,6 +11,10 @@ class SyncJob extends JobHook
 {
     protected $rule;
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     public function run()
     {
         $db = $this->db();
@@ -20,10 +24,32 @@ class SyncJob extends JobHook
                 $this->runForRule($rule);
             }
         } else {
-            $this->runForRule(SyncRule::load($id, $db));
+            $this->runForRule(SyncRule::loadWithAutoIncId((int) $id, $db));
         }
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function exportSettings()
+    {
+        $settings = [
+            'apply_changes' => $this->getSetting('apply_changes') === 'y'
+        ];
+        $id = $this->getSetting('rule_id');
+        if ($id !== '__ALL__') {
+            $settings['rule'] = SyncRule::loadWithAutoIncId((int) $id, $this->db())
+                ->get('rule_name');
+        }
+
+        return $settings;
+    }
+
+    /**
+     * @param SyncRule $rule
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     protected function runForRule(SyncRule $rule)
     {
         if ($this->getSetting('apply_changes') === 'y') {
@@ -40,6 +66,11 @@ class SyncJob extends JobHook
         );
     }
 
+    /**
+     * @param QuickForm $form
+     * @return DirectorObjectForm|QuickForm
+     * @throws \Zend_Form_Exception
+     */
     public static function addSettingsFormFields(QuickForm $form)
     {
         /** @var DirectorObjectForm $form */

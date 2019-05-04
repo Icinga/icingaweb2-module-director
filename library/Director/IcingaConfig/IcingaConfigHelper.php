@@ -2,16 +2,15 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
-use Icinga\Exception\IcingaException;
-use Icinga\Exception\ProgrammingError;
+use InvalidArgumentException;
 
 class IcingaConfigHelper
 {
     /**
      * Reserved words according to
-     * https://docs.icinga.com/icinga2/snapshot/doc/module/icinga2/chapter/language-reference#reserved-keywords
+     * https://icinga.com/docs/icinga2/latest/doc/17-language-reference/#reserved-keywords
      */
-    protected static $reservedWords = array(
+    protected static $reservedWords = [
         'object',
         'template',
         'include',
@@ -39,7 +38,19 @@ class IcingaConfigHelper
         'in',
         'current_filename',
         'current_line',
-    );
+        'include_zones',
+        'globals',
+        'locals',
+        'default',
+        'break',
+        'continue',
+        'while',
+        'throw',
+        'try',
+        'except',
+        'using',
+        'namespace',
+    ];
 
     public static function renderKeyValue($key, $value, $prefix = '    ')
     {
@@ -69,7 +80,10 @@ class IcingaConfigHelper
         } elseif ($value === 'n' || $value === false) {
             return 'false';
         } else {
-            throw new ProgrammingError('%s is not a valid boolean', $value);
+            throw new InvalidArgumentException(sprintf(
+                '%s is not a valid boolean',
+                $value
+            ));
         }
     }
 
@@ -78,7 +92,7 @@ class IcingaConfigHelper
         return (string) $value;
     }
 
-    protected static function renderFloat($value)
+    public static function renderFloat($value)
     {
         // Render .0000 floats as integers, mainly because of some JSON
         // implementations:
@@ -98,7 +112,7 @@ class IcingaConfigHelper
     //       Parameter? Dedicated method? Always if \n is found?
     public static function renderString($string)
     {
-        $special = array(
+        $special = [
             '/\\\/',
             '/"/',
             '/\$/',
@@ -106,10 +120,10 @@ class IcingaConfigHelper
             '/\r/',
             '/\n/',
             // '/\b/', -> doesn't work
-            '/\f/'
-        );
+            '/\f/',
+        ];
 
-        $replace = array(
+        $replace = [
             '\\\\\\',
             '\\"',
             '\\$',
@@ -118,7 +132,7 @@ class IcingaConfigHelper
             '\\n',
             // '\\b',
             '\\f',
-        );
+        ];
 
         $string = preg_replace($special, $replace, $string);
 
@@ -144,7 +158,10 @@ class IcingaConfigHelper
         } elseif (is_string($value)) {
             return static::renderString($value);
         } else {
-            throw new IcingaException('Unexpected type %s', var_export($value, 1));
+            throw new InvalidArgumentException(sprintf(
+                'Unexpected type %s',
+                var_export($value, 1)
+            ));
         }
     }
 
@@ -160,7 +177,7 @@ class IcingaConfigHelper
     // Requires an array
     public static function renderArray($array)
     {
-        $data = array();
+        $data = [];
         foreach ($array as $entry) {
             if ($entry instanceof IcingaConfigRenderer) {
                 $data[] = $entry;
@@ -186,7 +203,7 @@ class IcingaConfigHelper
 
     public static function renderDictionary($dictionary)
     {
-        $vals = array();
+        $vals = [];
         foreach ($dictionary as $key => $value) {
             $vals[$key] = rtrim(
                 self::renderKeyValue(
@@ -259,11 +276,12 @@ class IcingaConfigHelper
         $value = 0;
         foreach ($parts as $part) {
             if (! preg_match('/^(\d+)([dhms]?)$/', $part, $m)) {
-                throw new ProgrammingError(
+                throw new InvalidArgumentException(sprintf(
                     '"%s" is not a valid time (duration) definition',
                     $interval
-                );
+                ));
             }
+
             switch ($m[2]) {
                 case 'd':
                     $value += $m[1] * 86400;
@@ -290,11 +308,11 @@ class IcingaConfigHelper
             return '0s';
         }
 
-        $steps = array(
+        $steps = [
             'd' => 86400,
             'h' => 3600,
             'm' => 60,
-        );
+        ];
 
         foreach ($steps as $unit => $duration) {
             if ($seconds % $duration === 0) {
@@ -305,26 +323,93 @@ class IcingaConfigHelper
         return $seconds . 's';
     }
 
-    public static function stringHasMacro($string)
+    public static function stringHasMacro($string, $macroName = null)
     {
-        return preg_match('/(?<!\$)\$[\w\.]+\$(?!\$)/', $string);
+        $len = strlen($string);
+        $start = false;
+        // TODO: robust UTF8 support. It works, but it is not 100% correct
+        for ($i = 0; $i < $len; $i++) {
+            if ($string[$i] === '$') {
+                if ($start === false) {
+                    $start = $i;
+                } else {
+                    // Escaping, $$
+                    if ($start + 1 === $i) {
+                        $start = false;
+                    } else {
+                        if ($macroName === null) {
+                            return true;
+                        } else {
+                            if ($macroName === substr($string, $start + 1, $i - $start - 1)) {
+                                return true;
+                            } else {
+                                $start = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
-    public static function renderStringWithVariables($string)
+    /**
+     * Hint: this isn't complete, but let's restrict ourselves right now
+     *
+     * @param $name
+     * @return bool
+     */
+    public static function isValidMacroName($name)
     {
-        $string = preg_replace(
-            '/(?<!\$)\$([\w\.]+)\$(?!\$)/',
-            '" + ${1} + "',
-            static::renderString($string)
-        );
+        return preg_match('/^[A-z_][A-z_\.\d]+$/', $name)
+            && ! preg_match('/\.$/', $name);
+    }
 
-        if (substr($string, 0, 5) === '"" + ') {
-            $string = substr($string, 5);
-        }
-        if (substr($string, -5) === ' + ""') {
-            $string = substr($string, 0, -5);
+    public static function renderStringWithVariables($string, array $whiteList = null)
+    {
+        $len = strlen($string);
+        $start = false;
+        $parts = [];
+        // TODO: UTF8...
+        $offset = 0;
+        for ($i = 0; $i < $len; $i++) {
+            if ($string[$i] === '$') {
+                if ($start === false) {
+                    $start = $i;
+                } else {
+                    // Ignore $$
+                    if ($start + 1 === $i) {
+                        $start = false;
+                    } else {
+                        // We got a macro
+                        $macroName = substr($string, $start + 1, $i - $start - 1);
+                        if (static::isValidMacroName($macroName)) {
+                            if ($whiteList === null || in_array($macroName, $whiteList)) {
+                                if ($start > $offset) {
+                                    $parts[] = static::renderString(
+                                        substr($string, $offset, $start - $offset)
+                                    );
+                                }
+                                $parts[] = $macroName;
+                                $offset = $i + 1;
+                            }
+                        }
+
+                        $start = false;
+                    }
+                }
+            }
         }
 
-        return $string;
+        if ($offset < $i) {
+            $parts[] = static::renderString(substr($string, $offset, $i - $offset));
+        }
+
+        if (! empty($parts)) {
+            return implode(' + ', $parts);
+        } else {
+            return '""';
+        }
     }
 }

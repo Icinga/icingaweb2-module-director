@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ProgrammingError;
+use Exception;
 use Iterator;
 use Countable;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
@@ -11,8 +11,10 @@ use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 
 class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRenderer
 {
+    /** @var IcingaTimePeriodRange[] */
     protected $storedRanges = array();
 
+    /** @var IcingaTimePeriodRange[] */
     protected $ranges = array();
 
     protected $modified = false;
@@ -211,6 +213,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         )->where('o.timeperiod_id = ?', (int) $this->object->id)
             ->order('o.range_key');
 
+        /** @var IcingaTimePeriodRange $class */
         $class = $this->getClass();
         $this->ranges = $class::loadAll($connection, $query, 'range_key');
         $this->storedRanges = array();
@@ -224,13 +227,17 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
 
     public function store()
     {
+        $db = $this->object->getConnection();
         foreach ($this->ranges as $range) {
             $range->timeperiod_id = $this->object->id;
-            $range->store($this->object->getConnection());
+            $range->store($db);
         }
 
         foreach (array_diff(array_keys($this->storedRanges), array_keys($this->ranges)) as $delete) {
-            $this->storedRanges[$delete]->delete();
+            $db->getDbAdapter()->delete(
+                'icinga_timeperiod_range',
+                $this->storedRanges[$delete]->createWhere()
+            );
         }
 
         $this->storedRanges = $this->ranges;

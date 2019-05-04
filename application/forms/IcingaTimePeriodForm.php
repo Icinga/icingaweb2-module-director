@@ -6,44 +6,25 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaTimePeriodForm extends DirectorObjectForm
 {
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
-        $isTemplate = isset($_POST['object_type']) && $_POST['object_type'] === 'template';
-        $this->addElement('select', 'object_type', array(
-            'label'       => $this->translate('Object type'),
-            'description' => $this->translate('Whether this should be a template'),
-            'class'       => 'autosubmit',
-            'multiOptions' => $this->optionalEnum(array(
-                'object'   => $this->translate('Timeperiod object'),
-                'template' => $this->translate('Timeperiod template'),
-            ))
-        ));
+        $this->addElement('text', 'object_name', [
+            'label'    => $this->translate('Name'),
+            'required' => true,
+        ]);
 
-        if ($isTemplate) {
-            $this->addElement('text', 'object_name', array(
-                'label'       => $this->translate('Timeperiod template name'),
-                'required'    => true,
-                'description' => $this->translate('Name for the Icinga timperiod template you are going to create')
-            ));
-        } else {
-            $this->addElement('text', 'object_name', array(
-                'label'       => $this->translate('Timeperiod'),
-                'required'    => true,
-                'description' => $this->translate('Name for the Icinga timeperiod you are going to create')
-            ));
-        }
-
-        $this->addElement('text', 'display_name', array(
+        $this->addElement('text', 'display_name', [
             'label' => $this->translate('Display Name'),
-            'description' => $this->translate('the display name')
-        ));
+        ]);
 
         if ($this->isTemplate()) {
-            $this->addElement('text', 'update_method', array(
-                'label'       => $this->translate('Update Method'),
-                'description' => $this->translate('the update method'),
-                'value'       => 'LegacyTimePeriod',
-            ));
+            $this->addElement('text', 'update_method', [
+                'label' => $this->translate('Update Method'),
+                'value' => 'LegacyTimePeriod',
+            ]);
         } else {
             // TODO: I'd like to skip this for objects inheriting from a template
             //       with a defined update_method. However, unfortunately it's too
@@ -52,8 +33,50 @@ class IcingaTimePeriodForm extends DirectorObjectForm
             $this->addHidden('update_method', 'LegacyTimePeriod');
         }
 
-        $this->addImportsElement();
+        $this->addIncludeExclude()
+            ->addImportsElement()
+            ->setButtons();
+    }
 
-        $this->setButtons();
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
+    protected function addIncludeExclude()
+    {
+        $periods = [];
+        foreach ($this->db->enumTimeperiods() as $id => $period) {
+            if ($this->object === null || $this->object->get('object_name') !== $period) {
+                $periods[$period] = $period;
+            }
+        }
+
+        if (empty($periods)) {
+            return $this;
+        }
+
+        $this->addElement('extensibleSet', 'includes', [
+            'label'        => $this->translate('Include period'),
+            'multiOptions' => $this->optionalEnum($periods),
+            'description'  => $this->translate(
+                'Include other time periods into this.'
+            ),
+        ]);
+
+        $this->addElement('extensibleSet', 'excludes', [
+            'label'        => $this->translate('Exclude period'),
+            'multiOptions' => $this->optionalEnum($periods),
+            'description'  => $this->translate(
+                'Exclude other time periods from this.'
+            ),
+        ]);
+
+        $this->optionalBoolean(
+            'prefer_includes',
+            $this->translate('Prefer includes'),
+            $this->translate('Whether to prefer timeperiods includes or excludes. Default to true.')
+        );
+
+        return $this;
     }
 }

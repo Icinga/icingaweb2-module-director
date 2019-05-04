@@ -7,7 +7,9 @@ use Icinga\Data\ResourceFactory;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Exception\NotImplementedError;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Web\Url;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use RuntimeException;
 use Zend_Db_Expr;
 
 class Util
@@ -18,17 +20,11 @@ class Util
 
     public static function pgBinEscape($binary)
     {
+        if ($binary instanceof Zend_Db_Expr) {
+            throw new RuntimeException('Trying to escape binary twice');
+        }
+
         return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
-    }
-
-    public static function hex2binary($bin)
-    {
-        return pack('H*', $bin);
-    }
-
-    public static function binary2hex($hex)
-    {
-        return current(unpack('H*', $hex));
     }
 
     /**
@@ -155,12 +151,12 @@ class Util
 
     public static function addDbResourceFormElement(QuickForm $form, $name)
     {
-        return self::addResourceFormElement($form, $name, 'db');
+        static::addResourceFormElement($form, $name, 'db');
     }
 
     public static function addLdapResourceFormElement(QuickForm $form, $name)
     {
-        return self::addResourceFormElement($form, $name, 'ldap');
+        static::addResourceFormElement($form, $name, 'ldap');
     }
 
     protected static function addResourceFormElement(QuickForm $form, $name, $type)
@@ -173,14 +169,17 @@ class Util
             'required'     => true,
         ));
 
-        if (true && empty($list)) {
+        if (empty($list)) {
             if (self::hasPermission('config/application/resources')) {
-                $hint = $form->translate('Please click %s to create new resources');
-                $link = sprintf(
-                    '<a href="' . Url::fromPath('config/resource') . '" data-base-target="_main">%s</a>',
-                    $form->translate('here')
-                );
-                $form->addHtmlHint(sprintf($hint, $link));
+                $form->addHtmlHint(Html::sprintf(
+                    $form->translate('Please click %s to create new resources'),
+                    Link::create(
+                        $form->translate('here'),
+                        'config/resource',
+                        null,
+                        ['data-base-target' => '_main']
+                    )
+                ));
                 $msg = sprintf($form->translate('No %s resource available'), $type);
             } else {
                 $msg = $form->translate('Please ask an administrator to grant you access to resources');

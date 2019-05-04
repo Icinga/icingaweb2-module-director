@@ -1,4 +1,5 @@
 object Service "___TEST___service_$not_replaced$" {
+    host_name = "___TEST___host"
     display_name = "Service: $host.vars.not_replaced$"
     vars.custom_var = "$host.vars.not_replaced$"
     vars.test1 = "string"

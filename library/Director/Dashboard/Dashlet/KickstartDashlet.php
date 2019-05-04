@@ -11,7 +11,7 @@ class KickstartDashlet extends Dashlet
         return $this->translate('Kickstart Wizard');
     }
 
-    public function getEscapedSummary()
+    public function getSummary()
     {
         return $this->translate(
             'This synchronizes Icinga Director to your Icinga 2 infrastructure.'

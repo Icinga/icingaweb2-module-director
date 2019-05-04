@@ -5,19 +5,24 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Import\PurgeStrategy\PurgeStrategy;
 use Icinga\Module\Director\Import\Sync;
 use Exception;
 
-class SyncRule extends DbObject
+class SyncRule extends DbObject implements ExportInterface
 {
     protected $table = 'sync_rule';
 
-    protected $keyName = 'id';
+    protected $keyName = 'rule_name';
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $protectAutoinc = false;
+
+    protected $defaultProperties = [
         'id'                 => null,
         'rule_name'          => null,
         'object_type'        => null,
@@ -27,7 +32,14 @@ class SyncRule extends DbObject
         'sync_state'         => 'unknown',
         'last_error_message' => null,
         'last_attempt'       => null,
-    );
+        'description'        => null,
+    ];
+
+    protected $stateProperties = [
+        'sync_state',
+        'last_error_message',
+        'last_attempt',
+    ];
 
     private $sync;
 
@@ -47,30 +59,38 @@ class SyncRule extends DbObject
 
     private $destinationKeyPattern;
 
+    private $newSyncProperties;
+
+    private $originalId;
+
     public function listInvolvedSourceIds()
     {
         if (! $this->hasBeenLoadedFromDb()) {
-            return array();
+            return [];
         }
 
         $db = $this->getDb();
         return array_map('intval', array_unique(
             $db->fetchCol(
                 $db->select()
-                   ->from(array('p' => 'sync_property'), 'p.source_id')
-                   ->join(array('s' => 'import_source'), 's.id = p.source_id', array())
+                   ->from(['p' => 'sync_property'], 'p.source_id')
+                   ->join(['s' => 'import_source'], 's.id = p.source_id', array())
                    ->where('rule_id = ?', $this->get('id'))
                    ->order('s.source_name')
             )
         ));
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function fetchInvolvedImportSources()
     {
-        $sources = array();
+        $sources = [];
 
         foreach ($this->listInvolvedSourceIds() as $sourceId) {
-            $sources[$sourceId] = ImportSource::load($sourceId, $this->getConnection());
+            $sources[$sourceId] = ImportSource::loadWithAutoIncId($sourceId, $this->getConnection());
         }
 
         return $sources;
@@ -84,7 +104,7 @@ class SyncRule extends DbObject
 
         $db = $this->getDb();
         $query = $db->select()->from(
-            array('sr' => 'sync_run'),
+            ['sr' => 'sync_run'],
             'sr.start_time'
         )->where('sr.rule_id = ?', $this->get('id'))
         ->order('sr.start_time DESC')
@@ -101,29 +121,13 @@ class SyncRule extends DbObject
 
         $db = $this->getDb();
         $query = $db->select()->from(
-            array('sr' => 'sync_run'),
+            ['sr' => 'sync_run'],
             'sr.id'
         )->where('sr.rule_id = ?', $this->get('id'))
         ->order('sr.start_time DESC')
         ->limit(1);
 
         return $db->fetchOne($query);
-    }
-
-    public function getPriorityForNextProperty()
-    {
-        if (! $this->hasBeenLoadedFromDb()) {
-            return 1;
-        }
-        
-        $db = $this->getDb();
-        return $db->fetchOne(
-            $db->select()
-                ->from(
-                    array('p' => 'sync_property'),
-                    array('priority' => '(CASE WHEN MAX(p.priority) IS NULL THEN 1 ELSE MAX(p.priority) + 1 END)')
-                )->where('p.rule_id = ?', $this->get('id'))
-        );
     }
 
     public function matches($row)
@@ -135,6 +139,11 @@ class SyncRule extends DbObject
         return $this->filter()->matches($row);
     }
 
+    /**
+     * @param bool $apply
+     * @return bool
+     * @throws DuplicateKeyException
+     */
     public function checkForChanges($apply = false)
     {
         $hadChanges = false;
@@ -175,12 +184,17 @@ class SyncRule extends DbObject
 
     /**
      * @return IcingaObject[]
+     * @throws Exception
      */
     public function getExpectedModifications()
     {
         return $this->sync()->getExpectedModifications();
     }
 
+    /**
+     * @return bool
+     * @throws DuplicateKeyException
+     */
     public function applyChanges()
     {
         return $this->checkForChanges(true);
@@ -218,7 +232,10 @@ class SyncRule extends DbObject
         return $this->sync;
     }
 
-    protected function filter()
+    /**
+     * @return Filter
+     */
+    public function filter()
     {
         if ($this->filter === null) {
             $this->filter = Filter::fromQueryString($this->get('filter_expression'));
@@ -244,6 +261,122 @@ class SyncRule extends DbObject
         } else {
             return PurgeStrategy::load('PurgeNothing', $this);
         }
+    }
+
+    public function export()
+    {
+        $plain = $this->getProperties();
+        $plain['originalId'] = $plain['id'];
+        unset($plain['id']);
+
+        foreach ($this->stateProperties as $key) {
+            unset($plain[$key]);
+        }
+        $plain['properties'] = $this->exportSyncProperties();
+        ksort($plain);
+
+        return (object) $plain;
+    }
+
+    /**
+     * @param object $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        if (isset($properties['originalId'])) {
+            $id = $properties['originalId'];
+            unset($properties['originalId']);
+        } else {
+            $id = null;
+        }
+        $name = $properties['rule_name'];
+
+        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
+            $object = static::loadWithAutoIncId($id, $db);
+        } elseif ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
+        } elseif (static::existsWithName($name, $db)) {
+            throw new DuplicateKeyException(
+                'Sync Rule %s already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        $object->newSyncProperties = $properties['properties'];
+        unset($properties['properties']);
+        $object->setProperties($properties);
+        if ($id !== null && (int) $id !== (int) $object->get('id')) {
+            $object->originalId = $object->get('id');
+            $object->reallySet('id', $id);
+        }
+
+        return $object;
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->get('rule_name');
+    }
+
+    /**
+     * @throws DuplicateKeyException
+     */
+    protected function onStore()
+    {
+        parent::onStore();
+        if ($this->newSyncProperties !== null) {
+            $connection = $this->getConnection();
+            $db = $connection->getDbAdapter();
+            $myId = $this->get('id');
+            if ($this->originalId === null) {
+                $originalId = $myId;
+            } else {
+                $originalId = $this->originalId;
+                $this->originalId = null;
+            }
+            if ($this->hasBeenLoadedFromDb()) {
+                $db->delete(
+                    'sync_property',
+                    $db->quoteInto('rule_id = ?', $myId)
+                );
+            }
+
+            foreach ($this->newSyncProperties as $property) {
+                unset($property->rule_name);
+                $property = SyncProperty::create((array) $property, $connection);
+                $property->set('rule_id', $myId);
+                $property->store();
+            }
+        }
+    }
+
+    public function exportSyncProperties()
+    {
+        $all = [];
+        $db = $this->getDb();
+        $sourceNames = $db->fetchPairs(
+            $db->select()->from('import_source', ['id', 'source_name'])
+        );
+
+        foreach ($this->getSyncProperties() as $property) {
+            $properties = $property->getProperties();
+            $properties['source'] = $sourceNames[$properties['source_id']];
+            unset($properties['id']);
+            unset($properties['rule_id']);
+            unset($properties['source_id']);
+            ksort($properties);
+            $all[] = (object) $properties;
+        }
+
+        return $all;
     }
 
     /**
@@ -345,10 +478,19 @@ class SyncRule extends DbObject
         return $this->hasCombinedKey;
     }
 
+    public function hasSyncProperties()
+    {
+        $properties = $this->getSyncProperties();
+        return ! empty($properties);
+    }
+
+    /**
+     * @return SyncProperty[]
+     */
     public function getSyncProperties()
     {
         if (! $this->hasBeenLoadedFromDb()) {
-            return array();
+            return [];
         }
 
         if ($this->syncProperties === null) {
@@ -367,7 +509,48 @@ class SyncRule extends DbObject
             $db->select()
                ->from('sync_property')
                ->where('rule_id = ?', $this->get('id'))
-               ->order('priority DESC')
+               ->order('priority ASC')
+        );
+    }
+
+    /**
+     * TODO: implement in a generic way, this is duplicated code
+     *
+     * @param string $name
+     * @param Db $connection
+     * @api internal
+     * @return bool
+     */
+    public static function existsWithName($name, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+
+        return (string) $name === (string) $db->fetchOne(
+            $db->select()
+                ->from('sync_rule', 'rule_name')
+                ->where('rule_name = ?', $name)
+        );
+    }
+
+    /**
+     * @param string $name
+     * @param int $id
+     * @param Db $connection
+     * @api internal
+     * @return bool
+     */
+    protected static function existsWithNameAndId($name, $id, Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $dummy = new static;
+        $idCol = $dummy->autoincKeyName;
+        $keyCol = $dummy->keyName;
+
+        return (string) $id === (string) $db->fetchOne(
+            $db->select()
+                ->from($dummy->table, $idCol)
+                ->where("$idCol = ?", $id)
+                ->where("$keyCol = ?", $name)
         );
     }
 }

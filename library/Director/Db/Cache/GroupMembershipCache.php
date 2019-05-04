@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Db\Cache;
 
+use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 
@@ -26,8 +27,10 @@ class GroupMembershipCache
         $this->groupClass = 'Icinga\\Module\\Director\\Objects\\Icinga'
             . ucfirst($this->type) . 'Group';
 
+        Benchmark::measure('Initializing GroupMemberShipCache');
         $this->connection = $object->getConnection();
         $this->loadAllMemberships();
+        Benchmark::measure('Filled GroupMemberShipCache');
     }
 
     protected function loadAllMemberships()

@@ -6,7 +6,7 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
-use Icinga\Exception\ProgrammingError;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -18,6 +18,10 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use InvalidArgumentException;
+use LogicException;
+use RuntimeException;
 
 abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 {
@@ -36,9 +40,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether this Object makes use of (time) ranges */
     protected $supportsRanges = false;
 
-    /** @var bool Whether this object supports (command) Arguments */
-    protected $supportsArguments = false;
-
     /** @var bool Whether inheritance via "imports" property is supported */
     protected $supportsImports = false;
 
@@ -51,6 +52,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var bool Whether Sets of object can be defined */
     protected $supportsSets = false;
 
+    /** @var bool Whether this Object supports template-based Choices */
+    protected $supportsChoices = false;
+
     /** @var bool If the object is rendered in legacy config */
     protected $supportedInLegacy = false;
 
@@ -59,22 +63,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected $type;
 
     /* key/value!! */
-    protected $booleans = array();
+    protected $booleans = [];
 
     // Property suffixed with _id must exist
-    protected $relations = array(
+    protected $relations = [
         // property => PropertyClass
-    );
+    ];
 
-    protected $relatedSets = array(
+    protected $relatedSets = [
         // property => ExtensibleSetClass
-    );
+    ];
 
-    protected $multiRelations = array(
+    protected $multiRelations = [
         // property => IcingaObjectClass
-    );
+    ];
 
-    protected $loadedMultiRelations = array();
+    protected $loadedMultiRelations = [];
 
     /**
      * Allows to set properties pointing to related objects by name without
@@ -82,18 +86,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      *
      * @var array
      */
-    protected $unresolvedRelatedProperties = array();
+    protected $unresolvedRelatedProperties = [];
 
-    protected $loadedRelatedSets = array();
+    protected $loadedRelatedSets = [];
 
     // Will be rendered first, before imports
-    protected $prioritizedProperties = array();
+    protected $prioritizedProperties = [];
 
-    protected $propertiesNotForRendering = array(
+    protected $propertiesNotForRendering = [
         'id',
         'object_name',
         'object_type',
-    );
+    ];
 
     /**
      * Array of interval property names
@@ -103,13 +107,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      *
      * @var array
      */
-    protected $intervalProperties = array();
+    protected $intervalProperties = [];
 
     /** @var  Db */
     protected $connection;
 
     private $vars;
 
+    /** @var IcingaObjectGroups */
     private $groups;
 
     private $imports;
@@ -117,15 +122,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /** @var  IcingaTimePeriodRanges - TODO: generic ranges */
     private $ranges;
 
-    private $arguments;
-
     private $shouldBeRemoved = false;
 
-    private $resolveCache = array();
+    private $resolveCache = [];
 
     private $cachedPlainUnmodified;
 
     private $templateResolver;
+
+    protected static $tree;
 
     /**
      * @return Db
@@ -290,23 +295,47 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->relations[$property];
     }
 
+    /**
+     * @param $property
+     * @return IcingaObject
+     */
     public function getRelated($property)
     {
         return $this->getRelatedObject($property, $this->{$property . '_id'});
     }
 
+    /**
+     * @param $property
+     * @param $id
+     * @return string
+     */
     protected function getRelatedObjectName($property, $id)
     {
-        return $this->getRelatedObject($property, $id)->object_name;
+        return $this->getRelatedObject($property, $id)->getObjectName();
     }
 
+    /**
+     * @param $property
+     * @param $id
+     * @return IcingaObject
+     */
     protected function getRelatedObject($property, $id)
     {
         /** @var IcingaObject $class */
         $class = $this->getRelationClass($property);
-        return $class::loadWithAutoIncId($id, $this->connection);
+        try {
+            $object = $class::loadWithAutoIncId($id, $this->connection);
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
+
+        return $object;
     }
 
+    /**
+     * @param $property
+     * @return IcingaObject|null
+     */
     public function getResolvedRelated($property)
     {
         $id = $this->getSingleResolvedProperty($property . '_id');
@@ -316,6 +345,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return null;
+    }
+
+    public function prefetchAllRelatedTypes()
+    {
+        foreach (array_unique(array_values($this->relations)) as $relClass) {
+            /** @var static $class */
+            $class = __NAMESPACE__ . '\\' . $relClass;
+            $class::prefetchAll($this->getConnection());
+        }
+    }
+
+    public static function prefetchAllRelationsByType($type, Db $db)
+    {
+        /** @var static $class */
+        $class = self::classByType($type);
+        /** @var static $dummy */
+        $dummy = $class::create([], $db);
+        $dummy->prefetchAllRelatedTypes();
     }
 
     /**
@@ -355,7 +402,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function supportsArguments()
     {
-        return $this->supportsArguments;
+        return $this instanceof ObjectWithArguments;
     }
 
     /**
@@ -408,6 +455,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->supportsSets;
     }
 
+    /**
+     * Whether this object supports template-based Choices
+     *
+     * @return bool
+     */
+    public function supportsChoices()
+    {
+        return $this->supportsChoices;
+    }
+
     public function setAssignments($value)
     {
         return IcingaObjectLegacyAssignments::applyToObject($this, $value);
@@ -418,7 +475,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      *
      * @param Filter|string $filter
      *
-     * @throws ProgrammingError
+     * @throws LogicException
      *
      * @return self
      */
@@ -431,11 +488,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $type = get_class($this);
             }
 
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'I can only assign for applied objects or objects with native'
                 . ' support for assigments, got %s',
                 $type
-            );
+            ));
         }
 
         // @codingStandardsIgnoreEnd
@@ -464,23 +521,44 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
+    /**
+     * @param $name
+     */
     protected function resolveUnresolvedRelatedProperty($name)
     {
         $short = substr($name, 0, -3);
         /** @var IcingaObject $class */
         $class = $this->getRelationClass($short);
-        $object = $class::load(
-            $this->unresolvedRelatedProperties[$name],
-            $this->connection
-        );
+        try {
+            $object = $class::load(
+                $this->unresolvedRelatedProperties[$name],
+                $this->connection
+            );
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
 
         $this->reallySet($name, $object->get('id'));
         unset($this->unresolvedRelatedProperties[$name]);
     }
 
+    /**
+     * @return bool
+     */
     public function hasBeenModified()
     {
-        $this->resolveUnresolvedRelatedProperties();
+        if (parent::hasBeenModified()) {
+            return true;
+        }
+
+        if ($this->hasUnresolvedRelatedProperties()) {
+            $this->resolveUnresolvedRelatedProperties();
+
+            // Duplicates above code, but this makes it faster:
+            if (parent::hasBeenModified()) {
+                return true;
+            }
+        }
 
         if ($this->supportsCustomVars() && $this->vars !== null && $this->vars()->hasBeenModified()) {
             return true;
@@ -498,7 +576,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             return true;
         }
 
-        if ($this->supportsArguments() && $this->arguments !== null && $this->arguments()->hasBeenModified()) {
+        if ($this instanceof ObjectWithArguments
+            && $this->gotArguments()
+            && $this->arguments()->hasBeenModified()
+        ) {
             return true;
         }
 
@@ -514,7 +595,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        return parent::hasBeenModified();
+        return false;
+    }
+
+    protected function hasUnresolvedRelatedProperties()
+    {
+        return ! empty($this->unresolvedRelatedProperties);
     }
 
     protected function hasUnresolvedRelatedProperty($name)
@@ -522,6 +608,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return array_key_exists($name, $this->unresolvedRelatedProperties);
     }
 
+    /**
+     * @param $key
+     * @return mixed
+     */
     protected function getRelationId($key)
     {
         if ($this->hasUnresolvedRelatedProperty($key)) {
@@ -531,6 +621,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return parent::get($key);
     }
 
+    /**
+     * @param $key
+     * @return string|null
+     */
     protected function getRelatedProperty($key)
     {
         $idKey = $key . '_id';
@@ -541,13 +635,22 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($id = $this->get($idKey)) {
             /** @var IcingaObject $class */
             $class = $this->getRelationClass($key);
-            $object = $class::loadWithAutoIncId($id, $this->connection);
-            return $object->get('object_name');
+            try {
+                $object = $class::loadWithAutoIncId($id, $this->connection);
+            } catch (NotFoundError $e) {
+                throw new RuntimeException($e->getMessage(), 0, $e);
+            }
+
+            return $object->getObjectName();
         }
 
         return null;
     }
 
+    /**
+     * @param string $key
+     * @return \Icinga\Module\Director\CustomVariable\CustomVariable|mixed|null
+     */
     public function get($key)
     {
         if (substr($key, 0, 5) === 'vars.') {
@@ -613,7 +716,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             //TODO: allow for deep keys
             $this->vars()->set(substr($key, 5), $value);
             return $this;
-        } elseif (substr($key, 0, 10) === 'arguments.') {
+        } elseif ($this instanceof ObjectWithArguments
+            && substr($key, 0, 10) === 'arguments.'
+        ) {
             $this->arguments()->set(substr($key, 10), $value);
             return $this;
         }
@@ -674,17 +779,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    protected function setArguments($value)
-    {
-        $this->arguments()->setArguments($value);
-        return $this;
-    }
-
-    protected function getArguments()
-    {
-        return $this->arguments()->toPlainObject();
-    }
-
     protected function getRanges()
     {
         return $this->ranges()->getValues();
@@ -699,10 +793,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif ($value === '' || $value === null) {
             return null;
         } else {
-            throw new ProgrammingError(
+            throw new InvalidArgumentException(sprintf(
                 'Got invalid boolean: %s',
                 var_export($value, 1)
-            );
+            ));
         }
     }
 
@@ -727,6 +821,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->shouldBeRemoved;
     }
 
+    public function shouldBeRenamed()
+    {
+        return $this->hasBeenLoadedFromDb()
+            && $this->getOriginalProperty('object_name') !== $this->getObjectName();
+    }
+
+    /**
+     * @return IcingaObjectGroups
+     */
     public function groups()
     {
         $this->assertGroupsSupport();
@@ -739,6 +842,43 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this->groups;
+    }
+
+    public function hasModifiedGroups()
+    {
+        $this->assertGroupsSupport();
+        if ($this->groups === null) {
+            return false;
+        }
+
+        return $this->groups->hasBeenModified();
+    }
+
+    public function getAppliedGroups()
+    {
+        $this->assertGroupsSupport();
+        if (! $this instanceof IcingaHost) {
+            throw new RuntimeException('getAppliedGroups is only available for hosts currently!');
+        }
+
+        $type = strtolower($this->getType());
+        $query = $this->db->select()->from(
+            ['gr' => "icinga_${type}group_${type}_resolved"],
+            ['g.object_name']
+        )->join(
+            ['g' => "icinga_${type}group"],
+            "g.id = gr.${type}group_id",
+            []
+        )->joinLeft(
+            ['go' => "icinga_${type}group_${type}"],
+            "go.${type}group_id = gr.${type}group_id AND go.${type}_id = " . $this->id,
+            []
+        )->where(
+            "gr.${type}_id = ?",
+            $this->id
+        )->where("go.${type}_id IS NULL")->order('g.object_name');
+
+        return $this->db->fetchCol($query);
     }
 
     /**
@@ -769,20 +909,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->rangeClass;
     }
 
-    public function arguments()
-    {
-        $this->assertArgumentsSupport();
-        if ($this->arguments === null) {
-            if ($this->hasBeenLoadedFromDb()) {
-                $this->arguments = IcingaArguments::loadForStoredObject($this);
-            } else {
-                $this->arguments = new IcingaArguments($this);
-            }
-        }
-
-        return $this->arguments;
-    }
-
     /**
      * @return IcingaObjectImports
      */
@@ -790,7 +916,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->assertImportsSupport();
         if ($this->imports === null) {
-            if ($this->hasBeenLoadedFromDb()) {
+            // can not use hasBeenLoadedFromDb() when in onStore()
+            if ($this->getProperty('id') !== null) {
                 $this->imports = IcingaObjectImports::loadForStoredObject($this);
             } else {
                 $this->imports = new IcingaObjectImports($this);
@@ -826,9 +953,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getImports()
     {
-        return $this->imports()->listImportNames();
+        return $this->listImportNames();
     }
 
+    /**
+     * @deprecated This should no longer be in use
+     * @return IcingaTemplateResolver
+     */
     public function templateResolver()
     {
         if ($this->templateResolver === null) {
@@ -955,27 +1086,78 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getVars()
     {
-        $vars = (object) array();
+        $vars = [];
         foreach ($this->vars() as $key => $var) {
             if ($var->hasBeenDeleted()) {
                 continue;
             }
 
-            $vars->$key = $var->getValue();
+            $vars[$key] = $var->getValue();
         }
+        ksort($vars);
 
-        return $vars;
+        return (object) $vars;
     }
 
+    /**
+     * This is mostly for magic getters
+     * @return array
+     */
     public function getGroups()
     {
         return $this->groups()->listGroupNames();
+    }
+
+    /**
+     * @return array
+     * @throws NotFoundError
+     */
+    public function listInheritedGroupNames()
+    {
+        $parents = $this->imports()->getObjects();
+        /** @var IcingaObject $parent */
+        foreach (array_reverse($parents) as $parent) {
+            $inherited = $parent->getGroups();
+            if (! empty($inherited)) {
+                return $inherited;
+            }
+        }
+
+        return [];
     }
 
     public function setGroups($groups)
     {
         $this->groups()->set($groups);
         return $this;
+    }
+
+    /**
+     * @return array
+     * @throws NotFoundError
+     */
+    public function listResolvedGroupNames()
+    {
+        $groups = $this->groups()->listGroupNames();
+        if (empty($groups)) {
+            return $this->listInheritedGroupNames();
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @param $group
+     * @return bool
+     * @throws NotFoundError
+     */
+    public function hasGroup($group)
+    {
+        if ($group instanceof static) {
+            $group = $group->getObjectName();
+        }
+
+        return in_array($group, $this->listResolvedGroupNames());
     }
 
     protected function getResolved($what)
@@ -1036,7 +1218,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function triggerLoopDetection()
     {
-        $this->templateResolver()->listResolvedParentIds();
+        // $this->templateResolver()->listResolvedParentIds();
     }
 
     public function getSingleResolvedProperty($key, $default = null)
@@ -1052,8 +1234,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        /** @var IcingaObject $object */
-        foreach (array_reverse($this->imports()->getObjects()) as $object) {
+        /** @var IcingaObject[] $imports */
+        try {
+            $imports = array_reverse($this->imports()->getObjects());
+        } catch (NotFoundError $e) {
+            throw new RuntimeException($e->getMessage(), 0, $e);
+        }
+
+        // Eventually trigger loop detection
+        $this->listAncestorIds();
+
+        foreach ($imports as $object) {
             $v = $object->getSingleResolvedProperty($key);
             if (null !== $v) {
                 return $v;
@@ -1078,7 +1269,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $vals['_MERGED_']    = (object) array();
         $vals['_INHERITED_'] = (object) array();
         $vals['_ORIGINS_']   = (object) array();
-        $objects = $this->imports()->getObjects();
+        // $objects = $this->imports()->getObjects();
+        $objects = IcingaTemplateRepository::instanceByObject($this)
+            ->getTemplatesIndexedByNameFor($this, true);
 
         $get          = 'get'         . $what;
         $getInherited = 'getInherited' . $what;
@@ -1090,6 +1283,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
             foreach ($object->$getInherited() as $key => $value) {
                 if (in_array($key, $blacklist)) {
+                    continue;
+                }
+
+                if (! property_exists($origins, $key)) {
+                    // TODO:  Introduced with group membership resolver or
+                    //        choices - this should not be required. Check this!
                     continue;
                 }
 
@@ -1138,10 +1337,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertCustomVarsSupport()
     {
         if (! $this->supportsCustomVars()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no custom vars',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1150,10 +1349,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertGroupsSupport()
     {
         if (! $this->supportsGroups()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no groups',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1162,22 +1361,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertRangesSupport()
     {
         if (! $this->supportsRanges()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no ranges',
                 $this->getType()
-            );
-        }
-
-        return $this;
-    }
-
-    protected function assertArgumentsSupport()
-    {
-        if (! $this->supportsArguments()) {
-            throw new ProgrammingError(
-                'Objects of type "%s" have no arguments',
-                $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1186,10 +1373,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     protected function assertImportsSupport()
     {
         if (! $this->supportsImports()) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'Objects of type "%s" have no imports',
                 $this->getType()
-            );
+            ));
         }
 
         return $this;
@@ -1208,12 +1395,28 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 } else {
                     $this->vars = CustomVariables::loadForStoredObject($this);
                 }
+
+                if ($this->getShortTableName() === 'host') {
+                    $this->vars->setOverrideKeyName(
+                        $this->getConnection()->settings()->override_services_varname
+                    );
+                }
             } else {
                 $this->vars = new CustomVariables();
             }
         }
 
         return $this->vars;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasInitializedVars()
+    {
+        $this->assertCustomVarsSupport();
+
+        return $this->vars !== null;
     }
 
     public function getVarsTableName()
@@ -1269,6 +1472,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             && $this->get('object_type') === 'apply';
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
     protected function storeRelatedObjects()
     {
         $this
@@ -1281,21 +1489,42 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeArguments();
     }
 
+    /**
+     * @throws NotFoundError
+     */
     protected function beforeStore()
     {
         $this->resolveUnresolvedRelatedProperties();
+        if ($this->gotImports()) {
+            $this->imports()->getObjects();
+        }
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function onInsert()
     {
         DirectorActivityLog::logCreation($this, $this->connection);
         $this->storeRelatedObjects();
     }
 
+    /**
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Zend_Db_Adapter_Exception
+     */
     public function onUpdate()
     {
         DirectorActivityLog::logModification($this, $this->connection);
         $this->storeRelatedObjects();
+    }
+
+    public function onStore()
+    {
+        $this->notifyResolvers();
     }
 
     /**
@@ -1347,19 +1576,24 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
-     * @return self
+     * @return $this
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeArguments()
     {
-        if ($this->supportsArguments()) {
-            $this->arguments !== null && $this->arguments()->store();
+        if ($this instanceof ObjectWithArguments) {
+            $this->gotArguments() && $this->arguments()->store();
         }
 
         return $this;
     }
 
+    protected function notifyResolvers()
+    {
+    }
+
     /**
-     * @return self
+     * @return $this
      */
     protected function storeRelatedSets()
     {
@@ -1373,7 +1607,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     }
 
     /**
-     * @return self
+     * @return $this
+     * @throws NotFoundError
+     * @throws \Zend_Db_Adapter_Exception
      */
     protected function storeImports()
     {
@@ -1460,7 +1696,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 && array_key_exists('enable_active_checks', $this->defaultProperties)
             ) {
                 $passive = clone($this);
-                $passive->enable_active_checks = false;
+                $passive->set('enable_active_checks', false);
 
                 $config->configFile(
                     'director/master/' . $filename,
@@ -1470,7 +1706,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } elseif ($deploymentMode === 'masterless') {
             // no additional config
         } else {
-            throw new ProgrammingError('Unsupported deployment mode: %s' .$deploymentMode);
+            throw new LogicException(sprintf(
+                'Unsupported deployment mode: %s',
+                $deploymentMode
+            ));
         }
 
         $config->configFile(
@@ -1510,6 +1749,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $filename;
     }
 
+    /**
+     * @param $zoneId
+     * @param IcingaConfig|null $config
+     * @return string
+     * @throws NotFoundError
+     */
+    protected function getNameForZoneId($zoneId, IcingaConfig $config = null)
+    {
+        // TODO: this is still ugly.
+        if ($config === null) {
+            return IcingaZone::loadWithAutoIncId(
+                $zoneId,
+                $this->getConnection()
+            )->getObjectName();
+        } else {
+            // Config has a lookup cache, is faster:
+            return $config->getZoneName($zoneId);
+        }
+    }
+
     public function getRenderingZone(IcingaConfig $config = null)
     {
         if ($this->hasUnresolvedRelatedProperty('zone_id')) {
@@ -1517,28 +1776,33 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->hasProperty('zone_id')) {
-            if (! $this->supportsImports()) {
-                if ($zoneId = $this->get('zone_id')) {
-                    // Config has a lookup cache, is faster:
-                    return $config->getZoneName($zoneId);
-                }
-            }
-
             try {
-                if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
-                    // Config has a lookup cache, is faster:
-                    return $config->getZoneName($zoneId);
+                if (! $this->supportsImports()) {
+                    if ($zoneId = $this->get('zone_id')) {
+                        return $this->getNameForZoneId($zoneId, $config);
+                    }
                 }
+
+                if ($zoneId = $this->getSingleResolvedProperty('zone_id')) {
+                    return $this->getNameForZoneId($zoneId, $config);
+                }
+            } catch (NestingError $e) {
+                throw $e;
             } catch (Exception $e) {
                 return self::RESOLVE_ERROR;
             }
         }
 
+        return $this->getDefaultZone($config);
+    }
+
+    protected function getDefaultZone(IcingaConfig $config = null)
+    {
         if ($this->prefersGlobalZone()) {
             return $this->connection->getDefaultGlobalZoneName();
+        } else {
+            return $this->connection->getMasterZoneName();
         }
-
-        return $this->connection->getMasterZoneName();
     }
 
     protected function prefersGlobalZone()
@@ -1548,12 +1812,20 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderImports()
     {
-        // TODO: parent_host ORDERed by weigth...
-        if ($this->supportsImports()) {
-            return $this->imports()->toConfigString();
-        } else {
+        if (! $this->supportsImports()) {
             return '';
         }
+
+        $ret = '';
+        foreach ($this->getImports() as $name) {
+            $ret .= '    import ' . c::renderString($name) . "\n";
+        }
+
+        if ($ret !== '') {
+            $ret .= "\n";
+        }
+
+        return $ret;
     }
 
     protected function renderLegacyImports()
@@ -1582,13 +1854,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     /**
      * @codingStandardsIgnoreStart
      */
-    protected function renderLegacyHost_id()
+    protected function renderLegacyHost_id($value)
     {
-        return $this->renderLegacyRelationProperty(
-            'host',
-            $this->get('host_id'),
-            'host_name'
-        );
+        if (is_array($value)) {
+            return c1::renderKeyValue('host_name', c1::renderArray($value));
+        } else {
+            return $this->renderLegacyRelationProperty(
+                'host',
+                $this->get('host_id'),
+                'host_name'
+            );
+        }
     }
 
     /**
@@ -1663,7 +1939,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         return c1::renderKeyValue(
             $legacyKey,
-            c1::renderBoolean($this->$property)
+            c1::renderBoolean($this->get($property))
         );
     }
 
@@ -1806,6 +2082,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($this->propertyIsInterval($key)) {
+            return c1::renderKeyValue(
+                $this->intervalProperties[$key],
+                c1::renderInterval($value)
+            );
+        }
+
         if (substr($key, -3) === '_id'
              && $this->hasRelation($relKey = substr($key, 0, -3))
         ) {
@@ -1817,12 +2100,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderBooleanProperty($key)
     {
-        return c::renderKeyValue($key, c::renderBoolean($this->$key));
+        return c::renderKeyValue($key, c::renderBoolean($this->get($key)));
     }
 
     protected function renderPropertyAsSeconds($key)
     {
-        return c::renderKeyValue($key, c::renderInterval($this->$key));
+        return c::renderKeyValue($key, c::renderInterval($this->get($key)));
     }
 
     protected function renderSuffix()
@@ -1876,8 +2159,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function renderLegacyGroups()
     {
-        if ($this->supportsGroups()) {
-            return $this->groups()->toLegacyConfigString();
+        if ($this->supportsGroups() && $this->hasBeenLoadedFromDb()) {
+            $applied = array();
+            if ($this instanceof IcingaHost) {
+                $applied = $this->getAppliedGroups();
+            }
+            return $this->groups()->toLegacyConfigString($applied);
         } else {
             return '';
         }
@@ -1891,6 +2178,19 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $out = '';
         foreach ($this->loadAllMultiRelations() as $rel) {
             $out .= $rel->toConfigString();
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return string
+     */
+    protected function renderLegacyMultiRelations()
+    {
+        $out = '';
+        foreach ($this->loadAllMultiRelations() as $rel) {
+            $out .= $rel->toLegacyConfigString();
         }
 
         return $out;
@@ -1925,11 +2225,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     protected function renderArguments()
     {
-        if ($this->supportsArguments()) {
-            return $this->arguments()->toConfigString();
-        } else {
-            return '';
-        }
+        return '';
     }
 
     protected function renderRelatedSets()
@@ -2090,10 +2386,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function renderAssign_Filter()
     {
-        // @codingStandardsIgnoreEnd
         return '    ' . AssignRenderer::forFilter(
             Filter::fromQueryString($this->get('assign_filter'))
         )->renderAssign() . "\n";
+    }
+
+    public function renderLegacyAssign_Filter()
+    {
+        // @codingStandardsIgnoreEnd
+        if ($this instanceof IcingaHostGroup) {
+            $c = "    # resolved memberships are set via the individual object\n";
+        } elseif ($this instanceof IcingaService) {
+            $c = "    # resolved objects are listed here\n";
+        } else {
+            $c = "    # assign is not supported for " . $this->type . "\n";
+        }
+        $c .= '    #' . AssignRenderer::forFilter(
+            Filter::fromQueryString($this->get('assign_filter'))
+        )->renderAssign() . "\n";
+        return $c;
     }
 
     public function toLegacyConfigString()
@@ -2102,11 +2413,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderLegacyObjectHeader(),
             $this->renderLegacyImports(),
             $this->renderLegacyProperties(),
-            $this->renderLegacyRanges(),
             //$this->renderArguments(),
             //$this->renderRelatedSets(),
             $this->renderLegacyGroups(),
-            //$this->renderMultiRelations(),
+            $this->renderLegacyMultiRelations(),
+            $this->renderLegacyRanges(),
             $this->renderLegacyCustomExtensions(),
             $this->renderLegacyCustomVars(),
             $this->renderLegacySuffix()
@@ -2151,11 +2462,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $this->renderPrioritizedProperties(),
             $this->renderImports(),
             $this->renderProperties(),
-            $this->renderRanges(),
             $this->renderArguments(),
             $this->renderRelatedSets(),
             $this->renderGroups(),
             $this->renderMultiRelations(),
+            $this->renderRanges(),
             $this->renderCustomExtensions(),
             $this->renderCustomVars(),
             $this->renderSuffix()
@@ -2163,7 +2474,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->isDisabled()) {
             return "/* --- This object has been disabled ---\n"
-                . $str . "*/\n";
+                // Do not allow strings to break our comment
+                . str_replace('*/', "* /", $str) . "*/\n";
         } else {
             return $str;
         }
@@ -2203,14 +2515,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getObjectName()
     {
-        if ($this->hasProperty('object_name')) {
-            return $this->get('object_name');
+        $property = static::getKeyColumnName();
+        if ($this->hasProperty($property)) {
+            return $this->get($property);
         } else {
-            // TODO: replace with an exception once finished
-            throw new ProgrammingError(
-                'Trying to access "object_name" for an instance of "%s"',
+            throw new LogicException(sprintf(
+                'Trying to access "%s" for an instance of "%s"',
+                $property,
                 get_class($this)
-            );
+            ));
         }
     }
 
@@ -2219,7 +2532,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // allow for icinga_host and host
         $type = lcfirst(preg_replace('/^icinga_/', '', $type));
 
-        if (strpos($type, 'data') === false) {
+        // Hint: Sync/Import are not IcingaObjects, this should be reconsidered:
+        if (strpos($type, 'import') === 0 || strpos($type, 'sync') === 0) {
+            $prefix = '';
+        } elseif (strpos($type, 'data') === false) {
             $prefix = 'Icinga';
         } else {
             $prefix = 'Director';
@@ -2238,6 +2554,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'serviceSet';
         } elseif ($type === 'apiuser') {
             $type = 'apiUser';
+        } elseif ($type === 'host_template_choice') {
+            $type = 'templateChoiceHost';
+        } elseif ($type === 'service_template_choice') {
+            $type = 'TemplateChoiceService';
+        } elseif ($type === 'scheduled_downtime') {
+            $type = 'ScheduledDowntime';
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
@@ -2263,6 +2585,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @param Db $db
      *
      * @return IcingaObject
+     * @throws NotFoundError
      */
     public static function loadByType($type, $id, Db $db)
     {
@@ -2285,18 +2608,32 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $class::exists($id, $db);
     }
 
-    public static function loadAllByType($type, Db $db, $query = null, $keyColumn = 'object_name')
+    public static function getKeyColumnName()
+    {
+        return 'object_name';
+    }
+
+    public static function loadAllByType($type, Db $db, $query = null, $keyColumn = null)
     {
         /** @var DbObject $class */
         $class = self::classByType($type);
 
+        if ($keyColumn === null) {
+            if (method_exists($class, 'getKeyColumnName')) {
+                $keyColumn = $class::getKeyColumnName();
+            }
+        }
+
         if (is_array($class::create()->getKeyName())) {
             return $class::loadAll($db, $query);
         } else {
-            if (PrefetchCache::shouldBeUsed() && $query === null && $keyColumn === 'object_name') {
+            if (PrefetchCache::shouldBeUsed()
+                && $query === null
+                && $keyColumn === static::getKeyColumnName()
+            ) {
                 $result = array();
                 foreach ($class::prefetchAll($db) as $row) {
-                    $result[$row->object_name] = $row;
+                    $result[$row->$keyColumn] = $row;
                 }
 
                 return $result;
@@ -2310,7 +2647,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @param $type
      * @param Db $db
      * @return IcingaObject[]
-     * @throws ProgrammingError
      */
     public static function loadAllExternalObjectsByType($type, Db $db)
     {
@@ -2319,10 +2655,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $dummy = $class::create();
 
         if (is_array($dummy->getKeyName())) {
-            throw new ProgrammingError(
+            throw new LogicException(sprintf(
                 'There is no support for loading external objects of type "%s"',
                 $type
-            );
+            ));
         } else {
             $query = $db->getDbAdapter()
                 ->select()
@@ -2343,6 +2679,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return static::create((array) $plain, $connection);
     }
 
+    /**
+     * @param IcingaObject $object
+     * @param null $preserve
+     * @return $this
+     * @throws NotFoundError
+     */
     public function replaceWith(IcingaObject $object, $preserve = null)
     {
         if ($preserve === null) {
@@ -2361,34 +2703,88 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this;
     }
 
-    // TODO: with rules? What if I want to override vars? Drop in favour of vars.x?
-    public function merge(IcingaObject $object)
+    /**
+     * TODO: with rules? What if I want to override vars? Drop in favour of vars.x?
+     *
+     * @param IcingaObject $object
+     * @param bool $replaceVars
+     * @return $this
+     * @throws NotFoundError
+     */
+    public function merge(IcingaObject $object, $replaceVars = false)
     {
         $object = clone($object);
 
         if ($object->supportsCustomVars()) {
             $vars = $object->getVars();
-            $object->vars = array();
+            $object->set('vars', []);
         }
 
-        $this->setProperties((array) $object->toPlainObject(null, true));
+        if ($object->supportsGroups()) {
+            $groups = $object->getGroups();
+            $object->set('groups', []);
+        }
+
+        if ($object->supportsImports()) {
+            $imports = $object->listImportNames();
+            $object->set('imports', []);
+        }
+
+        $plain = (array) $object->toPlainObject(false, false);
+        unset($plain['vars']);
+        unset($plain['groups']);
+        unset($plain['imports']);
+        foreach ($plain as $p => $v) {
+            if ($v === null) {
+                // We want default values, but no null values
+                continue;
+            }
+
+            $this->set($p, $v);
+        }
 
         if ($object->supportsCustomVars()) {
             $myVars = $this->vars();
-            /** @var CustomVariables $vars */
-            foreach ($vars as $key => $var) {
-                $myVars->set($key, $var);
+            if ($replaceVars) {
+                $this->set('vars', $vars);
+            } else {
+                /** @var CustomVariables $vars */
+                foreach ($vars as $key => $var) {
+                    $myVars->set($key, $var);
+                }
+            }
+        }
+
+        if ($object->supportsGroups()) {
+            if (! empty($groups)) {
+                $this->set('groups', $groups);
+            }
+        }
+
+        if ($object->supportsImports()) {
+            if (! empty($imports)) {
+                $this->set('imports', $imports);
             }
         }
 
         return $this;
     }
 
+    /**
+     * @param bool $resolved
+     * @param bool $skipDefaults
+     * @param array|null $chosenProperties
+     * @param bool $resolveIds
+     * @param bool $keepId
+     * @return object
+     * @throws NotFoundError
+     */
     public function toPlainObject(
         $resolved = false,
         $skipDefaults = false,
         array $chosenProperties = null,
-        $resolveIds = true
+        $resolveIds = true,
+        $keepId = false
     ) {
         $props = array();
 
@@ -2407,7 +2803,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($p as $k => $v) {
             // Do not ship ids for IcingaObjects:
             if ($resolveIds) {
-                if ($k === 'id' && $this->hasProperty('object_name')) {
+                if ($k === 'id' && $keepId === false && $this->hasProperty('object_name')) {
                     continue;
                 }
 
@@ -2423,14 +2819,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
                         $k = $relKey;
                     } else {
-                        throw new ProgrammingError('No such relation: %s', $relKey);
+                        throw new LogicException(sprintf(
+                            'No such relation: %s',
+                            $relKey
+                        ));
                     }
-                }
-            }
-
-            if ($chosenProperties !== null) {
-                if (! in_array($v, $chosenProperties)) {
-                    continue;
                 }
             }
 
@@ -2452,7 +2845,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->supportsGroups()) {
             // TODO: resolve
-            $props['groups'] = $this->groups()->listGroupNames();
+            $groups = $this->groups()->listGroupNames();
+            if ($resolved && empty($groups)) {
+                $groups = $this->listInheritedGroupNames();
+            }
+
+            $props['groups'] = $groups;
         }
 
         foreach ($this->loadAllMultiRelations() as $key => $rel) {
@@ -2461,8 +2859,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsArguments()) {
-            // TODO: resolve
+        if ($this instanceof ObjectWithArguments) {
             $props['arguments'] = $this->arguments()->toPlainObject(
                 $resolved,
                 $skipDefaults
@@ -2479,9 +2876,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this->supportsImports()) {
             if ($resolved) {
-                $props['imports'] = array();
+                $props['imports'] = [];
             } else {
-                $props['imports'] = $this->imports()->listImportNames();
+                $props['imports'] = $this->listImportNames();
             }
         }
 
@@ -2535,9 +2932,53 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
+        if ($chosenProperties !== null) {
+            $chosen = [];
+            foreach ($chosenProperties as $k) {
+                if (array_key_exists($k, $props)) {
+                    $chosen[$k] = $props[$k];
+                }
+            }
+
+            $props = $chosen;
+        }
         ksort($props);
 
         return (object) $props;
+    }
+
+    public function listImportNames()
+    {
+        if ($this->gotImports()) {
+            return $this->imports()->listImportNames();
+        } else {
+            return $this->templateTree()->listParentNamesFor($this);
+        }
+    }
+
+    public function listFlatResolvedImportNames()
+    {
+        return $this->templateTree()->getAncestorsFor($this);
+    }
+
+    public function listImportIds()
+    {
+        return $this->templateTree()->listParentIdsFor($this);
+    }
+
+    public function listAncestorIds()
+    {
+        return $this->templateTree()->listAncestorIdsFor($this);
+    }
+
+    protected function templateTree()
+    {
+        return $this->templates()->tree();
+    }
+
+    protected function templates()
+    {
+        return IcingaTemplateRepository::instanceByObject($this, $this->getConnection());
     }
 
     protected function differsFromDefaultValue($key, $value)
@@ -2549,11 +2990,32 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
     }
 
+    protected function mapHostsToZones($names)
+    {
+        $map = array();
+
+        foreach ($names as $hostname) {
+            /** @var IcingaHost $host */
+            $host = IcingaHost::load($hostname, $this->connection);
+
+            $zone = $host->getRenderingZone();
+            if (! array_key_exists($zone, $map)) {
+                $map[$zone] = array();
+            }
+
+            $map[$zone][] = $hostname;
+        }
+
+        ksort($map);
+
+        return $map;
+    }
+
     public function getUrlParams()
     {
         $params = array();
 
-        if ($this->isApplyRule()) {
+        if ($this->isApplyRule() && ! $this instanceof IcingaScheduledDowntime) {
             $params['id'] = $this->get('id');
         } else {
             $params = array('name' => $this->getObjectName());
@@ -2576,9 +3038,17 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function getOnDeleteUrl()
     {
-        return 'director/' . strtolower($this->getShortTableName()) . 's';
+        $plural= preg_replace('/cys$/', 'cies', strtolower($this->getShortTableName()) . 's');
+        return 'director/' . $plural;
     }
 
+    /**
+     * @param bool $resolved
+     * @param bool $skipDefaults
+     * @param array|null $chosenProperties
+     * @return string
+     * @throws NotFoundError
+     */
     public function toJson(
         $resolved = false,
         $skipDefaults = false,
@@ -2634,7 +3104,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
         }
 
-        if ($this->supportsArguments()) {
+        if ($this instanceof ObjectWithArguments) {
             $args = $this->arguments()->toUnmodifiedPlainObject();
             if (! empty($args)) {
                 $props['arguments'] = $args;
@@ -2693,7 +3163,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         unset($this->groups);
         unset($this->imports);
         unset($this->ranges);
-        unset($this->arguments);
+        if ($this instanceof ObjectWithArguments) {
+            $this->unsetArguments();
+        }
 
         parent::__destruct();
     }

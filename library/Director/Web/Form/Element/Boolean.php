@@ -28,6 +28,16 @@ class Boolean extends ZfSelect
         return null;
     }
 
+    public function isValid($value, $context = null)
+    {
+        if ($value === 'y' || $value === 'n') {
+            $this->setValue($value);
+            return true;
+        }
+
+        return parent::isValid($value, $context);
+    }
+
     /**
      * @param string $value
      * @param string $key

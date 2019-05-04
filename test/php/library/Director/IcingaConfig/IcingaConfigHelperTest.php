@@ -19,7 +19,7 @@ class IcingaConfigHelperTest extends BaseTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\ProgrammingError
+     * @expectedException \InvalidArgumentException
      */
     public function testWhetherInvalidIntervalStringRaisesException()
     {
@@ -53,12 +53,12 @@ class IcingaConfigHelperTest extends BaseTestCase
 
     public function testWhetherDictionaryRendersCorrectly()
     {
-        $dict = (object) array(
+        $dict = (object) [
             'key1'     => 'bla',
             'include'  => 'reserved',
             'spe cial' => 'value',
             '0'        => 'numeric',
-        );
+        ];
         $this->assertEquals(
             c::renderDictionary($dict),
             rtrim($this->loadRendered('dict1'))
@@ -81,26 +81,50 @@ class IcingaConfigHelperTest extends BaseTestCase
         $this->assertEquals(c::renderString('\f'), '"\\\\f"');
     }
 
+    public function testMacrosAreDetected()
+    {
+        $this->assertFalse(c::stringHasMacro('$$vars$'));
+        $this->assertFalse(c::stringHasMacro('$$'));
+        $this->assertTrue(c::stringHasMacro('$vars$$'));
+        $this->assertTrue(c::stringHasMacro('$multiple$$vars.nested.name$$vars$ is here'));
+        $this->assertTrue(c::stringHasMacro('some $vars.nested.name$ is here'));
+        $this->assertTrue(c::stringHasMacro('some $vars.nested.name$$vars.even.more$'));
+        $this->assertTrue(c::stringHasMacro('$vars.nested.name$$a$$$$not$'));
+        $this->assertTrue(c::stringHasMacro('MSSQL$$$config$'));
+        $this->assertTrue(c::stringHasMacro('MSSQL$$$config$', 'config'));
+        $this->assertTrue(c::stringHasMacro('MSSQL$$$nix$ and $config$', 'config'));
+        $this->assertFalse(c::stringHasMacro('MSSQL$$$nix$config$ and $$', 'config'));
+        $this->assertFalse(c::stringHasMacro('MSSQL$$$nix$ and $$config$', 'config'));
+        $this->assertFalse(c::stringHasMacro('MSSQL$$$config$', 'conf'));
+    }
+
     public function testRenderStringWithVariables()
     {
-        $this->assertEquals(c::renderStringWithVariables('Before $var$'), '"Before " + var');
+        $this->assertEquals('"Before " + var', c::renderStringWithVariables('Before $var$'));
         $this->assertEquals(c::renderStringWithVariables('$var$ After'), 'var + " After"');
         $this->assertEquals(c::renderStringWithVariables('$var$'), 'var');
         $this->assertEquals(c::renderStringWithVariables('$$var$$'), '"$$var$$"');
         $this->assertEquals(c::renderStringWithVariables('Before $$var$$ After'), '"Before $$var$$ After"');
         $this->assertEquals(
-            c::renderStringWithVariables('Before $name$ $name$ After'),
-            '"Before " + name + " " + name + " After"'
+            '"Before " + name1 + " " + name2 + " After"',
+            c::renderStringWithVariables('Before $name1$ $name2$ After')
+        );
+    }
+
+    public function testRenderStringWithVariablesX()
+    {
+        $this->assertEquals(
+            '"Before " + var1 + " " + var2 + " After"',
+            c::renderStringWithVariables('Before $var1$ $var2$ After')
         );
         $this->assertEquals(
-            c::renderStringWithVariables('Before $var1$ $var2$ After'),
-            '"Before " + var1 + " " + var2 + " After"'
+            'host.vars.custom',
+            c::renderStringWithVariables('$host.vars.custom$')
         );
-        $this->assertEquals(c::renderStringWithVariables('$host.vars.custom$'), 'host.vars.custom');
-        $this->assertEquals(c::renderStringWithVariables('$var"$'), '"$var\"$"');
+        $this->assertEquals('"$var\"$"', c::renderStringWithVariables('$var"$'));
         $this->assertEquals(
-            c::renderStringWithVariables('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$'),
-            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"'
+            '"\\\\tI am\\\\rrendering\\\\nproperly\\\\fand I " + support + " \"multiple\" " + variables + "\\\\$"',
+            c::renderStringWithVariables('\tI am\rrendering\nproperly\fand I $support$ "multiple" $variables$\$')
         );
     }
 }

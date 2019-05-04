@@ -2,14 +2,17 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\ConfigurationError;
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
+use RuntimeException;
 
-class IcingaNotification extends IcingaObject
+class IcingaNotification extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_notification';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                    => null,
         'object_name'           => null,
         'object_type'           => null,
@@ -26,7 +29,7 @@ class IcingaNotification extends IcingaObject
         'period_id'             => null,
         'zone_id'               => null,
         'assign_filter'         => null,
-    );
+    ];
 
     protected $supportsCustomVars = true;
 
@@ -36,29 +39,29 @@ class IcingaNotification extends IcingaObject
 
     protected $supportsApplyRules = true;
 
-    protected $relatedSets = array(
+    protected $relatedSets = [
         'states' => 'StateFilterSet',
         'types'  => 'TypeFilterSet',
-    );
+    ];
 
-    protected $multiRelations = array(
+    protected $multiRelations = [
         'users'       => 'IcingaUser',
         'user_groups' => 'IcingaUserGroup',
-    );
+    ];
 
-    protected $relations = array(
+    protected $relations = [
         'zone'    => 'IcingaZone',
         'host'    => 'IcingaHost',
         'service' => 'IcingaService',
         'command' => 'IcingaCommand',
         'period'  => 'IcingaTimePeriod',
-    );
+    ];
 
-    protected $intervalProperties = array(
+    protected $intervalProperties = [
         'notification_interval' => 'interval',
         'times_begin'           => 'times_begin',
         'times_end'             => 'times_end',
-    );
+    ];
 
     protected function prefersGlobalZone()
     {
@@ -78,18 +81,15 @@ class IcingaNotification extends IcingaObject
     protected function renderTimes_begin()
     {
         // @codingStandardsIgnoreEnd
-        $times = (object) array(
+        $times = (object) [
             'begin' => c::renderInterval($this->times_begin)
-        );
+        ];
 
-        if ($this->times_end !== null) {
-            $times->end = c::renderInterval($this->times_end);
+        if ($this->get('times_end') !== null) {
+            $times->end = c::renderInterval($this->get('times_end'));
         }
 
-        return c::renderKeyValue(
-            'times',
-            c::renderDictionary($times)
-        );
+        return c::renderKeyValue('times', c::renderDictionary($times));
     }
 
     /**
@@ -106,18 +106,92 @@ class IcingaNotification extends IcingaObject
     {
         // @codingStandardsIgnoreEnd
 
-        if ($this->times_begin !== null) {
+        if ($this->get('times_begin') !== null) {
             return '';
         }
 
-        $times = (object) array(
-            'end' => c::renderInterval($this->times_end)
+        $times = (object) [
+            'end' => c::renderInterval($this->get('times_end'))
+        ];
+
+        return c::renderKeyValue('times', c::renderDictionary($times));
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    /**
+     * @return \stdClass
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
+    {
+        // TODO: ksort in toPlainObject?
+        $props = (array) $this->toPlainObject();
+        $props['fields'] = $this->loadFieldReferences();
+        ksort($props);
+
+        return (object) $props;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Notification "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        // $object->newFields = $properties['fields'];
+        unset($properties['fields']);
+        $object->setProperties($properties);
+
+        return $object;
+    }
+
+    protected function loadFieldReferences()
+    {
+        $db = $this->getDb();
+
+        $res = $db->fetchAll(
+            $db->select()->from([
+                'nf' => 'icinga_notification_field'
+            ], [
+                'nf.datafield_id',
+                'nf.is_required',
+                'nf.var_filter',
+            ])->join(['df' => 'director_datafield'], 'df.id = nf.datafield_id', [])
+                ->where('notification_id = ?', $this->get('id'))
+                ->order('varname ASC')
         );
 
-        return c::renderKeyValue(
-            'times',
-            c::renderDictionary($times)
-        );
+        if (empty($res)) {
+            return [];
+        } else {
+            foreach ($res as $field) {
+                $field->datafield_id = (int) $field->datafield_id;
+            }
+            return $res;
+        }
     }
 
     /**
@@ -138,10 +212,10 @@ class IcingaNotification extends IcingaObject
     {
         if ($this->isApplyRule()) {
             if (($to = $this->get('apply_to')) === null) {
-                throw new ConfigurationError(
+                throw new RuntimeException(sprintf(
                     'Applied notification "%s" has no valid object type',
                     $this->getObjectName()
-                );
+                ));
             }
 
             return sprintf(
@@ -161,7 +235,7 @@ class IcingaNotification extends IcingaObject
         if (is_int($key)) {
             $this->id = $key;
         } elseif (is_array($key)) {
-            foreach (array('id', 'host_id', 'service_id', 'object_name') as $k) {
+            foreach (['id', 'host_id', 'service_id', 'object_name'] as $k) {
                 if (array_key_exists($k, $key)) {
                     $this->set($k, $key[$k]);
                 }

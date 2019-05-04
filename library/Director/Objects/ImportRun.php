@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
 
 class ImportRun extends DbObject
 {
@@ -15,7 +16,7 @@ class ImportRun extends DbObject
     /** @var ImportSource */
     protected $importSource = null;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'              => null,
         'source_id'       => null,
         'rowset_checksum' => null,
@@ -23,7 +24,11 @@ class ImportRun extends DbObject
         'end_time'        => null,
         // TODO: Check whether succeeded could be dropped
         'succeeded'       => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'rowset_checksum',
+    ];
 
     public function prepareImportedObjectQuery($columns = array('object_name'))
     {
@@ -63,6 +68,8 @@ class ImportRun extends DbObject
     public function fetchRows($columns, $filter = null, $keys = null)
     {
         $db = $this->getDb();
+        /** @var Db $connection */
+        $connection = $this->getConnection();
         $binchecksum = $this->rowset_checksum;
 
         $query = $db->select()->from(
@@ -85,7 +92,17 @@ class ImportRun extends DbObject
             array('p' => 'imported_property'),
             'p.checksum = rp.property_checksum',
             array()
-        )->where('rsr.rowset_checksum = ?', $this->getConnection()->quoteBinary($binchecksum))->order('r.object_name');
+        )->order('r.object_name');
+        if ($connection->isMysql()) {
+            $query->where('rsr.rowset_checksum = :checksum')->bind([
+                'checksum' => $binchecksum
+            ]);
+        } else {
+            $query->where(
+                'rsr.rowset_checksum = ?',
+                $connection->quoteBinary($binchecksum)
+            );
+        }
 
         if ($columns === null) {
             $columns = $this->listColumnNames();
@@ -132,7 +149,10 @@ class ImportRun extends DbObject
     public function importSource()
     {
         if ($this->importSource === null) {
-            $this->importSource = ImportSource::load($this->get('source_id'), $this->connection);
+            $this->importSource = ImportSource::loadWithAutoIncId(
+                (int) $this->get('source_id'),
+                $this->connection
+            );
         }
         return $this->importSource;
     }

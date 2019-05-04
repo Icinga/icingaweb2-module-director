@@ -2,23 +2,41 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use dipl\Html\Link;
+use dipl\Web\Url;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Web\Controller\ObjectsController;
 
 class ServicesController extends ObjectsController
 {
-    public function init()
-    {
-        parent::init();
-        $this->view->tabs->remove('objects');
-    }
+    protected $multiEdit = array(
+        'imports',
+        'groups',
+        'disabled'
+    );
 
-    public function indexAction()
+    public function edittemplatesAction()
     {
-        $r = $this->getRequest();
-        if ($r->getActionName() !== 'templates' && ! $this->getRequest()->isApiRequest()) {
-            $this->redirectNow('director/services/templates');
+        parent::editAction();
+
+        $objects = $this->loadMultiObjectsFromParams();
+        $names = [];
+        /** @var ExportInterface $object */
+        foreach ($objects as $object) {
+            $names[] = $object->getUniqueIdentifier();
         }
 
-        return parent::indexAction();
+        $url = Url::fromPath('director/basket/add', [
+            'type'  => 'ServiceTemplate',
+        ]);
+
+        $url->getParams()->addValues('names', $names);
+
+        $this->actions()->add(Link::create(
+            $this->translate('Add to Basket'),
+            $url,
+            null,
+            ['class' => 'icon-tag']
+        ));
     }
 }

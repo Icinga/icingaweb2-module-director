@@ -2,6 +2,9 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Exception;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -17,7 +20,7 @@ class DirectorDeploymentLog extends DbObject
 
     protected $config;
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'                     => null,
         'config_checksum'        => null,
         'last_activity_checksum' => null,
@@ -34,17 +37,22 @@ class DirectorDeploymentLog extends DbObject
         'startup_succeeded'      => null,
         'username'               => null,
         'startup_log'            => null,
-    );
+    ];
+
+    protected $binaryProperties = [
+        'config_checksum',
+        'last_activity_checksum'
+    ];
 
     public function getConfigHexChecksum()
     {
-        return Util::binary2hex($this->config_checksum);
+        return bin2hex($this->config_checksum);
     }
 
     public function getConfig()
     {
         if ($this->config === null) {
-            $this->config = IcingaConfig::load($this->config_checksum);
+            $this->config = IcingaConfig::load($this->config_checksum, $this->connection);
         }
 
         return $this->config;
@@ -93,6 +101,11 @@ class DirectorDeploymentLog extends DbObject
         return $db->fetchOne($query, $stage);
     }
 
+    /**
+     * @param Db $connection
+     * @return DirectorDeploymentLog
+     * @throws NotFoundError
+     */
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();
@@ -102,5 +115,69 @@ class DirectorDeploymentLog extends DbObject
         );
 
         return static::load($db->fetchOne($query), $connection);
+    }
+
+    /**
+     * @param CoreApi $api
+     * @param Db $connection
+     * @return DirectorDeploymentLog
+     */
+    public static function getRelatedToActiveStage(CoreApi $api, Db $connection)
+    {
+        try {
+            return static::requireRelatedToActiveStage($api, $connection);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param CoreApi $api
+     * @param Db $connection
+     * @return DirectorDeploymentLog
+     * @throws NotFoundError
+     */
+    public static function requireRelatedToActiveStage(CoreApi $api, Db $connection)
+    {
+        $stage = $api->getActiveStageName();
+
+        if (! strlen($stage)) {
+            throw new NotFoundError('Got no active stage name');
+        }
+        $db = $connection->getDbAdapter();
+        $query = $db->select()->from(
+            ['l' => 'director_deployment_log'],
+            ['id' => 'MAX(l.id)']
+        )->where('l.stage_name = ?', $stage);
+
+        return static::load($db->fetchOne($query), $connection);
+    }
+
+    /**
+     * @return static[]
+     */
+    public static function getUncollected(Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()
+            ->from('director_deployment_log')
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL')
+            ->order('stage_name');
+
+        return static::loadAll($connection, $query, 'stage_name');
+    }
+
+    public static function hasUncollected(Db $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $query = $db->select()
+            ->from('director_deployment_log', ['cnt' => 'COUNT(*)'])
+            ->where('stage_name IS NOT NULL')
+            ->where('stage_collected IS NULL')
+            ->where('startup_succeeded IS NULL');
+
+        return $db->fetchOne($query) > 0;
     }
 }

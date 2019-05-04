@@ -3,12 +3,13 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Icinga\Application\Icinga;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Web\Notification;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
 use Icinga\Web\Url;
+use InvalidArgumentException;
 use Exception;
+use RuntimeException;
 
 /**
  * QuickForm wants to be a base class for simple forms
@@ -63,6 +64,14 @@ abstract class QuickForm extends QuickBaseForm
 
     protected $isApiRequest = false;
 
+    protected $successCallbacks = [];
+
+    protected $calledSuccessCallbacks = false;
+
+    protected $onRequestCallbacks = [];
+
+    protected $calledOnRequestCallbacks = false;
+
     public function __construct($options = null)
     {
         parent::__construct($options);
@@ -95,6 +104,28 @@ abstract class QuickForm extends QuickBaseForm
         return $this;
     }
 
+    protected function addSubmitButton($label, $options = [])
+    {
+        $el = $this->createElement('submit', $label, $options)
+            ->setLabel($label)
+            ->setDecorators(array('ViewHelper'));
+        $this->submitButtonName = $el->getName();
+        $this->setSubmitLabel($label);
+        $this->addElement($el);
+    }
+
+    protected function addStandaloneSubmitButton($label, $options = [])
+    {
+        $this->addSubmitButton($label, $options);
+        $this->addDisplayGroup([$this->submitButtonName], 'buttons', array(
+            'decorators' => array(
+                'FormElements',
+                array('HtmlTag', array('tag' => 'p')),
+            ),
+            'order' => 1000,
+        ));
+    }
+
     protected function addSubmitButtonIfSet()
     {
         if (false === ($label = $this->getSubmitLabel())) {
@@ -105,13 +136,12 @@ abstract class QuickForm extends QuickBaseForm
             return;
         }
 
-        $el = $this->createElement('submit', $label)
-            ->setLabel($label)
-            ->setDecorators(array('ViewHelper'));
-        $this->submitButtonName = $el->getName();
-        $this->addElement($el);
+        $this->addSubmitButton($label);
 
-        $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT')
+        $fakeEl = $this->createElement('submit', '_FAKE_SUBMIT', array(
+            'role' => 'none',
+            'tabindex' => '-1',
+        ))
             ->setLabel($label)
             ->setDecorators(array('ViewHelper'));
         $this->fakeSubmitButtonName = $fakeEl->getName();
@@ -126,6 +156,11 @@ abstract class QuickForm extends QuickBaseForm
             )
         );
 
+        $this->addButtonDisplayGroup();
+    }
+
+    protected function addButtonDisplayGroup()
+    {
         $grp = array(
             $this->submitButtonName,
             $this->deleteButtonName
@@ -155,6 +190,9 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function createIdElement()
     {
+        if ($this->isApiRequest()) {
+            return $this;
+        }
         $this->detectName();
         $this->addHidden(self::ID, $this->getName());
         $this->getElement(self::ID)->setIgnore(true);
@@ -194,11 +232,24 @@ abstract class QuickForm extends QuickBaseForm
 
     public function isApiRequest()
     {
-        return $this->isApiRequest;
+        if ($this->isApiRequest === null) {
+            if ($this->request === null) {
+                throw new RuntimeException(
+                    'Early acess to isApiRequest(). This is not possible, sorry'
+                );
+            }
+
+            return $this->getRequest()->isApiRequest();
+        } else {
+            return $this->isApiRequest;
+        }
     }
 
     public function regenerateCsrfToken()
     {
+        if ($this->isApiRequest()) {
+            return $this;
+        }
         if (! $element = $this->getElement(self::CSRF)) {
             $this->addHidden(self::CSRF, CsrfToken::generate());
             $element = $this->getElement(self::CSRF);
@@ -261,6 +312,9 @@ abstract class QuickForm extends QuickBaseForm
     {
         if ($this->hasBeenSubmitted === null) {
             $req = $this->getRequest();
+            if ($req->isApiRequest()) {
+                return $this->hasBeenSubmitted = true;
+            }
             if ($req->isPost()) {
                 if (! $this->hasSubmitButton()) {
                     return $this->hasBeenSubmitted = $this->hasBeenSent();
@@ -334,6 +388,7 @@ abstract class QuickForm extends QuickBaseForm
                 if ($this->isValid($post)) {
                     try {
                         $this->onSuccess();
+                        $this->callOnSuccessCallables();
                     } catch (Exception $e) {
                         $this->addException($e);
                         $this->onFailure();
@@ -344,8 +399,6 @@ abstract class QuickForm extends QuickBaseForm
             } else {
                 $this->setDefaults($post);
             }
-        } else {
-            // Well...
         }
 
         return $this;
@@ -353,15 +406,7 @@ abstract class QuickForm extends QuickBaseForm
 
     public function addException(Exception $e, $elementName = null)
     {
-        $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
-        $file = array_pop($file);
-        $msg = sprintf(
-            '%s (%s:%d)',
-            $e->getMessage(),
-            $file,
-            $e->getLine()
-        );
-
+        $msg = $this->getErrorMessageForException($e);
         if ($el = $this->getElement($elementName)) {
             $el->addError($msg);
         } else {
@@ -369,9 +414,93 @@ abstract class QuickForm extends QuickBaseForm
         }
     }
 
+    public function addUniqueErrorMessage($msg)
+    {
+        if (! in_array($msg, $this->getErrorMessages())) {
+            $this->addErrorMessage($msg);
+        }
+
+        return $this;
+    }
+
+    public function addUniqueException(Exception $e)
+    {
+        $msg = $this->getErrorMessageForException($e);
+
+        if (! in_array($msg, $this->getErrorMessages())) {
+            $this->addErrorMessage($msg);
+        }
+
+        return $this;
+    }
+
+    protected function getErrorMessageForException(Exception $e)
+    {
+        $file = preg_split('/[\/\\\]/', $e->getFile(), -1, PREG_SPLIT_NO_EMPTY);
+        $file = array_pop($file);
+        return sprintf(
+            '%s (%s:%d)',
+            $e->getMessage(),
+            $file,
+            $e->getLine()
+        );
+    }
+
     public function onSuccess()
     {
         $this->redirectOnSuccess();
+    }
+
+    /**
+     * @param callable $callable
+     * @return $this
+     */
+    public function callOnRequest($callable)
+    {
+        if (! is_callable($callable)) {
+            throw new InvalidArgumentException(
+                'callOnRequest() expects a callable'
+            );
+        }
+        $this->onRequestCallbacks[] = $callable;
+
+        return $this;
+    }
+
+    protected function callOnRequestCallables()
+    {
+        if (! $this->calledOnRequestCallbacks) {
+            $this->calledOnRequestCallbacks = true;
+            foreach ($this->onRequestCallbacks as $callable) {
+                $callable($this);
+            }
+        }
+    }
+
+    /**
+     * @param callable $callable
+     * @return $this
+     */
+    public function callOnSucess($callable)
+    {
+        if (! is_callable($callable)) {
+            throw new InvalidArgumentException(
+                'callOnSuccess() expects a callable'
+            );
+        }
+        $this->successCallbacks[] = $callable;
+
+        return $this;
+    }
+
+    protected function callOnSuccessCallables()
+    {
+        if (! $this->calledSuccessCallbacks) {
+            $this->calledSuccessCallbacks = true;
+            foreach ($this->successCallbacks as $callable) {
+                $callable($this);
+            }
+        }
     }
 
     public function setSuccessMessage($message)
@@ -396,10 +525,12 @@ abstract class QuickForm extends QuickBaseForm
         if ($this->isApiRequest()) {
             // TODO: Set the status line message?
             $this->successMessage = $this->getSuccessMessage($message);
+            $this->callOnSuccessCallables();
             return;
         }
 
         $url = $this->getSuccessUrl();
+        $this->callOnSuccessCallables();
         $this->notifySuccess($this->getSuccessMessage($message));
         $this->redirectAndExit($url);
     }
@@ -438,17 +569,20 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function onRequest()
     {
+        $this->callOnRequestCallables();
     }
 
     public function setRequest(Request $request)
     {
         if ($this->request !== null) {
-            throw new ProgrammingError('Unable to set request twice');
+            throw new RuntimeException('Unable to set request twice');
         }
 
         $this->request = $request;
         $this->prepareElements();
         $this->onRequest();
+        $this->callOnRequestCallables();
+
         return $this;
     }
 
@@ -476,7 +610,9 @@ abstract class QuickForm extends QuickBaseForm
                 $req = $this->request;
             }
 
-            if ($req->isPost()) {
+            if ($req->isApiRequest()) {
+                $this->hasBeenSent = true;
+            } elseif ($req->isPost()) {
                 $post = $req->getPost();
                 $this->hasBeenSent = array_key_exists(self::ID, $post) &&
                     $post[self::ID] === $this->getName();

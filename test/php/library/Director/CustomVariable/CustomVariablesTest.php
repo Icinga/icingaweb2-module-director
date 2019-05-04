@@ -15,15 +15,12 @@ class CustomVariablesTest extends BaseTestCase
         $vars->bla = 'da';
         $vars->{'aBc'} = 'normal';
         $vars->{'a-0'} = 'special';
-        $expected = $this->indentVarsList(array(
+        $expected = $this->indentVarsList([
             'vars["a-0"] = "special"',
             'vars.aBc = "normal"',
             'vars.bla = "da"'
-        ));
-        $this->assertEquals(
-            $vars->toConfigString(),
-            $expected
-        );
+        ]);
+        $this->assertEquals($expected, $vars->toConfigString());
     }
 
     public function testVarsCanBeUnsetAndSetAgain()
@@ -33,14 +30,25 @@ class CustomVariablesTest extends BaseTestCase
         unset($vars->one);
         $vars->one = 'three';
 
-        $res = array();
+        $res = [];
         foreach ($vars as $k => $v) {
             $res[$k] = $v->getValue();
         }
 
+        $this->assertEquals(['one' => 'three'], $res);
+    }
+
+    public function testNumericKeysAreRenderedWithArraySyntax()
+    {
+        $vars = $this->newVars();
+        $vars->{'1'} = 1;
+        $expected = $this->indentVarsList([
+            'vars["1"] = 1'
+        ]);
+
         $this->assertEquals(
-            array('one' => 'three'),
-            $res
+            $expected,
+            $vars->toConfigString(true)
         );
     }
 
@@ -49,14 +57,11 @@ class CustomVariablesTest extends BaseTestCase
         $vars = $this->newVars();
         $vars->bla = 'da';
         $vars->abc = '$val$';
-        $expected = $this->indentVarsList(array(
-            'vars.abc = val',
+        $expected = $this->indentVarsList([
+            'vars.abc = "$val$"',
             'vars.bla = "da"'
-        ));
-        $this->assertEquals(
-            $vars->toConfigString(true),
-            $expected
-        );
+        ]);
+        $this->assertEquals($expected, $vars->toConfigString(true));
     }
 
     protected function indentVarsList($vars)

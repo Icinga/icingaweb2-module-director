@@ -6,6 +6,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaNotification;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class NotificationController extends ObjectController
 {
@@ -14,10 +15,12 @@ class NotificationController extends ObjectController
         $this->assertPermission('director/notifications');
     }
 
+    // TODO: KILL IT
     public function init()
     {
         parent::init();
         // TODO: Check if this is still needed, remove it otherwise
+        /** @var \Icinga\Web\Widget\Tab $tab */
         if ($this->object && $this->object->object_type === 'apply') {
             if ($host = $this->params->get('host')) {
                 foreach ($this->getTabs()->getTabs() as $tab) {
@@ -30,6 +33,22 @@ class NotificationController extends ObjectController
                     $tab->getUrl()->setParam('service', $service);
                 }
             }
+        }
+    }
+
+    /**
+     * @param DirectorObjectForm $form
+     */
+    protected function onObjectFormLoaded(DirectorObjectForm $form)
+    {
+        if (! $this->object) {
+            return;
+        }
+
+        if ($this->object->isTemplate()) {
+            $form->setListUrl('director/notifications/templates');
+        } else {
+            $form->setListUrl('director/notifications/applyrules');
         }
     }
 

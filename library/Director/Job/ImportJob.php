@@ -9,6 +9,10 @@ use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ImportJob extends JobHook
 {
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     public function run()
     {
         $db = $this->db();
@@ -18,10 +22,36 @@ class ImportJob extends JobHook
                 $this->runForSource($source);
             }
         } else {
-            $this->runForSource(ImportSource::load($id, $db));
+            $this->runForSource(ImportSource::loadWithAutoIncId($id, $db));
         }
     }
 
+    /**
+     * @return array
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function exportSettings()
+    {
+        $settings = parent::exportSettings();
+        if (array_key_exists('source_id', $settings)) {
+            $id = $settings['source_id'];
+            if ($id !== '__ALL__') {
+                $settings['source'] = ImportSource::loadWithAutoIncId(
+                    $id,
+                    $this->db()
+                )->get('source_name');
+            }
+
+            unset($settings['source_id']);
+        }
+
+        return $settings;
+    }
+
+    /**
+     * @param ImportSource $source
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     protected function runForSource(ImportSource $source)
     {
         if ($this->getSetting('run_import') === 'y') {
@@ -38,6 +68,10 @@ class ImportJob extends JobHook
         );
     }
 
+    /**
+     * @param QuickForm $form
+     * @throws \Zend_Form_Exception
+     */
     public static function addSettingsFormFields(QuickForm $form)
     {
         $rules = self::enumImportSources($form);

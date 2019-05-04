@@ -67,7 +67,7 @@ class ImportSourceLdap extends ImportSourceHook
             'label'       => $form->translate('Properties'),
             'description' => $form->translate(
                 'The LDAP properties that should be fetched. This is required to be a'
-                . ' comma-separated list like: "cn, dnshostname, operatingystem, sAMAccountName"'
+                . ' comma-separated list like: "cn, dnshostname, operatingsystem, sAMAccountName"'
             ),
             'spellcheck'  => 'false',
             'required'    => true,

@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Cli;
 
-use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Objects\IcingaObject;
 
 class ObjectsCommand extends Command
@@ -14,7 +13,7 @@ class ObjectsCommand extends Command
     /**
      * List all objects of this type
      *
-     * Use this command to get a list of all matching objeccts
+     * Use this command to get a list of all matching objects
      *
      * USAGE
      *
@@ -46,9 +45,9 @@ class ObjectsCommand extends Command
     }
 
     /**
-     * Delete a specific object
+     * Fetch all objects of this type
      *
-     * Use this command to delete a single Icinga object
+     * Use this command to fetch all matching objects
      *
      * USAGE
      *
@@ -87,6 +86,9 @@ class ObjectsCommand extends Command
         echo $this->renderJson($res, !$this->params->shift('no-pretty'));
     }
 
+    /**
+     * @return IcingaObject[]
+     */
     protected function getObjects()
     {
         if ($this->objects === null) {

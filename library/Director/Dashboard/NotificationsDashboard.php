@@ -4,12 +4,10 @@ namespace Icinga\Module\Director\Dashboard;
 
 class NotificationsDashboard extends Dashboard
 {
-    protected $dashletNames = array(
+    protected $dashletNames = [
         'NotificationApply',
         'NotificationTemplate',
-        'UserObject',
-        'TimeperiodObject'
-    );
+    ];
 
     public function getTitle()
     {
@@ -34,6 +32,13 @@ class NotificationsDashboard extends Dashboard
             . ' channels. You could also delegate notifications to external service'
             . ' providers. The possibilities are endless, as you are allowed to'
             . ' define as many custom notification commands as you want'
+        );
+    }
+
+    public function getTabs()
+    {
+        return $this->createTabsForDashboards(
+            ['notifications', 'users', 'timeperiods']
         );
     }
 }

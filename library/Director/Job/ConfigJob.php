@@ -65,7 +65,7 @@ class ConfigJob extends JobHook
         $db = $this->db();
 
         return IcingaConfig::existsForActivityChecksum(
-            Util::binary2hex(DirectorActivityLog::loadLatest($db)->checksum),
+            bin2hex(DirectorActivityLog::loadLatest($db)->checksum),
             $db
         );
     }
@@ -87,12 +87,16 @@ class ConfigJob extends JobHook
             return false;
         }
 
+        if (DirectorDeploymentLog::loadLatest($db)->getConfigHexChecksum()
+            === $config->getHexChecksum()
+        ) {
+            return false;
+        }
+
         if ($this->getActiveChecksum() === $config->getHexChecksum()) {
             return false;
         }
 
-        // $current = $api->getActiveChecksum($db);
-        // TODO: no current, but last deployment
         return true;
     }
 

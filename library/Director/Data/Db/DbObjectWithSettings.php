@@ -2,13 +2,18 @@
 
 namespace Icinga\Module\Director\Data\Db;
 
+use Icinga\Module\Director\Db;
+
 abstract class DbObjectWithSettings extends DbObject
 {
+    /** @var Db $connection */
+    protected $connection;
+
     protected $settingsTable = 'your_table_name';
 
     protected $settingsRemoteId = 'column_pointing_to_main_table_id';
 
-    protected $settings = array();
+    protected $settings = [];
 
     public function set($key, $value)
     {
@@ -37,8 +42,22 @@ abstract class DbObjectWithSettings extends DbObject
         return parent::get($key);
     }
 
+    public function setSettings($settings)
+    {
+        $settings = (array) $settings;
+        ksort($settings);
+        if ($settings !== $this->settings) {
+            $this->settings = $settings;
+            $this->hasBeenModified = true;
+        }
+
+        return $this;
+    }
+
     public function getSettings()
     {
+        // Sort them, important only for new objects
+        ksort($this->settings);
         return $this->settings;
     }
 
@@ -51,18 +70,26 @@ abstract class DbObjectWithSettings extends DbObject
         return $default;
     }
 
+    public function getStoredSetting($name, $default = null)
+    {
+        $stored = $this->fetchSettingsFromDb();
+        if (array_key_exists($name, $stored)) {
+            return $stored[$name];
+        }
+
+        return $default;
+    }
+
     public function __unset($key)
     {
         if ($this->hasProperty($key)) {
-            return parent::__unset($key);
+            parent::__unset($key);
         }
 
         if (array_key_exists($key, $this->settings)) {
             unset($this->settings[$key]);
             $this->hasBeenModified = true;
         }
-
-        return $this;
     }
 
     protected function onStore()
@@ -70,9 +97,9 @@ abstract class DbObjectWithSettings extends DbObject
         $old = $this->fetchSettingsFromDb();
         $oldKeys = array_keys($old);
         $newKeys = array_keys($this->settings);
-        $add = array();
-        $mod = array();
-        $del = array();
+        $add = [];
+        $mod = [];
+        $del = [];
         $id = $this->get('id');
 
         foreach ($this->settings as $key => $val) {
@@ -94,7 +121,7 @@ abstract class DbObjectWithSettings extends DbObject
         foreach ($mod as $key => $val) {
             $db->update(
                 $this->settingsTable,
-                array('setting_value' => $val),
+                ['setting_value' => $val],
                 $db->quoteInto($where, $key)
             );
         }
@@ -102,11 +129,11 @@ abstract class DbObjectWithSettings extends DbObject
         foreach ($add as $key => $val) {
             $db->insert(
                 $this->settingsTable,
-                array(
+                [
                     $this->settingsRemoteId => $id,
                     'setting_name'          => $key,
                     'setting_value'         => $val
-                )
+                ]
             );
         }
 
@@ -119,10 +146,16 @@ abstract class DbObjectWithSettings extends DbObject
     protected function fetchSettingsFromDb()
     {
         $db = $this->getDb();
+        $id = $this->get('id');
+        if (! $id) {
+            return [];
+        }
+
         return $db->fetchPairs(
             $db->select()
-               ->from($this->settingsTable, array('setting_name', 'setting_value'))
-               ->where($this->settingsRemoteId . ' = ?', $this->get('id'))
+               ->from($this->settingsTable, ['setting_name', 'setting_value'])
+               ->where($this->settingsRemoteId . ' = ?', $id)
+               ->order('setting_name')
         );
     }
 

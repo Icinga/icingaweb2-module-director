@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Clicommands;
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Cli\Command;
 use Icinga\Module\Director\Db\Housekeeping;
+use Icinga\Module\Director\Db\MembershipHousekeeping;
 
 class HousekeepingCommand extends Command
 {

@@ -3,7 +3,6 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 
 class IcingaServiceSetForm extends DirectorObjectForm
@@ -20,44 +19,22 @@ class IcingaServiceSetForm extends DirectorObjectForm
             $this->setupHost();
         }
 
-        $this->setupFields()
-             ->setButtons();
-    }
-
-    protected function setupFields()
-    {
-        /** @var IcingaServiceSet $object */
-        $object = $this->object();
-
-        $this->assertResolvedImports();
-
-        if ($this->hasBeenSent() && $services = $this->getSentValue('service')) {
-            $object->service = $services;
-        }
-
-        // TODO: disabled for now. Sets have no fields, so somehow the resolver
-        //       fails here
-        if (false && $this->assertResolvedImports()) {
-            $this->fieldLoader($object)
-                ->loadFieldsForMultipleObjects($object->getServiceObjects());
-        }
-
-        return $this;
+        $this->setButtons();
     }
 
     protected function setupTemplate()
     {
-        $this->addElement('text', 'object_name', array(
+        $this->addElement('text', 'object_name', [
             'label'       => $this->translate('Service set name'),
             'description' => $this->translate(
                 'A short name identifying this set of services'
             ),
             'required'    => true,
-        ));
-
-        $this->addHidden('object_type', 'template');
-        $this->addDescriptionElement()
-            ->addAssignmentElements();
+        ])
+        ->eventuallyAddNameRestriction('director/service_set/filter-by-name')
+        ->addHidden('object_type', 'template')
+        ->addDescriptionElement()
+        ->addAssignmentElements();
     }
 
     protected function setObjectSuccessUrl()
@@ -85,11 +62,10 @@ class IcingaServiceSetForm extends DirectorObjectForm
         }
 
         if (count($object->get('imports'))) {
-            $this->addHtmlHint(
-                $this->getView()->escape(
-                    $object->getResolvedProperty('description')
-                )
-            );
+            $description = $object->getResolvedProperty('description');
+            if ($description) {
+                $this->addHtmlHint($description);
+            }
         }
 
         $this->addHidden('object_type', 'object');
@@ -135,15 +111,19 @@ class IcingaServiceSetForm extends DirectorObjectForm
 
     protected function addAssignmentElements()
     {
-        $this->addAssignFilter(array(
-            'columns' => IcingaHost::enumProperties($this->db, 'host.'),
+        if (! $this->hasPermission('director/service_set/apply')) {
+            return $this;
+        }
+
+        $this->addAssignFilter([
+            'suggestionContext' => 'HostFilterColumns',
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want. You'
                 . ' might also want to skip this, define it later and/or just'
                 . ' add this set of services to single hosts'
             )
-        ));
+        ]);
 
         return $this;
     }

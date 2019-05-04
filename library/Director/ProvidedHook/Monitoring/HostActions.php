@@ -37,7 +37,7 @@ class HostActions extends HostActionsHook
             );
         }
 
-        if (IcingaHost::exists($hostname, $db)) {
+        if (Util::hasPermission('director/hosts') && IcingaHost::exists($hostname, $db)) {
             $actions['Modify'] = Url::fromPath(
                 'director/host/edit',
                 array('name' => $hostname)

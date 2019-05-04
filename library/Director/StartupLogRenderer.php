@@ -2,24 +2,47 @@
 
 namespace Icinga\Module\Director;
 
+use dipl\Html\Html;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use Icinga\Web\View;
+use dipl\Html\Link;
+use dipl\Html\ValidHtml;
 
-class StartupLogRenderer
+class StartupLogRenderer implements ValidHtml
 {
-    public static function beautify(DirectorDeploymentLog $deploymentLog, View $view)
+    /** @var DirectorDeploymentLog */
+    protected $deployment;
+
+    public function __construct(DirectorDeploymentLog $deployment)
     {
-        $log = $view->escape($deploymentLog->get('startup_log'));
+        $this->deployment = $deployment;
+    }
+
+    public function render()
+    {
+        $deployment = $this->deployment;
+        $log = Html::escape($deployment->get('startup_log'));
         $lines = array();
         $severity = 'information';
         $sevPattern = '/^(debug|notice|information|warning|critical)\/(\w+)/';
-        $filePatternHint = '~(/[\w/]+/api/packages/director/[^/]+/)([^:]+\.conf)(: (\d+))~';
-        $filePatternDetail = '~(/[\w/]+/api/packages/director/[^/]+/)([^:]+\.conf)(\((\d+)\))~';
+        $settings = new Settings($this->deployment->getConnection());
+        $package = $settings->get('icinga_package_name');
+        $pathPattern = '~(/[\w/]+/api/packages/' . $package . '/[^/]+/)';
+        $filePatternHint = $pathPattern . '([^:]+\.conf)(: (\d+))~';
+        $filePatternDetail = $pathPattern . '([^:]+\.conf)(\((\d+)\))~';
         $markPattern = null;
         // len [stage] + 1
         $markReplace = '        ^';
 
         foreach (preg_split('/\n/', $log) as $line) {
+            if (preg_match('/^\[([\d\s\:\+\-]+)\]\s/', $line, $m)) {
+                $time = $m[1];
+                // TODO: we might use new DateTime($time) and show a special "timeAgo"
+                //       format - but for now this should suffice.
+                $line = substr($line, strpos($line, ']') + 2);
+            } else {
+                $time = null;
+            }
+
             if (preg_match($sevPattern, $line, $m)) {
                 $severity = $m[1];
                 $line = preg_replace(
@@ -35,11 +58,12 @@ class StartupLogRenderer
             $line = preg_replace('/([\^]{2,})/', '<span class="error-hint">\1</span>', $line);
             $markPattern = null;
 
+            $self = $this;
             if (preg_match($filePatternHint, $line, $m)) {
                 $line = preg_replace_callback(
                     $filePatternHint,
-                    function ($matches) use ($severity, $view, $deploymentLog) {
-                        return StartupLogRenderer::logLink($matches, $severity, $deploymentLog, $view);
+                    function ($matches) use ($severity, $self) {
+                        return $self->logLink($matches, $severity);
                     },
                     $line
                 );
@@ -51,19 +75,23 @@ class StartupLogRenderer
 
                 $line = preg_replace_callback(
                     $filePatternDetail,
-                    function ($matches) use ($severity, $view, $deploymentLog) {
-                        return StartupLogRenderer::logLink($matches, $severity, $deploymentLog, $view);
+                    function ($matches) use ($severity, $self) {
+                        return $self->logLink($matches, $severity);
                     },
                     $line
                 );
             }
 
-            $lines[] .= $line;
+            if ($time === null) {
+                $lines[] .= $line;
+            } else {
+                $lines[] .= "[$time] $line";
+            }
         }
         return implode("\n", $lines);
     }
 
-    public static function logLink($match, $severity, DirectorDeploymentLog $deploymentLog, View $view)
+    protected function logLink($match, $severity)
     {
         $stageDir = $match[1];
         $filename = $match[2];
@@ -74,9 +102,10 @@ class StartupLogRenderer
             $lineNumber = null;
         }
 
+        $deployment = $this->deployment;
         $params = array(
-            'config_checksum' => $deploymentLog->getConfigHexChecksum(),
-            'deployment_id'   => $deploymentLog->get('id'),
+            'config_checksum' => $deployment->getConfigHexChecksum(),
+            'deployment_id'   => $deployment->get('id'),
             'file_path'       => $filename,
             'backTo'          => 'deployment'
         );
@@ -85,13 +114,13 @@ class StartupLogRenderer
             $params['highlightSeverity'] = $severity;
         }
 
-        return $view->qlink(
+        return Link::create(
             '[stage]/' . $filename,
             'director/config/file',
             $params,
-            array(
+            [
                 'title' => $stageDir . $filename
-            )
+            ]
         ) . $suffix;
     }
 }

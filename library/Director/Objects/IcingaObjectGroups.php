@@ -2,14 +2,15 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use Icinga\Exception\NotFoundError;
-use Icinga\Exception\ProgrammingError;
-use Iterator;
 use Countable;
+use Exception;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
+use Iterator;
+use RuntimeException;
 
 class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 {
@@ -84,6 +85,11 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return null;
     }
 
+    /**
+     * @param $group
+     * @return $this
+     * @throws NotFoundError
+     */
     public function set($group)
     {
         if (! is_array($group)) {
@@ -154,6 +160,13 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         $this->idx = array_keys($this->groups);
     }
 
+    /**
+     * @param $group
+     * @param string $onError
+     * @return $this
+     * @throws NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
     public function add($group, $onError = 'fail')
     {
         // TODO: only one query when adding array
@@ -164,16 +177,20 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
             return $this;
         }
 
-        if (array_key_exists($group, $this->groups)) {
-            return $this;
-        }
-
         /** @var IcingaObjectGroup $class */
         $class = $this->getGroupClass();
 
         if ($group instanceof $class) {
+            if (array_key_exists($group->getObjectName(), $this->groups)) {
+                return $this;
+            }
+
             $this->groups[$group->object_name] = $group;
         } elseif (is_string($group)) {
+            if (array_key_exists($group, $this->groups)) {
+                return $this;
+            }
+
             $connection = $this->object->getConnection();
 
             try {
@@ -190,7 +207,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                         break;
                     case 'fail':
                         throw new NotFoundError(
-                            'The group "%s" doesn\'t exists.',
+                            'The group "%s" doesn\'t exist.',
                             $group
                         );
                         break;
@@ -199,7 +216,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                 }
             }
         } else {
-            throw new ProgrammingError(
+            throw new RuntimeException(
                 'Invalid group object: %s',
                 var_export($group, 1)
             );
@@ -343,9 +360,10 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return c::renderKeyValue('groups', c::renderArray($groups));
     }
 
-    public function toLegacyConfigString()
+    public function toLegacyConfigString($additionalGroups = array())
     {
-        $groups = array_keys($this->groups);
+        $groups = array_merge(array_keys($this->groups), $additionalGroups);
+        $groups = array_unique($groups);
 
         if (empty($groups)) {
             return '';

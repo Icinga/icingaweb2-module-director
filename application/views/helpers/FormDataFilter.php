@@ -3,9 +3,9 @@
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
-use Icinga\Exception\ProgrammingError;
+use Icinga\Data\FilterColumns;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaObjectGroup;
+use Icinga\Module\Director\Web\Form\Element\Boolean;
 use Icinga\Module\Director\Web\Form\IconHelper;
 
 /**
@@ -16,13 +16,13 @@ use Icinga\Module\Director\Web\Form\IconHelper;
  */
 class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 {
-    private $currentId;
-
     private $fieldName;
 
     private $cachedColumnSelect;
 
     private $query;
+
+    private $suggestionContext;
 
     /**
      * Generates an 'extensible set' element.
@@ -38,6 +38,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
      * @param array $attribs Attributes for the element tag.
      *
      * @return string The element XHTML.
+     * @throws Zend_Form_Exception
      */
     public function formDataFilter($name, $value = null, $attribs = null)
     {
@@ -46,6 +47,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         if (array_key_exists('columns', $attribs)) {
             $this->setColumns($attribs['columns']);
             unset($attribs['columns']);
+        }
+
+        if (array_key_exists('suggestionContext', $attribs)) {
+            $this->setSuggestionContext($attribs['suggestionContext']);
+            unset($attribs['suggestionContext']);
         }
 
         // TODO: check for columns in attribs, preserve & remove them from the
@@ -64,6 +70,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             . $this->endRoot();
     }
 
+    /**
+     * @param Filter $filter
+     * @return string
+     * @throws Zend_Form_Exception
+     */
     protected function renderFilter(Filter $filter)
     {
         if ($filter instanceof FilterChain) {
@@ -71,7 +82,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         } elseif ($filter instanceof FilterExpression) {
             return $this->renderFilterExpression($filter);
         } else {
-            throw new ProgrammingError('Got a Filter being neither expression nor chain');
+            throw new InvalidArgumentException('Got a Filter being neither expression nor chain');
         }
     }
 
@@ -85,6 +96,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return '</ul>';
     }
 
+    /**
+     * @param FilterChain $filter
+     * @return string
+     * @throws Zend_Form_Exception
+     */
     protected function renderFilterChain(FilterChain $filter)
     {
         $parts = array();
@@ -135,6 +151,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return "</div>\n";
     }
 
+    /**
+     * @param FilterExpression $filter
+     * @return string
+     * @throws Zend_Form_Exception
+     */
     protected function filterExpressionHtml(FilterExpression $filter)
     {
         return $this->selectColumn($filter)
@@ -146,6 +167,11 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
              . $this->expandLink($filter);
     }
 
+    /**
+     * @param FilterExpression $filter
+     * @return string
+     * @throws Zend_Form_Exception
+     */
     protected function renderFilterExpression(FilterExpression $filter)
     {
         return $this->beginExpression($filter)
@@ -153,21 +179,31 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
              . $this->endExpression($filter);
     }
 
+    /**
+     * @param FilterExpression|null $filter
+     * @return Boolean|string
+     * @throws Zend_Form_Exception
+     */
     protected function element(FilterExpression $filter = null)
     {
         if ($filter) {
             // TODO: Make this configurable
             $type = 'host';
+            $prefixLen = strlen($type) + 1;
             $filter = clone($filter);
+            $col = $filter->getColumn();
 
             if ($this->columnIsJson($filter)) {
+                $col = $filter->getExpression();
                 $filter->setExpression(json_decode($filter->getColumn()));
             } else {
                 $filter->setExpression(json_decode($filter->getExpression()));
             }
 
+            if (($filter->getExpression() === true) || ($filter->getExpression() === false)) {
+                return '';
+            }
             $dummy = IcingaObject::createByType($type);
-            $col = $filter->getColumn();
             if ($dummy->hasProperty($col)) {
                 if ($dummy->propertyIsBoolean($col)) {
                     return $this->boolean($filter);
@@ -176,29 +212,45 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
 
             if (substr($col, -7) === '.groups' && $dummy->supportsGroups()) {
                 $type = substr($col, 0, -7);
+
                 return $this->selectGroup($type, $filter);
+            } elseif (substr($col, $prefixLen, 5) === 'vars.') {
+                $var = substr($col, $prefixLen + 5);
+
+                return $this->text($filter, "DataListValues!${var}");
             }
         }
 
         return $this->text($filter);
     }
 
-    protected function selectGroup($type, Filter $filter)
+    /**
+     * @param $type
+     * @param FilterExpression $filter
+     * @return Zend_Form_Element
+     */
+    protected function selectGroup($type, FilterExpression $filter)
     {
-        $available = IcingaObjectGroup::enumForType($type);
-
-        return $this->select(
+        return $this->view->formText(
             $this->elementId('value', $filter),
-            $this->optionalEnum($available),
-            $filter->getExpression()
+            $filter->getExpression(),
+            [
+                'class' => 'director-suggest',
+                'data-suggestion-context' => "${type}groupnames",
+            ]
         );
     }
 
-    protected function boolean(Filter $filter = null)
+    /**
+     * @param FilterExpression|null $filter
+     * @return Boolean
+     * @throws Zend_Form_Exception
+     */
+    protected function boolean(FilterExpression $filter = null)
     {
         $value = $filter === null ? '' : $filter->getExpression();
 
-        $el = new Icinga\Module\Director\Web\Form\Element\Boolean(
+        $el = new Boolean(
             $this->elementId('value', $filter),
             array(
                 'value'      => $value,
@@ -215,24 +267,41 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return strlen($col) && $col[0] === '"';
     }
 
-    protected function text(Filter $filter = null)
+    /**
+     * @param FilterExpression|null $filter
+     * @param string                $suggestionContext
+     *
+     * @return mixed
+     */
+    protected function text(FilterExpression $filter = null, $suggestionContext = null)
     {
+        $attr = null;
+        if ($suggestionContext !== null) {
+            $attr = [
+                'class'                   => 'director-suggest',
+                'data-suggestion-context' => $suggestionContext,
+            ];
+        }
+
         $value = $filter === null ? '' : $filter->getExpression();
         if (is_array($value)) {
-            return $this->view->formExtensibleSet(
+            return $this->view->formIplExtensibleSet(
                 $this->elementId('value', $filter),
-                $value
+                $value,
+                $attr
             );
-
-            $value = '(' . implode('|', $value) . ')';
         }
 
         return $this->view->formText(
             $this->elementId('value', $filter),
-            $value
+            $value,
+            $attr
         );
     }
 
+    /**
+     * @return \Icinga\Data\Filter\FilterExpression
+     */
     protected function emptyExpression()
     {
         return Filter::expression('', '=', '');
@@ -250,6 +319,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $res[$k] = $v;
             }
         }
+
         // sort($res);
         return $res;
     }
@@ -262,33 +332,29 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return $prefix . $filter->getId() . $suffix;
     }
 
-    protected function selectOperator(Filter $filter = null)
+    /**
+     * @param FilterChain|null $filter
+     * @return mixed
+     */
+    protected function selectOperator(FilterChain $filter = null)
     {
-        $ops = array(
+        $ops = [
             'AND' => 'AND',
             'OR'  => 'OR',
             'NOT' => 'NOT'
-        );
+        ];
 
-        return $this->view->formSelect(
-            $this->elementId('operator', $filter),
-            $filter === null ? null : $filter->getOperatorName(),
-            array(
-                'class' => 'operator autosubmit',
-            ),
-            $ops
-        );
         return $this->select(
             $this->elementId('operator', $filter),
             $ops,
             $filter === null ? null : $filter->getOperatorName(),
-            array('class' => 'operator autosubmit')
+            ['class' => 'operator autosubmit']
         );
     }
 
     protected function selectSign(FilterExpression $filter = null)
     {
-        $signs = array(
+        $signs = [
             '='  => '=',
             '!=' => '!=',
             '>'  => '>',
@@ -297,8 +363,9 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             '<=' => '<=',
             'in' => 'in',
             'contains' => 'contains',
-            // 'true' => 'is true (or set)',
-        );
+            'true'     => 'is true (or set)',
+            'false'    => 'is false (or not set)',
+        ];
 
         if ($filter === null) {
             $sign = null;
@@ -309,6 +376,8 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
                 $expression = json_decode($filter->getExpression());
                 if ($expression === true) {
                     $sign = 'true';
+                } elseif ($expression === false) {
+                    $sign = 'false';
                 } elseif (is_array($expression)) {
                     $sign = 'in';
                 } else {
@@ -336,6 +405,16 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
         return $this;
     }
 
+    protected function getSuggestionContext()
+    {
+        return $this->suggestionContext;
+    }
+
+    protected function setSuggestionContext($context)
+    {
+        $this->suggestionContext = $context;
+    }
+
     protected function selectColumn(FilterExpression $filter = null)
     {
         $active = $filter === null ? null : $filter->getColumn();
@@ -343,31 +422,41 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             $active = $filter->getExpression();
         }
 
-        if (! $this->hasColumnList()) {
+        if ($context = $this->getSuggestionContext()) {
             return $this->view->formText(
                 $this->elementId('column', $filter),
                 $active,
-                array('class' => 'column autosubmit')
+                [
+                    'class' => 'column autosubmit director-suggest',
+                    'data-suggestion-context' => $context,
+                ]
             );
         }
+        if ($this->hasColumnList()) {
+            $cols = $this->getColumnList();
+            if ($active && !isset($cols[$active])) {
+                $cols[$active] = str_replace(
+                    '_',
+                    ' ',
+                    ucfirst(ltrim($active, '_'))
+                ); // ??
+            }
 
-        $cols = $this->getColumnList();
-        if ($active && !isset($cols[$active])) {
-            $cols[$active] = str_replace(
-                '_',
-                ' ',
-                ucfirst(ltrim($active, '_'))
-            ); // ??
+            $cols = $this->optionalEnum($cols);
+
+            return $this->select(
+                $this->elementId('column', $filter),
+                $cols,
+                $active,
+                ['class' => 'column autosubmit']
+            );
+        } else {
+            return $this->view->formText(
+                $this->elementId('column', $filter),
+                $active,
+                ['class' => 'column autosubmit']
+            );
         }
-
-        $cols = $this->optionalEnum($cols);
-
-        return $this->select(
-            $this->elementId('column', $filter),
-            $cols,
-            $active,
-            array('class' => 'column autosubmit')
-        );
     }
 
     protected function optionalEnum($enum)
@@ -401,7 +490,7 @@ class Zend_View_Helper_FormDataFilter extends Zend_View_Helper_FormElement
             );
             asort($this->cachedColumnSelect);
         } elseif ($this->cachedColumnSelect === null) {
-            throw new ProgrammingError('No columns set nor does the query provide any');
+            throw new RuntimeException('No columns set nor does the query provide any');
         }
     }
 

@@ -5,10 +5,8 @@ namespace Icinga\Module\Director\IcingaConfig;
 use Icinga\Application\Benchmark;
 use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
-use Icinga\Exception\ConfigurationError;
-use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
-use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ShipConfigFilesHook;
@@ -16,6 +14,9 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
+use InvalidArgumentException;
+use LogicException;
+use RuntimeException;
 
 class IcingaConfig
 {
@@ -27,9 +28,7 @@ class IcingaConfig
 
     protected $lastActivityChecksum;
 
-    /**
-     * @var \Zend_Db_Adapter_Abstract
-     */
+    /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
     protected $connection;
@@ -82,17 +81,17 @@ class IcingaConfig
         if ($this->isLegacy()) {
             return $this->deploymentModeV1;
         } else {
-            throw new ProgrammingError('There is no deployment mode for Icinga 2 config format!');
+            throw new LogicException('There is no deployment mode for Icinga 2 config format!');
         }
     }
 
     public function setConfigFormat($format)
     {
         if (! in_array($format, array('v1', 'v2'))) {
-            throw new ConfigurationError(
+            throw new InvalidArgumentException(sprintf(
                 'Only Icinga v1 and v2 config format is supported, got "%s"',
                 $format
-            );
+            ));
         }
 
         $this->configFormat = $format;
@@ -139,7 +138,7 @@ class IcingaConfig
 
     public function getHexChecksum()
     {
-        return Util::binary2hex($this->checksum);
+        return bin2hex($this->checksum);
     }
 
     /**
@@ -161,7 +160,7 @@ class IcingaConfig
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function getFileNames()
     {
@@ -205,7 +204,7 @@ class IcingaConfig
             array('checksum' => $connection->dbHexFunc('c.checksum'))
         )->where(
             'checksum = ?',
-            $connection->quoteBinary(Util::hex2binary($checksum))
+            $connection->quoteBinary(hex2bin($checksum))
         );
 
         return $db->fetchOne($query) === $checksum;
@@ -223,7 +222,7 @@ class IcingaConfig
             array()
         )->where(
             'last_activity_checksum = ?',
-            $connection->quoteBinary(Util::hex2binary($checksum))
+            $connection->quoteBinary(hex2bin($checksum))
         )->order('l.id DESC')->limit(1);
 
         return self::load($db->fetchOne($query), $connection);
@@ -241,7 +240,7 @@ class IcingaConfig
             array()
         )->where(
             'last_activity_checksum = ?',
-            $connection->quoteBinary(Util::hex2binary($checksum))
+            $connection->quoteBinary(hex2bin($checksum))
         )->order('l.id DESC')->limit(1);
 
         return $db->fetchOne($query) === $checksum;
@@ -437,27 +436,20 @@ class IcingaConfig
     }
 
     /**
-     * @throws IcingaException
-     *
      * @return self
      */
     protected function generateFromDb()
     {
         PrefetchCache::initialize($this->connection);
-
         $start = microtime(true);
 
-        // Raise limits. TODO: do this in a failsafe way, and only if necessary
-        if ((string) ini_get('memory_limit') !== '-1') {
-            ini_set('memory_limit', '1024M');
-        }
-
+        MemoryLimit::raiseTo('1024M');
         ini_set('max_execution_time', 0);
         // Workaround for https://bugs.php.net/bug.php?id=68606 or similar
         ini_set('zend.enable_gc', 0);
 
         if (! $this->connection->isPgsql() && $this->db->quote("1\0") !== '\'1\\0\'') {
-            throw new IcingaException(
+            throw new RuntimeException(
                 'Refusing to render the configuration, your DB layer corrupts binary data.'
                 . ' You might be affected by Zend Framework bug #655'
             );
@@ -477,12 +469,9 @@ class IcingaConfig
             ->createFileFromDb('userGroup')
             ->createFileFromDb('user')
             ->createFileFromDb('notification')
+            ->createFileFromDb('dependency')
+            ->createFileFromDb('scheduledDowntime')
             ;
-
-        if (! $this->isLegacy()) {
-            $this->configFile('zones.d/director-global/commands')
-                ->prepend("library \"methods\"\n\n");
-        }
 
         PrefetchCache::forget();
         IcingaHost::clearAllPrefetchCaches();
@@ -518,11 +507,25 @@ class IcingaConfig
             )
         )->prepend(
             "\nconst DirectorStageDir = dirname(dirname(current_filename))\n"
+            . $this->renderFlappingLogHelper()
             . $this->renderHostOverridableVars()
             . $this->renderMagicApplyFor()
         );
 
         return $this;
+    }
+
+    protected function renderFlappingLogHelper()
+    {
+        return '
+globals.directorWarnedOnceForThresholds = false;
+globals.directorWarnOnceForThresholds = function() {
+    if (globals.directorWarnedOnceForThresholds == false) {
+        globals.directorWarnedOnceForThresholds = true
+        log(LogWarning, "config", "Director: flapping_threshold_high/low is not supported in this Icinga 2 version!")
+    }
+}
+';
     }
 
     protected function renderHostOverridableVars()
@@ -531,27 +534,44 @@ class IcingaConfig
 
         return sprintf(
             '
-const DirectorOverrideVars = "%s"
 const DirectorOverrideTemplate = "%s"
+if (! globals.contains(DirectorOverrideTemplate)) {
+  const DirectorOverrideVars = "%s"
 
-template Service DirectorOverrideTemplate {
-  /**
-   * Seems that host is missing when used in a service object, works fine for
-   * apply rules
-   */
-  if (! host) {
-    var host = get_host(host_name)
+  globals.directorWarnedOnceForServiceWithoutHost = false;
+  globals.directorWarnOnceForServiceWithoutHost = function() {
+    if (globals.directorWarnedOnceForServiceWithoutHost == false) {
+      globals.directorWarnedOnceForServiceWithoutHost = true
+      log(
+        LogWarning,
+        "config",
+        "Director: Custom Variable Overrides will not work in this Icinga 2 version. See Director issue #1579"
+      )
+    }
   }
 
-  if (vars) {
-    vars += host.vars[DirectorOverrideVars][name]
-  } else {
-    vars = host.vars[DirectorOverrideVars][name]
+  template Service DirectorOverrideTemplate {
+    /**
+     * Seems that host is missing when used in a service object, works fine for
+     * apply rules
+     */
+    if (! host) {
+      var host = get_host(host_name)
+    }
+    if (! host) {
+      globals.directorWarnOnceForServiceWithoutHost()
+    }
+
+    if (vars) {
+      vars += host.vars[DirectorOverrideVars][name]
+    } else {
+      vars = host.vars[DirectorOverrideVars][name]
+    }
   }
 }
 ',
-            $settings->override_services_varname,
-            $settings->override_services_templatename
+            $settings->override_services_templatename,
+            $settings->override_services_varname
         );
     }
 
@@ -629,7 +649,7 @@ apply Service for (title => params in host.vars["%s"]) {
         $result = $this->db->fetchRow($query);
 
         if (empty($result)) {
-            throw new NotFoundError('Got no config for %s', Util::binary2hex($checksum));
+            throw new NotFoundError('Got no config for %s', bin2hex($checksum));
         }
 
         $this->checksum = $this->binFromDb($result->checksum);
@@ -719,7 +739,8 @@ apply Service for (title => params in host.vars["%s"]) {
             'user',
             'userGroup',
             'timePeriod',
-            'notification'
+            'notification',
+            'dependency'
         );
 
         return in_array($type, $types);
@@ -747,10 +768,10 @@ apply Service for (title => params in host.vars["%s"]) {
         foreach (Hook::all('Director\\ShipConfigFiles') as $hook) {
             foreach ($hook->fetchFiles() as $filename => $file) {
                 if (array_key_exists($filename, $this->files)) {
-                    throw new ProgrammingError(
+                    throw new LogicException(sprintf(
                         'Cannot ship one file twice: %s',
                         $filename
-                    );
+                    ));
                 }
                 if ($file instanceof IcingaConfigFile) {
                     $this->files[$filename] = $file;
@@ -765,7 +786,7 @@ apply Service for (title => params in host.vars["%s"]) {
 
     public function getLastActivityHexChecksum()
     {
-        return Util::binary2hex($this->getLastActivityChecksum());
+        return bin2hex($this->getLastActivityChecksum());
     }
 
     /**

@@ -3,23 +3,24 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
-use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Exception\NestingError;
+use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
 use Icinga\Module\Director\IcingaConfig\TypeFilterSet;
+use Icinga\Module\Director\Objects\IcingaTemplateChoice;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 
-abstract class DirectorObjectForm extends QuickForm
+abstract class DirectorObjectForm extends DirectorForm
 {
-    /** @var  Db */
-    protected $db;
-
     /** @var IcingaObject */
     protected $object;
 
@@ -37,6 +38,11 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected $listUrl;
 
+    /** @var Auth */
+    private $auth;
+
+    private $choiceElements = [];
+
     protected $preferredObjectType;
 
     /** @var IcingaObjectFieldLoader */
@@ -44,13 +50,10 @@ abstract class DirectorObjectForm extends QuickForm
 
     private $allowsExperimental;
 
-    /** @var  CoreApi */
-    private $api;
-
     private $presetImports;
 
     private $earlyProperties = array(
-        'imports',
+        // 'imports',
         'check_command',
         'check_command_id',
         'has_agent',
@@ -63,6 +66,32 @@ abstract class DirectorObjectForm extends QuickForm
     public function setPreferredObjectType($type)
     {
         $this->preferredObjectType = $type;
+        return $this;
+    }
+
+    public function setAuth(Auth $auth)
+    {
+        $this->auth = $auth;
+        return $this;
+    }
+
+    public function getAuth()
+    {
+        if ($this->auth === null) {
+            $this->auth = Auth::getInstance();
+        }
+        return $this->auth;
+    }
+
+    protected function eventuallyAddNameRestriction($restrictionName)
+    {
+        $restrictions = $this->getAuth()->getRestrictions($restrictionName);
+        if (! empty($restrictions)) {
+            $this->getElement('object_name')->addValidator(
+                new NamePattern($restrictions)
+            );
+        }
+
         return $this;
     }
 
@@ -80,22 +109,23 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
-     * @param array $values
-     *
      * @return DbObject|DbObjectWithSettings|IcingaObject
      */
     protected function object()
     {
         if ($this->object === null) {
-            $values = array();
+            $values = $this->getValues();
             /** @var DbObject|IcingaObject $class */
             $class = $this->getObjectClassname();
             if ($this->preferredObjectType) {
                 $values['object_type'] = $this->preferredObjectType;
             }
+            if ($this->presetImports) {
+                $values['imports'] = $this->presetImports;
+            }
 
             $this->object = $class::create($values, $this->db);
-            foreach ($this->getValues() as $key => $value) {
+            foreach ($values as $key => $value) {
                 $this->object->$key = $value;
             }
         } else {
@@ -105,6 +135,27 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $this->object;
+    }
+
+    protected function extractChoicesFromPost($post)
+    {
+        $imports = [];
+
+        foreach ($this->choiceElements as $other) {
+            $name = $other->getName();
+            if (array_key_exists($name, $post)) {
+                $value = $post[$name];
+                if (is_string($value)) {
+                    $imports[] = $value;
+                } elseif (is_array($value)) {
+                    foreach ($value as $chosen) {
+                        $imports[] = $chosen;
+                    }
+                }
+            }
+        }
+
+        return $imports;
     }
 
     protected function assertResolvedImports()
@@ -125,28 +176,54 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->hasBeenSent()) {
             // prefill special properties, required to resolve fields and similar
             $post = $this->getRequest()->getPost();
+
+            $key = 'imports';
+            if ($el = $this->getElement($key)) {
+                if (array_key_exists($key, $post)) {
+                    $imports = $post[$key];
+                    if (! is_array($imports)) {
+                        $imports = array($imports);
+                    }
+                    $imports = array_filter(array_values(array_merge(
+                        $imports,
+                        $this->extractChoicesFromPost($post)
+                    )), 'strlen');
+
+                    /** @var ZfElement $el */
+                    $this->populate([$key => $imports]);
+                    $el->setValue($imports);
+                    if (! $this->tryToSetObjectPropertyFromElement($object, $el, $key)) {
+                        return $this->resolvedImports = false;
+                    }
+                }
+            } elseif ($this->presetImports) {
+                $imports = array_values(array_merge(
+                    $this->presetImports,
+                    $this->extractChoicesFromPost($post)
+                ));
+                if (! $this->eventuallySetImports($imports)) {
+                    return $this->resolvedImports = false;
+                }
+            } else {
+                if (! empty($this->choiceElements)) {
+                    if (! $this->eventuallySetImports($this->extractChoicesFromPost($post))) {
+                        return $this->resolvedImports = false;
+                    }
+                }
+            }
+
             foreach ($this->earlyProperties as $key) {
                 if ($el = $this->getElement($key)) {
                     if (array_key_exists($key, $post)) {
-                        $this->populate(array($key => $post[$key]));
-                        $old = null;
-                        try {
-                            $old = $object->get($key);
-                            $object->set($key, $el->getValue());
-                            $object->resolveUnresolvedRelatedProperties();
-                        } catch (Exception $e) {
-                            if ($old !== null) {
-                                $object->set($key, $old);
-                            }
-                            $this->addException($e, $key);
-                        }
+                        $this->populate([$key => $post[$key]]);
+                        $this->tryToSetObjectPropertyFromElement($object, $el, $key);
                     }
                 }
             }
         }
 
         try {
-            $object->templateResolver()->listResolvedParentIds();
+            $object->listAncestorIds();
         } catch (NestingError $e) {
             $this->addUniqueErrorMessage($e->getMessage());
             return $this->resolvedImports = false;
@@ -156,6 +233,41 @@ abstract class DirectorObjectForm extends QuickForm
         }
 
         return $this->setResolvedImports();
+    }
+
+    protected function eventuallySetImports($imports)
+    {
+        try {
+            $this->object()->set('imports', $imports);
+            return true;
+        } catch (Exception $e) {
+            $this->addException($e, 'imports');
+            return false;
+        }
+    }
+
+    protected function tryToSetObjectPropertyFromElement(
+        IcingaObject $object,
+        ZfElement $element,
+        $key
+    ) {
+        $old = null;
+        try {
+            $old = $object->get($key);
+            $object->set($key, $element->getValue());
+            $object->resolveUnresolvedRelatedProperties();
+
+            if ($key === 'imports') {
+                $object->imports()->getObjects();
+            }
+            return true;
+        } catch (Exception $e) {
+            if ($old !== null) {
+                $object->set($key, $old);
+            }
+            $this->addException($e, $key);
+            return false;
+        }
     }
 
     public function setResolvedImports($resolved = true)
@@ -262,9 +374,26 @@ abstract class DirectorObjectForm extends QuickForm
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
                 try {
+                    if ($key === 'imports' && ! empty($this->choiceElements)) {
+                        if (! is_array($value)) {
+                            $value = [$value];
+                        }
+                        foreach ($this->choiceElements as $element) {
+                            $chosen = $element->getValue();
+                            if (is_string($chosen)) {
+                                $value[] = $chosen;
+                            } elseif (is_array($chosen)) {
+                                foreach ($chosen as $choice) {
+                                    $value[] = $choice;
+                                }
+                            }
+                        }
+                    }
                     $object->set($key, $value);
                     if ($object instanceof IcingaObject) {
-                        $object->resolveUnresolvedRelatedProperties();
+                        if ($this->resolvedImports !== false) {
+                            $object->imports()->getObjects();
+                        }
                     }
                 } catch (Exception $e) {
                     $this->addException($e, $key);
@@ -372,19 +501,32 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
+     * @param bool $importsFirst
      * @return $this
      */
-    protected function groupMainProperties()
+    protected function groupMainProperties($importsFirst = false)
     {
-        $elements = array(
-            'object_type',
-            'object_name',
-            'imports',
+        if ($importsFirst) {
+            $elements = [
+                'imports',
+                'object_type',
+                'object_name',
+            ];
+        } else {
+            $elements = [
+                'object_type',
+                'object_name',
+                'imports',
+            ];
+        }
+        $elements = array_merge($elements, [
             'display_name',
             'host_id',
             'address',
             'address6',
             'groups',
+            'inherited_groups',
+            'applied_groups',
             'users',
             'user_groups',
             'apply_to',
@@ -396,10 +538,21 @@ abstract class DirectorObjectForm extends QuickForm
             'email',
             'pager',
             'enable_notifications',
+            'disable_checks', //Dependencies
+            'disable_notifications',
+            'ignore_soft_states',
             'apply_for',
             'create_live',
             'disabled',
-        );
+        ]);
+
+        // Add template choices to the main section
+        /** @var \Zend_Form_Element $el */
+        foreach ($this->getElements() as $key => $el) {
+            if (substr($el->getName(), 0, 6) === 'choice') {
+                $elements[] = $key;
+            }
+        }
 
         $this->addDisplayGroup($elements, 'object_definition', array(
             'decorators' => array(
@@ -460,7 +613,7 @@ abstract class DirectorObjectForm extends QuickForm
             }
             $el->setMultiOptions($multi);
         } else {
-            if (is_string($inherited)) {
+            if (is_string($inherited) || is_int($inherited)) {
                 $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
             }
         }
@@ -489,7 +642,7 @@ abstract class DirectorObjectForm extends QuickForm
                 : $this->translate('A new %s has successfully been created'),
                 $this->translate($this->getObjectShortClassName())
             );
-            $object->store($this->db);
+                $object->store($this->db);
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -511,29 +664,13 @@ abstract class DirectorObjectForm extends QuickForm
                 'director/' . strtolower($this->getObjectShortClassName()),
                 $object->getUrlParams()
             );
+        } elseif ($object->hasProperty('id')) {
+            $this->setSuccessUrl($this->getSuccessUrl()->with('id', $object->getProperty('id')));
         }
     }
 
     protected function beforeSuccessfulRedirect()
     {
-    }
-
-    protected function addBoolean($key, $options, $default = null)
-    {
-        if ($default === null) {
-            return $this->addElement('OptionalYesNo', $key, $options);
-        } else {
-            $this->addElement('YesNo', $key, $options);
-            return $this->getElement($key)->setValue($default);
-        }
-    }
-
-    protected function optionalBoolean($key, $label, $description)
-    {
-        return $this->addBoolean($key, array(
-            'label'       => $label,
-            'description' => $description
-        ));
     }
 
     public function hasElement($name)
@@ -551,11 +688,31 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->object !== null;
     }
 
-    public function setObject(IcingaObject $object)
+    public function isIcingaObject()
+    {
+        if ($this->object !== null) {
+            return $this->object instanceof IcingaObject;
+        }
+
+        /** @var DbObject $class */
+        $class = $this->getObjectClassname();
+        $instance = $class::create();
+
+        return $instance instanceof IcingaObject;
+    }
+
+    public function isMultiObjectForm()
+    {
+        return false;
+    }
+
+    public function setObject(DbObject $object)
     {
         $this->object = $object;
         if ($this->db === null) {
-            $this->setDb($object->getConnection());
+            /** @var Db $connection */
+            $connection = $object->getConnection();
+            $this->setDb($connection);
         }
 
         return $this;
@@ -588,7 +745,6 @@ abstract class DirectorObjectForm extends QuickForm
     protected function removeFromSet(& $set, $key)
     {
         unset($set[$key]);
-        sort($set);
     }
 
     protected function moveUpInSet(& $set, $key)
@@ -631,22 +787,32 @@ abstract class DirectorObjectForm extends QuickForm
 
     protected function onRequest()
     {
-        $object = $this->object();
-        $this->setDefaultsFromObject($object);
-        $this->prepareFields($object);
+        if ($this->object !== null) {
+            $this->setDefaultsFromObject($this->object);
+        }
+        $this->prepareFields($this->object());
+        IcingaObjectFormHook::callOnSetup($this);
         if ($this->hasBeenSent()) {
             $this->handlePost();
         }
-        $this->loadInheritedProperties();
-        $this->addFields();
+        try {
+            $this->loadInheritedProperties();
+            $this->addFields();
+            $this->callOnRequestCallables();
+        } catch (Exception $e) {
+            $this->addUniqueException($e);
+
+            return;
+        }
+
+        if ($this->shouldBeDeleted()) {
+            $this->deleteObject($this->object());
+        }
     }
 
     protected function handlePost()
     {
         $object = $this->object();
-        if ($this->shouldBeDeleted()) {
-            $this->deleteObject($object);
-        }
 
         $post = $this->getRequest()->getPost();
         $this->populate($post);
@@ -679,7 +845,7 @@ abstract class DirectorObjectForm extends QuickForm
                     }
                 }
 
-                if ($value !== null) {
+                if ($value !== null && $value !== []) {
                     $element->setValue($value);
                 }
             }
@@ -744,6 +910,15 @@ abstract class DirectorObjectForm extends QuickForm
                     )
                 );
             }
+        } elseif ($object instanceof IcingaCommand && $object->isInUse()) {
+            $el->setAttrib('disabled', 'disabled');
+            $el->setAttrib(
+                'title',
+                sprintf(
+                    $this->translate('This Command is still in use by %d other objects'),
+                    $object->countDirectUses()
+                )
+            );
         }
 
         $this->addElement($el);
@@ -766,7 +941,7 @@ abstract class DirectorObjectForm extends QuickForm
         return $this->getSentValue($name) === $this->getElement($name)->getLabel();
     }
 
-    protected function abortDeletion()
+    public function abortDeletion()
     {
         if ($this->hasDeleteButton()) {
             $this->setSentValue($this->deleteButtonName, 'ABORTED');
@@ -787,6 +962,12 @@ abstract class DirectorObjectForm extends QuickForm
             if ($this->hasBeenSent()) {
                 return $this->getSentValue($name, $default);
             } else {
+                if ($name === 'object_type' && $this->preferredObjectType) {
+                    return $this->preferredObjectType;
+                }
+                if ($name === 'imports' && $this->presetImports) {
+                    return $this->presetImports;
+                }
                 if ($this->valueIsEmpty($val = $this->getValue($name))) {
                     return $default;
                 } else {
@@ -828,20 +1009,15 @@ abstract class DirectorObjectForm extends QuickForm
         return $default;
     }
 
-    protected function addUniqueErrorMessage($msg)
-    {
-        if (! in_array($msg, $this->getErrorMessages())) {
-            $this->addErrorMessage($msg);
-        }
-
-        return $this;
-    }
-
     public function loadObject($id)
     {
         /** @var DbObject $class */
         $class = $this->getObjectClassname();
-        $this->object = $class::load($id, $this->db);
+        if (is_int($id)) {
+            $this->object = $class::loadWithAutoIncId($id, $this->db);
+        } else {
+            $this->object = $class::load($id, $this->db);
+        }
 
         // TODO: hmmmm...
         if (! is_array($id) && $this->object->getKeyName() === 'id') {
@@ -860,20 +1036,16 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
-     * @return Db
+     * @param Db $db
+     * @return $this
      */
-    public function getDb()
-    {
-        return $this->db;
-    }
-
     public function setDb(Db $db)
     {
-        $this->db = $db;
         if ($this->object !== null) {
             $this->object->setConnection($db);
         }
 
+        parent::setDb($db);
         return $this;
     }
 
@@ -966,12 +1138,50 @@ abstract class DirectorObjectForm extends QuickForm
     }
 
     /**
+     * @param $type
+     * @return $this
+     */
+    protected function addChoices($type)
+    {
+        if ($this->isTemplate()) {
+            return $this;
+        }
+
+        $connection = $this->getDb();
+        $choiceType = 'TemplateChoice' . ucfirst($type);
+        $choices = IcingaObject::loadAllByType($choiceType, $connection);
+        foreach ($choices as $choice) {
+            $this->addChoiceElement($choice);
+        }
+
+        return $this;
+    }
+
+    protected function addChoiceElement(IcingaTemplateChoice $choice)
+    {
+        $imports = $this->object()->listImportNames();
+        $element = $choice->createFormElement($this, $imports);
+        $this->addElement($element);
+        $this->choiceElements[$element->getName()] = $element;
+        return $this;
+    }
+
+    /**
      * @param bool $required
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addImportsElement($required = null)
     {
-        $required = $required !== null ? $required : !$this->isTemplate();
+        if ($this->presetImports) {
+            return $this;
+        }
+
+        if (in_array($this->getObjectShortClassName(), ['TimePeriod', 'ScheduledDowntime'])) {
+            $required = false;
+        } else {
+            $required = $required !== null ? $required : !$this->isTemplate();
+        }
         $enum = $this->enumAllowedTemplates();
         if (empty($enum)) {
             if ($required) {
@@ -989,6 +1199,20 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
+        $db = $this->getDb()->getDbAdapter();
+        $object = $this->object;
+        if ($object->supportsChoices()) {
+            $choiceNames = $db->fetchCol(
+                $db->select()->from(
+                    $this->object()->getTableName(),
+                    'object_name'
+                )->where('template_choice_id IS NOT NULL')
+            );
+        } else {
+            $choiceNames = [];
+        }
+
+        $type = $object->getShortTableName();
         $this->addElement('extensibleSet', 'imports', array(
             'label'        => $this->translate('Imports'),
             'description'  => $this->translate(
@@ -997,7 +1221,10 @@ abstract class DirectorObjectForm extends QuickForm
                 . ' wins'
             ),
             'required'     => $required,
-            'multiOptions' => $this->optionallyAddFromEnum($enum),
+            'spellcheck'   => 'false',
+            'hideOptions'  => $choiceNames,
+            'suggest'      => "${type}templates",
+            // 'multiOptions' => $this->optionallyAddFromEnum($enum),
             'sorted'       => true,
             'value'        => $this->presetImports,
             'class'        => 'autosubmit'
@@ -1024,6 +1251,10 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws \Zend_Form_Exception
+     */
     protected function addGroupDisplayNameElement()
     {
         $this->addElement('text', 'display_name', array(
@@ -1041,6 +1272,7 @@ abstract class DirectorObjectForm extends QuickForm
      * @param bool $force
      *
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addCheckCommandElements($force = false)
     {
@@ -1048,14 +1280,17 @@ abstract class DirectorObjectForm extends QuickForm
             return $this;
         }
 
-        $this->addElement('select', 'check_command_id', array(
+        $this->addElement('text', 'check_command', array(
             'label' => $this->translate('Check command'),
             'description'  => $this->translate('Check command definition'),
-            'multiOptions' => $this->optionalEnum($this->db->enumCheckcommands()),
-            'class'        => 'autosubmit', // This influences fields
+            // 'multiOptions' => $this->optionalEnum($this->db->enumCheckcommands()),
+            'class'        => 'autosubmit director-suggest', // This influences fields
+            'data-suggestion-context' => 'checkcommandnames',
+            'value' => $this->getObject()->get('check_command')
         ));
         $this->getDisplayGroup('object_definition')
-            ->addElement($this->getElement('check_command_id'));
+            // ->addElement($this->getElement('check_command_id'))
+            ->addElement($this->getElement('check_command'));
 
         $eventCommands = $this->db->enumEventcommands();
 
@@ -1109,6 +1344,17 @@ abstract class DirectorObjectForm extends QuickForm
             )
         );
 
+        $this->addElement(
+            'text',
+            'check_timeout',
+            array(
+                'label' => $this->translate('Check timeout'),
+                'description' => $this->translate(
+                    "Check command timeout in seconds. Overrides the CheckCommand's timeout attribute"
+                )
+            )
+        );
+
         $periods = $this->db->enumTimeperiods();
 
         if (!empty($periods)) {
@@ -1157,6 +1403,34 @@ abstract class DirectorObjectForm extends QuickForm
         );
 
         $this->optionalBoolean(
+            'enable_flapping',
+            $this->translate('Enable flap detection'),
+            $this->translate('Whether flap detection is enabled on this object')
+        );
+
+        $this->addElement(
+            'text',
+            'flapping_threshold_high',
+            array(
+                'label' => $this->translate('Flapping threshold (high)'),
+                'description' => $this->translate(
+                    'Flapping upper bound in percent for a service to be considered flapping'
+                )
+            )
+        );
+
+        $this->addElement(
+            'text',
+            'flapping_threshold_low',
+            array(
+                'label' => $this->translate('Flapping threshold (low)'),
+                'description' => $this->translate(
+                    'Flapping lower bound in percent for a service to be considered not flapping'
+                )
+            )
+        );
+
+        $this->optionalBoolean(
             'volatile',
             $this->translate('Volatile'),
             $this->translate('Whether this check is volatile.')
@@ -1166,12 +1440,16 @@ abstract class DirectorObjectForm extends QuickForm
             'check_interval',
             'retry_interval',
             'max_check_attempts',
+            'check_timeout',
             'check_period_id',
             'enable_active_checks',
             'enable_passive_checks',
             'enable_notifications',
             'enable_event_handler',
             'enable_perfdata',
+            'enable_flapping',
+            'flapping_threshold_high',
+            'flapping_threshold_low',
             'volatile'
         );
         $this->addToCheckExecutionDisplayGroup($elements);
@@ -1184,7 +1462,7 @@ abstract class DirectorObjectForm extends QuickForm
         $object = $this->object();
         $tpl = $this->db->enumIcingaTemplates($object->getShortTableName());
         if (empty($tpl)) {
-            return array();
+            return [];
         }
 
         $id = $object->get('id');
@@ -1193,12 +1471,7 @@ abstract class DirectorObjectForm extends QuickForm
             unset($tpl[$id]);
         }
 
-        if (empty($tpl)) {
-            return array();
-        }
-
-        $tpl = array_combine($tpl, $tpl);
-        return $tpl;
+        return array_combine($tpl, $tpl);
     }
 
     protected function addExtraInfoElements()
@@ -1271,9 +1544,10 @@ abstract class DirectorObjectForm extends QuickForm
      * Forms should use this helper method for objects using the typical
      * assign_filter column
      *
-     * @param array  $properties Form element properties
+     * @param array $properties Form element properties
      *
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addAssignFilter($properties)
     {
@@ -1303,10 +1577,11 @@ abstract class DirectorObjectForm extends QuickForm
      * TODO: Evaluate whether parts or all of this could be moved to the element
      * class.
      *
-     * @param string $name       Element name
-     * @param array  $properties Form element properties
+     * @param string $name Element name
+     * @param array $properties Form element properties
      *
      * @return $this
+     * @throws \Zend_Form_Exception
      */
     protected function addFilterElement($name, $properties)
     {
@@ -1330,28 +1605,28 @@ abstract class DirectorObjectForm extends QuickForm
         return $this;
     }
 
-    protected function addEventFilterElements()
+    protected function addEventFilterElements($elements = array('states','types'))
     {
-        $this->addElement('extensibleSet', 'states', array(
-            'label' => $this->translate('States'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
-            'description'  => $this->translate(
-                'The host/service states you want to get notifications for'
-            ),
-        ));
+        if (in_array('states', $elements)) {
+            $this->addElement('extensibleSet', 'states', array(
+                'label' => $this->translate('States'),
+                'multiOptions' => $this->optionallyAddFromEnum($this->enumStates()),
+                'description'  => $this->translate(
+                    'The host/service states you want to get notifications for'
+                ),
+            ));
+        }
 
-        $this->addElement('extensibleSet', 'types', array(
-            'label' => $this->translate('Transition types'),
-            'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
-            'description'  => $this->translate(
-                'The state transition types you want to get notifications for'
-            ),
-        ));
+        if (in_array('types', $elements)) {
+            $this->addElement('extensibleSet', 'types', array(
+                'label' => $this->translate('Transition types'),
+                'multiOptions' => $this->optionallyAddFromEnum($this->enumTypes()),
+                'description'  => $this->translate(
+                    'The state transition types you want to get notifications for'
+                ),
+            ));
+        }
 
-        $elements = array(
-            'states',
-            'types',
-        );
         $this->addDisplayGroup($elements, 'event_filters', array(
             'decorators' => array(
                 'FormElements',
@@ -1397,26 +1672,5 @@ abstract class DirectorObjectForm extends QuickForm
     {
         $set = new TypeFilterSet();
         return $set->enumAllowedValues();
-    }
-
-    public function setApi($api)
-    {
-        $this->api = $api;
-        return $this;
-    }
-
-    protected function api()
-    {
-        return $this->api;
-    }
-
-    private function dummyForTranslation()
-    {
-        $this->translate('Host');
-        $this->translate('Service');
-        $this->translate('Zone');
-        $this->translate('Command');
-        $this->translate('User');
-        // ... TBC
     }
 }

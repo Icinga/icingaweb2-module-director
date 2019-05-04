@@ -55,7 +55,7 @@ class SyncDashlet extends Dashlet
 
     public function getUrl()
     {
-        return 'director/list/syncrule';
+        return 'director/syncrules';
     }
 
     public function listRequiredPermissions()

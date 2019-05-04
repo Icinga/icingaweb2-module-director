@@ -5,9 +5,8 @@ namespace Icinga\Module\Director\Dashboard;
 class DeploymentDashboard extends Dashboard
 {
     protected $dashletNames = array(
-        'Deployment',
         'ActivityLog',
-        'Job',
+        'Deployment',
         'Infrastructure',
     );
 

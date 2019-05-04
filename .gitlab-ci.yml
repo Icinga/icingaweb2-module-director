@@ -7,7 +7,7 @@ PSR2 CS Test:
   tags:
   - xenial
   script:
-  - phpcs --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ application/ configuration.php run.php test
+  - phpcs --report-width=auto --report-full --report-gitblame --report-summary -p --standard=PSR2 --extensions=php --encoding=utf-8 -w -s library/Director/ library/vendor/ipl/ application/ *.php test
 
 CentOS 7/MySQL:
   stage: Unit-Tests with DB
@@ -22,7 +22,7 @@ CentOS 7/MySQL:
   after_script:
   - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
   script:
-  - phpunit
+  - phpunit --verbose
   
 CentOS 7/PostgreSQL:
   stage: Unit-Tests with DB
@@ -40,22 +40,22 @@ CentOS 7/PostgreSQL:
   - psql postgres -c "DROP DATABASE $DIRECTOR_TESTDB"
   - psql postgres -c "DROP USER $DIRECTOR_TESTDB_USER"
   script:
-  - phpunit
+  - phpunit --verbose
 
-CentOS 6/MySQL:
-  stage: Unit-Tests with DB
-  tags:
-  - centos6
-  - director
-  variables:
-    DIRECTOR_TESTDB: "director_test_${CI_BUILD_ID}_${CI_RUNNER_ID}"
-    DIRECTOR_TESTDB_RES: "Director MySQL TestDB"
-  before_script:
-  - mysql -u root -e "CREATE DATABASE $DIRECTOR_TESTDB"
-  after_script:
-  - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
-  script:
-  - phpunit
+#CentOS 6/MySQL:
+#  stage: Unit-Tests with DB
+#  tags:
+#  - centos6
+#  - director
+#  variables:
+#    DIRECTOR_TESTDB: "director_test_${CI_BUILD_ID}_${CI_RUNNER_ID}"
+#    DIRECTOR_TESTDB_RES: "Director MySQL TestDB"
+#  before_script:
+#  - mysql -u root -e "CREATE DATABASE $DIRECTOR_TESTDB"
+#  after_script:
+#  - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
+#  script:
+#  - phpunit
 
 Jessie/MySQL:
   stage: Unit-Tests with DB
@@ -70,7 +70,7 @@ Jessie/MySQL:
   after_script:
   - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
   script:
-  - phpunit
+  - phpunit --verbose
   
 Jessie/PostgreSQL:
   stage: Unit-Tests with DB
@@ -88,7 +88,7 @@ Jessie/PostgreSQL:
   - psql postgres -c "DROP DATABASE $DIRECTOR_TESTDB"
   - psql postgres -c "DROP USER $DIRECTOR_TESTDB_USER"
   script:
-  - phpunit
+  - phpunit --verbose
 
 Xenial/MySQL:
   stage: Unit-Tests with DB
@@ -103,7 +103,7 @@ Xenial/MySQL:
   after_script:
   - mysql -u root -e "DROP DATABASE $DIRECTOR_TESTDB"
   script:
-  - phpunit
+  - phpunit --verbose
   
 Xenial/PostgreSQL:
   stage: Unit-Tests with DB
@@ -121,5 +121,5 @@ Xenial/PostgreSQL:
   - psql postgres -c "DROP DATABASE $DIRECTOR_TESTDB"
   - psql postgres -c "DROP USER $DIRECTOR_TESTDB_USER"
   script:
-  - phpunit
+  - phpunit --verbose
 

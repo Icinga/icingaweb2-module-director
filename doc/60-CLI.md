@@ -129,6 +129,11 @@ Use this command to modify specific properties of an existing Icinga object.
 | Option            | Description                                           |
 |-------------------|-------------------------------------------------------|
 | `--<key> <value>` | Provide all properties as single command line options |
+| `--append-<key> <value>` | Appends to array values, like `imports`,       |
+|                   | `groups` or `vars.system_owners`                      |
+| `--remove-<key> [<value>]` | Remove a specific property, eventually only  |
+|                   | when matching `value`. In case the property is an     |
+|                   | array it will remove just `value` when given          |
 | `--json`          | Otherwise provide all options as a JSON string        |
 | `--replace`       | Replace all object properties with the given ones     |
 | `--auto-create`   | Create the object in case it does not exist           |
@@ -157,8 +162,8 @@ icingacli director host set localhost --json '{ "address": "127.0.0.2" }'
 ```
 
 This command will fail in case the specified object does not exist. This is
-when the `--auto-create` parameter comes in handy. Command output will thell
-you whether an object has either be created or (not) modified.
+when the `--auto-create` parameter comes in handy. Command output will tell
+you whether an object has either been created or (not) modified.
 
 With `set` you only set the specified properties and do not touch the other
 ones. You could also want to completely override an object, purging all other
@@ -192,7 +197,7 @@ in JSON format.
 
 ### Clone an existing object
 
-Use this command to clone a specific object
+Use this command to clone a specific object.
 
 #### Usage
 
@@ -298,6 +303,122 @@ web frontend. Do not use this unless you really understand its implications. And
 remember, with great power comes great responsibility.
 
 
+Import/Export Director Objects
+------------------------------
+
+Some objects are not directly related to Icinga Objects but used by the Director
+to manage them. To make it easier for administrators to for example pre-fill an
+empty Director Instance with Import Sources and Sync Rules, related import/export
+commands come in handy.
+
+Use `icingacli director export <type> [options]` to export objects of a specific
+type:
+
+| Type                  | Description                                     |
+|-----------------------|-------------------------------------------------|
+| `datafields`          | Export all DataField definitions                |
+| `datalists`           | Export all DataList definitions                 |
+| `hosttemplatechoices` | Export all IcingaTemplateChoiceHost definitions |
+| `importsources`       | Export all ImportSource definitions             |
+| `jobs`                | Export all Job definitions                      |
+| `syncrules`           | Export all SyncRule definitions                 |
+
+#### Options
+
+| Option        | Description                                          |
+|---------------|------------------------------------------------------|
+| `--no-pretty` | JSON is pretty-printed per default. Use this flag to |
+|               | enforce unformatted JSON                             |
+
+Use `icingacli director import <type> < exported.json` to import objects of a
+specific type:
+
+| Type                  | Description                                     |
+|-----------------------|-------------------------------------------------|
+| `importsources`       | Import ImportSource definitions from STDIN      |
+| `syncrules`           | Import SyncRule definitions from STDIN          |
+
+
+This feature is available since v1.5.0.
+
+
+Director Configuration Basket
+-----------------------------
+
+A basket contains a set of Director Configuration objects (like Templates,
+Commands, Import/Sync definitions - but not single Hosts or Services). This
+CLI command allows you to integrate them into your very own workflows
+
+## Available Actions
+
+| Action     | Description                                       |
+|------------|---------------------------------------------------|
+| `dump`     | JSON-dump for objects related to the given Basket |
+| `list`     | List configured Baskets                           |
+| `restore`  | Restore a Basket from JSON dump provided on STDIN |
+| `snapshot` | Take a snapshot for the given Basket              |
+
+### Options
+
+| Option   | Description                                          |
+|----------|------------------------------------------------------|
+| `--name` | `dump` and `snapshot` require a specific object name |
+
+Use `icingacli director basket restore < exported-basket.json` to restore objects
+from a specific basket. Take a snapshot or a backup first to be on the safe side.
+
+This feature is available since v1.6.0.
+
+
+Health Check Plugin
+-------------------
+
+You can use the Director CLI as an Icinga CheckPlugin and monitor your Director
+Health. This will run all or just one of the following test suites:
+
+| Name         | Description                                                       |
+|--------------|-------------------------------------------------------------------|
+| `config`     | Configuration, Schema, Migrations                                 |
+| `sync`       | All configured Sync Rules (pending changes are not a problem)     |
+| `import`     | All configured Import Sources (pending changes are not a problem) |
+| `jobs`       | All configured Jobs (ignores disabled ones)                       |
+| `deployment` | Deployment Endpoint, last deployment outcome                      |
+
+#### Usage
+
+`icingacli director health check [options]`
+
+#### Options
+
+| Option           | Description                           |
+|------------------|---------------------------------------|
+| `--check <name>` | Run only a specific test suite        |
+| `--<db> <name>`  | Use a specific Icinga Web DB resource |
+
+#### Examples
+
+```shell
+icingacli director health check
+```
+
+Example for running a check only for the configuration:
+
+```shell
+icingacli director health check --check config
+```
+
+Sample output:
+
+```
+Director configuration: 5 tests OK
+[OK] Database resource 'Director DB' has been specified'
+[OK] Make sure the DB schema exists
+[OK] There are no pending schema migrations
+[OK] Deployment endpoint is 'icinga.example.com'
+[OK] There is a single un-deployed change
+```
+
+
 Kickstart and schema handling
 -----------------------------
 
@@ -381,6 +502,98 @@ only one
 Run sync and import jobs
 ------------------------
 
+### Import Sources
+
+#### List available Import Sources
+
+This shows a table with your defined Import Sources, their IDs and
+current state. As triggering Imports requires an ID, this is where you
+can look up the desired ID.
+
+`icingacli director importsource list`
+
+#### Check a given Import Source for changes
+
+This command fetches data from the given Import Source and compares it
+to the most recently imported data.
+
+`icingacli director importsource check --id <id>`
+
+##### Options
+
+| Option        | Description                                             |
+|---------------|---------------------------------------------------------|
+| `--id <id>`   | An Import Source ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details                    |
+
+#### Fetch data from a given Import Source
+
+This command fetches data from the given Import Source and outputs them
+as plain JSON
+
+`icingacli director importsource fetch --id <id>`
+
+##### Options
+
+| Option        | Description                                             |
+|---------------|---------------------------------------------------------|
+| `--id <id>`   | An Import Source ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details                    |
+
+#### Trigger an Import Run for a given Import Source
+
+This command fetches data from the given Import Source and stores it to
+the Director DB, so that the next related Sync Rule run can work with
+fresh data. In case data didn't change, nothing is going to be stored.
+
+`icingacli director importsource run --id <id>`
+
+##### Options
+
+| Option        | Description                                             |
+|---------------|---------------------------------------------------------|
+| `--id <id>`   | An Import Source ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details                    |
+
+### Sync Rules
+
+#### List defined Sync Rules
+
+This shows a table with your defined Sync Rules, their IDs and current
+state. As triggering a Sync requires an ID, this is where you can look
+up the desired ID.
+
+`icingacli director syncrule list`
+
+#### Check a given Sync Rule for changes
+
+This command runs a complete Sync in memory but doesn't persist eventual
+changes.
+
+`icingacli director syncrule check --id <id>`
+
+##### Options
+
+| Option        | Description                                        |
+|---------------|----------------------------------------------------|
+| `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details               |
+
+#### Trigger a Sync Run for a given Sync Rule
+
+This command builds new objects according your Sync Rule, compares them
+with existing ones and persists eventual changes.
+
+`icingacli director syncrule run --id <id>`
+
+##### Options
+
+| Option        | Description                                        |
+|---------------|----------------------------------------------------|
+| `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
+| `--benchmark` | Show timing and memory usage details               |
+
+### Running Jobs
 The `jobs` command runs pending Import and Sync jobs. Please note that we have
 planned a scheduler configurable through the Icinga Director web interface, but
 this is not available yes.

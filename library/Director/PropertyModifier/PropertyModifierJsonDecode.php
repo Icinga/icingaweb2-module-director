@@ -3,11 +3,17 @@
 namespace Icinga\Module\Director\PropertyModifier;
 
 use Icinga\Exception\InvalidPropertyException;
+use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class PropertyModifierJsonDecode extends PropertyModifierHook
 {
+    /**
+     * @param QuickForm $form
+     * @return QuickForm|void
+     * @throws \Zend_Form_Exception
+     */
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement('select', 'on_failure', array(
@@ -29,6 +35,11 @@ class PropertyModifierJsonDecode extends PropertyModifierHook
         return 'Decode a JSON string';
     }
 
+    /**
+     * @param $value
+     * @return mixed|null
+     * @throws InvalidPropertyException
+     */
     public function transform($value)
     {
         if (null === $value) {
@@ -46,31 +57,12 @@ class PropertyModifierJsonDecode extends PropertyModifierHook
                 default:
                     throw new InvalidPropertyException(
                         'JSON decoding failed with "%s" for %s',
-                        $this->getLastJsonError(),
+                        JsonException::getJsonErrorMessage(json_last_error()),
                         substr($value, 0, 128)
                     );
             }
         }
 
         return $decoded;
-    }
-
-    // TODO: just return json_last_error_msg() for PHP >= 5.5.0
-    protected function getLastJsonError()
-    {
-        switch (json_last_error()) {
-            case JSON_ERROR_DEPTH:
-                return 'The maximum stack depth has been exceeded';
-            case JSON_ERROR_CTRL_CHAR:
-                return 'Control character error, possibly incorrectly encoded';
-            case JSON_ERROR_STATE_MISMATCH:
-                return 'Invalid or malformed JSON';
-            case JSON_ERROR_SYNTAX:
-                return 'Syntax error';
-            case JSON_ERROR_UTF8:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            default:
-                return 'An error occured when parsing a JSON string';
-        }
     }
 }

@@ -18,6 +18,26 @@ class AssignRendererTest extends BaseTestCase
         );
     }
 
+    public function testNegationIsRenderedCorrectlyOnRootLevel()
+    {
+        $string = '!(host.name="one"&host.name="two")';
+        $expected = 'assign where !(host.name == "one" && host.name == "two")';
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
+    public function testNegationIsRenderedCorrectlyOnDeeperLevel()
+    {
+        $string = 'host.address="127.*"&!host.name="localhost"';
+        $expected = 'assign where match("127.*", host.address) && !(host.name == "localhost")';
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
     public function testWildcardsRenderAMatchMethod()
     {
         $string = 'host.address="127.0.0.*"';
@@ -34,7 +54,7 @@ class AssignRendererTest extends BaseTestCase
             . '&host.vars.is_clustered=true)';
 
         $expected = 'assign where match("*internal", host.name) ||'
-            . ' (service.vars.priority < 2 && host.vars.is_clustered == true)';
+            . ' (service.vars.priority < 2 && host.vars.is_clustered)';
 
         $this->assertEquals(
             $expected,
@@ -80,6 +100,18 @@ class AssignRendererTest extends BaseTestCase
         $string = 'host.name=' . json_encode(array('a' ,'b'));
 
         $expected = 'assign where host.name in [ "a", "b" ]';
+
+        $this->assertEquals(
+            $expected,
+            $this->renderer($string)->renderAssign()
+        );
+    }
+
+    public function testWhetherSlashesAreNotEscaped()
+    {
+        $string = 'host.name=' . json_encode('a/b');
+
+        $expected = 'assign where host.name == "a/b"';
 
         $this->assertEquals(
             $expected,

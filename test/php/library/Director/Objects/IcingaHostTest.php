@@ -7,6 +7,7 @@ use Icinga\Module\Director\Data\PropertiesFilter\CustomVariablesFilter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHostGroup;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Test\BaseTestCase;
 use Icinga\Exception\IcingaException;
@@ -30,7 +31,8 @@ class IcingaHostTest extends BaseTestCase
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
-            array('display_name' => 'Replaced display')
+            array('display_name' => 'Replaced display'),
+            $this->getDb()
         );
 
         $this->assertEquals(
@@ -62,7 +64,8 @@ class IcingaHostTest extends BaseTestCase
     {
         $host = $this->host();
         $newHost = IcingaHost::create(
-            array('display_name' => 'Replaced display')
+            array('display_name' => 'Replaced display'),
+            $this->getDb()
         );
 
         $this->assertEquals(
@@ -108,7 +111,8 @@ class IcingaHostTest extends BaseTestCase
                     'test2'     => 18,
                     'initially' => 'set and then preserved',
                 )
-            )
+            ),
+            $this->getDb()
         );
 
         $preserve = array('address', 'vars.test1', 'vars.initially');
@@ -252,7 +256,7 @@ class IcingaHostTest extends BaseTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\NotFoundError
+     * @expectedException \RuntimeException
      */
     public function testFailsToStoreWithMissingLazyRelations()
     {
@@ -333,7 +337,7 @@ class IcingaHostTest extends BaseTestCase
     }
 
     /**
-     * @expectedException \Icinga\Exception\NotFoundError
+     * @expectedException \RuntimeException
      */
     public function testFailsToStoreWithInvalidUnresolvedDependencies()
     {
@@ -421,7 +425,7 @@ class IcingaHostTest extends BaseTestCase
         $a->store();
         try {
             $b->store();
-        } catch (IcingaException $e) {
+        } catch (\RuntimeException $e) {
             $msg = $e->getMessage();
             $matchMysql = strpos(
                 $msg,
@@ -618,6 +622,41 @@ class IcingaHostTest extends BaseTestCase
         );
     }
 
+    public function testMergingObjectKeepsGroupsIfNotGiven()
+    {
+        $one = IcingaHostGroup::create([
+            'object_name' => 'one',
+            'object_type' => 'object',
+        ]);
+        $two = IcingaHostGroup::create([
+            'object_name' => 'two',
+            'object_type' => 'object',
+        ]);
+        $a = IcingaHost::create([
+            'object_name' => 'one',
+            'object_type' => 'object',
+            'imports'     => [],
+            'address'     => '127.0.0.2',
+            'groups'      => [$one, $two]
+        ]);
+
+        $b = IcingaHost::create([
+            'object_name' => 'one',
+            'object_type' => 'object',
+            'imports'     => [],
+            'address'     => '127.0.0.42',
+        ]);
+
+        $a->merge($b);
+        $this->assertEquals(
+            '127.0.0.42',
+            $a->get('address')
+        );
+        $this->assertEquals(
+            ['one', 'two'],
+            $a->getGroups()
+        );
+    }
 
     protected function getDummyRelatedProperties()
     {
@@ -649,7 +688,7 @@ class IcingaHostTest extends BaseTestCase
                     )
                 )
             )
-        ));
+        ), $this->getDb());
     }
 
     protected function getDefaultHostProperties($prefix = '')
@@ -663,6 +702,7 @@ class IcingaHostTest extends BaseTestCase
             "${prefix}check_command" => "check_command",
             "${prefix}check_interval" => "check_interval",
             "${prefix}check_period" => "check_period",
+            "${prefix}check_timeout" => "check_timeout",
             "${prefix}command_endpoint" => "command_endpoint",
             "${prefix}display_name" => "display_name",
             "${prefix}enable_active_checks" => "enable_active_checks",
@@ -672,7 +712,8 @@ class IcingaHostTest extends BaseTestCase
             "${prefix}enable_passive_checks" => "enable_passive_checks",
             "${prefix}enable_perfdata" => "enable_perfdata",
             "${prefix}event_command" => "event_command",
-            "${prefix}flapping_threshold" => "flapping_threshold",
+            "${prefix}flapping_threshold_high" => "flapping_threshold_high",
+            "${prefix}flapping_threshold_low" => "flapping_threshold_low",
             "${prefix}icon_image" => "icon_image",
             "${prefix}icon_image_alt" => "icon_image_alt",
             "${prefix}max_check_attempts" => "max_check_attempts",
@@ -681,7 +722,8 @@ class IcingaHostTest extends BaseTestCase
             "${prefix}retry_interval" => "retry_interval",
             "${prefix}volatile" => "volatile",
             "${prefix}zone" => "zone",
-            "${prefix}groups" => "Groups"
+            "${prefix}groups" => "Groups",
+            "${prefix}templates" => "templates"
         );
     }
     protected function loadRendered($name)

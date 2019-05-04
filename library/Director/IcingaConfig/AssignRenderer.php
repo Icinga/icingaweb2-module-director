@@ -17,6 +17,7 @@ use Icinga\Data\Filter\FilterMatch;
 use Icinga\Data\Filter\FilterMatchNot;
 use Icinga\Data\Filter\FilterNotEqual;
 use Icinga\Exception\QueryException;
+use InvalidArgumentException;
 
 class AssignRenderer
 {
@@ -49,6 +50,14 @@ class AssignRenderer
 
     protected function renderFilter(Filter $filter)
     {
+        if ($filter instanceof FilterNot) {
+            $parts = [];
+            foreach ($filter->filters() as $sub) {
+                $parts[] = $this->renderFilter($sub);
+            }
+
+            return '!(' . implode(' && ', $parts) . ')';
+        }
         if ($filter->isChain()) {
             /** @var FilterChain $filter */
             return $this->renderFilterChain($filter);
@@ -69,6 +78,23 @@ class AssignRenderer
         } else {
             return sprintf(
                 '%s == %s',
+                $column,
+                $expression
+            );
+        }
+    }
+
+    protected function renderNotEquals($column, $expression)
+    {
+        if (substr($column, -7) === '.groups') {
+            return sprintf(
+                '!(%s in %s)',
+                $expression,
+                $column
+            );
+        } else {
+            return sprintf(
+                '%s != %s',
                 $column,
                 $expression
             );
@@ -133,6 +159,15 @@ class AssignRenderer
                 );
             }
         } elseif ($filter instanceof FilterMatch) {
+            if ($rawExpression === true) {
+                return $column;
+            }
+            if ($rawExpression === false) {
+                return sprintf(
+                    '! %s',
+                    $column
+                );
+            }
             if (strpos($expression, '*') === false) {
                 return $this->renderEquals($column, $expression);
             } else {
@@ -144,11 +179,7 @@ class AssignRenderer
             }
         } elseif ($filter instanceof FilterMatchNot) {
             if (strpos($expression, '*') === false) {
-                return sprintf(
-                    '%s != %s',
-                    $column,
-                    $expression
-                );
+                return $this->renderNotEquals($column, $expression);
             } else {
                 return sprintf(
                     '! match(%s, %s)',
@@ -213,31 +244,23 @@ class AssignRenderer
         } elseif ($filter instanceof FilterOr) {
             $op = ' || ';
         } elseif ($filter instanceof FilterNot) {
-            $op = ' !'; // TODO -> different
+            throw new InvalidArgumentException('renderFilterChain should never get a FilterNot instance');
         } else {
-            throw new QueryException('Cannot render filter: %s', $filter);
+            throw new InvalidArgumentException('Cannot render filter: %s', $filter);
         }
 
         $parts = array();
         if (! $filter->isEmpty()) {
             /** @var Filter $f */
             foreach ($filter->filters() as $f) {
-                if ($f->isChain()) {
-                    if ($f instanceof FilterNot) {
-                        $parts[] = '! (' . $this->renderFilter($f) . ')';
-                    } else {
-                        $parts[] = '(' . $this->renderFilter($f) . ')';
-                    }
+                if ($f instanceof FilterChain && $f->count() > 1) {
+                    $parts[] = '(' . $this->renderFilter($f) . ')';
                 } else {
                     $parts[] = $this->renderFilter($f);
                 }
             }
         }
 
-        if ($filter instanceof FilterNot) {
-            return implode(' && ', $parts);
-        } else {
-            return implode($op, $parts);
-        }
+        return implode($op, $parts);
     }
 }

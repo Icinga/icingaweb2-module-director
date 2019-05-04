@@ -38,7 +38,7 @@ Icinga Director is an Open Source project and lives from your contributions. No
 matter whether these are feature requests, issues, translations, documentation
 or code.
 
-* Please check whether a related issue alredy exists on our [Issue Tracker](https://dev.icinga.com/projects/icingaweb2-module-director/issues)
+* Please check whether a related issue already exists on our [Issue Tracker](https://github.com/Icinga/icingaweb2-module-director/issues)
 * Make sure your code conforms to the [PSR-2: Coding Style Guide](http://www.php-fig.org/psr/psr-2/)
 * [Unit-Tests](doc/93-Testing.md) would be great
 * Send a [Pull Request](https://github.com/Icinga/icingaweb2-module-director/pulls)
@@ -53,10 +53,12 @@ The following are to be considered community-supported modules, as they are not
 supported by the Icinga Team. At least not yet. But please give them a try if
 they fit your needs. They are being used in productive environments:
 
-* [AWS - Amazon Web Services](https://github.com/Thomas-Gelf/icingaweb2-module-aws):
+* [AWS - Amazon Web Services](https://github.com/Icinga/icingaweb2-module-aws):
   provides an Import Source for Autoscaling Groups on AWS
-* [File-Shipper](https://github.com/Thomas-Gelf/icingaweb2-module-fileshipper):
+* [File-Shipper](https://github.com/Icinga/icingaweb2-module-fileshipper):
   allows Director to ship additional config files with manual config with its
   deployments
-* [PuppetDB](https://github.com/Thomas-Gelf/icingaweb2-module-puppetdb): provides
+* [PuppetDB](https://github.com/Icinga/icingaweb2-module-puppetdb): provides
   an Import Source dealing with your PuppetDB
+* [vSphere](https://github.com/Icinga/icingaweb2-module-vsphere): VMware vSphere
+  Import Source for Virtual Machines and Host Systems

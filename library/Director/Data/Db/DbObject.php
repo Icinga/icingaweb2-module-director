@@ -2,12 +2,15 @@
 
 namespace Icinga\Module\Director\Data\Db;
 
-use Icinga\Exception\IcingaException as IE;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Util;
-use Exception;
+use InvalidArgumentException;
+use LogicException;
+use RuntimeException;
 use Zend_Db_Adapter_Abstract;
+use Zend_Db_Exception;
 
 /**
  * Base class for ...
@@ -22,9 +25,6 @@ abstract class DbObject
 
     /** @var Zend_Db_Adapter_Abstract */
     protected $db;
-
-    /** @var  Zend_Db_Adapter_Abstract */
-    protected $r;
 
     /**
      * Default columns. MUST be set when extending this class. Each table
@@ -69,6 +69,11 @@ abstract class DbObject
      */
     protected $autoincKeyName;
 
+    /** @var bool forbid updates to autoinc values */
+    protected $protectAutoinc = true;
+
+    protected $binaryProperties = [];
+
     /**
      * Filled with object instances when prefetchAll is used
      */
@@ -90,7 +95,7 @@ abstract class DbObject
             || $this->keyName === null
             || $this->defaultProperties === null
         ) {
-            throw new IE("Someone extending this class didn't RTFM");
+            throw new LogicException("Someone extending this class didn't RTFM");
         }
 
         $this->properties = $this->defaultProperties;
@@ -102,27 +107,27 @@ abstract class DbObject
         return $this->table;
     }
 
+    /************************************************************************\
+     * When extending this class one might want to override any of the      *
+     * following hooks. Try to use them whenever possible, especially       *
+     * instead of overriding other essential methods like store().          *
+    \************************************************************************/
+
     /**
-     * Kann überschrieben werden, um Kreuz-Checks usw vor dem Speichern durch-
-     * zuführen - die Funktion ist aber public und erlaubt jederzeit, die Kon-
-     * sistenz eines Objektes bei bedarf zu überprüfen.
+     * One can override this to allow for cross checks and more before storing
+     * the object. Please note that the method is public and allows to check
+     * object consistence at any time.
      *
-     * @return boolean  Ob der Wert gültig ist
+     * @return boolean  Whether this object is valid
      */
     public function validate()
     {
         return true;
     }
 
-    /************************************************************************\
-     * Nachfolgend finden sich ein paar Hooks, die bei Bedarf überschrieben *
-     * werden können. Wann immer möglich soll darauf verzichtet werden,     *
-     * andere Funktionen (wie z.B. store()) zu überschreiben.               *
-    \************************************************************************/
-
     /**
-     * Wird ausgeführt, bevor die eigentlichen Initialisierungsoperationen
-     * (laden von Datenbank, aus Array etc) starten
+     * This is going to be executed before any initialization method takes *
+     * (load from DB, populate from Array...) takes place
      *
      * @return void
      */
@@ -131,18 +136,8 @@ abstract class DbObject
     }
 
     /**
-     * Wird ausgeführt, nachdem mittels ::factory() ein neues Objekt erstellt
-     * worden ist.
-     *
-     * @return void
-     */
-    protected function onFactory()
-    {
-    }
-
-    /**
-     * Wird ausgeführt, nachdem mittels ::factory() ein neues Objekt erstellt
-     * worden ist.
+     * Will be executed every time an object has successfully been loaded from
+     * Database
      *
      * @return void
      */
@@ -151,8 +146,9 @@ abstract class DbObject
     }
 
     /**
-     * Wird ausgeführt, bevor ein Objekt abgespeichert wird. Die Operation
-     * wird aber auf jeden Fall durchgeführt, außer man wirft eine Exception
+     * Will be executed before an Object is going to be stored. In case you
+     * want to prevent the store() operation from taking place, please throw
+     * an Exception.
      *
      * @return void
      */
@@ -220,6 +216,7 @@ abstract class DbObject
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+
         return $this;
     }
 
@@ -227,8 +224,6 @@ abstract class DbObject
      * Getter
      *
      * @param string $property Property
-     *
-     * @throws IE
      *
      * @return mixed
      */
@@ -243,16 +238,35 @@ abstract class DbObject
             return $this->$func();
         }
 
-        if (! array_key_exists($property, $this->properties)) {
-            throw new IE('Trying to get invalid property "%s"', $property);
-        }
+        $this->assertPropertyExists($property);
         return $this->properties[$property];
+    }
+
+    public function getProperty($key)
+    {
+        $this->assertPropertyExists($key);
+        return $this->properties[$key];
+    }
+
+    protected function assertPropertyExists($key)
+    {
+        if (! array_key_exists($key, $this->properties)) {
+            throw new InvalidArgumentException(sprintf(
+                'Trying to get invalid property "%s"',
+                $key
+            ));
+        }
+
+        return $this;
     }
 
     public function hasProperty($key)
     {
         if (array_key_exists($key, $this->properties)) {
             return true;
+        } elseif ($key === 'id') {
+            // There is getId, would give false positive
+            return false;
         }
         $func = 'get' . ucfirst($key);
         if (substr($func, -2) === '[]') {
@@ -270,8 +284,6 @@ abstract class DbObject
      * @param string $key
      * @param mixed  $value
      *
-     * @throws IE
-     *
      * @return self
      */
     public function set($key, $value)
@@ -283,7 +295,11 @@ abstract class DbObject
 
         $func = 'validate' . ucfirst($key);
         if (method_exists($this, $func) && $this->$func($value) !== true) {
-            throw new IE('Got invalid value "%s" for "%s"', $value, $key);
+            throw new InvalidArgumentException(sprintf(
+                'Got invalid value "%s" for "%s"',
+                $value,
+                $key
+            ));
         }
         $func = 'munge' . ucfirst($key);
         if (method_exists($this, $func)) {
@@ -300,7 +316,10 @@ abstract class DbObject
         }
 
         if (! $this->hasProperty($key)) {
-            throw new IE('Trying to set invalid key %s', $key);
+            throw new InvalidArgumentException(sprintf(
+                'Trying to set invalid key %s',
+                $key
+            ));
         }
 
         if ((is_numeric($value) || is_string($value))
@@ -310,7 +329,7 @@ abstract class DbObject
         }
 
         if ($key === $this->getAutoincKeyName()  && $this->hasBeenLoadedFromDb()) {
-            throw new IE('Changing autoincremental key is not allowed');
+            throw new InvalidArgumentException('Changing autoincremental key is not allowed');
         }
 
         return $this->reallySet($key, $value);
@@ -368,13 +387,12 @@ abstract class DbObject
      * Magic unsetter
      *
      * @param string $key
-     * @throws IE
      * @return void
      */
     public function __unset($key)
     {
         if (! array_key_exists($key, $this->properties)) {
-            throw new IE('Trying to unset invalid key');
+            throw new InvalidArgumentException('Trying to unset invalid key');
         }
         $this->properties[$key] = $this->defaultProperties[$key];
     }
@@ -383,13 +401,15 @@ abstract class DbObject
      * Runs set() for every key/value pair of the given Array
      *
      * @param  array $props  Array of properties
-     * @throws IE
      * @return self
      */
     public function setProperties($props)
     {
         if (! is_array($props)) {
-            throw new IE('Array required, got %s', gettype($props));
+            throw new InvalidArgumentException(sprintf(
+                'Array required, got %s',
+                gettype($props)
+            ));
         }
         foreach ($props as $key => $value) {
             $this->set($key, $value);
@@ -433,12 +453,26 @@ abstract class DbObject
         $props = array();
         foreach (array_keys($this->modifiedProperties) as $key) {
             if ($key === $this->autoincKeyName) {
-                continue;
+                if ($this->protectAutoinc) {
+                    continue;
+                } elseif ($this->properties[$key] === null) {
+                    continue;
+                }
             }
 
             $props[$key] = $this->properties[$key];
         }
         return $props;
+    }
+
+    /**
+     * List all properties that changed since object creation
+     *
+     * @return array
+     */
+    public function listModifiedProperties()
+    {
+        return array_keys($this->modifiedProperties);
     }
 
     /**
@@ -502,19 +536,24 @@ abstract class DbObject
      *
      * // TODO: may conflict with ->id
      *
-     * @return string
+     * @throws InvalidArgumentException When key can not be calculated
+     *
+     * @return string|array
      */
     public function getId()
     {
-        // TODO: Doesn't work for array() / multicol key
         if (is_array($this->keyName)) {
             $id = array();
             foreach ($this->keyName as $key) {
-                if (! isset($this->properties[$key])) {
-                    return null; // Really?
+                if (isset($this->properties[$key])) {
+                    $id[$key] = $this->properties[$key];
                 }
-                $id[$key] = $this->properties[$key];
             }
+
+            if (empty($id)) {
+                throw new InvalidArgumentException('Could not evaluate id for multi-column object!');
+            }
+
             return $id;
         } else {
             if (isset($this->properties[$this->keyName])) {
@@ -527,12 +566,12 @@ abstract class DbObject
     /**
      * Get the autoinc value if set
      *
-     * @return string
+     * @return int
      */
     public function getAutoincId()
     {
         if (isset($this->properties[$this->autoincKeyName])) {
-            return $this->properties[$this->autoincKeyName];
+            return (int) $this->properties[$this->autoincKeyName];
         }
         return null;
     }
@@ -597,15 +636,27 @@ abstract class DbObject
         return $this->setDbProperties($properties);
     }
 
+    /**
+     * @param object $row
+     * @param Db $db
+     * @return self
+     */
+    public static function fromDbRow($row, Db $db)
+    {
+        return (new static())
+            ->setConnection($db)
+            ->setDbProperties($row);
+    }
+
     protected function setDbProperties($properties)
     {
         foreach ($properties as $key => $val) {
             if (! array_key_exists($key, $this->properties)) {
-                throw new IE(
+                throw new LogicException(sprintf(
                     'Trying to set invalid %s key "%s". DB schema change?',
                     $this->table,
                     $key
-                );
+                ));
             }
             if ($val === null) {
                 $this->properties[$key] = null;
@@ -629,6 +680,26 @@ abstract class DbObject
         return $this->loadedProperties;
     }
 
+    public function getOriginalProperty($key)
+    {
+        $this->assertPropertyExists($key);
+        if ($this->hasBeenLoadedFromDb()) {
+            return $this->loadedProperties[$key];
+        }
+
+        return null;
+    }
+
+    public function resetProperty($key)
+    {
+        $this->set($key, $this->getOriginalProperty($key));
+        if ($this->listModifiedProperties() === [$key]) {
+            $this->hasBeenModified = false;
+        }
+
+        return $this;
+    }
+
     public function hasBeenLoadedFromDb()
     {
         return $this->loadedFromDb;
@@ -638,6 +709,7 @@ abstract class DbObject
      * Ändert den entsprechenden Datensatz in der Datenbank
      *
      * @return int  Anzahl der geänderten Zeilen
+     * @throws \Zend_Db_Adapter_Exception
      */
     protected function updateDb()
     {
@@ -659,17 +731,20 @@ abstract class DbObject
      * Fügt der Datenbank-Tabelle einen entsprechenden Datensatz hinzu
      *
      * @return int  Anzahl der betroffenen Zeilen
+     * @throws \Zend_Db_Adapter_Exception
      */
     protected function insertIntoDb()
     {
         $properties = $this->getPropertiesForDb();
         if ($this->autoincKeyName !== null) {
-            unset($properties[$this->autoincKeyName]);
+            if ($this->protectAutoinc || $properties[$this->autoincKeyName] === null) {
+                unset($properties[$this->autoincKeyName]);
+            }
         }
         // TODO: Remove this!
         if ($this->connection->isPgsql()) {
             foreach ($properties as $key => $value) {
-                if (preg_match('/checksum$/', $key)) {
+                if ($this->isBinaryColumn($key)) {
                     $properties[$key] = Util::pgBinEscape($value);
                 }
             }
@@ -678,12 +753,17 @@ abstract class DbObject
         return $this->db->insert($this->table, $properties);
     }
 
+    protected function isBinaryColumn($column)
+    {
+        return in_array($column, $this->binaryProperties);
+    }
+
     /**
      * Store object to database
      *
      * @param  DbConnection $db
      * @return bool Whether storing succeeded
-     * @throws IE
+     * @throws DuplicateKeyException
      */
     public function store(DbConnection $db = null)
     {
@@ -692,7 +772,11 @@ abstract class DbObject
         }
 
         if ($this->validate() !== true) {
-            throw new IE('%s[%s] validation failed', $this->table, $this->getLogId());
+            throw new InvalidArgumentException(sprintf(
+                '%s[%s] validation failed',
+                $this->table,
+                $this->getLogId()
+            ));
         }
 
         if ($this->hasBeenLoadedFromDb() && ! $this->hasBeenModified()) {
@@ -702,7 +786,6 @@ abstract class DbObject
         $this->beforeStore();
         $table = $this->table;
         $id = $this->getId();
-        $result = false;
 
         try {
             if ($this->hasBeenLoadedFromDb()) {
@@ -710,23 +793,28 @@ abstract class DbObject
                     $result = true;
                     $this->onUpdate();
                 } else {
-                    throw new IE(
+                    throw new RuntimeException(sprintf(
                         'FAILED storing %s "%s"',
                         $table,
                         $this->getLogId()
-                    );
+                    ));
                 }
             } else {
                 if ($id && $this->existsInDb()) {
+                    $logId = '"' . $this->getLogId() . '"';
+
+                    if ($autoId = $this->getAutoincId()) {
+                        $logId .= sprintf(', %s=%s', $this->autoincKeyName, $autoId);
+                    }
                     throw new DuplicateKeyException(
                         'Trying to recreate %s (%s)',
                         $table,
-                        $this->getLogId()
+                        $logId
                     );
                 }
 
                 if ($this->insertIntoDb()) {
-                    if ($this->autoincKeyName) {
+                    if ($this->autoincKeyName && $this->getProperty($this->autoincKeyName) === null) {
                         if ($this->connection->isPgsql()) {
                             $this->properties[$this->autoincKeyName] = $this->db->lastInsertId(
                                 $table,
@@ -740,25 +828,21 @@ abstract class DbObject
                     $this->onInsert();
                     $result = true;
                 } else {
-                    throw new IE(
+                    throw new RuntimeException(sprintf(
                         'FAILED to store new %s "%s"',
                         $table,
                         $this->getLogId()
-                    );
+                    ));
                 }
             }
-        } catch (Exception $e) {
-            if ($e instanceof IE) {
-                throw $e;
-            }
-
-            throw new IE(
+        } catch (Zend_Db_Exception $e) {
+            throw new RuntimeException(sprintf(
                 'Storing %s[%s] failed: %s {%s}',
                 $this->table,
                 $this->getLogId(),
                 $e->getMessage(),
                 var_export($this->getProperties(), 1) // TODO: Remove properties
-            );
+            ));
         }
 
         $this->modifiedProperties = array();
@@ -766,6 +850,7 @@ abstract class DbObject
         $this->loadedProperties = $this->properties;
         $this->onStore();
         $this->loadedFromDb = true;
+
         return $result;
     }
 
@@ -785,17 +870,17 @@ abstract class DbObject
     /**
      * @param string $key
      * @return self
-     * @throws IE
+     * @throws InvalidArgumentException
      */
     protected function setKey($key)
     {
         $keyname = $this->getKeyName();
         if (is_array($keyname)) {
             if (! is_array($key)) {
-                throw new IE(
+                throw new InvalidArgumentException(sprintf(
                     '%s has a multicolumn key, array required',
                     $this->table
-                );
+                ));
             }
             foreach ($keyname as $k) {
                 if (! array_key_exists($k, $key)) {
@@ -818,9 +903,15 @@ abstract class DbObject
         return $result !== false;
     }
 
-    protected function createWhere()
+    public function createWhere()
     {
         if ($id = $this->getAutoincId()) {
+            if ($originalId = $this->getOriginalProperty($this->autoincKeyName)) {
+                return $this->db->quoteInto(
+                    sprintf('%s = ?', $this->autoincKeyName),
+                    $originalId
+                );
+            }
             return $this->db->quoteInto(
                 sprintf('%s = ?', $this->autoincKeyName),
                 $id
@@ -836,19 +927,13 @@ abstract class DbObject
                     if ($this->loadedProperties[$k] === null) {
                         $where[] = sprintf('%s IS NULL', $k);
                     } else {
-                        $where[] = $this->db->quoteInto(
-                            sprintf('%s = ?', $k),
-                            $this->loadedProperties[$k]
-                        );
+                        $where[] = $this->createQuotedWhere($k, $this->loadedProperties[$k]);
                     }
                 } else {
                     if ($this->properties[$k] === null) {
                         $where[] = sprintf('%s IS NULL', $k);
                     } else {
-                        $where[] = $this->db->quoteInto(
-                            sprintf('%s = ?', $k),
-                            $this->properties[$k]
-                        );
+                        $where[] = $this->createQuotedWhere($k, $this->properties[$k]);
                     }
                 }
             }
@@ -856,16 +941,27 @@ abstract class DbObject
             return implode(' AND ', $where);
         } else {
             if ($this->hasBeenLoadedFromDb()) {
-                return $this->db->quoteInto(
-                    sprintf('%s = ?', $key),
-                    $this->loadedProperties[$key]
-                );
+                return $this->createQuotedWhere($key, $this->loadedProperties[$key]);
             } else {
-                return $this->db->quoteInto(
-                    sprintf('%s = ?', $key),
-                    $this->properties[$key]
-                );
+                return $this->createQuotedWhere($key, $this->properties[$key]);
             }
+        }
+    }
+
+    protected function createQuotedWhere($column, $value)
+    {
+        return $this->db->quoteInto(
+            sprintf('%s = ?', $column),
+            $this->eventuallyQuoteBinary($value, $column)
+        );
+    }
+
+    protected function eventuallyQuoteBinary($value, $column)
+    {
+        if ($this->isBinaryColumn($column)) {
+            return $this->connection->quoteBinary($value);
+        } else {
+            return $value;
         }
     }
 
@@ -886,27 +982,27 @@ abstract class DbObject
         $table = $this->table;
 
         if (! $this->hasBeenLoadedFromDb()) {
-            throw new IE(
+            throw new LogicException(sprintf(
                 'Cannot delete %s "%s", it has not been loaded from Db',
                 $table,
                 $this->getLogId()
-            );
+            ));
         }
 
         if (! $this->existsInDb()) {
-            throw new IE(
+            throw new InvalidArgumentException(sprintf(
                 'Cannot delete %s "%s", it does not exist',
                 $table,
                 $this->getLogId()
-            );
+            ));
         }
         $this->beforeDelete();
         if (! $this->deleteFromDb()) {
-            throw new IE(
+            throw new RuntimeException(sprintf(
                 'Deleting %s (%s) FAILED',
                 $table,
                 $this->getLogId()
-            );
+            ));
         }
         // $this->log(sprintf('%s "%s" has been DELETED', $table, this->getLogId()));
         $this->onDelete();
@@ -948,6 +1044,10 @@ abstract class DbObject
         return array_key_exists($class, self::$prefetched);
     }
 
+    /**
+     * @param $key
+     * @return static|bool
+     */
     protected static function getPrefetched($key)
     {
         $class = get_called_class();
@@ -1009,8 +1109,22 @@ abstract class DbObject
         return self::$prefetchStats;
     }
 
+    /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     * @throws NotFoundError
+     */
     public static function loadWithAutoIncId($id, DbConnection $connection)
     {
+        /* Need to cast to int, otherwise the id will be matched against
+         * object_name, which may wreak havoc if an object has a
+         * object_name matching some id. Note that DbObject::set() and
+         * DbObject::setDbProperties() will convert any property to
+         * string, including ids.
+         */
+        $id = (int) $id;
+
         if ($prefetched = static::getPrefetched($id)) {
             return $prefetched;
         }
@@ -1020,9 +1134,16 @@ abstract class DbObject
         $obj->setConnection($connection)
             ->set($obj->autoincKeyName, $id)
             ->loadFromDb();
+
         return $obj;
     }
 
+    /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     * @throws NotFoundError
+     */
     public static function load($id, DbConnection $connection)
     {
         if ($prefetched = static::getPrefetched($id)) {
@@ -1032,6 +1153,7 @@ abstract class DbObject
         /** @var DbObject $obj */
         $obj = new static;
         $obj->setConnection($connection)->setKey($id)->loadFromDb();
+
         return $obj;
     }
 
@@ -1040,7 +1162,7 @@ abstract class DbObject
      * @param \Zend_Db_Select $query
      * @param string|null $keyColumn
      *
-     * @return self[]
+     * @return static[]
      */
     public static function loadAll(DbConnection $connection, $query = null, $keyColumn = null)
     {
@@ -1053,7 +1175,6 @@ abstract class DbObject
         } else {
             $select = $query;
         }
-
         $rows = $db->fetchAll($select);
 
         foreach ($rows as $row) {

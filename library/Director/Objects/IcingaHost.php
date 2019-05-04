@@ -6,47 +6,56 @@ use Icinga\Data\Db\DbConnection;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\PropertiesFilter;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
-use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Objects\Extension\FlappingSupport;
+use InvalidArgumentException;
+use RuntimeException;
 
-class IcingaHost extends IcingaObject
+class IcingaHost extends IcingaObject implements ExportInterface
 {
+    use FlappingSupport;
+
     protected $table = 'icinga_host';
 
     protected $defaultProperties = array(
-        'id'                    => null,
-        'object_name'           => null,
-        'object_type'           => null,
-        'disabled'              => 'n',
-        'display_name'          => null,
-        'address'               => null,
-        'address6'              => null,
-        'check_command_id'      => null,
-        'max_check_attempts'    => null,
-        'check_period_id'       => null,
-        'check_interval'        => null,
-        'retry_interval'        => null,
-        'enable_notifications'  => null,
-        'enable_active_checks'  => null,
-        'enable_passive_checks' => null,
-        'enable_event_handler'  => null,
-        'enable_flapping'       => null,
-        'enable_perfdata'       => null,
-        'event_command_id'      => null,
-        'flapping_threshold'    => null,
-        'volatile'              => null,
-        'zone_id'               => null,
-        'command_endpoint_id'   => null,
-        'notes'                 => null,
-        'notes_url'             => null,
-        'action_url'            => null,
-        'icon_image'            => null,
-        'icon_image_alt'        => null,
-        'has_agent'             => null,
-        'master_should_connect' => null,
-        'accept_config'         => null,
-        'api_key'               => null,
+        'id'                      => null,
+        'object_name'             => null,
+        'object_type'             => null,
+        'disabled'                => 'n',
+        'display_name'            => null,
+        'address'                 => null,
+        'address6'                => null,
+        'check_command_id'        => null,
+        'max_check_attempts'      => null,
+        'check_period_id'         => null,
+        'check_interval'          => null,
+        'retry_interval'          => null,
+        'check_timeout'           => null,
+        'enable_notifications'    => null,
+        'enable_active_checks'    => null,
+        'enable_passive_checks'   => null,
+        'enable_event_handler'    => null,
+        'enable_flapping'         => null,
+        'enable_perfdata'         => null,
+        'event_command_id'        => null,
+        'flapping_threshold_high' => null,
+        'flapping_threshold_low'  => null,
+        'volatile'                => null,
+        'zone_id'                 => null,
+        'command_endpoint_id'     => null,
+        'notes'                   => null,
+        'notes_url'               => null,
+        'action_url'              => null,
+        'icon_image'              => null,
+        'icon_image_alt'          => null,
+        'has_agent'               => null,
+        'master_should_connect'   => null,
+        'accept_config'           => null,
+        'api_key'                 => null,
+        'template_choice_id'      => null,
     );
 
     protected $relations = array(
@@ -55,6 +64,7 @@ class IcingaHost extends IcingaObject
         'check_period'     => 'IcingaTimePeriod',
         'command_endpoint' => 'IcingaEndpoint',
         'zone'             => 'IcingaZone',
+        'template_choice'  => 'IcingaTemplateChoiceHost',
     );
 
     protected $booleans = array(
@@ -72,6 +82,7 @@ class IcingaHost extends IcingaObject
 
     protected $intervalProperties = array(
         'check_interval' => 'check_interval',
+        'check_timeout'  => 'check_timeout',
         'retry_interval' => 'retry_interval',
     );
 
@@ -83,7 +94,12 @@ class IcingaHost extends IcingaObject
 
     protected $supportsFields = true;
 
+    protected $supportsChoices = true;
+
     protected $supportedInLegacy = true;
+
+    /** @var HostGroupMembershipResolver */
+    protected $hostgroupMembershipResolver;
 
     public static function enumProperties(
         DbConnection $connection = null,
@@ -94,7 +110,7 @@ class IcingaHost extends IcingaObject
         if ($filter === null) {
             $filter = new PropertiesFilter();
         }
-        $realProperties = static::create()->listProperties();
+        $realProperties = array_merge(['templates'], static::create()->listProperties());
         sort($realProperties);
 
         if ($filter->match(PropertiesFilter::$HOST_PROPERTY, 'name')) {
@@ -106,6 +122,9 @@ class IcingaHost extends IcingaObject
             }
 
             if (substr($prop, -3) === '_id') {
+                if ($prop === 'template_choice_id') {
+                    continue;
+                }
                 $prop = substr($prop, 0, -3);
             }
 
@@ -114,7 +133,7 @@ class IcingaHost extends IcingaObject
 
         $hostVars = array();
 
-        if ($connection !== null) {
+        if ($connection instanceof Db) {
             foreach ($connection->fetchDistinctHostVars() as $var) {
                 if ($filter->match(PropertiesFilter::$CUSTOM_PROPERTY, $var->varname, $var)) {
                     if ($var->datatype) {
@@ -210,7 +229,7 @@ class IcingaHost extends IcingaObject
 
         $props['zone_id'] = $this->getSingleResolvedProperty('zone_id');
 
-        $endpoint = IcingaEndpoint::create($props);
+        $endpoint = IcingaEndpoint::create($props, $this->connection);
 
         $zone = IcingaZone::create(array(
             'object_name' => $name,
@@ -225,6 +244,107 @@ class IcingaHost extends IcingaObject
         $pre = 'zones.d/' . $this->getRenderingZone($config) . '/';
         $config->configFile($pre . 'agent_endpoints')->addObject($endpoint);
         $config->configFile($pre . 'agent_zones')->addObject($zone);
+    }
+
+    public function getAgentListenPort()
+    {
+        $conn = $this->connection;
+        $name = $this->getObjectName();
+        if (IcingaEndpoint::exists($name, $conn)) {
+            return IcingaEndpoint::load($name, $conn)->getResolvedPort();
+        } else {
+            return 5665;
+        }
+    }
+
+    public function getUniqueIdentifier()
+    {
+        if ($this->isTemplate()) {
+            return $this->getObjectName();
+        } else {
+            throw new RuntimeException(
+                'getUniqueIdentifier() is supported by Host Templates only'
+            );
+        }
+    }
+
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
+    {
+        // TODO: ksort in toPlainObject?
+        $props = (array) $this->toPlainObject();
+        $props['fields'] = $this->loadFieldReferences();
+        ksort($props);
+
+        return (object) $props;
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return IcingaHost
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+        if ($properties['object_type'] !== 'template') {
+            throw new InvalidArgumentException(sprintf(
+                'Can import only Templates, got "%s" for "%s"',
+                $properties['object_type'],
+                $name
+            ));
+        }
+        $key = $name;
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Service Template "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        // $object->newFields = $properties['fields'];
+        unset($properties['fields']);
+        $object->setProperties($properties);
+
+        return $object;
+    }
+
+    protected function loadFieldReferences()
+    {
+        $db = $this->getDb();
+
+        $res = $db->fetchAll(
+            $db->select()->from([
+                'hf' => 'icinga_host_field'
+            ], [
+                'hf.datafield_id',
+                'hf.is_required',
+                'hf.var_filter',
+            ])->join(['df' => 'director_datafield'], 'df.id = hf.datafield_id', [])
+                ->where('host_id = ?', $this->get('id'))
+                ->order('varname ASC')
+        );
+
+        if (empty($res)) {
+            return [];
+        } else {
+            foreach ($res as $field) {
+                $field->datafield_id = (int) $field->datafield_id;
+            }
+            return $res;
+        }
     }
 
     public function hasAnyOverridenServiceVars()
@@ -292,6 +412,32 @@ class IcingaHost extends IcingaObject
         return $this;
     }
 
+    protected function notifyResolvers()
+    {
+        $resolver = $this->getHostGroupMembershipResolver();
+        $resolver->addObject($this);
+        $resolver->refreshDb();
+
+        return $this;
+    }
+
+    protected function getHostGroupMembershipResolver()
+    {
+        if ($this->hostgroupMembershipResolver === null) {
+            $this->hostgroupMembershipResolver = new HostGroupMembershipResolver(
+                $this->getConnection()
+            );
+        }
+
+        return $this->hostgroupMembershipResolver;
+    }
+
+    public function setHostGroupMembershipResolver(HostGroupMembershipResolver $resolver)
+    {
+        $this->hostgroupMembershipResolver = $resolver;
+        return $this;
+    }
+
     protected function getServiceOverrivesVarname()
     {
         return $this->connection->settings()->override_services_varname;
@@ -335,6 +481,16 @@ class IcingaHost extends IcingaObject
      *
      * @return string
      */
+    protected function renderTemplate_choice_id()
+    {
+        return '';
+    }
+
+    /**
+     * Internal property, will not be rendered
+     *
+     * @return string
+     */
     protected function renderAccept_config()
     {
         // @codingStandardsIgnoreEnd
@@ -352,6 +508,12 @@ class IcingaHost extends IcingaObject
         return c1::renderKeyValue('display_name', $this->display_name);
     }
 
+    protected function renderLegacyVolatile()
+    {
+        // not available for hosts in Icinga 1.x
+        return;
+    }
+
     protected function renderLegacyCustomExtensions()
     {
         $str = parent::renderLegacyCustomExtensions();
@@ -361,6 +523,73 @@ class IcingaHost extends IcingaObject
         }
 
         return $str;
+    }
+
+    /**
+     * @return IcingaService[]
+     */
+    public function fetchServices()
+    {
+        $connection = $this->getConnection();
+        $db = $connection->getDbAdapter();
+
+        /** @var IcingaService[] $services */
+        $services = IcingaService::loadAll(
+            $connection,
+            $db->select()->from('icinga_service')
+                ->where('host_id = ?', $this->get('id'))
+        );
+
+        return $services;
+    }
+
+    /**
+     * @return IcingaServiceSet[]
+     */
+    public function fetchServiceSets()
+    {
+        $connection = $this->getConnection();
+        $db = $connection->getDbAdapter();
+
+        /** @var IcingaServiceSet[] $sets */
+        $sets = IcingaServiceSet::loadAll(
+            $connection,
+            $db->select()->from('icinga_service_set')
+                ->where('host_id = ?', $this->get('id'))
+        );
+
+        return $sets;
+    }
+
+    /**
+     * @return string
+     */
+    public function generateApiKey()
+    {
+        $key = sha1(
+            (string) microtime(false)
+            . $this->getObjectName()
+            . rand(1, 1000000)
+        );
+
+        if ($this->dbHasApiKey($key)) {
+            $key = $this->generateApiKey();
+        }
+
+        $this->set('api_key', $key);
+
+        return $key;
+    }
+
+    protected function dbHasApiKey($key)
+    {
+        $db = $this->getDb();
+        $query = $db->select()->from(
+            ['o' => $this->getTableName()],
+            'o.api_key'
+        )->where('api_key = ?', $key);
+
+        return $db->fetchOne($query) === $key;
     }
 
     public static function loadWithApiKey($key, Db $db)

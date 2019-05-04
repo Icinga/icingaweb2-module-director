@@ -3,76 +3,89 @@
 namespace Icinga\Module\Director;
 
 use Diff;
-use Diff_Renderer_Html_Inline;
-use Diff_Renderer_Html_SideBySide;
-use Diff_Renderer_Text_Context;
-use Diff_Renderer_Text_Unified;
-use Icinga\Application\Benchmark;
+use dipl\Html\ValidHtml;
+use InvalidArgumentException;
 
-class ConfigDiff
+class ConfigDiff implements ValidHtml
 {
     protected $a;
 
     protected $b;
 
     protected $diff;
-    protected $opcodes;
+
+    protected $htmlRenderer = 'SideBySide';
+
+    protected $knownHtmlRenderers = [
+        'SideBySide',
+        'Inline',
+    ];
+
+    protected $knownTextRenderers = [
+        'Context',
+        'Unified',
+    ];
 
     protected function __construct($a, $b)
     {
         require_once dirname(__DIR__) . '/vendor/php-diff/lib/Diff.php';
 
         if (empty($a)) {
-            $this->a = array();
+            $this->a = [];
         } else {
             $this->a = explode("\n", (string) $a);
         }
 
         if (empty($b)) {
-            $this->b = array();
+            $this->b = [];
         } else {
             $this->b = explode("\n", (string) $b);
         }
 
-        $options = array(
+        $options = [
             'context' => 5,
             // 'ignoreWhitespace' => true,
             // 'ignoreCase' => true,
-        );
+        ];
         $this->diff = new Diff($this->a, $this->b, $options);
     }
 
+    public function render()
+    {
+        return $this->renderHtml();
+    }
+
+    /**
+     * @return string
+     */
     public function renderHtml()
     {
-        return $this->renderHtmlSideBySide();
+        return $this->diff->Render($this->getHtmlRenderer());
     }
 
-    public function renderHtmlSideBySide()
+    public function setHtmlRenderer($name)
     {
-        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Html/SideBySide.php';
-        $renderer = new Diff_Renderer_Html_SideBySide;
-        return $this->diff->Render($renderer);
+        if (in_array($name, $this->knownHtmlRenderers)) {
+            $this->htmlRenderer = $name;
+        } else {
+            throw new InvalidArgumentException("There is no known '$name' renderer");
+        }
+
+        return $this;
     }
 
-    public function renderHtmlInline()
+    protected function getHtmlRenderer()
     {
-        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Html/Inline.php';
-        $renderer = new Diff_Renderer_Html_Inline;
-        return $this->diff->Render($renderer);
-    }
+        $filename = sprintf(
+            '%s/vendor/php-diff/lib/Diff/Renderer/Html/%s.php',
+            dirname(__DIR__),
+            $this->htmlRenderer
+        );
+        require_once($filename);
 
-    public function renderTextContext()
-    {
-        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Text/Context.php';
-        $renderer = new Diff_Renderer_Text_Context;
-        return $this->diff->Render($renderer);
-    }
+        $class = 'Diff_Renderer_Html_' . $this->htmlRenderer;
 
-    public function renderTextUnified()
-    {
-        require_once dirname(__DIR__)  . '/vendor/php-diff/lib/Diff/Renderer/Text/Context.php';
-        $renderer = new Diff_Renderer_Text_Context;
-        return $this->diff->Render($renderer);
+        return new $class;
     }
 
     public function __toString()
@@ -82,7 +95,6 @@ class ConfigDiff
 
     public static function create($a, $b)
     {
-        $diff = new static($a, $b);
-        return $diff;
+        return new static($a, $b);
     }
 }

@@ -88,6 +88,6 @@ class HostApplyMatchesTest extends BaseTestCase
                 'location' => 'Nuremberg',
                 'tags' => array('Special', 'Amazing'),
             )
-        ));
+        ), $this->getDb());
     }
 }

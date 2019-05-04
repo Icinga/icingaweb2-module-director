@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
-use Icinga\Exception\ProgrammingError;
+use InvalidArgumentException;
 
 class IcingaLegacyConfigHelper
 {
@@ -34,24 +34,24 @@ class IcingaLegacyConfigHelper
         } elseif ($value === 'n') {
             return '0';
         } else {
-            throw new ProgrammingError('%s is not a valid boolean', $value);
+            throw new InvalidArgumentException('%s is not a valid boolean', $value);
         }
     }
 
     // TODO: Double-check legacy "encoding"
     public static function renderString($string)
     {
-        $special = array(
+        $special = [
             '/\\\/',
             '/\$/',
             '/\t/',
             '/\r/',
             '/\n/',
             // '/\b/', -> doesn't work
-            '/\f/'
-        );
+            '/\f/',
+        ];
 
-        $replace = array(
+        $replace = [
             '\\\\\\',
             '\\$',
             '\\t',
@@ -59,17 +59,20 @@ class IcingaLegacyConfigHelper
             '\\n',
             // '\\b',
             '\\f',
-        );
+        ];
 
         $string = preg_replace($special, $replace, $string);
 
         return $string;
     }
 
-    // Requires an array
+    /**
+     * @param array $array
+     * @return string
+     */
     public static function renderArray($array)
     {
-        $data = array();
+        $data = [];
         foreach ($array as $entry) {
             if ($entry instanceof IcingaConfigRenderer) {
                 // $data[] = $entry;
@@ -99,10 +102,9 @@ class IcingaLegacyConfigHelper
 
     public static function renderInterval($interval)
     {
-        if ($interval % 60 === 0) {
-            return $interval / 60;
-        } else {
-            return sprintf('%.2F', $interval);
+        if ($interval < 60) {
+            $interval = 60;
         }
+        return $interval / 60;
     }
 }

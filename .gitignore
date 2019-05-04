@@ -2,6 +2,5 @@
 /.idea/
 .*.sw[op]
 
-## PHP / composer
+## PHP vendor artifacts
 /vendor/
-composer.lock

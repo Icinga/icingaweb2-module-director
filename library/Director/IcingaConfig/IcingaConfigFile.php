@@ -96,7 +96,7 @@ class IcingaConfigFile
 
     public function getHexChecksum()
     {
-        return Util::binary2hex($this->getChecksum());
+        return bin2hex($this->getChecksum());
     }
 
     public function getChecksum()

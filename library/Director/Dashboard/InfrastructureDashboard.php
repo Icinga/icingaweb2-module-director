@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
+use Icinga\Module\Director\Web\Tabs\InfraTabs;
+
 class InfrastructureDashboard extends Dashboard
 {
     protected $dashletNames = array(
@@ -28,5 +30,10 @@ class InfrastructureDashboard extends Dashboard
             . ' way, might lead to a dead end, requiring quite some effort to'
             . ' clean up the whole mess afterwards.'
         );
+    }
+
+    public function getTabs()
+    {
+        return new InfraTabs($this->getAuth());
     }
 }

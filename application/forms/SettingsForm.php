@@ -4,13 +4,16 @@ namespace Icinga\Module\Director\Forms;
 
 use Exception;
 use Icinga\Module\Director\Settings;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
 
-class SettingsForm extends QuickForm
+class SettingsForm extends DirectorForm
 {
     /** @var Settings */
     protected $settings;
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $settings = $this->settings;
@@ -23,13 +26,7 @@ class SettingsForm extends QuickForm
                 . ' environment.'
             )
         );
-
-        $globalZones = array(
-            null => sprintf(
-                $this->translate('%s (default)'),
-                $settings->getDefaultValue('default_global_zone')
-            )
-        );
+        $globalZones = $this->eventuallyConfiguredEnum('default_global_zone', $this->enumGlobalZones());
 
         $this->addElement('select', 'default_global_zone', array(
             'label'        => $this->translate('Default global zone'),
@@ -40,6 +37,17 @@ class SettingsForm extends QuickForm
                 . ' might be adjusted to a custom Zone name'
             ),
             'value'  => $settings->getStoredValue('default_global_zone')
+        ));
+
+        $this->addElement('text', 'icinga_package_name', array(
+            'label'        => $this->translate('Icinga Package Name'),
+            'description'  => $this->translate(
+                'The Icinga Package name Director uses to deploy it\'s configuration.'
+                . ' This defaults to "director" and should not be changed unless'
+                . ' you really know what you\'re doing'
+            ),
+            'placeholder'  => $settings->get('icinga_package_name'),
+            'value'  => $settings->getStoredValue('icinga_package_name')
         ));
 
         $this->addElement('select', 'disable_all_jobs', array(
@@ -144,18 +152,35 @@ class SettingsForm extends QuickForm
 
     protected function eventuallyConfiguredEnum($name, $enum)
     {
-        return array(
-            null => sprintf(
+        if (array_key_exists($name, $enum)) {
+            $default = sprintf(
                 $this->translate('%s (default)'),
                 $enum[$this->settings->getDefaultValue($name)]
-            )
-        ) + $enum;
+            );
+        } else {
+            $default = $this->translate('- please choose -');
+        }
+
+        return [null => $default] + $enum;
     }
 
     public function setSettings(Settings $settings)
     {
         $this->settings = $settings;
         return $this;
+    }
+
+    protected function enumGlobalZones()
+    {
+        $db = $this->settings->getDb();
+        $zones = $db->fetchCol(
+            $db->select()->from('icinga_zone', 'object_name')
+                ->where('disabled = ?', 'n')
+                ->where('is_global = ?', 'y')
+                ->order('object_name')
+        );
+
+        return array_combine($zones, $zones);
     }
 
     public function onSuccess()

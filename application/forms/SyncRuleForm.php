@@ -10,15 +10,15 @@ class SyncRuleForm extends DirectorObjectForm
     {
         $availableTypes = array(
             'host'             => $this->translate('Host'),
-            'hostgroup'        => $this->translate('Host group'),
+            'hostgroup'        => $this->translate('Host Group'),
             'service'          => $this->translate('Service'),
-            'servicegroup'     => $this->translate('Service group'),
+            'servicegroup'     => $this->translate('Service Group'),
             'serviceSet'       => $this->translate('Service Set'),
             'user'             => $this->translate('User'),
-            'usergroup'        => $this->translate('User group'),
-            'datalistEntry'    => $this->translate('Datalist entry'),
+            'usergroup'        => $this->translate('User Group'),
+            'datalistEntry'    => $this->translate('Data List Entry'),
             'command'          => $this->translate('Command'),
-            'timePeriod'       => $this->translate('Time period'),
+            'timePeriod'       => $this->translate('Time Period'),
             'endpoint'         => $this->translate('Endpoint'),
             'zone'             => $this->translate('Zone'),
         );
@@ -27,6 +27,15 @@ class SyncRuleForm extends DirectorObjectForm
             'label'       => $this->translate('Rule name'),
             'description' => $this->translate('Please provide a rule name'),
             'required'    => true,
+        ));
+
+        $this->addElement('textarea', 'description', array(
+            'label'       => $this->translate('Description'),
+            'description' => $this->translate(
+                'An extended description for this Sync Rule. This should explain'
+                . ' what this Rule is going to accomplish.'
+            ),
+            'rows'        => '3',
         ));
 
         $this->addElement('select', 'object_type', array(

@@ -9,9 +9,11 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\KickstartHelper;
-use Icinga\Module\Director\Web\Form\QuickForm;
+use Icinga\Module\Director\Web\Form\DirectorForm;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
-class KickstartForm extends QuickForm
+class KickstartForm extends DirectorForm
 {
     private $config;
 
@@ -24,18 +26,25 @@ class KickstartForm extends QuickForm
     /** @var IcingaEndpoint */
     private $endpoint;
 
+    private $dbResourceName;
+
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->storeConfigLabel = $this->translate('Store configuration');
         $this->createDbLabel    = $this->translate('Create database schema');
         $this->migrateDbLabel   = $this->translate('Apply schema migrations');
 
-        $this->addResourceConfigElements();
-        $this->addResourceDisplayGroup();
+        if ($this->dbResourceName === null) {
+            $this->addResourceConfigElements();
+            $this->addResourceDisplayGroup();
 
-        if (!$this->config()->get('db', 'resource')
-            || ($this->config()->get('db', 'resource') !== $this->getResourceName())) {
-            return;
+            if (!$this->config()->get('db', 'resource')
+                || ($this->config()->get('db', 'resource') !== $this->getResourceName())) {
+                return;
+            }
         }
 
         if (!$this->migrations()->hasSchema()) {
@@ -59,16 +68,17 @@ class KickstartForm extends QuickForm
         }
 
         if (! $this->endpoint && $this->getDb()->hasDeploymentEndpoint()) {
-            $hint = sprintf($this->translate(
-                'Your database looks good, you are ready to %s'
-            ), $this->getView()->qlink(
-                'start working with the Icinga Director',
-                'director',
-                null,
-                array('data-base-target' => '_main')
-            ));
+            $hint = Html::sprintf(
+                $this->translate('Your database looks good, you are ready to %s'),
+                Link::create(
+                    'start working with the Icinga Director',
+                    'director',
+                    null,
+                    ['data-base-target' => '_main']
+                )
+            );
 
-            $this->addHtmlHint($hint, array('name' => 'HINT_ready'));
+            $this->addHtmlHint($hint, ['name' => 'HINT_ready']);
             $this->getDisplayGroup('config')->addElements(
                 array($this->getElement('HINT_ready'))
             );
@@ -78,15 +88,30 @@ class KickstartForm extends QuickForm
 
         $this->addResourceDisplayGroup();
 
-        $this->addHtmlHint(
-            $this->translate(
-                'Your installation of Icinga Director has not yet been prepared for'
-                . ' deployments. This kickstart wizard will assist you with setting'
-                . ' up the connection to your Icinga 2 server.'
-            ),
-            array('name' => 'HINT_kickstart')
-            // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/object-types#objecttype-apilistener
-        );
+        if ($this->getDb()->hasDeploymentEndpoint()) {
+            $this->addHtmlHint(
+                $this->translate(
+                    'Your configuration looks good. Still, you might want to re-run'
+                    . ' this kickstart wizard to (re-)import modified or new manually'
+                    . ' defined Command definitions or to get fresh new ITL commands'
+                    . ' after an Icinga 2 Core upgrade.'
+                ),
+                array('name' => 'HINT_kickstart')
+                // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/
+                // ... object-types#objecttype-apilistener
+            );
+        } else {
+            $this->addHtmlHint(
+                $this->translate(
+                    'Your installation of Icinga Director has not yet been prepared for'
+                    . ' deployments. This kickstart wizard will assist you with setting'
+                    . ' up the connection to your Icinga 2 server.'
+                ),
+                array('name' => 'HINT_kickstart')
+                // http://docs.icinga.com/icinga2/latest/doc/module/icinga2/chapter/
+                // ... object-types#objecttype-apilistener
+            );
+        }
 
         $this->addElement('text', 'endpoint', array(
             'label'       => $this->translate('Endpoint Name'),
@@ -160,6 +185,9 @@ class KickstartForm extends QuickForm
         $this->setSubmitLabel($this->translate('Run import'));
     }
 
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     */
     protected function onSetup()
     {
         if ($this->hasBeenSubmitted()) {
@@ -171,8 +199,11 @@ class KickstartForm extends QuickForm
             if (! isset($resourceConfig->charset)
                 || ! in_array($resourceConfig->charset, array('utf8', 'utf8mb4'))
             ) {
-                $this->getElement('resource')
-                    ->addError('Please change the encoding for the director database to utf8');
+                if ($resource = $this->getElement('resource')) {
+                    $resource->addError('Please change the encoding for the director database to utf8');
+                } else {
+                    $this->addError('Please change the encoding for the director database to utf8');
+                }
             }
 
             $resource = $this->getResource();
@@ -194,6 +225,9 @@ class KickstartForm extends QuickForm
         }
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function addResourceConfigElements()
     {
         $config = $this->config();
@@ -219,21 +253,29 @@ class KickstartForm extends QuickForm
                 $this->translate('This has to be a MySQL or PostgreSQL database')
             );
 
-            $hint = $this->translate('Please click %s to create new DB resources');
-            $link = $this->getView()->qlink(
-                $this->translate('here'),
-                'config/resource',
-                null,
-                array('data-base-target' => '_main')
-            );
-            $this->addHtmlHint(sprintf($hint, $link));
+            $this->addHtmlHint(Html::sprintf(
+                $this->translate('Please click %s to create new DB resources'),
+                Link::create(
+                    $this->translate('here'),
+                    'config/resource',
+                    null,
+                    ['data-base-target' => '_main']
+                )
+            ));
         }
 
         $this->setSubmitLabel($this->storeConfigLabel);
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function addResourceDisplayGroup()
     {
+        if ($this->dbResourceName !== null) {
+            return;
+        }
+
         $elements = array(
             'HINT_no_resource',
             'resource',
@@ -254,6 +296,9 @@ class KickstartForm extends QuickForm
         ));
     }
 
+    /**
+     * @throws \Zend_Form_Exception
+     */
     protected function addKickstartDisplayGroup()
     {
         $elements = array(
@@ -271,6 +316,10 @@ class KickstartForm extends QuickForm
         ));
     }
 
+    /**
+     * @return bool
+     * @throws \Zend_Form_Exception
+     */
     protected function storeResourceConfig()
     {
         $config = $this->config();
@@ -294,7 +343,7 @@ class KickstartForm extends QuickForm
                 )
             );
             $this->addHtmlHint(
-                '<pre>' . $config . '</pre>',
+                Html::tag('pre', null, $config),
                 array('name' => 'HINT_config_store')
             );
 
@@ -313,6 +362,10 @@ class KickstartForm extends QuickForm
         return $this;
     }
 
+    /**
+     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Zend_Form_Exception
+     */
     public function onSuccess()
     {
         if ($this->getSubmitLabel() === $this->storeConfigLabel) {
@@ -341,8 +394,19 @@ class KickstartForm extends QuickForm
         parent::onSuccess();
     }
 
+    public function setDbResourceName($name)
+    {
+        $this->dbResourceName = $name;
+
+        return $this;
+    }
+
     protected function getResourceName()
     {
+        if ($this->dbResourceName !== null) {
+            return $this->dbResourceName;
+        }
+
         if ($this->hasBeenSent()) {
             $resource = $this->getSentValue('resource');
             $resources = $this->enumResources();
@@ -356,7 +420,7 @@ class KickstartForm extends QuickForm
         }
     }
 
-    protected function getDb()
+    public function getDb()
     {
         return Db::fromResourceName($this->getResourceName());
     }
@@ -366,6 +430,9 @@ class KickstartForm extends QuickForm
         return ResourceFactory::create($this->getResourceName());
     }
 
+    /**
+     * @return Migrations
+     */
     protected function migrations()
     {
         return new Migrations($this->getDb());

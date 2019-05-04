@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Forms\DirectorDatafieldForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 
 class DatafieldController extends ActionController
@@ -24,23 +25,22 @@ class DatafieldController extends ActionController
             $edit = true;
         }
 
-        $form = $this->view->form = $this->loadForm('directorDatafield')
-            ->setSuccessUrl('director/data/fields')
+        $form = DirectorDatafieldForm::load()
             ->setDb($this->db());
 
         if ($edit) {
             $form->loadObject($id);
-            $this->view->title = sprintf(
+            $this->addTitle(
                 $this->translate('Modify %s'),
                 $form->getObject()->varname
             );
-            $this->singleTab($this->translate('Edit a field'));
+            $this->addSingleTab($this->translate('Edit a Field'));
         } else {
-            $this->view->title = $this->translate('Add a new Data Field');
-            $this->singleTab($this->translate('New field'));
+            $this->addTitle($this->translate('Add a new Data Field'));
+            $this->addSingleTab($this->translate('New Field'));
         }
 
         $form->handleRequest();
-        $this->render('object/form', null, true);
+        $this->content()->add($form);
     }
 }
