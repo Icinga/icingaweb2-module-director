@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This generates and signs your required certificates. Please do not
 # forget to install the Icinga 2 package and your desired monitoring
@@ -156,7 +156,7 @@ if [ -f "${ICINGA2_SSLDIR}/${ICINGA2_NODENAME}.crt" ]; then
 
   if [ -z "${ICINGA2_UPDATE_CONFIG}" ] && [ -z "${ICINGA2_DRYRUN}" ]; then
     warn "Aborting here, you can can call the script like this to just update config:"
-    info " ICINGA2_UPDATE_CONFIG=1 $0"
+    info " export ICINGA2_UPDATE_CONFIG=1; bash $0"
     exit 1
   fi
 elif [ -z "${ICINGA2_DRYRUN}" ]; then
