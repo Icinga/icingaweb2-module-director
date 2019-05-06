@@ -193,7 +193,8 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             ['hsb' => 'icinga_host_service_blacklist'],
             $db->quoteInto('s.id = hsb.service_id AND hsb.host_id = ?', $this->host->get('id')),
             []
-        )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
+        )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply')
+         ->order('s.object_name');
 
         return $db->fetchAll($query);
     }
