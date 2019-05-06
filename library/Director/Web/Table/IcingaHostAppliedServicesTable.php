@@ -5,6 +5,8 @@ namespace Icinga\Module\Director\Web\Table;
 use dipl\Html\Html;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
 use dipl\Html\Link;
@@ -97,9 +99,9 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             }
         } else {
             $link = Link::create(sprintf(
-                $this->translate('%s (where %s)'),
+                $this->translate('%s (%s)'),
                 $row->name,
-                $row->filter
+                $this->renderApplyFilter($row->filter)
             ), 'director/host/appliedservice', [
                 'name'       => $this->host->getObjectName(),
                 'service_id' => $row->id,
@@ -107,6 +109,22 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         }
 
         return $this::row([$link], $attributes);
+    }
+
+    /**
+     * @param Filter $assignFilter
+     *
+     * @return string
+     */
+    protected function renderApplyFilter(Filter $assignFilter)
+    {
+        try {
+            $string = AssignRenderer::forFilter($assignFilter)->renderAssign();
+        } catch (IcingaException $e) {
+            $string = 'Error in Filter rendering: ' . $e->getMessage();
+        }
+
+        return $string;
     }
 
     /**
