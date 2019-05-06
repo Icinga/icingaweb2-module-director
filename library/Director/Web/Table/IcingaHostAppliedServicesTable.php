@@ -5,6 +5,8 @@ namespace Icinga\Module\Director\Web\Table;
 use dipl\Html\Html;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
 use dipl\Html\Link;
@@ -96,10 +98,16 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 $link = Html::tag('a', $row->name);
             }
         } else {
+            $applyFor = '';
+            if (! empty($row->apply_for)) {
+                $applyFor = sprintf('(apply for %s) ', $row->apply_for);
+            }
+
             $link = Link::create(sprintf(
-                $this->translate('%s (where %s)'),
+                $this->translate('%s %s(%s)'),
                 $row->name,
-                $row->filter
+                $applyFor,
+                $this->renderApplyFilter($row->filter)
             ), 'director/host/appliedservice', [
                 'name'       => $this->host->getObjectName(),
                 'service_id' => $row->id,
@@ -107,6 +115,22 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
         }
 
         return $this::row([$link], $attributes);
+    }
+
+    /**
+     * @param Filter $assignFilter
+     *
+     * @return string
+     */
+    protected function renderApplyFilter(Filter $assignFilter)
+    {
+        try {
+            $string = AssignRenderer::forFilter($assignFilter)->renderAssign();
+        } catch (IcingaException $e) {
+            $string = 'Error in Filter rendering: ' . $e->getMessage();
+        }
+
+        return $string;
     }
 
     /**
@@ -130,6 +154,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             'disabled'      => 'disabled',
             'blacklisted'   => 'blacklisted',
             'assign_filter' => 'assign_filter',
+            'apply_for'     => 'apply_for',
         ]);
     }
 
@@ -160,6 +185,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 'id'            => 's.id',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
+                'apply_for'     => 's.apply_for',
                 'disabled'      => 's.disabled',
                 'blacklisted'   => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
             ]
