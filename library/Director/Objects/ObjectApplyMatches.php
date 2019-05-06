@@ -7,6 +7,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Application\MemoryLimit;
+use Icinga\Module\Director\Data\AssignFilterHelper;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use stdClass;
@@ -54,7 +55,7 @@ abstract class ObjectApplyMatches
     {
         $filterObj = static::getPreparedFilter($filter);
         if ($filterObj->isExpression() || ! $filterObj->isEmpty()) {
-            return $filterObj->matches($this->flatObject);
+            return AssignFilterHelper::matchesFilter($filterObj, $this->flatObject);
         } else {
             return false;
         }
@@ -72,8 +73,10 @@ abstract class ObjectApplyMatches
         Benchmark::measure(sprintf('Starting Filter %s', $filter));
         $filter = clone($filter);
         static::fixFilterColumns($filter);
+        $helper = new AssignFilterHelper($filter);
+
         foreach (static::flatObjects($db) as $object) {
-            if ($filter->matches($object)) {
+            if ($helper->matches($object)) {
                 $name = $object->object_name;
                 $result[] = $name;
             }
@@ -148,6 +151,7 @@ abstract class ObjectApplyMatches
     public static function fixFilterColumns(Filter $filter)
     {
         if ($filter->isExpression()) {
+            /** @var FilterExpression $filter */
             static::fixFilterExpressionColumn($filter);
         } else {
             foreach ($filter->filters() as $sub) {
@@ -164,7 +168,6 @@ abstract class ObjectApplyMatches
             $filter->setColumn($column);
         }
 
-        /** @var FilterExpression $filter */
         $col = $filter->getColumn();
         $type = static::$type;
 
