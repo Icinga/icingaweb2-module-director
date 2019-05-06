@@ -20,6 +20,7 @@ before switching to a new version.
 * FIX: Auto-suggestion field was positioned wrongly once scrolled down
 * FEATURE: It's now possible to clone a Service to a different Host (#1796)
 * FEATURE: Scheduled Downtimes for "Hosts AND their services" (#1831)
+* FEATURE: auto-suggestion and more for Fields based on Data Lists (#1846)
 
 ### Import and Sync
 * FIX: Avoid caching between multiple runs of sync (#1836)
