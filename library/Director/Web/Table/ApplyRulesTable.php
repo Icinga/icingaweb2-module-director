@@ -209,8 +209,12 @@ class ApplyRulesTable extends ZfQueryBasedTable
             'object_name'   => 'o.object_name',
             'disabled'      => 'o.disabled',
             'assign_filter' => 'o.assign_filter',
-            'apply_for'     => 'o.apply_for',
+            'apply_for'     => '(NULL)',
         ];
+
+        if ($table === 'icinga_service') {
+            $columns['apply_for'] = 'o.apply_for';
+        }
         $query = $this->db()->select()->from(
             ['o' => $table],
             $columns
