@@ -221,6 +221,7 @@ class HostController extends ObjectController
             $content->add($table);
         }
 
+        /* @deprecated to be removed in 1.8.0 #1850 #1851 */
         if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
             if ($applied instanceof CustomVariableDictionary) {
                 $table = IcingaHostAppliedForServiceTable::load($host, $applied)
