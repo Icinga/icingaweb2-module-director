@@ -79,9 +79,15 @@ class ApplyRulesTable extends ZfQueryBasedTable
         }
         $url = Url::fromPath("director/{$this->baseObjectUrl}/edit", $params);
 
+        $assignWhere = $this->renderApplyFilter($row->assign_filter);
+
+        if (! empty($row->apply_for)) {
+            $assignWhere = sprintf('apply for %s / %s', $row->apply_for, $assignWhere);
+        }
+
         $tr = static::tr([
             static::td(Link::create($row->object_name, $url)),
-            static::td($this->renderApplyFilter($row->assign_filter)),
+            static::td($assignWhere),
             // NOT (YET) static::td($this->createActionLinks($row))->setSeparator(' ')
         ]);
 
@@ -203,6 +209,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
             'object_name'   => 'o.object_name',
             'disabled'      => 'o.disabled',
             'assign_filter' => 'o.assign_filter',
+            'apply_for'     => 'o.apply_for',
         ];
         $query = $this->db()->select()->from(
             ['o' => $table],

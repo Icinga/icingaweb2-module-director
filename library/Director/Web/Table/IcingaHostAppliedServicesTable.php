@@ -98,9 +98,15 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 $link = Html::tag('a', $row->name);
             }
         } else {
+            $applyFor = '';
+            if (! empty($row->apply_for)) {
+                $applyFor = sprintf('(apply for %s) ', $row->apply_for);
+            }
+
             $link = Link::create(sprintf(
-                $this->translate('%s (%s)'),
+                $this->translate('%s %s(%s)'),
                 $row->name,
+                $applyFor,
                 $this->renderApplyFilter($row->filter)
             ), 'director/host/appliedservice', [
                 'name'       => $this->host->getObjectName(),
@@ -148,6 +154,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
             'disabled'      => 'disabled',
             'blacklisted'   => 'blacklisted',
             'assign_filter' => 'assign_filter',
+            'apply_for'     => 'apply_for',
         ]);
     }
 
@@ -178,6 +185,7 @@ class IcingaHostAppliedServicesTable extends SimpleQueryBasedTable
                 'id'            => 's.id',
                 'name'          => 's.object_name',
                 'assign_filter' => 's.assign_filter',
+                'apply_for'     => 's.apply_for',
                 'disabled'      => 's.disabled',
                 'blacklisted'   => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
             ]
