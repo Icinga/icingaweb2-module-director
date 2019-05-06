@@ -40,6 +40,7 @@ abstract class TemplateController extends CompatController
 
         ObjectsTable::create($this->getType(), $this->db())
             ->setAuth($this->Auth())
+            ->setBaseObjectUrl($this->getBaseObjectUrl())
             ->filterTemplate($template, $this->getInheritance())
             ->renderTo($this);
     }
@@ -57,6 +58,7 @@ abstract class TemplateController extends CompatController
             )->addBackToUsageLink($template);
 
         ApplyRulesTable::create($type, $this->db())
+            ->setBaseObjectUrl($this->getBaseObjectUrl())
             ->filterTemplate($template, $this->params->get('inheritance', 'direct'))
             ->renderTo($this);
     }
@@ -214,6 +216,11 @@ abstract class TemplateController extends CompatController
     protected function getTranslatedPluralType()
     {
         return $this->translate(ucfirst($this->getPluralType()));
+    }
+
+    protected function getBaseObjectUrl()
+    {
+        return $this->getType();
     }
 
     /**
