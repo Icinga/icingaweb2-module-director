@@ -10,16 +10,41 @@ before switching to a new version.
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/18?closed=1)
 
+### User Interface
+* FIX: Service-related links in Activity Log have been corrected (#1377, #1816)
+* FIX: Activity Log now works for Service Sets (#1287, #1786, #1816)
+* FIX: Assign Filters are no longer mandatory when modifying Service Groups (#930)
+* FIX: Object type for CheckCommands has been corrected in config preview (#1799)
+* FIX: Import preview in combination with Black/Whitelisting (#1825)
+* FIX: Routing/redirection when working with Data Fields (#1847)
+* FIX: Auto-suggestion field was positioned wrongly once scrolled down
+* FEATURE: It's now possible to clone a Service to a different Host (#1796)
+* FEATURE: Scheduled Downtimes for "Hosts AND their services" (#1831)
+
 ### Import and Sync
+* FIX: Avoid caching between multiple runs of sync (#1836)
 * FEATURE: When fetching invalid data, Import refers erroneous rows (#1741)
 * FEATURE: Sync now offers a preview, showing what would happen (#1754)
 * FEATURE: ParseURL property modifier has been added (#1746)
+* FEATURE: There is a new generic REST API Import Source (#1818)
 
 ### CLI
+* FIX: importsource fetch did not apply configured property modifiers (#1819)
 * FEATURE: Service Groups are now available on CLI (#1745)
 
 ### Icinga Configuration
 * FIX: Allow to render single configuration files larger than 16MB (#1787)
+* FEATURE: It's now possible to define Scheduled Downtimes (#347, #1828)
+* FEATURE: Allow to render command definitions as (v1.x-like) strings (#1809)
+
+### Documentation
+* FIX: Installation instructions have been adjusted to fit MySQL 8
+
+### Internals
+* FIX: support different timezones with MySQL (#1332, #1840)
+* FIX: support importing DSL-based Command Arguments (#1812)
+* FEATURE: a new Hook allows to run custom code at deployment time (#1342, #1843)
+* FEATURE: there is a new low-level IcingaObjectFormHook (#1841)
 
 1.6.2
 -----
