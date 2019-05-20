@@ -26,10 +26,10 @@ class ExtensibleSet extends FormElement
             return $value;
         }
         if (! is_array($value)) {
-            throw new InvalidArgumentException(
+            throw new InvalidArgumentException(sprintf(
                 'ExtensibleSet expects to work with Arrays, got %s',
                 var_export($value, 1)
-            );
+            ));
         }
         $value = array_filter($value, 'strlen');
 
