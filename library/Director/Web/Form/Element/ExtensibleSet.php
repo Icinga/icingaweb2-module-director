@@ -20,7 +20,7 @@ class ExtensibleSet extends FormElement
     public function getValue()
     {
         $value = parent::getValue();
-        if (is_string($value)) {
+        if (is_string($value) || is_numeric($value)) {
             $value = [$value];
         } elseif ($value === null) {
             return $value;
