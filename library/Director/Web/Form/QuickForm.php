@@ -481,7 +481,7 @@ abstract class QuickForm extends QuickBaseForm
      * @param callable $callable
      * @return $this
      */
-    public function callOnSucess($callable)
+    public function callOnSuccess($callable)
     {
         if (! is_callable($callable)) {
             throw new InvalidArgumentException(

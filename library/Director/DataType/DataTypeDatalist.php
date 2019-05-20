@@ -51,7 +51,7 @@ class DataTypeDatalist extends DataTypeHook
         }
 
         if ($behavior === 'suggest_extend') {
-            $form->callOnSucess(function (DirectorForm $form) use ($name, $listId) {
+            $form->callOnSuccess(function (DirectorForm $form) use ($name, $listId) {
                 $value = (array) $form->getValue($name);
                 if ($value === null) {
                     return;
