@@ -236,7 +236,8 @@ class ActivityLogInfo extends HtmlDocument
         if ($this->newProperties === null) {
             if (property_exists($this->entry, 'new_properties')) {
                 $this->newProperties = json_decode($this->entry->new_properties);
-            } else {
+            }
+            if ($this->newProperties === null) {
                 $this->newProperties = new \stdClass;
             }
         }
