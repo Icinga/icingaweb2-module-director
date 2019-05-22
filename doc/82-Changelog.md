@@ -6,6 +6,13 @@ before switching to a new version.
 
 1.7.0 (unreleased)
 ------------------
+### Breaking Changes
+* At least PHP 5.6.3 is now required, Director 1.7.x will refuse to work with
+  older versions
+* New dependencies have been introduced: you're now required to install the ipl
+* Please check [packages.icinga.com](https://packages.icinga.com), we're now
+  shipping official packages for the Icinga Director
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/18?closed=1)
