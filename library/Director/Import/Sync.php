@@ -446,6 +446,8 @@ class Sync
             $sourceId = $source->id;
 
             foreach ($this->imported[$sourceId] as $key => $row) {
+                // Workaround: $a["10"] = "val"; -> array_keys($a) = [(int) 10]
+                $key = (string) $key;
                 if (! array_key_exists($key, $objects)) {
                     // Safe default values for object_type and object_name
                     if ($ruleObjectType === 'datalistEntry') {
