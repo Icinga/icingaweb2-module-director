@@ -8,7 +8,6 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Hook\JobHook;
 use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\QuickForm;
 
 class ConfigJob extends JobHook
@@ -20,6 +19,11 @@ class ConfigJob extends JobHook
     public function run()
     {
         $db = $this->db();
+
+        if (DirectorDeploymentLog::hasUncollected($db)) {
+            $this->api()->collectLogFiles($db);
+        }
+
         $this->clearLastDeployment();
 
         if ($this->shouldGenerate()) {

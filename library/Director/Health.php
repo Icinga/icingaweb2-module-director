@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director;
 
+use Exception;
 use Icinga\Application\Config;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\CheckPlugin\Check;
@@ -11,10 +12,12 @@ use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
-use Exception;
+use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 
 class Health
 {
+    use CoreApi;
+
     /** @var Db */
     protected $connection;
 
@@ -96,6 +99,11 @@ class Health
         }
 
         return $this->connection;
+    }
+
+    protected function db()
+    {
+        return $this->getConnection();
     }
 
     public function checkConfig()
@@ -254,6 +262,10 @@ class Health
         if (! DirectorDeploymentLog::hasDeployments($db)) {
             $check->warn('Configuration has never been deployed');
             return $check;
+        }
+
+        if (DirectorDeploymentLog::hasUncollected($db)) {
+            $this->api()->collectLogFiles($db);
         }
 
         $latest = DirectorDeploymentLog::loadLatest($db);
