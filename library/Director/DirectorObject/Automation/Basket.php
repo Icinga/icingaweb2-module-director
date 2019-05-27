@@ -151,7 +151,7 @@ class Basket extends DbObject implements ExportInterface
             }
             if (isset($this->protectedFormerChosenObjects[$type])) {
                 if (is_array($this->protectedFormerChosenObjects[$type])) {
-                    $this->chosenObjects[$type] = $this->protectedFormerChosenObjects;
+                    $this->chosenObjects[$type] = $this->protectedFormerChosenObjects[$type];
                 } else {
                     $this->chosenObjects[$type] = [];
                 }
