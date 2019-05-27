@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
+use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -184,7 +185,7 @@ class SyncRule extends DbObject implements ExportInterface
 
     /**
      * @return IcingaObject[]
-     * @throws Exception
+     * @throws IcingaException
      */
     public function getExpectedModifications()
     {

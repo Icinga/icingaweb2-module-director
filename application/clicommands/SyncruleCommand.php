@@ -3,7 +3,9 @@
 namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\SyncRule;
+use RuntimeException;
 
 /**
  * Deal with Director Sync Rules
@@ -59,8 +61,47 @@ class SyncruleCommand extends Command
     public function checkAction()
     {
         $rule = $this->getSyncRule();
-        $rule->checkForChanges();
+        $hasChanges = $rule->checkForChanges();
         $this->showSyncStateDetails($rule);
+        if ($hasChanges) {
+            $mods = $this->getExpectedModificationCounts($rule);
+            printf(
+                "Expected modifications: %dx create, %dx modify, %dx delete\n",
+                $mods->modify,
+                $mods->create,
+                $mods->delete
+            );
+        }
+
+        exit($this->getSyncStateExitCode($rule));
+    }
+
+    protected function getExpectedModificationCounts(SyncRule $rule)
+    {
+        $modifications = $rule->getExpectedModifications();
+
+        $create = 0;
+        $modify = 0;
+        $delete = 0;
+
+        /** @var IcingaObject $object */
+        foreach ($modifications as $object) {
+            if ($object->hasBeenLoadedFromDb()) {
+                if ($object->shouldBeRemoved()) {
+                    $delete++;
+                } else {
+                    $modify++;
+                }
+            } else {
+                $create++;
+            }
+        }
+
+        return (object) [
+            'create' => $create,
+            'modify' => $modify,
+            'delete' => $delete,
+        ];
     }
 
     /**
@@ -103,7 +144,6 @@ class SyncruleCommand extends Command
 
     /**
      * @param SyncRule $rule
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function showSyncStateDetails(SyncRule $rule)
     {
@@ -113,7 +153,6 @@ class SyncruleCommand extends Command
     /**
      * @param SyncRule $rule
      * @return string
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function getSyncStateDescription(SyncRule $rule)
     {
@@ -128,6 +167,28 @@ class SyncruleCommand extends Command
                     . '  trigger a new Sync Run.';
             case 'failing':
                 return 'This Sync Rule failed: '. $rule->get('last_error_message');
+            default:
+                throw new RuntimeException('Invalid sync state: ' . $rule->get('sync_state'));
+        }
+    }
+
+    /**
+     * @param SyncRule $rule
+     * @return string
+     */
+    protected function getSyncStateExitCode(SyncRule $rule)
+    {
+        switch ($rule->get('sync_state')) {
+            case 'unknown':
+                return 3;
+            case 'in-sync':
+                return 0;
+            case 'pending-changes':
+                return 1;
+            case 'failing':
+                return 2;
+            default:
+                throw new RuntimeException('Invalid sync state: ' . $rule->get('sync_state'));
         }
     }
 }
