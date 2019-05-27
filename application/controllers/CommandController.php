@@ -101,6 +101,6 @@ class CommandController extends ObjectController
 
     protected function hasBasketSupport()
     {
-        return ! $this->object->isExternal();
+        return true;
     }
 }

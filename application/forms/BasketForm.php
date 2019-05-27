@@ -15,6 +15,8 @@ class BasketForm extends DirectorObjectForm
     {
         return [
             'Command'            => $this->translate('Command Definitions'),
+            'ExternalCommand'    => $this->translate('External Command Definitions'),
+            'CommandTemplate'    => $this->translate('Command Template'),
             'HostGroup'          => $this->translate('Host Group'),
             'IcingaTemplateChoiceHost' => $this->translate('Host Template Choice'),
             'HostTemplate'       => $this->translate('Host Templates'),
@@ -108,7 +110,7 @@ class BasketForm extends DirectorObjectForm
 
     protected function getObjectClassname()
     {
-        return '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Basket';
+        return Basket::class;
     }
 
     public function onSuccess()

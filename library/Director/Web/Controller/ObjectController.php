@@ -12,6 +12,7 @@ use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Forms\DeploymentLinkForm;
 use Icinga\Module\Director\Forms\IcingaCloneObjectForm;
 use Icinga\Module\Director\Forms\IcingaObjectFieldForm;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -150,6 +151,7 @@ abstract class ObjectController extends ActionController
         if ($this->object->isExternal()) {
             $this->addActionClone();
         }
+        $this->addActionBasket();
         $preview->renderTo($this);
     }
 
@@ -328,7 +330,15 @@ abstract class ObjectController extends ActionController
         if ($this->hasBasketSupport()) {
             $object = $this->object;
             if ($object instanceof ExportInterface) {
-                if ($object instanceof IcingaServiceSet) {
+                if ($object instanceof IcingaCommand) {
+                    if ($object->isExternal()) {
+                        $type = 'ExternalCommand';
+                    } elseif ($object->isTemplate()) {
+                        $type = 'CommandTemplate';
+                    } else {
+                        $type = 'Command';
+                    }
+                } elseif ($object instanceof IcingaServiceSet) {
                     $type = 'ServiceSet';
                 } elseif ($object->isTemplate()) {
                     $type = ucfirst($this->getType()) . 'Template';

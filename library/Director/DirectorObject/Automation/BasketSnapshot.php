@@ -6,33 +6,47 @@ use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorDatalist;
+use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaDependency;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaHostGroup;
+use Icinga\Module\Director\Objects\IcingaNotification;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\IcingaServiceGroup;
+use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
+use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
 use RuntimeException;
 
 class BasketSnapshot extends DbObject
 {
     protected static $typeClasses = [
-        'Datafield'       => '\\Icinga\\Module\\Director\\Objects\\DirectorDatafield',
-        'TimePeriod'      => '\\Icinga\\Module\\Director\\Objects\\IcingaTimePeriod',
-        'Command'         => '\\Icinga\\Module\\Director\\Objects\\IcingaCommand',
-        'HostGroup'       => '\\Icinga\\Module\\Director\\Objects\\IcingaHostGroup',
-        'IcingaTemplateChoiceHost' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceHost',
-        'HostTemplate'    => '\\Icinga\\Module\\Director\\Objects\\IcingaHost',
-        'ServiceGroup'    => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceGroup',
-        'IcingaTemplateChoiceService' => '\\Icinga\\Module\\Director\\Objects\\IcingaTemplateChoiceService',
-        'ServiceTemplate' => '\\Icinga\\Module\\Director\\Objects\\IcingaService',
-        'ServiceSet'      => '\\Icinga\\Module\\Director\\Objects\\IcingaServiceSet',
-        'Notification'    => '\\Icinga\\Module\\Director\\Objects\\IcingaNotification',
-        'DataList'        => '\\Icinga\\Module\\Director\\Objects\\DirectorDatalist',
-        'Dependency'      => '\\Icinga\\Module\\Director\\Objects\\IcingaDependency',
-        'ImportSource'    => '\\Icinga\\Module\\Director\\Objects\\ImportSource',
-        'SyncRule'        => '\\Icinga\\Module\\Director\\Objects\\SyncRule',
-        'DirectorJob'     => '\\Icinga\\Module\\Director\\Objects\\DirectorJob',
-        'Basket'          => '\\Icinga\\Module\\Director\\DirectorObject\\Automation\\Basket',
+        'Datafield'       => DirectorDatafield::class,
+        'TimePeriod'      => IcingaTimePeriod::class,
+        'CommandTemplate' => [IcingaCommand::class, ['object_type' => 'template']],
+        'ExternalCommand' => [IcingaCommand::class, ['object_type' => 'external_object']],
+        'Command'         => [IcingaCommand::class, ['object_type' => 'object']],
+        'HostGroup'       => IcingaHostGroup::class,
+        'IcingaTemplateChoiceHost' => IcingaTemplateChoiceHost::class,
+        'HostTemplate'    => IcingaHost::class,
+        'ServiceGroup'    => IcingaServiceGroup::class,
+        'IcingaTemplateChoiceService' => IcingaTemplateChoiceService::class,
+        'ServiceTemplate' => IcingaService::class,
+        'ServiceSet'      => IcingaServiceSet::class,
+        'Notification'    => IcingaNotification::class,
+        'DataList'        => DirectorDatalist::class,
+        'Dependency'      => IcingaDependency::class,
+        'ImportSource'    => ImportSource::class,
+        'SyncRule'        => SyncRule::class,
+        'DirectorJob'     => DirectorJob::class,
+        'Basket'          => Basket::class,
     ];
 
     protected $objects = [];
@@ -47,6 +61,8 @@ class BasketSnapshot extends DbObject
     ];
 
     protected $restoreOrder = [
+        'CommandTemplate',
+        'ExternalCommand',
         'Command',
         'TimePeriod',
         'HostGroup',
@@ -91,7 +107,11 @@ class BasketSnapshot extends DbObject
     {
         static::assertValidType($type);
 
-        return self::$typeClasses[$type];
+        if (is_array(self::$typeClasses[$type])) {
+            return self::$typeClasses[$type][0];
+        } else {
+            return self::$typeClasses[$type];
+        }
     }
 
     /**
@@ -374,23 +394,28 @@ class BasketSnapshot extends DbObject
     protected function addAll($typeName)
     {
         $class = static::getClassForType($typeName);
+        if (is_array(self::$typeClasses[$typeName])) {
+            $filter = self::$typeClasses[$typeName][1];
+        } else {
+            $filter = null;
+        }
         /** @var IcingaObject $dummy */
         $dummy = $class::create();
         /** @var ExportInterface $object */
         if ($dummy instanceof IcingaObject && $dummy->supportsImports()) {
             $db = $this->getDb();
-            if ($dummy instanceof IcingaCommand) {
-                $select = $db->select()->from($dummy->getTableName())
-                    ->where('object_type != ?', 'external_object');
-            } elseif (! $dummy->isGroup()
+            $select = $db->select()->from($dummy->getTableName());
+            if ($filter) {
+                foreach ($filter as $column => $value) {
+                    $select->where("$column = ?", $value);
+                }
+            }
+            if (! $dummy->isGroup()
                 // TODO: this is ugly.
                 && ! $dummy instanceof IcingaDependency
                 && ! $dummy instanceof IcingaTimePeriod
             ) {
-                $select = $db->select()->from($dummy->getTableName())
-                    ->where('object_type = ?', 'template');
-            } else {
-                $select = $db->select()->from($dummy->getTableName());
+                $select->where('object_type = ?', 'template');
             }
             $all = $class::loadAll($this->getConnection(), $select);
         } else {
