@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -51,9 +52,16 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         // TODO: do not suggest chosen ones
         $argumentVars = array();
         $argumentVarDescriptions = array();
+        if ($object instanceof IcingaCommand) {
+            $command = $object;
+        } elseif ($object->hasProperty('check_command_id')) {
+            $command = $object->getResolvedRelated('check_command');
+        } else {
+            $command = null;
+        }
 
-        if ($object->supportsArguments()) {
-            foreach ($object->arguments() as $arg) {
+        if ($command) {
+            foreach ($command->arguments() as $arg) {
                 if ($arg->argument_format === 'string') {
                     $val = $arg->argument_value;
                     // TODO: create var::extractMacros or so
