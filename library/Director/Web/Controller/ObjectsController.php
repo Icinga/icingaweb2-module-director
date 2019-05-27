@@ -69,7 +69,7 @@ abstract class ObjectsController extends ActionController
             && $host = $this->params->get('host')
         ) {
             $host = IcingaHost::load($host, $this->db());
-            $table->getQuery()->where('host_id = ?', $host->get('id'));
+            $table->getQuery()->where('o.host_id = ?', $host->get('id'));
         }
 
         if ($request->getActionName() === 'templates') {
