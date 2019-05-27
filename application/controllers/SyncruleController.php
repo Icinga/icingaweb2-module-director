@@ -207,7 +207,7 @@ class SyncruleController extends ActionController
                             if (isset($modifiedProperties['imports'])) {
                                 $modifiedProperties['imports']++;
                             } else {
-                                $modifiedProperties['grouimportsps'] = 1;
+                                $modifiedProperties['imports'] = 1;
                             }
                         }
                     }
