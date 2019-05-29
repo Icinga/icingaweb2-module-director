@@ -30,7 +30,7 @@ class DataTypeDatalist extends DataTypeHook
             $enum = $this->getEntries($form);
             if ($targetDataType === 'string') {
                 $params['sorted'] = true;
-                $params = ['multiOptions' => $enum];
+                $params = ['multiOptions' => $form->optionalEnum($enum)];
                 $type = 'select';
             } else {
                 $params = ['multiOptions' => $form->optionalEnum($enum)];
