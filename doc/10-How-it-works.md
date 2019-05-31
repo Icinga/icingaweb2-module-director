@@ -67,6 +67,11 @@ object Zone "director-global" {
 }
 ```
 
+Please do not use this zone for your own configuration files.
+There is a zone called `global-templates` available in default Icinga
+setups that's meant for configuration files. `director-global` is reserved
+for use by Icinga Director.
+
 Zone membership handling
 ------------------------
 
