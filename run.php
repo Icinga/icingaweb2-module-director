@@ -38,6 +38,7 @@ $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\Pro
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierSplit');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierJoin');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierGetHostByName');
+$this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierGetIPv4ByName');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierDnsRecords');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierExtractFromDN');
 $this->provideHook('director/PropertyModifier', $prefix . 'PropertyModifier\\PropertyModifierFromAdSid');
