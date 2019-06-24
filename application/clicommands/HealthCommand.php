@@ -25,10 +25,13 @@ class HealthCommand extends Command
      *
      * OPTIONS
      *
-     *   --check <name>     Run only a specific set of checks
-     *                      valid names: config, sync, import, jobs, deployment
-     *   --db <name>        Use a specific Icinga Web DB resource
-     *   --watch <seconds>  Refresh every <second>. For interactive use only
+     *   --check <name>                 Run only a specific set of checks
+     *                                  valid names: config, sync, import, job, deployment
+     *   --db <name>                    Use a specific Icinga Web DB resource
+     *   --watch <seconds>              Refresh every <second>. For interactive use only
+     *   --critical_undeploy <integer>  Use a specific value as acritical for pending deployments; Default = 3
+     *   --warning_undeploy <integer>   Use a specific value as a warning for pending deployments; Default = 2
+     *                                  If provided critical < warning then we swap that values 
      */
     public function checkAction()
     {
@@ -36,15 +39,19 @@ class HealthCommand extends Command
         if ($name = $this->params->get('db')) {
             $health->setDbResourceName($name);
         }
-
+        $crit = ($this->params->get('critical_undeploy') > 0 ? $this->params->get('critical_undeploy') : 3);
+        $warn = ($this->params->get('warning_undeploy') > 0 ? $this->params->get('warning_undeploy') : 2);
+        if ($crit < $warn) {
+            extract(array('crit' => $warn, 'warn' => $crit));
+        }
         if ($name = $this->params->get('check')) {
-            $check = $health->getCheck($name);
+            $check = $health->getCheck($name, $crit, $warn);
             echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
 
             exit($check->getState()->getNumeric());
         } else {
             $state = new PluginState('OK');
-            $checks = $health->getAllChecks();
+            $checks = $health->getAllChecks($crit, $warn);
 
             $output = [];
             foreach ($checks as $check) {
