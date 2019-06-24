@@ -31,7 +31,7 @@ class HealthCommand extends Command
      *   --watch <seconds>              Refresh every <second>. For interactive use only
      *   --critical_undeploy <integer>  Use a specific value as acritical for pending deployments; Default = 3
      *   --warning_undeploy <integer>   Use a specific value as a warning for pending deployments; Default = 2
-     *                                  If provided critical < warning then we swap that values 
+     *                                  If provided critical < warning then we swap that values
      */
     public function checkAction()
     {

@@ -247,12 +247,12 @@ class Health
             $count = $db->countActivitiesSinceLastDeployedConfig();
             if ($count < $warning) {
                 $check->succeed("There is a $count un-deployed change");
-            } elseif ($count < $critical ) {
+            } elseif ($count < $critical) {
                 $check->warn("There are $count un-deployed changes");
             }
             else {
                 $check->fail("There are a $count un-deployed change");
-          }
+            }
         });
 
         if (! DirectorDeploymentLog::hasDeployments($db)) {
