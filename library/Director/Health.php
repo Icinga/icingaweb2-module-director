@@ -249,8 +249,7 @@ class Health
                 $check->succeed("There is a $count un-deployed change");
             } elseif ($count < $critical) {
                 $check->warn("There are $count un-deployed changes");
-            }
-            else {
+            } else {
                 $check->fail("There are a $count un-deployed change");
             }
         });
