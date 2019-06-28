@@ -687,7 +687,7 @@ constants
         $running = DirectorDeploymentLog::getRelatedToActiveStage($this, $db);
         if ($running !== null) {
             foreach ($empty as $deployment) {
-                if ($deployment->get('start_time') < $running->get('start_time')) {
+                if ($deployment->getDeploymentTimestamp() < $running->getDeploymentTimestamp()) {
                     $deployment->set('stage_collected', 'n');
                     $deployment->store();
                     $this->deleteStage($this->getPackageName(), $deployment->get('stage_name'));
