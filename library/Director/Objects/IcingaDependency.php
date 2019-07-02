@@ -21,7 +21,9 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'disabled'               => 'n',
         'apply_to'               => null,
         'parent_host_id'         => null,
+        'parent_host_var'        => null,
         'parent_service_id'      => null,
+        'parent_service_var'     => null,
         'child_host_id'          => null,
         'child_service_id'       => null,
         'disable_checks'         => null,
@@ -119,6 +121,10 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         return '';
     }
 
+    /**
+     * @return string
+     * @throws ConfigurationError
+     */
     protected function renderObjectHeader()
     {
         if ($this->isApplyRule()) {
