@@ -321,7 +321,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     {
         // @codingStandardsIgnoreEnd
         return c::renderKeyValue(
-            'parent_host',
+            'parent_host_name',
             $this->get('parent_host_var')
         );
     }
@@ -378,14 +378,24 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     {
         // @codingStandardsIgnoreEnd
         return c::renderKeyValue(
-            'parent_service',
+            'parent_service_name',
             $this->get('parent_host_var')
         );
     }
 
-    //special case for parent service set as plain string for Apply rules
+    //
+    /**
+     * Render parent_service_var as parent_service_name
+     *
+     * Special case for parent service set as plain string for Apply rules
+     *
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
     public function renderParent_service_by_name()
     {
+        // @codingStandardsIgnoreEnd
         return c::renderKeyValue(
             'parent_service_name',
             c::renderString($this->get('parent_service_by_name'))
@@ -412,8 +422,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         $objKey = $this->unresolvedRelatedProperties[$name];
 
         # related services need array key
-        if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
-            if ($name === 'parent_service_id' && $this->object_type === 'apply' ) {
+        if ($class === IcingaService::class) {
+            if ($name === 'parent_service_id' && $this->object_type === 'apply') {
                 //special case , parent service can be set as simple string for Apply
                 if ($this->properties['parent_host_id'] === null) {
                     $this->reallySet(
@@ -441,7 +451,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
             }
 
             try {
-                $class::load( $objKey, $this->connection);
+                $class::load($objKey, $this->connection);
             } catch (NotFoundError $e) {
                 // Not a simple service on host
                 // Hunt through inherited services, use service assigned to
@@ -459,7 +469,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
                         'object_name' => $this->unresolvedRelatedProperties[$name]
                     ];
                     try {
-                        $object = $class::load( $objKey, $this->connection);
+                        $object = $class::load($objKey, $this->connection);
                     } catch (NotFoundError $e) {
                         continue;
                     }
@@ -521,27 +531,15 @@ class IcingaDependency extends IcingaObject implements ExportInterface
 
     protected function getRelatedProperty($key)
     {
-        $idKey = $key . '_id';
-        if ($this->hasUnresolvedRelatedProperty($idKey)) {
-            return $this->unresolvedRelatedProperties[$idKey];
+        $related = parent::getRelatedProperty($key);
+        // handle special case for plain string parent service on Dependency
+        // Apply rules
+        if ($related === null && $key === 'parent_service'
+            && null !== $this->get('parent_service_by_name')
+        ) {
+            return $this->get('parent_service_by_name');
         }
 
-        if ($id = $this->get($idKey)) {
-            /** @var IcingaObject $class */
-            $class = $this->getRelationClass($key);
-            $object = $class::loadWithAutoIncId($id, $this->connection);
-
-            return $object->getObjectName();
-        } else {
-            // handle special case for plain string parent service on Dependency
-            // Apply rules
-            if ($key === 'parent_service'
-                && null !== $this->get('parent_service_by_name')
-            ) {
-                return $this->get('parent_service_by_name');
-            }
-        }
-
-        return null;
+        return $related;
     }
 }
