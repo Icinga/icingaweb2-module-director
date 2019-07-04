@@ -188,60 +188,57 @@ class IcingaDependencyForm extends DirectorObjectForm
      */
     protected function addObjectsElement()
     {
-        $this->addElement(
-            'text',
-            'parent_host',
-            array(
-                'label' => $this->translate('Parent Host'),
-                'description' => $this->translate(
-                    'The parent host.'
-                ),
-                'class' => "autosubmit director-suggest",
-                'data-suggestion-context' => 'hostnames',
-                'order' => 10,
-                'required' => $this->isObject(),
-                'value' => $this->getObject()->get('parent_host')
+        $dependency = $this->getObject();
+        $parentHost = $dependency->get('parent_host');
+        if ($parentHost === null) {
+            $parentHost = $dependency->get('parent_host_var');
+        }
+        $this->addElement('text', 'parent_host', [
+            'label' => $this->translate('Parent Host'),
+            'description' => $this->translate(
+                'The parent host.'
+            ),
+            'class' => "autosubmit director-suggest",
+            'data-suggestion-context' => 'hostnames',
+            'order' => 10,
+            'required' => $this->isObject(),
+            'value' => $parentHost
+        ]);
+        $sentParent = $this->getSentOrObjectValue('parent_host');
 
-            )
-        );
-        $sent_parent=$this->getSentOrObjectValue("parent_host");
-
-        if (!empty($sent_parent) || $this->object->isApplyRule()) {
-            $this->addElement(
-                'text',
-                'parent_service',
-                array(
+        if (!empty($sentParent) || $dependency->isApplyRule()) {
+            $parentService = $dependency->get('parent_service');
+            if ($parentService === null) {
+                $parentService = $dependency->get('parent_service_var');
+            }
+            $this->addElement('text', 'parent_service', [
                     'label' => $this->translate('Parent Service'),
                     'description' => $this->translate(
-                        'Optional. The parent service. If omitted this dependency object is treated as host dependency.'
+                        'Optional. The parent service. If omitted this dependency'
+                         . ' object is treated as host dependency.'
                     ),
                     'class' => "autosubmit director-suggest",
                     'data-suggestion-context' => 'servicenames',
-                    'data-suggestion-for-host' => $sent_parent,
+                    'data-suggestion-for-host' => $sentParent,
                     'order' => 20,
-                    'value' => $this->getObject()->get('parent_service')
-                )
-            );
+                    'value' => $parentService
+                ]);
         }
 
         // If configuring Object, allow selection of child host and/or service,
         // otherwise apply rules will determine child object.
-        if ($this->isObject()) {
-            $this->addElement(
-                'text',
-                'child_host',
-                array(
-                    'label' => $this->translate('Child Host'),
-                    'description' => $this->translate(
-                        'The child host.'
-                    ),
-                    'value' => $this->getObject()->get('child_host'),
-                    'order' => 30,
-                    'class'    => "autosubmit director-suggest",
-                    'required' => $this->isObject(),
-                    'data-suggestion-context' => 'hostnames',
-                )
-            );
+        if ($dependency->isObject()) {
+            $this->addElement('text', 'child_host', [
+                'label' => $this->translate('Child Host'),
+                'description' => $this->translate(
+                    'The child host.'
+                ),
+                'value' => $dependency->get('child_host'),
+                'order' => 30,
+                'class'    => "autosubmit director-suggest",
+                'required' => $this->isObject(),
+                'data-suggestion-context' => 'hostnames',
+            ]);
 
             $sent_child=$this->getSentOrObjectValue("child_host");
 

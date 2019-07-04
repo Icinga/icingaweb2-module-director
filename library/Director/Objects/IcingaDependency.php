@@ -60,6 +60,13 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'ignore_soft_states'    => 'ignore_soft_states'
     ];
 
+    protected $propertiesNotForRendering = [
+        'id',
+        'object_name',
+        'object_type',
+        'apply_to',
+    ];
+
     public function getUniqueIdentifier()
     {
         return $this->getObjectName();
@@ -105,20 +112,6 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         $object->setProperties($properties);
 
         return $object;
-    }
-
-    /**
-     * Do not render internal property apply_to
-     *
-     * Avoid complaints for method names with underscore:
-     * @codingStandardsIgnoreStart
-     *
-     * @return string
-     */
-    public function renderApply_to()
-    {
-        // @codingStandardsIgnoreEnd
-        return '';
     }
 
     /**
@@ -319,6 +312,21 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     }
 
     /**
+     * Render parent_host_var as parent_host
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderParent_host_var()
+    {
+        // @codingStandardsIgnoreEnd
+        return c::renderKeyValue(
+            'parent_host',
+            $this->get('parent_host_var')
+        );
+    }
+
+    /**
      * Render child_service_id as host_name
      *
      * Avoid complaints for method names with underscore:
@@ -357,6 +365,21 @@ class IcingaDependency extends IcingaObject implements ExportInterface
             'parent_service',
             $this->get('parent_service_id'),
             'parent_service_name'
+        );
+    }
+
+    /**
+     * Render parent_service_var as parent_service_name
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderParent_service_var()
+    {
+        // @codingStandardsIgnoreEnd
+        return c::renderKeyValue(
+            'parent_service',
+            $this->get('parent_host_var')
         );
     }
 
