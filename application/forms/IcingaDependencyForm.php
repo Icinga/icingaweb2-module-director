@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaDependency;
 
@@ -286,5 +287,30 @@ class IcingaDependencyForm extends DirectorObjectForm
         $object->set('object_name', $dependency->getObjectName());
 
         return $this;
+    }
+
+    protected function handleProperties(DbObject $object, & $values)
+    {
+        if ($this->hasBeenSent()) {
+            if (isset($values['parent_host'])
+                && $this->isCustomVar($values['parent_host'])
+            ) {
+                $values['parent_host_var'] = $values['parent_host'];
+                $values['parent_host'] = '';
+            }
+            if (isset($values['parent_service'])
+                && $this->isCustomVar($values['parent_service'])
+            ) {
+                $values['parent_service_var'] = $values['parent_service'];
+                $values['parent_service'] = '';
+            }
+        }
+
+        parent::handleProperties($object, $values);
+    }
+
+    protected function isCustomVar($string)
+    {
+        return \preg_match('/^(?:host|service)\.vars\./', $string);
     }
 }
