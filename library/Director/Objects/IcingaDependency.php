@@ -41,6 +41,12 @@ class IcingaDependency extends IcingaObject implements ExportInterface
 
     protected $supportsApplyRules = true;
 
+    /**
+     * @internal
+     * @var bool
+     */
+    protected $renderForArray = false;
+
     protected $relatedSets = [
         'states' => 'StateFilterSet',
     ];
@@ -114,6 +120,11 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         return $object;
     }
 
+    public function parentHostIsVar()
+    {
+        return $this->get('parent_host_var') !== null;
+    }
+
     /**
      * @return string
      * @throws ConfigurationError
@@ -128,15 +139,75 @@ class IcingaDependency extends IcingaObject implements ExportInterface
                 );
             }
 
-            return sprintf(
-                "%s %s %s to %s {\n",
-                $this->getObjectTypeName(),
-                $this->getType(),
-                c::renderString($this->getObjectName()),
-                ucfirst($to)
-            );
+            if ($this->renderForArray) {
+                return $this->renderArrayObjectHeader($to);
+            } else {
+                return $this->renderSingleObjectHeader($to);
+            }
         } else {
             return parent::renderObjectHeader();
+        }
+    }
+
+    protected function renderSingleObjectHeader($to)
+    {
+        return sprintf(
+            "%s %s %s to %s {\n",
+            $this->getObjectTypeName(),
+            $this->getType(),
+            c::renderString($this->getObjectName()),
+            ucfirst($to)
+        );
+    }
+
+    protected function renderArrayObjectHeader($to)
+    {
+        return sprintf(
+            "%s %s %s for (host_parent_name in %s) to %s {\n",
+            $this->getObjectTypeName(),
+            $this->getType(),
+            c::renderString($this->getObjectName()),
+            $this->get('parent_host_var'),
+            ucfirst($to)
+        );
+    }
+
+    /**
+     * @return string
+     */
+    protected function renderSuffix()
+    {
+        if ($this->parentHostIsVar() && ! $this->renderForArray) {
+            return parent::renderSuffix() . $this->renderCloneForArray();
+        } else {
+            return parent::renderSuffix();
+        }
+    }
+
+    protected function renderCloneForArray()
+    {
+        $clone = clone($this);
+        $clone->renderForArray = true;
+
+        return $clone->toConfigString();
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     */
+    public function renderAssign_Filter()
+    {
+        if ($this->parentHostIsVar()) {
+            $varName = $this->get('parent_host_var');
+            if ($this->renderForArray) {
+                $suffix = sprintf(' && typeof(%s) == Array', $varName);
+            } else {
+                $suffix = sprintf(' && typeof(%s) == String', $varName);
+            }
+
+            return preg_replace('/\n$/m', $suffix, parent::renderAssign_Filter() . "\n");
+        } else {
+            return parent::renderAssign_Filter();
         }
     }
 
@@ -303,7 +374,6 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     public function renderParent_host_id()
     {
         // @codingStandardsIgnoreEnd
-
         return $this->renderRelationProperty(
             'parent_host',
             $this->get('parent_host_id'),
@@ -319,6 +389,14 @@ class IcingaDependency extends IcingaObject implements ExportInterface
      */
     public function renderParent_host_var()
     {
+        // @codingStandardsIgnoreEnd
+        if ($this->renderForArray) {
+            return c::renderKeyValue(
+                'parent_host_name',
+                'host_parent_name'
+            );
+        }
+
         // @codingStandardsIgnoreEnd
         return c::renderKeyValue(
             'parent_host_name',
