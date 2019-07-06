@@ -386,7 +386,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         if ($class == "Icinga\Module\Director\Objects\IcingaService" ) {
             if ($name === 'parent_service_id' && $this->object_type === 'apply' ) {
                 //special case , parent service can be set as simple string for Apply
-                if ($this->properties['parent_host_id'] === null) {
+                if ($this->properties['parent_service_id'] === null) {
                     $this->reallySet(
                         'parent_service_by_name',
                         $this->unresolvedRelatedProperties[$name]
