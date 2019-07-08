@@ -1845,4 +1845,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (163, NOW());
+  VALUES (164, NOW());
