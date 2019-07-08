@@ -188,12 +188,13 @@ class IcingaDependencyForm extends DirectorObjectForm
         $dependency = $this->getObject();
         $parentHost = $dependency->get('parent_host');
         if ($parentHost === null) {
-            $parentHost = $dependency->get('parent_host_var');
+            $parentHost = '$' . $dependency->get('parent_host_var') . '$';
         }
         $this->addElement('text', 'parent_host', [
             'label' => $this->translate('Parent Host'),
             'description' => $this->translate(
-                'The parent host.'
+                'The parent host. You might want to refer Host Custom Variables'
+                . ' via $host.vars.varname$'
             ),
             'class' => "autosubmit director-suggest",
             'data-suggestion-context' => 'hostnames',
@@ -223,31 +224,29 @@ class IcingaDependencyForm extends DirectorObjectForm
         // otherwise apply rules will determine child object.
         if ($dependency->isObject()) {
             $this->addElement('text', 'child_host', [
-                'label' => $this->translate('Child Host'),
-                'description' => $this->translate(
-                    'The child host.'
-                ),
-                'value' => $dependency->get('child_host'),
-                'order' => 30,
-                'class'    => "autosubmit director-suggest",
-                'required' => $this->isObject(),
+                'label'       => $this->translate('Child Host'),
+                'description' => $this->translate('The child host.'),
+                'value'       => $dependency->get('child_host'),
+                'order'       => 30,
+                'class'       => 'autosubmit director-suggest',
+                'required'    => $this->isObject(),
                 'data-suggestion-context' => 'hostnames',
             ]);
 
-            $sent_child=$this->getSentOrObjectValue("child_host");
+            $sentChild = $this->getSentOrObjectValue('child_host');
 
-            if (!empty($sent_child)) {
+            if (!empty($sentChild)) {
                 $this->addElement('text', 'child_service', [
                     'label' => $this->translate('Child Service'),
                     'description' => $this->translate(
                         'Optional. The child service. If omitted this dependency'
                         . ' object is treated as host dependency.'
                     ),
-                    'class' => "autosubmit director-suggest",
+                    'class' => 'autosubmit director-suggest',
                     'order' => 40,
                     'value' => $this->getObject()->get('child_service'),
                     'data-suggestion-context'  => 'servicenames',
-                    'data-suggestion-for-host' => $sent_child,
+                    'data-suggestion-for-host' => $sentChild,
                 ]);
             }
         }
@@ -288,14 +287,8 @@ class IcingaDependencyForm extends DirectorObjectForm
             if (isset($values['parent_host'])
                 && $this->isCustomVar($values['parent_host'])
             ) {
-                $values['parent_host_var'] = $values['parent_host'];
+                $values['parent_host_var'] = \trim($values['parent_host'], '$');
                 $values['parent_host'] = '';
-            }
-            if (isset($values['parent_service'])
-                && $this->isCustomVar($values['parent_service'])
-            ) {
-                $values['parent_service_var'] = $values['parent_service'];
-                $values['parent_service'] = '';
             }
         }
 
@@ -304,6 +297,7 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function isCustomVar($string)
     {
-        return \preg_match('/^(?:host|service)\.vars\./', $string);
+        return \preg_match('/^\$(?:host)\.vars\..+\$$/', $string);
+        // Eventually: return \preg_match('/^\$(?:host|service)\.vars\..+\$$/', $string);
     }
 }
