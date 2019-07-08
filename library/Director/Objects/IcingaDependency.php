@@ -176,10 +176,22 @@ class IcingaDependency extends IcingaObject implements ExportInterface
      */
     protected function renderSuffix()
     {
-        if ($this->parentHostIsVar() && ! $this->renderForArray) {
-            return parent::renderSuffix() . $this->renderCloneForArray();
-        } else {
+        if (! $this->parentHostIsVar()) {
             return parent::renderSuffix();
+        }
+
+        if (\strlen($this->get('assign_filter')) > 0) {
+            $suffix = parent::renderSuffix();
+        } else {
+            $suffix = '    assign where ' . $this->renderAssignFilterExtension('')
+                . "\n" . parent::renderSuffix();
+        }
+
+
+        if ($this->renderForArray) {
+            return $suffix;
+        } else {
+            return $suffix . $this->renderCloneForArray();
         }
     }
 
@@ -197,16 +209,23 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     public function renderAssign_Filter()
     {
         if ($this->parentHostIsVar()) {
-            $varName = $this->get('parent_host_var');
-            if ($this->renderForArray) {
-                $suffix = sprintf(' && typeof(%s) == Array', $varName);
-            } else {
-                $suffix = sprintf(' && typeof(%s) == String', $varName);
-            }
-
-            return preg_replace('/\n$/m', $suffix, parent::renderAssign_Filter() . "\n");
+            return preg_replace(
+                '/\n$/m',
+                $this->renderAssignFilterExtension(),
+                parent::renderAssign_Filter() . "\n"
+            );
         } else {
             return parent::renderAssign_Filter();
+        }
+    }
+
+    protected function renderAssignFilterExtension($pre = ' && ')
+    {
+        $varName = $this->get('parent_host_var');
+        if ($this->renderForArray) {
+            return sprintf('%stypeof(%s) == Array', $pre, $varName);
+        } else {
+            return sprintf('%stypeof(%s) == String', $pre, $varName);
         }
     }
 

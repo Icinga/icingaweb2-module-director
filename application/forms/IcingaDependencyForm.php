@@ -94,6 +94,7 @@ class IcingaDependencyForm extends DirectorObjectForm
             'description'  => $this->translate(
                 'Whether this dependency should affect hosts or services'
             ),
+            'required'     => true,
             'class'        => 'autosubmit',
             'multiOptions' => $this->optionalEnum([
                 'host'    => $this->translate('Hosts'),
@@ -110,7 +111,6 @@ class IcingaDependencyForm extends DirectorObjectForm
         $suggestionContext = ucfirst($applyTo) . 'FilterColumns';
         $this->addAssignFilter([
             'suggestionContext' => $suggestionContext,
-            'required' => true,
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want'
@@ -188,7 +188,10 @@ class IcingaDependencyForm extends DirectorObjectForm
         $dependency = $this->getObject();
         $parentHost = $dependency->get('parent_host');
         if ($parentHost === null) {
-            $parentHost = '$' . $dependency->get('parent_host_var') . '$';
+            $parentHostVar = $dependency->get('parent_host_var');
+            if (\strlen($parentHostVar) > 0) {
+                $parentHost = '$' . $dependency->get('parent_host_var') . '$';
+            }
         }
         $this->addElement('text', 'parent_host', [
             'label' => $this->translate('Parent Host'),
