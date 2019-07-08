@@ -23,7 +23,6 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'parent_host_id'         => null,
         'parent_host_var'        => null,
         'parent_service_id'      => null,
-        'parent_service_var'     => null,
         'child_host_id'          => null,
         'child_service_id'       => null,
         'disable_checks'         => null,
@@ -446,24 +445,9 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         );
     }
 
-    /**
-     * Render parent_service_var as parent_service_name
-     * @codingStandardsIgnoreStart
-     *
-     * @return string
-     */
-    public function renderParent_service_var()
-    {
-        // @codingStandardsIgnoreEnd
-        return c::renderKeyValue(
-            'parent_service_name',
-            $this->get('parent_host_var')
-        );
-    }
-
     //
     /**
-     * Render parent_service_var as parent_service_name
+     * Render parent_service_by_name as parent_service_name
      *
      * Special case for parent service set as plain string for Apply rules
      *
@@ -501,7 +485,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
 
         # related services need array key
         if ($class === IcingaService::class) {
-            if ($name === 'parent_service_id' && $this->object_type === 'apply') {
+            if ($name === 'parent_service_id' && $this->get('object_type') === 'apply') {
                 //special case , parent service can be set as simple string for Apply
                 if ($this->properties['parent_host_id'] === null) {
                     $this->reallySet(

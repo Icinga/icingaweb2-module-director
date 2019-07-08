@@ -94,7 +94,6 @@ class IcingaDependencyForm extends DirectorObjectForm
             'description'  => $this->translate(
                 'Whether this dependency should affect hosts or services'
             ),
-            'required'     => true,
             'class'        => 'autosubmit',
             'multiOptions' => $this->optionalEnum([
                 'host'    => $this->translate('Hosts'),
@@ -209,9 +208,6 @@ class IcingaDependencyForm extends DirectorObjectForm
 
         if (!empty($sentParent) || $dependency->isApplyRule()) {
             $parentService = $dependency->get('parent_service');
-            if ($parentService === null) {
-                $parentService = $dependency->get('parent_service_var');
-            }
             $this->addElement('text', 'parent_service', [
                     'label' => $this->translate('Parent Service'),
                     'description' => $this->translate(
