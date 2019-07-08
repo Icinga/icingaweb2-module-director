@@ -121,7 +121,10 @@ class IcingaServiceSetForm extends DirectorObjectForm
                 'This allows you to configure an assignment filter. Please feel'
                 . ' free to combine as many nested operators as you want. You'
                 . ' might also want to skip this, define it later and/or just'
-                . ' add this set of services to single hosts'
+                . ' add this set of services to single hosts. The "contains"'
+                . ' operator is valid for arrays only. Please use wildcards and'
+                . ' the = (equals) operator when searching for partial string'
+                . ' matches, like in *.example.com'
             )
         ]);
 

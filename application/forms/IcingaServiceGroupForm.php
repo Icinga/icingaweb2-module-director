@@ -28,7 +28,10 @@ class IcingaServiceGroupForm extends DirectorObjectForm
             'required' => false,
             'description' => $this->translate(
                 'This allows you to configure an assignment filter. Please feel'
-                . ' free to combine as many nested operators as you want'
+                . ' free to combine as many nested operators as you want. The'
+                . ' "contains" operator is valid for arrays only. Please use'
+                . ' wildcards and the = (equals) operator when searching for'
+                . ' partial string matches, like in *.example.com'
             )
         ]);
 
