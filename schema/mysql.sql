@@ -1675,7 +1675,6 @@ CREATE TABLE icinga_dependency (
   parent_host_id INT(10) UNSIGNED DEFAULT NULL,
   parent_host_var VARCHAR(128) DEFAULT NULL,
   parent_service_id INT(10) UNSIGNED DEFAULT NULL,
-  parent_service_var VARCHAR(128) DEFAULT NULL,
   child_host_id INT(10) UNSIGNED DEFAULT NULL,
   child_service_id INT(10) UNSIGNED DEFAULT NULL,
   disable_checks ENUM('y', 'n') DEFAULT NULL,
