@@ -1965,6 +1965,7 @@ CREATE TABLE icinga_dependency (
   disabled enum_boolean DEFAULT 'n',
   apply_to enum_host_service NULL DEFAULT NULL,
   parent_host_id integer DEFAULT NULL,
+  parent_host_var character varying(128) DEFAULT NULL,
   parent_service_id integer DEFAULT NULL,
   child_host_id integer DEFAULT NULL,
   child_service_id integer DEFAULT NULL,
@@ -2156,4 +2157,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (162, NOW());
+  VALUES (164, NOW());
