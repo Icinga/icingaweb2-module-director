@@ -423,6 +423,16 @@ abstract class DirectorObjectForm extends DirectorForm
                 $el = $this->getElement($k);
                 if ($el) {
                     $this->setInheritedValue($el, $inherited->$k, $origins->$k);
+                } elseif (substr($k, -3) === '_id') {
+                    $k = substr($k, 0, -3);
+                    $el = $this->getElement($k);
+                    if ($el) {
+                        $this->setInheritedValue(
+                            $el,
+                            $object->getRelatedObjectName($k, $v),
+                            $origins->{"${k}_id"}
+                        );
+                    }
                 }
             }
         }

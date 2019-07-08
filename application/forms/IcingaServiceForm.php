@@ -318,12 +318,14 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function setupServiceElements()
     {
         if ($this->object) {
-            $this->addHidden('object_type', $this->object->object_type);
+            $objectType = $this->object->object_type;
         } elseif ($this->preferredObjectType) {
-            $this->addHidden('object_type', $this->preferredObjectType);
+            $objectType = $this->preferredObjectType;
         } else {
-            $this->addHidden('object_type', 'template');
+            $objectType = 'template';
         }
+        $this->addHidden('object_type', $objectType);
+        $forceCommandElements = $this->hasPermission('director/admin');
 
         $this->addNameElement()
              ->addHostObjectElement()
@@ -334,7 +336,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addApplyForElement()
              ->groupMainProperties()
              ->addAssignmentElements()
-             ->addCheckCommandElements()
+             ->addCheckCommandElements($forceCommandElements)
              ->addCheckExecutionElements()
              ->addExtraInfoElements()
              ->addAgentAndZoneElements()

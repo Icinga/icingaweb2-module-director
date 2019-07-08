@@ -309,7 +309,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      * @param $id
      * @return string
      */
-    protected function getRelatedObjectName($property, $id)
+    public function getRelatedObjectName($property, $id)
     {
         return $this->getRelatedObject($property, $id)->getObjectName();
     }
