@@ -481,7 +481,7 @@ CREATE TABLE icinga_host (
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
-  address VARCHAR(64) DEFAULT NULL,
+  address VARCHAR(255) DEFAULT NULL,
   address6 VARCHAR(45) DEFAULT NULL,
   check_command_id INT(10) UNSIGNED DEFAULT NULL,
   max_check_attempts MEDIUMINT UNSIGNED DEFAULT NULL,
@@ -1845,4 +1845,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (164, NOW());
+  VALUES (165, NOW());

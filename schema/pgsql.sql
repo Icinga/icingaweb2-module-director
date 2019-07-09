@@ -608,7 +608,7 @@ CREATE TABLE icinga_host (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name CHARACTER VARYING(255) DEFAULT NULL,
-  address character varying(64) DEFAULT NULL,
+  address character varying(255) DEFAULT NULL,
   address6 character varying(45) DEFAULT NULL,
   check_command_id integer DEFAULT NULL,
   max_check_attempts integer DEFAULT NULL,
@@ -2157,4 +2157,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (164, NOW());
+  VALUES (165, NOW());
