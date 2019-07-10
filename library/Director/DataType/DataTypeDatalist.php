@@ -90,8 +90,7 @@ class DataTypeDatalist extends DataTypeHook
     {
         /** @var DirectorObjectForm $form */
         $db = $form->getDb()->getDbAdapter();
-
-        $roles = array_map('json_encode', Acl::instance()->listRoleNames());
+        $roles = Acl::instance()->listRoleNames();
         $select = $db->select()
             ->from('director_datalist_entry', ['entry_name', 'entry_value'])
             ->where('list_id = ?', $this->getSetting('datalist_id'))
@@ -100,7 +99,11 @@ class DataTypeDatalist extends DataTypeHook
         if (empty($roles)) {
             $select->where('allowed_roles IS NULL');
         } else {
-            $select->where('(allowed_roles IS NULL OR allowed_roles IN (?))', $roles);
+            $parts = ['allowed_roles IS NULL'];
+            foreach ($roles as $role) {
+                $parts[] = $db->quoteInto("allowed_roles LIKE ?", '%' . \json_encode($role) . '%');
+            }
+            $select->where('(' . \implode(' OR ', $parts) . ')');
         }
 
         return $db->fetchPairs($select);
