@@ -23,7 +23,7 @@ class DataTypeDatalist extends DataTypeHook
     {
         $params = [];
         $behavior = $this->getSetting('behavior', 'strict');
-        $targetDataType = $this->getSetting('data_type');
+        $targetDataType = $this->getSetting('data_type', 'string');
         $listId = $this->getSetting('datalist_id');
 
         if ($behavior === 'strict') {
