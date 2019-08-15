@@ -87,6 +87,6 @@ class ImportedrowsTable extends SimpleQueryBasedTable
             $this->importRun->fetchRows($this->columns)
         );
 
-        return $ds->select()->order('object_name');
+        return $ds->select()->order($this->importRun->importSource()->get('key_column'));
     }
 }
