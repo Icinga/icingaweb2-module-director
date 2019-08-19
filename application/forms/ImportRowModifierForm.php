@@ -28,7 +28,12 @@ class ImportRowModifierForm extends DirectorObjectForm
 
         $this->addElement('text', 'property_name', array(
             'label'        => $this->translate('Property'),
-            'description'  => $this->translate('This must be an import source column (property)'),
+            'description'  => $this->translate(
+                $this->translate('Please start typing for a list of suggestions. Dots allow you to access nested'
+                . ' properties: column.some.key. Such nested properties cannot be modified in-place,'
+                . ' but you can store the modified value to a new "target property"'
+                )
+            ),
             'required'     => true,
             'class'        => 'autosubmit director-suggest',
             'data-suggestion-context' => 'importsourceproperties!' . $this->source->id,
