@@ -26,19 +26,13 @@ class ImportRowModifierForm extends DirectorObjectForm
     {
         $this->addHidden('source_id', $this->source->id);
 
-        $this->addElement('select', 'property_name', [
+        $this->addElement('text', 'property_name', array(
             'label'        => $this->translate('Property'),
             'description'  => $this->translate('This must be an import source column (property)'),
             'required'     => true,
-        ]);
-        try {
-            $sourceColumns = $this->enumSourceColumns();
-            $this->getElement('property_name')->setOptions([
-                'multiOptions' => $this->optionalEnum($sourceColumns)
-            ]);
-        } catch (Exception $e) {
-            $this->getElement('property_name')->addError($e->getMessage());
-        }
+            'class'        => 'autosubmit director-suggest',
+            'data-suggestion-context' => 'importsourceproperties!' . $this->source->id,
+        ));
 
         $this->addElement('text', 'target_property', [
             'label'        => $this->translate('Target property'),
@@ -102,22 +96,6 @@ class ImportRowModifierForm extends DirectorObjectForm
         }
 
         $this->setButtons();
-    }
-
-    /**
-     * @return array
-     * @throws ConfigurationError
-     */
-    protected function enumSourceColumns()
-    {
-        $columns = array_merge(
-            $this->getImportSource()->listColumns(),
-            $this->source->listModifierTargetProperties()
-        );
-
-        $columns = array_combine($columns, $columns);
-
-        return $columns;
     }
 
     /**
