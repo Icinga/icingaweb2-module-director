@@ -5,7 +5,7 @@ set -ex
 MODULE_HOME=${MODULE_HOME:="$(dirname "$(readlink -f "$(dirname "$0")")")"}
 PHP_VERSION="$(php -r 'echo phpversion();')"
 
-ICINGAWEB_VERSION=${ICINGAWEB_VERSION:=2.6.2}
+ICINGAWEB_VERSION=${ICINGAWEB_VERSION:=2.7.1}
 ICINGAWEB_GITREF=${ICINGAWEB_GITREF:=}
 
 PHPCS_VERSION=${PHPCS_VERSION:=3.3.2}
