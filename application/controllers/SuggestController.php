@@ -3,8 +3,11 @@
 namespace Icinga\Module\Director\Controllers;
 
 use dipl\Html\Html;
+use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Objects\HostApplyMatches;
@@ -382,5 +385,26 @@ class SuggestController extends ActionController
         )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
 
         return $db->fetchAll($query);
+    }
+
+    protected function suggestImportsourceproperties($sourceId = null)
+    {
+        if ($sourceId === null) {
+            return [];
+        }
+
+        try {
+            $importSource = ImportSource::loadWithAutoIncId($sourceId, $this->db());
+            $source = ImportSourceHook::loadByName($importSource->get('source_name'), $this->db());
+
+            $columns = array_merge(
+                $source->listColumns(),
+                $importSource->listProperties()
+            );
+
+            return array_combine($columns, $columns);
+        } catch (NotFoundError $e) {
+            return [];
+        }
     }
 }
