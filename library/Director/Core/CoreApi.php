@@ -77,7 +77,7 @@ class CoreApi implements DeploymentApiInterface
             return null;
         }
 
-        if (preg_match('/^v?(\d\.\d+\.\d+)/', $version, $match)) {
+        if (preg_match('/^[rv]?(\d\.\d+\.\d+)/', $version, $match)) {
             return $match[1];
         } else {
             return null;
