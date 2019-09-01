@@ -92,7 +92,6 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     /**
      * @return bool
-     * @throws \Icinga\Exception\NotFoundError
      */
     public function shouldRun()
     {
@@ -101,7 +100,6 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     /**
      * @return bool
-     * @throws \Icinga\Exception\NotFoundError
      */
     public function isOverdue()
     {
@@ -121,7 +119,6 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     /**
      * @return bool
-     * @throws \Icinga\Exception\NotFoundError
      */
     public function isPending()
     {
@@ -138,7 +135,6 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     /**
      * @return bool
-     * @throws \Icinga\Exception\NotFoundError
      */
     public function isWithinTimeperiod()
     {
@@ -266,10 +262,16 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     /**
      * @return IcingaTimePeriod
-     * @throws \Icinga\Exception\NotFoundError
      */
     protected function timeperiod()
     {
-        return IcingaTimePeriod::loadWithAutoIncId($this->get('timeperiod_id'), $this->connection);
+        try {
+            return IcingaTimePeriod::loadWithAutoIncId($this->get('timeperiod_id'), $this->connection);
+        } catch (NotFoundError $e) {
+            throw new \RuntimeException(sprintf(
+                'The TimePeriod configured for Job "%s" could not have been found',
+                $this->get('name')
+            ));
+        }
     }
 }
