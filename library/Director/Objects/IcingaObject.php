@@ -3295,7 +3295,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $bl_hosts=$this->blacklisted_hosts;
             }
         }
-	sort($bl_hosts);
+        if ($bl_hosts) {
+            sort($bl_hosts);
+        }
         return $bl_hosts;
     }
 
