@@ -330,7 +330,14 @@ input[type=text], input[type=button], select, select option, textarea {
 }
 
 form ul.form-errors {
+    list-style-type: none;
     margin-bottom: 0.5em;
+    padding: 0;
+
+    ul.errors {
+      list-style-type: none;
+      padding: 0;
+    }
 
     ul.errors li {
         background: @color-critical;
