@@ -197,7 +197,7 @@ class KickstartForm extends DirectorForm
         if ($resourceName = $this->getResourceName()) {
             $resourceConfig = ResourceFactory::getResourceConfig($resourceName);
             if (! isset($resourceConfig->charset)
-                || ! in_array($resourceConfig->charset, array('utf8', 'utf8mb4'))
+                || ! in_array($resourceConfig->charset, array('utf8', 'utf8mb4', 'UTF-8'))
             ) {
                 if ($resource = $this->getElement('resource')) {
                     $resource->addError('Please change the encoding for the director database to utf8');
