@@ -26,29 +26,29 @@ class SyncRuleForm extends DirectorObjectForm
             'zone'              => $this->translate('Zone'),
         ];
 
-        $this->addElement('text', 'rule_name', array(
+        $this->addElement('text', 'rule_name', [
             'label'       => $this->translate('Rule name'),
             'description' => $this->translate('Please provide a rule name'),
             'required'    => true,
-        ));
+        ]);
 
-        $this->addElement('textarea', 'description', array(
+        $this->addElement('textarea', 'description', [
             'label'       => $this->translate('Description'),
             'description' => $this->translate(
                 'An extended description for this Sync Rule. This should explain'
                 . ' what this Rule is going to accomplish.'
             ),
             'rows'        => '3',
-        ));
+        ]);
 
-        $this->addElement('select', 'object_type', array(
+        $this->addElement('select', 'object_type', [
             'label'        => $this->translate('Object Type'),
             'description'  => $this->translate('Choose an object type'),
             'required'     => true,
             'multiOptions' => $this->optionalEnum($availableTypes)
-        ));
+        ]);
 
-        $this->addElement('select', 'update_policy', array(
+        $this->addElement('select', 'update_policy', [
             'label'        => $this->translate('Update Policy'),
             'description'  => $this->translate(
                 'Define what should happen when an object with a matching key'
@@ -57,28 +57,25 @@ class SyncRuleForm extends DirectorObjectForm
                 . ' it (helpful for one-time imports)'
             ),
             'required'     => true,
-            'multiOptions' => $this->optionalEnum(array(
+            'multiOptions' => $this->optionalEnum([
                 'merge'    => $this->translate('Merge'),
                 'override' => $this->translate('Replace'),
                 'ignore'   => $this->translate('Ignore'),
-            ))
-        ));
+            ])
+        ]);
 
-        $this->addElement('select', 'purge_existing', array(
-            'label' => $this->translate('Purge'),
-            'description'  => $this->translate(
+        $this->addBoolean('purge_existing', [
+            'label'       => $this->translate('Purge'),
+            'description' => $this->translate(
                 'Whether to purge existing objects. This means that objects of'
                 . ' the same type will be removed from Director in case they no'
                 . ' longer exist at your import source.'
             ),
-            'required'     => true,
-            'multiOptions' => $this->optionalEnum(array(
-                'y' => $this->translate('Yes'),
-                'n' => $this->translate('No')
-            ))
-        ));
+            'required'   => true,
 
-        $this->addElement('text', 'filter_expression', array(
+        ]);
+
+        $this->addElement('text', 'filter_expression', [
             'label'       => $this->translate('Filter Expression'),
             'description' => sprintf(
                 $this->translate(
@@ -86,8 +83,13 @@ class SyncRuleForm extends DirectorObjectForm
                     . ' filter syntax is allowed, so this could look as follows: %s'
                 ),
                 '(host=a|host=b)&!ip=127.*'
+            ) . ' ' . $this->translate(
+                'Be careful: this is usually NOT what you want, as it makes Sync "blind"'
+                . ' for objects matching this filter. This means that "Purge" will not'
+                . ' work as expected. The "Black/Whitelist" Import Property Modifier'
+                . ' is probably what you\'re looking for.'
             ),
-        ));
+        ]);
 
         $this->setButtons();
     }
