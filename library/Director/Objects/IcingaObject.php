@@ -1565,7 +1565,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ->storeRanges()
             ->storeRelatedSets()
             ->storeArguments()
-            ->storeBlacklisted_hosts();
+            ->storeBlacklisted_Hosts();
     }
 
     /**
@@ -2983,8 +2983,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $props['ranges'] = $this->get('ranges');
         }
 
-        if ($this->getBlacklisted_hosts() !== null) {
-            $props['blacklisted_hosts']=$this->getBlacklisted_hosts();
+        if ($this->getBlacklisted_Hosts() !== null) {
+            $props['blacklisted_hosts']=$this->getBlacklisted_Hosts();
         }
 
         if ($skipDefaults) {
@@ -3286,7 +3286,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         parent::__destruct();
     }
 
-    public function getBlacklisted_hosts() {
+    public function getBlacklisted_Hosts()
+    {
         $bl_hosts=null;
         if ($this instanceof IcingaService) {
             if ($this->hasBeenLoadedFromDb()) {
@@ -3301,30 +3302,30 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $bl_hosts;
     }
 
-    public function setBlacklisted_hosts($list) 
+    public function setBlacklisted_Hosts($list)
     {
         if ($this instanceof IcingaService) {
             $this->blacklisted_hosts=$list;
         }
 
-	return $this;
+        return $this;
     }
 
-    public function storeBlacklisted_hosts() 
+    public function storeBlacklisted_Hosts()
     {
         if ($this instanceof IcingaService && $this->blacklisted_hosts !==null) {
             $to_add=array_diff($this->blacklisted_hosts, $this->getBlacklistedHostnames());
             $to_remove=array_diff($this->getBlacklistedHostnames(), $this->blacklisted_hosts);
             foreach ($to_add as $hostname) {
-                $host=IcingaHost::loadByType('host',$hostname,$this->getConnection());
+                $host=IcingaHost::loadByType('host', $hostname, $this->getConnection());
                 $this->db->insert('icinga_host_service_blacklist', [
                     'host_id'    => $host->get('id'),
                     'service_id' => $this->get('id')
                 ]);
             }
             foreach ($to_remove as $hostname) {
-                $host=IcingaHost::loadByType('host',$hostname,$this->getConnection());
-                $this->db->delete('icinga_host_service_blacklist', [ 
+                $host=IcingaHost::loadByType('host', $hostname, $this->getConnection());
+                $this->db->delete('icinga_host_service_blacklist', [
                     $this->db->quoteInto('host_id = ?', $host->get('id')),
                     $this->db->quoteInto('service_id = ?', $this->get('id'))
                 ]);
