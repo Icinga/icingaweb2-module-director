@@ -2,13 +2,13 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use ipl\Html\HtmlDocument;
+use dipl\Html\HtmlDocument;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\SyncRun;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\NameValueTable;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\NameValueTable;
 
 class SyncRunDetails extends NameValueTable
 {

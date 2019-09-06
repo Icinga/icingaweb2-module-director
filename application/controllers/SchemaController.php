@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Controller\ActionController;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class SchemaController extends ActionController
 {

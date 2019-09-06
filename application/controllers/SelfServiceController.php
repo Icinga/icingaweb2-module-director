@@ -12,7 +12,7 @@ use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
-use ipl\Html\Html;
+use dipl\Html\Html;
 
 class SelfServiceController extends ActionController
 {

@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\ActionBar;
 
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Link;
 
 class TemplateActionBar extends DirectorBaseActionBar
 {

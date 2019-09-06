@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use gipfl\IcingaWeb2\Widget\UnorderedList;
+use dipl\Web\Widget\UnorderedList;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -24,8 +24,8 @@ use Icinga\Module\Director\Web\Table\SyncpropertyTable;
 use Icinga\Module\Director\Web\Table\SyncRunTable;
 use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
 use Icinga\Module\Director\Web\Widget\SyncRunDetails;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class SyncruleController extends ActionController
 {
@@ -270,7 +270,7 @@ class SyncruleController extends ActionController
 
     /**
      * @param IcingaObject[] $objects
-     * @return \ipl\Html\HtmlElement
+     * @return \dipl\Html\HtmlElement
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function objectList($objects)
@@ -499,7 +499,7 @@ class SyncruleController extends ActionController
 
         $form = new CloneSyncRuleForm($rule);
         $this->content()->add($form);
-        $form->handleRequest($this->getServerRequest());
+        $form->handleRequest($this->getRequest());
     }
 
     /**

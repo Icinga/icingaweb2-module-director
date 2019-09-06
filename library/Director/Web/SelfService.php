@@ -12,11 +12,11 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\ActionBar;
-use gipfl\IcingaWeb2\Widget\ControlsAndContent;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ActionBar;
+use dipl\Web\Widget\ControlsAndContent;
 
 class SelfService
 {

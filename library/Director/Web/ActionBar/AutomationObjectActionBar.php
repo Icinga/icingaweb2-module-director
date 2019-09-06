@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Web\ActionBar;
 
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\ActionBar;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ActionBar;
 use Icinga\Web\Request;
 
 class AutomationObjectActionBar extends ActionBar

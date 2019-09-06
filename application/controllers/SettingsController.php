@@ -6,7 +6,7 @@ use Icinga\Module\Director\Forms\KickstartForm;
 use Icinga\Module\Director\Forms\SelfServiceSettingsForm;
 use Icinga\Module\Director\Settings;
 use Icinga\Module\Director\Web\Controller\ActionController;
-use ipl\Html\Html;
+use dipl\Html\Html;
 
 class SettingsController extends ActionController
 {

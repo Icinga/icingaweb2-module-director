@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use ipl\Html\Html;
+use dipl\Html\Html;
 use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;
 use Icinga\Module\Director\Health;
 use Icinga\Module\Director\Web\Controller\ActionController;

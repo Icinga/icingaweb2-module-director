@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\Html;
+use dipl\Html\Html;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Objects\IcingaHost;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\SimpleQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class IcingaHostAppliedForServiceTable extends SimpleQueryBasedTable
 {

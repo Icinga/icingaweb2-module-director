@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Html;
+use dipl\Html\Link;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Table\BasketTable;
 

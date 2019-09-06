@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Restriction;
 
-use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
+use dipl\Db\Zf1\FilterRenderer;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;

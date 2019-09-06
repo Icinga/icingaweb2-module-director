@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use ipl\Html\HtmlDocument;
+use dipl\Html\HtmlDocument;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigFile;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
 
 class ShowConfigFile extends HtmlDocument
 {

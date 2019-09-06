@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use ipl\Html\HtmlDocument;
+use dipl\Html\HtmlDocument;
 use Exception;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -10,10 +10,10 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Widget\Tab;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\Tabs;
+use dipl\Html\Html;
+use dipl\Html\HtmlString;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends HtmlDocument

@@ -2,11 +2,11 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\NameValueTable;
+use dipl\Html\BaseHtmlElement;
+use dipl\Html\Html;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\NameValueTable;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\PlainObjectRenderer;

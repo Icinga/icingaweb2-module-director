@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\ValidHtml;
+use dipl\Html\ValidHtml;
 use Icinga\Data\DataArray\ArrayDatasource;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Import\SyncUtils;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\PlainObjectRenderer;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Table\SimpleQueryBasedTable;
+use dipl\Html\Html;
+use dipl\Web\Table\SimpleQueryBasedTable;
 
 class ImportsourceHookTable extends SimpleQueryBasedTable
 {

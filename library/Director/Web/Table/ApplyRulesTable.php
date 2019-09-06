@@ -9,11 +9,11 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
-use gipfl\IcingaWeb2\Icon;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
-use gipfl\IcingaWeb2\Url;
-use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
+use dipl\Db\Zf1\FilterRenderer;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 use Zend_Db_Select as ZfSelect;
 
 class ApplyRulesTable extends ZfQueryBasedTable

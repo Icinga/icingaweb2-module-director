@@ -13,14 +13,12 @@ use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
 use InvalidArgumentException;
-use gipfl\IcingaWeb2\Translator;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\ControlsAndContent;
-use gipfl\IcingaWeb2\Controller\Extension\ControlsAndContentHelper;
-use gipfl\IcingaWeb2\Zf1\SimpleViewRenderer;
-use GuzzleHttp\Psr7\ServerRequest;
-use Psr\Http\Message\ServerRequestInterface;
+use dipl\Compat\Translator;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\ControlsAndContent;
+use dipl\Web\Controller\Extension\ControlsAndContentHelper;
+use dipl\Zf1\SimpleViewRenderer;
 
 abstract class ActionController extends Controller implements ControlsAndContent
 {
@@ -118,14 +116,6 @@ abstract class ActionController extends Controller implements ControlsAndContent
         }
 
         return $this;
-    }
-
-    /**
-     * @return ServerRequestInterface
-     */
-    protected function getServerRequest()
-    {
-        return ServerRequest::fromGlobals();
     }
 
     protected function applyPaginationLimits(Paginatable $paginatable, $limit = 25, $offset = null)

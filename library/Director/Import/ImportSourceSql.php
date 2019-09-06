@@ -9,7 +9,7 @@ use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Filter\QueryColumnsFromSql;
 use Icinga\Module\Director\Web\Form\QuickForm;
-use ipl\Html\Html;
+use dipl\Html\Html;
 
 class ImportSourceSql extends ImportSourceHook
 {

@@ -2,19 +2,19 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use ipl\Html\HtmlDocument;
+use dipl\Html\HtmlDocument;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\StartupLogRenderer;
 use Icinga\Util\Format;
 use Icinga\Web\Request;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Icon;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\NameValueTable;
-use gipfl\IcingaWeb2\Widget\Tabs;
+use dipl\Html\Html;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
+use dipl\Web\Widget\NameValueTable;
+use dipl\Web\Widget\Tabs;
 
 class DeploymentInfo extends HtmlDocument
 {

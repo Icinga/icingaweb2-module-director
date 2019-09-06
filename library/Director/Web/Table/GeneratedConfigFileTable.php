@@ -4,8 +4,8 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
 
 class GeneratedConfigFileTable extends ZfQueryBasedTable
 {

@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use gipfl\IcingaWeb2\Icon;
+use dipl\Html\Icon;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTableEndpoint extends ObjectsTable

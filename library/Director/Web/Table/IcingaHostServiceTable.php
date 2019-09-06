@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use ipl\Html\Html;
+use dipl\Html\Html;
 use Icinga\Module\Director\Objects\IcingaHost;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
 
 class IcingaHostServiceTable extends ZfQueryBasedTable
 {

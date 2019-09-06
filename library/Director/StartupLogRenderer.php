@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director;
 
-use ipl\Html\Html;
+use dipl\Html\Html;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use gipfl\IcingaWeb2\Link;
-use ipl\Html\ValidHtml;
+use dipl\Html\Link;
+use dipl\Html\ValidHtml;
 
 class StartupLogRenderer implements ValidHtml
 {

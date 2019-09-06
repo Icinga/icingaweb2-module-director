@@ -4,9 +4,9 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
-use gipfl\IcingaWeb2\Url;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
 
 class ObjectSetTable extends ZfQueryBasedTable

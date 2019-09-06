@@ -5,9 +5,9 @@ namespace Icinga\Module\Director\Web\Table;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Resolver\TemplateTree;
-use gipfl\IcingaWeb2\Link;
-use ipl\Html\Table;
-use gipfl\Translation\TranslationHelper;
+use dipl\Html\Link;
+use dipl\Html\Table;
+use dipl\Translation\TranslationHelper;
 
 class TemplateUsageTable extends Table
 {

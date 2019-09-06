@@ -6,9 +6,9 @@ use Icinga\Exception\AuthenticationException;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\BaseHtmlElement;
+use dipl\Html\Html;
+use dipl\Html\Link;
 
 class IcingaHostForm extends DirectorObjectForm
 {

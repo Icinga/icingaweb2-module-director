@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
+use dipl\Web\Table\Extension\MultiSelect;
 
 class ObjectsTableHost extends ObjectsTable
 {

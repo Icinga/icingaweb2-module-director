@@ -15,7 +15,7 @@ use Icinga\Module\Director\Web\Table\PropertymodifierTable;
 use Icinga\Module\Director\Web\Tabs\ImportsourceTabs;
 use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
 use InvalidArgumentException;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Link;
 
 class ImportsourceController extends ActionController
 {
@@ -124,7 +124,7 @@ class ImportsourceController extends ActionController
         $this->addTitle('Clone: %s', $source->get('source_name'));
         $form = new CloneImportSourceForm($source);
         $this->content()->add($form);
-        $form->handleRequest($this->getServerRequest());
+        $form->handleRequest($this->getRequest());
     }
 
     /**

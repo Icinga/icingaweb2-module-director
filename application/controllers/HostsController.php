@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use gipfl\IcingaWeb2\Url;
+use dipl\Web\Url;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
@@ -11,7 +11,7 @@ use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Forms\IcingaAddServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Web\Controller\ObjectsController;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Link;
 
 class HostsController extends ObjectsController
 {

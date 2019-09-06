@@ -2,9 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use gipfl\IcingaWeb2\Url;
-use Icinga\Web\Response;
-use ipl\Html\Form;
+use dipl\Html\Form;
 use Icinga\Web\Window;
 
 class DbSelectorForm extends Form
@@ -18,21 +16,18 @@ class DbSelectorForm extends Form
     /** @var Window */
     protected $window;
 
-    protected $response;
-
-    public function __construct(Response $response, Window $window, $allowedNames)
+    public function __construct(Window $window, $allowedNames)
     {
-        $this->response = $response;
         $this->window = $window;
         $this->allowedNames = $allowedNames;
     }
 
     protected function assemble()
     {
-        $this->addElement('hidden', 'DbSelector', [
+        $this->addElement('DbSelector', 'hidden', [
             'value' => 'sent'
         ]);
-        $this->addElement('select', 'db_resource', [
+        $this->addElement('db_resource', 'select', [
             'options' => $this->allowedNames,
             'class'   => 'autosubmit',
             'value'   => $this->getSession()->get('db_resource')
@@ -46,35 +41,15 @@ class DbSelectorForm extends Form
      */
     public function hasBeenSubmitted()
     {
-        return $this->hasBeenSent() && $this->getRequestParam('DbSelector') === 'sent';
+        return $this->hasBeenSent() && $this->getRequest()->get('DbSelector') === 'sent';
     }
 
     public function onSuccess()
     {
-        $this->getSession()->set('db_resource', $this->getElement('db_resource')->getValue());
-        $this->response->redirectAndExit(Url::fromRequest($this->getRequest()));
+        $this->getSession()->set('db_resource', $this->getValue('db_resource'));
+        $this->redirectOnSuccess();
     }
 
-    protected function getRequestParam($name, $default = null)
-    {
-        $request = $this->getRequest();
-        if ($request === null) {
-            return $default;
-        }
-        if ($request->getMethod() === 'POST') {
-            $params = $request->getParsedBody();
-        } elseif ($this->getMethod() === 'GET') {
-            parse_str($request->getUri()->getQuery(), $params);
-        } else {
-            $params = [];
-        }
-
-        if (array_key_exists($name, $params)) {
-            return $params[$name];
-        }
-
-        return $default;
-    }
     /**
      * @return \Icinga\Web\Session\SessionNamespace
      */

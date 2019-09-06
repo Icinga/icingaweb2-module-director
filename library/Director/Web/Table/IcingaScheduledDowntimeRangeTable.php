@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\IcingaScheduledDowntime;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
 
 class IcingaScheduledDowntimeRangeTable extends ZfQueryBasedTable
 {

@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\DirectorDatalist;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
 
 class DatalistEntryTable extends ZfQueryBasedTable
 {

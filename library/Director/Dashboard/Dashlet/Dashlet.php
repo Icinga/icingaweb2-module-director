@@ -6,11 +6,11 @@ use DirectoryIterator;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Dashboard\Dashboard;
-use ipl\Html\BaseHtmlElement;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Icon;
-use gipfl\IcingaWeb2\Link;
-use gipfl\Translation\TranslationHelper;
+use dipl\Html\BaseHtmlElement;
+use dipl\Html\Html;
+use dipl\Html\Icon;
+use dipl\Html\Link;
+use dipl\Translation\TranslationHelper;
 
 abstract class Dashlet extends BaseHtmlElement
 {

@@ -7,9 +7,9 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\IcingaObjectGroup;
 use Exception;
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
-use gipfl\IcingaWeb2\Url;
+use dipl\Html\Link;
+use dipl\Web\Table\ZfQueryBasedTable;
+use dipl\Web\Url;
 
 class GroupMemberTable extends ZfQueryBasedTable
 {

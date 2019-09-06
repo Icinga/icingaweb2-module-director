@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Link;
 use Icinga\Module\Director\Forms\DirectorJobForm;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\DirectorJob;

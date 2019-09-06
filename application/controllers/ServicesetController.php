@@ -9,7 +9,7 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetHostTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
-use gipfl\IcingaWeb2\Link;
+use dipl\Html\Link;
 
 class ServicesetController extends ObjectController
 {

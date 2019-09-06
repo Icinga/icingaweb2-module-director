@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Url;
+use dipl\Html\Link;
+use dipl\Web\Url;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Web\Controller\ObjectsController;
 
