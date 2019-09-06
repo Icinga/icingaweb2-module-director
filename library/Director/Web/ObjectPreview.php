@@ -2,14 +2,14 @@
 
 namespace Icinga\Module\Director\Web;
 
-use dipl\Html\Text;
+use ipl\Html\Text;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Web\Request;
-use dipl\Html\Html;
-use dipl\Html\Link;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Widget\ControlsAndContent;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Link;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Widget\ControlsAndContent;
 
 class ObjectPreview
 {

@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use dipl\Html\Icon;
+use gipfl\IcingaWeb2\Icon;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 
 class RemoveLinkForm extends DirectorForm

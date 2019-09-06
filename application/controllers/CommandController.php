@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use dipl\Html\Html;
+use ipl\Html\Html;
 use Icinga\Module\Director\Forms\IcingaCommandArgumentForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Resolver\CommandUsage;

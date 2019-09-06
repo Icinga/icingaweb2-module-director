@@ -11,7 +11,7 @@ use Icinga\Module\Director\Web\Table\DatafieldTable;
 use Icinga\Module\Director\Web\Table\DatalistEntryTable;
 use Icinga\Module\Director\Web\Table\DatalistTable;
 use Icinga\Module\Director\Web\Tabs\DataTabs;
-use dipl\Html\Link;
+use gipfl\IcingaWeb2\Link;
 
 class DataController extends ActionController
 {

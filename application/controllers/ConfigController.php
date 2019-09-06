@@ -24,11 +24,11 @@ use Icinga\Module\Director\Web\Widget\ShowConfigFile;
 use Icinga\Web\Notification;
 use Exception;
 use RuntimeException;
-use dipl\Html\Html;
-use dipl\Html\HtmlString;
-use dipl\Html\Icon;
-use dipl\Html\Link;
-use dipl\Web\Url;
+use ipl\Html\Html;
+use ipl\Html\HtmlString;
+use gipfl\IcingaWeb2\Icon;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Url;
 
 class ConfigController extends ActionController
 {
@@ -445,7 +445,7 @@ class ConfigController extends ActionController
     }
 
     /**
-     * @return \dipl\Web\Widget\Tabs
+     * @return \gipfl\IcingaWeb2\Widget\Tabs
      */
     protected function configTabs()
     {

@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
-use dipl\Html\Form;
-use dipl\Html\FormDecorator\DdDtDecorator;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Url;
+use ipl\Html\Form;
+use ipl\Html\FormDecorator\DdDtDecorator;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\ImportSource;
 
 class CloneImportSourceForm extends Form
@@ -26,7 +26,7 @@ class CloneImportSourceForm extends Form
 
     protected function assemble()
     {
-        $this->addElement('source_name', 'text', [
+        $this->addElement('text', 'source_name', [
             'label' => $this->translate('New name'),
             'value' => $this->source->get('source_name'),
         ]);
@@ -49,7 +49,7 @@ class CloneImportSourceForm extends Form
     public function onSuccess()
     {
         $export = $this->source->export();
-        $newName = $this->getValue('source_name');
+        $newName = $this->getElement('source_name')->getValue();
         $export->source_name = $newName;
         unset($export->originalId);
 

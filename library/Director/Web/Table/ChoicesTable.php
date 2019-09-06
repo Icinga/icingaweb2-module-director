@@ -3,9 +3,9 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Db;
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
-use dipl\Web\Url;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Url;
 
 class ChoicesTable extends ZfQueryBasedTable
 {

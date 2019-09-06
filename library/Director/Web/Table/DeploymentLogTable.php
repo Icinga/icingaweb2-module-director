@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
-use dipl\Html\Link;
-use dipl\Web\Table\ZfQueryBasedTable;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use Icinga\Date\DateFormatter;
 
 class DeploymentLogTable extends ZfQueryBasedTable

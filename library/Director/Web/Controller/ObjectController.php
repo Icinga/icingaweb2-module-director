@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
-use dipl\Html\Html;
+use ipl\Html\Html;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
@@ -25,7 +25,7 @@ use Icinga\Module\Director\Web\Table\ActivityLogTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
-use dipl\Html\Link;
+use gipfl\IcingaWeb2\Link;
 
 abstract class ObjectController extends ActionController
 {

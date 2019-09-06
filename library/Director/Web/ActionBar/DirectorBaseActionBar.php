@@ -3,10 +3,10 @@
 namespace Icinga\Module\Director\Web\ActionBar;
 
 use Icinga\Module\Director\Dashboard\Dashboard;
-use dipl\Html\Link;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Widget\ActionBar;
-use dipl\Web\Url;
+use gipfl\IcingaWeb2\Link;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Widget\ActionBar;
+use gipfl\IcingaWeb2\Url;
 
 class DirectorBaseActionBar extends ActionBar
 {

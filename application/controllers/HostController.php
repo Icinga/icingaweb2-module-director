@@ -2,10 +2,10 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use dipl\Html\Html;
-use dipl\Html\Link;
-use dipl\Web\Url;
-use dipl\Web\Widget\Tabs;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\Url;
+use gipfl\IcingaWeb2\Widget\Tabs;
 use Exception;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;

@@ -3,8 +3,8 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use Icinga\Authentication\Auth;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Widget\Tabs;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Widget\Tabs;
 
 class InfraTabs extends Tabs
 {

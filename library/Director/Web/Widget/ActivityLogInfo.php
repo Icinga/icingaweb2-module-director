@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use dipl\Html\HtmlDocument;
-use dipl\Html\HtmlElement;
+use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\ConfigDiff;
@@ -13,13 +13,13 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use dipl\Html\Html;
-use dipl\Html\Icon;
-use dipl\Html\Link;
-use dipl\Translation\TranslationHelper;
-use dipl\Web\Url;
-use dipl\Web\Widget\NameValueTable;
-use dipl\Web\Widget\Tabs;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Icon;
+use gipfl\IcingaWeb2\Link;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Url;
+use gipfl\IcingaWeb2\Widget\NameValueTable;
+use gipfl\IcingaWeb2\Widget\Tabs;
 
 class ActivityLogInfo extends HtmlDocument
 {
