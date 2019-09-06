@@ -8,20 +8,23 @@ class SyncRuleForm extends DirectorObjectForm
 {
     public function setup()
     {
-        $availableTypes = array(
-            'host'             => $this->translate('Host'),
-            'hostgroup'        => $this->translate('Host Group'),
-            'service'          => $this->translate('Service'),
-            'servicegroup'     => $this->translate('Service Group'),
-            'serviceSet'       => $this->translate('Service Set'),
-            'user'             => $this->translate('User'),
-            'usergroup'        => $this->translate('User Group'),
-            'datalistEntry'    => $this->translate('Data List Entry'),
-            'command'          => $this->translate('Command'),
-            'timePeriod'       => $this->translate('Time Period'),
-            'endpoint'         => $this->translate('Endpoint'),
-            'zone'             => $this->translate('Zone'),
-        );
+        $availableTypes = [
+            'host'              => $this->translate('Host'),
+            'hostgroup'         => $this->translate('Host Group'),
+            'service'           => $this->translate('Service'),
+            'servicegroup'      => $this->translate('Service Group'),
+            'serviceSet'        => $this->translate('Service Set'),
+            'user'              => $this->translate('User'),
+            'usergroup'         => $this->translate('User Group'),
+            'datalistEntry'     => $this->translate('Data List Entry'),
+            'command'           => $this->translate('Command'),
+            'timePeriod'        => $this->translate('Time Period'),
+            'notification'      => $this->translate('Notification'),
+            'scheduledDowntime' => $this->translate('Scheduled Downtime'),
+            'dependency'        => $this->translate('Dependency'),
+            'endpoint'          => $this->translate('Endpoint'),
+            'zone'              => $this->translate('Zone'),
+        ];
 
         $this->addElement('text', 'rule_name', array(
             'label'       => $this->translate('Rule name'),

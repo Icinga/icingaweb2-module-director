@@ -31,7 +31,10 @@ CREATE TYPE enum_sync_rule_object_type AS ENUM(
   'endpoint',
   'zone',
   'timePeriod',
-  'serviceSet'
+  'serviceSet',
+  'scheduledDowntime',
+  'notification',
+  'dependency'
 );
 CREATE TYPE enum_sync_rule_update_policy AS ENUM('merge', 'override', 'ignore');
 CREATE TYPE enum_sync_property_merge_policy AS ENUM('override', 'merge');
