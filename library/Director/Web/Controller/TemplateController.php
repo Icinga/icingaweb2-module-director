@@ -12,11 +12,11 @@ use Icinga\Module\Director\Web\Table\ObjectsTable;
 use Icinga\Module\Director\Web\Table\TemplatesTable;
 use Icinga\Module\Director\Web\Table\TemplateUsageTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
-use dipl\Html\FormattedString;
-use dipl\Html\Html;
-use dipl\Html\Link;
-use dipl\Web\CompatController;
-use dipl\Web\Widget\UnorderedList;
+use Icinga\Module\Director\Web\Widget\UnorderedList;
+use ipl\Html\FormattedString;
+use ipl\Html\Html;
+use gipfl\IcingaWeb2\Link;
+use gipfl\IcingaWeb2\CompatController;
 
 abstract class TemplateController extends CompatController
 {

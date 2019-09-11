@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use dipl\Web\Widget\UnorderedList;
+use Icinga\Module\Director\Web\Widget\UnorderedList;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;

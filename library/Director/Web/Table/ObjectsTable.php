@@ -170,6 +170,11 @@ class ObjectsTable extends ZfQueryBasedTable
         return $tr;
     }
 
+    protected function getRowClasses($row)
+    {
+        return [];
+    }
+
     protected function applyObjectTypeFilter(ZfSelect $query)
     {
         return $query->where(

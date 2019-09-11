@@ -2359,12 +2359,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             );
         }
 
-        $str = sprintf(
-            "define %s {\n$name",
-            $type,
-            $name
-        );
-
+        $str = "define $type {\n$name";
         if ($this->isTemplate()) {
             $str .= c1::renderKeyValue('register', '0');
         }

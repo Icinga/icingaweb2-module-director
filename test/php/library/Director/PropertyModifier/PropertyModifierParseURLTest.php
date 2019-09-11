@@ -51,7 +51,7 @@ class PropertyModifierParseURLTest extends BaseTestCase
     }
 
     /**
-     * @expectedException Icinga\Exception\InvalidPropertyException
+     * @expectedException \Icinga\Exception\InvalidPropertyException
      */
     public function testMissingComponentThrowsExceptionOnfailureFail()
     {
@@ -88,7 +88,7 @@ class PropertyModifierParseURLTest extends BaseTestCase
     }
 
     /**
-     * @expectedException Icinga\Exception\InvalidPropertyException
+     * @expectedException \Icinga\Exception\InvalidPropertyException
      */
     public function testInvalidUrlThrowsExceptionOnfailureFail()
     {

@@ -32,7 +32,7 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testGettingFirstFailsForEmptyArray()
     {
@@ -61,7 +61,7 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testGettingLastFailsForEmptyArray()
     {
@@ -90,7 +90,7 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testGettingSpecificFailsForEmptyArray()
     {
@@ -103,7 +103,7 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testGettingSpecificFailsForMissingValue()
     {
@@ -116,7 +116,7 @@ class PropertyModifierArrayElementByPositionTest extends BaseTestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testFailsForStrings()
     {

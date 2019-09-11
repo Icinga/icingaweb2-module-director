@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaServiceAssignment extends IcingaObject
+class IcingaServiceSetAssignment extends IcingaObject
 {
     protected $table = 'icinga_service_set_assignment';
 
