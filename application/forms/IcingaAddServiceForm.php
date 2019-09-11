@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;

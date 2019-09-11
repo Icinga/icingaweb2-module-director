@@ -11,9 +11,7 @@ abstract class IcingaObjectField extends DbObject
      *
      * @param Filter|string $filter
      *
-     * @throws ProgrammingError
-     *
-     * @return self
+     * @return $this
      * @codingStandardsIgnoreStart
      */
     protected function setVar_filter($value)
