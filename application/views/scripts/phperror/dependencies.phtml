@@ -1,0 +1,71 @@
+<?php
+
+use Icinga\Application\Modules\Manager;
+
+?>
+<div class="controls">
+<?= $this->tabs ?>
+<h1><?= $this->escape($this->title) ?></h1>
+</div>
+
+<div class="content">
+<p class="error"><?= $this->escape($this->message) ?></p>
+<table class="common-table table-row-selectable">
+<thead>
+<tr>
+    <th><?= $this->translate('Module name') ?></th>
+    <th><?= $this->translate('Required') ?></th>
+    <th><?= $this->translate('Installed') ?></th>
+</tr>
+</thead>
+<tbody data-base-target="_next">
+<?php
+
+foreach ($this->dependencies as $module => $required) {
+    /** @var Manager $this->modules */
+    if ($modules->hasEnabled($module)) {
+        $installed = $modules->getModule($module, false)->getVersion();
+        $installed = \ltrim($installed, 'v'); // v0.6.0 VS 0.6.0
+        if (\preg_match('/^([<>=]+)\s*v?(\d+\.\d+\.\d+)$/', $required, $match)) {
+            $operator = $match[1];
+            $vRequired = $match[2];
+            if (\version_compare($installed, $vRequired, $operator)) {
+                $icon = 'ok';
+            } else {
+                $icon = 'cancel';
+            }
+        } else {
+            $icon = 'cancel';
+        }
+        $link = $this->qlink(
+                $module,
+                'config/module',
+                ['name' => $module],
+                ['class' => "icon-$icon"]
+        );
+    } elseif ($modules->hasInstalled($module)) {
+        $installed = $this->translate('disabled');
+        $link = $this->qlink($module, 'config/module', ['name' => $module], ['class' => 'icon-cancel']);
+    } else {
+        $installed = $this->translate('missing');
+        $link = sprintf(
+            '<a href="#" class="icon-cancel">%s</a> (<a href="https://github.com/Icinga/icingaweb2-module-%s"'
+            . ' target="_blank" rel="noreferrer">%s</a>)',
+            $this->escape($module),
+            $this->escape($module),
+            $this->translate('more')
+        );
+    }
+
+    \printf(
+        '<tr><td>%s</a></td><td>%s</td><td>%s</td></tr>',
+        $link,
+        $this->escape($required),
+        $this->escape($installed)
+    );
+}
+
+?>
+</tbody>
+</table>
+</div>
