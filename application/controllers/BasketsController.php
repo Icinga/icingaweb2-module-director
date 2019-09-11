@@ -45,7 +45,8 @@ class BasketsController extends ActionController
         )));
         $table = (new BasketTable($this->db()))
             ->setAttribute('data-base-target', '_self');
-        if ($table->hasSearch() || count($table)) {
+        // TODO: temporarily disabled, this was a thing in dipl
+        if (/*$table->hasSearch() || */count($table)) {
             $table->renderTo($this);
         }
     }
