@@ -21,7 +21,7 @@ class ExtensibleSet
 
     protected $inheritedValues = array();
 
-    protected $fromDb = false;
+    protected $fromDb;
 
     /**
      * @var IcingaObject
