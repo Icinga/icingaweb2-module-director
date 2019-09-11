@@ -54,7 +54,7 @@ class ObjectsTableEndpoint extends ObjectsTable
     public function getRowClasses($row)
     {
         if ($row->object_name === $this->deploymentEndpoint) {
-            return array('deployment-endpoint', parent::getRowClasses($row));
+            return array_merge(array('deployment-endpoint'), parent::getRowClasses($row));
         } else {
             return null;
         }
