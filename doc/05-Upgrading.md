@@ -16,6 +16,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.7.x](#upgrade-to-1.7.x)
 * [Upgrading to 1.6.x](#upgrade-to-1.6.x)
 * [Upgrading to 1.5.x](#upgrade-to-1.5.x)
 * [Upgrading to 1.4.x](#upgrade-to-1.4.x)
@@ -37,6 +38,23 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.7.x"></a>Upgrading to 1.7.x
+-------------------------------------------------
+
+Since v1.7.0 Icinga Director requires at least PHP 5.6. Also, this version
+introduces new dependencies. Please make sure that the following Icinga Web 2
+modules have been installed and enabled:
+
+* [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
+* [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.3.0)
+* [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.6.0)
+
+Apart from this, in case you are running 1.6.x or any GIT master since then,
+all you need is to replace the Director module folder with the new one. Or to
+run `git checkout v1.7.x` in case you installed Director from GIT.
+
+As always, you'll then be prompted to apply pending Database Migrations.
 
 <a name="upgrade-to-1.6.x"></a>Upgrading to 1.6.x
 -------------------------------------------------
