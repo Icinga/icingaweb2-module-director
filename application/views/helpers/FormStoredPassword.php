@@ -1,7 +1,7 @@
 <?php
 
-use dipl\Html\Html;
-use dipl\Html\HtmlDocument;
+use ipl\Html\Html;
+use ipl\Html\HtmlDocument;
 
 /**
  * Please see StoredPassword (the Form Element) for related documentation
