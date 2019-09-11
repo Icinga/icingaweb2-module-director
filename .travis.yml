@@ -11,9 +11,9 @@ services:
   - mysql
   - postgresql
 
-cache:
-  directories:
-    - vendor
+#cache:
+#  directories:
+#    - vendor
 
 matrix:
   fast_finish: true
