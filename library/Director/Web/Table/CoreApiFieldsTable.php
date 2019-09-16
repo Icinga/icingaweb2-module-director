@@ -31,8 +31,10 @@ class CoreApiFieldsTable extends Table
 
     public function assemble()
     {
-        $this->header();
-        $body = $this->body();
+        if (empty($this->fields)) {
+            return;
+        }
+        $this->add(Html::tag('thead', Html::tag('tr', Html::wrapEach($this->getColumnsToBeRendered(), 'th'))));
         foreach ($this->fields as $name => $field) {
             $tr = $this::tr([
                 $this::td($name),
@@ -45,7 +47,7 @@ class CoreApiFieldsTable extends Table
                 // $this::td($this->renderKeyValue($field->attributes))
             ]);
             $this->addAttributeColumns($tr, $field->attributes);
-            $body->add($tr);
+            $this->add($tr);
         }
     }
 

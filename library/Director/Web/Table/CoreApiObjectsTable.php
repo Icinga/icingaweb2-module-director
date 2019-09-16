@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\Html;
 use ipl\Html\Table;
 use gipfl\Translation\TranslationHelper;
 
@@ -32,10 +33,12 @@ class CoreApiObjectsTable extends Table
 
     public function assemble()
     {
-        $this->header();
-        $body = $this->body();
+        if (empty($this->objects)) {
+            return;
+        }
+        $this->add(Html::tag('thead', Html::tag('tr', Html::wrapEach($this->getColumnsToBeRendered(), 'th'))));
         foreach ($this->objects as $name) {
-            $body->add($this::tr($this::td(Link::create(
+            $this->add($this::tr($this::td(Link::create(
                 str_replace('!', ': ', $name),
                 'director/inspect/object',
                 [

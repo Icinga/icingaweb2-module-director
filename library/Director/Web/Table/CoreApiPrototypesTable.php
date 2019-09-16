@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use ipl\Html\Html;
 use ipl\Html\Table;
 use gipfl\Translation\TranslationHelper;
 
@@ -23,11 +24,13 @@ class CoreApiPrototypesTable extends Table
 
     public function assemble()
     {
-        $this->header();
-        $body = $this->body();
+        if (empty($this->prototypes)) {
+            return;
+        }
+        $this->add(Html::tag('thead', Html::tag('tr', Html::wrapEach($this->getColumnsToBeRendered(), 'th'))));
         $type = $this->typeName;
         foreach ($this->prototypes as $name) {
-            $body->add($this::tr($this::td("$type.$name()")));
+            $this->add($this::tr($this::td("$type.$name()")));
         }
     }
 
