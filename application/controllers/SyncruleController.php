@@ -160,7 +160,17 @@ class SyncruleController extends ActionController
         $this->tabs(new SyncRuleTabs($rule))->activate('preview');
         $this->addTitle('Sync Preview');
         $sync = new Sync($rule);
-        $modifications = $sync->getExpectedModifications();
+        try {
+            $modifications = $sync->getExpectedModifications();
+        } catch (\Exception $e) {
+            $this->content()->add(
+                Html::tag('p', [
+                    'class' => 'error'
+                ], $e->getMessage())
+            );
+
+            return;
+        }
 
         if (empty($modifications)) {
             $this->content()->add(Html::tag('p', [
