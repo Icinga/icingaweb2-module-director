@@ -98,10 +98,9 @@ class TemplateUsageTable extends Table
         }
 
         if ($used) {
-            $this->generateHeader();
-            $this->body()->add($rows);
+            $this->add($rows);
         } else {
-            $this->body()->add($this->translate('This template is not in use'));
+            $this->add($this->translate('This template is not in use'));
         }
     }
 
