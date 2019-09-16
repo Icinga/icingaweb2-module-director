@@ -317,7 +317,7 @@ abstract class DbObject
 
         if (! $this->hasProperty($key)) {
             throw new InvalidArgumentException(sprintf(
-                'Trying to set invalid key %s',
+                'Trying to set invalid key "%s"',
                 $key
             ));
         }
