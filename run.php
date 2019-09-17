@@ -78,7 +78,8 @@ foreach ($this->getDependencies() as $module => $required) {
                 continue;
             }
         }
-        include __DIR__ . '/run-missingdeps.php';
-        return;
     }
+
+    include __DIR__ . '/run-missingdeps.php';
+    return;
 }
