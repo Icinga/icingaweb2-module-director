@@ -593,23 +593,6 @@ with existing ones and persists eventual changes.
 | `--id <id>`   | A Sync Rule ID. Use the list command to figure out |
 | `--benchmark` | Show timing and memory usage details               |
 
-### Running Jobs
-The `jobs` command runs pending Import and Sync jobs. Please note that we have
-planned a scheduler configurable through the Icinga Director web interface, but
-this is not available yes.
-
-So the only option you have right now is to trigger all jobs at once:
-
-```shell
-icingacli director jobs run
-```
-
-The output could look as follows:
-
-```
-Import "Puppet DB (PE 2015)" provides changes, triggering run... SUCCEEDED
-Sync rule "Hosts from PE2015" provides changes, triggering sync... SUCCEEDED
-```
 
 Database housekeeping
 ---------------------

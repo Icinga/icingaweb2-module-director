@@ -7,6 +7,10 @@ div.action-bar a:focus, .tabs a:focus {
   }
 }
 
+a:before {
+  text-decoration: none;
+}
+
 form:focus {
   outline: none;
 }
@@ -1075,7 +1079,7 @@ span.error {
   }
 }
 
-p.error {
+p.error:not(.state-hint) {
     color: white;
     padding: 1em 2em;
     background-color: @colorCritical;
@@ -1087,7 +1091,7 @@ p.error {
     }
 }
 
-p.warning {
+p.warning:not(.state-hint) {
     color: white;
     padding: 1em 2em;
     background-color: @colorWarning;
@@ -1099,7 +1103,7 @@ p.warning {
     }
 }
 
-p.information {
+p.information:not(.state-hint) {
     color: white;
     padding: 1em 2em;
     background-color: @colorOk;
@@ -1109,6 +1113,45 @@ p.information {
         color: inherit;
         text-decoration: underline;
     }
+}
+
+p.state-hint {
+  border: 1px solid @text-color;
+  padding: 0.5em;
+  line-height: 2em;
+  max-width: 60em;
+  border-left-width: 3em;
+  &:before {
+    position: relative;
+    margin-left: -1.5em;
+    margin-right: 0.5em;
+    height: 100%;
+    vertical-align: middle;
+    font-family: 'ifont';
+    color: white;
+    font-size: 2em;
+  }
+  &.ok {
+    border-color: @color-ok;
+  }
+  &.warning {
+    border-color: @color-warning;
+  }
+  &.error {
+    border-color: @color-critical;
+  }
+  &.critical:before, &.error:before {
+    content: '\e885';
+  }
+  &.warning:before {
+    content: '\e885';
+  }
+  &.ok:before {
+    content: '\e803';
+  }
+  a {
+    text-decoration: underline;
+  }
 }
 
 table th.actions, table td.actions {

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Web\Tabs\MainTabs;
 use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;
 use Icinga\Module\Director\Dashboard\Dashboard;
 use Icinga\Module\Director\Health;
@@ -45,22 +46,7 @@ class DashboardController extends ActionController
             $dashboard = Dashboard::loadByName($name, $this->db());
             $this->tabs($dashboard->getTabs())->activate($name);
         } else {
-            $this->tabs()->add('main', [
-                'label' => $this->translate('Overview'),
-                'url' => 'director'
-            ])->activate('main');
-            if ($this->hasPermission('director/admin')) {
-                $this->tabs()->add('health', [
-                    'label' => $this->translate('Health'),
-                    'url' => 'director/health'
-                ]);
-                $state = $this->getHealthState();
-                if ($state->isProblem()) {
-                    $this->tabs()->get('health')->setTagParams([
-                        'class' => 'state-' . strtolower($state->getName())
-                    ]);
-                }
-            }
+            $this->tabs(new MainTabs($this->Auth(), $this->getDbResourceName()))->activate('main');
         }
 
         $cntDashboards = 0;
@@ -82,17 +68,5 @@ class DashboardController extends ActionController
             );
             $this->content()->add($msg);
         }
-    }
-
-    /**
-     * @return \Icinga\Module\Director\CheckPlugin\PluginState
-     */
-    protected function getHealthState()
-    {
-        $health = new Health();
-        $health->setDbResourceName($this->getDbResourceName());
-        $output = new HealthCheckPluginOutput($health);
-
-        return $output->getState();
     }
 }

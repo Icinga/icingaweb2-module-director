@@ -54,7 +54,10 @@ Apart from this, in case you are running 1.6.x or any GIT master since then,
 all you need is to replace the Director module folder with the new one. Or to
 run `git checkout v1.7.x` in case you installed Director from GIT.
 
-As always, you'll then be prompted to apply pending Database Migrations.
+As always, you'll then be prompted to apply pending Database Migrations. There
+is now a new, modern (and mandatory) Background Daemon, the old (optional) Jobs
+Daemon must be removed. Please check our [documentation](75-Background-Daemon.md)
+for related instructions.
 
 <a name="upgrade-to-1.6.x"></a>Upgrading to 1.6.x
 -------------------------------------------------

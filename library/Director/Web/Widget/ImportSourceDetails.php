@@ -20,9 +20,6 @@ class ImportSourceDetails extends HtmlDocument
         $this->source = $source;
     }
 
-    /**
-     * @throws \Icinga\Exception\IcingaException
-     */
     protected function assemble()
     {
         $source = $this->source;
@@ -35,7 +32,7 @@ class ImportSourceDetails extends HtmlDocument
             case 'unknown':
                 $this->add(Html::tag(
                     'p',
-                    null,
+                    ['class' => 'state-hint warning'],
                     $this->translate(
                         "It's currently unknown whether we are in sync with this Import Source."
                         . ' You should either check for changes or trigger a new Import Run.'
@@ -43,7 +40,7 @@ class ImportSourceDetails extends HtmlDocument
                 ));
                 break;
             case 'in-sync':
-                $this->add(Html::tag('p', null, sprintf(
+                $this->add(Html::tag('p', ['class' => 'state-hint ok'], sprintf(
                     $this->translate(
                         'This Import Source was last found to be in sync at %s.'
                     ),
@@ -54,13 +51,13 @@ class ImportSourceDetails extends HtmlDocument
                 // - there have been activities since then
                 break;
             case 'pending-changes':
-                $this->add(Html::tag('p', ['class' => 'warning'], $this->translate(
+                $this->add(Html::tag('p', ['class' => 'state-hint warning'], $this->translate(
                     'There are pending changes for this Import Source. You should trigger a new'
                     . ' Import Run.'
                 )));
                 break;
             case 'failing':
-                $this->add(Html::tag('p', ['class' => 'error'], sprintf(
+                $this->add(Html::tag('p', ['class' => 'state-hint error'], sprintf(
                     $this->translate(
                         'This Import Source failed when last checked at %s: %s'
                     ),
@@ -69,7 +66,7 @@ class ImportSourceDetails extends HtmlDocument
                 )));
                 break;
             default:
-                $this->add(Html::tag('p', ['class' => 'error'], sprintf(
+                $this->add(Html::tag('p', ['class' => 'state-hint error'], sprintf(
                     $this->translate('This Import Source has an invalid state: %s'),
                     $source->get('import_state')
                 )));
