@@ -25,6 +25,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierExtractFromDN;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierFromAdSid;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierFromLatin1;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierGetHostByName;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierGetPropertyFromOtherImportSource;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierJoin;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierJsonDecode;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierLConfCustomVar;
@@ -83,6 +84,7 @@ $directorHooks = [
         PropertyModifierFromAdSid::class,
         PropertyModifierFromLatin1::class,
         PropertyModifierGetHostByName::class,
+        PropertyModifierGetPropertyFromOtherImportSource::class,
         PropertyModifierJoin::class,
         PropertyModifierJsonDecode::class,
         PropertyModifierLConfCustomVar::class,
