@@ -409,8 +409,7 @@ class BasketSnapshot extends DbObject
                 foreach ($filter as $column => $value) {
                     $select->where("$column = ?", $value);
                 }
-            }
-            if (! $dummy->isGroup()
+            } elseif (! $dummy->isGroup()
                 // TODO: this is ugly.
                 && ! $dummy instanceof IcingaDependency
                 && ! $dummy instanceof IcingaTimePeriod
