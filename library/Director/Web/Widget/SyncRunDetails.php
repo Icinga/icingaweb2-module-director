@@ -58,11 +58,12 @@ class SyncRunDetails extends NameValueTable
             $formerId = $db->fetchActivityLogIdByChecksum($run->last_former_activity);
             $lastId = $db->fetchActivityLogIdByChecksum($run->last_related_activity);
 
-            $activityUrl = sprintf(
-                'director/config/activities?id>%d&id<=%d',
+            $idRangeEx = sprintf(
+                'id>%d&id<=%d',
                 $formerId,
                 $lastId
             );
+            $activityUrl = 'director/config/activities';
 
             $links = new HtmlDocument();
             $links->setSeparator(', ');
@@ -70,28 +71,29 @@ class SyncRunDetails extends NameValueTable
                 $links->add(new Link(
                     sprintf('%d created', $run->objects_created),
                     $activityUrl,
-                    ['action' => 'create']
+                    ['action' => 'create', 'idRangeEx' => $idRangeEx]
                 ));
             }
             if ($run->objects_modified > 0) {
                 $links->add(new Link(
                     sprintf('%d modified', $run->objects_modified),
                     $activityUrl,
-                    ['action' => 'modify']
+                    ['action' => 'modify', 'idRangeEx' => $idRangeEx]
                 ));
             }
             if ($run->objects_deleted > 0) {
                 $links->add(new Link(
                     sprintf('%d deleted', $run->objects_deleted),
                     $activityUrl,
-                    ['action' => 'delete']
+                    ['action' => 'delete', 'idRangeEx' => $idRangeEx]
                 ));
             }
 
             if (count($links) > 1) {
                 $links->add(new Link(
                     'Show all actions',
-                    $activityUrl
+                    $activityUrl,
+                    ['idRangeEx' => $idRangeEx]
                 ));
             }
 

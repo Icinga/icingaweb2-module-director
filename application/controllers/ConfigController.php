@@ -142,8 +142,11 @@ class ConfigController extends ActionController
         $lastDeployedId = $this->db()->getLastDeploymentActivityLogId();
         $table = new ActivityLogTable($this->db());
         $table->setLastDeployedId($lastDeployedId);
+        if ($idRangeEx = $this->url()->getParam('idRangeEx')) {
+            $table->applyFilter(Filter::fromQueryString($idRangeEx));
+        }
         $filter = Filter::fromQueryString(
-            $this->url()->without(['page', 'limit', 'q'])->getQueryString()
+            $this->url()->without(['page', 'limit', 'q', 'idRangeEx'])->getQueryString()
         );
         $table->applyFilter($filter);
         if ($this->url()->hasParam('author')) {
