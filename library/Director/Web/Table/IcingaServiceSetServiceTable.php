@@ -97,17 +97,6 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $this;
     }
 
-    protected function addHeaderColumnsTo(HtmlElement $parent)
-    {
-        if ($this->host || $this->affectedHost) {
-            $this->addHostHeaderTo($parent);
-        } else {
-            parent::addHeaderColumnsTo($parent);
-        }
-
-        return $parent;
-    }
-
     /**
      * @param $row
      * @return BaseHtmlElement
@@ -160,11 +149,6 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         return $tr;
     }
 
-    public function getColumnsToBeRendered()
-    {
-        return ['Will not be rendered'];
-    }
-
     protected function getTitle()
     {
         return $this->title ?: $this->translate('Servicename');
@@ -173,8 +157,12 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     /**
      * @param HtmlElement $parent
      */
-    protected function addHostHeaderTo(HtmlElement $parent)
+    protected function renderTitleColumns()
     {
+        if (! $this->host || ! $this->affectedHost) {
+            return Html::tag('th', $this->getTitle());
+        }
+
         if (! $this->host) {
             $deleteLink = '';
         } elseif ($this->readonly) {
@@ -232,7 +220,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
             $deleteLink->handleRequest();
         }
 
-        $parent->add($this::th([$this->getTitle(), $deleteLink]));
+        return $this::th([$this->getTitle(), $deleteLink]);
     }
 
     /**
