@@ -347,6 +347,18 @@ class IcingaHost extends IcingaObject implements ExportInterface
         }
     }
 
+    public function beforeDelete()
+    {
+        foreach ($this->fetchServices() as $service) {
+            $service->delete();
+        }
+        foreach ($this->fetchServiceSets() as $set) {
+            $set->delete();
+        }
+
+        parent::beforeDelete();
+    }
+
     public function hasAnyOverridenServiceVars()
     {
         $varname = $this->getServiceOverrivesVarname();
