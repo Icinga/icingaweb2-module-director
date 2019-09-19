@@ -308,6 +308,9 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
     protected function applyPropertyModifierToRow(PropertyModifierHook $modifier, $key, $row)
     {
+        if (! is_object($row)) {
+            throw new InvalidArgumentException('Every imported row MUST be an object');
+        }
         if ($modifier->requiresRow()) {
             $modifier->setRow($row);
         }

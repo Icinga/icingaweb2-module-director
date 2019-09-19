@@ -199,6 +199,11 @@ abstract class PropertyModifierHook
         return $this;
     }
 
+    public function exportSettings()
+    {
+        return (object) $this->settings;
+    }
+
     /**
      * Override this method if you want to extend the settings form
      *

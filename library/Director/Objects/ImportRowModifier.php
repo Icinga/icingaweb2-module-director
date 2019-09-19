@@ -62,7 +62,7 @@ class ImportRowModifier extends DbObjectWithSettings
         $properties =  $this->getProperties();
         unset($properties['id']);
         unset($properties['source_id']);
-        $properties['settings'] = (object) $this->getSettings();
+        $properties['settings'] = $this->getInstance()->exportSettings();
         ksort($properties);
 
         return (object) $properties;
