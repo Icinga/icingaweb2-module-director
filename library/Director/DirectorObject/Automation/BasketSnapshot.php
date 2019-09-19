@@ -471,6 +471,8 @@ class BasketSnapshot extends DbObject
             $identifier,
             $connection
         );
-        $this->objects[$typeName][$identifier] = $object->export();
+        if ($object !== null) {
+            $this->objects[$typeName][$identifier] = $object->export();
+        }
     }
 }
