@@ -19,9 +19,11 @@ abstract class DbObjectWithSettings extends DbObject
     {
         if ($this->hasProperty($key)) {
             return parent::set($key, $value);
+        } elseif ($this->hasSetterForProperty($key)) { // Hint: hasProperty checks only for Getters
+            return parent::set($key, $value);
         }
 
-        if (! array_key_exists($key, $this->settings) || $value !== $this->settings[$key]) {
+        if (! \array_key_exists($key, $this->settings) || $value !== $this->settings[$key]) {
             $this->hasBeenModified = true;
         }
 
