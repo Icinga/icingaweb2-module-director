@@ -268,14 +268,28 @@ abstract class DbObject
             // There is getId, would give false positive
             return false;
         }
+
+        return $this->hasGetterForProperty($key);
+    }
+
+    protected function hasGetterForProperty($key)
+    {
         $func = 'get' . ucfirst($key);
-        if (substr($func, -2) === '[]') {
+        if (\substr($func, -2) === '[]') {
             $func = substr($func, 0, -2);
         }
-        if (method_exists($this, $func)) {
-            return true;
+
+        return \method_exists($this, $func);
+    }
+
+    protected function hasSetterForProperty($key)
+    {
+        $func = 'set' . ucfirst($key);
+        if (\substr($func, -2) === '[]') {
+            $func = substr($func, 0, -2);
         }
-        return false;
+
+        return \method_exists($this, $func);
     }
 
     /**
