@@ -23,11 +23,11 @@ class AddToBasketForm extends DirectorForm
      */
     public function setup()
     {
-        $baskets = Basket::loadAll($this->getDb());
-        $enum = [];
-        foreach ($baskets as $basket) {
-            $enum[$basket->get('basket_name')] = $basket->get('basket_name');
-        }
+        $db = $this->getDb()->getDbAdapter();
+        $enum = $db->fetchPairs($db->select()->from('director_basket', [
+            'a' => 'basket_name',
+            'b' => 'basket_name',
+        ])->order('basket_name'));
 
         $names = [];
         $basket = null;

@@ -45,6 +45,6 @@ class BasketTable extends ZfQueryBasedTable
             ['bs' => 'director_basket_snapshot'],
             'bs.basket_uuid = b.uuid',
             []
-        )->group('b.uuid');
+        )->group('b.uuid')->order('b.basket_name');
     }
 }
