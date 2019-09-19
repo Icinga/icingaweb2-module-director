@@ -7,7 +7,7 @@ use Icinga\Web\Url;
 
 if (Icinga::app()->isCli()) {
     throw new IcingaException(
-        "PHP version 5.4.x is required for Director >= 1.4.0, you're running %s."
+        "PHP version 5.6.x is required for Director >= 1.7.0, you're running %s."
         . ' Please either upgrade PHP or downgrade Icinga Director',
         PHP_VERSION
     );
