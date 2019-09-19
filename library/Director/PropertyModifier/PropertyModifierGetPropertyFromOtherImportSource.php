@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\PropertyModifier;
 
-use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Objects\ImportRowModifier;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -65,6 +64,24 @@ class PropertyModifierGetPropertyFromOtherImportSource extends PropertyModifierH
                 'The property to get from the row we found in the chosen Import Source'
             ),
         ] + $extra);
+    }
+
+    /**
+     * @param $settings
+     * @return PropertyModifierHook
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function setSettings(array $settings)
+    {
+        if (isset($settings['import_source'])) {
+            $settings['import_source_id'] = ImportSource::load(
+                $settings['import_source'],
+                $this->getDb()
+            )->get('id');
+            unset($settings['import_source']);
+        }
+
+        return parent::setSettings($settings);
     }
 
     public function transform($value)

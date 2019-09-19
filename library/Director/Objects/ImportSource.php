@@ -47,6 +47,8 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
     private $rowModifiers;
 
+    private $loadedRowModifiers;
+
     private $newRowModifiers;
 
     /**
@@ -101,14 +103,43 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
             $object = static::create([], $db);
         }
 
-        $object->newRowModifiers = $properties['modifiers'];
-        unset($properties['modifiers']);
         $object->setProperties($properties);
         if ($id !== null) {
+            // TODO: really?
             $object->reallySet('id', $id);
         }
 
         return $object;
+    }
+
+    public function setModifiers(array $modifiers)
+    {
+        if ($this->loadedRowModifiers === null) {
+            $this->loadedRowModifiers = $this->fetchRowModifiers();
+        }
+        $current = $this->loadedRowModifiers;
+        if (count($current) !== count($modifiers)) {
+            $this->newRowModifiers = $modifiers;
+        } else {
+            $i = 0;
+            $modified = false;
+            foreach ($modifiers as $props) {
+                $this->loadedRowModifiers[$i]->setProperties((array) $props);
+                if ($this->loadedRowModifiers[$i]->hasBeenModified()) {
+                    $modified = true;
+                }
+            }
+            if ($modified) {
+                // TOOD: no newRowModifiers, directly store loaded ones if diff
+                $this->newRowModifiers = $modifiers;
+            }
+        }
+    }
+
+    public function hasBeenModified()
+    {
+        return $this->newRowModifiers !== null
+            || parent::hasBeenModified();
     }
 
     public function getUniqueIdentifier()

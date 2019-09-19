@@ -178,7 +178,7 @@ abstract class PropertyModifierHook
         return $this->db;
     }
 
-    public function setSettings($settings)
+    public function setSettings(array $settings)
     {
         $this->settings = $settings;
         return $this;
@@ -202,6 +202,11 @@ abstract class PropertyModifierHook
     public function exportSettings()
     {
         return (object) $this->settings;
+    }
+
+    public function getSettings()
+    {
+        return $this->settings;
     }
 
     /**
