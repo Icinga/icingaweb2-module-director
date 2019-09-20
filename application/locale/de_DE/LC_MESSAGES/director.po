@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Director Module (master)\n"
 "Report-Msgid-Bugs-To: dev@icinga.com\n"
 "POT-Creation-Date: 2019-09-20 09:34+0200\n"
-"PO-Revision-Date: 2019-09-20 10:27+0200\n"
+"PO-Revision-Date: 2019-09-20 10:31+0200\n"
 "Last-Translator: Thomas Gelf <thomas@gelf.net>\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
@@ -6039,7 +6039,7 @@ msgstr "Nicht-verknüpfte importierte Zeilen"
 #: ../../../../application/controllers/PhperrorController.php:20
 #: ../../../../application/controllers/PhperrorController.php:36
 msgid "Unsatisfied dependencies"
-msgstr "Unbefriedigte Abhängigkeiten"
+msgstr "Unerfüllte Abhängigkeiten"
 
 #: ../../../../library/Director/Db/Housekeeping.php:50
 msgid "Unused rendered files"
