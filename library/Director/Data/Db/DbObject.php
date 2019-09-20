@@ -988,6 +988,10 @@ abstract class DbObject
             $logId = $id;
         }
 
+        if ($logId === null && $this->autoincKeyName) {
+            $logId = $this->getAutoincId();
+        }
+
         return $logId;
     }
 
