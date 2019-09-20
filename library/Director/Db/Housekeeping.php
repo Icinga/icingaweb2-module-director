@@ -112,10 +112,19 @@ class Housekeeping
         $conn = $this->connection;
         $lastActivity = $conn->getLastActivityChecksum();
 
-        $sql = 'DELETE c.* FROM director_generated_config c'
-             . ' LEFT JOIN director_deployment_log d ON c.checksum = d.config_checksum'
-             . ' WHERE d.config_checksum IS NULL'
-             . '   AND ? != ' . $conn->dbHexFunc('c.last_activity_checksum');
+        if ($this->connection->isPgsql()) {
+            $sql = 'DELETE FROM director_generated_config'
+                . ' USING director_generated_config AS c'
+                . ' LEFT JOIN director_deployment_log d ON c.checksum = d.config_checksum'
+                . ' WHERE director_generated_config.checksum = c.checksum'
+                . '   AND d.config_checksum IS NULL'
+                . '   AND ? != ' . $conn->dbHexFunc('c.last_activity_checksum');
+        } else {
+            $sql = 'DELETE c.* FROM director_generated_config c'
+                . ' LEFT JOIN director_deployment_log d ON c.checksum = d.config_checksum'
+                . ' WHERE d.config_checksum IS NULL'
+                . '   AND ? != ' . $conn->dbHexFunc('c.last_activity_checksum');
+        }
 
         return $this->db->query($sql, $lastActivity);
     }
@@ -131,9 +140,17 @@ class Housekeeping
 
     public function wipeUnusedFiles()
     {
-        $sql = 'DELETE f FROM director_generated_file f'
-             . ' LEFT JOIN director_generated_config_file cf ON f.checksum = cf.file_checksum'
-             . ' WHERE cf.file_checksum IS NULL';
+        if ($this->connection->isPgsql()) {
+            $sql = 'DELETE FROM director_generated_file'
+                . ' USING director_generated_file AS f'
+                . ' LEFT JOIN director_generated_config_file cf ON f.checksum = cf.file_checksum'
+                . ' WHERE director_generated_file.checksum = f.checksum'
+                . ' AND cf.file_checksum IS NULL';
+        } else {
+            $sql = 'DELETE f FROM director_generated_file f'
+                . ' LEFT JOIN director_generated_config_file cf ON f.checksum = cf.file_checksum'
+                . ' WHERE cf.file_checksum IS NULL';
+        }
 
         return $this->db->exec($sql);
     }
@@ -150,8 +167,17 @@ class Housekeeping
     {
         // This one removes imported_rowset and imported_rowset_row
         // entries no longer used by any historic import<F12>
-        $sql = 'DELETE rs.* FROM imported_rowset rs LEFT JOIN import_run r'
-            . ' ON r.rowset_checksum = rs.checksum WHERE r.id IS NULL';
+        if ($this->connection->isPgsql()) {
+            $sql = 'DELETE FROM imported_rowset'
+                . ' USING  imported_rowset AS rs'
+                . ' LEFT JOIN import_run r ON r.rowset_checksum = rs.checksum'
+                . ' WHERE imported_rowset.checksum = rs.checksum'
+                . ' AND r.id IS NULL';
+        } else {
+            $sql = 'DELETE rs.* FROM imported_rowset rs'
+                . ' LEFT JOIN import_run r ON r.rowset_checksum = rs.checksum'
+                . ' WHERE r.id IS NULL';
+        }
 
         return $this->db->exec($sql);
     }
@@ -168,8 +194,17 @@ class Housekeeping
     {
         // This query removes imported_row and imported_row_property columns
         // without related rowset
-        $sql = 'DELETE r.* FROM imported_row r LEFT JOIN imported_rowset_row rsr'
-            . ' ON rsr.row_checksum = r.checksum WHERE rsr.row_checksum IS NULL';
+        if ($this->connection->isPgsql()) {
+            $sql = 'DELETE FROM imported_row'
+                . ' USING imported_row AS r'
+                . ' LEFT JOIN imported_rowset_row rsr ON rsr.row_checksum = r.checksum'
+                . ' WHERE imported_row.checksum = r.checksum'
+                . ' AND rsr.row_checksum IS NULL';
+        } else {
+            $sql = 'DELETE r.* FROM imported_row r'
+                . ' LEFT JOIN imported_rowset_row rsr ON rsr.row_checksum = r.checksum'
+                . ' WHERE rsr.row_checksum IS NULL';
+        }
 
         return $this->db->exec($sql);
     }
@@ -185,8 +220,17 @@ class Housekeeping
     public function wipeUnlinkedImportedProperties()
     {
         // This query removes unlinked imported properties
-        $sql = 'DELETE p.* FROM imported_property p LEFT JOIN imported_row_property rp'
-            . ' ON rp.property_checksum = p.checksum WHERE rp.property_checksum IS NULL';
+        if ($this->connection->isPgsql()) {
+            $sql = 'DELETE FROM imported_property'
+                . ' USING imported_property AS p'
+                . ' LEFT JOIN imported_row_property rp ON rp.property_checksum = p.checksum'
+                . ' WHERE imported_property.checksum = p.checksum'
+                . ' AND rp.property_checksum IS NULL';
+        } else {
+            $sql = 'DELETE p.* FROM imported_property p'
+                . ' LEFT JOIN imported_row_property rp ON rp.property_checksum = p.checksum'
+                . ' WHERE rp.property_checksum IS NULL';
+        }
 
         return $this->db->exec($sql);
     }
