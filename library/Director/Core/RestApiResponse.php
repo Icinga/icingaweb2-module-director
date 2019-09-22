@@ -98,7 +98,12 @@ class RestApiResponse
         $result = @json_decode($json);
         if ($result === null) {
             $this->setJsonError();
-            throw new IcingaException('Parsing JSON result failed: ' . $this->errorMessage);
+            // <h1>Bad Request</h1><p><pre>bad version</pre></p>
+            throw new IcingaException(
+                'Parsing JSON result failed: '
+                . $this->errorMessage
+                . ' (Got: ' . substr($json, 0, 60) . ')'
+            );
         }
         if (property_exists($result, 'error')) {
             if (property_exists($result, 'status')) {
