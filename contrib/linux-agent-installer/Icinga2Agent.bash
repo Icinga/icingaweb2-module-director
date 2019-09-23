@@ -109,7 +109,7 @@ redhat)
 esac
 
 icinga_version() {
-  "$ICINGA2_BIN" --version 2>/dev/null | grep -oP 'version: [rv]\K\d+\.\d+\.\d+[^\)]*'
+  "$ICINGA2_BIN" --version 2>/dev/null | grep -oP 'version: [rv]?\K\d+\.\d+\.\d+[^\)]*'
 }
 
 icinga_major() {
