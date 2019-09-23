@@ -4,15 +4,13 @@ namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Core\DeploymentApiInterface;
-use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
-// use Icinga\Module\Director\Objects\DirectorDeploymentLog;
-use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\DirectorForm;
-use Icinga\Module\Director\Web\Form\QuickForm;
 
 class DeployConfigForm extends DirectorForm
 {
+    use DeployFormsBug7530;
+
     /** @var DeploymentApiInterface */
     private $api;
 
@@ -70,8 +68,11 @@ class DeployConfigForm extends DirectorForm
 
     public function onSuccess()
     {
+        if ($this->skipBecauseOfBug7530()) {
+            return;
+        }
+
         $db = $this->db;
-        $checksum = $this->checksum;
         $msg = $this->translate('Config has been submitted, validation is going on');
         $this->setSuccessMessage($msg);
 

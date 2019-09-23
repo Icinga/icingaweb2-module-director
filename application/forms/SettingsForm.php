@@ -85,6 +85,26 @@ class SettingsForm extends DirectorForm
             'value' => $settings->getStoredValue('enable_audit_log')
         ));
 
+        if ($settings->getStoredValue('ignore_bug7530')) {
+            // Show this only for those who touched this setting
+            $this->addElement('select', 'ignore_bug7530', array(
+                'label'        => $this->translate('Ignore Bug #7530'),
+                'multiOptions' => $this->eventuallyConfiguredEnum(
+                    'ignore_bug7530',
+                    array(
+                        'n' => $this->translate('No'),
+                        'y' => $this->translate('Yes'),
+                    )
+                ),
+                'description'  => $this->translate(
+                    'Icinga v2.11.0 breaks some configurations, the Director will'
+                    . ' warn you before every deployment in case your config is'
+                    . ' affected. This setting allows to hide this warning.'
+                ),
+                'value' => $settings->getStoredValue('ignore_bug7530')
+            ));
+        }
+
         $this->addElement('select', 'config_format', array(
             'label'        => $this->translate('Configuration format'),
             'multiOptions' => $this->eventuallyConfiguredEnum(

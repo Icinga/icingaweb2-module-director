@@ -14,6 +14,8 @@ use Zend_View_Interface;
 
 class DeploymentLinkForm extends DirectorForm
 {
+    use DeployFormsBug7530;
+
     /** @var DeploymentInfo */
     protected $info;
 
@@ -82,10 +84,11 @@ class DeploymentLinkForm extends DirectorForm
 
         $this->setAttrib('class', 'inline');
         $this->addHtml(Icon::create('wrench'));
+        $target = $this->shouldWarnAboutBug7530() ? '_self' : '_next';
         $this->addSubmitButton($this->translate('Deploy'), [
             'class'            => 'link-button icon-wrench',
             'title'            => $msg,
-            'data-base-target' => '_next'
+            'data-base-target' => $target,
         ]);
     }
 
@@ -105,6 +108,9 @@ class DeploymentLinkForm extends DirectorForm
 
     public function onSuccess()
     {
+        if ($this->skipBecauseOfBug7530()) {
+            return;
+        }
         $this->deploy();
     }
 

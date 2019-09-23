@@ -25,6 +25,7 @@ class Settings
         'self-service/agent_name'         => 'fqdn',
         'self-service/transform_hostname' => '0',
         'self-service/global_zones'       => ['director-global'],
+        'ignore_bug7530'                  => 'n',
         // 'experimental_features'       => null, // 'allow'
         // 'master_zone'                 => null,
     ];
