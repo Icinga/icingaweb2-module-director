@@ -37,7 +37,7 @@ class ServiceActions extends ServiceActionsHook
 
         $hostname = $service->host_name;
         if (Util::hasPermission('director/inspect')) {
-            $actions['Inspect'] = Url::fromPath('director/inspect/object', [
+            $actions[mt('director', 'Inspect')] = Url::fromPath('director/inspect/object', [
                 'type'   => 'service',
                 'plural' => 'services',
                 'name'   => sprintf(

@@ -31,14 +31,14 @@ class HostActions extends HostActionsHook
         }
         $hostname = $host->host_name;
         if (Util::hasPermission('director/inspect')) {
-            $actions['Inspect'] = Url::fromPath(
+            $actions[mt('director', 'Inspect')] = Url::fromPath(
                 'director/inspect/object',
                 array('type' => 'host', 'plural' => 'hosts', 'name' => $hostname)
             );
         }
 
         if (Util::hasPermission('director/hosts') && IcingaHost::exists($hostname, $db)) {
-            $actions['Modify'] = Url::fromPath(
+            $actions[mt('director', 'Modify')] = Url::fromPath(
                 'director/host/edit',
                 array('name' => $hostname)
             );
