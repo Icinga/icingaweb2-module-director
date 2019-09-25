@@ -50,6 +50,12 @@ modules have been installed and enabled:
 * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.5.0)
 * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
 
+Also, the following PHP libraries should be available:
+
+* php-pcntl (might already be built into your PHP binary)
+* php-posix (on RHEL/CentOS this is php-process, or rh-php7x-php-process)
+* php-sockets (might already be built into your PHP binary)
+
 Apart from this, in case you are running 1.6.x or any GIT master since then,
 all you need is to replace the Director module folder with the new one. Or to
 run `git checkout v1.7.x` in case you installed Director from GIT.

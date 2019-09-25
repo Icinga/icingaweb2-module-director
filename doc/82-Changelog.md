@@ -4,14 +4,13 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-1.7.0 (unreleased)
-------------------
+1.7.0
+-----
 ### Breaking Changes
 * At least PHP 5.6.3 is now required, Director 1.7.x will refuse to work with
   older versions
-* New dependencies have been introduced: you're now required to install the ipl
-* Please check [packages.icinga.com](https://packages.icinga.com), we're now
-  shipping official packages for the Icinga Director
+* New dependencies have been introduced, [Upgrading](05-Upgrading.md) and
+  [Installation](02-Installation.md) documentations contain related details
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
@@ -25,16 +24,35 @@ before switching to a new version.
 * FIX: Import preview in combination with Black/Whitelisting (#1825)
 * FIX: Routing/redirection when working with Data Fields (#1847)
 * FIX: Auto-suggestion field was positioned wrongly once scrolled down
+* FIX: Timezone inconsistencie have been fixed (#1700)
+* FIX: Link-like buttons where shortened on Icinga Web 2.7 (#1928)
+* FIX: Search in range-filtered Activity Log no longer fails (#1381)
 * FEATURE: It's now possible to clone a Service to a different Host (#1796)
 * FEATURE: Scheduled Downtimes for "Hosts AND their services" (#1831)
-* FEATURE: auto-suggestion and more for Fields based on Data Lists (#1846)
+* FEATURE: Auto-suggestion and more for Fields based on Data Lists (#1846)
+* FEATURE: Show missing dependencies (#1938)
+
+### Translations
+* FEATURE: German translation has been refreshed (#1951)
+* FEATURE: Japanese is now available (#1869)
 
 ### Import and Sync
 * FIX: Avoid caching between multiple runs of sync (#1836)
+* FIX: Imported Rows Table (history) eventually failed on Icinga Web 2 (#1925)
+* FIX: Improved error handling on preview (#1941)
 * FEATURE: When fetching invalid data, Import refers erroneous rows (#1741)
 * FEATURE: Sync now offers a preview, showing what would happen (#1754)
 * FEATURE: ParseURL property modifier has been added (#1746)
 * FEATURE: There is a new generic REST API Import Source (#1818)
+* FEATURE: Sync now supports Notifications and Dependencies (#1212, #925, #1209)
+* FEATURE: Limits (memory, execution time) raised for Import runs via UI (#1954)
+
+### Configuration Baskets
+* FIX: snapshots do no longer fail for deleted elements on snapshot (#1940)
+* FEATURE: baskets now support External Commands (#1854)
+
+### REST API
+* FIX: Command Arguments can now be managed via API (#1416)
 
 ### CLI
 * FIX: importsource fetch did not apply configured property modifiers (#1819)
@@ -42,8 +60,13 @@ before switching to a new version.
 
 ### Icinga Configuration
 * FIX: Allow to render single configuration files larger than 16MB (#1787)
+* FIX: Icinga v2.11 version detection for Agent Installation script (#1957)
+* DEPRECATED: magic-apply-for (a hidden feature) is now deprecated (#1850)
 * FEATURE: It's now possible to define Scheduled Downtimes (#347, #1828)
 * FEATURE: Allow to render command definitions as (v1.x-like) strings (#1809)
+* FEATURE: host address now allows 255 characters (#1890)
+* FEATURE: Director now assists with Services applied to parent Zones (#1634)
+* FEATURE: Warn affected setups when affected by a specific core issue (#1958)
 
 ### Documentation
 * FIX: Installation instructions have been adjusted to fit MySQL 8

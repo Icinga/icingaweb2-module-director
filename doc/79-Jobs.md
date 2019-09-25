@@ -1,8 +1,11 @@
 <a id="Jobs"></a>Jobs
 =====================
 
-Director allows you to schedule eventually long-running tasks so that they
-can run in the background. Currently this includes:
+The [background daemon](75-Background-Daemon.md) is responsible for running
+Jobs accoring our schedule. Director allows you to schedule eventually long-
+running tasks so that they can run in the background.
+
+Currently this includes:
 
 * Import runs
 * Sync runs
@@ -26,55 +29,6 @@ Some of you might want actions like automated config deployment not to be
 executed all around the clock. That's why you have the possibility to assign
 time periods to your jobs. Choose an Icinga timeperiod, the job will only be
 executed within that period.
-
-Execution methods
------------------
-
-Jobs are executed on CLI, basically with the `jobs` CLI command and its
-available actions and options. A call to...
-
-```sh
-icingacli director jobs run
-```
-
-...would run all currently pending jobs just once. As cron jobs should not run
-forever, the command terminates after this. In case you want it to keep on
-running, just add `forever` (or `--forever`) to the command:
-
-```sh
-icingacli director jobs run forever
-```
-
-This could be used to run the Job Runner as a daemon, preferrably with a
-systemd unit file looking as follows:
-
-```ini
-[Unit]
-Description=Director Job runner
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/icingacli director jobs run forever
-Restart=on-success
-```
-
-However, `forever` is not forever. In case Director detects that too much
-memory has been used (and not freed), it terminates itself with exit code 0.
-So, like the above init script, please expect the Job Runner to terminate at
-any time.
-
-Want so see more details? Add `--verbose` to get colorful log lines on STDERR.
-In case the Job Runner is running with Systemd, those log lines will find its
-way to your system log.
-
-An example script is included as [contrib](../contrib/systemd/director-jobs.service)
-and can simply stored in `/etc/systemd/system/director-jobs.service`. To enable
-and start the job afterwards run:
-
-```sh
-systemctl enable director-jobs.service
-systemctl start director-jobs.service
-```
 
 Time periods
 ------------
