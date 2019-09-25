@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
@@ -29,6 +30,8 @@ class IcingaZone extends IcingaObject
 
     protected $supportsImports = true;
 
+    protected static $globalZoneNames;
+
     private $endpointList;
 
     protected function renderCustomExtensions()
@@ -39,6 +42,28 @@ class IcingaZone extends IcingaObject
         }
 
         return c::renderKeyValue('endpoints', c::renderArray($endpoints));
+    }
+
+    public function isGlobal()
+    {
+        return $this->get('is_global') === 'y';
+    }
+
+    public static function zoneNameIsGlobal($name, Db $connection)
+    {
+        if (self::$globalZoneNames === null) {
+            $db = $connection->getDbAdapter();
+            self::setCachedGlobalZoneNames($db->fetchCol(
+                $db->select()->from('icinga_zone', 'object_name')->where('is_global = ?', 'y')
+            ));
+        }
+
+        return \in_array($name, self::$globalZoneNames);
+    }
+
+    public static function setCachedGlobalZoneNames($names)
+    {
+        self::$globalZoneNames = $names;
     }
 
     public function getRenderingZone(IcingaConfig $config = null)

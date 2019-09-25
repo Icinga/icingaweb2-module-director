@@ -9,6 +9,7 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaZone;
 use PHPUnit_Framework_TestCase;
 
 abstract class BaseTestCase extends PHPUnit_Framework_TestCase
@@ -77,6 +78,11 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
             self::$db = new Db($dbConfig);
             $migrations = new Migrations(self::$db);
             $migrations->applyPendingMigrations();
+            IcingaZone::create([
+                'object_name' => 'director-global',
+                'object_type' => 'external_object',
+                'is_global'   => 'y'
+            ])->store(self::$db);
         }
 
         return self::$db;
