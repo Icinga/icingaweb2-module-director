@@ -42,16 +42,16 @@ Starting the Daemon
 You now can start the Background daemon like any other service on your Linux system:
 
 ```sh
-systemctl enable icinga-director.service
+systemctl start icinga-director.service
 ```
 
 Stopping the Daemon
 -------------------
 
-You now can start the Background daemon like any other service on your Linux system:
+You now can stop the Background daemon like any other service on your Linux system:
 
 ```sh
-systemctl enable icinga-director.service
+systemctl stop icinga-director.service
 ```
 
 Getting rid of the old Job Daemon
