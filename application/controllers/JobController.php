@@ -16,6 +16,7 @@ class JobController extends ActionController
      */
     public function indexAction()
     {
+        $this->setAutorefreshInterval(10);
         $job = $this->requireJob();
         $this
             ->addJobTabs($job, 'show')

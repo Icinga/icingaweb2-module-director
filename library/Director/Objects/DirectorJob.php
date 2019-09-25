@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Daemon\Logger;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -79,15 +80,20 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
         try {
             $job->run();
             $this->set('last_attempt_succeeded', 'y');
+            $success = true;
         } catch (Exception $e) {
+            Logger::error($e->getMessage());
             $this->set('ts_last_error', date('Y-m-d H:i:s'));
             $this->set('last_error_message', $e->getMessage());
             $this->set('last_attempt_succeeded', 'n');
+            $success = false;
         }
 
         if ($this->hasBeenModified()) {
             $this->store();
         }
+
+        return $success;
     }
 
     /**

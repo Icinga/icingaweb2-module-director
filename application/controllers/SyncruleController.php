@@ -130,7 +130,7 @@ class SyncruleController extends ActionController
      */
     protected function warning($msg)
     {
-        $this->content()->add(Html::tag('p', ['class' => 'warning'], $msg));
+        $this->content()->add(Html::tag('p', ['class' => 'state-hint warning'], $msg));
     }
 
     /**
@@ -138,7 +138,7 @@ class SyncruleController extends ActionController
      */
     protected function error($msg)
     {
-        $this->content()->add(Html::tag('p', ['class' => 'error'], $msg));
+        $this->content()->add(Html::tag('p', ['class' => 'state-hint error'], $msg));
     }
 
     /**
@@ -165,7 +165,7 @@ class SyncruleController extends ActionController
         } catch (\Exception $e) {
             $this->content()->add(
                 Html::tag('p', [
-                    'class' => 'error'
+                    'class' => 'state-hint error'
                 ], $e->getMessage())
             );
 
@@ -174,7 +174,7 @@ class SyncruleController extends ActionController
 
         if (empty($modifications)) {
             $this->content()->add(Html::tag('p', [
-                'class' => 'information'
+                'class' => 'state-hint ok'
             ], $this->translate('This Sync Rule is in sync and would currently not apply any changes')));
 
             return;

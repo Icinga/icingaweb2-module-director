@@ -2,7 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
@@ -44,6 +43,9 @@ class ImportsourceController extends ActionController
         }
     }
 
+    /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
     protected function addMainActions()
     {
         $this->actions(new AutomationObjectActionBar(
@@ -66,7 +68,6 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     public function indexAction()
@@ -95,7 +96,7 @@ class ImportsourceController extends ActionController
     }
 
     /**
-     * @throws NotFoundError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function editAction()
     {
@@ -239,7 +240,7 @@ class ImportsourceController extends ActionController
 
     /**
      * @return ImportSource
-     * @throws NotFoundError
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function getImportSource()
     {
