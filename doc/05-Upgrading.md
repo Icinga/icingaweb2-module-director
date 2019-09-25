@@ -47,8 +47,8 @@ introduces new dependencies. Please make sure that the following Icinga Web 2
 modules have been installed and enabled:
 
 * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
-* [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.3.0)
-* [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.6.0)
+* [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.4.0)
+* [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
 
 Apart from this, in case you are running 1.6.x or any GIT master since then,
 all you need is to replace the Director module folder with the new one. Or to
