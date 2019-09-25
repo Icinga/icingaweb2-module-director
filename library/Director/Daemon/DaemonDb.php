@@ -226,7 +226,6 @@ class DaemonDb
             if ($this->db) {
                 $this->db->closeConnection();
             }
-
         } catch (Exception $e) {
             Logger::error('Failed to disconnect: ' . $e->getMessage());
         }
