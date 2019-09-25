@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Icinga\Application\Benchmark;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -457,6 +458,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
         $name = $this->get('source_name');
         Benchmark::measure("Starting with import $name");
+        $this->raiseLimits();
         try {
             $import = new Import($this);
             $this->set('last_attempt', date('Y-m-d H:i:s'));
@@ -494,5 +496,18 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     public function runImport()
     {
         return $this->checkForChanges(true);
+    }
+
+    /**
+     * Raise PHP resource limits
+     *
+     * @return $this;
+     */
+    protected function raiseLimits()
+    {
+        MemoryLimit::raiseTo('1024M');
+        ini_set('max_execution_time', 0);
+
+        return $this;
     }
 }
