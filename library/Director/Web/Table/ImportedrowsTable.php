@@ -16,6 +16,8 @@ class ImportedrowsTable extends SimpleQueryBasedTable
     /** @var ImportRun */
     protected $importRun;
 
+    protected $keyColumn;
+
     public static function load(ImportRun $run)
     {
         $table = new static();
@@ -35,12 +37,21 @@ class ImportedrowsTable extends SimpleQueryBasedTable
         return $this;
     }
 
+    protected function getKeyColumn()
+    {
+        if ($this->keyColumn === null) {
+            $this->keyColumn = $this->importRun->importSource()->get('key_column');
+        }
+
+        return $this->keyColumn;
+    }
+
     public function getColumns()
     {
         if ($this->columns === null) {
             $cols = $this->importRun->listColumnNames();
 
-            $keyColumn = $this->importRun->importSource()->get('key_column');
+            $keyColumn = $this->getKeyColumn();
             if ($keyColumn !== null && ($pos = array_search($keyColumn, $cols)) !== false) {
                 unset($cols[$pos]);
                 array_unshift($cols, $keyColumn);
@@ -87,6 +98,6 @@ class ImportedrowsTable extends SimpleQueryBasedTable
             $this->importRun->fetchRows($this->columns)
         );
 
-        return $ds->select()->order('object_name');
+        return $ds->select()->order($this->getKeyColumn());
     }
 }
