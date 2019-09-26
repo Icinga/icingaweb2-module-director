@@ -19,6 +19,7 @@ class JobsCommand extends Command
 {
     public function runAction()
     {
+        $this->app->getModuleManager()->loadEnabledModules();
         $loop = Loop::create();
         if ($this->params->get('rpc')) {
             $this->enableRpc($loop);
