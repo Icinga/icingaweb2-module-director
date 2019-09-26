@@ -57,6 +57,7 @@ before switching to a new version.
 ### CLI
 * FIX: importsource fetch did not apply configured property modifiers (#1819)
 * FEATURE: Service Groups are now available on CLI (#1745)
+* FEATURE: A new background daemon has been introduced (#1905)
 
 ### Icinga Configuration
 * FIX: Allow to render single configuration files larger than 16MB (#1787)
