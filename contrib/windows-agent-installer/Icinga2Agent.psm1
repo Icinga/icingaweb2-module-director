@@ -1,6 +1,6 @@
 <#
 .Synopsis
-   Icinga 2 PowerShell Module - the most flexible and easy way to configure and install Icinga 2 Agents on Windows.
+   Icinga 2 PowerShell Module - the most flexible and easy way to configure and install Icinga 2 Agents on Windows. 
 .DESCRIPTION
    More Information on https://github.com/Icinga/icinga2-powershell-module
 .EXAMPLE
@@ -34,16 +34,18 @@ function Icinga2AgentModule {
         # Like -FetchAgentName, this argument will ensure the hostname is set inside the script, will however include the domain to provide the FQDN internally.
         [switch]$FetchAgentFQDN             = $FALSE,
         # Allows to transform the hostname to either lower or upper case if required. 0: Do nothing 1: To lower case 2: To upper case
-        [int]$TransformHostname             = 0,
+        [int]$TransformHostname             = -1,
 
         # This variable allows to specify on which port the Icinga 2 Agent will listen on
-        [int]$AgentListenPort               = 5665,
+        [int]$AgentListenPort               = -1,
         # Each Icinga 2 Agent is in general forwarding it's check results to a parent master or satellite zone. Here you will have to specify the name of the parent zone
         [string]$ParentZone,#
         # Icinga 2 internals to make it configurable if the Agent is accepting configuration from the Icinga config master.
-        [bool]$AcceptConfig                 = $TRUE,
+        [int]$AcceptConfig                  = -1,
         # This argument will define if the Icinga 2 debug log will be enabled or disabled.
         [switch]$IcingaEnableDebugLog       = $FALSE,
+        # This argument will define if we enable or disable the Icinga 2 logging feature
+        [switch]$IcingaDisableLogging       = $FALSE,
         # Allows to specify if the PowerShell Module will add a firewall rule, allowing Icinga 2 masters or Satellites to connect to the Icinga 2 Agent on the defined port
         [switch]$AgentAddFirewallRule       = $FALSE,
         # This parameter requires an array of string values, to which endpoints the Agent should in general connect to. If you are only having one endpoint, only add one. You will have to specify all endpoints the Agent requires to connect to
@@ -51,7 +53,8 @@ function Icinga2AgentModule {
         # While -ParentEndpoints will define the name of endpoints by an array, this parameter will allow to assign IP address and port configuration, allowing the Icinga 2 Agent to directly connect to parent Icinga 2 instances. To specify IP address and port, you will have to seperate these entries by using ';' without blank spaces. The order of the config has to match the assignment of -ParentEndpoints. You can specify the IP address only without a port definition by just leaving the last part. If you wish to not specify a config for a specific endpoint, simply add an empty string to the correct location.
         [array]$EndpointsConfig,
         # Allows to specify global zones, which will be added into the icinga2.conf. Note: In case no global zone will be defined, director-global will be added by default. If you specify zones by yourself, please ensure to add director-global as this is not done automaticly when adding custom global-zones.
-        [array]$GlobalZones                 = @( 'director-global' ),
+        [array]$GlobalZones                 = @(),
+
 
         # Agent installation / update
         <# This argument will allow to override the user the Icinga 2 service is running with. Windows provides some basic users already which can be configured:
@@ -71,7 +74,7 @@ function Icinga2AgentModule {
         #With this parameter you can define a download Url or local directory from which the module will download/install a specific Icinga 2 Agent MSI Installer package. Please ensure to only define the base download Url / Directory, as the Module will generate the MSI file name based on your operating system architecture and the version to install. The Icinga 2 MSI Installer name is internally build as follows: Icinga2-v[InstallAgentVersion]-[OSArchitecture].msi
 
         # Full example: Icinga2-v2.8.0-x86_64.msi
-        [string]$DownloadUrl                = 'https://packages.icinga.com/windows/',
+        [string]$DownloadUrl,
         # Allows to specify in which directory the Icinga 2 Agent will be installed into. In case of an Agent update you can specify with this argument a new directory the new Agent will be installed into. The old directory will be removed caused by the required uninstaller process.
         [string]$AgentInstallDirectory,
         # In case the Icinga 2 Agent is already installed on the system, this parameter will allow you to configure if you wish to upgrade / downgrade to a specified version with the -InstallAgentVersion parameter as well. If none of both parameters is defined, the module will not update or downgrade the agent.
@@ -86,7 +89,7 @@ function Icinga2AgentModule {
         [string]$CAServer,
         # TODO
         [string]$CACertificatePath,
-        # Here you can specify a custom port in case your CA Server is not listening on 5665
+        # Here you can specify a custom port in case your CA Server is not listening on 5665 
         [int]$CAPort                        = 5665,
         # The module will generate the certificates in general only if one of the required files is missing. By adding this parameter to your call, the module will force the re-creation of the certificates.
         [switch]$ForceCertificateGeneration = $FALSE,
@@ -127,7 +130,7 @@ function Icinga2AgentModule {
         # When this argument is set, the installed NSClient++ will be removed from the system as well. This argument is only used by calling the function 'uninstall'
         [switch]$RemoveNSClient             = $FALSE,
 
-        # Dump Icinga Config
+        # Dump Icinga Config 
         [switch]$DumpIcingaConfig           = $FALSE,
         # Dump Icinga Objects
         [switch]$DumpIcingaObjects          = $FALSE,
@@ -163,6 +166,7 @@ function Icinga2AgentModule {
         parent_zone             = $ParentZone;
         accept_config           = $AcceptConfig;
         icinga_enable_debug_log = $IcingaEnableDebugLog;
+        icinga_disable_log      = $IcingaDisableLogging;
         agent_add_firewall_rule = $AgentAddFirewallRule;
         parent_endpoints        = $ParentEndpoints;
         endpoints_config        = $EndpointsConfig;
@@ -211,11 +215,63 @@ function Icinga2AgentModule {
     }
 
     #
+    # In case we run the script not through Icinga Director, we might want to set
+    # script default values
+    #
+    $installer | Add-Member -membertype ScriptMethod -name 'setScriptDefaultVariables' -value {
+        if ($this.cfg['transform_hostname'] -eq -1) {
+            $this.cfg['transform_hostname'] = 0;
+            $this.debug('Setting "transform_hostname" to default 0');
+        }
+        if ($this.cfg['download_url'] -eq '') {
+            $this.cfg['download_url'] = 'https://packages.icinga.com/windows/';
+            $this.debug('Setting "download_url" to default "https://packages.icinga.com/windows/"');
+        }
+        if ($this.cfg['agent_listen_port'] -eq -1) {
+            $this.cfg['agent_listen_port'] = 5665;
+            $this.debug('Setting "agent_listen_port" to default 5665');
+        }
+        if ($this.cfg['global_zones'].Count -eq 0) {
+            $this.cfg['global_zones'] = @( 'director-global' );
+            $this.debug('Setting "global_zones" to default "director-global"');
+        }
+        if ($this.cfg['accept_config'] -eq -1) {
+            $this.cfg['accept_config'] = $TRUE;
+            $this.debug('Setting "accept_config" to default "true"');
+        }
+    }
+
+    #
     # Override the given arguments of the PowerShell script with
     # custom values or edited values
     #
     $installer | Add-Member -membertype ScriptMethod -name 'overrideConfig' -value {
-        param([string] $key, $value);
+        param([string] $key, $value, $keepScriptArguments);
+
+        # Ensure the director will not override our custom config for arguments
+        if ($keepScriptArguments) {
+            $scriptValue = $this.cfg[$key];
+
+            if ([string]::IsNullOrEmpty($scriptValue) -eq $FALSE) {
+                if ($scriptValue.GetType().Name -eq 'SwitchParameter' -And $scriptValue -eq $TRUE) {
+                    $this.debug("Skipping overriding of '$key', as set by script. [$scriptValue]");
+                    return;
+                }
+
+                if ($scriptValue.GetType().Name -eq 'SwitchParameter' -And $scriptValue -eq $FALSE) {
+                    # Do not keep value
+                } elseif ($scriptValue.GetType().Name -eq 'Int32' -And $scriptValue -eq -1) {
+                    # Do not keep value
+                } elseif ([string]::IsNullOrEmpty($scriptValue) -eq $FALSE) {
+                    $this.debug("Skipping overriding of '$key', as set by script. [$scriptValue]");
+                    return;
+                } else {
+                    $this.debug("Skipping overriding of '$key', as set by script. [$scriptValue]");
+                    return;
+                }
+            }
+        }
+
         $this.cfg[$key] = $value;
     }
 
@@ -1548,6 +1604,8 @@ const NodeName = "' + $this.getProperty('local_hostname') + '"
  *            PowerShell Module to switch this feature on or off.
  */
 const PowerShellIcinga2EnableDebug = false;
+const PowerShellIcinga2EnableLog = true;
+
 if (PowerShellIcinga2EnableDebug) {
   object FileLogger "debug-file" {
     severity = "debug"
@@ -1566,9 +1624,11 @@ if (!globals.contains("NscpPath")) {
 }
 
 /* Enable our default main logger feature to write log output. */
-object FileLogger "main-log" {
-  severity = "information"
-  path = LocalStateDir + "/log/icinga2/icinga2.log"
+if (PowerShellIcinga2EnableLog) {
+  object FileLogger "main-log" {
+    severity = "information"
+    path = LocalStateDir + "/log/icinga2/icinga2.log"
+  }
 }
 
 /* All informations required to correctly connect to our parent Icinga 2 nodes. */
@@ -2090,7 +2150,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
     #
     # Enable or disable the Icinga 2 debug log
     #
-    $installer | Add-Member -membertype ScriptMethod -name 'switchIcingaDebugLog' -value {
+    $installer | Add-Member -membertype ScriptMethod -name 'switchIcingaLogging' -value {
         # In case the config is not valid -> do nothing
         if (-Not $this.isIcingaConfigValid($FALSE)) {
             throw 'Unable to process Icinga 2 debug configuration. The icinga2.conf is corrupt! Please check the icinga2.log';
@@ -2102,35 +2162,53 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
         }
 
         [string]$icingaCurrentConfig = [System.IO.File]::ReadAllText($this.getIcingaConfigFile());
-        [string]$newIcingaConfig = '';
+        [string]$newIcingaConfig = $icingaCurrentConfig;
 
         if ($this.config('icinga_enable_debug_log')) {
             $this.info('Trying to enable debug log for Icinga 2...');
-            if ($icingaCurrentConfig.Contains('const PowerShellIcinga2EnableDebug = false;')) {
-                $newIcingaConfig = $icingaCurrentConfig.Replace('const PowerShellIcinga2EnableDebug = false;', 'const PowerShellIcinga2EnableDebug = true;');
+            if ($newIcingaConfig.Contains('const PowerShellIcinga2EnableDebug = false;')) {
+                $newIcingaConfig = $newIcingaConfig.Replace('const PowerShellIcinga2EnableDebug = false;', 'const PowerShellIcinga2EnableDebug = true;');
                 $this.info('Icinga 2 debug log has been enabled');
             } else {
                 $this.info('Icinga 2 debug log is already enabled or configuration not found');
             }
         } else {
             $this.info('Trying to disable debug log for Icinga 2...');
-            if ($icingaCurrentConfig.Contains('const PowerShellIcinga2EnableDebug = true;')) {
-                $newIcingaConfig = $icingaCurrentConfig.Replace('const PowerShellIcinga2EnableDebug = true;', 'const PowerShellIcinga2EnableDebug = false;');
+            if ($newIcingaConfig.Contains('const PowerShellIcinga2EnableDebug = true;')) {
+                $newIcingaConfig = $newIcingaConfig.Replace('const PowerShellIcinga2EnableDebug = true;', 'const PowerShellIcinga2EnableDebug = false;');
                 $this.info('Icinga 2 debug log has been disabled');
             } else {
                 $this.info('Icinga 2 debug log is not enabled or configuration not found');
             }
         }
 
+        if ($this.config('icinga_disable_log') -eq $FALSE) {
+            $this.info('Trying to enable logging for Icinga 2...');
+            if ($newIcingaConfig.Contains('const PowerShellIcinga2EnableLog = false;')) {
+                $newIcingaConfig = $newIcingaConfig.Replace('const PowerShellIcinga2EnableLog = false;', 'const PowerShellIcinga2EnableLog = true;');
+                $this.info('Icinga 2 logging has been enabled');
+            } else {
+                $this.info('Icinga 2 logging is already enabled or configuration not found');
+            }
+        } else {
+            $this.info('Trying to disable logging for Icinga 2...');
+            if ($newIcingaConfig.Contains('const PowerShellIcinga2EnableLog = true;')) {
+                $newIcingaConfig = $newIcingaConfig.Replace('const PowerShellIcinga2EnableLog = true;', 'const PowerShellIcinga2EnableLog = false;');
+                $this.info('Icinga 2 logging has been disabled');
+            } else {
+                $this.info('Icinga 2 logging is not enabled or configuration not found');
+            }
+        }
+
         # In case we made a modification to the configuration -> write it
-        if ($newIcingaConfig -ne '') {
+        if ($newIcingaConfig -ne $icingaCurrentConfig) {
             $this.writeConfig($newIcingaConfig);
             # Validate the config if it is valid
             if (-Not $this.isIcingaConfigValid($FALSE)) {
                 # if not write the old configuration again
                 $this.writeConfig($icingaCurrentConfig);
                 if (-Not $this.isIcingaConfigValid($FALSE)) {
-                    throw 'Critical exception: Something went wrong while processing debug configuration. The Icinga 2 config is corrupt!  Please check the icinga2.log';
+                    throw 'Critical exception: Something went wrong while processing logging configuration. The Icinga 2 config is corrupt!  Please check the icinga2.log';
                 }
             }
         }
@@ -2142,28 +2220,36 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
     # easier
     #
     $installer | Add-Member -membertype ScriptMethod -name 'fetchHostnameOrFQDN' -value {
-        if ($this.config('fetch_agent_fqdn') -And (Get-WmiObject win32_computersystem).Domain) {
-            [string]$hostname = [string]::Format('{0}.{1}',
-                                                (Get-WmiObject win32_computersystem).DNSHostName,
-                                                (Get-WmiObject win32_computersystem).Domain
-                                                );
-            $this.setProperty('local_hostname', $hostname);
-            $this.info([string]::Format('Setting internal Agent Name to "{0}"', $this.getProperty('local_hostname')));
-        } elseif ($this.config('fetch_agent_name')) {
-            [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName;
-            $this.setProperty('local_hostname', $hostname);
-            $this.info([string]::Format('Setting internal Agent Name to "{0}"', $this.getProperty('local_hostname')));
-        }
 
-         # Add additional variables to our config for more user-friendly usage
+        # Add additional variables to our config for more user-friendly usage
         [string]$host_fqdn = [string]::Format('{0}.{1}',
-                                                (Get-WmiObject win32_computersystem).DNSHostName,
-                                                (Get-WmiObject win32_computersystem).Domain
-                                                );
-        [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName;
+                                 (Get-WmiObject win32_computersystem).DNSHostName,
+                                 (Get-WmiObject win32_computersystem).Domain
+                             );
 
-        $this.setProperty('fqdn', $host_fqdn);
-        $this.setProperty('hostname', $hostname);
+        if ([string]::IsNullOrEmpty($this.config('agent_name')) -eq $FALSE) {
+            $this.setProperty('local_hostname', $this.config('agent_name'));
+            $this.setProperty('fqdn', $host_fqdn);
+            $this.setProperty('hostname', $this.config('agent_name'));
+        } else {
+            if ($this.config('fetch_agent_fqdn') -And (Get-WmiObject win32_computersystem).Domain) {
+                [string]$hostname = [string]::Format('{0}.{1}',
+                                                    (Get-WmiObject win32_computersystem).DNSHostName,
+                                                    (Get-WmiObject win32_computersystem).Domain
+                                                    );
+                $this.setProperty('local_hostname', $hostname);
+            } elseif ($this.config('fetch_agent_name')) {
+                [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName;
+                $this.setProperty('local_hostname', $hostname);
+            }
+
+            $this.info([string]::Format('Setting internal Agent Name to "{0}"', $this.getProperty('local_hostname')));
+
+            [string]$hostname = (Get-WmiObject win32_computersystem).DNSHostName;
+
+            $this.setProperty('fqdn', $host_fqdn);
+            $this.setProperty('hostname', $hostname);
+        }
 
         if (-Not $this.getProperty('local_hostname')) {
             $this.warn('You have not specified an Agent Name or turned on to auto fetch this information.');
@@ -2675,7 +2761,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
             }
 
             # If our PowerShell Version is supporting the function, convert it to a valid string
-            $this.overrideConfig('director_host_object', (ConvertTo-Json -Compress $json));
+            $this.overrideConfig('director_host_object', (ConvertTo-Json -Compress $json), $FALSE);
         }
     }
 
@@ -2791,14 +2877,14 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
 
                         if ($value.Contains( '!')) {
                             [array]$valueArray = $value.Split('!');
-                            $this.overrideConfig($argument, $valueArray);
+                            $this.overrideConfig($argument, $valueArray, $TRUE);
                         } else {
                             if ($value.toLower() -eq 'true') {
-                                $this.overrideConfig($argument, $TRUE);
+                                $this.overrideConfig($argument, $TRUE, $TRUE);
                             } elseif ($value.toLower() -eq 'false') {
-                                $this.overrideConfig($argument, $FALSE);
+                                $this.overrideConfig($argument, $FALSE, $TRUE);
                             } else {
-                                $this.overrideConfig($argument, $value);
+                                $this.overrideConfig($argument, $value, $TRUE);
                             }
                         }
                     } else {
@@ -3101,6 +3187,8 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
             # Establish connection to Icinga Director Self-Service API if required
             # and fetch basic / host configuration if tokens are set
             $this.connectToIcingaDirectorSelfServiceAPI();
+            # Set Script defaults
+            $this.setScriptDefaultVariables();
             # Get host name or FQDN if required
             $this.fetchHostnameOrFQDN();
             # Get IP-Address of host
@@ -3151,7 +3239,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
 
             $this.generateIcingaConfiguration();
             $this.applyPossibleConfigChanges();
-            $this.switchIcingaDebugLog();
+            $this.switchIcingaLogging();
             $this.installIcingaAgentFirewallRule();
             $this.installNSClient();
 
