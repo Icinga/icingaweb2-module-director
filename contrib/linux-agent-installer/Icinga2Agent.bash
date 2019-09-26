@@ -275,7 +275,7 @@ if [ -z "${ICINGA2_DRYRUN}" ]; then
   "$ICINGA2_BIN" daemon -C
 
   echo "Please restart icinga2:"
-  echo "  service icinga2 restart"
+  echo "  systemctl restart icinga2"
 else
   output_code() {
     sed 's/^/    /m' <<<"$1"
