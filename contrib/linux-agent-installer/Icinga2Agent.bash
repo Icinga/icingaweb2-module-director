@@ -112,14 +112,8 @@ icinga_version() {
   "$ICINGA2_BIN" --version 2>/dev/null | grep -oP '\(version: [rv]?\K\d+\.\d+\.\d+[^\)]*'
 }
 
-icinga_major() {
-  icinga_version | grep -oP '^\d+\.\d+'
-}
-
-# only can do float like versions (1.x)
-version_compare() {
-  # args: v1 op v2
-  return "$(awk "BEGIN {print !($1 $2 $3)}")"
+version() {
+   echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'
 }
 
 # Make sure icinga2 is installed and running
@@ -135,7 +129,7 @@ if [ -z "${ICINGA2_SSLDIR}" ]; then
     info "Using old SSL directory: ${ICINGA2_SSLDIR_OLD}"
     info "Because you already have a certificate in ${ICINGA2_SSLDIR_OLD}/${ICINGA2_NODENAME}.crt"
     ICINGA2_SSLDIR="${ICINGA2_SSLDIR_OLD}"
-  elif version_compare "$(icinga_major)" ">=" 2.8 ; then
+  elif [ $(version $version) -gt $(version 2.8) ]; then
     info "Using new SSL directory: ${ICINGA2_SSLDIR_NEW}"
     ICINGA2_SSLDIR="${ICINGA2_SSLDIR_NEW}"
   else
