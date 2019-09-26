@@ -6,9 +6,8 @@ data loss on upgrade. But to be on the safe side, please always [backup](#backup
 your database before running an upgrade.
 
 Then drop the new version to your Icinga Web 2 module folder and you're all done.
-In case you make use of the [Job Runner](79-Jobs.md), you should restart it's
-service. Eventually refresh the page in your browser<sup>[[1]](#footnote1)</sup>,
-and you are ready to go.
+Eventually refresh the page in your browser<sup>[[1]](#footnote1)</sup>, and you
+are ready to go.
 
 Should there any other actions be required (like [schema migrations](#schema-migrations)),
 you will be told so in your frontend.
