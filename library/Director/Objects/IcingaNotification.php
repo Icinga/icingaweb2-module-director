@@ -230,6 +230,20 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         }
     }
 
+    /**
+     * Render host_id as host_name
+     *
+     * Avoid complaints for method names with underscore:
+     * @codingStandardsIgnoreStart
+     *
+     * @return string
+     */
+    public function renderHost_id()
+    {
+        // @codingStandardsIgnoreEnd
+        return $this->renderRelationProperty('host', $this->get('host_id'), 'host_name');
+    }
+
     protected function setKey($key)
     {
         if (is_int($key)) {
