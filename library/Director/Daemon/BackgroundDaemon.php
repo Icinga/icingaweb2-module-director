@@ -143,7 +143,8 @@ class BackgroundDaemon
         $dbResourceName = null
     ) {
         $db = new DaemonDb($processDetails);
-        $db->on('state', function ($state) use ($processState) {
+        $db->on('state', function ($state, $level = null) use ($processState) {
+            // TODO: level is sent but not used
             $processState->setComponentState('db', $state);
         });
 
