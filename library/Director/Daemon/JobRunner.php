@@ -172,7 +172,7 @@ class JobRunner implements DbBasedComponent
     {
         $id = $job->get('id');
         $jobName = $job->get('job_name');
-        Logger::debug("Job starting: $jobName");
+        Logger::debug("Job ($jobName) starting");
         $arguments = [
             'director',
             'job',
@@ -199,11 +199,11 @@ class JobRunner implements DbBasedComponent
         }
         unset($this->scheduledIds[$id]);
         $this->runningIds[$id] = $cli->run($this->loop)->then(function () use ($id, $jobName) {
-            Logger::debug("Job finished: $jobName");
+            Logger::debug("Job ($jobName) finished");
         })->otherwise(function (\Exception $e) use ($id, $jobName) {
-            Logger::error('Job failed: ' . $e->getMessage());
-        })->otherwise(function (FinishedProcessState $state) {
-            Logger::error($state->getReason());
+            Logger::error("Job ($jobName) failed: " . $e->getMessage());
+        })->otherwise(function (FinishedProcessState $state) use ($jobName) {
+            Logger::error("Job ($jobName) failed: " . $state->getReason());
         })->always(function () use ($id) {
             unset($this->runningIds[$id]);
             $this->loop->futureTick(function () {
