@@ -76,6 +76,10 @@ class BackgroundDaemon
         $this->jobRunner = new JobRunner($this->loop);
         $this->systemd = $this->eventuallyInitializeSystemd();
         $this->processState->setSystemd($this->systemd);
+        if ($this->systemd) {
+            $this->systemd->setReady();
+        }
+        $this->setState('ready');
         $this->processDetails = $this
             ->initializeProcessDetails($this->systemd)
             ->registerProcessList($this->jobRunner->getProcessList());
@@ -90,9 +94,7 @@ class BackgroundDaemon
             ->register($this->jobRunner)
             ->register($this->logProxy)
             ->run($this->loop);
-        if ($this->systemd) {
-            $this->systemd->setReady();
-        }
+        $this->setState('running');
     }
 
     /**
