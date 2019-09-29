@@ -194,8 +194,8 @@ class JobRunner implements DbBasedComponent
         });
         if ($this->logProxy) {
             $logger = clone($this->logProxy);
-            $logger->setPrefix("[$jobName]: ");
-            $cli->rpc()->setHandler($this->logProxy, 'logger');
+            $logger->setPrefix("Job ($jobName): ");
+            $cli->rpc()->setHandler($logger, 'logger');
         }
         unset($this->scheduledIds[$id]);
         $this->runningIds[$id] = $cli->run($this->loop)->then(function () use ($id, $jobName) {
