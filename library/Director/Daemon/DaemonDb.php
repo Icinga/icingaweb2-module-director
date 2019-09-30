@@ -47,7 +47,14 @@ class DaemonDb
     /** @var Deferred|null */
     protected $pendingDisconnect;
 
+    /** @var \React\EventLoop\TimerInterface */
     protected $refreshTimer;
+
+    /** @var \React\EventLoop\TimerInterface */
+    protected $schemaCheckTimer;
+
+    /** @var int */
+    protected $startupSchemaVersion;
 
     public function __construct(DaemonProcessDetails $details, $dbConfig = null)
     {
@@ -83,6 +90,9 @@ class DaemonDb
         $this->connect();
         $this->refreshTimer = $loop->addPeriodicTimer(3, function () {
             $this->refreshMyState();
+        });
+        $this->schemaCheckTimer = $loop->addPeriodicTimer(15, function () {
+            $this->checkDbSchema();
         });
         if ($this->configWatch) {
             $this->configWatch->run($this->loop);
@@ -148,7 +158,8 @@ class DaemonDb
         if ($this->hasAnyOtherActiveInstance($connection)) {
             throw new RuntimeException('DB is locked by a running daemon instance');
         }
-        $this->details->set('schema_version', $migrations->getLastMigrationNumber());
+        $this->startupSchemaVersion = $migrations->getLastMigrationNumber();
+        $this->details->set('schema_version', $this->startupSchemaVersion);
 
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
@@ -157,6 +168,42 @@ class DaemonDb
         });
 
         return $connection;
+    }
+
+    protected function checkDbSchema()
+    {
+        if ($this->connection === null) {
+            return;
+        }
+
+        if ($this->schemaIsOutdated()) {
+            $this->emit('schemaChange', [
+                $this->getStartupSchemaVersion(),
+                $this->getDbSchemaVersion()
+            ]);
+        }
+    }
+
+    protected function schemaIsOutdated()
+    {
+        return $this->getStartupSchemaVersion() < $this->getDbSchemaVersion();
+    }
+
+    protected function getStartupSchemaVersion()
+    {
+        return $this->startupSchemaVersion;
+    }
+
+    protected function getDbSchemaVersion()
+    {
+        if ($this->connection === null) {
+            throw new RuntimeException(
+                'Cannot determine DB schema version without an established DB connection'
+            );
+        }
+        $migrations = new Migrations($this->connection);
+
+        return  $migrations->getLastMigrationNumber();
     }
 
     protected function onConnected()
