@@ -84,7 +84,13 @@ class DeploymentLinkForm extends DirectorForm
 
         $this->setAttrib('class', 'inline');
         $this->addHtml(Icon::create('wrench'));
-        $target = $this->shouldWarnAboutBug7530() ? '_self' : '_next';
+        try {
+            // As this is shown for single objects, ignore errors caused by an
+            // unreachable core
+            $target = $this->shouldWarnAboutBug7530() ? '_self' : '_next';
+        } catch (\Exception $e) {
+            $target = '_next';
+        }
         $this->addSubmitButton($this->translate('Deploy'), [
             'class'            => 'link-button icon-wrench',
             'title'            => $msg,
@@ -108,8 +114,12 @@ class DeploymentLinkForm extends DirectorForm
 
     public function onSuccess()
     {
-        if ($this->skipBecauseOfBug7530()) {
-            return;
+        try {
+            if ($this->skipBecauseOfBug7530()) {
+                return;
+            }
+        } catch (\Exception $e) {
+            // continue
         }
         $this->deploy();
     }
