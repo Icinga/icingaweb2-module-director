@@ -8,10 +8,7 @@ Sync & Config Deployment Tasks.
 Daemon Installation
 -------------------
 
-In case you installed Icinga Director as a package, the daemon should already
-have been installed. In case you're running directly from a GIT working copy or
-from a manual installation, you need to tell `systemd` about your new service.
-
+To run the Background Daemon, you need to tell `systemd` about your new service.
 First make sure that the system user `icingadirector` exists. In case it doesn't,
 please create one:
 
