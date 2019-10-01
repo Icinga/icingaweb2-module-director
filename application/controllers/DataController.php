@@ -7,6 +7,7 @@ use Icinga\Module\Director\Forms\DirectorDatalistForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Table\CustomvarTable;
+use Icinga\Module\Director\Web\Table\DatafieldCategoryTable;
 use Icinga\Module\Director\Web\Table\DatafieldTable;
 use Icinga\Module\Director\Web\Table\DatalistEntryTable;
 use Icinga\Module\Director\Web\Table\DatalistTable;
@@ -72,6 +73,24 @@ class DataController extends ActionController
         ));
 
         (new DatafieldTable($this->db()))->renderTo($this);
+    }
+
+    public function fieldcategoriesAction()
+    {
+        $this->setAutorefreshInterval(10);
+        $this->tabs(new DataTabs())->activate('datafieldcategory');
+        $this->addTitle($this->translate('Data Field Categories'));
+        $this->actions()->add(Link::create(
+            $this->translate('Add'),
+            'director/datafieldcategory/add',
+            null,
+            [
+                'class' => 'icon-plus',
+                'data-base-target' => '_next',
+            ]
+        ));
+
+        (new DatafieldCategoryTable($this->db()))->renderTo($this);
     }
 
     public function varsAction()
