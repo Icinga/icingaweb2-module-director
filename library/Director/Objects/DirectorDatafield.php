@@ -37,6 +37,9 @@ class DirectorDatafield extends DbObjectWithSettings
 
     protected $settingsRemoteId = 'datafield_id';
 
+    /** @var DirectorDatafieldCategory|null */
+    private $category;
+
     private $object;
 
     public static function fromDbRow($row, Db $connection)
@@ -56,6 +59,49 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         return $obj;
+    }
+
+    public function hasCategory()
+    {
+        return $this->category !== null || $this->get('category_id') !== null;
+    }
+
+    public function getCategory()
+    {
+        if ($this->category) {
+            return $this->category;
+        } elseif ($id = $this->get('category_id')) {
+            return DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+        } else {
+            return null;
+        }
+    }
+
+    public function getCategoryName()
+    {
+        $category = $this->getCategory();
+        if ($this->category === null) {
+            return null;
+        } else {
+            return $category->get('category_name');
+        }
+    }
+
+    public function setCategory($category)
+    {
+        if ($category === null) {
+            $this->category = null;
+            $this->set('category_id', null);
+        } elseif ($category instanceof DirectorDatafieldCategory) {
+            if ($category->hasBeenLoadedFromDb()) {
+                $this->set('category_id', $category->get('id'));
+            }
+            $this->category = $category;
+        } else {
+            $this->setCategory(DirectorDatafieldCategory::load($category, $this->getConnection()));
+        }
+
+        return $this;
     }
 
     /**

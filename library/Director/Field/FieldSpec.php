@@ -12,6 +12,9 @@ class FieldSpec
     protected $varName;
 
     /** @var string */
+    protected $category;
+
+    /** @var string */
     protected $caption;
 
     /** @var boolean */
@@ -46,13 +49,14 @@ class FieldSpec
     {
         return DirectorDatafield::create([
             'varname'     => $this->getVarName(),
+            'category'    => $this->getCategory(),
             'caption'     => $this->getCaption(),
             'description' => $this->getDescription(),
             'datatype'    => $this->getDataType(),
             'format'      => $this->getFormat(),
             'var_filter'  => $this->getVarFilter(),
             'icinga_type' => $object->getShortTableName(),
-            'object_id'   => $object->get('id')
+            'object_id'   => $object->get('id'),
         ]);
     }
 
@@ -179,6 +183,24 @@ class FieldSpec
     public function setFormat($format)
     {
         $this->format = $format;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCategory()
+    {
+        return $this->category;
+    }
+
+    /**
+     * @param string $category
+     * @return FieldSpec
+     */
+    public function setCategory($category)
+    {
+        $this->category = $category;
         return $this;
     }
 }

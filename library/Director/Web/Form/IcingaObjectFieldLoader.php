@@ -34,6 +34,7 @@ class IcingaObjectFieldLoader
     /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
+    /** @var DirectorDatafield[] */
     protected $fields;
 
     protected $elements;
@@ -233,6 +234,8 @@ class IcingaObjectFieldLoader
         foreach ($this->fields as $key => $field) {
             if ($category = $field->category_id) {
                 $categories[$key] = $category;
+            } elseif ($field) {
+
             }
         }
         $cObjects = [];
