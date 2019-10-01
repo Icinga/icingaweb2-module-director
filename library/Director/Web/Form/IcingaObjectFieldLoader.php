@@ -9,6 +9,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Hook\HostFieldHook;
 use Icinga\Module\Director\Hook\ServiceFieldHook;
+use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -219,14 +220,7 @@ class IcingaObjectFieldLoader
             $form->addElement($element);
         }
 
-        if (! empty($elements)) {
-            $form->addElementsToGroup(
-                $elements,
-                'custom_fields',
-                50,
-                $form->translate('Custom properties')
-            );
-        }
+        $this->attachGroupElements($elements, $form);
     }
 
     /**
@@ -237,19 +231,26 @@ class IcingaObjectFieldLoader
     {
         $categories = [];
         foreach ($this->fields as $key => $field) {
-            if ($category = $field->category) {
+            if ($category = $field->category_id) {
                 $categories[$key] = $category;
             }
         }
+        $cObjects = [];
+        foreach ($categories as $id) {
+            if (! isset($cObjects[$id])) {
+                $cObjects[$id] = DirectorDatafieldCategory::loadWithAutoIncId($id, $form->getDb());
+            }
+        }
+        $idx = array_flip(array_keys($cObjects));
 
         foreach ($elements as $key => $element) {
             if (isset($categories[$key])) {
                 $category = $categories[$key];
                 $form->addElementsToGroup(
                     [$element],
-                    'custom_fields_' . $category->get('id'),
-                    50,
-                    $category->get('category_name')
+                    'custom_fields_' . $category,
+                    51 + $idx[$category],
+                    $cObjects[$category]->get('category_name')
                 );
             } else {
                 $form->addElementsToGroup(
@@ -524,6 +525,7 @@ class IcingaObjectFieldLoader
                 'var_filter'  => 'f.var_filter',
                 'is_required' => 'f.is_required',
                 'id'          => 'df.id',
+                'category_id' => 'df.category_id',
                 'varname'     => 'df.varname',
                 'caption'     => 'df.caption',
                 'description' => 'df.description',
