@@ -8,7 +8,7 @@ class DirectorDatafieldCategory extends DbObject
 {
     protected $table = 'director_datafield_category';
 
-    protected $keyName = 'id';
+    protected $keyName = 'category_name';
 
     protected $autoincKeyName = 'id';
 
