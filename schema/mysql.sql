@@ -179,8 +179,17 @@ CREATE TABLE director_datalist_entry (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE director_datafield_category (
+  id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  category_name VARCHAR(255) NOT NULL,
+  description TEXT DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY category_name (category_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE director_datafield (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  category_id INT(10) UNSIGNED DEFAULT NULL,
   varname VARCHAR(64) NOT NULL COLLATE utf8_bin,
   caption VARCHAR(255) NOT NULL,
   description TEXT DEFAULT NULL,
