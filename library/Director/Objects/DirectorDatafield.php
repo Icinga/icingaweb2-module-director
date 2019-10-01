@@ -19,14 +19,19 @@ class DirectorDatafield extends DbObjectWithSettings
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'            => null,
+        'category_id'   => null,
         'varname'       => null,
         'caption'       => null,
         'description'   => null,
         'datatype'      => null,
         'format'        => null,
-    );
+    ];
+
+    protected $relations = [
+        'category'      => 'DirectorDatafieldCategory'
+    ];
 
     protected $settingsTable = 'director_datafield_setting';
 

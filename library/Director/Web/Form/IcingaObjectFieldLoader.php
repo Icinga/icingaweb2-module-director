@@ -230,6 +230,39 @@ class IcingaObjectFieldLoader
     }
 
     /**
+     * @param ZfElement[]        $elements
+     * @param DirectorObjectForm $form
+     */
+    protected function attachGroupElements(array $elements, DirectorObjectForm $form)
+    {
+        $categories = [];
+        foreach ($this->fields as $key => $field) {
+            if ($category = $field->category) {
+                $categories[$key] = $category;
+            }
+        }
+
+        foreach ($elements as $key => $element) {
+            if (isset($categories[$key])) {
+                $category = $categories[$key];
+                $form->addElementsToGroup(
+                    [$element],
+                    'custom_fields_' . $category->get('id'),
+                    50,
+                    $category->get('category_name')
+                );
+            } else {
+                $form->addElementsToGroup(
+                    [$element],
+                    'custom_fields',
+                    50,
+                    $form->translate('Custom properties')
+                );
+            }
+        }
+    }
+
+    /**
      * @param ZfElement[] $elements
      * @return ZfElement[]
      */
