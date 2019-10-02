@@ -6,7 +6,6 @@ use Exception;
 use gipfl\Cli\Process;
 use gipfl\IcingaCliDaemon\DbResourceConfigWatch;
 use gipfl\SystemD\NotifySystemD;
-use Icinga\Module\Director\Db;
 use React\EventLoop\Factory as Loop;
 use React\EventLoop\LoopInterface;
 use Ramsey\Uuid\Uuid;
@@ -16,13 +15,8 @@ class BackgroundDaemon
     /** @var LoopInterface */
     private $loop;
 
-    /** @var Db */
-    protected $connection;
-
     /** @var NotifySystemD|boolean */
     protected $systemd;
-
-    protected $onShutdown;
 
     /** @var JobRunner */
     protected $jobRunner;
