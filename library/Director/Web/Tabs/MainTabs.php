@@ -5,7 +5,7 @@ namespace Icinga\Module\Director\Web\Tabs;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\Tabs;
 use Icinga\Authentication\Auth;
-use Icinga\Module\Director\Daemon\BackgroundDaemonState;
+use Icinga\Module\Director\Web\Widget\Daemon\BackgroundDaemonState;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Health;
 use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;

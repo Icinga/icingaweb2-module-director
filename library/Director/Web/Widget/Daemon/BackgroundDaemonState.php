@@ -1,7 +1,8 @@
 <?php
 
-namespace Icinga\Module\Director\Daemon;
+namespace Icinga\Module\Director\Web\Widget\Daemon;
 
+use Icinga\Module\Director\Daemon\RunningDaemonInfo;
 use Icinga\Module\Director\Db;
 
 class BackgroundDaemonState
