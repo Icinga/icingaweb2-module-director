@@ -19,26 +19,18 @@ class DirectorDatafieldCategoryForm extends DirectorObjectForm
             )
         );
 
-        $this->addElement('text', 'category_name', array(
+        $this->addElement('text', 'category_name', [
             'label'       => $this->translate('Category name'),
             'description' => $this->translate(
                 'The unique name of the category used for grouping your custom Data Fields.'
             ),
             'required'    => true,
-        ));
+        ]);
 
-        $this->addElement('text', 'description', array(
+        $this->addElement('text', 'description', [
             'label'       => $this->translate('Description'),
-            'required'    => true,
-        ));
+        ]);
 
         $this->setButtons();
-    }
-
-    public function xxxshouldBeRenamed()
-    {
-        $object = $this->object();
-        return $object->hasBeenLoadedFromDb()
-            && $object->getOriginalProperty('category_name') !== $this->getSentValue('category_name');
     }
 }
