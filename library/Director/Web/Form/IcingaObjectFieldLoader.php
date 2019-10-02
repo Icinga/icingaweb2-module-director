@@ -231,29 +231,32 @@ class IcingaObjectFieldLoader
     protected function attachGroupElements(array $elements, DirectorObjectForm $form)
     {
         $categories = [];
+        $categoriesFetchedById = [];
         foreach ($this->fields as $key => $field) {
-            if ($category = $field->category_id) {
-                $categories[$key] = $category;
-            } elseif ($field) {
-
+            if ($id = $field->get('category_id')) {
+                if (isset($categoriesFetchedById[$id])) {
+                    $category = $categoriesFetchedById[$id];
+                } else {
+                    $category = DirectorDatafieldCategory::loadWithAutoIncId($id, $form->getDb());
+                    $categoriesFetchedById[$id] = $category;
+                }
+            } elseif ($field->hasCategory()) {
+                $category = $field->getCategory();
+            } else {
+                continue;
             }
+            $categories[$key] = $category;
         }
-        $cObjects = [];
-        foreach ($categories as $id) {
-            if (! isset($cObjects[$id])) {
-                $cObjects[$id] = DirectorDatafieldCategory::loadWithAutoIncId($id, $form->getDb());
-            }
-        }
-        $idx = array_flip(array_keys($cObjects));
+        $prioIdx = \array_flip(\array_keys($categories));
 
         foreach ($elements as $key => $element) {
             if (isset($categories[$key])) {
                 $category = $categories[$key];
                 $form->addElementsToGroup(
                     [$element],
-                    'custom_fields_' . $category,
-                    51 + $idx[$category],
-                    $cObjects[$category]->get('category_name')
+                    'custom_fields:' . $category->get('category_name'),
+                    51 + $prioIdx[$key],
+                    $category->get('category_name')
                 );
             } else {
                 $form->addElementsToGroup(
@@ -575,7 +578,7 @@ class IcingaObjectFieldLoader
         }
 
         foreach ($this->loadHookedDataFieldForObject($object) as $id => $fields) {
-            if (array_key_exists($id, $result)) {
+             if (array_key_exists($id, $result)) {
                 foreach ($fields as $varName => $field) {
                     $result[$id]->$varName = $field;
                 }
