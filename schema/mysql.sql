@@ -197,7 +197,12 @@ CREATE TABLE director_datafield (
 -- datatype_param? multiple ones?
   format enum ('string', 'json', 'expression'),
   PRIMARY KEY (id),
-  KEY search_idx (varname)
+  KEY search_idx (varname),
+  CONSTRAINT director_datalist_value_datalist
+    FOREIGN KEY category (category_id)
+    REFERENCES director_datafield_category (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_datafield_setting (
@@ -1878,4 +1883,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (167, NOW());
+  VALUES (168, NOW());
