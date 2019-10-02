@@ -66,6 +66,10 @@ class DirectorDatafield extends DbObjectWithSettings
         return $this->category !== null || $this->get('category_id') !== null;
     }
 
+    /**
+     * @return DirectorDatafieldCategory|null
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public function getCategory()
     {
         if ($this->category) {
