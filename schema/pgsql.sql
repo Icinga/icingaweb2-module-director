@@ -248,18 +248,35 @@ CREATE TABLE director_datalist_entry (
 CREATE INDEX datalist_entry_datalist ON director_datalist_entry (list_id);
 
 
+CREATE TABLE director_datafield_category (
+  id serial,
+  category_name character varying(255) NOT NULL,
+  description text DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX datafield_category_name ON director_datafield_category (category_name);
+
+
 CREATE TABLE director_datafield (
   id serial,
+  category_id integer DEFAULT NULL,
   varname character varying(64) NOT NULL,
   caption character varying(255) NOT NULL,
   description text DEFAULT NULL,
   datatype character varying(255) NOT NULL,
 -- datatype_param? multiple ones?
   format enum_property_format,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  CONSTRAINT director_datafield_category
+    FOREIGN KEY (category_id)
+    REFERENCES director_datafield_category (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 );
 
 CREATE INDEX search_idx ON director_datafield (varname);
+CREATE INDEX datafield_category ON director_datafield (category_id);
 
 
 CREATE TABLE director_datafield_setting (
@@ -2182,4 +2199,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (167, NOW());
+  VALUES (168, NOW());

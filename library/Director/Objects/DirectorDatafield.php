@@ -19,18 +19,26 @@ class DirectorDatafield extends DbObjectWithSettings
 
     protected $autoincKeyName = 'id';
 
-    protected $defaultProperties = array(
+    protected $defaultProperties = [
         'id'            => null,
+        'category_id'   => null,
         'varname'       => null,
         'caption'       => null,
         'description'   => null,
         'datatype'      => null,
         'format'        => null,
-    );
+    ];
+
+    protected $relations = [
+        'category'      => 'DirectorDatafieldCategory'
+    ];
 
     protected $settingsTable = 'director_datafield_setting';
 
     protected $settingsRemoteId = 'datafield_id';
+
+    /** @var DirectorDatafieldCategory|null */
+    private $category;
 
     private $object;
 
@@ -51,6 +59,53 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         return $obj;
+    }
+
+    public function hasCategory()
+    {
+        return $this->category !== null || $this->get('category_id') !== null;
+    }
+
+    /**
+     * @return DirectorDatafieldCategory|null
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function getCategory()
+    {
+        if ($this->category) {
+            return $this->category;
+        } elseif ($id = $this->get('category_id')) {
+            return DirectorDatafieldCategory::loadWithAutoIncId($id, $this->getConnection());
+        } else {
+            return null;
+        }
+    }
+
+    public function getCategoryName()
+    {
+        $category = $this->getCategory();
+        if ($this->category === null) {
+            return null;
+        } else {
+            return $category->get('category_name');
+        }
+    }
+
+    public function setCategory($category)
+    {
+        if ($category === null) {
+            $this->category = null;
+            $this->set('category_id', null);
+        } elseif ($category instanceof DirectorDatafieldCategory) {
+            if ($category->hasBeenLoadedFromDb()) {
+                $this->set('category_id', $category->get('id'));
+            }
+            $this->category = $category;
+        } else {
+            $this->setCategory(DirectorDatafieldCategory::load($category, $this->getConnection()));
+        }
+
+        return $this;
     }
 
     /**

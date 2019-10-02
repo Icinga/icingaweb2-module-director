@@ -9,6 +9,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Hook\HostFieldHook;
 use Icinga\Module\Director\Hook\ServiceFieldHook;
+use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -33,6 +34,7 @@ class IcingaObjectFieldLoader
     /** @var \Zend_Db_Adapter_Abstract */
     protected $db;
 
+    /** @var DirectorDatafield[] */
     protected $fields;
 
     protected $elements;
@@ -219,13 +221,51 @@ class IcingaObjectFieldLoader
             $form->addElement($element);
         }
 
-        if (! empty($elements)) {
-            $form->addElementsToGroup(
-                $elements,
-                'custom_fields',
-                50,
-                $form->translate('Custom properties')
-            );
+        $this->attachGroupElements($elements, $form);
+    }
+
+    /**
+     * @param ZfElement[]        $elements
+     * @param DirectorObjectForm $form
+     */
+    protected function attachGroupElements(array $elements, DirectorObjectForm $form)
+    {
+        $categories = [];
+        $categoriesFetchedById = [];
+        foreach ($this->fields as $key => $field) {
+            if ($id = $field->get('category_id')) {
+                if (isset($categoriesFetchedById[$id])) {
+                    $category = $categoriesFetchedById[$id];
+                } else {
+                    $category = DirectorDatafieldCategory::loadWithAutoIncId($id, $form->getDb());
+                    $categoriesFetchedById[$id] = $category;
+                }
+            } elseif ($field->hasCategory()) {
+                $category = $field->getCategory();
+            } else {
+                continue;
+            }
+            $categories[$key] = $category;
+        }
+        $prioIdx = \array_flip(\array_keys($categories));
+
+        foreach ($elements as $key => $element) {
+            if (isset($categories[$key])) {
+                $category = $categories[$key];
+                $form->addElementsToGroup(
+                    [$element],
+                    'custom_fields:' . $category->get('category_name'),
+                    51 + $prioIdx[$key],
+                    $category->get('category_name')
+                );
+            } else {
+                $form->addElementsToGroup(
+                    [$element],
+                    'custom_fields',
+                    50,
+                    $form->translate('Custom properties')
+                );
+            }
         }
     }
 
@@ -491,6 +531,7 @@ class IcingaObjectFieldLoader
                 'var_filter'  => 'f.var_filter',
                 'is_required' => 'f.is_required',
                 'id'          => 'df.id',
+                'category_id' => 'df.category_id',
                 'varname'     => 'df.varname',
                 'caption'     => 'df.caption',
                 'description' => 'df.description',

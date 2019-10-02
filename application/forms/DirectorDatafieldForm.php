@@ -164,6 +164,11 @@ class DirectorDatafieldForm extends DirectorObjectForm
             'rows'        => '3',
         ));
 
+        $this->addElement('select', 'category_id', [
+            'label' => $this->translate('Data Field Category'),
+            'multiOptions'  => $this->optionalEnum($this->enumCategpories()),
+        ]);
+
         $error = false;
         try {
             $types = $this->enumDataTypes();
@@ -284,5 +289,13 @@ class DirectorDatafieldForm extends DirectorObjectForm
         }
 
         return $enum;
+    }
+
+    protected function enumCategpories()
+    {
+        $db = $this->getDb()->getDbAdapter();
+        return $db->fetchPairs(
+            $db->select()->from('director_datafield_category', ['id', 'category_name'])
+        );
     }
 }

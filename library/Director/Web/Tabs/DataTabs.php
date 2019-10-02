@@ -20,6 +20,9 @@ class DataTabs extends Tabs
         $this->add('datafield', [
             'label' => $this->translate('Data fields'),
             'url'   => 'director/data/fields'
+        ])->add('datafieldcategory', [
+            'label' => $this->translate('Data field categories'),
+            'url'   => 'director/data/fieldcategories'
         ])->add('datalist', [
             'label' => $this->translate('Data lists'),
             'url'   => 'director/data/lists'
