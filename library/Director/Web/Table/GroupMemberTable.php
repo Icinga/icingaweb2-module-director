@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
@@ -13,6 +14,8 @@ use gipfl\IcingaWeb2\Url;
 
 class GroupMemberTable extends ZfQueryBasedTable
 {
+    use MultiSelect;
+
     protected $searchColumns = [
         'o.object_name',
         // membership_type
@@ -39,6 +42,16 @@ class GroupMemberTable extends ZfQueryBasedTable
         $table = new $class($db);
         $table->type = $type;
         return $table;
+    }
+    public function assemble()
+    {
+        if ($this->type === 'host') {
+            $this->enableMultiSelect(
+                'director/hosts/edit',
+                'director/hosts',
+                ['name']
+            );
+        }
     }
 
     public function setGroup(IcingaObjectGroup $group)
