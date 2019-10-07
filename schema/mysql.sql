@@ -198,7 +198,7 @@ CREATE TABLE director_datafield (
   format enum ('string', 'json', 'expression'),
   PRIMARY KEY (id),
   KEY search_idx (varname),
-  CONSTRAINT director_datalist_value_datalist
+  CONSTRAINT director_datafield_category
     FOREIGN KEY category (category_id)
     REFERENCES director_datafield_category (id)
     ON DELETE RESTRICT
