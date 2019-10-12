@@ -107,7 +107,7 @@ class DaemonDb
             } else {
                 Logger::error('DB configuration is no longer valid');
             }
-            $this->emitStatus('there is no valid DB configuration');
+            $this->emitStatus('no configuration');
             $this->dbConfig = $config;
 
             return new FulfilledPromise();
@@ -136,6 +136,7 @@ class DaemonDb
             $this->pendingReconnection->reset();
             $this->pendingReconnection = null;
         }
+        $this->emitStatus('connecting');
 
         return $this->pendingReconnection = RetryUnless::succeeding($callback)
             ->setInterval(0.2)
@@ -286,7 +287,7 @@ class DaemonDb
 
     protected function emitStatus($message, $level = 'info')
     {
-        $this->emit('status', [$message, $level]);
+        $this->emit('state', [$message, $level]);
 
         return $this;
     }
