@@ -8,6 +8,6 @@ class PropertyModifierLowercase extends PropertyModifierHook
 {
     public function transform($value)
     {
-        return strtolower($value);
+        return \mb_strtolower($value, 'UTF-8');
     }
 }

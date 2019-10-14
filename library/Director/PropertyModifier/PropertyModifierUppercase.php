@@ -8,6 +8,6 @@ class PropertyModifierUppercase extends PropertyModifierHook
 {
     public function transform($value)
     {
-        return strtoupper($value);
+        return \mb_strtoupper($value, 'UTF-8');
     }
 }
