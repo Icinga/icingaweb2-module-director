@@ -26,7 +26,7 @@ class CloneSyncRuleForm extends Form
 
     protected function assemble()
     {
-        $this->addElement('rule_name', 'text', [
+        $this->addElement('text', 'rule_name', [
             'label' => $this->translate('New name'),
             'value' => $this->rule->get('rule_name'),
         ]);
@@ -59,7 +59,6 @@ class CloneSyncRuleForm extends Form
         }
         $this->newRule = SyncRule::import($export, $this->getTargetDb());
         $this->newRule->store();
-        $this->redirectOnSuccess();
     }
 
     public function getSuccessUrl()
