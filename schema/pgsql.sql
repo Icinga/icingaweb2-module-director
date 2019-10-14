@@ -46,7 +46,7 @@ CREATE TYPE enum_sync_state AS ENUM(
 );
 CREATE TYPE enum_host_service AS ENUM('host', 'service');
 CREATE TYPE enum_owner_type AS ENUM('user', 'usergroup', 'role');
-
+CREATE DOMAIN d_smallint AS integer CHECK (VALUE >= 0) CHECK (VALUE < 65536);
 
 CREATE OR REPLACE FUNCTION unix_timestamp(timestamp with time zone) RETURNS bigint AS '
         SELECT EXTRACT(EPOCH FROM $1)::bigint AS result
@@ -585,7 +585,7 @@ CREATE TABLE icinga_endpoint (
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
   host character varying(255) DEFAULT NULL,
-  port smallint DEFAULT NULL,
+  port d_smallint DEFAULT NULL,
   log_duration character varying(32) DEFAULT NULL,
   apiuser_id INTEGER DEFAULT NULL,
   PRIMARY KEY (id),
@@ -2199,4 +2199,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (168, NOW());
+  VALUES (169, NOW());
