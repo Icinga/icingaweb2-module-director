@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+1.7.1
+-----
+
+* FIX: Daemon didn't report DB state to systemd (#1983)
+* FIX: Cloning Sync rules failed since v1.7.0 (#1982)
+* FIX: It wasn't possible to multi-select Hosts belonging to a Group (#1973)
+* FIX: An ugly error has been shown in some places when Icinga went away (#1966)
+* FIX: Upper- and Lowercase property modifiers are now multibyte/UTF8-safe (#710)
+* FIX: Check for broken configs has been extended to Icinga v2.11.* (#1985)
+
 1.7.0
 -----
 ### Breaking Changes
