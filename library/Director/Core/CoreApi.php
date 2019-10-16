@@ -797,7 +797,7 @@ constants
      * @param IcingaConfig $config
      * @param Db $db
      * @param null $packageName
-     * @return \Icinga\Module\Director\Data\Db\DbObject
+     * @return DirectorDeploymentLog
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     public function dumpConfig(IcingaConfig $config, Db $db, $packageName = null)
@@ -806,6 +806,7 @@ constants
             $packageName = $db->settings()->get('icinga_package_name');
         }
         $start = microtime(true);
+        /** @var DirectorDeploymentLog $deployment */
         $deployment = DirectorDeploymentLog::create(array(
             // 'config_id'      => $config->id,
             // 'peer_identity'  => $endpoint->object_name,
