@@ -18,13 +18,22 @@ next (will be 1.8.0)
 1.7.1
 -----
 
-* FIX: Daemon didn't report DB state to systemd (#1983)
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/22?closed=1)
+
+### User Interface
 * FIX: Cloning Sync rules failed since v1.7.0 (#1982)
 * FIX: It wasn't possible to multi-select Hosts belonging to a Group (#1973)
-* FIX: An ugly error has been shown in some places when Icinga went away (#1966)
-* FIX: Upper- and Lowercase property modifiers are now multibyte/UTF8-safe (#710)
+* FIX: Removed an un-formatted error in case Icinga is unreachable (#1966)
 * FIX: Check for broken configs has been extended to Icinga v2.11.* (#1985)
 * FEATURE: Show a warning when detecting a downgraded installation (#1992)
+
+### Import and Sync
+* FIX: Upper- and Lowercase property modifiers are now multibyte/UTF8-safe (#710)
+
+### Background Daemon
+* FIX: Daemon didn't report DB state to systemd (#1983)
 
 1.7.0
 -----
