@@ -139,14 +139,29 @@ class Migrations
         if ($version === 0) {
             $filename = $this->getFullSchemaFile();
         } else {
-            $filename = sprintf(
-                '%s/upgrade_%d.sql',
-                $this->getMigrationsDir(),
-                $version
-            );
+            $filename = $this->getMigrationFileName($version);
         }
 
         return file_get_contents($filename);
+    }
+
+    public function hasBeenDowngraded()
+    {
+        return ! $this->hasMigrationFile($this->getLastMigrationNumber());
+    }
+
+    public function hasMigrationFile($version)
+    {
+        return \file_exists($this->getMigrationFileName($version));
+    }
+
+    protected function getMigrationFileName($version)
+    {
+        return sprintf(
+            '%s/upgrade_%d.sql',
+            $this->getMigrationsDir(),
+            $version
+        );
     }
 
     protected function listMigrationsAfter($version)
