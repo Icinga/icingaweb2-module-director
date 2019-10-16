@@ -19,6 +19,7 @@ next (will be 1.8.0)
 * FIX: An ugly error has been shown in some places when Icinga went away (#1966)
 * FIX: Upper- and Lowercase property modifiers are now multibyte/UTF8-safe (#710)
 * FIX: Check for broken configs has been extended to Icinga v2.11.* (#1985)
+* FEATURE: Show a warning when detecting a downgraded installation (#1992)
 
 1.7.0
 -----
