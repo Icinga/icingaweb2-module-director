@@ -212,7 +212,7 @@ class Health
             $name = $job->get('job_name');
             if ($job->hasBeenDisabled()) {
                 $check->succeed("'$name' has been disabled");
-            } elseif (! $job->lastAttemptSucceeded()) {
+            } elseif ($job->lastAttemptFailed()) {
                 $message = $job->get('last_error_message');
                 $check->fail("Last attempt for '$name' failed: $message");
             } elseif ($job->isOverdue()) {

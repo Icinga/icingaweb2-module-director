@@ -156,6 +156,11 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
         return $this->get('last_attempt_succeeded') === 'y';
     }
 
+    public function lastAttemptFailed()
+    {
+        return $this->get('last_attempt_succeeded') === 'n';
+    }
+
     public function hasTimeperiod()
     {
         return $this->get('timeperiod_id') !== null;

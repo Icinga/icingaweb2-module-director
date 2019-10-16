@@ -32,6 +32,9 @@ next (will be 1.8.0)
 ### Import and Sync
 * FIX: Upper- and Lowercase property modifiers are now multibyte/UTF8-safe (#710)
 
+### Health Check
+* FIX: do not complain about no-due newly created jobs (#1994)
+
 ### Background Daemon
 * FIX: Daemon didn't report DB state to systemd (#1983)
 
