@@ -152,11 +152,12 @@ class DaemonDb
         $connection->getDbAdapter()->getConnection();
         $migrations = new Migrations($connection);
         if (! $migrations->hasSchema()) {
-            $this->emit('status', ['DB has no schema', 'error']);
+            $this->emitStatus('no schema', 'error');
             throw new RuntimeException('DB has no schema');
         }
         $this->wipeOrphanedInstances($connection);
         if ($this->hasAnyOtherActiveInstance($connection)) {
+            $this->emitStatus('locked by other instance', 'error');
             throw new RuntimeException('DB is locked by a running daemon instance');
         }
         $this->startupSchemaVersion = $migrations->getLastMigrationNumber();
