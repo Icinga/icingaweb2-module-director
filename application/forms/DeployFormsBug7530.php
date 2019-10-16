@@ -68,7 +68,9 @@ trait DeployFormsBug7530
             $version = $this->api->getVersion();
             if ($version === null) {
                 throw new \RuntimeException($this->translate('Unable to detect your Icinga 2 Core version'));
-            } elseif ($version === '2.11.0') {
+            } elseif (\version_compare($version, '2.11.0', '>=')
+                && \version_compare($version, '2.12.0', '<')
+            ) {
                 return true;
             }
         }
