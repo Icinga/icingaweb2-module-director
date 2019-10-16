@@ -15,6 +15,16 @@ next (will be 1.8.0)
 * FIX: It's now possible to set Endpoint ports > 32767 on PostgreSQL (#928)
 * FEATURE: Data Fields can now be grouped into categories (#1969)
 
+1.7.2
+-----
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/23?closed=1)
+
+### DB Schema
+* FIX: Rolling out new installations on MySQL v5.6 fails (#1993)
+
 1.7.1
 -----
 

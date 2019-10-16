@@ -38,7 +38,7 @@ CREATE TABLE director_activity_log (
   old_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   new_properties TEXT DEFAULT NULL COMMENT 'Property hash, JSON',
   author VARCHAR(64) NOT NULL,
-  change_time TIMESTAMP NOT NULL,
+  change_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   checksum VARBINARY(20) NOT NULL,
   parent_checksum VARBINARY(20) DEFAULT NULL,
   PRIMARY KEY (id),
