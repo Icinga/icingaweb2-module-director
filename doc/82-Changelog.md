@@ -7,6 +7,11 @@ before switching to a new version.
 next (will be 1.8.0)
 --------------------
 
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/21?closed=1)
+
+### User Interface
 * FIX: It's now possible to set Endpoint ports > 32767 on PostgreSQL (#928)
 * FEATURE: Data Fields can now be grouped into categories (#1969)
 
