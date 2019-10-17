@@ -192,6 +192,26 @@ class Db extends DbConnection
         return $db->fetchOne($query) > 0;
     }
 
+    public function getEndpointNamesInDeploymentZone()
+    {
+        $db = $this->db();
+        $query = $db->select()->from(
+            array('z' => 'icinga_zone'),
+            array('object_name' => 'e.object_name')
+        )->join(
+            array('e' => 'icinga_endpoint'),
+            'e.zone_id = z.id',
+            array()
+        )->join(
+            array('au' => 'icinga_apiuser'),
+            'e.apiuser_id = au.id',
+            array()
+        )->where('z.object_name = ?', $this->getMasterZoneName())
+            ->order('e.object_name ASC');
+
+        return $db->fetchCol($query) ?: [];
+    }
+
     public function getDeploymentEndpointName()
     {
         $db = $this->db();

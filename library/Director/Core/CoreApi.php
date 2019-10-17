@@ -708,24 +708,30 @@ constants
         }
     }
 
-    public function listStageFiles($stage)
+    public function listStageFiles($stage, $packageName = null)
     {
+        if ($packageName === null) {
+            $packageName = $this->getPackageName();
+        }
         return array_keys(
-            $this->client()->get(sprintf(
+            $this->client()->get(\sprintf(
                 'config/stages/%s/%s',
-                urlencode($this->getPackageName()),
-                urlencode($stage)
+                \urlencode($packageName),
+                \urlencode($stage)
             ))->getResult('name', array('type' => 'file'))
         );
     }
 
-    public function getStagedFile($stage, $file)
+    public function getStagedFile($stage, $file, $packageName = null)
     {
-        return $this->client()->getRaw(sprintf(
+        if ($packageName === null) {
+            $packageName = $this->getPackageName();
+        }
+        return $this->client()->getRaw(\sprintf(
             'config/files/%s/%s/%s',
-            urlencode($this->getPackageName()),
-            urlencode($stage),
-            urlencode($file)
+            \urlencode($packageName),
+            \urlencode($stage),
+            \urlencode($file)
         ));
     }
 

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -10,9 +11,9 @@ use Icinga\Module\Director\Web\Table\CoreApiObjectsTable;
 use Icinga\Module\Director\Web\Table\CoreApiPrototypesTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
 use Icinga\Module\Director\Web\Tree\InspectTreeRenderer;
-use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Widget\IcingaObjectInspection;
+use Icinga\Module\Director\Web\Widget\InspectPackages;
+use ipl\Html\Html;
 
 class InspectController extends ActionController
 {
@@ -24,9 +25,7 @@ class InspectController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function typesAction()
     {
@@ -55,8 +54,7 @@ class InspectController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function typeAction()
     {
@@ -95,9 +93,7 @@ class InspectController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function objectAction()
     {
@@ -116,7 +112,6 @@ class InspectController extends ActionController
 
     /**
      * @param IcingaEndpoint $endpoint
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function showEndpointInformation(IcingaEndpoint $endpoint)
     {
@@ -132,8 +127,6 @@ class InspectController extends ActionController
     /**
      * @param IcingaEndpoint $endpoint
      * @return Link
-     * @throws \Icinga\Exception\ProgrammingError
-     * @throws \Icinga\Exception\IcingaException
      */
     protected function linkToEndpoint(IcingaEndpoint $endpoint)
     {
@@ -143,8 +136,7 @@ class InspectController extends ActionController
     }
 
     /**
-     * @throws \Icinga\Exception\IcingaException
-     * @throws \Icinga\Exception\ProgrammingError
+     * @throws \Icinga\Exception\NotFoundError
      */
     public function statusAction()
     {
@@ -158,9 +150,39 @@ class InspectController extends ActionController
     }
 
     /**
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function packagesAction()
+    {
+        $db = $this->db();
+        $endpointName = $this->params->get('endpoint');
+        $package = $this->params->get('package');
+        $stage = $this->params->get('stage');
+        $file = $this->params->get('file');
+        if ($endpointName === null) {
+            $endpoint = null;
+        } else {
+            $endpoint = IcingaEndpoint::load($endpointName, $db);
+        }
+        if ($endpoint === null) {
+            $this->addSingleTab($this->translate('Inspect Packages'));
+        } elseif ($file !== null) {
+            $this->addSingleTab($this->translate('Inspect File Content'));
+        } else {
+            $this->tabs(
+                new ObjectTabs('endpoint', $this->Auth(), $endpoint)
+            )->activate('packages');
+        }
+        $widget = new InspectPackages($this->db(), 'director/inspect/packages');
+        $this->addTitle($widget->getTitle($endpoint, $package, $stage, $file));
+        if ($file === null) {
+            $this->actions()->add($widget->getBreadCrumb($endpoint, $package, $stage));
+        }
+        $this->content()->add($widget->getContent($endpoint, $package, $stage, $file));
+    }
+
+    /**
      * @return IcingaEndpoint
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\IcingaException
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function endpoint()
