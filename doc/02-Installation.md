@@ -41,7 +41,7 @@ HINT: You should replace `some-password` with a secure custom password.
 #### MySQL (or MariaDB)
 
     mysql -e "CREATE DATABASE director CHARACTER SET 'utf8';
-       CREATE USER director@localhost IDENTIFIED BY 'some-password;
+       CREATE USER director@localhost IDENTIFIED BY 'some-password';
        GRANT ALL ON director.* TO director@localhost;"
 
 In case your MySQL root user is password-protected, please add `-p` to this
