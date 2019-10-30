@@ -30,16 +30,17 @@ class PropertyModifierArrayElementByPosition extends PropertyModifierHook
             'label'       => $form->translate('Position Type'),
             'required'    => true,
             'multiOptions' => $form->optionalEnum([
-                'first' => $form->translate('First Element'),
-                'last'  => $form->translate('Last Element'),
-                'fixed' => $form->translate('Specific Element (by position)'),
+                'first'   => $form->translate('First Element'),
+                'last'    => $form->translate('Last Element'),
+                'fixed'   => $form->translate('Specific Element (by position)'),
+                'keyname' => $form->translate('Specific Element (by key name)'),
             ]),
         ]);
 
         $form->addElement('text', 'position', [
             'label'       => $form->translate('Position'),
             'description' => $form->translate(
-                'Numeric position'
+                'Numeric position or key name'
             ),
         ]);
 
@@ -105,6 +106,21 @@ class PropertyModifierArrayElementByPosition extends PropertyModifierHook
                     return $this->emptyValue($value);
                 }
                 // https://github.com/squizlabs/PHP_CodeSniffer/pull/1363
+            case 'keyname':
+                $pos = $this->getSetting('position');
+                if (! is_string($pos)) {
+                    throw new InvalidArgumentException(sprintf(
+                        '"%s" is not a valid array key name',
+                        $pos
+                    ));
+                }
+
+                if (array_key_exists($pos, $value)) {
+                    return $value[$pos];
+                } else {
+                    return $this->emptyValue($value);
+                }
+                // https://github.com/squizlabs/PHP_CodeSniffer/pull/1363
             default:
                 throw new ConfigurationError(
                     '"%s" is not a valid array position_type',
@@ -125,6 +141,8 @@ class PropertyModifierArrayElementByPosition extends PropertyModifierHook
             case 'last':
                 return 'last';
             case 'fixed':
+                return '#' . $this->getSetting('position');
+            case 'keyname':
                 return '#' . $this->getSetting('position');
             default:
                 throw new ConfigurationError(
