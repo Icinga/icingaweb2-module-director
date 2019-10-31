@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
+use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
@@ -44,6 +45,11 @@ abstract class ActionController extends Controller implements ControlsAndContent
      */
     public function init()
     {
+        if (! $this->getRequest()->isApiRequest()
+            && $this->Config()->get('frontend', 'disabled', 'no') === 'yes'
+        ) {
+            throw new NotFoundError('Not found');
+        }
         $this->initializeTranslator();
         Benchmark::measure('Director base Controller init()');
         $this->checkForRestApiRequest();

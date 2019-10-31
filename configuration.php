@@ -3,6 +3,9 @@
 use Icinga\Application\Icinga;
 use Icinga\Web\Window;
 
+if ($this->getConfig()->get('frontend', 'disabled', 'no') === 'yes') {
+    return;
+}
 $this->providePermission('director/api', $this->translate('Allow to access the director API'));
 $this->providePermission('director/audit', $this->translate('Allow to access the full audit log'));
 $this->providePermission(
