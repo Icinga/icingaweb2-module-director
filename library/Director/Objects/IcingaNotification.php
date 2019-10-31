@@ -244,6 +244,18 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         return $this->renderRelationProperty('host', $this->get('host_id'), 'host_name');
     }
 
+    /**
+     * Render service_id as service_name
+     *
+     * @codingStandardsIgnoreStart
+     * @return string
+     */
+    public function renderService_id()
+    {
+        // @codingStandardsIgnoreEnd
+        return $this->renderRelationProperty('service', $this->get('service_id'), 'service_name');
+    }
+
     protected function setKey($key)
     {
         if (is_int($key)) {

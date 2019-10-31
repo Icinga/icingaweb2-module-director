@@ -14,6 +14,9 @@ before switching to a new version.
 ### DB Schema
 * FIX: Rolling out new installations on MySQL v5.6 fails (#1993)
 
+### Icinga Configuration
+* FIX: Render service\_name for Notifications (#2006)
+
 1.7.1
 -----
 
