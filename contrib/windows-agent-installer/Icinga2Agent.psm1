@@ -232,8 +232,9 @@ function Icinga2AgentModule {
             $this.debug('Setting "agent_listen_port" to default 5665');
         }
         if ($this.cfg['global_zones'].Count -eq 0) {
-            $this.cfg['global_zones'] = @( 'director-global' );
-            $this.debug('Setting "global_zones" to default "director-global"');
+            $this.cfg['global_zones'] = @( 'director-global', 'global-templates' );
+            $this.generateGlobalZones();
+            $this.debug('Setting "global_zones" to default "director-global" and "global-templates"');
         }
         if ($this.cfg['accept_config'] -eq -1) {
             $this.cfg['accept_config'] = $TRUE;
