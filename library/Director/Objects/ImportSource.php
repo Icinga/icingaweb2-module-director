@@ -115,11 +115,11 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
 
     public function setModifiers(array $modifiers)
     {
-        if ($this->loadedRowModifiers === null) {
+        if ($this->loadedRowModifiers === null && $this->hasBeenLoadedFromDb()) {
             $this->loadedRowModifiers = $this->fetchRowModifiers();
         }
         $current = $this->loadedRowModifiers;
-        if (count($current) !== count($modifiers)) {
+        if ($current !== null && count($current) !== count($modifiers)) {
             $this->newRowModifiers = $modifiers;
         } else {
             $i = 0;
@@ -394,7 +394,6 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     public function fetchRowModifiers()
     {
         $db = $this->getDb();
-
         $modifiers = ImportRowModifier::loadAll(
             $this->getConnection(),
             $db->select()
@@ -403,7 +402,11 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
                ->order('priority ASC')
         );
 
-        return $modifiers;
+        if ($modifiers) {
+            return $modifiers;
+        } else {
+            return [];
+        }
     }
 
     protected function fetchFlatRowModifiers()

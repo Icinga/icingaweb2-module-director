@@ -125,6 +125,9 @@ class ImportsourceController extends ActionController
         $this->addTitle('Clone: %s', $source->get('source_name'));
         $form = new CloneImportSourceForm($source);
         $this->content()->add($form);
+        $form->on(CloneImportSourceForm::ON_SUCCESS, function (CloneImportSourceForm $form) {
+            $this->getResponse()->redirectAndExit($form->getSuccessUrl());
+        });
         $form->handleRequest($this->getServerRequest());
     }
 
