@@ -30,6 +30,19 @@ next (will be 1.8.0)
 ### Icinga Configuration
 * FIX: Render service\_name for Notifications (#2006)
 
+### User Interface
+* FIX: Cloning Import Sources failed since v1.7.0 (#1997)
+
+### CLI
+* FIX: Importing Import Sources failed since v1.7.0 (#2005)
+
+### Automation
+* FIX: Fixing linux install script version check (#2008)
+* FIX: Windows Kickstart Script - $GlobalZones was empty (#2002)
+
+### Documentation
+* FIX: Missing single quote in mysql example bug (#2003)
+
 1.7.1
 -----
 
