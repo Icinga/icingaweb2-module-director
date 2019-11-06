@@ -77,6 +77,10 @@ abstract class ObjectsController extends ActionController
         } elseif ($request->getActionName() === 'applyrules') {
             $table->filterObjectType('apply');
         }
+        $search = $this->params->get('q');
+        if (\strlen($search) > 0) {
+            $table->search($search);
+        }
 
         return (new IcingaObjectsHandler(
             $request,
