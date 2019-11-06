@@ -15,6 +15,7 @@ class ObjectSetTable extends ZfQueryBasedTable
         'os.object_name',
         'os.description',
         'os.assign_filter',
+        'o.object_name',
     ];
 
     private $type;
