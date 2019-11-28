@@ -406,7 +406,7 @@ abstract class GroupMembershipResolver
         );
     }
 
-    protected function getDifference(& $left, & $right)
+    protected function getDifference(&$left, &$right)
     {
         $diff = array();
 
@@ -476,7 +476,7 @@ abstract class GroupMembershipResolver
      * @param IcingaObject[]|int[] $objects
      * @return ZfSelect
      */
-    protected function addMembershipWhere(ZfSelect $query, $column, & $objects)
+    protected function addMembershipWhere(ZfSelect $query, $column, &$objects)
     {
         if (empty($objects)) {
             return $query;

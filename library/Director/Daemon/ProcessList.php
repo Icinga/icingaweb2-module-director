@@ -79,7 +79,7 @@ class ProcessList
 
         $timer = $this->loop->addPeriodicTimer($timeout / 20, function () use (
             $deferred,
-            & $timer,
+            &$timer,
             $killTimer
         ) {
             $stopped = [];

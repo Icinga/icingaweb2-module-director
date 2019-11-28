@@ -113,7 +113,7 @@ class ExtensibleSetElement extends BaseHtmlElement
         return $this;
     }
 
-    protected function extractZfInfo(& $attribs = null)
+    protected function extractZfInfo(&$attribs = null)
     {
         if ($attribs === null) {
             return;

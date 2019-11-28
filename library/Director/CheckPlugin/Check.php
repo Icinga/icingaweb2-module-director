@@ -39,7 +39,7 @@ class Check extends CheckResults
         return $this;
     }
 
-    protected function makeBool($check, & $message)
+    protected function makeBool($check, &$message)
     {
         if (is_callable($check)) {
             try {

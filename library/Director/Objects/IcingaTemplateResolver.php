@@ -300,7 +300,7 @@ class IcingaTemplateResolver
         return array_keys($list);
     }
 
-    protected function assertNotInList($id, & $list)
+    protected function assertNotInList($id, &$list)
     {
         if (array_key_exists($id, $list)) {
             $list = array_keys($list);

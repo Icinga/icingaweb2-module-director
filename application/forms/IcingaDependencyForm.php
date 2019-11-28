@@ -287,7 +287,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function handleProperties(DbObject $object, & $values)
+    protected function handleProperties(DbObject $object, &$values)
     {
         if ($this->hasBeenSent()) {
             if (isset($values['parent_host'])

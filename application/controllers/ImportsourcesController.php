@@ -57,7 +57,7 @@ class ImportsourcesController extends ActionController
      * @param $raw
      * @throws \Icinga\Exception\ConfigurationError
      */
-    protected function acceptImport(& $raw)
+    protected function acceptImport(&$raw)
     {
         (new ImportExport($this->db()))->unserializeImportSources(json_decode($raw));
     }
