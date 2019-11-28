@@ -46,7 +46,7 @@ class Zend_View_Helper_FormStoredPassword extends Zend_View_Helper_FormElement
         return $res;
     }
 
-    protected function stripAttribute(& $attribs, $name, $default = null)
+    protected function stripAttribute(&$attribs, $name, $default = null)
     {
         if (\array_key_exists($name, $attribs)) {
             if (\strlen($attribs[$name])) {

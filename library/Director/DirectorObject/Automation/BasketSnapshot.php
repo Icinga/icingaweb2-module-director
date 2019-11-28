@@ -258,7 +258,7 @@ class BasketSnapshot extends DbObject
      * @throws \Zend_Db_Adapter_Exception
      */
     protected function restoreType(
-        & $all,
+        &$all,
         $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
         Db $connection,
@@ -314,7 +314,7 @@ class BasketSnapshot extends DbObject
      * @param $list
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
-    protected function recursivelyStore(IcingaObject $object, & $list)
+    protected function recursivelyStore(IcingaObject $object, &$list)
     {
         foreach ($object->listImportNames() as $parent) {
             if (array_key_exists($parent, $list)) {

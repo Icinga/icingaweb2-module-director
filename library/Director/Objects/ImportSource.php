@@ -299,7 +299,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         return null;
     }
 
-    public function applyModifiers(& $data)
+    public function applyModifiers(&$data)
     {
         $modifiers = $this->fetchFlatRowModifiers();
 

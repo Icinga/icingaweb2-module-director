@@ -443,7 +443,7 @@ class Import
      *
      * @param array $array
      */
-    protected function sortArrayObject(& $array)
+    protected function sortArrayObject(&$array)
     {
         foreach ($array as $key => $val) {
             $this->sortElement($val);
@@ -455,7 +455,7 @@ class Import
      *
      * @param mixed $el
      */
-    protected function sortElement(& $el)
+    protected function sortElement(&$el)
     {
         if (is_array($el)) {
             $this->sortArrayObject($el);

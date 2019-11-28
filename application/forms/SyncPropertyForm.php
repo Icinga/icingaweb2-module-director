@@ -223,7 +223,7 @@ class SyncPropertyForm extends DirectorObjectForm
         return $this;
     }
 
-    protected function addIcingaTempateColumns(& $columns)
+    protected function addIcingaTempateColumns(&$columns)
     {
         $funcTemplates = 'enum' . ucfirst($this->rule->get('object_type')) . 'Templates';
         if (method_exists($this->db, $funcTemplates)) {
@@ -238,7 +238,7 @@ class SyncPropertyForm extends DirectorObjectForm
         }
     }
 
-    protected function addDatalistsColumns(& $columns)
+    protected function addDatalistsColumns(&$columns)
     {
         // Clear other columns, we don't allow them right now
         $columns = [];

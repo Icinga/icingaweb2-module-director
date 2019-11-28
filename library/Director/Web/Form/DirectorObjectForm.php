@@ -286,7 +286,7 @@ abstract class DirectorObjectForm extends DirectorForm
     }
 
     // TODO: move to a subform
-    protected function handleRanges(IcingaObject $object, & $values)
+    protected function handleRanges(IcingaObject $object, &$values)
     {
         if (! $object->supportsRanges()) {
             return;
@@ -369,7 +369,7 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->displayGroups[$group];
     }
 
-    protected function handleProperties(DbObject $object, & $values)
+    protected function handleProperties(DbObject $object, &$values)
     {
         if ($this->hasBeenSent()) {
             foreach ($values as $key => $value) {
@@ -752,17 +752,17 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->objectName;
     }
 
-    protected function removeFromSet(& $set, $key)
+    protected function removeFromSet(&$set, $key)
     {
         unset($set[$key]);
     }
 
-    protected function moveUpInSet(& $set, $key)
+    protected function moveUpInSet(&$set, $key)
     {
         list($set[$key - 1], $set[$key]) = array($set[$key], $set[$key - 1]);
     }
 
-    protected function moveDownInSet(& $set, $key)
+    protected function moveDownInSet(&$set, $key)
     {
         list($set[$key + 1], $set[$key]) = array($set[$key], $set[$key + 1]);
     }

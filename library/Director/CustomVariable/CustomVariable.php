@@ -109,7 +109,7 @@ abstract class CustomVariable implements IcingaConfigRenderer
         ));
     }
 
-    public function flatten(array & $flat, $prefix)
+    public function flatten(array &$flat, $prefix)
     {
         $flat[$prefix] = $this->getDbValue();
     }

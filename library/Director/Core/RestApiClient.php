@@ -172,7 +172,7 @@ class RestApiClient
      * @param  $data
      * @return int
      */
-    protected function readPart($curl, & $data)
+    protected function readPart($curl, &$data)
     {
         $length = strlen($data);
         $this->readBuffer .= $data;

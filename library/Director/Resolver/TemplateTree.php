@@ -215,7 +215,7 @@ class TemplateTree
      * @param $list
      * @throws NestingError
      */
-    protected function assertNotInList($id, & $list)
+    protected function assertNotInList($id, &$list)
     {
         if (array_key_exists($id, $list)) {
             $list = array_keys($list);
@@ -265,7 +265,7 @@ class TemplateTree
      * @return array
      * @throws NestingError
      */
-    public function getAncestorsById($id, & $ancestors = [], $path = [])
+    public function getAncestorsById($id, &$ancestors = [], $path = [])
     {
         $path[$id] = true;
         foreach ($this->getParentsById($id) as $pid => $name) {
@@ -325,7 +325,7 @@ class TemplateTree
         }
     }
 
-    public function getDescendantsById($id, & $children = [], & $path = [])
+    public function getDescendantsById($id, &$children = [], &$path = [])
     {
         $path[$id] = true;
         foreach ($this->getChildrenById($id) as $pid => $name) {
@@ -359,14 +359,14 @@ class TemplateTree
     protected function returnFullTree()
     {
         $result = $this->rootNodes;
-        foreach ($result as $id => & $node) {
+        foreach ($result as $id => &$node) {
             $this->addChildrenById($id, $node);
         }
 
         return $result;
     }
 
-    protected function addChildrenById($pid, array & $base)
+    protected function addChildrenById($pid, array &$base)
     {
         foreach ($this->getChildrenById($pid) as $id => $name) {
             $base['children'][$id] = [

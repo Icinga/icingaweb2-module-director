@@ -336,7 +336,7 @@ class SelfServiceController extends ActionController
      * @throws \Zend_Controller_Request_Exception
      * @throws \Zend_Controller_Response_Exception
      */
-    protected function addHostToParams(IcingaHost $host, array & $params)
+    protected function addHostToParams(IcingaHost $host, array &$params)
     {
         if (! $host->isObject()) {
             return;
@@ -391,7 +391,7 @@ class SelfServiceController extends ActionController
         $params['accept_config']    = $host->getSingleResolvedProperty('accept_config')=== 'y';
     }
 
-    protected function addStringSettingsToParams(Settings $settings, array $keys, array & $params)
+    protected function addStringSettingsToParams(Settings $settings, array $keys, array &$params)
     {
         foreach ($keys as $key) {
             $value = $settings->get("self-service/$key");
@@ -401,7 +401,7 @@ class SelfServiceController extends ActionController
         }
     }
 
-    protected function addBooleanSettingsToParams(Settings $settings, array $keys, array & $params)
+    protected function addBooleanSettingsToParams(Settings $settings, array $keys, array &$params)
     {
         foreach ($keys as $key) {
             $value = $settings->get("self-service/$key");
