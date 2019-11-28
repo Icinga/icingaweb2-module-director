@@ -359,10 +359,10 @@ abstract class GroupMembershipResolver
         if (array_key_exists($name, $this->groupMap)) {
             return $this->groupMap[$name];
         } else {
-            throw new InvalidArgumentException(
+            throw new InvalidArgumentException(sprintf(
                 'Unable to lookup the group name for "%s"',
                 $name
-            );
+            ));
         }
     }
 
