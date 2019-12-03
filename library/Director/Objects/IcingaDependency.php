@@ -31,6 +31,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'period_id'              => null,
         'zone_id'                => null,
         'assign_filter'          => null,
+        'assign_filter_checksum' => null,
         'parent_service_by_name' => null,
     ];
 

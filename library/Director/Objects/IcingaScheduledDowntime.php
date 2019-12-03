@@ -10,18 +10,19 @@ class IcingaScheduledDowntime extends IcingaObject
     protected $table = 'icinga_scheduled_downtime';
 
     protected $defaultProperties = [
-        'id'                => null,
-        'zone_id'           => null,
-        'object_name'       => null,
-        'object_type'       => null,
-        'disabled'          => 'n',
-        'author'            => null,
-        'comment'           => null,
-        'fixed'             => null,
-        'duration'          => null,
-        'apply_to'          => null,
-        'assign_filter'     => null,
-        'with_services'     => null,
+        'id'                     => null,
+        'zone_id'                => null,
+        'object_name'            => null,
+        'object_type'            => null,
+        'disabled'               => 'n',
+        'author'                 => null,
+        'comment'                => null,
+        'fixed'                  => null,
+        'duration'               => null,
+        'apply_to'               => null,
+        'assign_filter'          => null,
+        'assign_filter_checksum' => null,
+        'with_services'          => null,
     ];
 
     protected $supportsImports = true;

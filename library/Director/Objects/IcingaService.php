@@ -58,6 +58,7 @@ class IcingaService extends IcingaObject implements ExportInterface
         'apply_for'               => null,
         'use_var_overrides'       => null,
         'assign_filter'           => null,
+        'assign_filter_checksum'  => null,
         'template_choice_id'      => null,
     ];
 

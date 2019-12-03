@@ -18,12 +18,13 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     protected $table = 'icinga_service_set';
 
     protected $defaultProperties = array(
-        'id'                    => null,
-        'host_id'               => null,
-        'object_name'           => null,
-        'object_type'           => null,
-        'description'           => null,
-        'assign_filter'         => null,
+        'id'                     => null,
+        'host_id'                => null,
+        'object_name'            => null,
+        'object_type'            => null,
+        'description'            => null,
+        'assign_filter'          => null,
+        'assign_filter_checksum' => null,
     );
 
     protected $keyName = array('host_id', 'object_name');
