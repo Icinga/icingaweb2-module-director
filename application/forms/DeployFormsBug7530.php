@@ -64,6 +64,7 @@ trait DeployFormsBug7530
 
     protected function coreHasBug7530()
     {
+        // TODO: Cache this
         if ($this->api instanceof CoreApi) {
             $version = $this->api->getVersion();
             if ($version === null) {
