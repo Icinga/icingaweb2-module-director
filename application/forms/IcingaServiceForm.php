@@ -66,6 +66,7 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         if ($this->host && $this->set) {
+            // Probably never reached, as providesOverrides includes this
             $this->setupOnHostForSet();
 
             return;
@@ -91,7 +92,7 @@ class IcingaServiceForm extends DirectorObjectForm
         }
     }
 
-    protected function providesOverrides()
+    public function providesOverrides()
     {
         return $this->applyGenerated
             || $this->inheritedFrom
@@ -170,6 +171,14 @@ class IcingaServiceForm extends DirectorObjectForm
                 'order' => 1000,
             ]);
         }
+    }
+
+    /**
+     * @return IcingaHost|null
+     */
+    public function getHost()
+    {
+        return $this->host;
     }
 
     /**

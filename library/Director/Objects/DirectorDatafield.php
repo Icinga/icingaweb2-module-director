@@ -6,7 +6,9 @@ use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
+use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
+use Icinga\Module\Director\Resolver\OverriddenVarsResolver;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use InvalidArgumentException;
 use Zend_Form_Element as ZfElement;
@@ -243,57 +245,80 @@ class DirectorDatafield extends DbObjectWithSettings
     protected function applyObjectData(ZfElement $el, DirectorObjectForm $form)
     {
         $object = $form->getObject();
-        if ($object instanceof IcingaObject) {
-            if ($object->isTemplate()) {
-                $el->setRequired(false);
-            }
+        if (! ($object instanceof IcingaObject)) {
+            return;
+        }
+        if ($object->isTemplate()) {
+            $el->setRequired(false);
+        }
 
-            $varname = $this->get('varname');
+        $varName = $this->get('varname');
+        $inherited = $origin = null;
 
-            $inherited = $object->getInheritedVar($varname);
-
-            if (null !== $inherited) {
-                $form->setInheritedValue(
-                    $el,
-                    $inherited,
-                    $object->getOriginForVar($varname)
-                );
-            } elseif ($object->hasRelation('check_command')) {
-                // TODO: Move all of this elsewhere and test it
-                try {
-                    /** @var IcingaCommand $command */
-                    $command = $object->getResolvedRelated('check_command');
-                    if ($command === null) {
-                        return;
-                    }
-                    $inherited = $command->vars()->get($varname);
-                    $inheritedFrom = null;
-
-                    if ($inherited !== null) {
-                        $inherited = $inherited->getValue();
-                    }
-
-                    if ($inherited === null) {
-                        $inherited = $command->getResolvedVar($varname);
-                        if ($inherited === null) {
-                            $inheritedFrom = $command->getOriginForVar($varname);
-                        }
-                    } else {
-                        $inheritedFrom = $command->getObjectName();
-                    }
-
-                    $inherited = $command->getResolvedVar($varname);
-                    if (null !== $inherited) {
-                        $form->setInheritedValue(
-                            $el,
-                            $inherited,
-                            $inheritedFrom
-                        );
-                    }
-                } catch (\Exception $e) {
-                    // Ignore failures
+        if ($form instanceof IcingaServiceForm && $form->providesOverrides()) {
+            $resolver = new OverriddenVarsResolver($form->getDb());
+            $vars = $resolver->resolveFor($form->getHost(), $object);
+            foreach ($vars as $host => $values) {
+                if (\property_exists($values, $varName)) {
+                    $inherited = $values->$varName;
+                    $origin = $host;
                 }
             }
+        }
+
+        if ($inherited === null) {
+            $inherited = $object->getInheritedVar($varName);
+            if (null !== $inherited) {
+                $origin = $object->getOriginForVar($varName);
+            }
+        }
+
+        if ($inherited === null) {
+            $cmd = $this->eventuallyGetResolvedCommandVar($object, $varName);
+            if ($cmd !== null) {
+                list($inherited, $origin) = $cmd;
+            }
+        }
+
+        if ($inherited !== null) {
+            $form->setInheritedValue($el, $inherited, $origin);
+        }
+    }
+
+    protected function eventuallyGetResolvedCommandVar(IcingaObject $object, $varName)
+    {
+        if (! $object->hasRelation('check_command')) {
+            return null;
+        }
+
+        // TODO: Move all of this elsewhere and test it
+        try {
+            /** @var IcingaCommand $command */
+            $command = $object->getResolvedRelated('check_command');
+            if ($command === null) {
+                return null;
+            }
+            $inherited = $command->vars()->get($varName);
+            $inheritedFrom = null;
+
+            if ($inherited !== null) {
+                $inherited = $inherited->getValue();
+            }
+
+            if ($inherited === null) {
+                $inherited = $command->getResolvedVar($varName);
+                if ($inherited === null) {
+                    $inheritedFrom = $command->getOriginForVar($varName);
+                }
+            } else {
+                $inheritedFrom = $command->getObjectName();
+            }
+
+            $inherited = $command->getResolvedVar($varName);
+
+            return [$inherited, $inheritedFrom];
+        } catch (\Exception $e) {
+            return null;
         }
     }
 }
