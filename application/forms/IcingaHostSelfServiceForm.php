@@ -108,7 +108,9 @@ class IcingaHostSelfServiceForm extends DirectorForm
 
             $propertyNames = ['display_name', 'address', 'address6'];
             foreach ($propertyNames as $property) {
-                $host->set($property, $this->getValue($property));
+                if (\strlen($value = $this->getValue($property)) > 0) {
+                    $host->set($property, $value);
+                }
             }
         } else {
             $host = IcingaHost::create(array_filter($this->getValues(), 'strlen'), $db);

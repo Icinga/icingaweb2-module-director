@@ -17,6 +17,9 @@ next (will be 1.8.0)
 * FEATURE: Inspect is now available for Packages, Stages and Files (#1995)
 * FEATURE: Allow to disable the Director frontend / UI (#2007)
 
+### REST API
+* FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
+
 1.7.2
 -----
 
