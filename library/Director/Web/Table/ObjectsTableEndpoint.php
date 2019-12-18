@@ -19,6 +19,7 @@ class ObjectsTableEndpoint extends ObjectsTable
             'object_name' => $this->translate('Endpoint'),
             'host'        => $this->translate('Host'),
             'zone'        => $this->translate('Zone'),
+            'object_type' => $this->translate('Type'),
         );
     }
 

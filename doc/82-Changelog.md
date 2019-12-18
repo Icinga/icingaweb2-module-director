@@ -16,6 +16,7 @@ next (will be 1.8.0)
 * FEATURE: Data Fields can now be grouped into categories (#1969)
 * FEATURE: Inspect is now available for Packages, Stages and Files (#1995)
 * FEATURE: Allow to disable the Director frontend / UI (#2007)
+* FEATURE: Endpoints table now shows the object type (e.g. external) (#2050)
 
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
