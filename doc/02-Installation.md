@@ -30,6 +30,7 @@ Requirements
 * php-pcntl (might already be built into your PHP binary)
 * php-posix (on RHEL/CentOS this is php-process, or rh-php7x-php-process)
 * php-sockets (might already be built into your PHP binary)
+* php-mbstring
 
 Database
 --------
