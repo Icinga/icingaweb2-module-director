@@ -104,6 +104,10 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
             $object = static::create([], $db);
         }
 
+        if (! isset($properties['modifiers'])) {
+            $properties['modifiers'] = [];
+        }
+
         $object->setProperties($properties);
 
         return $object;
@@ -128,7 +132,6 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
                 $i++;
             }
             if ($modified) {
-                // TOOD: no newRowModifiers, directly store loaded ones if diff
                 $this->newRowModifiers = $modifiers;
             }
         }
