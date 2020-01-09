@@ -2,8 +2,8 @@
 
 namespace Icinga\Module\Director\Objects;
 
-use http\Exception\RuntimeException;
 use Icinga\Module\Director\Data\Db\DbObject;
+use RuntimeException;
 
 class DirectorDatalistEntry extends DbObject
 {
