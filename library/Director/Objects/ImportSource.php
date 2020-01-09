@@ -118,8 +118,8 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         if ($this->loadedRowModifiers === null && $this->hasBeenLoadedFromDb()) {
             $this->loadedRowModifiers = $this->fetchRowModifiers();
         }
-        $current = $this->loadedRowModifiers;
-        if ($current !== null && count($current) !== count($modifiers)) {
+        $current = (array) $this->loadedRowModifiers;
+        if (\count($current) !== \count($modifiers)) {
             $this->newRowModifiers = $modifiers;
         } else {
             $i = 0;
