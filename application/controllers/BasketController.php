@@ -180,7 +180,7 @@ class BasketController extends ActionController
                 'attachment; filename=Director-Basket_%s_%s.json',
                 str_replace([' ', '"'], ['_', '_'], iconv(
                     'UTF-8',
-                    'ISO-8859-11//IGNORE',
+                    'ISO-8859-1//IGNORE',
                     $basket->get('basket_name')
                 )),
                 substr($snapSum, 0, 7)
