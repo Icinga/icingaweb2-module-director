@@ -105,10 +105,6 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         }
 
         $object->setProperties($properties);
-        if ($id !== null) {
-            // TODO: really?
-            $object->reallySet('id', $id);
-        }
 
         return $object;
     }
@@ -129,6 +125,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
                 if ($this->loadedRowModifiers[$i]->hasBeenModified()) {
                     $modified = true;
                 }
+                $i++;
             }
             if ($modified) {
                 // TOOD: no newRowModifiers, directly store loaded ones if diff
