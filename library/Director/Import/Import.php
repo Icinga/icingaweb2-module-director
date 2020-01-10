@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Import;
 
 use Exception;
+use Icinga\Application\Benchmark;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ImportSourceHook;
@@ -164,7 +165,9 @@ class Import
             $this->data = ImportSourceHook::forImportSource(
                 $this->source
             )->fetchData();
+            Benchmark::measure('Fetched all data from Import Source');
             $this->source->applyModifiers($this->data);
+            Benchmark::measure('Applied Property Modifiers to imported data');
         }
 
         return $this->data;
