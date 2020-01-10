@@ -29,7 +29,7 @@ class IcingaVar extends DbObject
     ];
 
     /**
-     * @param CustomVariable $var
+     * @param CustomVariable $customVar
      * @param Db $db
      *
      * @return static

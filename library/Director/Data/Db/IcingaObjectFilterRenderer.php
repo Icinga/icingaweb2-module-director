@@ -15,10 +15,10 @@ class IcingaObjectFilterRenderer
     /** @var IcingaObjectQuery */
     protected $query;
 
-    protected $columnMap = array(
+    protected $columnMap = [
         'host.name' => 'host.object_name',
         'service.name' => 'service.object_name',
-    );
+    ];
 
     public function __construct(Filter $filter, IcingaObjectQuery $query)
     {

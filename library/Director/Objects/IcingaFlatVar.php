@@ -10,10 +10,10 @@ class IcingaFlatVar extends DbObject
 {
     protected $table = 'icinga_flat_var';
 
-    protected $keyName = array(
-        'checksum',
+    protected $keyName = [
+        'var_checksum',
         'flatname_checksum'
-    );
+    ];
 
     protected $defaultProperties = [
         'var_checksum'      => null,
@@ -39,18 +39,18 @@ class IcingaFlatVar extends DbObject
 
     public static function forCustomVar(CustomVariable $var, Db $db)
     {
-        $flat = array();
+        $flat = [];
         $varSum = $var->checksum();
         $var->flatten($flat, $var->getKey());
-        $flatVars = array();
+        $flatVars = [];
 
         foreach ($flat as $name => $value) {
-            $flatVar = static::create(array(
+            $flatVar = static::create([
                 'var_checksum'      => $varSum,
                 'flatname_checksum' => sha1($name, true),
                 'flatname'          => $name,
                 'flatvalue'         => $value,
-            ), $db);
+            ], $db);
 
             $flatVar->store();
             $flatVars[] = $flatVar;

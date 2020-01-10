@@ -70,7 +70,7 @@ class IcingaObjectQuery
         if (! $this->hasJoinedVar($name)) {
             $type = $this->type;
             $alias = $this->safeVarAlias($name);
-            $varAlias = $alias . '_v';
+            $varAlias = "v_$alias";
             // TODO: optionally $varRelation = sprintf('icinga_%s_resolved_var', $type);
             $varRelation = sprintf('icinga_%s_var', $type);
             $idCol = sprintf('%s.%s_id', $alias, $type);
@@ -95,6 +95,12 @@ class IcingaObjectQuery
         }
 
         return $this;
+    }
+
+    // Debug only
+    public function getSql()
+    {
+        return (string) $this->baseQuery;
     }
 
     public function listNames()
@@ -141,7 +147,6 @@ class IcingaObjectQuery
      */
     public function getAliasForRequiredFilterColumn($column)
     {
-        $dot = strpos($column, '.');
         list($key, $sub) = $this->splitFilterKey($column);
         if ($sub === null) {
             return $key;
@@ -169,9 +174,9 @@ class IcingaObjectQuery
     {
         $dot = strpos($key, '.');
         if ($dot === false) {
-            return array($key, null);
+            return [$key, null];
         } else {
-            return array(substr($key, 0, $dot), substr($key, $dot + 1));
+            return [substr($key, 0, $dot), substr($key, $dot + 1)];
         }
     }
 

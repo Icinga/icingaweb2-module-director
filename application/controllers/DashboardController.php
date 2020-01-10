@@ -35,7 +35,14 @@ class DashboardController extends ActionController
             $this->setAutorefreshInterval(10);
         }
 
-        $mainDashboards = ['Objects', 'Alerts', 'Automation', 'Deployment', 'Director', 'Data'];
+        $mainDashboards = [
+            'Objects',
+            'Alerts',
+            'Automation',
+            'Deployment',
+            'Director',
+            'Data',
+        ];
         $this->setTitle($this->translate('Icinga Director - Main Dashboard'));
         $names = $this->params->getValues('name', $mainDashboards);
         if (! $this->params->has('name')) {
