@@ -2,11 +2,13 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
+use Icinga\Module\Director\Web\Table\IcingaHostsMatchingFilterTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetHostTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use gipfl\IcingaWeb2\Link;
@@ -82,7 +84,16 @@ class ServicesetController extends ObjectController
             $set->getObjectName()
         );
 
-        IcingaServiceSetHostTable::load($set)->renderTo($this);
+        $table = IcingaServiceSetHostTable::load($set);
+        if ($table->count()) {
+            $table->renderTo($this);
+        }
+        $filter = $set->get('assign_filter');
+        if (\strlen($filter) > 0) {
+            $this->content()->add(
+                IcingaHostsMatchingFilterTable::load(Filter::fromQueryString($filter), $this->db())
+            );
+        }
     }
 
     protected function addServiceSetTabs()
