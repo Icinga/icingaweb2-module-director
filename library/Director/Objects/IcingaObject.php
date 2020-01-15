@@ -2115,7 +2115,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     protected function renderLegacySuffix()
     {
-        return "}\n\n";
+        $txt = '';
+
+        if ($this instanceof IcingaHost || $this instanceof IcingaService) {
+            $freshness = $this->vars()->get('legacy_passive_freshness');
+            if ($freshness !== null) {
+                $txt .= "\n    # Enable freshness mode for this object\n";
+                $txt .= c1::renderKeyValue('active_checks_enabled', '0');
+                $txt .= c1::renderKeyValue('passive_checks_enabled', '1');
+                $txt .= c1::renderKeyValue('check_freshness', '1');
+
+                $value = $freshness->getValue();
+                $threshold = $value >= 60 ? $value : $this->getResolvedProperty('check_interval');
+                if ($threshold) {
+                    $txt .= c1::renderKeyValue('freshness_threshold', $threshold);
+                }
+            }
+        }
+
+        $txt .= "}\n\n";
+        return $txt;
     }
 
     /**
