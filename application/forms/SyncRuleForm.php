@@ -54,13 +54,15 @@ class SyncRuleForm extends DirectorObjectForm
                 'Define what should happen when an object with a matching key'
                 . " already exists. You could merge its properties (import source"
                 . ' wins), replace it completely with the imported object or ignore'
-                . ' it (helpful for one-time imports)'
+                . ' it (helpful for one-time imports). "Update only" means that this'
+                . ' Rule would never create (or delete) full Objects.'
             ),
             'required'     => true,
             'multiOptions' => $this->optionalEnum([
-                'merge'    => $this->translate('Merge'),
-                'override' => $this->translate('Replace'),
-                'ignore'   => $this->translate('Ignore'),
+                'merge'       => $this->translate('Merge'),
+                'override'    => $this->translate('Replace'),
+                'ignore'      => $this->translate('Ignore'),
+                'update-only' => $this->translate('Update only'),
             ])
         ]);
 

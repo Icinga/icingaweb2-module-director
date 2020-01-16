@@ -18,6 +18,9 @@ next (will be 1.8.0)
 * FEATURE: Allow to disable the Director frontend / UI (#2007)
 * FEATURE: Endpoints table now shows the object type (e.g. external) (#2050)
 
+### Import and Sync
+* FEATURE: allow to define update-only Sync Rules (#2059)
+
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 

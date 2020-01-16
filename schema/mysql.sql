@@ -1524,7 +1524,7 @@ CREATE TABLE sync_rule (
     'notification',
     'dependency'
   ) NOT NULL,
-  update_policy ENUM('merge', 'override', 'ignore') NOT NULL,
+  update_policy ENUM('merge', 'override', 'ignore', 'update-only') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
   filter_expression TEXT DEFAULT NULL,
   sync_state ENUM(
@@ -1883,4 +1883,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (168, NOW());
+  VALUES (170, NOW());

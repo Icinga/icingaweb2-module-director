@@ -106,10 +106,14 @@ class Sync
     {
         $modified = [];
         $objects = $this->prepare();
+        $updateOnly = $this->rule->get('update_policy') === 'update-only';
+        $allowCreate = ! $updateOnly;
         foreach ($objects as $object) {
             if ($object->hasBeenModified()) {
-                $modified[] = $object;
-            } elseif ($object->shouldBeRemoved()) {
+                if ($allowCreate || $object->hasBeenLoadedFromDb()) {
+                    $modified[] = $object;
+                }
+            } elseif (! $updateOnly && $object->shouldBeRemoved()) {
                 $modified[] = $object;
             }
         }
@@ -691,6 +695,7 @@ class Sync
                 break;
 
             case 'merge':
+            case 'update-only':
                 // TODO: re-evaluate merge settings. vars.x instead of
                 //       just "vars" might suffice.
                 $this->objects[$key]->merge($object, $this->replaceVars);
@@ -738,6 +743,8 @@ class Sync
         $dba->beginTransaction();
 
         $object = null;
+        $updateOnly = $this->rule->get('update_policy') === 'update-only';
+        $allowCreate = ! $updateOnly;
 
         try {
             $formerActivityChecksum = hex2bin(
@@ -750,7 +757,7 @@ class Sync
             // $failed = 0;
             foreach ($objects as $object) {
                 $this->setResolver($object);
-                if ($object->shouldBeRemoved()) {
+                if (! $updateOnly && $object->shouldBeRemoved()) {
                     $object->delete();
                     $deleted++;
                     continue;
@@ -758,11 +765,11 @@ class Sync
 
                 if ($object->hasBeenModified()) {
                     $existing = $object->hasBeenLoadedFromDb();
-                    $object->store($db);
-
                     if ($existing) {
+                        $object->store($db);
                         $modified++;
-                    } else {
+                    } elseif ($allowCreate) {
+                        $object->store($db);
                         $created++;
                     }
                 }
