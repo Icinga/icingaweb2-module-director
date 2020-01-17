@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Form;
 
 use Exception;
+use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -670,9 +671,14 @@ abstract class DirectorObjectForm extends DirectorForm
         $object = $this->object();
 
         if ($object instanceof IcingaObject) {
+            $params = $object->getUrlParams();
+            $url = Url::fromPath($this->getAction());
+            if ($url->hasParam('dbResourceName')) {
+                $params['dbResourceName'] = $url->getParam('dbResourceName');
+            }
             $this->setSuccessUrl(
                 'director/' . strtolower($this->getObjectShortClassName()),
-                $object->getUrlParams()
+                $params
             );
         } elseif ($object->hasProperty('id')) {
             $this->setSuccessUrl($this->getSuccessUrl()->with('id', $object->getProperty('id')));
