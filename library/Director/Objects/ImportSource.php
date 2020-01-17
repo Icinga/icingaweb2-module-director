@@ -307,21 +307,37 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
             return $this;
         }
 
-
         foreach ($modifiers as $modPair) {
             /** @var PropertyModifierHook $modifier */
             list($property, $modifier) = $modPair;
             $rejected = [];
+            $newRows = [];
             foreach ($data as $key => $row) {
                 $this->applyPropertyModifierToRow($modifier, $property, $row);
                 if ($modifier->rejectsRow()) {
                     $rejected[] = $key;
                     $modifier->rejectRow(false);
                 }
+                if ($modifier->expandsRows()) {
+                    $target = $modifier->getTargetProperty($property);
+
+                    $newValue = $row->$target;
+                    if (\is_array($newValue)) {
+                        foreach ($newValue as $val) {
+                            $newRow = clone $row;
+                            $newRow->$target = $val;
+                            $newRows[] = $newRow;
+                        }
+                        $rejected[] = $key;
+                    }
+                }
             }
 
             foreach ($rejected as $key) {
                 unset($data[$key]);
+            }
+            foreach ($newRows as $row) {
+                $data[] = $row;
             }
         }
 

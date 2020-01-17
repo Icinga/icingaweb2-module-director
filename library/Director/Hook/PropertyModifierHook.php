@@ -60,6 +60,21 @@ abstract class PropertyModifierHook
     }
 
     /**
+     * This creates one cloned row for every entry of the result array
+     *
+     * When set to true and given that the property modifier returns an Array,
+     * the current row will be cloned for every entry of that array. The modified
+     * property will then be replace each time accordingly. An empty Array
+     * completely removes the corrent row.
+     *
+     * @return bool
+     */
+    public function expandsRows()
+    {
+        return false;
+    }
+
+    /**
      * Reject this whole row
      *
      * Allows your property modifier to reject specific rows
