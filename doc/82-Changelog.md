@@ -20,6 +20,7 @@ next (will be 1.8.0)
 
 ### Import and Sync
 * FEATURE: allow to define update-only Sync Rules (#2059)
+* FEATURE: New Property Modifier: ListToObject (#2062)
 
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
