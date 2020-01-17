@@ -29,6 +29,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierGetPropertyFromOther
 use Icinga\Module\Director\PropertyModifier\PropertyModifierJoin;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierJsonDecode;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierLConfCustomVar;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierListToObject;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierLowercase;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierMakeBoolean;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierMap;
@@ -88,6 +89,7 @@ $directorHooks = [
         PropertyModifierJoin::class,
         PropertyModifierJsonDecode::class,
         PropertyModifierLConfCustomVar::class,
+        PropertyModifierListToObject::class,
         PropertyModifierLowercase::class,
         PropertyModifierMakeBoolean::class,
         PropertyModifierMap::class,
