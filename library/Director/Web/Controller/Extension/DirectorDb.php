@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Controller\Extension;
 
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Window;
 use RuntimeException;
 
 trait DirectorDb
@@ -125,7 +126,7 @@ trait DirectorDb
 
     protected function getWindowSessionValue($value, $default = null)
     {
-        /** @var \Icinga\Web\Window $window */
+        /** @var Window $window */
         $window = $this->Window();
         /** @var \Icinga\Web\Session\SessionNamespace $session */
         $session = $window->getSessionNamespace('director');

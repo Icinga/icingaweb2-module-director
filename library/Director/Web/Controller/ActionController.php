@@ -10,6 +10,7 @@ use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
+use Icinga\Module\Director\Web\Window;
 use Icinga\Security\SecurityException;
 use Icinga\Web\Controller;
 use Icinga\Web\UrlParams;
@@ -65,6 +66,21 @@ abstract class ActionController extends Controller implements ControlsAndContent
     public function getAuth()
     {
         return $this->Auth();
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     * @return Window
+     */
+    public function Window()
+    {
+        // @codingStandardsIgnoreEnd
+        if ($this->window === null) {
+            $this->window = new Window(
+                $this->_request->getHeader('X-Icinga-WindowId', Window::UNDEFINED)
+            );
+        }
+        return $this->window;
     }
 
     /**

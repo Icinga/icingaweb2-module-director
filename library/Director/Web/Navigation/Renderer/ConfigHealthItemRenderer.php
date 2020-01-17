@@ -12,7 +12,7 @@ use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Web\Navigation\Renderer\BadgeNavigationItemRenderer;
-use Icinga\Web\Window;
+use Icinga\Module\Director\Web\Window;
 
 class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
 {
