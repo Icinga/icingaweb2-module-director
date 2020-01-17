@@ -25,6 +25,9 @@ next (will be 1.8.0)
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 
+### Internals
+* FEATURE: Property Modifiers are now able to clone rows (#2060)
+
 1.7.2
 -----
 
