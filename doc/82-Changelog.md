@@ -27,6 +27,7 @@ next (will be 1.8.0)
 
 ### Internals
 * FEATURE: Property Modifiers are now able to clone rows (#2060)
+* FIX: typo in DeploymentHook::onSuccessfulDump() has been fixed (#2069)
 
 1.7.2
 -----

@@ -853,7 +853,7 @@ constants
 
         if ($succeeded === 'y') {
             foreach ($hooks as $hook) {
-                $hook->onSuccessfullDump($deployment);
+                $hook->triggerSuccessfulDump($deployment);
             }
         }
 
