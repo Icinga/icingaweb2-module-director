@@ -43,6 +43,7 @@ next (will be 1.8.0)
 
 ### User Interface
 * FIX: Cloning Import Sources failed since v1.7.0 (#1997)
+* FIX: Switching Director DBs was broken since Web 2.6.3 (#2063)
 
 ### CLI
 * FIX: Importing Import Sources failed since v1.7.0 (#2005)
