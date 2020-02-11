@@ -31,6 +31,9 @@ next (will be 1.8.0)
 * FEATURE: Form field rendering for sets now deals with invalid values
 * FEATURE: Better description for time-based form fields (#1897)
 
+### Translations
+* FEATURE: Italian is now available (#2080)
+
 ### CLI
 * FEATURE: Deployment Status and related utilities (#2189)
 
