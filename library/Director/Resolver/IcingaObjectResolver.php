@@ -37,6 +37,8 @@ class IcingaObjectResolver
      */
     protected $inheritancePaths;
 
+    protected $flatImports = [];
+
     protected $templateVars;
 
     protected $resolvedTemplateVars = [];
@@ -56,17 +58,19 @@ class IcingaObjectResolver
         foreach ($this->fetchPlainObjects($this->baseTable, 'template') as $template) {
             $id = $template->id;
             $this->stripIgnoredProperties($template);
-            // Let's to this only on final objects:
-            // $this->replaceRelatedNames($object);
-            // $this->convertBooleans($object);
             $this->stripNullProperties($template);
             $this->templates[$id] = (array) $template;
         }
         $this->templateVars = $this->fetchTemplateVars();
+        $this->inheritancePaths = $this->fetchInheritancePaths($this->baseTable, 'host_id');
+        foreach ($this->inheritancePaths as $path) {
+            $this->getResolvedImports($path);
+        }
+
         // Using already resolved data, so this is unused right now:
         // $this->groupMemberShips = $this->fetchAllGroups();
         $this->resolvedGroupMemberShips = $this->fetchAllResolvedGroups();
-        $this->inheritancePaths = $this->fetchInheritancePaths($this->baseTable, 'host_id');
+
         foreach ($this->inheritancePaths as $path) {
             if (! isset($this->resolvedTemplateProperties[$path])) {
                 $properties = (object) $this->getResolvedProperties($path);
@@ -91,7 +95,7 @@ class IcingaObjectResolver
 
     protected static function addUniqueMembers(&$list, $newMembers)
     {
-        foreach ($newMembers as $member) {
+        foreach (\array_reverse($newMembers) as $member) {
             $pos = \array_search($member, $list);
             if ($pos !== false) {
                 unset($list[$pos]);
@@ -168,6 +172,11 @@ class IcingaObjectResolver
             $object->groups = $groups;
         }
 
+        $templates = $this->getTemplateNamesById($id);
+        if (! empty($templates)) {
+            $object->templates = \array_reverse($templates);
+        }
+
         return $object;
     }
 
@@ -191,6 +200,7 @@ class IcingaObjectResolver
                 $groupColumn
             ])
             ->group($relColumn)
+            // Ordering by length increases the possibility to have less cycles afterwards
             ->order("LENGTH($groupColumn)");
 
         return $this->db->fetchPairs($query);
@@ -223,40 +233,49 @@ class IcingaObjectResolver
         }
     }
 
+    protected function getTemplateNamesByID($objectId)
+    {
+        if (isset($this->inheritancePaths[$objectId])) {
+            return $this->translateTemplateIdsToNames(
+                $this->getResolvedImports($this->inheritancePaths[$objectId])
+            );
+        } else {
+            return [];
+        }
+    }
+
     /**
      * @param $path
      * @return array[]
      */
     protected function getResolvedProperties($path)
     {
-        $pos = \strpos($path, ',');
-        if ($pos === false) {
-            return $this->templates[$path];
-        } else {
-            $first = \substr($path, 0, $pos);
-            $parentPath = \substr($path, $pos + 1);
-            $result = $this->templates[$first]
-                + $this->getResolvedProperties($parentPath);
-            unset($result['object_name']);
-
-            return $result;
+        $result = [];
+        // + adds only non existing members, so let's reverse our templates
+        foreach ($this->getResolvedImports($path) as $templateId) {
+            $result += $this->templates[$templateId];
         }
+        unset($result['object_name']);
+
+        return $result;
     }
 
     protected function getResolvedVars($path)
     {
-        $pos = \strpos($path, ',');
-        if ($pos === false) {
-            if (isset($this->templateVars[$path])) {
-                return $this->templateVars[$path];
-            } else {
-                return [];
-            }
+        $result = [];
+        foreach ($this->getResolvedImports($path) as $templateId) {
+            $result += $this->getTemplateVars($templateId);
+        }
+
+        return $result;
+    }
+
+    protected function getTemplateVars($templateId)
+    {
+        if (isset($this->templateVars[$templateId])) {
+            return $this->templateVars[$templateId];
         } else {
-            $first = \substr($path, 0, $pos);
-            $parentPath = \substr($path, $pos + 1);
-            return $this->getResolvedVars($first)
-                + $this->getResolvedVars($parentPath);
+            return [];
         }
     }
 
@@ -283,13 +302,36 @@ class IcingaObjectResolver
         }
     }
 
-    protected function cleanupObjects(&$objects)
+    /**
+     * Hint: this ships most important (last) imports first
+     *
+     * @param $path
+     * @return array
+     */
+    protected function getResolvedImports($path)
     {
-        foreach ($objects as $object) {
-            $this->stripIgnoredProperties($object);
-            $this->replaceRelatedNames($object);
-            $this->convertBooleans($object);
+        if (! isset($this->flatImports[$path])) {
+            $this->flatImports[$path] = $this->calculateFlatImports($path);
         }
+
+        return $this->flatImports[$path];
+    }
+
+    protected function calculateFlatImports($path)
+    {
+        $imports = \preg_split('/,/', $path);
+        $ancestors = [];
+        foreach ($imports as $template) {
+            if (isset($this->inheritancePaths[$template])) {
+                $this->addUniqueMembers(
+                    $ancestors,
+                    $this->calculateFlatImports($this->inheritancePaths[$template])
+                );
+            }
+            $this->addUniqueMembers($ancestors, [$template]);
+        }
+
+        return $ancestors;
     }
 
     protected function fetchPlainObjects($table, $objectType = null)
@@ -329,7 +371,7 @@ class IcingaObjectResolver
         $names = [];
         foreach ($ids as $id) {
             if (isset($this->templates[$id])) {
-                $names[] = $this->templates[$id]->object_name;
+                $names[] = $this->templates[$id]['object_name'];
             } else {
                 throw new \RuntimeException("There is no template with ID $id");
             }
@@ -499,9 +541,9 @@ class IcingaObjectResolver
      */
     protected static function flattenVars(\stdClass $object, $key = 'vars')
     {
-        if (property_exists($object, $key)) {
+        if (\property_exists($object, $key)) {
             foreach ($object->vars as $k => $v) {
-                if (is_object($v)) {
+                if (\is_object($v)) {
                     static::flattenVars($v, $k);
                 }
                 $object->{$key . '.' . $k} = $v;
