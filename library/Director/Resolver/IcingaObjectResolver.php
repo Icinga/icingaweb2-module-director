@@ -178,18 +178,20 @@ class IcingaObjectResolver
      */
     protected function fetchInheritancePaths($baseTable, $relColumn)
     {
-        // select host_id, GROUP_CONCAT(parent_host_id ORDER BY weight) FROM icinga_host_inheritance group by host_id;
+        if ($this->db instanceof \Zend_Db_Adapter_Pdo_Pgsql) {
+            $groupColumn = "ARRAY_TO_STRING(ARRAY_AGG(parent_$relColumn ORDER BY weight), ',')";
+        } else {
+            $groupColumn = "GROUP_CONCAT(parent_$relColumn ORDER BY weight SEPARATOR ',')";
+        }
         $query = $this->db->select()
             ->from([
                 'oi' => "${baseTable}_inheritance"
             ], [
                 $relColumn,
-                "GROUP_CONCAT(parent_$relColumn ORDER BY weight SEPARATOR ',')"
+                $groupColumn
             ])
             ->group($relColumn)
-            ->order("LENGTH(GROUP_CONCAT(parent_$relColumn ORDER BY weight SEPARATOR ','))");
-
-        // pgsql: ARRAY_TO_STRING(ARRAY_AGG(---), ',') -> order?
+            ->order("LENGTH($groupColumn)");
 
         return $this->db->fetchPairs($query);
     }
