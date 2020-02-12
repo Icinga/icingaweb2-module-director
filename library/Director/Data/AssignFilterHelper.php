@@ -100,12 +100,12 @@ class AssignFilterHelper
 
             return true;
         } else {
-            $class = get_class($filter);
-            $parts = preg_split('~\\~', $class);
+            $class = \get_class($filter);
+            $parts = \preg_split('/\\\/', $class);
 
             throw new NotImplementedError(
                 'Matching for Filter of type "%s" is not implemented',
-                end($parts)
+                \end($parts)
             );
         }
     }
