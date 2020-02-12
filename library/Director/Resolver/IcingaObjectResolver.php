@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Resolver;
 
 use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\AssignFilterHelper;
 use Icinga\Module\Director\Objects\DynamicApplyMatches;
 use Zend_Db_Adapter_Abstract as ZfDB;
 
@@ -119,14 +120,17 @@ class IcingaObjectResolver
 
     public function fetchObjectsMatchingFilter(Filter $filter)
     {
+        $filter = clone($filter);
         DynamicApplyMatches::setType($this->getType());
         DynamicApplyMatches::fixFilterColumns($filter);
+        $helper = new AssignFilterHelper($filter);
         $objects = [];
         $allVars = $this->fetchNonTemplateVars();
         foreach ($this->fetchPlainObjects($this->baseTable, 'object') as $object) {
             $id = $object->id; // id will be stripped
-            if ($filter->matches($object)) {
-                $objects[$id] = $this->enrichObject($object, $allVars);
+            $object = $this->enrichObject($object, $allVars);
+            if ($helper->matches($object)) {
+                $objects[$id] = $object;
             }
         }
 

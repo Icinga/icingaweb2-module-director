@@ -13,8 +13,6 @@ use Icinga\Module\Director\Resolver\IcingaHostObjectResolver;
 
 class IcingaHostsMatchingFilterTable extends QueryBasedTable
 {
-    protected $filter;
-
     protected $searchColumns = [
         'object_name',
     ];
@@ -25,8 +23,6 @@ class IcingaHostsMatchingFilterTable extends QueryBasedTable
     public static function load(Filter $filter, Db $db)
     {
         $table = new static();
-        $table->filter = $filter;
-
         $table->dataSource = new ArrayDatasource(
             (new IcingaHostObjectResolver($db->getDbAdapter()))
                 ->fetchObjectsMatchingFilter($filter)
