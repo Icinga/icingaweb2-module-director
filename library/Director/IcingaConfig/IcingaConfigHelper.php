@@ -387,7 +387,7 @@ class IcingaConfigHelper
                         if (static::isValidMacroName($macroName)) {
                             if ($whiteList === null
                                 || preg_match('/(' . implode(')|(', $whiteList) . ')/', $macroName)
-							) {
+                            ) {
                                 if ($start > $offset) {
                                     $parts[] = static::renderString(
                                         substr($string, $offset, $start - $offset)
