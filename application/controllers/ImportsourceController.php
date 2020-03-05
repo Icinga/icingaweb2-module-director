@@ -146,7 +146,7 @@ class ImportsourceController extends ActionController
 
         $this->actions()->add(Link::create(
             $this->translate('Download JSON'),
-            $this->url()->setBasePath('director/importsource/fetch'),
+            $this->url()->setPath('director/importsource/fetch'),
             null,
             [
                 'target' => '_blank',
