@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
+use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -143,10 +144,49 @@ class ImportsourceController extends ActionController
             $source->get('source_name')
         );
 
-        $this->actions()->add(Link::create('[..]', '#', null, [
+        $this->actions()->add(Link::create(
+            $this->translate('Download JSON'),
+            $this->url()->setBasePath('director/importsource/fetch'),
+            null,
+            [
+                'target' => '_blank',
+                'class'  => 'icon-download',
+            ]
+        ))->add(Link::create('[..]', '#', null, [
             'onclick' => 'javascript:$("table.raw-data-table").toggleClass("collapsed");'
         ]));
         (new ImportsourceHookTable())->setImportSource($source)->renderTo($this);
+    }
+
+    /**
+     * @throws \Icinga\Exception\ConfigurationError
+     * @throws \Icinga\Exception\NotFoundError
+     * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     */
+    public function fetchAction()
+    {
+        $source = $this->getImportSource();
+        $source->checkForChanges();
+        $hook = ImportSourceHook::forImportSource($source);
+        $data = $hook->fetchData();
+        $source->applyModifiers($data);
+
+
+        $filename = sprintf(
+            "director-importsource-%d_%s.json",
+            $this->getParam('id'),
+            date('YmdHis')
+        );
+        $response = $this->getResponse();
+        $response->setHeader('Content-Type', 'application/json', true);
+        $response->setHeader('Content-disposition', "attachment; filename=$filename", true);
+        $response->sendHeaders();
+        $this->sendJson($this->getResponse(), $data);
+        // TODO: this is not clean
+        if (\ob_get_level()) {
+            \ob_end_flush();
+        }
+        exit;
     }
 
     /**
