@@ -14,7 +14,10 @@ class ImportSourceLdap extends ImportSourceHook
     public function fetchData()
     {
         $columns = $this->listColumns();
-        $query = $this->connection()->select()->from($this->settings['objectclass'], $columns);
+        $query = $this->connection()
+            ->select()
+            ->setUsePagedResults()
+            ->from($this->settings['objectclass'], $columns);
 
         if ($base = $this->settings['base']) {
             $query->setBase($base);
