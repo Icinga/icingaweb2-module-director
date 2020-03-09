@@ -704,7 +704,7 @@ constants
             if (array_key_exists($stage, $uncollected)) {
                 continue;
             }
-            $this->client()->delete('config/stages/' . $packageName . '/' . $stage);
+            $this->client()->delete($this->prepareStageUrl($packageName, $stage));
         }
     }
 
@@ -714,11 +714,9 @@ constants
             $packageName = $this->getPackageName();
         }
         return array_keys(
-            $this->client()->get(\sprintf(
-                'config/stages/%s/%s',
-                \urlencode($packageName),
-                \urlencode($stage)
-            ))->getResult('name', array('type' => 'file'))
+            $this->client()
+                ->get($this->prepareStageUrl($packageName, $stage))
+                ->getResult('name', ['type' => 'file'])
         );
     }
 
@@ -727,28 +725,24 @@ constants
         if ($packageName === null) {
             $packageName = $this->getPackageName();
         }
-        return $this->client()->getRaw(\sprintf(
-            'config/files/%s/%s/%s',
-            \urlencode($packageName),
-            \urlencode($stage),
-            \urlencode($file)
-        ));
+        return $this->client()
+            ->getRaw($this->prepareFileUrl($packageName, $stage, $file));
     }
 
     public function hasPackage($name)
     {
         $modules = $this->getPackages();
-        return array_key_exists($name, $modules);
+        return \array_key_exists($name, $modules);
     }
 
     public function createPackage($name)
     {
-        return $this->client()->post('config/packages/' . urlencode($name))->succeeded();
+        return $this->client()->post($this->preparePackageUrl($name))->succeeded();
     }
 
     public function deletePackage($name)
     {
-        return $this->client()->delete('config/packages/' . urlencode($name))->succeeded();
+        return $this->client()->delete($this->preparePackageUrl($name))->succeeded();
     }
 
     public function assertPackageExists($name)
@@ -767,11 +761,9 @@ constants
 
     public function deleteStage($packageName, $stageName)
     {
-        $this->client()->delete(sprintf(
-            'config/stages/%s/%s',
-            rawurlencode($packageName),
-            rawurlencode($stageName)
-        ))->succeeded();
+        $this->client()->delete(
+            $this->prepareStageUrl($packageName, $stageName)
+        )->succeeded();
     }
 
     /**
@@ -833,7 +825,7 @@ constants
 
         $this->assertPackageExists($packageName);
 
-        $response = $this->client()->post('config/stages/' . urlencode($packageName), [
+        $response = $this->client()->post('config/stages/' . \rawurlencode($packageName), [
             'files' => $config->getFileContents()
         ]);
 
@@ -881,6 +873,30 @@ constants
             '[..] %d bytes removed by Director [..]',
             $logLen - (strlen($begin) + strlen($end))
         ) . $end;
+    }
+
+    protected function preparePackageUrl($packageName)
+    {
+        return 'config/packages/' . \rawurlencode($packageName);
+    }
+
+    protected function prepareStageUrl($packageName, $stage)
+    {
+        return \sprintf(
+            'config/stages/%s/%s',
+            \rawurlencode($packageName),
+            \rawurlencode($stage)
+        );
+    }
+
+    protected function prepareFileUrl($packageName, $stage, $file)
+    {
+        return \sprintf(
+            'config/files/%s/%s/%s',
+            \rawurlencode($packageName),
+            \rawurlencode($stage),
+            \rawurlencode($file)
+        );
     }
 
     protected function client()
