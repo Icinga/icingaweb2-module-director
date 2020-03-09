@@ -22,6 +22,7 @@ next (will be 1.8.0)
 * FEATURE: allow to define update-only Sync Rules (#2059)
 * FEATURE: New Property Modifier: ListToObject (#2062)
 * FEATURE: Import Sources now allow to download previewed data as JSON (#2096)
+* FIX: LDAP Import is now able to paginate limited results (#2019)
 
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)

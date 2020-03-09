@@ -143,10 +143,11 @@ class ImportsourceController extends ActionController
             $this->translate('Import source preview: %s'),
             $source->get('source_name')
         );
+        $fetchUrl = clone($this->url());
 
         $this->actions()->add(Link::create(
             $this->translate('Download JSON'),
-            $this->url()->setPath('director/importsource/fetch'),
+            $fetchUrl->setPath('director/importsource/fetch'),
             null,
             [
                 'target' => '_blank',
