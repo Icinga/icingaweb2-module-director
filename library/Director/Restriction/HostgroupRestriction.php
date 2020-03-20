@@ -57,11 +57,9 @@ class HostgroupRestriction extends ObjectRestriction
         }
 
         if (! $host->hasBeenLoadedFromDb()) {
-            if ($host->hasModifiedGroups()) {
-                foreach ($this->listRestrictedHostgroups() as $group) {
-                    if ($host->hasGroup($group)) {
-                        return true;
-                    }
+            foreach ($this->listRestrictedHostgroups() as $group) {
+                if ($host->hasGroup($group)) {
+                    return true;
                 }
             }
 
