@@ -97,7 +97,13 @@ class BackgroundDaemonDetails extends BaseHtmlElement
             )));
 
             $this->add(Html::tag('h2', $this->translate('Process List')));
-            $processes = \json_decode($this->daemon->process_info);
+            if (\is_string($this->daemon->process_info)) {
+                // from DB:
+                $processes = \json_decode($this->daemon->process_info);
+            } else {
+                // via RPC:
+                $processes = $this->daemon->process_info;
+            }
             $table = new Table();
             $table->add(Html::tag('thead', Html::tag('tr', Html::wrapEach([
                 'PID',
