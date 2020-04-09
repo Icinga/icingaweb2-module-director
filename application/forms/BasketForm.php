@@ -24,6 +24,7 @@ class BasketForm extends DirectorObjectForm
             'IcingaTemplateChoiceService' => $this->translate('Service Template Choice'),
             'ServiceTemplate'    => $this->translate('Service Templates'),
             'ServiceSet'         => $this->translate('Service Sets'),
+            'NotificationTemplate' => $this->translate('Notification Templates'),
             'Notification'       => $this->translate('Notifications'),
             'TimePeriod'         => $this->translate('Time Periods'),
             'Dependency'         => $this->translate('Dependencies'),
