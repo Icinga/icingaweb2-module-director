@@ -17,11 +17,6 @@ class BackgroundDaemonState
         $this->db = $db;
     }
 
-    public function hasProblems()
-    {
-        return $this->isRunning();
-    }
-
     public function isRunning()
     {
         foreach ($this->getInstances() as $instance) {
@@ -33,7 +28,7 @@ class BackgroundDaemonState
         return false;
     }
 
-    public function getInstances()
+    protected function getInstances()
     {
         if ($this->instances === null) {
             $this->instances = $this->fetchInfo();
