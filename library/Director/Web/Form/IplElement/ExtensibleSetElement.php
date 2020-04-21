@@ -42,6 +42,10 @@ class ExtensibleSetElement extends BaseHtmlElement
 
     private $hideOptions = [];
 
+    private $inherited;
+
+    private $inheritedFrom;
+
     protected $defaultAttributes = [
         'class' => 'extensible-set'
     ];
@@ -129,10 +133,17 @@ class ExtensibleSetElement extends BaseHtmlElement
             $this->disable($attribs['disable']);
             unset($attribs['disable']);
         }
-
         if (array_key_exists('value', $attribs)) {
             $this->setValue($attribs['value']);
             unset($attribs['value']);
+        }
+        if (array_key_exists('inherited', $attribs)) {
+            $this->inherited = $attribs['inherited'];
+            unset($attribs['inherited']);
+        }
+        if (array_key_exists('inheritedFrom', $attribs)) {
+            $this->inheritedFrom = $attribs['inheritedFrom'];
+            unset($attribs['inheritedFrom']);
         }
 
         if (array_key_exists('multiOptions', $attribs)) {
@@ -228,10 +239,13 @@ class ExtensibleSetElement extends BaseHtmlElement
                 return;
             }
             $field = Html::tag('select', ['class' => 'autosubmit']);
+            $more = $this->inherited === null
+                ? $this->translate('- add more -')
+                : $this->getInheritedInfo();
             $field->add(Html::tag('option', [
                 'value' => '',
                 'tabindex' => '-1'
-            ], $this->translate('- add more -')));
+            ], $more));
 
             foreach ($this->multiOptions as $key => $label) {
                 if ($key === null) {
@@ -253,7 +267,9 @@ class ExtensibleSetElement extends BaseHtmlElement
         } else {
             $field = Html::tag('input', [
                 'type' => 'text',
-                'placeholder' => $this->translate('Add a new one...'),
+                'placeholder' => $this->inherited === null
+                    ? $this->translate('Add a new one...')
+                    : $this->getInheritedInfo(),
             ]);
         }
         $field->addAttributes([
@@ -281,6 +297,22 @@ class ExtensibleSetElement extends BaseHtmlElement
                 ),
                 $field
             ]));
+        }
+    }
+
+    private function getInheritedInfo()
+    {
+        if ($this->inheritedFrom === null) {
+            return \sprintf(
+                $this->translate('%s (inherited)'),
+                \implode(', ', $this->inherited)
+            );
+        } else {
+            return \sprintf(
+                $this->translate('%s (inherited from %s)'),
+                \implode(', ', $this->inherited),
+                $this->inheritedFrom
+            );
         }
     }
 

@@ -16,6 +16,7 @@ use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
@@ -623,6 +624,9 @@ abstract class DirectorObjectForm extends DirectorForm
                 $multi[null] = $this->translate($this->translate('- inherited -'));
             }
             $el->setMultiOptions($multi);
+        } elseif ($el instanceof ExtensibleSet) {
+            $el->setAttrib('inherited', $inherited);
+            $el->setAttrib('inheritedFrom', $inheritedFrom);
         } else {
             if (is_string($inherited) || is_int($inherited)) {
                 $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
