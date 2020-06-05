@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use Icinga\Exception\InvalidPropertyException;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\RestApi\RestApiClient;
 use Icinga\Module\Director\Web\Form\QuickForm;
@@ -16,18 +17,12 @@ class ImportSourceRestApi extends ImportSourceHook
 
     public function fetchData()
     {
-        $result = $this->getRestApi()->get($this->getUrl());
-        if ($property = $this->getSetting('extract_property')) {
-            if (\property_exists($result, $property)) {
-                $result = $result->$property;
-            } else {
-                throw new \RuntimeException(sprintf(
-                    'Result has no "%s" property. Available keys: %s',
-                    $property,
-                    \implode(', ', \array_keys((array) $result))
-                ));
-            }
-        }
+        $result = $this->getRestApi()->get(
+            $this->getUrl(),
+            null,
+            $this->buildHeaders()
+        );
+        $result = $this->extractProperty($result);
 
         return (array) $result;
     }
@@ -49,6 +44,66 @@ class ImportSourceRestApi extends ImportSourceHook
     }
 
     /**
+     * Extract result from a property specified
+     *
+     * A simple key, like "objects", will take the final result from key objects
+     *
+     * If you have a deeper key like "objects" under the key "results", specify this as "results.objects".
+     *
+     * When a key of the JSON object contains a literal ".", this can be escaped as
+     *
+     * @param $result
+     *
+     * @return mixed
+     */
+    protected function extractProperty($result)
+    {
+        $property = $this->getSetting('extract_property');
+        if (! $property) {
+            return $result;
+        }
+
+        $parts = preg_split('~(?<!\\\\)\.~', $property);
+
+        // iterate over parts of the attribute path
+        $data = $result;
+        foreach ($parts as $part) {
+            // un-escape any dots
+            $part = preg_replace('~\\\\.~', '.', $part);
+
+            if (property_exists($data, $part)) {
+                $data = $data->$part;
+            } else {
+                throw new \RuntimeException(sprintf(
+                    'Result has no "%s" property. Available keys: %s',
+                    $part,
+                    implode(', ', array_keys((array) $data))
+                ));
+            }
+        }
+
+        return $data;
+    }
+
+    protected function buildHeaders()
+    {
+        $headers = [];
+
+        $text = $this->getSetting('headers', '');
+        foreach (preg_split("~\r?\n~", $text) as $header) {
+            $header = trim($header);
+            $parts = preg_split('~\s*:\s*~', $header, 2);
+            if (count($parts) < 2) {
+                throw new InvalidPropertyException('Could not parse header: %s', $header);
+            }
+
+            $headers[$parts[0]] = $parts[1];
+        }
+
+        return $headers;
+    }
+
+    /**
      * @param QuickForm $form
      * @throws \Zend_Form_Exception
      */
@@ -59,6 +114,7 @@ class ImportSourceRestApi extends ImportSourceHook
         static::addUrl($form);
         static::addResultProperty($form);
         static::addAuthentication($form);
+        static::addHeader($form);
         static::addProxy($form);
     }
 
@@ -80,6 +136,23 @@ class ImportSourceRestApi extends ImportSourceHook
             'class'    => 'autosubmit',
             'value'    => 'HTTPS',
             'required' => true,
+        ]);
+    }
+
+    /**
+     * @param QuickForm $form
+     * @throws \Zend_Form_Exception
+     */
+    protected static function addHeader(QuickForm $form)
+    {
+        $form->addElement('textarea', 'headers', [
+            'label'       => $form->translate('HTTP Header'),
+            'description' => join(' ', [
+                $form->translate('Additional headers for the HTTP request.'),
+                $form->translate('Specify headers in text format "Header: Value", each header on a new line.'),
+            ]),
+            'class'       => 'preformatted',
+            'rows'        => 4,
         ]);
     }
 
@@ -131,11 +204,15 @@ class ImportSourceRestApi extends ImportSourceHook
     protected static function addResultProperty(QuickForm $form)
     {
         $form->addElement('text', 'extract_property', array(
-            'label'    => 'Extract property',
-            'description' => $form->translate(
-                'Often the expected result is provided in a property like "objects".'
-                . ' Please specify this if required'
-            ),
+            'label'       => 'Extract property',
+            'description' => join("\n", [
+                $form->translate('Often the expected result is provided in a property like "objects".'
+                    . ' Please specify this if required.'),
+                $form->translate('Also deeper keys can be specific by a dot-notation:'),
+                '"result.objects", "key.deeper_key.very_deep"',
+                $form->translate('Literal dots in a key name can be written in the escape notation:'),
+                '"key\.with\.dots"',
+            ])
         ));
     }
 
