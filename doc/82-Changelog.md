@@ -32,6 +32,7 @@ next (will be 1.8.0)
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 
 ### Background Daemon
+* FIX: Daemon Logger used to not override the given log level (#2139)
 * FEATURE: Daemon: prepare for future reactphp promise versions (#2137)
 
 ### Internals
