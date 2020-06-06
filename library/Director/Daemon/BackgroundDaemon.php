@@ -131,6 +131,22 @@ class BackgroundDaemon
         return $systemd;
     }
 
+    /**
+     * @return DaemonProcessDetails
+     */
+    public function getProcessDetails()
+    {
+        return $this->processDetails;
+    }
+
+    /**
+     * @return DaemonProcessState
+     */
+    public function getProcessState()
+    {
+        return $this->processState;
+    }
+
     protected function initializeDb(
         DaemonProcessDetails $processDetails,
         DaemonProcessState $processState,
@@ -178,13 +194,14 @@ class BackgroundDaemon
         $this->shutdown();
     }
 
-    protected function reload()
+    public function reload()
     {
         if ($this->reloading) {
             Logger::error('Ignoring reload request, reload is already in progress');
             return;
         }
         $this->reloading = true;
+        Logger::info('Going gown for reload now');
         $this->setState('reloading the main process');
         $this->daemonDb->disconnect()->then(function () {
             Process::restart();
