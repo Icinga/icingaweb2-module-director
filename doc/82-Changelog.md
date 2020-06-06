@@ -20,6 +20,7 @@ next (will be 1.8.0)
 * FEATURE: Allow to disable the Director frontend / UI (#2007)
 * FEATURE: Endpoints table now shows the object type (e.g. external) (#2050)
 * FEATURE: make sure that form label and fields stay close together (#2136)
+* FEATURE: show more content, reduce padding (expect on mobile) (#2140)
 
 ### Import and Sync
 * FEATURE: allow to define update-only Sync Rules (#2059)

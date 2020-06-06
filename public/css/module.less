@@ -7,6 +7,28 @@ div.action-bar a:focus, .tabs a:focus {
   }
 }
 
+table.common-table td {
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  vertical-align: middle;
+
+  p {
+    word-break: break-word;
+  }
+}
+
+#layout.minimal-layout table.common-table td {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+table.common-table thead th {
+  border-bottom: 1px solid @text-color;
+}
+table.common-table tbody td {
+  border-bottom: 1px solid @gray-lighter;
+}
+
 a:before {
   text-decoration: none;
 }
