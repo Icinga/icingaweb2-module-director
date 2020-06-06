@@ -45,6 +45,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierToInt;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUppercase;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUpperCaseFirst;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierURLEncode;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierUuidBinToHex;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierXlsNumericIp;
 use Icinga\Module\Director\ProvidedHook\CubeLinks;
 
@@ -105,6 +106,7 @@ $directorHooks = [
         PropertyModifierUppercase::class,
         PropertyModifierUpperCaseFirst::class,
         PropertyModifierURLEncode::class,
+        PropertyModifierUuidBinToHex::class,
         PropertyModifierXlsNumericIp::class,
     ]
 ];
