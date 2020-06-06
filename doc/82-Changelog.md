@@ -29,6 +29,9 @@ next (will be 1.8.0)
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 
+### Background Daemon
+* FEATURE: Daemon: prepare for future reactphp promise versions (#2137)
+
 ### Internals
 * FEATURE: Property Modifiers are now able to clone rows (#2060)
 * FIX: typo in DeploymentHook::onSuccessfulDump() has been fixed (#2069)

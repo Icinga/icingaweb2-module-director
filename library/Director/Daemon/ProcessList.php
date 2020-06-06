@@ -8,7 +8,7 @@ use ipl\Stdlib\EventEmitter;
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
 use React\Promise\Deferred;
-use React\Promise\FulfilledPromise;
+use function React\Promise\resolve;
 
 class ProcessList
 {
@@ -60,7 +60,7 @@ class ProcessList
     public function killOrTerminate($timeout = 5)
     {
         if ($this->processes->count() === 0) {
-            return new FulfilledPromise();
+            return resolve();
         }
         $deferred = new Deferred();
         $killTimer = $this->loop->addTimer($timeout, function () use ($deferred) {

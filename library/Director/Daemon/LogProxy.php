@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Daemon;
 
 use Exception;
 use Icinga\Module\Director\Db;
-use React\Promise\FulfilledPromise;
+use function React\Promise\resolve;
 
 class LogProxy implements DbBasedComponent
 {
@@ -39,7 +39,7 @@ class LogProxy implements DbBasedComponent
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
 
-        return new FulfilledPromise();
+        return resolve();
     }
 
     /**
@@ -50,7 +50,7 @@ class LogProxy implements DbBasedComponent
         $this->connection = null;
         $this->db = null;
 
-        return new FulfilledPromise();
+        return resolve();
     }
 
     public function log($severity, $message)
