@@ -177,7 +177,7 @@ elif [ -z "${ICINGA2_DRYRUN}" ]; then
     --cert "${ICINGA2_SSLDIR}/${ICINGA2_NODENAME}.crt" \
     --trustedcert "${ICINGA2_SSLDIR}/trusted-master.crt" \
     --ca "${ICINGA2_SSLDIR}/ca.crt"
-  then "Could not retrieve final certificate from host ${ICINGA2_CA_NODE}"
+  then fail "Could not retrieve final certificate from host ${ICINGA2_CA_NODE}"
   fi
 else
   info "Would create certificates under ${ICINGA2_SSLDIR}, but in dry-run!"
