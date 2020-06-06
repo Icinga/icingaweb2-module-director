@@ -268,6 +268,9 @@ class IcingaHostForm extends DirectorObjectForm
     {
         $links = [];
         foreach ($groups as $name) {
+            if (! empty($links)) {
+                $links[] = ', ';
+            }
             $links[] = Link::create(
                 $name,
                 'director/hostgroup',
@@ -278,7 +281,7 @@ class IcingaHostForm extends DirectorObjectForm
 
         return Html::tag('span', [
             'style' => 'line-height: 2.5em; padding-left: 0.5em'
-        ], $links)->setSeparator(', ');
+        ], $links);
     }
 
     protected function getAppliedGroups()
