@@ -14,7 +14,7 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
 
     public function getName()
     {
-        return 'Black or White-list rows based on property value';
+        return mt('director', 'Reject or keep rows based on property value');
     }
 
     /**
@@ -38,7 +38,7 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
         ]);
 
         $form->addElement('text', 'filter_string', [
-            'label'       => 'Filter',
+            'label'       => $form->translate('Filter'),
             'description' => $form->translate(
                 'The string/pattern you want to search for. Depends on the'
                 . ' chosen method, use www.* or *linux* for wildcard matches'
@@ -56,8 +56,8 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
             ),
             'value'        => 'reject',
             'multiOptions' => [
-                'reject' => $form->translate('Reject the whole row (Blacklist)'),
-                'keep'   => $form->translate('Keep only matching rows (Whitelist)'),
+                'reject' => $form->translate('Reject the whole row'),
+                'keep'   => $form->translate('Keep only matching rows'),
             ],
         ]);
     }

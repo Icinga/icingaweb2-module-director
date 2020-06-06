@@ -14,6 +14,7 @@ next (will be 1.8.0)
 ### User Interface
 * FIX: It's now possible to set Endpoint ports > 32767 on PostgreSQL (#928)
 * FIX: Group list is no longer prefixed with a comma (#2133)
+* FIX: Change wording, avoid black/whitelist (#2134)
 * FEATURE: Data Fields can now be grouped into categories (#1969)
 * FEATURE: Inspect is now available for Packages, Stages and Files (#1995)
 * FEATURE: Allow to disable the Director frontend / UI (#2007)
