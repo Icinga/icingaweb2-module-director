@@ -132,12 +132,12 @@ class IcingaServiceForm extends DirectorObjectForm
                 Html::tag(
                     'p',
                     ['class' => 'warning'],
-                    $this->translate('This Service has been blacklisted on this host')
+                    $this->translate('This Service has been deactivated on this host')
                 ),
                 ['name' => 'HINT_blacklisted']
             );
             $group = null;
-            $this->addDeleteButton($this->translate('Restore'));
+            $this->addDeleteButton($this->translate('Reactivate'));
             $this->setSubmitLabel(false);
         } else {
             $this->addOverrideHint();
@@ -158,7 +158,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->setSubmitLabel(false);
             }
 
-            $this->addDeleteButton($this->translate('Blacklist'));
+            $this->addDeleteButton($this->translate('Deactivate'));
         }
 
         if (! $this->hasSubmitButton()) {
@@ -188,6 +188,7 @@ class IcingaServiceForm extends DirectorObjectForm
      */
     protected function getFirstParent(IcingaService $service)
     {
+        /** @var IcingaService[] $objects */
         $objects = $service->imports()->getObjects();
         if (empty($objects)) {
             throw new RuntimeException('Something went wrong, got no parent');
@@ -262,7 +263,7 @@ class IcingaServiceForm extends DirectorObjectForm
             'service_id' => $service->get('id')
         ])) {
             $msg = sprintf(
-                $this->translate('%s has been blacklisted on %s'),
+                $this->translate('%s has been deactivated on %s'),
                 $service->getObjectName(),
                 $host->getObjectName()
             );
@@ -298,7 +299,7 @@ class IcingaServiceForm extends DirectorObjectForm
         ]);
         if ($db->delete('icinga_host_service_blacklist', $where)) {
             $msg = sprintf(
-                $this->translate('%s is no longer blacklisted on %s'),
+                $this->translate('%s is no longer deactivated on %s'),
                 $service->getObjectName(),
                 $host->getObjectName()
             );
