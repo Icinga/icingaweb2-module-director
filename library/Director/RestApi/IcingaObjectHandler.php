@@ -146,7 +146,14 @@ class IcingaObjectHandler extends RequestHandler
 
                 if ($object->hasBeenModified()) {
                     $status = $object->hasBeenLoadedFromDb() ? 200 : 201;
-                    $object->store();
+                    if($object->store()){
+                        $liveCreationEnabled = $request->getParam('live-creation');
+                        if ($liveCreationEnabled === 'true'){
+                            if (!$this->api->createObjectAtRuntime($object)) {
+                                $status = 500;
+                            }
+                        }
+                    }
                     $response->setHttpResponseCode($status);
                 } else {
                     $response->setHttpResponseCode(304);
