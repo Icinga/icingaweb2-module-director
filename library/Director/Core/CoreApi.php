@@ -314,10 +314,11 @@ class CoreApi implements DeploymentApiInterface
         $key = $object->getShortTableName();
 
         $command = sprintf(
-            "f = function() {\n"
-            . '  existing = get_%s("%s")'
-            . "\n  if (existing) { return false }"
-            . "\n%s\n}\nInternal.run_with_activation_context(f)\n",
+            'existing = get_%s("%s")'
+            . "\nf = function() {\n"
+            . "%s\n}\n"
+            . "if (existing) { false } else {\n"
+            . "Internal.run_with_activation_context(f)\n}\n",
             $key,
             $object->get('object_name'),
             (string) $object
