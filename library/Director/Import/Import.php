@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Import;
 use Exception;
 use Icinga\Application\Benchmark;
 use Icinga\Exception\IcingaException;
+use Icinga\Module\Director\Data\RecursiveUtf8Validator;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
@@ -335,7 +336,13 @@ class Import
 
             $this->rowsetExists = true;
         } catch (Exception $e) {
-            $db->rollBack();
+            try {
+                $db->rollBack();
+            } catch (Exception $e) {
+                // Well...
+            }
+            // Eventually throws details for invalid UTF8 characters
+            RecursiveUtf8Validator::validateRows($this->data);
             throw $e;
         }
     }

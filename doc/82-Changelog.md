@@ -27,6 +27,7 @@ next (will be 1.8.0)
 * FEATURE: New Property Modifier: ListToObject (#2062)
 * FEATURE: Property Modifier: convert binary UUID to HEX presentation (#2138)
 * FEATURE: Import Sources now allow to download previewed data as JSON (#2096)
+* FEATURE: UTF8 validation for failed imports gives better error message (#2143)
 * FIX: LDAP Import is now able to paginate limited results (#2019)
 
 ### REST API
