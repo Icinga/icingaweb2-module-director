@@ -964,14 +964,21 @@ form.db-selector {
   }
 }
 
-#layout.twocols &#col1 {
+// Adjustments for the legacy layout to keep backwards compatibility
+#layout.twocols > #main &#col1 {
   width: 50%;
 }
-#layout.twocols &#col2 {
+#layout.twocols > #main &#col2 {
   width: 50%;
 }
-#layout.twocols &#col1 + #col2 {
+#layout.twocols > #main &#col1 + #col2 {
   width: 50%;
+}
+
+// Adjustments for the flexbox layout
+#layout.twocols > #content-wrapper &#col2,
+#layout.twocols > #content-wrapper &#col1 + #col2 {
+  flex-grow: 1;
 }
 
 form dd {
