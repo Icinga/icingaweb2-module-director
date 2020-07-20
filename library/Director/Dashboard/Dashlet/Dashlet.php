@@ -2,10 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
-use DirectoryIterator;
-use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Acl;
-use Icinga\Module\Director\Dashboard\Dashboard;
+use Icinga\Module\Director\Db;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Icon;
@@ -16,24 +14,20 @@ abstract class Dashlet extends BaseHtmlElement
 {
     use TranslationHelper;
 
-    protected $tag = 'li';
+    /** @var Db */
+    protected $db;
 
-    protected $sectionName;
+    protected $tag = 'li';
 
     protected $icon = 'help';
 
-    protected $supportsLegacyConfig;
-
-    /** @var \Icinga\Module\Director\Db */
-    protected $db;
-
     protected $stats;
 
-    protected $requiredStats = array();
+    protected $requiredStats = [];
 
-    public function __construct(Dashboard $dashboard)
+    public function __construct(Db $db)
     {
-        $this->db = $dashboard->getDb();
+        $this->db = $db;
     }
 
     /**
@@ -50,45 +44,22 @@ abstract class Dashlet extends BaseHtmlElement
     }
 
     /**
-     * @deprecated This is obsolete, should not be used
-     * @param Dashboard $dashboard
-     * @return array
+     * @param $name
+     * @param Db $db
+     * @return Dashlet
      */
-    public static function loadAll(Dashboard $dashboard)
+    public static function loadByName($name, Db $db)
     {
-        $dashlets = array();
-
-        foreach (new DirectoryIterator(__DIR__) as $file) {
-            if ($file->isDot()) {
-                continue;
-            }
-            $filename = $file->getFilename();
-            if (preg_match('/^(\w+)Dashlet\.php$/', $filename, $match)) {
-                $dashlet = static::loadByName($match[1], $dashboard);
-
-                if ($dashlet->isAllowed()) {
-                    $dashlets[] = $dashlet;
-                }
-            }
-        }
-
-        return $dashlets;
-    }
-
-    public static function loadByName($name, Dashboard $dashboard)
-    {
+        /** @var Dashlet */
         $class = __NAMESPACE__ . '\\' . $name . 'Dashlet';
-        return new $class($dashboard);
+        return new $class($db);
     }
 
-    public static function loadByNames(array $names, Dashboard $dashboard)
+    public static function loadByNames(array $names, Db $db)
     {
-        $prefix = __NAMESPACE__ . '\\';
-        $dashlets =  array();
+        $dashlets =  [];
         foreach ($names as $name) {
-            $class = $prefix . $name . 'Dashlet';
-            /** @var Dashlet $dashlet */
-            $dashlet = new $class($dashboard);
+            $dashlet = static::loadByName($name, $db);
 
             if ($dashlet->isAllowed()) {
                 $dashlets[] = $dashlet;
@@ -98,34 +69,9 @@ abstract class Dashlet extends BaseHtmlElement
         return $dashlets;
     }
 
-    public function renderClassAttribute()
-    {
-        $classes = $this->listCssClasses();
-        if (empty($classes)) {
-            return '';
-        } else {
-            if (! is_array($classes)) {
-                $classes = array($classes);
-            }
-
-            return ' class="' . implode(' ', $classes) . '"';
-        }
-    }
-
     public function listCssClasses()
     {
-        return array();
-    }
-
-    public function getSectionName()
-    {
-        if ($this->sectionName === null) {
-            throw new ProgrammingError(
-                'Dashlets without a sectionName are not allowed'
-            );
-        }
-
-        return $this->sectionName;
+        return [];
     }
 
     public function getIconName()
@@ -137,22 +83,15 @@ abstract class Dashlet extends BaseHtmlElement
 
     abstract public function getUrl();
 
-    public function renderContent()
+    protected function assemble()
     {
-        $this->add(
-            Link::create(
-                [
-                    $this->getTitle(),
-                    Icon::create($this->getIconName()),
-                    Html::tag('p', null, $this->getSummary())
-                ],
-                $this->getUrl(),
-                null,
-                ['class' => $this->listCssClasses()]
-            )
-        );
-
-        return parent::renderContent();
+        $this->add(Link::create([
+            $this->getTitle(),
+            Icon::create($this->getIconName()),
+            Html::tag('p', null, $this->getSummary())
+        ], $this->getUrl(), null, [
+            'class' => $this->listCssClasses()
+        ]));
     }
 
     public function listRequiredPermissions()

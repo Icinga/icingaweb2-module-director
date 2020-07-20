@@ -2,18 +2,18 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use ipl\Html\HtmlDocument;
 use Exception;
+use gipfl\Translation\TranslationHelper;
+use gipfl\IcingaWeb2\Widget\Tabs;
+use ipl\Html\Html;
+use ipl\Html\HtmlDocument;
+use ipl\Html\HtmlString;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Widget\Tab;
-use ipl\Html\Html;
-use ipl\Html\HtmlString;
-use gipfl\Translation\TranslationHelper;
-use gipfl\IcingaWeb2\Widget\Tabs;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends HtmlDocument
@@ -180,7 +180,7 @@ abstract class Dashboard extends HtmlDocument
         } else {
             $this->dashlets = Dashlet::loadByNames(
                 $this->dashletNames,
-                $this
+                $this->getDb()
             );
         }
     }
@@ -271,11 +271,8 @@ abstract class Dashboard extends HtmlDocument
     protected function applyRestrictions($type, $query)
     {
         switch ($type) {
-            case 'hostgroup':
-                $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
-                $r->applyToQuery($query);
-                break;
             case 'host':
+            case 'hostgroup':
                 $r = new HostgroupRestriction($this->getDb(), $this->getAuth());
                 $r->applyToQuery($query);
                 break;
