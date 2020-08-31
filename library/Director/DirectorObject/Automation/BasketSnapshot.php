@@ -20,6 +20,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
@@ -28,6 +29,7 @@ use RuntimeException;
 class BasketSnapshot extends DbObject
 {
     protected static $typeClasses = [
+        'Zone'            => IcingaZone::class,
         'Datafield'       => DirectorDatafield::class,
         'TimePeriod'      => IcingaTimePeriod::class,
         'CommandTemplate' => [IcingaCommand::class, ['object_type' => 'template']],
@@ -62,6 +64,7 @@ class BasketSnapshot extends DbObject
     ];
 
     protected $restoreOrder = [
+        'Zone',
         'CommandTemplate',
         'ExternalCommand',
         'Command',
@@ -91,6 +94,12 @@ class BasketSnapshot extends DbObject
     protected $binaryProperties = [
         'basket_uuid',
         'content_checksum',
+    ];
+
+    protected $defaultZones = [
+        'master',
+        'director-global',
+        'global-templates'
     ];
 
     public static function supports($type)
@@ -403,6 +412,8 @@ class BasketSnapshot extends DbObject
         }
         /** @var IcingaObject $dummy */
         $dummy = $class::create();
+        /** @var Zone[] to export*/
+        $zones = [];
         /** @var ExportInterface $object */
         if ($dummy instanceof IcingaObject && $dummy->supportsImports()) {
             $db = $this->getDb();
@@ -415,6 +426,7 @@ class BasketSnapshot extends DbObject
                 // TODO: this is ugly.
                 && ! $dummy instanceof IcingaDependency
                 && ! $dummy instanceof IcingaTimePeriod
+                && ! $dummy instanceof IcingaZone
             ) {
                 $select->where('object_type = ?', 'template');
             }
@@ -423,7 +435,31 @@ class BasketSnapshot extends DbObject
             $all = $class::loadAll($this->getConnection());
         }
         foreach ($all as $object) {
+            if (property_exists($object->export(), 'zone')) {
+                array_push($zones, $object->export()->zone);
+            }
             $this->objects[$typeName][$object->getUniqueIdentifier()] = $object->export();
+        }
+        $zones = array_unique($zones);
+        foreach ($zones as $zone) {
+            if (!empty($zone) &&  !in_array($zone, $this->defaultZones)) {
+                static::addGroupZone($zone);
+            }
+        }
+    }
+
+    protected function addGroupZone($zone)
+    {
+        $class = static::getClassForType("Zone");
+        $dummy = $class::create();
+        if ($dummy instanceof IcingaObject && $dummy->supportsImports()) {
+            $db = $this->getDb();
+            $select = $db->select()->from($dummy->getTableName())
+                ->where('object_name = ?', $zone);
+            $all = $class::loadAll($this->getConnection(), $select);
+            foreach ($all as $object) {
+                $this->objects['Zone'][$object->getUniqueIdentifier()] = $object->export();
+            }
         }
     }
 

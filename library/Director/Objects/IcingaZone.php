@@ -3,10 +3,12 @@
 namespace Icinga\Module\Director\Objects;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 
-class IcingaZone extends IcingaObject
+class IcingaZone extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_zone';
 
@@ -33,6 +35,47 @@ class IcingaZone extends IcingaObject
     protected static $globalZoneNames;
 
     private $endpointList;
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
+
+    /**
+     * @return object
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function export()
+    {
+        return $this->toPlainObject();
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return static
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $name = $properties['object_name'];
+
+        if ($replace && static::exists($name, $db)) {
+            $object = static::load($name, $db);
+        } elseif (static::exists($name, $db)) {
+            throw new DuplicateKeyException(
+                'Zone "%s" already exists',
+                $name
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+        $object->setProperties($properties);
+        return $object;
+    }
 
     protected function renderCustomExtensions()
     {

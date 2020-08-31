@@ -18,7 +18,23 @@ class IcingaHostGroupForm extends DirectorObjectForm
 
         $this->addGroupDisplayNameElement()
              ->addAssignmentElements()
+             ->addZoneElements()
              ->setButtons();
+    }
+
+    protected function addZoneElements()
+    {
+        $this->addZoneElement(true);
+        $this->addDisplayGroup(['zone_id'], 'clustering', [
+            'decorators' => [
+                'FormElements',
+                ['HtmlTag', ['tag' => 'dl']],
+                'Fieldset',
+            ],
+            'order' => 80,
+            'legend' => $this->translate('Zone settings'),
+        ]);
+        return $this;
     }
 
     protected function addAssignmentElements()
