@@ -1,7 +1,8 @@
 [Unit]
 Description=Icinga Director - Monitoring Configuration
 Documentation=https://icinga.com/docs/director/latest/
-Wants=network.target
+Wants=network-online.target
+After=mariadb.service mysqld.service postgresql.service
 
 [Service]
 EnvironmentFile=-/etc/default/icinga-director
