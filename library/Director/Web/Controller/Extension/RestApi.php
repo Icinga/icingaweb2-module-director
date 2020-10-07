@@ -36,6 +36,21 @@ trait RestApi
     }
 
     /**
+     * @return bool
+     */
+    protected function sendNotFoundUnlessRestApi()
+    {
+        /** @var \Icinga\Web\Request $request */
+        $request = $this->getRequest();
+        if ($request->isApiRequest()) {
+            return false;
+        } else {
+            $this->sendJsonError($this->getResponse(), 'Not found', 404);
+            return true;
+        }
+    }
+
+    /**
      * @throws AuthenticationException
      */
     protected function assertApiPermission()
