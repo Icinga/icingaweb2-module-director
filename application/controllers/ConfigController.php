@@ -131,13 +131,22 @@ class ConfigController extends ActionController
         if ($this->sendNotFoundUnlessRestApi()) {
             return;
         }
+        $db = $this->db();
+        $api = $this->api();
+        try {
+            if (DirectorDeploymentLog::hasUncollected($db)) {
+                $api->collectLogFiles($db);
+            }
+        } catch (Exception $e) {
+            // Ignore eventual issues while talking to Icinga
+        }
+
         $activeConfiguration = null;
         $lastActivityLogChecksum = null;
         $configChecksum = null;
-        $api = $this->api();
-        $status = new DeploymentStatus($this->db(), $api);
+        $status = new DeploymentStatus($db, $api);
         if ($stageName = $api->getActiveStageName()) {
-            $activityLogChecksum = DirectorDeploymentLog::getRelatedToActiveStage($api, $this->db());
+            $activityLogChecksum = DirectorDeploymentLog::getRelatedToActiveStage($api, $db);
             $lastActivityLogChecksum = bin2hex($activityLogChecksum->last_activity_checksum);
             $configChecksum = $status->getConfigChecksumForStageName($stageName);
             $activeConfiguration = [
