@@ -131,16 +131,40 @@ class ConfigController extends ActionController
         if ($this->sendNotFoundUnlessRestApi()) {
             return;
         }
+        $activeConfiguration = null;
+        $lastActivityLogChecksum = null;
+        $configChecksum = null;
         $api = $this->api();
         $status = new DeploymentStatus($this->db(), $api);
-        $stageName = $api->getActiveStageName();
-        $checksum = $status->getConfigChecksumForStageName($stageName);
-        $this->sendJson($this->getResponse(), (object) [
-            'active_configuration' => (object) [
-                'active_stage_name' => $stageName,
-                'active_checksum'   => $checksum
-            ],
-        ]);
+        if ($stageName = $api->getActiveStageName()) {
+            $activityLogChecksum = DirectorDeploymentLog::getRelatedToActiveStage($api, $this->db());
+            $lastActivityLogChecksum = bin2hex($activityLogChecksum->last_activity_checksum);
+            $configChecksum = $status->getConfigChecksumForStageName($stageName);
+            $activeConfiguration = [
+                'stage_name' => $stageName,
+                'config_checksum'   => ($configChecksum) ? : null,
+                'activity_log_checksum' => $lastActivityLogChecksum
+            ];
+        }
+        $result = [
+            'active_configuration' => (object) $activeConfiguration,
+        ];
+
+        if ($configChecksumsListToVerify = $this->params->get('config_checksums')) {
+            $result['configuration'] = $status->getDeploymentStatusForConfigChecksums(
+                explode(',', $configChecksumsListToVerify),
+                $configChecksum
+            );
+        }
+
+        if ($activityLogChecksumsListToVerify = $this->params->get('activity_log_checksums')) {
+            $result['activity'] = $status->getDeploymentStatusForActivityLogChecksums(
+                explode(',', $activityLogChecksumsListToVerify),
+                $lastActivityLogChecksum
+            );
+        }
+
+        $this->sendJson($this->getResponse(), (object) $result);
     }
 
     /**
