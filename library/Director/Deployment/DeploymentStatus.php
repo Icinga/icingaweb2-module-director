@@ -46,19 +46,19 @@ class DeploymentStatus
         ];
 
         if ($configs) {
-            $result['configs'] = $this->getDeploymentStatusForConfigChecksums(
+            $result['configs'] = (object) $this->getDeploymentStatusForConfigChecksums(
                 explode(',', $configs),
                 $configChecksum
             );
         }
 
         if ($activities) {
-            $result['activities'] = $this->getDeploymentStatusForActivityLogChecksums(
+            $result['activities'] = (object) $this->getDeploymentStatusForActivityLogChecksums(
                 explode(',', $activities),
                 $lastActivityLogChecksum
             );
         }
-        return $result;
+        return (object) $result;
     }
 
     public function getConfigChecksumForStageName($stageName)
