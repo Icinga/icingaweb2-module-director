@@ -512,9 +512,9 @@ Content-Type: application/json
 ```json
 {
     "active_configuration": {
-        "stage_name": "...",
-        "config_checksum": "...",
-        "activity_log_checksum": "..."
+        "stage_name": "b191211d-05cb-4679-842b-c45170b96421",
+        "config": "617b9cbad9e141cfc3f4cb636ec684bd60073be1",
+        "activity": "028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2"
     }
 }
 ```
@@ -534,14 +534,14 @@ Following an example of how to do it:
 {
     "active_configuration": {
         "stage_name": "b191211d-05cb-4679-842b-c45170b96421",
-        "config_checksum": "617b9cbad9e141cfc3f4cb636ec684bd60073be1",
-        "activity_log_checksum": "028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2"
+        "config": "617b9cbad9e141cfc3f4cb636ec684bd60073be1",
+        "activity": "028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2"
     },
-    "configuration": {
+    "configs": {
         "617b9cbad9e141cfc3f4cb636ec684bd60073be2": "deployed",
         "617b9cbad9e141cfc3f4cb636ec684bd60073be1": "active"
     },
-    "activity": {
+    "activities": {
         "617b9cbad9e141cfc3f4cb636ec684bd60073be1": "undeployed",
         "028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2": "active"
     }
