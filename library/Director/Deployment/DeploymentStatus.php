@@ -45,7 +45,7 @@ class DeploymentStatus
             if ($singleChecksum === $activeConfigChecksum) {
                 $status = 'active';
             } else {
-                if (isset($deployedConfigs[$singleChecksum])){
+                if (isset($deployedConfigs[$singleChecksum])) {
                     $status = ($deployedConfigs[$singleChecksum] === 'y') ? 'deployed' : 'failed';
                 } else {
                     // check if it's in generated_config table it is undeployed
