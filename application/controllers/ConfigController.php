@@ -6,6 +6,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\ConfigDiff;
+use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -15,7 +16,6 @@ use Icinga\Module\Director\Web\Table\ActivityLogTable;
 use Icinga\Module\Director\Web\Table\ConfigFileDiffTable;
 use Icinga\Module\Director\Web\Table\DeploymentLogTable;
 use Icinga\Module\Director\Web\Table\GeneratedConfigFileTable;
-use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Tabs\InfraTabs;
 use Icinga\Module\Director\Web\Widget\ActivityLogInfo;
@@ -124,6 +124,23 @@ class ConfigController extends ActionController
         } else {
             $this->deploymentFailed($checksum);
         }
+    }
+
+    public function deploymentStatusAction()
+    {
+        if ($this->sendNotFoundUnlessRestApi()) {
+            return;
+        }
+        $api = $this->api();
+        $status = new DeploymentStatus($this->db(), $api);
+        $stageName = $api->getActiveStageName();
+        $checksum = $status->getConfigChecksumForStageName($stageName);
+        $this->sendJson($this->getResponse(), (object) [
+            'active_configuration' => (object) [
+                'active_stage_name' => $stageName,
+                'active_checksum'   => $checksum
+            ],
+        ]);
     }
 
     /**
