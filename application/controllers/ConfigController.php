@@ -133,45 +133,8 @@ class ConfigController extends ActionController
         }
         $db = $this->db();
         $api = $this->api();
-        try {
-            if (DirectorDeploymentLog::hasUncollected($db)) {
-                $api->collectLogFiles($db);
-            }
-        } catch (Exception $e) {
-            // Ignore eventual issues while talking to Icinga
-        }
-
-        $activeConfiguration = null;
-        $lastActivityLogChecksum = null;
-        $configChecksum = null;
         $status = new DeploymentStatus($db, $api);
-        if ($stageName = $api->getActiveStageName()) {
-            $activityLogChecksum = DirectorDeploymentLog::getRelatedToActiveStage($api, $db);
-            $lastActivityLogChecksum = bin2hex($activityLogChecksum->last_activity_checksum);
-            $configChecksum = $status->getConfigChecksumForStageName($stageName);
-            $activeConfiguration = [
-                'stage_name' => $stageName,
-                'config'   => ($configChecksum) ? : null,
-                'activity' => $lastActivityLogChecksum
-            ];
-        }
-        $result = [
-            'active_configuration' => (object) $activeConfiguration,
-        ];
-
-        if ($configChecksumsListToVerify = $this->params->get('configs')) {
-            $result['configs'] = $status->getDeploymentStatusForConfigChecksums(
-                explode(',', $configChecksumsListToVerify),
-                $configChecksum
-            );
-        }
-
-        if ($activityLogChecksumsListToVerify = $this->params->get('activities')) {
-            $result['activities'] = $status->getDeploymentStatusForActivityLogChecksums(
-                explode(',', $activityLogChecksumsListToVerify),
-                $lastActivityLogChecksum
-            );
-        }
+        $result = $status->getDeploymentStatus($this->params->get('configs'), $this->params->get('activities'));
 
         $this->sendJson($this->getResponse(), (object) $result);
     }
