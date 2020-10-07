@@ -524,7 +524,7 @@ is set to null.
 
 Another possibility is to pass a list of checksums to fetch the status of 
 specific deployments and (activity log) activities.
-Following an example of how to do it:
+Following, you can see an example of how to do it:
 
     GET director/config/deployment-status?config_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be2,
     617b9cbad9e141cfc3f4cb636ec684bd60073be1&activity_log_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be1,

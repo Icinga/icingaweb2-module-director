@@ -490,6 +490,61 @@ version the `deploy` command allows you to provide a specific checksum:
 icingacli director config deploy --checksum b330febd0820493fb12921ad8f5ea42102a5c871
 ```
 
+### Deployments status
+In case you want to fetch the information about the deployments status, 
+you can call the following CLI command:
+```shell
+icingacli director config deploymentstatus
+```
+```json
+{
+    "active_configuration": {
+        "stage_name": "5c65cae0-4f1b-47b4-a890-766c82681622",
+        "config": "617b9cbad9e141cfc3f4cb636ec684bd60073be1",
+        "activity": "4f7bc6600dd50a989f22f82d3513e561ef333363"
+    }
+}
+```
+In case there is no active stage name related to the Director, active_configuration 
+is set to null.
+
+Another possibility is to pass a list of checksums to fetch the status of 
+specific deployments and (activity log) activities.
+Following, you can see an example of how to do it:
+```shell
+icingacli director config deploymentstatus \
+    --configs 617b9cbad9e141cfc3f4cb636ec684bd60073be1 \
+    --activities 4f7bc6600dd50a989f22f82d3513e561ef333363
+```
+```json
+{
+    "active_configuration": {
+        "stage_name": "5c65cae0-4f1b-47b4-a890-766c82681622",
+        "config": "617b9cbad9e141cfc3f4cb636ec684bd60073be1",
+        "activity": "4f7bc6600dd50a989f22f82d3513e561ef333363"
+    },
+    "configs": {
+        "617b9cbad9e141cfc3f4cb636ec684bd60073be1": "active"
+    },
+    "activities": {
+        "4f7bc6600dd50a989f22f82d3513e561ef333363": "active"
+    }
+}
+```
+
+You can also decide to access directly to a value inside the result JSON by 
+using the `--key` param:
+```shell
+icingacli director config deploymentstatus \
+    --configs 617b9cbad9e141cfc3f4cb636ec684bd60073be1 \
+    --activities 4f7bc6600dd50a989f22f82d3513e561ef333363 \
+    --key active_configuration.config
+```
+```
+617b9cbad9e141cfc3f4cb636ec684bd60073be1
+```
+
+
 
 ### Cronjob usage
 
