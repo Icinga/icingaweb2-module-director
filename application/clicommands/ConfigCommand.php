@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 
 /**
@@ -118,5 +119,18 @@ class ConfigCommand extends Command
                 sprintf("Failed to deploy config '%s'\n", $checksum)
             );
         }
+    }
+
+    /**
+     * Checks the deployments status
+     */
+    public function deploymentstatusAction()
+    {
+        $db = $this->db();
+        $api = $this->api();
+        $status = new DeploymentStatus($db, $api);
+        $result = $status->getDeploymentStatus($this->params->get('configs'), $this->params->get('activities'));
+
+        printf(json_encode($result));
     }
 }

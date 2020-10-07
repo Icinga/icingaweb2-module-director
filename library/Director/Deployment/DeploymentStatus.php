@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Deployment;
 
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 
 class DeploymentStatus
 {
@@ -15,6 +16,49 @@ class DeploymentStatus
     {
         $this->db = $db;
         $this->api = $api;
+    }
+
+    public function getDeploymentStatus($configs = null, $activities = null)
+    {
+        try {
+            if (DirectorDeploymentLog::hasUncollected($this->db)) {
+                $this->api->collectLogFiles($this->db);
+            }
+        } catch (Exception $e) {
+            // Ignore eventual issues while talking to Icinga
+        }
+
+        $activeConfiguration = null;
+        $lastActivityLogChecksum = null;
+        $configChecksum = null;
+        if ($stageName = $this->api->getActiveStageName()) {
+            $activityLogChecksum = DirectorDeploymentLog::getRelatedToActiveStage($this->api, $this->db);
+            $lastActivityLogChecksum = bin2hex($activityLogChecksum->last_activity_checksum);
+            $configChecksum = $this->getConfigChecksumForStageName($stageName);
+            $activeConfiguration = [
+                'stage_name' => $stageName,
+                'config'   => ($configChecksum) ? : null,
+                'activity' => $lastActivityLogChecksum
+            ];
+        }
+        $result = [
+            'active_configuration' => (object) $activeConfiguration,
+        ];
+
+        if ($configs) {
+            $result['configs'] = $this->getDeploymentStatusForConfigChecksums(
+                explode(',', $configs),
+                $configChecksum
+            );
+        }
+
+        if ($activities) {
+            $result['activities'] = $this->getDeploymentStatusForActivityLogChecksums(
+                explode(',', $activities),
+                $lastActivityLogChecksum
+            );
+        }
+        return $result;
     }
 
     public function getConfigChecksumForStageName($stageName)
