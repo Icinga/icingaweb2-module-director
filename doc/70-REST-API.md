@@ -547,6 +547,12 @@ Following an example of how to do it:
     }
 }
 ```
+The list of possible status is: 
+* `active`: whether this configuration is currently active
+* `deployed`: whether this configuration has ever been deployed
+* `failed`: whether the deployment of this configuration has failed
+* `undeployed`: whether this configuration has been rendered, but not yet deployed
+* `unknown`: whether no configurations have been found for this checksum
 
 ### Agent Tickets
 
