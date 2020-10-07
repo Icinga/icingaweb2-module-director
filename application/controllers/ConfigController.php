@@ -151,23 +151,23 @@ class ConfigController extends ActionController
             $configChecksum = $status->getConfigChecksumForStageName($stageName);
             $activeConfiguration = [
                 'stage_name' => $stageName,
-                'config_checksum'   => ($configChecksum) ? : null,
-                'activity_log_checksum' => $lastActivityLogChecksum
+                'config'   => ($configChecksum) ? : null,
+                'activity' => $lastActivityLogChecksum
             ];
         }
         $result = [
             'active_configuration' => (object) $activeConfiguration,
         ];
 
-        if ($configChecksumsListToVerify = $this->params->get('config_checksums')) {
-            $result['configuration'] = $status->getDeploymentStatusForConfigChecksums(
+        if ($configChecksumsListToVerify = $this->params->get('configs')) {
+            $result['configs'] = $status->getDeploymentStatusForConfigChecksums(
                 explode(',', $configChecksumsListToVerify),
                 $configChecksum
             );
         }
 
-        if ($activityLogChecksumsListToVerify = $this->params->get('activity_log_checksums')) {
-            $result['activity'] = $status->getDeploymentStatusForActivityLogChecksums(
+        if ($activityLogChecksumsListToVerify = $this->params->get('activities')) {
+            $result['activities'] = $status->getDeploymentStatusForActivityLogChecksums(
                 explode(',', $activityLogChecksumsListToVerify),
                 $lastActivityLogChecksum
             );
