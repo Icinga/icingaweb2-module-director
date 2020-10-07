@@ -496,6 +496,58 @@ impossible to distinct them by name. Therefore, a dedicated REST API endpoint
 internal ID. This ID can then be used to modify or delete a Rule via
 `director/service`.
 
+### Deployment Status
+In case you want to fetch the information about the deployments status, 
+you can call the following API:
+
+    GET director/config/deployment-status
+
+```
+HTTP/1.1 200 OK
+Date: Wed, 07 Oct 2020 13:14:33 GMT
+Server: Apache
+Content-Type: application/json
+```
+
+```json
+{
+    "active_configuration": {
+        "stage_name": "...",
+        "config_checksum": "...",
+        "activity_log_checksum": "..."
+    }
+}
+```
+This throws a 500 in case Icinga isn't reachable. 
+In case there is no active stage name related to the Director, active_configuration 
+is set to null.
+
+Another possibility is to pass a list of checksums to fetch the status of 
+specific deployments and (activity log) activities.
+Following an example of how to do it:
+
+    GET director/config/deployment-status?config_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be2,
+    617b9cbad9e141cfc3f4cb636ec684bd60073be1&activity_log_checksums=617b9cbad9e141cfc3f4cb636ec684bd60073be1,
+    028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2
+    
+```json
+{
+    "active_configuration": {
+        "stage_name": "b191211d-05cb-4679-842b-c45170b96421",
+        "config_checksum": "617b9cbad9e141cfc3f4cb636ec684bd60073be1",
+        "activity_log_checksum": "028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2"
+    },
+    "configuration": {
+        "617b9cbad9e141cfc3f4cb636ec684bd60073be2": "deployed",
+        "617b9cbad9e141cfc3f4cb636ec684bd60073be1": "active"
+    },
+    "activity": {
+        "617b9cbad9e141cfc3f4cb636ec684bd60073be1": "undeployed",
+        "028b3a19ca7457f5fc9dbb5e4ea527eaf61616a2": "active"
+    }
+}
+```
+
 ### Agent Tickets
 
 The Director is very helpful when it goes to manage your Icinga Agents. In
