@@ -188,7 +188,11 @@ class ImportsourceController extends ActionController
         $response->setHeader('Content-Type', 'application/json', true);
         $response->setHeader('Content-disposition', "attachment; filename=$filename", true);
         $response->sendHeaders();
-        $this->sendJson($this->getResponse(), $data);
+        try {
+            $this->sendJson($this->getResponse(), $data);
+        } catch (Exception $e) {
+            $this->sendJsonError($response, $e->getMessage());
+        }
         // TODO: this is not clean
         if (\ob_get_level()) {
             \ob_end_flush();
