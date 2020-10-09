@@ -17,7 +17,7 @@ class DataTypeDirectorObject extends DataTypeHook
         $type = $this->getSetting('icinga_object_type');
         $dummy = IcingaObject::createByType($type);
 
-        $display = $type === 'service_set'
+        $display = in_array($type, ['service_set', 'notification'])
             ? 'object_name'
             : 'COALESCE(display_name, object_name)';
         $query = $db->select()->from($dummy->getTableName(), [
@@ -27,6 +27,8 @@ class DataTypeDirectorObject extends DataTypeHook
 
         if ($type === 'service_set') {
             $query->where('host_id IS NULL');
+        } elseif ($type === 'notification') {
+            $query->where('object_type = ?', 'apply');
         } else {
             $query->where('object_type = ?', 'object');
         }
@@ -35,17 +37,17 @@ class DataTypeDirectorObject extends DataTypeHook
 
         $params = [];
         if ($this->getSetting('data_type') === 'array') {
-            $type = 'extensibleSet';
+            $elementType = $type === 'notification' ? 'select' : 'extensibleSet';
             $params['sorted'] = true;
             $params = ['multiOptions' => $enum];
         } else {
             $params = ['multiOptions' => [
                     null => $form->translate('- please choose -'),
                 ] + $enum];
-            $type = 'select';
+            $elementType = 'select';
         }
 
-        return $form->createElement($type, $name, $params);
+        return $form->createElement($elementType, $name, $params);
     }
 
     public static function addSettingsFormFields(QuickForm $form)
@@ -53,6 +55,7 @@ class DataTypeDirectorObject extends DataTypeHook
         $enum = [
             'host'         => $form->translate('Hosts'),
             'hostgroup'    => $form->translate('Host groups'),
+            'notification' => $form->translate('Notification Apply Rules'),
             'service'      => $form->translate('Services'),
             'servicegroup' => $form->translate('Service groups'),
             'service_set'  => $form->translate('Service Set'),
