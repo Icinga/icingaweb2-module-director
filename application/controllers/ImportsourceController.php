@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Expeption;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Hook\ImportSourceHook;
@@ -16,6 +17,7 @@ use Icinga\Module\Director\Web\Tabs\ImportsourceTabs;
 use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
 use InvalidArgumentException;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\Error;
 
 class ImportsourceController extends ActionController
 {
@@ -156,7 +158,11 @@ class ImportsourceController extends ActionController
         ))->add(Link::create('[..]', '#', null, [
             'onclick' => 'javascript:$("table.raw-data-table").toggleClass("collapsed");'
         ]));
-        (new ImportsourceHookTable())->setImportSource($source)->renderTo($this);
+        try {
+            (new ImportsourceHookTable())->setImportSource($source)->renderTo($this);
+        } catch (Exception $e) {
+            $this->content()->add(Error::show($e));
+        }
     }
 
     /**
