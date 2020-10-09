@@ -42,13 +42,12 @@ class PropertyModifierArrayToRow extends PropertyModifierHook
     public function transform($value)
     {
         if (empty($value)) {
-            $onDuplicate = $this->getSetting('on_duplicate', 'reject');
+            $onDuplicate = $this->getSetting('on_empty', 'reject');
             switch ($onDuplicate) {
                 case 'reject':
-                    $this->rejectRow();
-                    return null;
+                    return [];
                 case 'keep':
-                    return null;
+                    return [null];
                 case 'fail':
                     throw new InvalidArgumentException('Failed to clone row, value is empty');
                 default:
