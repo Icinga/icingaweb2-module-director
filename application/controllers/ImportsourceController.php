@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use Expeption;
+use Exception;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Hook\ImportSourceHook;
