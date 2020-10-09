@@ -9,6 +9,7 @@ use Icinga\Module\Director\DataType\DataTypeNumber;
 use Icinga\Module\Director\DataType\DataTypeSqlQuery;
 use Icinga\Module\Director\DataType\DataTypeString;
 use Icinga\Module\Director\Import\ImportSourceCoreApi;
+use Icinga\Module\Director\Import\ImportSourceDirectorObject;
 use Icinga\Module\Director\Import\ImportSourceLdap;
 use Icinga\Module\Director\Import\ImportSourceRestApi;
 use Icinga\Module\Director\Import\ImportSourceSql;
@@ -66,6 +67,7 @@ $directorHooks = [
         DataTypeString::class
     ],
     'director/ImportSource' => [
+        ImportSourceDirectorObject::class,
         ImportSourceSql::class,
         ImportSourceLdap::class,
         ImportSourceCoreApi::class,
