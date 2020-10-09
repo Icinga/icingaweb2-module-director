@@ -172,6 +172,7 @@ class ImportsourceController extends ActionController
      */
     public function fetchAction()
     {
+        $response = $this->getResponse();
         try {
             $source = $this->getImportSource();
             $source->checkForChanges();
@@ -184,7 +185,6 @@ class ImportsourceController extends ActionController
                 $this->getParam('id'),
                 date('YmdHis')
             );
-            $response = $this->getResponse();
             $response->setHeader('Content-Type', 'application/json', true);
             $response->setHeader('Content-disposition', "attachment; filename=$filename", true);
             $response->sendHeaders();
