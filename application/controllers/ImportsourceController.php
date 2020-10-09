@@ -172,23 +172,22 @@ class ImportsourceController extends ActionController
      */
     public function fetchAction()
     {
-        $source = $this->getImportSource();
-        $source->checkForChanges();
-        $hook = ImportSourceHook::forImportSource($source);
-        $data = $hook->fetchData();
-        $source->applyModifiers($data);
-
-
-        $filename = sprintf(
-            "director-importsource-%d_%s.json",
-            $this->getParam('id'),
-            date('YmdHis')
-        );
-        $response = $this->getResponse();
-        $response->setHeader('Content-Type', 'application/json', true);
-        $response->setHeader('Content-disposition', "attachment; filename=$filename", true);
-        $response->sendHeaders();
         try {
+            $source = $this->getImportSource();
+            $source->checkForChanges();
+            $hook = ImportSourceHook::forImportSource($source);
+            $data = $hook->fetchData();
+            $source->applyModifiers($data);
+
+            $filename = sprintf(
+                "director-importsource-%d_%s.json",
+                $this->getParam('id'),
+                date('YmdHis')
+            );
+            $response = $this->getResponse();
+            $response->setHeader('Content-Type', 'application/json', true);
+            $response->setHeader('Content-disposition', "attachment; filename=$filename", true);
+            $response->sendHeaders();
             $this->sendJson($this->getResponse(), $data);
         } catch (Exception $e) {
             $this->sendJsonError($response, $e->getMessage());
