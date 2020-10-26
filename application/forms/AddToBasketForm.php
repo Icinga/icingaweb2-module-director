@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\Web\Widget\Hint;
 use ipl\Html\Html;
 use ipl\Html\HtmlDocument;
 use gipfl\IcingaWeb2\Link;
@@ -112,9 +113,7 @@ class AddToBasketForm extends DirectorForm
             ), $basketName));
             return parent::onSuccess();
         } else {
-            $this->addHtmlHint(Html::tag('p', [
-                'class' => 'error'
-            ], Html::sprintf($this->translate(
+            $this->addHtmlHint(Hint::error(Html::sprintf($this->translate(
                 'Please check your Basket configuration, %s does not support'
                 . ' single "%s" configuration objects'
             ), Link::create(

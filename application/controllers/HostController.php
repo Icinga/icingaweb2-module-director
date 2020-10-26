@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Widget\Hint;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -116,12 +117,10 @@ class HostController extends ObjectController
      */
     public function invalidserviceAction()
     {
-        $this->content()->add(
-            Html::tag('p', ['class' => 'error'], sprintf(
-                $this->translate('No such service: %s'),
-                $this->params->get('service')
-            ))
-        );
+        $this->content()->add(Hint::error(sprintf(
+            $this->translate('No such service: %s'),
+            $this->params->get('service')
+        )));
 
         $this->servicesAction();
     }

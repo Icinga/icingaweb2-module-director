@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -190,7 +191,7 @@ abstract class TemplateController extends CompatController
                 TemplateUsageTable::forTemplate($template)
             );
         } catch (NestingError $e) {
-            $this->content()->add(Html::tag('p', ['class' => 'error'], $e->getMessage()));
+            $this->content()->add(Hint::error($e->getMessage()));
         }
     }
 

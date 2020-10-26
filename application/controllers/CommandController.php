@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Widget\Hint;
 use ipl\Html\Html;
 use Icinga\Module\Director\Forms\IcingaCommandArgumentForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -64,19 +65,14 @@ class CommandController extends ObjectController
         $command = $this->object;
         if ($command->isInUse()) {
             $usage = new CommandUsage($command);
-            $this->content()->add(Html::tag('p', [
-                'class' => 'information',
-                'data-base-target' => '_next'
-            ], Html::sprintf(
+            $this->content()->add(Hint::info(Html::sprintf(
                 $this->translate('This Command is currently being used by %s'),
                 Html::tag('span', null, $usage->getLinks())->setSeparator(', ')
-            )));
+            ))->addAttributes([
+                'data-base-target' => '_next'
+            ]));
         } else {
-            $this->content()->add(Html::tag(
-                'p',
-                ['class' => 'warning'],
-                $this->translate('This Command is currently not in use')
-            ));
+            $this->content()->add(Hint::warning($this->translate('This Command is currently not in use')));
         }
     }
 

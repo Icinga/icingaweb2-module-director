@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use gipfl\Web\Widget\Hint;
 use ipl\Html\Html;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
@@ -194,7 +195,7 @@ abstract class ObjectController extends ActionController
         try {
             $this->addFieldsFormAndTable($object, $type);
         } catch (NestingError $e) {
-            $this->content()->add(Html::tag('p', ['class' => 'error'], $e->getMessage()));
+            $this->content()->add(Hint::error($e->getMessage()));
         }
     }
 

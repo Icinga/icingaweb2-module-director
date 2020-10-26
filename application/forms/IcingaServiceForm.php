@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
@@ -129,11 +130,7 @@ class IcingaServiceForm extends DirectorObjectForm
 
         if ($this->hasBeenBlacklisted()) {
             $this->addHtml(
-                Html::tag(
-                    'p',
-                    ['class' => 'warning'],
-                    $this->translate('This Service has been deactivated on this host')
-                ),
+                Hint::warning($this->translate('This Service has been deactivated on this host')),
                 ['name' => 'HINT_blacklisted']
             );
             $group = null;

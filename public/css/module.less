@@ -1105,79 +1105,11 @@ span.error {
   }
 }
 
-p.error:not(.state-hint) {
-    color: white;
-    padding: 1em 2em;
-    background-color: @colorCritical;
-    font-weight: bold;
+p.legacy-error {
+  color: white;
+  padding: 1em 2em;
+  background-color: @colorCritical;
 
-    a {
-        color: inherit;
-        text-decoration: underline;
-    }
-}
-
-p.warning:not(.state-hint) {
-    color: white;
-    padding: 1em 2em;
-    background-color: @colorWarning;
-    font-weight: bold;
-
-    a {
-        color: inherit;
-        text-decoration: underline;
-    }
-}
-
-p.information:not(.state-hint) {
-    color: white;
-    padding: 1em 2em;
-    background-color: @colorOk;
-    font-weight: bold;
-
-    a {
-        color: inherit;
-        text-decoration: underline;
-    }
-}
-
-p.state-hint {
-  border: 1px solid @text-color;
-  padding: 0.5em;
-  line-height: 2em;
-  max-width: 60em;
-  border-left-width: 3em;
-  &:before {
-    position: relative;
-    margin-left: -1.5em;
-    margin-right: 0.5em;
-    height: 100%;
-    vertical-align: middle;
-    font-family: 'ifont';
-    color: white;
-    font-size: 2em;
-  }
-  &.ok {
-    border-color: @color-ok;
-  }
-  &.warning {
-    border-color: @color-warning;
-  }
-  &.error {
-    border-color: @color-critical;
-  }
-  &.critical:before, &.error:before {
-    content: '\e885';
-  }
-  &.warning:before {
-    content: '\e885';
-  }
-  &.ok:before {
-    content: '\e803';
-  }
-  a {
-    text-decoration: underline;
-  }
 }
 
 table th.actions, table td.actions {

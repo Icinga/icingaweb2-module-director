@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Web\Widget\UnorderedList;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -58,7 +59,7 @@ class SyncruleController extends ActionController
         }
         $this->addMainActions();
         if (! $run) {
-            $this->warning($this->translate('This Sync Rule has never been run before.'));
+            $c->add(Hint::warning($this->translate('This Sync Rule has never been run before.')));
         }
 
         switch ($rule->get('sync_state')) {
@@ -80,19 +81,19 @@ class SyncruleController extends ActionController
                 */
                 break;
             case 'pending-changes':
-                $this->warning($this->translate(
+                $c->add(Hint::warning($this->translate(
                     'There are pending changes for this Sync Rule. You should trigger a new'
                     . ' Sync Run.'
-                ));
+                )));
                 break;
             case 'failing':
-                $this->error(sprintf(
+                $c->add(Hint::error(sprintf(
                     $this->translate(
                         'This Sync Rule failed when last checked at %s: %s'
                     ),
                     $rule->get('last_attempt'),
                     $rule->get('last_error_message')
-                ));
+                )));
                 break;
         }
 
@@ -116,30 +117,14 @@ class SyncruleController extends ActionController
      */
     protected function addPropertyHint(SyncRule $rule)
     {
-        $this->warning(Html::sprintf(
+        $this->content()->add(Hint::warning(Html::sprintf(
             $this->translate('You must define some %s before you can run this Sync Rule'),
             new Link(
                 $this->translate('Sync Properties'),
                 'director/syncrule/property',
                 ['rule_id' => $rule->get('id')]
             )
-        ));
-    }
-
-    /**
-     * @param $msg
-     */
-    protected function warning($msg)
-    {
-        $this->content()->add(Html::tag('p', ['class' => 'state-hint warning'], $msg));
-    }
-
-    /**
-     * @param $msg
-     */
-    protected function error($msg)
-    {
-        $this->content()->add(Html::tag('p', ['class' => 'state-hint error'], $msg));
+        )));
     }
 
     /**
@@ -164,19 +149,15 @@ class SyncruleController extends ActionController
         try {
             $modifications = $sync->getExpectedModifications();
         } catch (\Exception $e) {
-            $this->content()->add(
-                Html::tag('p', [
-                    'class' => 'state-hint error'
-                ], $e->getMessage())
-            );
+            $this->content()->add(Hint::error($e->getMessage()));
 
             return;
         }
 
         if (empty($modifications)) {
-            $this->content()->add(Html::tag('p', [
-                'class' => 'state-hint ok'
-            ], $this->translate('This Sync Rule is in sync and would currently not apply any changes')));
+            $this->content()->add(Hint::ok($this->translate(
+                'This Sync Rule is in sync and would currently not apply any changes'
+            )));
 
             return;
         }

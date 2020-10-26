@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use gipfl\Web\Widget\Hint;
 use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Forms\ImportCheckForm;
 use Icinga\Module\Director\Forms\ImportRunForm;
@@ -30,17 +31,13 @@ class ImportSourceDetails extends HtmlDocument
 
         switch ($source->get('import_state')) {
             case 'unknown':
-                $this->add(Html::tag(
-                    'p',
-                    ['class' => 'state-hint warning'],
-                    $this->translate(
-                        "It's currently unknown whether we are in sync with this Import Source."
-                        . ' You should either check for changes or trigger a new Import Run.'
-                    )
-                ));
+                $this->add(Hint::warning($this->translate(
+                    "It's currently unknown whether we are in sync with this Import Source."
+                    . ' You should either check for changes or trigger a new Import Run.'
+                )));
                 break;
             case 'in-sync':
-                $this->add(Html::tag('p', ['class' => 'state-hint ok'], sprintf(
+                $this->add(Hint::ok(sprintf(
                     $this->translate(
                         'This Import Source was last found to be in sync at %s.'
                     ),
@@ -51,13 +48,13 @@ class ImportSourceDetails extends HtmlDocument
                 // - there have been activities since then
                 break;
             case 'pending-changes':
-                $this->add(Html::tag('p', ['class' => 'state-hint warning'], $this->translate(
+                $this->add(Hint::warning($this->translate(
                     'There are pending changes for this Import Source. You should trigger a new'
                     . ' Import Run.'
                 )));
                 break;
             case 'failing':
-                $this->add(Html::tag('p', ['class' => 'state-hint error'], sprintf(
+                $this->add(Hint::error(sprintf(
                     $this->translate(
                         'This Import Source failed when last checked at %s: %s'
                     ),
@@ -66,7 +63,7 @@ class ImportSourceDetails extends HtmlDocument
                 )));
                 break;
             default:
-                $this->add(Html::tag('p', ['class' => 'state-hint error'], sprintf(
+                $this->add(Hint::error(sprintf(
                     $this->translate('This Import Source has an invalid state: %s'),
                     $source->get('import_state')
                 )));

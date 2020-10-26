@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
@@ -56,9 +57,7 @@ class ConfigController extends ActionController
                 $this->setAutorefreshInterval(20);
             }
         } catch (Exception $e) {
-            $this->content()->prepend(
-                Html::tag('p', ['class' => 'warning'], $e->getMessage())
-            );
+            $this->content()->prepend(Hint::warning($e->getMessage()));
             // No problem, Icinga might be reloading
         }
 

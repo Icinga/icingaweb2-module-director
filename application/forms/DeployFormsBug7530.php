@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Core\CoreApi;
 use ipl\Html\Html;
 
@@ -89,7 +90,7 @@ trait DeployFormsBug7530
             $this->db->settings()->set('ignore_bug7530', 'y');
         }
         if ($this->shouldWarnAboutBug7530()) {
-            $this->addHtml(Html::tag('p', ['class' => 'state-hint warning'], Html::sprintf($this->translate(
+            $this->addHtml(Hint::warning(Html::sprintf($this->translate(
                 "Warning: you're running Icinga v2.11.0 and our configuration looks"
                 . " like you could face issue %s. We're already working on a solution."
                 . " The GitHub Issue and our %s contain related details."

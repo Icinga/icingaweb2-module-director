@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
 use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Objects\DirectorJob;
@@ -21,7 +22,7 @@ class JobDetails extends HtmlDocument
     {
         $runInterval = $job->get('run_interval');
         if ($job->hasBeenDisabled()) {
-            $this->add(Html::tag('p', ['class' => 'state-hint error'], sprintf(
+            $this->add(Hint::error(sprintf(
                 $this->translate(
                     'This job would run every %ds. It has been disabled and will'
                     . ' therefore not be executed as scheduled'
@@ -50,21 +51,19 @@ class JobDetails extends HtmlDocument
         ], DateFormatter::timeAgo($ts));
         if ($tsLastAttempt) {
             if ($job->get('last_attempt_succeeded') === 'y') {
-                $this->add(Html::tag('p', ['class' => 'state-hint ok'], Html::sprintf(
+                $this->add(Hint::ok(Html::sprintf(
                     $this->translate('The last attempt succeeded %s'),
                     $timeAgo
                 )));
             } else {
-                $this->add(Html::tag('p', ['class' => 'state-hint error'], Html::sprintf(
+                $this->add(Hint::error(Html::sprintf(
                     $this->translate('The last attempt failed %s: %s'),
                     $timeAgo,
                     $job->get('last_error_message')
                 )));
             }
         } else {
-            $this->add(Html::tag('p', [
-                'class' => 'state-hint warning'
-            ], $this->translate('This job has not been executed yet')));
+            $this->add(Hint::warning($this->translate('This job has not been executed yet')));
         }
     }
 }

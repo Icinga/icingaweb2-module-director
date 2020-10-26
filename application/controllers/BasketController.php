@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use Exception;
+use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Core\Json;
@@ -57,9 +58,7 @@ class BasketController extends ActionController
         $this->basketTabs()->activate('show');
         $this->addTitle($basket->get('basket_name'));
         if ($basket->isEmpty()) {
-            $this->content()->add(Html::tag('p', [
-                'class' => 'information'
-            ], $this->translate('This basket is empty')));
+            $this->content()->add(Hint::info($this->translate('This basket is empty')));
         }
         $this->content()->add(
             (new BasketForm())->setObject($basket)->handleRequest()
@@ -330,9 +329,7 @@ class BasketController extends ActionController
         $key = $this->params->get('key');
 
         $this->addTitle($this->translate('Single Object Diff'));
-        $this->content()->add(Html::tag('p', [
-            'class' => 'information'
-        ], Html::sprintf(
+        $this->content()->add(Hint::info(Html::sprintf(
             $this->translate('Comparing %s "%s" from Snapshot "%s" to current config'),
             $type,
             $key,

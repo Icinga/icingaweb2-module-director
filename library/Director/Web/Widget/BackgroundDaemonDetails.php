@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Widget;
 use gipfl\IcingaWeb2\Icon;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\Translation\TranslationHelper;
+use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Daemon\RunningDaemonInfo;
 use Icinga\Util\Format;
@@ -34,9 +35,7 @@ class BackgroundDaemonDetails extends BaseHtmlElement
     {
         $info = $this->info;
         if ($info->hasBeenStopped()) {
-            $this->add(Html::tag('p', [
-                'class' => 'state-hint error'
-            ], Html::sprintf(
+            $this->add(Hint::error(Html::sprintf(
                 $this->translate(
                     'Daemon has been stopped %s, was running with PID %s as %s@%s'
                 ),
@@ -47,9 +46,7 @@ class BackgroundDaemonDetails extends BaseHtmlElement
                 Html::tag('strong', $info->getFqdn())
             )));
         } elseif ($info->isOutdated()) {
-            $this->add(Html::tag('p', [
-                'class' => 'state-hint error'
-            ], Html::sprintf(
+            $this->add(Hint::error(Html::sprintf(
                 $this->translate(
                     'Daemon keep-alive is outdated, was last seen running with PID %s as %s@%s %s'
                 ),
@@ -83,9 +80,7 @@ class BackgroundDaemonDetails extends BaseHtmlElement
                     ),
             ]);
             $this->add($details);
-            $this->add(Html::tag('p', [
-                'class' => 'state-hint ok'
-            ], Html::sprintf(
+            $this->add(Hint::ok(Html::sprintf(
                 $this->translate(
                     'Daemon is running with PID %s as %s@%s, last refresh happened %s'
                 ),

@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web;
 
 use Exception;
+use gipfl\Web\Widget\Hint;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Forms\IcingaForgetApiKeyForm;
@@ -64,7 +65,7 @@ class SelfService
                 . ' secret key, you might want to dismiss the current key. This'
                 . ' would allow you to register the same host again.'
             )),
-            Html::tag('p', ['class' => 'warning'], $this->translate(
+            Hint::warning($this->translate(
                 'It is not a good idea to do so as long as your Agent still has'
                 . ' a valid Self Service API key!'
             )),
@@ -119,7 +120,7 @@ class SelfService
                     $wizard->renderTokenBasedWindowsInstaller($key)
                 ),
                 Html::tag('h2', null, $this->translate('Generate a new key')),
-                Html::tag('p', ['class' => 'warning'], $this->translate(
+                Hint::warning($this->translate(
                     'This will invalidate the former key'
                 )),
             ]);
@@ -206,7 +207,7 @@ class SelfService
             $wizard = new AgentWizard($host);
             $wizard->setTicketSalt($this->api->getTicketSalt());
         } catch (Exception $e) {
-            $c->add(Html::tag('p', ['class' => 'error'], sprintf(
+            $c->add(Hint::error(sprintf(
                 $this->translate(
                     'A ticket for this agent could not have been requested from'
                     . ' your deployment endpoint: %s'

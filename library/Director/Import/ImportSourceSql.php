@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Import;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Data\Db\DbConnection;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Hook\ImportSourceHook;
@@ -50,13 +51,9 @@ class ImportSourceSql extends ImportSourceHook
             if ($columns = $current->getSetting('column_cache')) {
                 $form->addHtmlHint('Columns: ' . $columns);
             } else {
-                $form->addHtmlHint(Html::tag(
-                    'p',
-                    ['class' => 'warning'],
-                    $form->translate(
-                        'Please click "Store" once again to determine query columns'
-                    )
-                ));
+                $form->addHtmlHint(Hint::warning($form->translate(
+                    'Please click "Store" once again to determine query columns'
+                )));
             }
         }
         return $form;
