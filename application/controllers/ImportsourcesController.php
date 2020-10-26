@@ -11,20 +11,6 @@ class ImportsourcesController extends ActionController
 {
     protected $isApified = true;
 
-    protected function sendUnsupportedMethod()
-    {
-        $method = strtoupper($this->getRequest()->getMethod()) ;
-        $response = $this->getResponse();
-        $this->sendJsonError($response, sprintf(
-            'Method %s is not supported',
-            $method
-        ), 422);  // TODO: check response code
-    }
-
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     * @throws \Icinga\Exception\Http\HttpNotFoundException
-     */
     public function indexAction()
     {
         if ($this->getRequest()->isApiRequest()) {
@@ -55,16 +41,12 @@ class ImportsourcesController extends ActionController
 
     /**
      * @param $raw
-     * @throws \Icinga\Exception\ConfigurationError
      */
-    protected function acceptImport(&$raw)
+    protected function acceptImport($raw)
     {
         (new ImportExport($this->db()))->unserializeImportSources(json_decode($raw));
     }
 
-    /**
-     * @throws \Icinga\Exception\ConfigurationError
-     */
     protected function sendExport()
     {
         $this->sendJson(

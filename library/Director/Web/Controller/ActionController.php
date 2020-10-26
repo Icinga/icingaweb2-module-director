@@ -188,6 +188,16 @@ abstract class ActionController extends Controller implements ControlsAndContent
         return $this;
     }
 
+    protected function sendUnsupportedMethod()
+    {
+        $method = strtoupper($this->getRequest()->getMethod()) ;
+        $response = $this->getResponse();
+        $this->sendJsonError($response, sprintf(
+            'Method %s is not supported',
+            $method
+        ), 422);  // TODO: check response code
+    }
+
     /**
      * @param string $permission
      * @return $this
