@@ -153,7 +153,7 @@ class JobRunner implements DbBasedComponent
     {
         $id = \array_shift($this->scheduledIds);
         try {
-            $job =  DirectorJob::loadWithAutoIncId((int) $id, $this->db);
+            $job = DirectorJob::loadWithAutoIncId((int) $id, $this->db);
             if ($job->shouldRun()) {
                 $this->runJob($job);
                 return true;
