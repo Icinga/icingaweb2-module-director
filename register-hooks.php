@@ -26,6 +26,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierDnsRecords;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierExtractFromDN;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierFromAdSid;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierFromLatin1;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierGetHostByAddr;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierGetHostByName;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierGetPropertyFromOtherImportSource;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierJoin;
@@ -89,6 +90,7 @@ $directorHooks = [
         PropertyModifierExtractFromDN::class,
         PropertyModifierFromAdSid::class,
         PropertyModifierFromLatin1::class,
+        PropertyModifierGetHostByAddr::class,
         PropertyModifierGetHostByName::class,
         PropertyModifierGetPropertyFromOtherImportSource::class,
         PropertyModifierJoin::class,
