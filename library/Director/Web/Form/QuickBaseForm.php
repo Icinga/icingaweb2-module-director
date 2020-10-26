@@ -6,10 +6,9 @@ use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Module;
 use ipl\Html\Html;
 use ipl\Html\ValidHtml;
-use dipl\Html\ValidHtml as DiplValidHml;
 use Zend_Form;
 
-abstract class QuickBaseForm extends Zend_Form implements ValidHtml, DiplValidHml
+abstract class QuickBaseForm extends Zend_Form implements ValidHtml
 {
     /**
      * The Icinga module this form belongs to. Usually only set if the

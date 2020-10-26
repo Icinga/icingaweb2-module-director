@@ -1,16 +1,11 @@
 <?php
 
 use Icinga\Application\Modules\Module;
-use dipl\Loader\CompatLoader;
 
 if (version_compare(PHP_VERSION, '5.6.0') < 0) {
     include __DIR__ . '/run-php5.3.php';
     return;
 }
-
-// TODO: this is going to be removed in v1.8.0
-require_once __DIR__ . '/library/vendor/ipl/Loader/CompatLoader.php';
-CompatLoader::delegateLoadingToIcingaWeb($this->app);
 
 /** @var Module $this */
 $modules = $this->app->getModuleManager();
