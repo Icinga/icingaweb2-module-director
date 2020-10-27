@@ -21,6 +21,7 @@ next (will be 1.8.0)
 * FEATURE: Endpoints table now shows the object type (e.g. external) (#2050)
 * FEATURE: make sure that form label and fields stay close together (#2136)
 * FEATURE: show more content, reduce padding (expect on mobile) (#2140)
+* FEATURE: location details for non-Director services on "Modify" (#1531)
 
 ### Import and Sync
 * FEATURE: allow to define update-only Sync Rules (#2059)

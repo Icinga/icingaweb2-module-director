@@ -117,12 +117,38 @@ class HostController extends ObjectController
      */
     public function invalidserviceAction()
     {
-        $this->content()->add(Hint::error(sprintf(
-            $this->translate('No such service: %s'),
-            $this->params->get('service')
-        )));
+        if (! $this->showInfoForNonDirectorService()) {
+            $this->content()->add(Hint::error(sprintf(
+                $this->translate('No such service: %s'),
+                $this->params->get('service')
+            )));
+        }
 
         $this->servicesAction();
+    }
+
+    protected function showInfoForNonDirectorService()
+    {
+        try {
+            $api = $this->getApiIfAvailable();
+            if ($api) {
+                $name = $this->params->get('name') . '!' . $this->params->get('service');
+                $info = $api->getObject($name, 'Services');
+                if (isset($info->attrs->source_location)) {
+                    $source = $info->attrs->source_location;
+                    $this->content()->add(Hint::info(Html::sprintf(
+                        'The configuration for this object has not been rendered by'
+                        . ' Icinga Director. You can find it on line %s in %s.',
+                        Html::tag('strong', null, $source->first_line),
+                        Html::tag('strong', null, $source->path)
+                    )));
+                }
+            }
+
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
