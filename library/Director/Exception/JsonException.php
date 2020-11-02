@@ -11,9 +11,7 @@ class JsonException extends IcingaException
         if ($msg === null) {
             return new static(static::getJsonErrorMessage(\json_last_error()));
         } else {
-            $args = \func_get_args();
-            $args[0] = $msg . ': ' . static::getJsonErrorMessage(\json_last_error());
-            return \call_user_func_array('static::__construct', $args);
+            return new static($msg . ': ' . static::getJsonErrorMessage(\json_last_error()));
         }
     }
 
