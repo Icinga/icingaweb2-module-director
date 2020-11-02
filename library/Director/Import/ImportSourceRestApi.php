@@ -225,7 +225,7 @@ class ImportSourceRestApi extends ImportSourceHook
         $form->addElement('text', 'username', array(
             'label' => $form->translate('Username'),
             'description' => $form->translate(
-                'Will be used for SOAP authentication against your vCenter'
+                'Will be used to authenticate against your REST API'
             ),
         ));
 
