@@ -24,7 +24,7 @@ class PropertyModifierGetHostByName extends PropertyModifierHook
 
     public function getName()
     {
-        return 'Get host by name (DNS lookup)';
+        return mt('director', 'Get host by name (DNS lookup)');
     }
 
     public function transform($value)
