@@ -211,8 +211,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         if ($this->parentHostIsVar()) {
             return preg_replace(
                 '/\n$/m',
-                $this->renderAssignFilterExtension(),
-                parent::renderAssign_Filter() . "\n"
+                $this->renderAssignFilterExtension() . "\n",
+                parent::renderAssign_Filter()
             );
         } else {
             return parent::renderAssign_Filter();

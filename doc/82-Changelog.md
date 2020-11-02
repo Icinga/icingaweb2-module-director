@@ -32,6 +32,9 @@ next (will be 1.8.0)
 * FEATURE: UTF8 validation for failed imports gives better error message (#2143)
 * FIX: LDAP Import is now able to paginate limited results (#2019)
 
+### Icinga Configuration
+* FIX: Correctly render Service Dependencies with Array-style parent hosts (#2088)
+
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 
