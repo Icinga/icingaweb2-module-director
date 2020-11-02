@@ -155,7 +155,7 @@ class ActivityLogInfo extends HtmlDocument
     }
 
     /**
-     * @return $this
+     * @return RestoreObjectForm
      * @throws \Icinga\Exception\IcingaException
      */
     protected function getRestoreForm()
