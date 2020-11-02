@@ -41,6 +41,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexReplace;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRejectOrSelect;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierReplace;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierSkipDuplicates;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierStripDomain;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSubstring;
@@ -105,6 +106,7 @@ $directorHooks = [
         PropertyModifierRegexSplit::class,
         PropertyModifierRejectOrSelect::class,
         PropertyModifierReplace::class,
+        PropertyModifierSkipDuplicates::class,
         PropertyModifierSplit::class,
         PropertyModifierStripDomain::class,
         PropertyModifierSubstring::class,
