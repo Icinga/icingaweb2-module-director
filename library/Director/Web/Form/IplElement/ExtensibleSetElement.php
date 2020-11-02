@@ -305,13 +305,25 @@ class ExtensibleSetElement extends BaseHtmlElement
         if ($this->inheritedFrom === null) {
             return \sprintf(
                 $this->translate('%s (inherited)'),
-                \implode(', ', $this->inherited)
+                $this->stringifyInheritedValue()
             );
         } else {
             return \sprintf(
                 $this->translate('%s (inherited from %s)'),
-                \implode(', ', $this->inherited),
+                $this->stringifyInheritedValue(),
                 $this->inheritedFrom
+            );
+        }
+    }
+
+    private function stringifyInheritedValue()
+    {
+        if (\is_array($this->inherited)) {
+            return \implode(', ', $this->inherited);
+        } else {
+            return \sprintf(
+                $this->translate('%s (not an Array!)'),
+                \var_export($this->inherited, 1)
             );
         }
     }
