@@ -29,10 +29,10 @@ class PropertyModifierGetHostByAddr extends PropertyModifierHook
 
     public function transform($value)
     {
-	if ($value === null) {
-	     return null;
-	}
-	$host = gethostbyaddr($value);
+        if ($value === null) {
+            return null;
+        }
+        $host = gethostbyaddr($value);
         if ($host === false) {
             switch ($this->getSetting('on_failure')) {
                 case 'null':
