@@ -7,7 +7,6 @@
     <file>run-php5.3.php</file>
     <file>application/</file>
     <file>library/Director/</file>
-    <file>library/vendor/ipl/</file>
     <file>test/</file>
 
     <arg value="wps"/>
