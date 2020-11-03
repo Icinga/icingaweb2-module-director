@@ -81,6 +81,13 @@ elif check_command dpkg; then
     . /etc/default/icinga2
   fi
   ICINGA2_OSFAMILY=debian
+elif check_command apk; then
+  info "This should be a Alpine system"
+  if [ -e /etc/icinga2/icinga2.sysconfig ]; then
+    # shellcheck disable=SC1091
+    . /etc/icinga2/icinga2.sysconfig
+  fi
+  ICINGA2_OSFAMILY=alpine
 else
   fail "Could not determine your os type!"
 fi
@@ -100,6 +107,10 @@ debian)
   : "${ICINGA2_GROUP:=nagios}"
   ;;
 redhat)
+  : "${ICINGA2_USER:=icinga}"
+  : "${ICINGA2_GROUP:=icinga}"
+  ;;
+alpine)
   : "${ICINGA2_USER:=icinga}"
   : "${ICINGA2_GROUP:=icinga}"
   ;;
@@ -275,7 +286,20 @@ if [ -z "${ICINGA2_DRYRUN}" ]; then
   "$ICINGA2_BIN" daemon -C
 
   echo "Please restart icinga2:"
-  echo "  systemctl restart icinga2"
+  case "$ICINGA2_OSFAMILY" in
+  debian)
+    echo "  systemctl restart icinga2"
+    ;;
+  redhat)
+    echo "  systemctl restart icinga2"
+    ;;
+  alpine)
+    echo "  rc-service icinga2 restart"
+    ;;
+  *)
+    fail "Unknown osfamily '$ICINGA2_OSFAMILY'!"
+    ;;
+  esac
 else
   output_code() {
     sed 's/^/    /m' <<<"$1"
