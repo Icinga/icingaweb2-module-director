@@ -83,6 +83,23 @@ class IcingaHostSelfServiceForm extends DirectorForm
         return $this->template;
     }
 
+    public function listMissingRequiredFields()
+    {
+        $result = [];
+        foreach ($this->getElements() as $element) {
+            if (in_array('isEmpty', $element->getErrors())) {
+                $result[] = $element->getName();
+            }
+        }
+
+        return $result;
+    }
+
+    public function isMissingRequiredFields()
+    {
+        return count($this->listMissingRequiredFields()) > 0;
+    }
+
     public function onSuccess()
     {
         $db = $this->getDb();

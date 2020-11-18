@@ -79,16 +79,22 @@ class SelfServiceController extends ActionController
             } else {
                 $error = implode('; ', $form->getErrorMessages());
                 if ($error === '') {
-                    foreach ($form->getErrors() as $elName => $errors) {
-                        if (in_array('isEmpty', $errors)) {
+                    if ($form->isMissingRequiredFields()) {
+                        $fields = $form->listMissingRequiredFields();
+                        if (count($fields) === 1) {
                             $this->sendPowerShellError(
-                                sprintf("%s is required", $elName),
+                                sprintf("%s is required", $fields[0]),
                                 400
                             );
-                            return;
                         } else {
-                            $this->sendPowerShellError('An unknown error ocurred', 500);
+                            $this->sendPowerShellError(
+                                sprintf("Missing parameters: %s", implode(', ', $fields)),
+                                400
+                            );
                         }
+                        return;
+                    } else {
+                        $this->sendPowerShellError('An unknown error ocurred', 500);
                     }
                 } else {
                     $this->sendPowerShellError($error, 400);
@@ -171,13 +177,12 @@ class SelfServiceController extends ActionController
      */
     protected function sendPowerShellError($error, $code)
     {
-        $this->getResponse()->setHttpResponseCode($code);
         if ($this->getRequest()->getHeader('X-Director-Accept') === 'text/plain') {
+            $this->getResponse()->setHttpResponseCode($code);
             echo "ERROR: $error";
         } else {
-            $this->sendJsonError($this->getResponse(), $error);
+            $this->sendJsonError($this->getResponse(), $error, $code);
         }
-        exit;
     }
 
     /**
