@@ -14,7 +14,7 @@ class PropertyModifierTrim extends PropertyModifierHook
     {
         $form->addElement('select', 'trim_method', [
             'label'       => $form->translate('Trim Method'),
-            'description' => $form->translate('Please where to trim this string'),
+            'description' => $form->translate('Where to trim the string(s)'),
             'value'       => 'trim',
             'multiOptions' =>  $form->optionalEnum([
                 'trim'  => $form->translate('Beginning and Ending'),
