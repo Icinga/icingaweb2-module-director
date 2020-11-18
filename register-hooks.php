@@ -46,6 +46,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierStripDomain;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSubstring;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierToInt;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierTrim;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUppercase;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUpperCaseFirst;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierURLEncode;
@@ -111,6 +112,7 @@ $directorHooks = [
         PropertyModifierStripDomain::class,
         PropertyModifierSubstring::class,
         PropertyModifierToInt::class,
+        PropertyModifierTrim::class,
         PropertyModifierUppercase::class,
         PropertyModifierUpperCaseFirst::class,
         PropertyModifierURLEncode::class,
