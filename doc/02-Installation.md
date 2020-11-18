@@ -26,10 +26,20 @@ Requirements
   MySQL forks are also fine. Mentioned versions are the required minimum,
   for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
 * PHP (>= 5.6.3). For best performance please consider use 7.x
+* php-pdo-mysql and/or php-pdo-pgsql
 * php-curl
+* php-iconv
 * php-pcntl (might already be built into your PHP binary)
 * php-posix (on RHEL/CentOS this is php-process, or rh-php7x-php-process)
 * php-sockets (might already be built into your PHP binary)
+* php-mbstring and php-json (already required by Icinga Web 2)
+
+Optional Requirements
+---------------------
+* For IBM DB2 Imports: php-pdo-ibm
+* For MSSQL Imports: php-mssql or php-pdo-dblib (or -sybase on some platforms)
+* For Oracle DB Imports: php-oci8 or php-pdo-oci
+* For Sqlite Imports: php-pdo-sqlite
 
 Database
 --------
