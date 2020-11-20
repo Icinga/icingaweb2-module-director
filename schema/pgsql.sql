@@ -1080,7 +1080,14 @@ CREATE TABLE icinga_hostgroup (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
-  PRIMARY KEY (id)
+  zone_id INT(10) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY search_idx (display_name),
+  CONSTRAINT icinga_hostgroup_zone
+  FOREIGN KEY zone (zone_id)
+  REFERENCES icinga_zone (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
@@ -1117,7 +1124,14 @@ CREATE TABLE icinga_servicegroup (
   disabled enum_boolean NOT NULL DEFAULT 'n',
   display_name character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
-  PRIMARY KEY (id)
+  zone_id INT(10) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY search_idx (display_name),
+  CONSTRAINT icinga_servicegroup_zone
+  FOREIGN KEY zone (zone_id)
+  REFERENCES icinga_zone (id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);

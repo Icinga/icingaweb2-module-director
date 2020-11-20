@@ -21,6 +21,6 @@ class IcingaUserGroup extends IcingaObjectGroup
 
     protected function prefersGlobalZone()
     {
-        return false;
+        return true;
     }
 }
