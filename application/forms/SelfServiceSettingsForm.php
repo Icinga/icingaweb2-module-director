@@ -39,7 +39,7 @@ class SelfServiceSettingsForm extends DirectorForm
             ],
             'value'  => $settings->getStoredOrDefaultValue('self-service/transform_hostname')
         ]);
-        $this->addElement('select', 'transform_parent_host', [
+        $this->addElement('select', 'resolve_parent_host', [
             'label'       => $this->translate('Transform Parent Host to IP'),
             'description' => $this->translate(
                 'This is only important in case your master/satellite nodes do not'
@@ -50,7 +50,7 @@ class SelfServiceSettingsForm extends DirectorForm
                 '0'   => $this->translate("Don't care, my host settings are fine"),
                 '1'   => $this->translate('My Agents should use DNS to look up Endpoint names'),
             ],
-            'value'  => $settings->getStoredOrDefaultValue('self-service/transform_parent_host')
+            'value'  => $settings->getStoredOrDefaultValue('self-service/resolve_parent_host')
         ]);
 
         $this->addElement('extensibleSet', 'global_zones', [

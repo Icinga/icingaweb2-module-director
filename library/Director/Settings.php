@@ -11,25 +11,25 @@ class Settings
     protected $cache;
 
     protected $defaults = [
-        'default_global_zone'                => 'director-global',
-        'icinga_package_name'                => 'director',
+        'default_global_zone'              => 'director-global',
+        'icinga_package_name'              => 'director',
         /* @deprecated to be removed in 1.8.0 #1850 #1851 */
-        'magic_apply_for'                    => '_director_apply_for',
-        'config_format'                      => 'v2',
-        'override_services_varname'          => '_override_servicevars',
-        'override_services_templatename'     => 'host var overrides (Director)',
-        'disable_all_jobs'                   => 'n', // 'y'
-        'enable_audit_log'                   => 'n',
-        'deployment_mode_v1'                 => 'active-passive',
-        'deployment_path_v1'                 => null,
-        'activation_script_v1'               => null,
-        'self-service/agent_name'            => 'fqdn',
-        'self-service/transform_hostname'    => '0',
-        'self-service/transform_parent_host' => '0',
-        'self-service/global_zones'          => ['director-global'],
-        'ignore_bug7530'                     => 'n',
-        // 'experimental_features'          => null, // 'allow'
-        // 'master_zone'                    => null,
+        'magic_apply_for'                  => '_director_apply_for',
+        'config_format'                    => 'v2',
+        'override_services_varname'        => '_override_servicevars',
+        'override_services_templatename'   => 'host var overrides (Director)',
+        'disable_all_jobs'                 => 'n', // 'y'
+        'enable_audit_log'                 => 'n',
+        'deployment_mode_v1'               => 'active-passive',
+        'deployment_path_v1'               => null,
+        'activation_script_v1'             => null,
+        'self-service/agent_name'          => 'fqdn',
+        'self-service/transform_hostname'  => '0',
+        'self-service/resolve_parent_host' => '0',
+        'self-service/global_zones'        => ['director-global'],
+        'ignore_bug7530'                   => 'n',
+        // 'experimental_features'        => null, // 'allow'
+        // 'master_zone'                  => null,
     ];
 
     protected $jsonEncode = [

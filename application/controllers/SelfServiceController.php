@@ -269,10 +269,15 @@ class SelfServiceController extends ActionController
             'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
             'transform_hostname'  => $transform,
             'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y',
-            // New params are CamelCase:
-            'ConvertEndpointIPConfig' => $settings->get('self-service/transform_parent_host'),
-            'InstallFrameworkService' => '0',
-            'InstallFrameworkPlugins' => '0',
+            // ConvertEndpointIPConfig:
+            'resolve_parent_host' => $settings->get('self-service/resolve_parent_host'),
+            // InstallFrameworkService:
+            'install_framework_service' => '0',
+            // ServiceDirectory    => framework_service_directory
+            // FrameworkServiceUrl => framework_service_url
+            // InstallFrameworkPlugins:
+            'install_framework_plugins' => '0',
+            // PluginsUrl => framework_plugins_url
         ];
         $username = $settings->get('self-service/icinga_service_user');
         if (strlen($username)) {
