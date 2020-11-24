@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Objects;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Hook\DataTypeHook;
@@ -159,15 +160,13 @@ class DirectorDatafield extends DbObjectWithSettings
             $list = null;
         }
 
-        $encoded = Json::encode($properties);
-        if ($id) {
-            if (static::exists($id, $db)) {
-                $existing = static::loadWithAutoIncId($id, $db);
-                $existingProperties = (array) $existing->export();
-                unset($existingProperties['originalId']);
-                if ($encoded === Json::encode($existingProperties)) {
-                    return $existing;
-                }
+        $compare = Json::decode(Json::encode($properties));
+        if ($id && static::exists($id, $db)) {
+            $existing = static::loadWithAutoIncId($id, $db);
+            $existingProperties = (array) $existing->export();
+            unset($existingProperties['originalId']);
+            if (CompareBasketObject::equals((object) $compare, (object) $existingProperties)) {
+                return $existing;
             }
         }
 
@@ -185,7 +184,8 @@ class DirectorDatafield extends DbObjectWithSettings
         foreach ($candidates as $candidate) {
             $export = $candidate->export();
             unset($export->originalId);
-            if (Json::encode($export) === $encoded) {
+            CompareBasketObject::normalize($export);
+            if (CompareBasketObject::equals($export, $compare)) {
                 return $candidate;
             }
         }

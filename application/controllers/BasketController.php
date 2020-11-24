@@ -13,6 +13,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
+use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
 use Icinga\Module\Director\Forms\AddToBasketForm;
 use Icinga\Module\Director\Forms\BasketCreateSnapshotForm;
 use Icinga\Module\Director\Forms\BasketForm;
@@ -289,7 +290,7 @@ class BasketController extends ActionController
                     if (isset($object->originalId)) {
                         unset($object->originalId);
                     }
-                    $hasChanged = Json::encode($currentExport) !== Json::encode($object);
+                    $hasChanged = ! CompareBasketObject::equals($currentExport, $object);
                     $table->addNameValueRow(
                         $key,
                         $hasChanged
@@ -303,7 +304,12 @@ class BasketController extends ActionController
                 } catch (Exception $e) {
                     $table->addNameValueRow(
                         $key,
-                        $e->getMessage()
+                        Html::tag('a', sprintf(
+                            '%s (%s:%d)',
+                            $e->getMessage(),
+                            basename($e->getFile()),
+                            $e->getLine()
+                        ))
                     );
                 }
             }
@@ -368,21 +374,30 @@ class BasketController extends ActionController
         }
         $fieldResolver = new BasketSnapshotFieldResolver($objects, $connection);
         $objectFromBasket = $objects->$type->$key;
+        unset($objectFromBasket->originalId);
+        CompareBasketObject::normalize($objectFromBasket);
+        $objectFromBasket = Json::encode($objectFromBasket, JSON_PRETTY_PRINT);
         $current = BasketSnapshot::instanceByIdentifier($type, $key, $connection);
         if ($current === null) {
             $current = '';
         } else {
             $exported = $current->export();
             $fieldResolver->tweakTargetIds($exported);
+            unset($exported->originalId);
+            CompareBasketObject::normalize($exported);
             $current = Json::encode($exported, JSON_PRETTY_PRINT);
         }
 
-        $this->content()->add(
-            ConfigDiff::create(
-                $current,
-                Json::encode($objectFromBasket, JSON_PRETTY_PRINT)
-            )->setHtmlRenderer('Inline')
-        );
+        if ($current === $objectFromBasket) {
+            $this->content()->add([
+                Hint::ok('Basket equals current object'),
+                Html::tag('pre', $current)
+            ]);
+        } else {
+            $this->content()->add(
+                ConfigDiff::create($current, $objectFromBasket)->setHtmlRenderer('Inline')
+            );
+        }
     }
 
     /**
