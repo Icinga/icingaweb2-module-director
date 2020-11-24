@@ -268,7 +268,8 @@ class SelfServiceController extends ActionController
             'fetch_agent_name'    => $settings->get('self-service/agent_name') === 'hostname',
             'fetch_agent_fqdn'    => $settings->get('self-service/agent_name') === 'fqdn',
             'transform_hostname'  => $transform,
-            'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y'
+            'flush_api_directory' => $settings->get('self-service/flush_api_dir') === 'y',
+            'ConvertEndpointIPConfig' => '0',
         ];
         $username = $settings->get('self-service/icinga_service_user');
         if (strlen($username)) {
