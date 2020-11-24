@@ -2,9 +2,9 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use gipfl\IcingaWeb2\Link;
-use gipfl\IcingaWeb2\Widget\NameValueTable;
 use Exception;
+use gipfl\IcingaWeb2\Link;
+use gipfl\Web\Table\NameValueTable;
 use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\ConfigDiff;
@@ -255,7 +255,10 @@ class BasketController extends ActionController
                 continue;
             }
             $table = new NameValueTable();
-            $table->setAttribute('data-base-target', '_next');
+            $table->addAttributes([
+                'class' => ['table-basket-changes', 'table-row-selectable'],
+                'data-base-target' => '_next',
+            ]);
             foreach ($objects as $key => $object) {
                 $linkParams = [
                     'name'     => $basket->get('basket_name'),
