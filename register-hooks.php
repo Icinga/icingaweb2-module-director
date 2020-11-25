@@ -36,6 +36,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierListToObject;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierLowercase;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierMakeBoolean;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierMap;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierNegateBoolean;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierParseURL;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexReplace;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexSplit;
@@ -102,6 +103,7 @@ $directorHooks = [
         PropertyModifierLowercase::class,
         PropertyModifierMakeBoolean::class,
         PropertyModifierMap::class,
+        PropertyModifierNegateBoolean::class,
         PropertyModifierParseURL::class,
         PropertyModifierRegexReplace::class,
         PropertyModifierRegexSplit::class,
