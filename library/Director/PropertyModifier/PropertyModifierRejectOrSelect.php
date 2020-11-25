@@ -37,16 +37,29 @@ class PropertyModifierRejectOrSelect extends PropertyModifierHook
             'class' => 'autosubmit',
         ]);
 
-        $form->addElement('text', 'filter_string', [
-            'label'       => $form->translate('Filter'),
-            'description' => $form->translate(
-                'The string/pattern you want to search for. Depends on the'
-                . ' chosen method, use www.* or *linux* for wildcard matches'
-                . ' and expression like /^www\d+\./ in case you opted for a'
-                . ' regular expression'
-            ),
-            'required'    => true,
-        ]);
+        $method = $form->getSetting('filter_method');
+        switch ($method) {
+            case 'wildcard':
+                $form->addElement('text', 'filter_string', [
+                    'label'       => $form->translate('Filter'),
+                    'description' => $form->translate(
+                        'The string/pattern you want to search for, use wildcard'
+                        . ' matches like www.* or *linux*'
+                    ),
+                    'required'    => true,
+                ]);
+                break;
+            case 'regex':
+                $form->addElement('text', 'filter_string', [
+                    'label'       => $form->translate('Filter'),
+                    'description' => $form->translate(
+                        'The string/pattern you want to search for, use regular'
+                        . ' expression like /^www\d+\./'
+                    ),
+                    'required'    => true,
+                ]);
+                break;
+        }
 
         $form->addElement('select', 'policy', [
             'label'       => $form->translate('Policy'),

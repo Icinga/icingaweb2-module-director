@@ -102,6 +102,26 @@ class ImportRowModifierForm extends DirectorObjectForm
         $this->setButtons();
     }
 
+    public function getSetting($name, $default = null)
+    {
+        if ($this->hasBeenSent()) {
+            $value = $this->getSentValue($name);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+        if ($this->isNew()) {
+            $value = $this->getElement($name)->getValue();
+            if ($value === null) {
+                return $default;
+            }
+
+            return $value;
+        }
+
+        return $this->object()->getSetting($name, $default);
+    }
+
     /**
      * @return ImportSourceHook
      * @throws ConfigurationError
