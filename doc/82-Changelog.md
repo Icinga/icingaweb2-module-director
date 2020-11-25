@@ -15,6 +15,8 @@ next (will be 1.8.0)
 * FIX: It's now possible to set Endpoint ports > 32767 on PostgreSQL (#928)
 * FIX: Group list is no longer prefixed with a comma (#2133)
 * FIX: Change wording, avoid black/whitelist (#2134, #2135)
+* FIX: Inherited values in sets (arrays) are now shown (#1310)
+* FIX: Column layout broke with Web 2.8, has been fixed (#2065)
 * FEATURE: Data Fields can now be grouped into categories (#1969)
 * FEATURE: Inspect is now available for Packages, Stages and Files (#1995)
 * FEATURE: Allow to disable the Director frontend / UI (#2007)
@@ -22,9 +24,17 @@ next (will be 1.8.0)
 * FEATURE: make sure that form label and fields stay close together (#2136)
 * FEATURE: show more content, reduce padding (expect on mobile) (#2140)
 * FEATURE: location details for non-Director services on "Modify" (#1531)
+* FEATURE: Service Set table can now also be searched for Services (#1873)
+* FEATURE: Apply-Rule-based Service Sets now show related Hosts (#2081)
+* FEATURE: Notification Apply Rules as a DirectorObject DataField (#2199)
+* FEATURE: Hint and Error styling has been unified and improved
+* FEATURE: Form field rendering for sets now deals with invalid values
+
+### CLI
+* FEATURE: Deployment Status and related utilities (#2189)
 
 ### Import and Sync
-* FEATURE: allow to define update-only Sync Rules (#2059)
+* FEATURE: allow defining update-only Sync Rules (#2059)
 * FEATURE: New Property Modifier: ListToObject (#2062)
 * FEATURE: Property Modifier: convert binary UUID to HEX presentation (#2138)
 * FEATURE: Property Modifier: get Host by Address (#2210)
@@ -32,24 +42,58 @@ next (will be 1.8.0)
 * FEATURE: Property Modifier: trim strings (#1660)
 * FEATURE: Property Modifier: negate boolean (#2227)
 * FEATURE: Property Modifier Reject/Select: improve usability (#2228)
+* FEATURE: Property Modifier: clone rows for every entry of an Array (#2192)
 * FEATURE: Import Sources now allows downloading previewed data as JSON (#2096)
+* FEATURE: REST API Import now allows custom headers (#2132)
+* FEATURE: REST API Import can now extract nested properties (#2132)
 * FEATURE: UTF8 validation for failed imports gives better error message (#2143)
 * FEATURE: ArrayByElementPosition now allows filtering by key name (#1721)
+* FEATURE: Use your Director Objects as an Import Source (#2198)
+* FIX: Import Source preview now catches all errors
+* FIX: Import Source download sends eventual errors as a valid JSON result
 * FIX: LDAP Import is now able to paginate limited results (#2019)
+
+### Configuration Baskets
+* FIX: Restoring Import Sources creating Modifiers now works (#2053)
+* FEATURE: Support Baskets from Icinca for Windows (#2223)
+* FEATURE: It's now possible to use Notification Templates in Baskets
+* FEATURE: Snapshot status/diff layout has been improved (#2225)
+
+### Authentication and Permissions
+* FIX: Users restricted to Hostgroups can now use related Templates (#2020, #2101)
 
 ### Icinga Configuration
 * FIX: Correctly render Service Dependencies with Array-style parent hosts (#2088)
 
+### Icinga Agent handling
+* FIX: Linux Agent installer now fails when unable to retrieve a certificate
+* FEATURE: Linux Agent installer now supports Alpine Linux (#2216)
+
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
+* FEATURE: Search is now also available for the REST API (#1889)
+* FEATURE: Deployment Status is now available (#2188)
+
+### Self Service API
+* FIX: error handling has been fixed (#1728)
+
+### Database Support
+* FIX: Added UTF8 to valid PostgreSQL encodings (used to be UTF-8)
 
 ### Background Daemon
 * FIX: Daemon Logger used to not override the given log level (#2139)
 * FEATURE: Daemon: prepare for future reactphp promise versions (#2137)
+* FEATURE: Daemon now logs that it is going to reload itself
+
+### Documentation
+* FEATURE: We now also mention optional/indirect requirements (#2054, #2220)
 
 ### Internals
 * FEATURE: Property Modifiers are now able to clone rows (#2060)
+* FEATURE: URL encoding for the Core API has been unified
+* REMOVED: dipl has been dropped, we're using ipl/incubator since v1.7 (#2209)
 * FIX: typo in DeploymentHook::onSuccessfulDump() has been fixed (#2069)
+* FIX: forms now support dbResourceName (#2064)
 
 1.7.2
 -----
