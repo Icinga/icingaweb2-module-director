@@ -32,6 +32,7 @@ next (will be 1.8.0)
 * FEATURE: Property Modifier: trim strings (#1660)
 * FEATURE: Import Sources now allow to download previewed data as JSON (#2096)
 * FEATURE: UTF8 validation for failed imports gives better error message (#2143)
+* FEATURE: ArrayByElementPosition now allows filtering by key name (#1721)
 * FIX: LDAP Import is now able to paginate limited results (#2019)
 
 ### Icinga Configuration
