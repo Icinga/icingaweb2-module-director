@@ -20,6 +20,7 @@ use Icinga\Module\Director\Job\SyncJob;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayElementByPosition;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayFilter;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayToRow;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayUnique;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierBitmask;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierCombine;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierDnsRecords;
@@ -87,6 +88,7 @@ $directorHooks = [
         PropertyModifierArrayElementByPosition::class,
         PropertyModifierArrayFilter::class,
         PropertyModifierArrayToRow::class,
+        PropertyModifierArrayUnique::class,
         PropertyModifierBitmask::class,
         PropertyModifierCombine::class,
         PropertyModifierDnsRecords::class,
