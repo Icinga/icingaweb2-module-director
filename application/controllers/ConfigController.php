@@ -2,11 +2,12 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Diff\HtmlRenderer\SideBySideDiff;
+use gipfl\Diff\PhpDiff;
 use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
@@ -416,10 +417,10 @@ class ConfigController extends ActionController
         $this
             ->addTitle($this->translate('Config file "%s"'), $filename)
             ->addSingleTab($this->translate('Diff'))
-            ->content()->add(ConfigDiff::create(
+            ->content()->add(new SideBySideDiff(new PhpDiff(
                 $left->getFile($filename),
                 $right->getFile($filename)
-            ));
+            )));
     }
 
     /**

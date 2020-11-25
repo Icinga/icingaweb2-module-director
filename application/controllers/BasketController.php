@@ -3,11 +3,12 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use gipfl\Diff\HtmlRenderer\InlineDiff;
+use gipfl\Diff\PhpDiff;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Table\NameValueTable;
 use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
-use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
@@ -397,9 +398,7 @@ class BasketController extends ActionController
                 Html::tag('pre', $current)
             ]);
         } else {
-            $this->content()->add(
-                ConfigDiff::create($current, $objectFromBasket)->setHtmlRenderer('Inline')
-            );
+            $this->content()->add(new InlineDiff(new PhpDiff($current, $objectFromBasket)));
         }
     }
 
