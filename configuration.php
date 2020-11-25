@@ -74,7 +74,7 @@ $this->provideRestriction(
 );
 
 $this->provideRestriction(
-    'director/dbresources/use',
+    'director/db_resource',
     $this->translate('Allow to use only these db resources (comma separated list)')
 );
 */
