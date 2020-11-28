@@ -29,6 +29,7 @@ next (will be 1.8.0)
 * FEATURE: Notification Apply Rules as a DirectorObject DataField (#2199)
 * FEATURE: Hint and Error styling has been unified and improved
 * FEATURE: Form field rendering for sets now deals with invalid values
+* FEATURE: Better description for time-based form fields (#1897)
 
 ### CLI
 * FEATURE: Deployment Status and related utilities (#2189)

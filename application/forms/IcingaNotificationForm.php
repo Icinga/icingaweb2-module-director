@@ -197,7 +197,7 @@ class IcingaNotificationForm extends DirectorObjectForm
                 'label' => $this->translate('First notification delay'),
                 'description' => $this->translate(
                     'Delay unless the first notification should be sent'
-                )
+                ) . '. ' . $this->getTimeValueInfo()
             )
         );
 
@@ -208,11 +208,19 @@ class IcingaNotificationForm extends DirectorObjectForm
                 'label' => $this->translate('Last notification'),
                 'description' => $this->translate(
                     'When the last notification should be sent'
-                )
+                ) . '. ' . $this->getTimeValueInfo()
             )
         );
 
         return $this;
+    }
+
+    protected function getTimeValueInfo()
+    {
+        return $this->translate(
+            'Unit is seconds unless a suffix is given. Supported suffixes include'
+            . ' ms (milliseconds), s (seconds), m (minutes), h (hours) and d (days).'
+        );
     }
 
     /**
