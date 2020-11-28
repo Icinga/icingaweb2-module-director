@@ -73,7 +73,7 @@ next (will be 1.8.0)
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 * FEATURE: Search is now also available for the REST API (#1889)
-* FEATURE: Deployment Status is now available (#2188)
+* FEATURE: Deployment Status is now available (#2187)
 
 ### Self Service API
 * FIX: error handling has been fixed (#1728)
