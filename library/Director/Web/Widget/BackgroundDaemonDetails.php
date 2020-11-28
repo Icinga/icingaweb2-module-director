@@ -57,6 +57,16 @@ class BackgroundDaemonDetails extends BaseHtmlElement
                 $this->timeAgo($info->getLastUpdate() / 1000)
             )));
         } else {
+            $this->add(Hint::ok(Html::sprintf(
+                $this->translate(
+                    'Daemon is running with PID %s as %s@%s, last refresh happened %s'
+                ),
+                // $info->getHexUuid(),
+                Html::tag('strong', (string)$info->getPid()),
+                Html::tag('strong', $info->getUsername()),
+                Html::tag('strong', $info->getFqdn()),
+                $this->timeAgo($info->getLastUpdate() / 1000)
+            )));
             $details = new NameValueTable();
             $details->addNameValuePairs([
                 $this->translate('Startup Time') => DateFormatter::formatDateTime($info->getTimestampStarted() / 1000),
@@ -80,16 +90,6 @@ class BackgroundDaemonDetails extends BaseHtmlElement
                     ),
             ]);
             $this->add($details);
-            $this->add(Hint::ok(Html::sprintf(
-                $this->translate(
-                    'Daemon is running with PID %s as %s@%s, last refresh happened %s'
-                ),
-                // $info->getHexUuid(),
-                Html::tag('strong', (string)$info->getPid()),
-                Html::tag('strong', $info->getUsername()),
-                Html::tag('strong', $info->getFqdn()),
-                $this->timeAgo($info->getLastUpdate() / 1000)
-            )));
 
             $this->add(Html::tag('h2', $this->translate('Process List')));
             if (\is_string($this->daemon->process_info)) {
