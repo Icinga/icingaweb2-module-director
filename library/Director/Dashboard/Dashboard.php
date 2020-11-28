@@ -14,6 +14,7 @@ use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Dashboard\Dashlet\Dashlet;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Widget\Tab;
+use ipl\Html\ValidHtml;
 use Zend_Db_Select as ZfSelect;
 
 abstract class Dashboard extends HtmlDocument
@@ -60,7 +61,9 @@ abstract class Dashboard extends HtmlDocument
      */
     protected function addDescription($description)
     {
-        if ($description !== null) {
+        if ($description instanceof ValidHtml) {
+            $this->add(Html::tag('p', $description));
+        } elseif ($description !== null) {
             $this->add(Html::tag(
                 'p',
                 null,
