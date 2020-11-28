@@ -94,6 +94,7 @@ next (will be 1.8.0)
 ### Internals
 * FEATURE: Property Modifiers are now able to clone rows (#2060)
 * FEATURE: URL encoding for the Core API has been unified
+* FEATURE: PHP 8.0 has been released and is officially supported (#2233)
 * REMOVED: dipl has been dropped, we're using ipl/incubator since v1.7 (#2209)
 * FIX: typo in DeploymentHook::onSuccessfulDump() has been fixed (#2069)
 * FIX: forms now support dbResourceName (#2064)

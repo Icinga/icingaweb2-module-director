@@ -25,7 +25,7 @@ Requirements
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
   MySQL forks are also fine. Mentioned versions are the required minimum,
   for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
-* PHP (>= 5.6.3). For best performance please consider use 7.x
+* PHP (>= 5.6.3). For best performance please consider use 7.x or 8.x
 * php-pdo-mysql and/or php-pdo-pgsql
 * php-curl
 * php-iconv
