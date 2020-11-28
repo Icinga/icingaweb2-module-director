@@ -90,11 +90,11 @@ class ImportSourceRestApi extends ImportSourceHook
         $headers = [];
 
         $text = $this->getSetting('headers', '');
-        foreach (preg_split("~\r?\n~", $text) as $header) {
+        foreach (preg_split('~\r?\n~', $text, -1, PREG_SPLIT_NO_EMPTY) as $header) {
             $header = trim($header);
             $parts = preg_split('~\s*:\s*~', $header, 2);
             if (count($parts) < 2) {
-                throw new InvalidPropertyException('Could not parse header: %s', $header);
+                throw new InvalidPropertyException('Could not parse header: "%s"', $header);
             }
 
             $headers[$parts[0]] = $parts[1];
