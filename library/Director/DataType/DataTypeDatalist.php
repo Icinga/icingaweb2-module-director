@@ -130,6 +130,11 @@ class DataTypeDatalist extends DataTypeHook
                 'string' => $form->translate('String'),
                 'array'  => $form->translate('Array'),
             ]),
+            'description' => $form->translate(
+                'Whether this should be a String or an Array in the generated'
+                . ' Icinga configuration. In case you opt for Array, Director'
+                . ' users will be able to select multiple elements from the list'
+            ),
             'required' => true,
         ]);
 

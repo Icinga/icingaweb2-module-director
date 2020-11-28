@@ -29,7 +29,7 @@ next (will be 1.8.0)
 * FEATURE: Notification Apply Rules as a DirectorObject DataField (#2199)
 * FEATURE: Hint and Error styling has been unified and improved
 * FEATURE: Form field rendering for sets now deals with invalid values
-* FEATURE: Better description for time-based form fields (#1897)
+* FEATURE: Better descriptions for time-based and other fields (#1897, #1264)
 
 ### Translations
 * FEATURE: Italian is now available (#2080)
