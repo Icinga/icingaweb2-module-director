@@ -147,7 +147,7 @@ class ImportSourceRestApi extends ImportSourceHook
     {
         $form->addElement('textarea', 'headers', [
             'label'       => $form->translate('HTTP Header'),
-            'description' => join(' ', [
+            'description' => implode(' ', [
                 $form->translate('Additional headers for the HTTP request.'),
                 $form->translate('Specify headers in text format "Header: Value", each header on a new line.'),
             ]),
@@ -165,20 +165,20 @@ class ImportSourceRestApi extends ImportSourceHook
         $ssl = ! ($form->getSentOrObjectSetting('scheme', 'HTTPS') === 'HTTP');
 
         if ($ssl) {
-            static::addBoolean($form, 'ssl_verify_peer', array(
+            static::addBoolean($form, 'ssl_verify_peer', [
                 'label'       => $form->translate('Verify Peer'),
                 'description' => $form->translate(
                     'Whether we should check that our peer\'s certificate has'
                     . ' been signed by a trusted CA. This is strongly recommended.'
                 )
-            ), 'y');
-            static::addBoolean($form, 'ssl_verify_host', array(
+            ], 'y');
+            static::addBoolean($form, 'ssl_verify_host', [
                 'label'       => $form->translate('Verify Host'),
                 'description' => $form->translate(
                     'Whether we should check that the certificate matches the'
                     . 'configured host'
                 )
-            ), 'y');
+            ], 'y');
         }
     }
 
@@ -188,13 +188,13 @@ class ImportSourceRestApi extends ImportSourceHook
      */
     protected static function addUrl(QuickForm $form)
     {
-        $form->addElement('text', 'url', array(
+        $form->addElement('text', 'url', [
             'label'    => 'REST API URL',
             'description' => $form->translate(
                 'Something like https://api.example.com/rest/v2/objects'
             ),
             'required' => true,
-        ));
+        ]);
     }
 
     /**
@@ -203,9 +203,9 @@ class ImportSourceRestApi extends ImportSourceHook
      */
     protected static function addResultProperty(QuickForm $form)
     {
-        $form->addElement('text', 'extract_property', array(
+        $form->addElement('text', 'extract_property', [
             'label'       => 'Extract property',
-            'description' => join("\n", [
+            'description' => implode("\n", [
                 $form->translate('Often the expected result is provided in a property like "objects".'
                     . ' Please specify this if required.'),
                 $form->translate('Also deeper keys can be specific by a dot-notation:'),
@@ -213,7 +213,7 @@ class ImportSourceRestApi extends ImportSourceHook
                 $form->translate('Literal dots in a key name can be written in the escape notation:'),
                 '"key\.with\.dots"',
             ])
-        ));
+        ]);
     }
 
     /**
@@ -222,12 +222,12 @@ class ImportSourceRestApi extends ImportSourceHook
      */
     protected static function addAuthentication(QuickForm $form)
     {
-        $form->addElement('text', 'username', array(
+        $form->addElement('text', 'username', [
             'label' => $form->translate('Username'),
             'description' => $form->translate(
                 'Will be used to authenticate against your REST API'
             ),
-        ));
+        ]);
 
         $form->addElement('password', 'password', array(
             'label' => $form->translate('Password'),
@@ -372,9 +372,9 @@ class ImportSourceRestApi extends ImportSourceHook
      */
     protected static function optionalBoolean(QuickForm $form, $key, $label, $description)
     {
-        static::addBoolean($form, $key, array(
+        static::addBoolean($form, $key, [
             'label'       => $label,
             'description' => $description
-        ));
+        ]);
     }
 }
