@@ -168,16 +168,6 @@ class HostController extends ObjectController
             $content->add($table);
         }
 
-        if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
-            if ($applied instanceof CustomVariableDictionary) {
-                $table = IcingaHostAppliedForServiceTable::load($host, $applied)
-                    ->setTitle($this->translate('Generated from host vars'));
-                if (count($table)) {
-                    $content->add($table);
-                }
-            }
-        }
-
         /** @var IcingaHost[] $parents */
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
@@ -244,19 +234,6 @@ class HostController extends ObjectController
 
         if (count($table)) {
             $content->add($table);
-        }
-
-        /* @deprecated to be removed in 1.8.0 #1850 #1851 */
-        if ($applied = $host->vars()->get($db->settings()->magic_apply_for)) {
-            if ($applied instanceof CustomVariableDictionary) {
-                $table = IcingaHostAppliedForServiceTable::load($host, $applied)
-                    ->setReadonly()
-                    ->highlightService($service)
-                    ->setTitle($this->translate('Generated from host vars'));
-                if (count($table)) {
-                    $content->add($table);
-                }
-            }
         }
 
         /** @var IcingaHost[] $parents */

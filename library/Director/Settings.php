@@ -13,8 +13,6 @@ class Settings
     protected $defaults = [
         'default_global_zone'              => 'director-global',
         'icinga_package_name'              => 'director',
-        /* @deprecated to be removed in 1.8.0 #1850 #1851 */
-        'magic_apply_for'                  => '_director_apply_for',
         'config_format'                    => 'v2',
         'override_services_varname'        => '_override_servicevars',
         'override_services_templatename'   => 'host var overrides (Director)',

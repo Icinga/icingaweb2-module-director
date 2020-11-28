@@ -67,6 +67,7 @@ next (will be 1.8.0)
 
 ### Icinga Configuration
 * FIX: Correctly render Service Dependencies with Array-style parent hosts (#2088)
+* REMOVED: magic-apply-for (a hidden deprecated feature) has been removed (#1851)
 
 ### Icinga Agent handling
 * FIX: Linux Agent installer now fails when unable to retrieve a certificate
