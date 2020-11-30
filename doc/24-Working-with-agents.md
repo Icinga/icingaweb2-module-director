@@ -4,8 +4,8 @@
 Working with Icinga 2 Agents can be quite tricky, as each Agent needs
 its own Endpoint and Zone definition, correct parent, peering host and
 log settings. There may always be reasons for a completely custom-made
-configuration. However, I'd strongly suggest to give the Director-assisted
-variant at least a try first. It might save you a lot of headaches.
+configuration. However, I'd **strongly suggest** using the **Director-
+assisted** variant. It will save you a lot of headaches.
 
 
 Preparation
