@@ -13,6 +13,7 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\IcingaConfig\AgentWizard;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
+use Icinga\Module\Director\Web\Widget\Documentation;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Translation\TranslationHelper;
@@ -100,24 +101,43 @@ class SelfService
             ]
         ));
 
-        if ($this->hasDocsModuleLoaded()) {
-            $actions->add(Link::create(
-                $this->translate('Documentation'),
-                'doc/module/director/chapter/Self-Service-API',
-                null,
-                ['class' => 'icon-book']
-            ));
-        }
+        $actions->add(Documentation::link(
+            $this->translate('Documentation'),
+            'director',
+            '74-Self-Service-API',
+            $this->translate('Self Service API')
+        ));
 
         if ($hasKey) {
             $wizard = new AgentWizard($host);
 
             $c->add([
                 Html::tag('p', null, [$this->translate('Api Key:'), ' ', Html::tag('strong', null, $key)]),
+                Html::tag('h2', $this->translate('Icinga for Windows')),
+                Html::tag('p', Html::sprintf(
+                    $this->translate('In case you\'re using %s, please run this Script:'),
+                    Html::tag('a', [
+                        'href'   => 'https://icinga.com/docs/windows/latest/',
+                        'target' => '_blank',
+                    ], $this->translate('Icinga for Windows'))
+                )),
                 Html::tag(
                     'pre',
                     ['class' => 'logfile'],
-                    $wizard->renderTokenBasedWindowsInstaller($key)
+                    $wizard->renderIcinga4WindowsWizardCommand($key)
+                ),
+                Html::tag('h3', $this->translate('Icinga 2 Powershell Module')),
+                Html::tag('p', Html::sprintf(
+                    $this->translate('In case you\'re using the legacy %s, please run:'),
+                    Html::tag('a', [
+                        'href'   => 'https://github.com/Icinga/icinga2-powershell-module',
+                        'target' => '_blank',
+                    ], $this->translate('Icinga 2 Powershell Module'))
+                )),
+                Html::tag(
+                    'pre',
+                    ['class' => 'logfile'],
+                    $wizard->renderPowershellModuleInstaller($key)
                 ),
                 Html::tag('h2', null, $this->translate('Generate a new key')),
                 Hint::warning($this->translate(
@@ -136,6 +156,9 @@ class SelfService
                 Html::tag('p', null, $this->translate(
                     'You can stop sharing a Template at any time. This will'
                     . ' immediately invalidate the former key.'
+                ) . ' ' . $this->translate(
+                    'Generated Host keys will continue to work, but you\'ll no'
+                    . ' longer be able to register new Hosts with this key'
                 )),
                 IcingaForgetApiKeyForm::load()->setHost($host)->handleRequest()
             ]);
@@ -169,7 +192,7 @@ class SelfService
             Html::tag(
                 'pre',
                 ['class' => 'logfile'],
-                $wizard->renderTokenBasedWindowsInstaller($key)
+                $wizard->renderIcinga4WindowsWizardCommand($key)
             )
         ]);
     }

@@ -146,7 +146,23 @@ class AgentWizard
             ]);
     }
 
-    public function renderTokenBasedWindowsInstaller($token, $withModule = false)
+    public function renderIcinga4WindowsWizardCommand($token)
+    {
+        $script = "Use-Icinga;\n"
+            . 'Start-IcingaAgentInstallWizard `' . "\n    "
+            . $this->renderPowershellParameters([
+                'DirectorUrl'            => $this->getDirectorUrl(),
+                'SelfServiceAPIKey'      => $token,
+                'UseDirectorSelfService' => 1,
+                'OverrideDirectorVars'   => 0,
+                'Reconfigure',
+                'RunInstaller'
+            ]);
+
+        return $script;
+    }
+
+    public function renderPowershellModuleInstaller($token, $withModule = false)
     {
         if ($withModule) {
             $script = $this->loadPowershellModule() . "\n\n";
@@ -217,7 +233,9 @@ class AgentWizard
                 $vals[] = $this->renderPowershellString($val);
             }
             $ret .= implode(', ', $vals);
-        } elseif ($value !== null) {
+        } elseif (is_int($value)) {
+            $ret .= $value;
+        } else {
             $ret .= $this->renderPowershellString($value);
         }
 
