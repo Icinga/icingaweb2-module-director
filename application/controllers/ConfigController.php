@@ -52,8 +52,7 @@ class ConfigController extends ActionController
         $this->addTitle($this->translate('Deployments'));
         try {
             if (DirectorDeploymentLog::hasUncollected($this->db())) {
-                $this->setAutorefreshInterval(3);
-                $this->api()->collectLogFiles($this->db());
+                $this->setAutorefreshInterval(2);
             } else {
                 $this->setAutorefreshInterval(20);
             }

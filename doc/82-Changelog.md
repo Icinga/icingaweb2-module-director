@@ -99,6 +99,7 @@ next (will be 1.8.0)
 * FIX: Daemon Logger used to not override the given log level (#2139)
 * FEATURE: Daemon: prepare for future reactphp promise versions (#2137)
 * FEATURE: Daemon now logs that it is going to reload itself
+* FEATURE: Now collects the Deployment status from Icinga (#2045, #1988)
 
 ### Documentation
 * FEATURE: We now also mention optional/indirect requirements (#2054, #2220)
