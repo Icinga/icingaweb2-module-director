@@ -255,14 +255,14 @@ class IcingaObjectFieldLoader
                 $form->addElementsToGroup(
                     [$element],
                     'custom_fields:' . $category->get('category_name'),
-                    51 + $prioIdx[$key],
+                    DirectorObjectForm::GROUP_ORDER_CUSTOM_FIELD_CATEGORIES + $prioIdx[$key],
                     $category->get('category_name')
                 );
             } else {
                 $form->addElementsToGroup(
                     [$element],
                     'custom_fields',
-                    50,
+                    DirectorObjectForm::GROUP_ORDER_CUSTOM_FIELDS,
                     $form->translate('Custom properties')
                 );
             }

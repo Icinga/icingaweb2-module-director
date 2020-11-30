@@ -57,7 +57,7 @@ class IcingaDependencyForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 80,
+            'order' => self::GROUP_ORDER_CLUSTERING,
             'legend' => $this->translate('Zone settings')
         ));
 
@@ -264,7 +264,7 @@ class IcingaDependencyForm extends DirectorObjectForm
                 ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
             ],
-            'order' => 25,
+            'order' => self::GROUP_ORDER_RELATED_OBJECTS,
             'legend' => $this->translate('Related Objects')
         ]);
 

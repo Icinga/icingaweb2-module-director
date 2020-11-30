@@ -131,7 +131,7 @@ class IcingaHostForm extends DirectorObjectForm
                 ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
             ],
-            'order'  => 80,
+            'order'  => self::GROUP_ORDER_CLUSTERING,
             'legend' => $this->translate('Icinga Agent and zone settings')
         ]);
 

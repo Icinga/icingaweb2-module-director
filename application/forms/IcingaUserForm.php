@@ -72,7 +72,7 @@ class IcingaUserForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 80,
+            'order' => self::GROUP_ORDER_CLUSTERING,
             'legend' => $this->translate('Zone settings')
         ));
 
@@ -190,7 +190,7 @@ class IcingaUserForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 20,
+            'order' => self::GROUP_ORDER_OBJECT_DEFINITION,
             'legend' => $this->translate('User properties')
         ));
     }

@@ -63,7 +63,7 @@ class IcingaAddServiceForm extends DirectorObjectForm
                 ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
             ],
-            'order'  => 20,
+            'order'  => self::GROUP_ORDER_OBJECT_DEFINITION,
             'legend' => $this->translate('Main properties')
         ]);
 

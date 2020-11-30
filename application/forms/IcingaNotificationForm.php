@@ -61,7 +61,7 @@ class IcingaNotificationForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 80,
+            'order' => self::GROUP_ORDER_CLUSTERING,
             'legend' => $this->translate('Zone settings')
         ));
 

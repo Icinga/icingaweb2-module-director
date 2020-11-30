@@ -23,6 +23,16 @@ use Zend_Form_Element_Select as ZfSelect;
 
 abstract class DirectorObjectForm extends DirectorForm
 {
+    const GROUP_ORDER_OBJECT_DEFINITION = 20;
+    const GROUP_ORDER_RELATED_OBJECTS = 25;
+    const GROUP_ORDER_ASSIGN = 30;
+    const GROUP_ORDER_CUSTOM_FIELDS = 50;
+    const GROUP_ORDER_CUSTOM_FIELD_CATEGORIES = 60;
+    const GROUP_ORDER_EVENT_FILTERS = 700;
+    const GROUP_ORDER_EXTRA_INFO = 750;
+    const GROUP_ORDER_CLUSTERING = 800;
+    const GROUP_ORDER_BUTTONS = 1000;
+
     /** @var IcingaObject */
     protected $object;
 
@@ -572,7 +582,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 20,
+            'order' => self::GROUP_ORDER_OBJECT_DEFINITION,
             'legend' => $this->translate('Main properties')
         ));
 
@@ -1551,7 +1561,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order'  => 75,
+            'order'  => self::GROUP_ORDER_EXTRA_INFO,
             'legend' => $this->translate('Additional properties')
         ));
 
@@ -1584,7 +1594,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order'  => 30,
+            'order'  => self::GROUP_ORDER_ASSIGN,
             'legend' => $this->translate('Assign where')
         ));
 
@@ -1653,7 +1663,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' =>70,
+            'order' => self::GROUP_ORDER_EVENT_FILTERS,
             'legend' => $this->translate('State and transition type filters')
         ));
 

@@ -165,7 +165,7 @@ class IcingaServiceForm extends DirectorObjectForm
                     ['HtmlTag', ['tag' => 'dl']],
                     'DtDdWrapper',
                 ],
-                'order' => 1000,
+                'order' => self::GROUP_ORDER_BUTTONS,
             ]);
         }
     }
@@ -686,7 +686,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 array('HtmlTag', array('tag' => 'dl')),
                 'Fieldset',
             ),
-            'order' => 40,
+            'order' => self::GROUP_ORDER_CLUSTERING,
             'legend' => $this->translate('Icinga Agent and zone settings')
         ));
 

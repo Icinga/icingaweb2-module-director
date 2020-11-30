@@ -38,7 +38,7 @@ class IcingaUserGroupForm extends DirectorObjectForm
                 ['HtmlTag', ['tag' => 'dl']],
                 'Fieldset',
             ],
-            'order'  => 80,
+            'order'  => self::GROUP_ORDER_CLUSTERING,
             'legend' => $this->translate('Zone settings')
         ]);
 
