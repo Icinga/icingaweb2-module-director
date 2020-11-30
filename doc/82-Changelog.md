@@ -4,8 +4,8 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-next (will be 1.8.0)
---------------------
+1.8.0
+-----
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
