@@ -68,6 +68,9 @@ next (will be 1.8.0)
 ### Authentication and Permissions
 * FIX: Users restricted to Hostgroups can now use related Templates (#2020, #2101)
 
+### Kickstart
+* FEATURE: Friendlier message if object to be removed is still in use (#2206)
+
 ### Icinga Configuration
 * FIX: Correctly render Service Dependencies with Array-style parent hosts (#2088)
 * REMOVED: magic-apply-for (a hidden deprecated feature) has been removed (#1851)

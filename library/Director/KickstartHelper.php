@@ -280,7 +280,14 @@ class KickstartHelper
     protected function removeZones()
     {
         foreach ($this->removeZones as $zone) {
-            $zone->delete();
+            try {
+                $zone->delete();
+            } catch (Exception $e) {
+                throw new Exception(sprintf(
+                    "Failed to remove external Zone '%s', it's eventually still in use",
+                    $zone->getObjectName()
+                ), 0, $e);
+            }
         }
 
         return $this;
@@ -339,7 +346,14 @@ class KickstartHelper
     protected function removeEndpoints()
     {
         foreach ($this->removeEndpoints as $endpoint) {
-            $endpoint->delete();
+            try {
+                $endpoint->delete();
+            } catch (Exception $e) {
+                throw new Exception(sprintf(
+                    "Failed to remove external Endpoint '%s', it's eventually still in use",
+                    $endpoint->getObjectName()
+                ), 0, $e);
+            }
         }
 
         return $this;
