@@ -322,7 +322,9 @@ class SuggestController extends ActionController
 
         $data = [];
         foreach ($db->fetchPairs($query) as $key => $label) {
-            $data[] = sprintf("%s [%s]", $label, $key);
+            // TODO: find a better solution here
+            // $data[] = sprintf("%s [%s]", $label, $key);
+            $data[] = $key;
         }
         return $data;
     }
