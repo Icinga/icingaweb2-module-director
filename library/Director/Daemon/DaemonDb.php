@@ -157,8 +157,8 @@ class DaemonDb
         }
         $this->wipeOrphanedInstances($connection);
         if ($this->hasAnyOtherActiveInstance($connection)) {
-            $this->emitStatus('locked by other instance', 'error');
-            throw new RuntimeException('DB is locked by a running daemon instance');
+            $this->emitStatus('locked by other instance', 'warning');
+            throw new RuntimeException('DB is locked by a running daemon instance, will retry');
         }
         $this->startupSchemaVersion = $migrations->getLastMigrationNumber();
         $this->details->set('schema_version', $this->startupSchemaVersion);
