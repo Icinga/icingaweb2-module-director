@@ -2,99 +2,46 @@
 
 namespace Icinga\Module\Director;
 
-use Diff;
+use gipfl\Diff\HtmlRenderer\InlineDiff;
+use gipfl\Diff\HtmlRenderer\SideBySideDiff;
+use gipfl\Diff\PhpDiff;
 use ipl\Html\ValidHtml;
 use InvalidArgumentException;
 
+/**
+ * @deprecated will be removed with v1.9 - please use gipfl\Diff
+ */
 class ConfigDiff implements ValidHtml
 {
-    protected $a;
+    protected $renderClass;
 
-    protected $b;
+    /** @var PhpDiff */
+    protected $phpDiff;
 
-    protected $diff;
-
-    protected $htmlRenderer = 'SideBySide';
-
-    protected $knownHtmlRenderers = [
-        'SideBySide',
-        'Inline',
-    ];
-
-    protected $knownTextRenderers = [
-        'Context',
-        'Unified',
-    ];
-
-    protected function __construct($a, $b)
+    public function __construct($a, $b)
     {
-        require_once dirname(__DIR__) . '/vendor/php-diff/lib/Diff.php';
-
-        if (empty($a)) {
-            $this->a = [];
-        } else {
-            $this->a = explode("\n", (string) $a);
-        }
-
-        if (empty($b)) {
-            $this->b = [];
-        } else {
-            $this->b = explode("\n", (string) $b);
-        }
-
-        $options = [
-            'context' => 5,
-            // 'ignoreWhitespace' => true,
-            // 'ignoreCase' => true,
-        ];
-        $this->diff = new Diff($this->a, $this->b, $options);
+        $this->phpDiff = new PhpDiff($a, $b);
     }
 
     public function render()
     {
-        return $this->renderHtml();
-    }
-
-    /**
-     * @return string
-     */
-    public function renderHtml()
-    {
-        return $this->diff->Render($this->getHtmlRenderer());
+        $class = $this->renderClass;
+        return (new $class($this->phpDiff))->render();
     }
 
     public function setHtmlRenderer($name)
     {
-        if (in_array($name, $this->knownHtmlRenderers)) {
-            $this->htmlRenderer = $name;
-        } else {
-            throw new InvalidArgumentException("There is no known '$name' renderer");
+        switch ($name) {
+            case 'SideBySide':
+                $this->renderClass = SideBySideDiff::class;
+                break;
+            case 'Inline':
+                $this->renderClass = InlineDiff::class;
+                break;
+            default:
+                throw new InvalidArgumentException("There is no known '$name' renderer");
         }
 
         return $this;
-    }
-
-    protected function getHtmlRenderer()
-    {
-        $filename = sprintf(
-            '%s/vendor/php-diff/lib/Diff/Renderer/Html/%s.php',
-            dirname(__DIR__),
-            $this->htmlRenderer
-        );
-        require_once($filename);
-
-        $class = 'Diff_Renderer_Html_' . $this->htmlRenderer;
-
-        return new $class;
-    }
-
-    public function __toString()
-    {
-        return $this->renderHtml();
-    }
-
-    public static function create($a, $b)
-    {
-        return new static($a, $b);
     }
 }

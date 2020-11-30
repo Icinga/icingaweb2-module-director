@@ -2,11 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use gipfl\Diff\HtmlRenderer\SideBySideDiff;
+use gipfl\Diff\PhpDiff;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\RestoreObjectForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -20,6 +21,7 @@ use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
+use ipl\Html\ValidHtml;
 
 class ActivityLogInfo extends HtmlDocument
 {
@@ -400,7 +402,7 @@ class ActivityLogInfo extends HtmlDocument
     /**
      * @param IcingaConfig $oldConfig
      * @param IcingaConfig $newConfig
-     * @return ConfigDiff[]
+     * @return ValidHtml[]
      */
     protected function getConfigDiffs(IcingaConfig $oldConfig, IcingaConfig $newConfig)
     {
@@ -426,7 +428,7 @@ class ActivityLogInfo extends HtmlDocument
                 continue;
             }
 
-            $diffs[$filename] = ConfigDiff::create($left, $right);
+            $diffs[$filename] = new SideBySideDiff(new PhpDiff($left, $right));
         }
 
         return $diffs;

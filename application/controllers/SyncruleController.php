@@ -2,9 +2,11 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Diff\HtmlRenderer\SideBySideDiff;
+use gipfl\Diff\PhpDiff;
+use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Web\Widget\UnorderedList;
-use Icinga\Module\Director\ConfigDiff;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Forms\SyncCheckForm;
@@ -27,7 +29,7 @@ use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
 use Icinga\Module\Director\Web\Widget\SyncRunDetails;
 use ipl\Html\Form;
 use ipl\Html\Html;
-use gipfl\IcingaWeb2\Link;
+use ipl\Html\ValidHtml;
 
 class SyncruleController extends ActionController
 {
@@ -367,7 +369,7 @@ class SyncruleController extends ActionController
      *
      * @param IcingaConfig $oldConfig
      * @param IcingaConfig $newConfig
-     * @return ConfigDiff[]
+     * @return ValidHtml[]
      */
     protected function getConfigDiffs(IcingaConfig $oldConfig, IcingaConfig $newConfig)
     {
@@ -393,7 +395,7 @@ class SyncruleController extends ActionController
                 continue;
             }
 
-            $diffs[$filename] = ConfigDiff::create($left, $right);
+            $diffs[$filename] = new SideBySideDiff(new PhpDiff($left, $right));
         }
 
         return $diffs;
