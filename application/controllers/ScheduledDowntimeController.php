@@ -9,6 +9,8 @@ use Icinga\Module\Director\Web\Table\IcingaScheduledDowntimeRangeTable;
 
 class ScheduledDowntimeController extends ObjectController
 {
+    protected $objectBaseUrl = 'director/scheduled-downtime';
+
     public function rangesAction()
     {
         /** @var IcingaScheduledDowntime $object */
