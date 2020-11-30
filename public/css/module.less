@@ -166,12 +166,17 @@ table.common-table {
   pre {
     margin: 0;
     padding: 0.2em;
-    max-height: 18em;
-    background: @gray-lightest;
+    max-height: 10em;
+    background: none;
     overflow: auto;
     word-break: keep-all;
     white-space: pre;
     display: inline-block;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 }
 
