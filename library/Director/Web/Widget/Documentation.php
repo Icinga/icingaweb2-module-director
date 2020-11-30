@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Widget;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Translation\TranslationHelper;
 use Icinga\Application\ApplicationBootstrap;
+use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
 use ipl\Html\Html;
 
@@ -24,6 +25,12 @@ class Documentation
         $this->auth = $auth;
     }
 
+    public static function link($label, $module, $chapter, $title = null)
+    {
+        $doc = new static(Icinga::app(), Auth::getInstance());
+        return $doc->getModuleLink($label, $module, $chapter, $title);
+    }
+
     public function getModuleLink($label, $module, $chapter, $title = null)
     {
         if ($title !== null) {
@@ -33,31 +40,35 @@ class Documentation
             );
         }
         $linkToGitHub = false;
-        $hasModule = $this->app->getModuleManager()->hasLoaded($module);
-        if ($hasModule && $this->hasAccessToDocumentationModule()) {
+        $baseParams = [
+            'class' => 'icon-book',
+            'title' => $title,
+        ];
+        if ($this->hasAccessToDocumentationModule()) {
             return Link::create(
                 $label,
-                'doc/module/director/chapter/' . \preg_replace('/^\d+-/', '', \rawurlencode($chapter)),
+                $this->getDirectorDocumentationUrl($chapter),
                 null,
-                [
-                    'data-base-target' => '_next',
-                    'class'            => 'icon-book',
-                    'title'            => $title,
-                ]
+                ['data-base-target' => '_next'] + $baseParams
             );
-        } elseif ($linkToGitHub) {
-            return Html::tag('a', [
-                'href'   => $this->githubDocumentationUrl($module, $chapter),
-                'target' => '_blank',
-                'title'  => $title,
-            ], $label);
-        } else {
-            return Html::tag('a', [
-                'href'   => $this->icingaDocumentationUrl($module, $chapter),
-                'target' => '_blank',
-                'title'  => $title,
-            ], $label);
         }
+
+        $baseParams['target'] = '_blank';
+        if ($linkToGitHub) {
+            return Html::tag('a', [
+                'href' => $this->githubDocumentationUrl($module, $chapter),
+            ] + $baseParams, $label);
+        }
+
+        return Html::tag('a', [
+            'href' => $this->icingaDocumentationUrl($module, $chapter),
+        ] + $baseParams, $label);
+    }
+
+    protected function getDirectorDocumentationUrl($chapter)
+    {
+        return 'doc/module/director/chapter/'
+            . \preg_replace('/^\d+-/', '', \rawurlencode($chapter));
     }
 
     protected function githubDocumentationUrl($module, $chapter)
