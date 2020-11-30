@@ -32,6 +32,7 @@ next (will be 1.8.0)
 * FEATURE: Hint and Error styling has been unified and improved
 * FEATURE: Form field rendering for sets now deals with invalid values
 * FEATURE: Better descriptions for time-based and other fields (#1897, #1264)
+* FEATURE: Daemon tab now gets red instead of yellow when not running (#2238)
 
 ### Translations
 * FEATURE: Italian is now available (#2080)

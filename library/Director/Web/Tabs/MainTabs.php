@@ -55,7 +55,7 @@ class MainTabs extends Tabs
                     if ($daemon->isRunning()) {
                         $state = 'ok';
                     } else {
-                        $state = 'warning';
+                        $state = 'critical';
                     }
                 } catch (\Exception $e) {
                     $state = 'unknown';
