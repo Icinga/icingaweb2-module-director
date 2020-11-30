@@ -70,6 +70,7 @@ next (will be 1.8.0)
 
 ### Kickstart
 * FEATURE: Friendlier message if object to be removed is still in use (#2206)
+* FEATURE: Kickstart now removes obsolete External Commands (#985)
 
 ### Icinga Configuration
 * FIX: Correctly render Service Dependencies with Array-style parent hosts (#2088)

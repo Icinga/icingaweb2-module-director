@@ -8,11 +8,13 @@ use Icinga\Exception\ConfigurationError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Objects\IcingaApiUser;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Core\RestApiClient;
+use RuntimeException;
 
 class KickstartHelper
 {
@@ -40,13 +42,19 @@ class KickstartHelper
     /** @var  IcingaZone[] */
     protected $removeZones;
 
-    protected $config = array(
+    /** @var  IcingaCommand[] */
+    protected $loadedCommands;
+
+    /** @var  IcingaCommand[] */
+    protected $removeCommands;
+
+    protected $config = [
         'endpoint' => null,
         'host'     => null,
         'port'     => null,
         'username' => null,
         'password' => null,
-    );
+    ];
 
     /**
      * KickstartHelper constructor.
@@ -65,11 +73,13 @@ class KickstartHelper
         $this->fetchEndpoints()
             ->reconnectToDeploymentEndpoint()
             ->fetchZones()
+            ->fetchCommands()
             ->storeZones()
             ->storeEndpoints()
+            ->storeCommands()
             ->removeEndpoints()
             ->removeZones()
-            ->importCommands();
+            ->removeCommands();
 
         $this->apiUser()->store();
     }
@@ -146,9 +156,9 @@ class KickstartHelper
     {
         if ($this->config[$key] === null) {
             return $default;
-        } else {
-            return $this->config[$key];
         }
+
+        return $this->config[$key];
     }
 
     /**
@@ -221,8 +231,7 @@ class KickstartHelper
         if (empty($objects)) {
             $class = 'Nothing';
         } else {
-            $class = preg_split('/\\\/', get_class(current($objects)));
-            $class = end($class);
+            $class = explode('/\\/', get_class(current($objects)))[0];
         }
 
         foreach ($objects as $object) {
@@ -254,6 +263,7 @@ class KickstartHelper
     /**
      * @return $this
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
      */
     protected function storeZones()
     {
@@ -279,18 +289,7 @@ class KickstartHelper
      */
     protected function removeZones()
     {
-        foreach ($this->removeZones as $zone) {
-            try {
-                $zone->delete();
-            } catch (Exception $e) {
-                throw new Exception(sprintf(
-                    "Failed to remove external Zone '%s', it's eventually still in use",
-                    $zone->getObjectName()
-                ), 0, $e);
-            }
-        }
-
-        return $this;
+        return $this->removeObjects($this->removeEndpoints, 'External Zone');
     }
 
     /**
@@ -317,6 +316,7 @@ class KickstartHelper
 
     /**
      * @return $this
+     * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
     protected function storeEndpoints()
@@ -345,18 +345,7 @@ class KickstartHelper
      */
     protected function removeEndpoints()
     {
-        foreach ($this->removeEndpoints as $endpoint) {
-            try {
-                $endpoint->delete();
-            } catch (Exception $e) {
-                throw new Exception(sprintf(
-                    "Failed to remove external Endpoint '%s', it's eventually still in use",
-                    $endpoint->getObjectName()
-                ), 0, $e);
-            }
-        }
-
-        return $this;
+        return $this->removeObjects($this->removeEndpoints, 'External Endpoint');
     }
 
     /**
@@ -403,32 +392,66 @@ class KickstartHelper
     }
 
     /**
-     * Import existing commands as external objects
-     *
-     * TODO: remove outdated ones
-     *
+     * @return $this
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    protected function fetchCommands()
+    {
+        $api = $this->api()->setDb($this->db);
+        $this->loadedCommands = array_merge(
+            $api->getSpecificCommandObjects('Check'),
+            $api->getSpecificCommandObjects('Notification'),
+            $api->getSpecificCommandObjects('Event')
+        );
+
+        return $this;
+    }
+
+    /**
      * @return $this
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
-    protected function importCommands()
+    protected function storeCommands()
     {
         $db = $this->db;
-        $zdb = $db->getDbAdapter();
-        $zdb->beginTransaction();
-        /** @var IcingaObject $object */
-        foreach (['Check', 'Notification', 'Event'] as $type) {
-            foreach ($this->api()->setDb($db)->getSpecificCommandObjects($type) as $object) {
-                if ($object::exists($object->object_name, $db)) {
-                    $new = $object::load($object->getObjectName(), $db)->replaceWith($object);
-                } else {
-                    $new = $object;
-                }
+        $existing = IcingaObject::loadAllExternalObjectsByType('command', $db);
 
-                $new->store();
+        foreach ($this->loadedCommands as $name => $object) {
+            if (array_key_exists($name, $existing)) {
+                $object = $existing[$name]->replaceWith($object);
+                unset($existing[$name]);
+            }
+
+            $object->store();
+        }
+
+        $this->removeCommands = $existing;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    protected function removeCommands()
+    {
+        return $this->removeObjects($this->removeCommands, 'External Command');
+    }
+
+    protected function removeObjects(array $objects, $typeName)
+    {
+        foreach ($objects as $object) {
+            try {
+                $object->delete();
+            } catch (Exception $e) {
+                throw new RuntimeException(sprintf(
+                    "Failed to remove %s '%s', it's eventually still in use",
+                    $typeName,
+                    $object->getObjectName()
+                ), 0, $e);
             }
         }
-        $zdb->commit();
 
         return $this;
     }
