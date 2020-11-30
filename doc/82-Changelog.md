@@ -74,6 +74,7 @@ next (will be 1.8.0)
 
 ### Icinga Configuration
 * FIX: Correctly render Service Dependencies with Array-style parent hosts (#2088)
+* FIX: times.begin and times.end are now rendered separately (#2193)
 * REMOVED: magic-apply-for (a hidden deprecated feature) has been removed (#1851)
 
 ### Icinga Agent handling

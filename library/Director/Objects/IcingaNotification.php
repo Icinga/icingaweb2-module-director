@@ -69,52 +69,23 @@ class IcingaNotification extends IcingaObject implements ExportInterface
     }
 
     /**
-     * We have distinct properties in the db
-     *
-     * ...but render times only once
-     *
-     * And we skip warnings about underscores in method names:
      * @codingStandardsIgnoreStart
-     *
      * @return string
      */
     protected function renderTimes_begin()
     {
         // @codingStandardsIgnoreEnd
-        $times = (object) [
-            'begin' => c::renderInterval($this->times_begin)
-        ];
-
-        if ($this->get('times_end') !== null) {
-            $times->end = c::renderInterval($this->get('times_end'));
-        }
-
-        return c::renderKeyValue('times', c::renderDictionary($times));
+        return c::renderKeyValue('times.begin', c::renderInterval($this->get('times_begin')));
     }
 
     /**
-     * We have distinct properties in the db
-     *
-     * ...but render times only once
-     *
-     * And we skip warnings about underscores in method names:
      * @codingStandardsIgnoreStart
-     *
      * @return string
      */
     protected function renderTimes_end()
     {
         // @codingStandardsIgnoreEnd
-
-        if ($this->get('times_begin') !== null) {
-            return '';
-        }
-
-        $times = (object) [
-            'end' => c::renderInterval($this->get('times_end'))
-        ];
-
-        return c::renderKeyValue('times', c::renderDictionary($times));
+        return c::renderKeyValue('times.end', c::renderInterval($this->get('times_end')));
     }
 
     public function getUniqueIdentifier()
