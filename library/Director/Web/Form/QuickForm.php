@@ -91,7 +91,12 @@ abstract class QuickForm extends QuickBaseForm
 
     protected function setPreferredDecorators()
     {
-        $this->setAttrib('class', 'autofocus');
+        $current = $this->getAttrib('class');
+        if ($current) {
+            $this->setAttrib('class', "$current autofocus");
+        } else {
+            $this->setAttrib('class', 'autofocus');
+        }
         $this->setDecorators(
             array(
                 'Description',
