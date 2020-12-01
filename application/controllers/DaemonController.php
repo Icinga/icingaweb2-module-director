@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Application\Icinga;
 use Icinga\Module\Director\Daemon\RunningDaemonInfo;
 use Icinga\Module\Director\Web\Tabs\MainTabs;
@@ -44,16 +45,20 @@ class DaemonController extends ActionController
                 '75-Background-Daemon',
                 $this->translate('Icinga Director Background Daemon')
             ));
-            $this->content()->add(Html::tag('p', ['class' => 'state-hint error'], [
+            $this->content()->add(Hint::error([
                 $message,
-                ($error ? [Html::tag('br'), Html::tag('strong', $error)] : ''),
+                ($error ? [Html::tag('br'), Html::tag('strong', $error)] : null),
             ]));
             return;
         }
 
-        foreach ($daemons as $daemon) {
-            $info = new RunningDaemonInfo($daemon);
-            $this->content()->add([new BackgroundDaemonDetails($info, $daemon)  /*, $logWindow*/]);
+        try {
+            foreach ($daemons as $daemon) {
+                $info = new RunningDaemonInfo($daemon);
+                $this->content()->add([new BackgroundDaemonDetails($info, $daemon)  /*, $logWindow*/]);
+            }
+        } catch (\Exception $e) {
+            $this->content()->add(Hint::error($e->getMessage()));
         }
     }
 }
