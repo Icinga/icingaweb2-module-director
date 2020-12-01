@@ -20,7 +20,7 @@ class IndexController extends DashboardController
 
             if ($migrations->hasSchema()) {
                 if (!$this->hasDeploymentEndpoint()) {
-                    $this->showKickstartForm(false);
+                    $this->showKickstartForm();
                 }
             }
 
@@ -38,18 +38,27 @@ class IndexController extends DashboardController
                 ), $migrations->getLastMigrationNumber())));
             }
 
-            parent::indexAction();
+            if ($migrations->hasSchema()) {
+                parent::indexAction();
+            } else {
+                $this->addTitle(sprintf(
+                    $this->translate('Icinga Director Setup: %s'),
+                    $this->translate('Create Schema')
+                ));
+                $this->addSingleTab('Setup');
+            }
         } else {
+            $this->addTitle(sprintf(
+                $this->translate('Icinga Director Setup: %s'),
+                $this->translate('Choose DB Resource')
+            ));
+            $this->addSingleTab('Setup');
             $this->showKickstartForm();
         }
     }
 
-    protected function showKickstartForm($showTab = true)
+    protected function showKickstartForm()
     {
-        if ($showTab) {
-            $this->addSingleTab($this->translate('Kickstart'));
-        }
-
         $form = KickstartForm::load();
         if ($name = $this->getPreferredDbResourceName()) {
             $form->setDbResourceName($name);
