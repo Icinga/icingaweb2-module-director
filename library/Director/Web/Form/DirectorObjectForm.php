@@ -26,6 +26,7 @@ abstract class DirectorObjectForm extends DirectorForm
     const GROUP_ORDER_OBJECT_DEFINITION = 20;
     const GROUP_ORDER_RELATED_OBJECTS = 25;
     const GROUP_ORDER_ASSIGN = 30;
+    const GROUP_ORDER_CHECK_EXECUTION = 40;
     const GROUP_ORDER_CUSTOM_FIELDS = 50;
     const GROUP_ORDER_CUSTOM_FIELD_CATEGORIES = 60;
     const GROUP_ORDER_EVENT_FILTERS = 700;
@@ -331,7 +332,7 @@ abstract class DirectorObjectForm extends DirectorForm
         return $this->addElementsToGroup(
             $elements,
             'check_execution',
-            60,
+            self::GROUP_ORDER_CHECK_EXECUTION,
             $this->translate('Check execution')
         );
     }
