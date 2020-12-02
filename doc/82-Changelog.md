@@ -59,6 +59,7 @@ before switching to a new version.
 * FEATURE: UTF8 validation for failed imports gives better error message (#2143)
 * FEATURE: ArrayByElementPosition now allows filtering by key name (#1721)
 * FEATURE: Use your Director Objects as an Import Source (#2198)
+* FEATURE: Property modifiers are now granted access the current Property Name (#2241)
 * FIX: Import Source preview now catches all errors
 * FIX: Import Source download sends eventual errors as a valid JSON result
 * FIX: LDAP Import is now able to paginate limited results (#2019)

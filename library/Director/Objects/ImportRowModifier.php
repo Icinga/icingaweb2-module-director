@@ -46,6 +46,7 @@ class ImportRowModifier extends DbObjectWithSettings
             }
             $obj = new $class;
             $obj->setSettings($this->getSettings());
+            $obj->setPropertyName($this->get('property_name'));
             $obj->setTargetProperty($this->get('target_property'));
             $obj->setDb($this->connection);
             $this->hookInstance = $obj;

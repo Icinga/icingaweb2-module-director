@@ -13,6 +13,9 @@ abstract class PropertyModifierHook
     /** @var string */
     private $targetProperty;
 
+    /** @var string */
+    private $propertyName;
+
     /** @var Db */
     private $db;
 
@@ -140,6 +143,24 @@ abstract class PropertyModifierHook
     public function setRow($row)
     {
         $this->row = $row;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPropertyName()
+    {
+        return $this->propertyName;
+    }
+
+    /**
+     * @param string $propertyName
+     * @return $this
+     */
+    public function setPropertyName($propertyName)
+    {
+        $this->propertyName = $propertyName;
         return $this;
     }
 
