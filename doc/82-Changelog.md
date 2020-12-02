@@ -35,7 +35,8 @@ before switching to a new version.
 * FEATURE: Daemon tab now gets red instead of yellow when not running (#2238)
 
 ### Translations
-* FEATURE: Italian is now available (#2080)
+* FEATURE: Italian translation is now available (#2080)
+* FEATURE: German translation has been refreshed (#2240)
 
 ### CLI
 * FEATURE: Deployment Status and related utilities (#2189)
