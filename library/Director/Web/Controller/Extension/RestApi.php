@@ -83,7 +83,7 @@ trait RestApi
     protected function sendJson(Response $response, $object)
     {
         $response->setHeader('Content-Type', 'application/json', true);
-        echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
+        echo json_encode($object, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
     }
 
     /**

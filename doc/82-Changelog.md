@@ -52,6 +52,7 @@ before switching to a new version.
 * FEATURE: Property Modifier Reject/Select: improve usability (#2228)
 * FEATURE: Property Modifier: clone rows for every entry of an Array (#2192)
 * FEATURE: Property Modifier: unique array values (#2229)
+* FEATURE: Property Modifier: allow to rename columns (#2242)
 * FEATURE: Import Sources now allows downloading previewed data as JSON (#2096)
 * FEATURE: REST API Import now allows custom headers (#2132)
 * FEATURE: REST API Import can now extract nested properties (#2132)
@@ -90,6 +91,7 @@ before switching to a new version.
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
 * FEATURE: Search is now also available for the REST API (#1889)
 * FEATURE: Deployment Status is now available (#2187)
+* FEATURE: UTF-8 characters and slashes are no longer escaped (#2243)
 
 ### Self Service API
 * FIX: error handling has been fixed (#1728)
