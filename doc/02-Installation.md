@@ -60,10 +60,10 @@ command.
 #### PostgreSQL
 
 
-    psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8';"
-    psql director -q -c "CREATE USER director WITH PASSWORD 'some-password';
-    GRANT ALL PRIVILEGES ON DATABASE director TO director;
-    CREATE EXTENSION pgcrypto;"
+    psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8'";
+    psql director -q -c "CREATE USER director WITH PASSWORD 'some-password'";
+    psql -q -c "GRANT ALL PRIVILEGES ON DATABASE director TO director";
+    psql -q -c "CREATE EXTENSION pgcrypto";
 
 Hint: pgcrypto helps to boost performance, but is currently optional. In case you
 do not have it available on your platform and/or do not know how to solve this
