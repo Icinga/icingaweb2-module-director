@@ -15,6 +15,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.8.x](#upgrade-to-1.8.x)
 * [Upgrading to 1.7.x](#upgrade-to-1.7.x)
 * [Upgrading to 1.6.x](#upgrade-to-1.6.x)
 * [Upgrading to 1.5.x](#upgrade-to-1.5.x)
@@ -37,6 +38,13 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.8.x"></a>Upgrading to 1.8.x
+-------------------------------------------------
+
+Before upgrading, please upgrade the [incubator module](https://github.com/Icinga/icingaweb2-module-incubator)
+to (at least) v0.6.0. As always, you'll be prompted to apply pending Database
+Migrations.
 
 <a name="upgrade-to-1.7.x"></a>Upgrading to 1.7.x
 -------------------------------------------------

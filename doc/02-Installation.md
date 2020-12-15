@@ -102,7 +102,7 @@ You might want to use a script as follows for this task:
     ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
     REPO_URL="https://github.com/icinga/icingaweb2-module-director"
     TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
-    MODULE_VERSION="1.7.1"
+    MODULE_VERSION="1.8.0"
     URL="${REPO_URL}/archive/v${MODULE_VERSION}.tar.gz"
     install -d -m 0755 "${TARGET_DIR}"
     wget -q -O - "$URL" | tar xfz - -C "${TARGET_DIR}" --strip-components 1
@@ -119,7 +119,7 @@ It will be immediately ready for use:
     ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
     REPO_URL="https://github.com/icinga/icingaweb2-module-director"
     TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
-    MODULE_VERSION="1.7.1"
+    MODULE_VERSION="1.8.0"
     git clone "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
 
 You can now directly use our current GIT master or check out a specific version.
