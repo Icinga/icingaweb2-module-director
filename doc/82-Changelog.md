@@ -73,6 +73,7 @@ before switching to a new version.
 
 ### Authentication and Permissions
 * FIX: Users restricted to Hostgroups can now use related Templates (#2020, #2101)
+* FEATURE: Optionally, restricted users can be allowed to set Groups (#2252)
 
 ### Kickstart
 * FEATURE: Friendlier message if object to be removed is still in use (#2206)

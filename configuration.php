@@ -41,6 +41,10 @@ $this->provideRestriction(
         'Limit access to the given comma-separated list of hostgroups'
     )
 );
+$this->providePermission(
+    'director/groups-for-restricted-hosts',
+    $this->translate('Allow users with Hostgroup restrictions to access the Groups field')
+);
 
 $this->provideRestriction(
     'director/service/apply/filter-by-name',
