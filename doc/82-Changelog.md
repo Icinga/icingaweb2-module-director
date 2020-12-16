@@ -87,6 +87,7 @@ before switching to a new version.
 ### Icinga Agent handling
 * FIX: Linux Agent installer now fails when unable to retrieve a certificate
 * FEATURE: Linux Agent installer now supports Alpine Linux (#2216)
+* FEATURE: Icinga for Windows support (#2147)
 
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)
