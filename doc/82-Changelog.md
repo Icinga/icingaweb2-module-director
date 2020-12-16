@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+next (will be 1.8.1)
+--------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/24?closed=1)
+
+### User Interface
+* FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
+
 1.8.0
 -----
 
