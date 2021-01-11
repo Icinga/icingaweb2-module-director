@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Countable;
 use Exception;
+use Icinga\Exception\NotFoundError;
 use Iterator;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
@@ -251,14 +252,23 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $connection = $this->object->getConnection();
         /** @var IcingaObject $class */
         $class = $this->getImportClass();
-        if (is_array($this->object->getKeyName())) {
-            // Services only
-            $import = $class::load([
-                'object_name' => $name,
-                'object_type' => 'template'
-            ], $connection);
-        } else {
-            $import = $class::load($name, $connection);
+        try {
+            if (is_array($this->object->getKeyName())) {
+                // Services only
+                $import = $class::load([
+                    'object_name' => $name,
+                    'object_type' => 'template'
+                ], $connection);
+            } else {
+                $import = $class::load($name, $connection);
+            }
+        } catch (NotFoundError $e) {
+            throw new NotFoundError(sprintf(
+                'Unable to load parent referenced from %s "%s", %s',
+                $this->object->getShortTableName(),
+                $this->object->getObjectName(),
+                lcfirst($e->getMessage())
+            ), $e->getCode(), $e);
         }
 
         return $this->objects[$import->getObjectName()] = $import;

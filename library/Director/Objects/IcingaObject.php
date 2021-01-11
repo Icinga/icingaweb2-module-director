@@ -535,7 +535,13 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $this->connection
             );
         } catch (NotFoundError $e) {
-            throw new RuntimeException($e->getMessage(), 0, $e);
+            // Hint: eventually a NotFoundError would be better
+            throw new RuntimeException(sprintf(
+                'Unable to load object referenced from %s "%s", %s',
+                $this->getShortTableName(),
+                $this->getObjectName(),
+                lcfirst($e->getMessage())
+            ), $e->getCode(), $e);
         }
 
         $this->reallySet($name, $object->get('id'));
