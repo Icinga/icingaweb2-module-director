@@ -91,6 +91,15 @@ class IcingaTemplateChoiceForm extends DirectorObjectForm
             'value' => 1,
         ));
 
+        $this->addElement('select', 'required_template', [
+            'label'        => $this->translate('Associated Template'),
+            'description'  => $this->translate(
+                'Choose Choice Associated Template'
+            ),
+            'required'     => true,
+            'multiOptions' => $this->fetchUnboundTemplates(),
+        ]);
+
         $this->setButtons();
     }
 

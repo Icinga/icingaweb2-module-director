@@ -1180,9 +1180,21 @@ abstract class DirectorObjectForm extends DirectorForm
 
         $connection = $this->getDb();
         $choiceType = 'TemplateChoice' . ucfirst($type);
+        $table = "icinga_$type";
         $choices = IcingaObject::loadAllByType($choiceType, $connection);
+        $chosenTemplates = $this->getSentOrObjectValue('imports');
+        $db = $connection->getDbAdapter();
+        $importedIds = $db->fetchCol(
+            $db->select()->from($table, 'id')
+                ->where('object_name in (?)', (array)$chosenTemplates)
+                ->where('object_type = ?', 'template')
+        );
+
         foreach ($choices as $choice) {
-            $this->addChoiceElement($choice);
+            $required = $choice->get('required_template_id');
+            if ($required === null || in_array($required, $importedIds, false)) {
+                $this->addChoiceElement($choice);
+            }
         }
 
         return $this;
