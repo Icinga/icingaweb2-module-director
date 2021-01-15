@@ -9,6 +9,7 @@ use Icinga\Module\Director\Forms\DirectorDatalistForm;
 use Icinga\Module\Director\Forms\IcingaServiceDictionaryMemberForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Module\Director\Web\Controller\ActionController;
@@ -287,11 +288,11 @@ class DataController extends ActionController
     }
 
     /**
-     * @param IcingaService $object
+     * @param IcingaObject $object
      * @param $varName
      * @return array
      */
-    protected function getCurrentInstances(IcingaService $object, $varName)
+    protected function getCurrentInstances(IcingaObject $object, $varName)
     {
         $currentVars = $object->getVars();
         if (isset($currentVars->$varName)) {
@@ -338,11 +339,11 @@ class DataController extends ActionController
     }
 
     /**
-     * @param IcingaService $object
+     * @param IcingaObject $object
      * @param $varName
      * @return string
      */
-    protected function prepareSubjectsLabel(IcingaService $object, $varName)
+    protected function prepareSubjectsLabel(IcingaObject $object, $varName)
     {
         if ($object instanceof IcingaService) {
             $hostName = $object->get('host');
