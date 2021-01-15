@@ -2,10 +2,17 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Widget\Hint;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Forms\DirectorDatalistEntryForm;
 use Icinga\Module\Director\Forms\DirectorDatalistForm;
+use Icinga\Module\Director\Forms\IcingaServiceDictionaryMemberForm;
 use Icinga\Module\Director\Objects\DirectorDatalist;
+use Icinga\Module\Director\Objects\IcingaHost;
+use Icinga\Module\Director\Objects\IcingaService;
+use Icinga\Module\Director\PlainObjectRenderer;
 use Icinga\Module\Director\Web\Controller\ActionController;
+use Icinga\Module\Director\Web\Form\IcingaObjectFieldLoader;
 use Icinga\Module\Director\Web\Table\CustomvarTable;
 use Icinga\Module\Director\Web\Table\DatafieldCategoryTable;
 use Icinga\Module\Director\Web\Table\DatafieldTable;
@@ -13,6 +20,9 @@ use Icinga\Module\Director\Web\Table\DatalistEntryTable;
 use Icinga\Module\Director\Web\Table\DatalistTable;
 use Icinga\Module\Director\Web\Tabs\DataTabs;
 use gipfl\IcingaWeb2\Link;
+use InvalidArgumentException;
+use ipl\Html\Html;
+use ipl\Html\Table;
 
 class DataController extends ActionController
 {
@@ -138,6 +148,218 @@ class DataController extends ActionController
         $table->getAttributes()->set('data-base-target', '_self');
         $table->setList($list);
         $this->content()->add([$form, $table]);
+    }
+
+    public function dictionaryAction()
+    {
+        $connection = $this->db();
+        $this->addSingleTab('Nested Dictionary');
+        $varName = $this->params->get('varname');
+        $instance = $this->url()->getParam('instance');
+        $action = $this->url()->getParam('action');
+        $object = $this->requireObject();
+
+        if ($instance || $action) {
+            $this->actions()->add(
+                Link::create($this->translate('Back'), $this->url()->without(['action', 'instance']), null, [
+                    'class' => 'icon-edit'
+                ])
+            );
+        } else {
+            $this->actions()->add(
+                Link::create($this->translate('Add'), $this->url(), [
+                    'action' => 'add'
+                ], [
+                    'class' => 'icon-edit'
+                ])
+            );
+        }
+        $subjects = $this->prepareSubjectsLabel($object, $varName);
+        $fieldLoader = new IcingaObjectFieldLoader($object);
+        $instances = $this->getCurrentInstances($object, $varName);
+
+        if (empty($instances)) {
+            $this->content()->add(Hint::info(sprintf(
+                $this->translate('No %s have been created yet'),
+                $subjects
+            )));
+        } else {
+            $this->content()->add($this->prepareInstancesTable($instances));
+        }
+
+        $field = $this->getFieldByName($fieldLoader, $varName);
+        $template = $object::load([
+            'object_name' => $field->getSetting('template_name')
+        ], $connection);
+
+        $form = new IcingaServiceDictionaryMemberForm();
+        $form->setDb($connection);
+        if ($instance) {
+            $instanceObject = $object::create([
+                'imports'    => [$template],
+                'object_name' => $instance,
+                'vars' => $instances[$instance]
+            ], $connection);
+            $form->setObject($instanceObject);
+        } elseif ($action === 'add') {
+            $form->presetImports([$template->getObjectName()]);
+        } else {
+            return;
+        }
+        if ($instance) {
+            if (! isset($instances[$instance])) {
+                throw new NotFoundError("There is no such instance: $instance");
+            }
+            $subTitle = sprintf($this->translate('Modify instance: %s'), $instance);
+        } else {
+            $subTitle = $this->translate('Add a new instance');
+        }
+
+        $this->content()->add(Html::tag('h2', ['style' => 'margin-top: 2em'], $subTitle));
+        $form->handleRequest($this->getRequest());
+        $this->content()->add($form);
+        if ($form->succeeded()) {
+            $virtualObject = $form->getObject();
+            $name = $virtualObject->getObjectName();
+            $params = $form->getObject()->getVars();
+            $instances[$name] = $params;
+            if ($name !== $instance) { // Has been renamed
+                unset($instances[$instance]);
+            }
+            ksort($instances);
+            $object->set("vars.$varName", (object)$instances);
+            $object->store();
+            $this->redirectNow($this->url()->without(['instance', 'action']));
+        } elseif ($form->shouldBeDeleted()) {
+            unset($instances[$instance]);
+            if (empty($instances)) {
+                $object->set("vars.$varName", null)->store();
+            } else {
+                $object->set("vars.$varName", (object)$instances)->store();
+            }
+            $this->redirectNow($this->url()->without(['instance', 'action']));
+        }
+    }
+
+    protected function requireObject()
+    {
+        $connection = $this->db();
+        $hostName = $this->params->getRequired('host');
+        $serviceName = $this->params->get('service');
+        if ($serviceName) {
+            $host = IcingaHost::load($hostName, $connection);
+            $object = IcingaService::load([
+                'host_id'     => $host->get('id'),
+                'object_name' => $serviceName,
+            ], $connection);
+        } else {
+            $object = IcingaHost::load($hostName, $connection);
+        }
+
+        if (! $object->isObject()) {
+            throw new InvalidArgumentException(sprintf(
+                'Only single objects allowed, %s is a %s',
+                $object->getObjectName(),
+                $object->get('object_type')
+            ));
+        }
+        return $object;
+    }
+
+    protected function shorten($string, $maxLen)
+    {
+        if (strlen($string) <= $maxLen) {
+            return $string;
+        }
+
+        return substr($string, 0, $maxLen) . '...';
+    }
+
+    protected function getFieldByName(IcingaObjectFieldLoader $loader, $name)
+    {
+        foreach ($loader->getFields() as $field) {
+            if ($field->get('varname') === $name) {
+                return $field;
+            }
+        }
+
+        throw new InvalidArgumentException("Found no configured field for '$name'");
+    }
+
+    /**
+     * @param IcingaService $object
+     * @param $varName
+     * @return array
+     */
+    protected function getCurrentInstances(IcingaService $object, $varName)
+    {
+        $currentVars = $object->getVars();
+        if (isset($currentVars->$varName)) {
+            $currentValue = $currentVars->$varName;
+        } else {
+            $currentValue = (object)[];
+        }
+        if (is_object($currentValue)) {
+            $currentValue = (array)$currentValue;
+        } else {
+            throw new InvalidArgumentException(sprintf(
+                '"%s" is not a valid Dictionary',
+                json_encode($currentValue)
+            ));
+        }
+        return $currentValue;
+    }
+
+    /**
+     * @param array $currentValue
+     * @param $subjects
+     * @return Hint|Table
+     */
+    protected function prepareInstancesTable(array $currentValue)
+    {
+        $table = new Table();
+        $table->addAttributes([
+            'class' => 'common-table table-row-selectable'
+        ]);
+        $table->getHeader()->add(
+            Table::row([
+                $this->translate('Key / Instance'),
+                $this->translate('Properties')
+            ], ['style' => 'text-align: left'], 'th')
+        );
+        foreach ($currentValue as $key => $item) {
+            $table->add(Table::row([
+                Link::create($key, $this->url()->with('instance', $key)),
+                str_replace("\n", ' ', $this->shorten(PlainObjectRenderer::render($item), 512))
+            ]));
+        }
+
+        return $table;
+    }
+
+    /**
+     * @param IcingaService $object
+     * @param $varName
+     * @return string
+     */
+    protected function prepareSubjectsLabel(IcingaService $object, $varName)
+    {
+        if ($object instanceof IcingaService) {
+            $hostName = $object->get('host');
+            $subjects = $object->getObjectName() . " ($varName)";
+        } else {
+            $hostName = $object->getObjectName();
+            $subjects = sprintf(
+                $this->translate('%s instances'),
+                $varName
+            );
+        }
+        $this->addTitle(sprintf(
+            $this->translate('%s on %s'),
+            $subjects,
+            $hostName
+        ));
+        return $subjects;
     }
 
     protected function addListActions(DirectorDatalist $list)

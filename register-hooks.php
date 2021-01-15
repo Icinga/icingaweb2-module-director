@@ -5,6 +5,7 @@ use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\DataType\DataTypeBoolean;
 use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\DataType\DataTypeDirectorObject;
+use Icinga\Module\Director\DataType\DataTypeDictionary;
 use Icinga\Module\Director\DataType\DataTypeNumber;
 use Icinga\Module\Director\DataType\DataTypeSqlQuery;
 use Icinga\Module\Director\DataType\DataTypeString;
@@ -67,6 +68,7 @@ $directorHooks = [
         DataTypeArray::class,
         DataTypeBoolean::class,
         DataTypeDatalist::class,
+        DataTypeDictionary::class,
         DataTypeNumber::class,
         DataTypeDirectorObject::class,
         DataTypeSqlQuery::class,
