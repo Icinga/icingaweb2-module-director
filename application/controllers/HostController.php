@@ -10,6 +10,7 @@ use gipfl\IcingaWeb2\Widget\Tabs;
 use Exception;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
+use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
@@ -24,7 +25,6 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
-use Icinga\Module\Director\Web\Widget\HostServiceRedirector;
 
 class HostController extends ObjectController
 {
@@ -100,15 +100,12 @@ class HostController extends ObjectController
         ));
     }
 
-    /**
-     * @throws \Icinga\Exception\NotFoundError
-     */
     public function findserviceAction()
     {
         $host = $this->getHostObject();
-        $redirector = new HostServiceRedirector($host, $this->getAuth());
         $this->redirectNow(
-            $redirector->getRedirectionUrl($this->params->get('service'))
+            (new ServiceFinder($host, $this->getAuth()))
+                ->getRedirectionUrl($this->params->get('service'))
         );
     }
 
