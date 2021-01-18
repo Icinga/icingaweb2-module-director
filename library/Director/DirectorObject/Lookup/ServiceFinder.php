@@ -31,6 +31,24 @@ class ServiceFinder
         $this->db = $host->getConnection();
     }
 
+    public static function find(IcingaHost $host, $serviceName)
+    {
+        foreach ([
+            SingleServiceInfo::class,
+            InheritedServiceInfo::class,
+            ServiceSetServiceInfo::class,
+            AppliedServiceInfo::class,
+            AppliedServiceSetServiceInfo::class,
+        ] as $class) {
+            /** @var ServiceInfo $class */
+            if ($info = $class::find($host, $serviceName)) {
+                return $info;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @param $serviceName
      * @return Url
@@ -38,17 +56,8 @@ class ServiceFinder
     public function getRedirectionUrl($serviceName)
     {
         if ($this->auth->hasPermission('director/host')) {
-            foreach ([
-                SingleServiceInfo::class,
-                InheritedServiceInfo::class,
-                ServiceSetServiceInfo::class,
-                AppliedServiceInfo::class,
-                AppliedServiceSetServiceInfo::class,
-            ] as $class) {
-                /** @var ServiceInfo $class */
-                if ($info = $class::find($this->host, $serviceName)) {
-                    return $info->getUrl();
-                }
+            if ($info = $this::find($this->host, $serviceName)) {
+                return $info->getUrl();
             }
         }
         if ($this->auth->hasPermission('director/monitoring/services-ro')) {
