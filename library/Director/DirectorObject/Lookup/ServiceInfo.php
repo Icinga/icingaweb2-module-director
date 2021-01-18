@@ -27,6 +27,11 @@ interface ServiceInfo
     public function getUrl();
 
     /**
+     * @return bool
+     */
+    public function requiresOverrides();
+
+    /**
      * @param IcingaHost $host
      * @param $serviceName
      * @return ServiceInfo|false

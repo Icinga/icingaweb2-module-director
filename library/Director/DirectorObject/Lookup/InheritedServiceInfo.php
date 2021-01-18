@@ -69,4 +69,9 @@ class InheritedServiceInfo implements ServiceInfo
             'inheritedFrom' => $this->hostTemplateName
         ]);
     }
+
+    public function requiresOverrides()
+    {
+        return true;
+    }
 }

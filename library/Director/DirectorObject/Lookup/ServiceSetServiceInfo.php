@@ -85,4 +85,9 @@ class ServiceSetServiceInfo implements ServiceInfo
             'set'     => $this->serviceSetName,
         ]);
     }
+
+    public function requiresOverrides()
+    {
+        return true;
+    }
 }

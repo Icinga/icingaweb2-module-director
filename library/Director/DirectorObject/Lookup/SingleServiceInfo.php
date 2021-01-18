@@ -8,23 +8,34 @@ use Icinga\Module\Director\Objects\IcingaService;
 
 class SingleServiceInfo implements ServiceInfo
 {
+    /** @var string */
     protected $hostName;
 
+    /** @var string */
     protected $serviceName;
 
-    public function __construct($hostName, $serviceName)
+    /** @var bool */
+    protected $useOverrides;
+
+    public function __construct($hostName, $serviceName, $useOverrides)
     {
         $this->hostName = $hostName;
         $this->serviceName= $serviceName;
+        $this->useOverrides = $useOverrides;
     }
 
     public static function find(IcingaHost $host, $serviceName)
     {
-        if (IcingaService::exists([
+        $keyParams = [
             'host_id' => $host->get('id'),
             'object_name' => $serviceName
-        ], $host->getConnection())) {
-            return new static($host->getObjectName(), $serviceName);
+        ];
+        $connection = $host->getConnection();
+        if (IcingaService::exists($keyParams, $connection)) {
+            $useOverrides = IcingaService::load($keyParams, $connection)
+                    ->getResolvedVar('use_var_overrides') === 'y';
+
+            return new static($host->getObjectName(), $serviceName, $useOverrides);
         }
 
         return false;
@@ -46,5 +57,10 @@ class SingleServiceInfo implements ServiceInfo
             'name'    => $this->hostName,
             'service' => $this->serviceName,
         ]);
+    }
+
+    public function requiresOverrides()
+    {
+        return $this->useOverrides;
     }
 }

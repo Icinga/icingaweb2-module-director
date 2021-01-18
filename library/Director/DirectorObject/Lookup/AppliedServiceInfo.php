@@ -65,6 +65,11 @@ class AppliedServiceInfo implements ServiceInfo
         ]);
     }
 
+    public function requiresOverrides()
+    {
+        return true;
+    }
+
     protected static function fetchApplyRulesByServiceName(Db $connection, $serviceName)
     {
         $db = $connection->getDbAdapter();
