@@ -6,6 +6,10 @@ use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 
+/**
+ * A service belonging to a Service Set, attached either directly to the given
+ * Host or to one of it's inherited Host Templates
+ */
 class ServiceSetServiceInfo implements ServiceInfo
 {
     /** @var string */

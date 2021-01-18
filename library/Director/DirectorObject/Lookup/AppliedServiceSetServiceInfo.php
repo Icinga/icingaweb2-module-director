@@ -8,6 +8,10 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
 
+/**
+ * A Service that makes part of a Service Set Apply Rule matching this Host,
+ * generating a Service with the given name
+ */
 class AppliedServiceSetServiceInfo implements ServiceInfo
 {
     /** @var string */

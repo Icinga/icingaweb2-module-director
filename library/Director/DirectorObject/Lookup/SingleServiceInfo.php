@@ -6,6 +6,10 @@ use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 
+/**
+ * A single service, directly attached to a Host Object. Overrides might
+ * still be used when use_var_overrides is true.
+ */
 class SingleServiceInfo implements ServiceInfo
 {
     /** @var string */
@@ -20,7 +24,7 @@ class SingleServiceInfo implements ServiceInfo
     public function __construct($hostName, $serviceName, $useOverrides)
     {
         $this->hostName = $hostName;
-        $this->serviceName= $serviceName;
+        $this->serviceName = $serviceName;
         $this->useOverrides = $useOverrides;
     }
 
@@ -33,7 +37,7 @@ class SingleServiceInfo implements ServiceInfo
         $connection = $host->getConnection();
         if (IcingaService::exists($keyParams, $connection)) {
             $useOverrides = IcingaService::load($keyParams, $connection)
-                    ->getResolvedVar('use_var_overrides') === 'y';
+                ->getResolvedVar('use_var_overrides') === 'y';
 
             return new static($host->getObjectName(), $serviceName, $useOverrides);
         }

@@ -7,6 +7,10 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 
+/**
+ * A Service attached to a parent Service Template. This is a shortcut for
+ * 'assign where "Template Name" in templates'
+ */
 class InheritedServiceInfo implements ServiceInfo
 {
     /** @var string */
