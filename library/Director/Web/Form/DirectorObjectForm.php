@@ -1184,11 +1184,15 @@ abstract class DirectorObjectForm extends DirectorForm
         $choices = IcingaObject::loadAllByType($choiceType, $connection);
         $chosenTemplates = $this->getSentOrObjectValue('imports');
         $db = $connection->getDbAdapter();
-        $importedIds = $db->fetchCol(
-            $db->select()->from($table, 'id')
-                ->where('object_name in (?)', (array)$chosenTemplates)
-                ->where('object_type = ?', 'template')
-        );
+        if (empty($chosenTemplates)) {
+            $importedIds = [];
+        } else {
+            $importedIds = $db->fetchCol(
+                $db->select()->from($table, 'id')
+                    ->where('object_name in (?)', (array)$chosenTemplates)
+                    ->where('object_type = ?', 'template')
+            );
+        }
 
         foreach ($choices as $choice) {
             $required = $choice->get('required_template_id');
