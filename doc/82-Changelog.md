@@ -21,6 +21,9 @@ next (will be 1.8.1)
 ### Automation, User Interface
 * FIX: error message wording on failing related (or parent) object ref (#2224)
 
+### REST API
+* FIX: creating scheduled downtime via api failed (#1879)
+
 1.8.0
 -----
 
