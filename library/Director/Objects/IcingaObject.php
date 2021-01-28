@@ -2559,7 +2559,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             $type = 'templateChoiceHost';
         } elseif ($type === 'service_template_choice') {
             $type = 'TemplateChoiceService';
-        } elseif ($type === 'scheduled_downtime') {
+        } elseif ($type === 'scheduled-downtime') {
             $type = 'ScheduledDowntime';
         }
 
