@@ -67,8 +67,8 @@ class SyncruleCommand extends Command
             $mods = $this->getExpectedModificationCounts($rule);
             printf(
                 "Expected modifications: %dx create, %dx modify, %dx delete\n",
-                $mods->modify,
                 $mods->create,
+                $mods->modify,
                 $mods->delete
             );
         }
