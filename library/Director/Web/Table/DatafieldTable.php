@@ -22,6 +22,7 @@ class DatafieldTable extends ZfQueryBasedTable
             'caption'         => 'df.caption',
             'description'     => 'df.description',
             'datatype'        => 'df.datatype',
+            'category'        => 'dfc.category_name',
             'assigned_fields' => 'SUM(used_fields.cnt)',
             'assigned_vars'   => 'SUM(used_vars.cnt)',
         );
@@ -36,6 +37,7 @@ class DatafieldTable extends ZfQueryBasedTable
                 ['id' => $row->id]
             )),
             $this::td($row->varname),
+            $this::td($row->category),
             $this::td($row->assigned_fields),
             $this::td($row->assigned_vars)
         ]);
@@ -46,6 +48,7 @@ class DatafieldTable extends ZfQueryBasedTable
         return array(
             $this->translate('Label'),
             $this->translate('Field name'),
+            $this->translate('Category'),
             $this->translate('# Used'),
             $this->translate('# Vars'),
         );
@@ -70,6 +73,10 @@ class DatafieldTable extends ZfQueryBasedTable
         return $db->select()->from(
             array('df' => 'director_datafield'),
             $this->getColumns()
+        )->joinLeft(
+            ['dfc' => 'director_datafield_category'],
+            'df.category_id = dfc.id',
+            []
         )->joinLeft(
             array('used_fields' => $db->select()->union($fieldsQueries, ZfDbSelect::SQL_UNION_ALL)),
             'used_fields.datafield_id = df.id',
