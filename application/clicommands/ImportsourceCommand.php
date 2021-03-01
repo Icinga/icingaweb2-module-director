@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Application\Benchmark;
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Objects\ImportSource;
 
@@ -90,7 +91,7 @@ class ImportsourceCommand extends Command
         $data = $hook->fetchData();
         $source->applyModifiers($data);
         Benchmark::measure(sprintf('Got %d rows, ready to dump JSON', count($data)));
-        echo json_encode($data, JSON_PRETTY_PRINT);
+        echo Json::encode($data, JSON_PRETTY_PRINT);
     }
 
     /**
