@@ -14,6 +14,9 @@ next (will be 1.9.0)
 ### Import and Sync
 * FEATURE: introduce 'disable' as your purge action on Sync (#2285)
 
+### User Interface
+* FIX: allow switching DB config while connection is failing (#2300)
+
 next patch release (will be 1.8.1)
 ----------------------------------
 
