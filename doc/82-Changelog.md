@@ -4,8 +4,18 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-next (will be 1.8.1)
+next (will be 1.9.0)
 --------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/25?closed=1)
+
+### Import and Sync
+* FEATURE: introduce 'disable' as your purge action on Sync (#2285)
+
+next patch release (will be 1.8.1)
+----------------------------------
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
@@ -13,9 +23,6 @@ next (will be 1.8.1)
 
 ### User Interface
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
-
-### Import and Sync
-* FEATURE: introduce 'disable' as your purge action on Sync (#2285)
 
 ### Automation, User Interface
 * FIX: error message wording on failing related (or parent) object ref (#2224)
