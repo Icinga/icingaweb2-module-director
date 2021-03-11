@@ -37,6 +37,7 @@ CREATE TYPE enum_sync_rule_object_type AS ENUM(
   'dependency'
 );
 CREATE TYPE enum_sync_rule_update_policy AS ENUM('merge', 'override', 'ignore', 'update-only');
+CREATE TYPE enum_sync_rule_purge_action AS ENUM('delete', 'disable');
 CREATE TYPE enum_sync_property_merge_policy AS ENUM('override', 'merge');
 CREATE TYPE enum_sync_state AS ENUM(
     'unknown',
@@ -1690,6 +1691,7 @@ CREATE TABLE sync_rule (
   object_type enum_sync_rule_object_type NOT NULL,
   update_policy enum_sync_rule_update_policy NOT NULL,
   purge_existing enum_boolean NOT NULL DEFAULT 'n',
+  purge_action enum_sync_rule_purge_action NOT NULL,
   filter_expression text DEFAULT NULL,
   sync_state enum_sync_state NOT NULL DEFAULT 'unknown',
   last_error_message text NULL DEFAULT NULL,
@@ -2199,4 +2201,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (171, NOW());
+  VALUES (172, NOW());

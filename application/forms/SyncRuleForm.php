@@ -74,8 +74,22 @@ class SyncRuleForm extends DirectorObjectForm
                 . ' longer exist at your import source.'
             ),
             'required'   => true,
-
+            'class'      => 'autosubmit',
         ]);
+
+        if ($this->getSentOrObjectValue('purge_existing') === 'y') {
+            $this->addElement('select', 'purge_action', [
+                'label'       => $this->translate('Purge Action'),
+                'description' => $this->translate(
+                    'Whether to delete or to disable objects subject to purge'
+                ),
+                'multiOptions' => $this->optionalEnum([
+                    'delete'  => $this->translate('Delete'),
+                    'disable' => $this->translate('Disable'),
+                ]),
+                'required'   => true,
+            ]);
+        }
 
         $this->addElement('text', 'filter_expression', [
             'label'       => $this->translate('Filter Expression'),

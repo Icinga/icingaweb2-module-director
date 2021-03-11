@@ -21,6 +21,7 @@ use Icinga\Module\Director\Objects\SyncRun;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use InvalidArgumentException;
+use RuntimeException;
 
 class Sync
 {
@@ -633,6 +634,7 @@ class Sync
 
         Benchmark::measure('Modified objects are ready, applying purge strategy');
         $noAction = [];
+        $purgeAction = $this->rule->get('purge_action');
         foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
             if (array_key_exists($key, $newObjects)) {
                 // Object has been touched, do not delete
@@ -642,7 +644,18 @@ class Sync
             if (array_key_exists($key, $this->objects)) {
                 $object = $this->objects[$key];
                 if (! $object->hasBeenModified()) {
-                    $object->markForRemoval();
+                    switch ($purgeAction) {
+                        case 'delete':
+                            $object->markForRemoval();
+                            break;
+                        case 'disable':
+                            $object->set('disabled', 'y');
+                            break;
+                        default:
+                            throw new RuntimeException(
+                                "Unsupported purge action: '$purgeAction'"
+                            );
+                    }
                 }
             }
         }

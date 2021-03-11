@@ -14,6 +14,9 @@ next (will be 1.8.1)
 ### User Interface
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
 
+### Import and Sync
+* FEATURE: introduce 'disable' as your purge action on Sync (#2285)
+
 ### Automation, User Interface
 * FIX: error message wording on failing related (or parent) object ref (#2224)
 
