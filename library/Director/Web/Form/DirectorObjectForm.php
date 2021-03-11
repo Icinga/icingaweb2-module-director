@@ -623,16 +623,16 @@ abstract class DirectorObjectForm extends DirectorForm
             return;
         }
 
-        $txtInherited = ' ' . $this->translate(' (inherited from "%s")');
+        $txtInherited = sprintf($this->translate(' (inherited from "%s")'), $inheritedFrom);
         if ($el instanceof ZfSelect) {
             $multi = $el->getMultiOptions();
             if (is_bool($inherited)) {
                 $inherited = $inherited ? 'y' : 'n';
             }
             if (is_scalar($inherited) && array_key_exists($inherited, $multi)) {
-                $multi[null] = $multi[$inherited] . sprintf($txtInherited, $inheritedFrom);
+                $multi[null] = $multi[$inherited] . $txtInherited;
             } else {
-                $multi[null] = $this->translate($this->translate('- inherited -'));
+                $multi[null] = $this->stringifyInheritedValue($inherited) . $txtInherited;
             }
             $el->setMultiOptions($multi);
         } elseif ($el instanceof ExtensibleSet) {
@@ -640,12 +640,17 @@ abstract class DirectorObjectForm extends DirectorForm
             $el->setAttrib('inheritedFrom', $inheritedFrom);
         } else {
             if (is_string($inherited) || is_int($inherited)) {
-                $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
+                $el->setAttrib('placeholder', $inherited . $txtInherited);
             }
         }
 
         // We inherited a value, so no need to require the field
         $el->setRequired(false);
+    }
+
+    protected function stringifyInheritedValue($value)
+    {
+        return is_scalar($value) ? $value : substr(json_encode($value), 0, 40);
     }
 
     public function setListUrl($url)
