@@ -629,7 +629,7 @@ abstract class DirectorObjectForm extends DirectorForm
             if (is_bool($inherited)) {
                 $inherited = $inherited ? 'y' : 'n';
             }
-            if (array_key_exists($inherited, $multi)) {
+            if (is_scalar($inherited) && array_key_exists($inherited, $multi)) {
                 $multi[null] = $multi[$inherited] . sprintf($txtInherited, $inheritedFrom);
             } else {
                 $multi[null] = $this->translate($this->translate('- inherited -'));
