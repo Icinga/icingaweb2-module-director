@@ -16,6 +16,7 @@ next (will be 1.9.0)
 
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
+* FIX: show Override button when all Fields belong to Field Categories (#2303)
 
 next patch release (will be 1.8.1)
 ----------------------------------
