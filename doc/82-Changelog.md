@@ -12,6 +12,7 @@ next (will be 1.8.1)
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/24?closed=1)
 
 ### User Interface
+* FIX: show Override button when all Fields belong to Field Categories (#2303)
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
 * FIX: deal with inherited values which are invalid for a select box (#2288)
 

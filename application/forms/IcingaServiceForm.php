@@ -139,6 +139,14 @@ class IcingaServiceForm extends DirectorObjectForm
         } else {
             $this->addOverrideHint();
             $group = $this->getDisplayGroup('custom_fields');
+            if (! $group) {
+                foreach ($this->getDisplayGroups() as $groupName => $eventualGroup) {
+                    if (preg_match('/^custom_fields:/', $groupName)) {
+                        $group = $eventualGroup;
+                        break;
+                    }
+                }
+            }
             if ($group) {
                 $elements = $group->getElements();
                 $group->setElements([$this->getElement('inheritance_hint')]);
