@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
+use Icinga\Module\Director\Monitoring;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -30,15 +31,59 @@ class HostController extends ObjectController
 {
     protected function checkDirectorPermissions()
     {
-        if (in_array($this->getRequest()->getActionName(), [
+        if ($this->isServiceAction() && (new Monitoring())->authCanEditService(
+            $this->Auth(),
+            $this->getParam('name'),
+                $this->getParam('service')
+        )) {
+            return;
+        }
+
+        if ($this->isServicesReadOnlyAction()) {
+            $this->assertPermission('director/monitoring/services-ro');
+            return;
+        }
+
+        if ($this->hasPermission('director/hosts')) { // faster
+            return;
+        }
+
+        if ($this->canModifyHostViaMonitoringPermissions($this->getParam('name'))) {
+            return;
+        }
+
+        $this->assertPermission('director/hosts'); // complain about default hosts permission
+    }
+
+    protected function isServicesReadOnlyAction()
+    {
+        return in_array($this->getRequest()->getActionName(), [
             'servicesro',
             'findservice',
-            'invalidservice'
-        ])) {
-            $this->assertPermission('director/monitoring/services-ro');
-        } else {
-            $this->assertPermission('director/hosts');
+            'invalidservice',
+        ]);
+    }
+
+    protected function isServiceAction()
+    {
+        return in_array($this->getRequest()->getActionName(), [
+            'servicesro',
+            'findservice',
+            'invalidservice',
+            'servicesetservice',
+            'appliedservice',
+            'inheritedservice',
+        ]);
+    }
+
+    protected function canModifyHostViaMonitoringPermissions($hostname)
+    {
+        if ($this->hasPermission('director/monitoring/hosts')) {
+            $monitoring = new Monitoring();
+            return $monitoring->authCanEditHost($this->Auth(), $hostname);
         }
+
+        return false;
     }
 
     /**

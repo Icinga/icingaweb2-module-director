@@ -33,6 +33,14 @@ $this->providePermission(
     'director/monitoring/services-ro',
     $this->translate('Allow readonly users to see where a Service came from')
 );
+$this->providePermission(
+    'director/monitoring/hosts',
+    $this->translate('Allow users to modify Hosts they are allowed to see in the monitoring module')
+);
+$this->providePermission(
+    'director/monitoring/services',
+    $this->translate('Allow users to modify Service they are allowed to see in the monitoring module')
+);
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
 $this->provideRestriction(
@@ -41,6 +49,14 @@ $this->provideRestriction(
         'Limit access to the given comma-separated list of hostgroups'
     )
 );
+
+$this->provideRestriction(
+    'director/monitoring/rw-object-filter',
+    $this->translate(
+        'Additional (monitoring module) object filter to further restrict write access'
+    )
+);
+
 $this->providePermission(
     'director/groups-for-restricted-hosts',
     $this->translate('Allow users with Hostgroup restrictions to access the Groups field')

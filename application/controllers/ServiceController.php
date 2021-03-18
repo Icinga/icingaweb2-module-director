@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
+use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -25,6 +26,10 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
+        if ($this->hasPermission('director/monitoring/services')) {
+            $monitoring = new Monitoring();
+            return $monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'));
+        }
         $this->assertPermission('director/hosts');
     }
 

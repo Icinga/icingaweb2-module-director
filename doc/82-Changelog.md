@@ -14,6 +14,9 @@ next (will be 1.9.0)
 ### Import and Sync
 * FEATURE: introduce 'disable' as your purge action on Sync (#2285)
 
+### Permissions and Restrictions
+* FEATURE: allow using monitoring module permissions (#2304)
+
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
 * FIX: show Override button when all Fields belong to Field Categories (#2303)
