@@ -34,7 +34,7 @@ class HostController extends ObjectController
         if ($this->isServiceAction() && (new Monitoring())->authCanEditService(
             $this->Auth(),
             $this->getParam('name'),
-                $this->getParam('service')
+            $this->getParam('service')
         )) {
             return;
         }
