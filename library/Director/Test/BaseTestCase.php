@@ -69,6 +69,9 @@ abstract class BaseTestCase extends PHPUnit_Framework_TestCase
             if (array_key_exists('DIRECTOR_TESTDB_HOST', $_SERVER)) {
                 $dbConfig->host = $_SERVER['DIRECTOR_TESTDB_HOST'];
             }
+            if (array_key_exists('DIRECTOR_TESTDB_PORT', $_SERVER)) {
+                $dbConfig->port = $_SERVER['DIRECTOR_TESTDB_PORT'];
+            }
             if (array_key_exists('DIRECTOR_TESTDB_USER', $_SERVER)) {
                 $dbConfig->username = $_SERVER['DIRECTOR_TESTDB_USER'];
             }
