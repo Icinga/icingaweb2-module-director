@@ -20,6 +20,7 @@ next (will be 1.9.0)
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
 * FIX: show Override button when all Fields belong to Field Categories (#2303)
+* FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 
 next patch release (will be 1.8.1)
 ----------------------------------
