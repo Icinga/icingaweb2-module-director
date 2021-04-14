@@ -213,10 +213,26 @@ abstract class ObjectApplyMatches
     protected function __construct(IcingaObject $object)
     {
         $this->object = $object;
-        $this->flatObject = $object->toPlainObject(true, false);
+        $flat = $object->toPlainObject(true, false);
         // Sure, we are flat - but we might still want to match templates.
-        unset($this->flatObject->imports);
-        $this->flatObject->templates = $object->listFlatResolvedImportNames();
-        static::flattenVars($this->flatObject);
+        unset($flat->imports);
+        $flat->templates = $object->listFlatResolvedImportNames();
+        $this->addAppliedGroupsToFlatObject($flat, $object);
+        static::flattenVars($flat);
+        $this->flatObject = $flat;
+    }
+
+    protected function addAppliedGroupsToFlatObject($flat, IcingaObject $object)
+    {
+        if ($object instanceof IcingaHost) {
+            $appliedGroups = $object->getAppliedGroups();
+            if (! empty($appliedGroups)) {
+                if (isset($flat->groups)) {
+                    $flat->groups = array_merge($flat->groups, $appliedGroups);
+                } else {
+                    $flat->groups = $appliedGroups;
+                }
+            }
+        }
     }
 }
