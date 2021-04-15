@@ -111,9 +111,18 @@ class BasketSnapshot extends DbObject
 
         if (is_array(self::$typeClasses[$type])) {
             return self::$typeClasses[$type][0];
-        } else {
+        }
+
+        return self::$typeClasses[$type];
+    }
+
+    public static function getClassAndObjectTypeForType($type)
+    {
+        if (is_array(self::$typeClasses[$type])) {
             return self::$typeClasses[$type];
         }
+
+        return [self::$typeClasses[$type], null];
     }
 
     /**
@@ -259,7 +268,7 @@ class BasketSnapshot extends DbObject
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
      */
-    protected function restoreType(
+    public function restoreType(
         &$all,
         $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
@@ -357,9 +366,9 @@ class BasketSnapshot extends DbObject
     {
         if ($this->hasBeenLoadedFromDb()) {
             return $this->getContent()->get('summary');
-        } else {
-            return Json::encode($this->getSummary(), JSON_PRETTY_PRINT);
         }
+
+        return Json::encode($this->getSummary(), JSON_PRETTY_PRINT);
     }
 
     /**
@@ -370,14 +379,14 @@ class BasketSnapshot extends DbObject
     {
         if ($this->hasBeenLoadedFromDb()) {
             return Json::decode($this->getContent()->get('summary'));
-        } else {
-            $summary = [];
-            foreach (array_keys($this->objects) as $key) {
-                $summary[$key] = count($this->objects[$key]);
-            }
-
-            return $summary;
         }
+
+        $summary = [];
+        foreach (array_keys($this->objects) as $key) {
+            $summary[$key] = count($this->objects[$key]);
+        }
+
+        return $summary;
     }
 
     /**
@@ -388,19 +397,15 @@ class BasketSnapshot extends DbObject
     {
         if ($this->hasBeenLoadedFromDb()) {
             return $this->getContent()->get('content');
-        } else {
-            return Json::encode($this->objects, JSON_PRETTY_PRINT);
         }
+
+        return Json::encode($this->objects, JSON_PRETTY_PRINT);
     }
 
     protected function addAll($typeName)
     {
-        $class = static::getClassForType($typeName);
-        if (is_array(self::$typeClasses[$typeName])) {
-            $filter = self::$typeClasses[$typeName][1];
-        } else {
-            $filter = null;
-        }
+        list($class, $filter) = static::getClassAndObjectTypeForType($typeName);
+
         /** @var IcingaObject $dummy */
         $dummy = $class::create();
         /** @var ExportInterface $object */
