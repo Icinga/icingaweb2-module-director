@@ -80,11 +80,9 @@ class ObjectPurgeHelper
             } else {
                 $object = $class::load($keyProperties->$keyColumn, $this->db);
             }
-//            $object->markForRemoval();
             $object->delete();
         }
         $db->commit();
-        // DirectorActivityLog::logRemoval($this, $this->connection);
     }
 
     public static function listObjectTypesAvailableForPurge()
