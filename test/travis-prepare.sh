@@ -9,10 +9,11 @@ psql_cmd() {
 }
 
 if [ "$DB" = mysql ]; then
-    mysql -u root -e "CREATE DATABASE ${DIRECTOR_TESTDB};"
+    mysql -u root -e "DROP DATABASE IF EXISTS ${DIRECTOR_TESTDB}; CREATE DATABASE ${DIRECTOR_TESTDB};"
 elif [ "$DB" = pgsql ]; then
     : "${DIRECTOR_TESTDB_USER:=director_test}"
 
+    psql -U postgres postgres -q -c "DROP DATABASE IF EXISTS ${DIRECTOR_TESTDB};"
     psql -U postgres postgres -q -c "CREATE DATABASE ${DIRECTOR_TESTDB} WITH ENCODING 'UTF8';"
     psql_cmd "CREATE USER ${DIRECTOR_TESTDB_USER} WITH PASSWORD 'testing';"
     psql_cmd "GRANT ALL PRIVILEGES ON DATABASE ${DIRECTOR_TESTDB} TO ${DIRECTOR_TESTDB_USER};"
