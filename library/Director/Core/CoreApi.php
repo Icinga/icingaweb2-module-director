@@ -677,6 +677,12 @@ constants
             $deployment->set('stage_collected', 'y');
 
             $deployment->store();
+
+            /** @var DeploymentHook[] $hooks */
+            $hooks = Hook::all('director/Deployment');
+            foreach ($hooks as $hook) {
+                $hook->onCollect($deployment);
+            }
         }
 
         foreach ($missing as $deployment) {
