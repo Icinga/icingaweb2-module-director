@@ -8,6 +8,7 @@ use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Import\SyncUtils;
+use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 
 /**
  * Generate, show and deploy Icinga 2 configuration
@@ -86,8 +87,16 @@ class ConfigCommand extends Command
     /**
      * Deploy the current configuration
      *
-     * Does nothing if config didn't change unless you provide
-     * the --force parameter
+     * USAGE
+     *
+     * icingacli director config deploy [--checksum <checksum>] [--force] [--wait <seconds>]
+     *
+     * OPTIONS
+     *
+     *   --checksum <checksum>  Optionally deploy a specific configuration
+     *   --force                Force a deployment, even when the configuration hasn't
+     *                          changed
+     *   --wait <seconds>       Optionally wait until Icinga completed it's restart
      */
     public function deployAction()
     {
@@ -114,13 +123,20 @@ class ConfigCommand extends Command
             }
         }
 
-        if ($api->dumpConfig($config, $db)) {
-            printf("Config '%s' has been deployed\n", $checksum);
-        } else {
-            $this->fail(
-                sprintf("Failed to deploy config '%s'\n", $checksum)
-            );
+        $deploymentLog = $api->dumpConfig($config, $db);
+        if (! $deploymentLog) {
+            $this->fail("Failed to deploy config '%s'", $checksum);
         }
+        if ($timeout = $this->params->get('wait')) {
+            if (! ctype_digit($timeout)) {
+                $this->fail("--wait must be the number of seconds to wait'");
+            }
+            $deployed = $this->waitForStartupAfterDeploy($deploymentLog, $timeout);
+            if ($deployed !== true) {
+                $this->fail("Failed to deploy config '%s': %s\n", $checksum, $deployed);
+            }
+        }
+        printf("Config '%s' has been deployed\n", $checksum);
     }
 
     /**
@@ -141,5 +157,26 @@ class ConfigCommand extends Command
         } else {
             echo Json::encode($result, JSON_PRETTY_PRINT) . "\n";
         }
+    }
+
+    private function waitForStartupAfterDeploy($deploymentLog, $timeout)
+    {
+        $startTime = time();
+        while ((time() - $startTime) <= $timeout) {
+            $deploymentFromDB = DirectorDeploymentLog::load($deploymentLog->getId(), $this->db());
+            $stageCollected = $deploymentFromDB->get('stage_collected');
+            if ($stageCollected === null) {
+                usleep(500000);
+                continue;
+            }
+            if ($stageCollected === 'n') {
+                return 'stage has not been collected';
+            }
+            if ($deploymentFromDB->get('startup_succeeded') === 'y') {
+                return true;
+            }
+            return 'deployment failed during startup';
+        }
+        return 'deployment timed out';
     }
 }
