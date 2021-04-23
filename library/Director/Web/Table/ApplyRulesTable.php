@@ -175,6 +175,10 @@ class ApplyRulesTable extends ZfQueryBasedTable
     {
         $auth = Auth::getInstance();
         $type = $this->type;
+        // TODO: Centralize this logic
+        if ($type === 'scheduledDowntime') {
+            $type = 'scheduled-downtime';
+        }
         $restrictions = $auth->getRestrictions("director/$type/apply/filter-by-name");
         if (empty($restrictions)) {
             return $query;

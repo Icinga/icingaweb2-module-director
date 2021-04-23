@@ -19,6 +19,7 @@ next (will be 1.9.0)
 
 ### Permissions and Restrictions
 * FEATURE: allow using monitoring module permissions (#2304)
+* FEATURE: it's now possible to grant (global) access to scheduled downtimes (#2086)
 
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)

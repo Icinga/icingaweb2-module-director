@@ -22,6 +22,10 @@ class IcingaScheduledDowntimeForm extends DirectorObjectForm
                 'required' => true,
             ]);
         }
+
+        if ($this->object()->isApplyRule()) {
+            $this->eventuallyAddNameRestriction('director/scheduled-downtime/apply/filter-by-name');
+        }
         $this->addImportsElement();
         $this->addElement('text', 'author', [
             'label'       => $this->translate('Author'),

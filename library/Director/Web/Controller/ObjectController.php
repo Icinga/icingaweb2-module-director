@@ -434,9 +434,13 @@ abstract class ObjectController extends ActionController
 
     protected function assertTypePermission()
     {
-        return $this->assertPermission(
-            'director/' . strtolower($this->getPluralType())
-        );
+        $type = strtolower($this->getPluralType());
+        // TODO: Check getPluralType usage, fix it there.
+        if ($type === 'scheduleddowntimes') {
+            $type = 'scheduled-downtimes';
+        }
+
+        return $this->assertPermission("director/$type");
     }
 
     protected function eventuallyLoadObject()

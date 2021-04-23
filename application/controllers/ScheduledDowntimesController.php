@@ -34,4 +34,14 @@ class ScheduledDowntimesController extends ObjectsController
     {
         return 'scheduled-downtime';
     }
+
+    protected function assertApplyRulePermission()
+    {
+        return $this->assertPermission('director/scheduled-downtimes');
+    }
+
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/scheduled-downtimes');
+    }
 }

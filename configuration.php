@@ -22,7 +22,11 @@ $this->providePermission('director/services', $this->translate('Allow to configu
 $this->providePermission('director/servicesets', $this->translate('Allow to configure service sets'));
 $this->providePermission('director/service_set/apply', $this->translate('Allow to define Service Set Apply Rules'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
-$this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
+$this->providePermission('director/notifications', $this->translate('Allow to configure notifications (unrestricted)'));
+$this->providePermission(
+    'director/scheduled-downtimes',
+    $this->translate('Allow to configure notifications (unrestricted)')
+);
 $this->providePermission(
     'director/inspect',
     $this->translate(
@@ -73,6 +77,13 @@ $this->provideRestriction(
     'director/notification/apply/filter-by-name',
     $this->translate(
         'Filter available notification apply rules'
+    )
+);
+
+$this->provideRestriction(
+    'director/scheduled-downtime/apply/filter-by-name',
+    $this->translate(
+        'Filter available scheduled downtime rules'
     )
 );
 
