@@ -13,6 +13,7 @@ next (will be 1.9.0)
 
 ### Import and Sync
 * FEATURE: introduce 'disable' as your purge action on Sync (#2285)
+* FEATURE: there is now a simple "group by" Property Modifier (#2317)
 
 ### Configuration Baskets
 * FEATURE: it's now possible to purge objects of specific types (#2201)
