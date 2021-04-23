@@ -25,6 +25,7 @@ next (will be 1.9.0)
 * FIX: show Override button when all Fields belong to Field Categories (#2303)
 * FIX: show Services applied with Rules involving applied Hostgroups (#2313)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
+* FEATURE: Service Template for single Host services provides auto-completion (#1974)
 
 next patch release (will be 1.8.1)
 ----------------------------------

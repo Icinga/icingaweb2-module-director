@@ -100,15 +100,12 @@ class IcingaAddServiceForm extends DirectorObjectForm
 
             return $this;
         }
-
-        $this->addElement('select', 'imports', [
+        $this->addElement('text', 'imports', [
             'label'        => $this->translate('Service'),
-            'description'  => $this->translate(
-                'Choose a service template'
-            ),
+            'description'  => $this->translate('Choose a service template'),
             'required'     => true,
-            'multiOptions' => $this->optionalEnum($enum),
-            'class'        => 'autosubmit'
+            'data-suggestion-context' => 'servicetemplates',
+            'class'        => 'autosubmit director-suggest'
         ]);
 
         return $this;
