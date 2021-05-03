@@ -29,6 +29,9 @@ next (will be 1.9.0)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 * FEATURE: Service Template for single Host services provides auto-completion (#1974)
 
+### Documentation
+* FIX: configure the daemon with main setup instructions (#2296, #2320)
+
 next patch release (will be 1.8.1)
 ----------------------------------
 
