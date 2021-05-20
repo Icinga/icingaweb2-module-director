@@ -468,7 +468,7 @@ class IcingaService extends IcingaObject implements ExportInterface
     /**
      * @return bool
      */
-    protected function hasBeenAssignedToHostTemplate()
+    public function hasBeenAssignedToHostTemplate()
     {
         $hostId = $this->get('host_id');
 
