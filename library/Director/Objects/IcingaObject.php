@@ -8,6 +8,7 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
+use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -19,7 +20,6 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
-use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
 
@@ -733,7 +733,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->propertyIsBoolean($key)) {
-            return parent::set($key, $this->normalizeBoolean($value));
+            return parent::set($key, DbDataFormatter::normalizeBoolean($value));
         }
 
         // e.g. zone_id
@@ -793,27 +793,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->ranges()->getValues();
     }
 
-    protected function normalizeBoolean($value)
-    {
-        if ($value === 'y' || $value === '1' || $value === true || $value === 1) {
-            return 'y';
-        }
-        if ($value === 'n' || $value === '0' || $value === false || $value === 0) {
-            return 'n';
-        }
-        if ($value === '' || $value === null) {
-            return null;
-        }
-
-        throw new InvalidArgumentException(sprintf(
-            'Got invalid boolean: %s',
-            var_export($value, 1)
-        ));
-    }
-
     protected function setDisabled($disabled)
     {
-        return parent::reallySet('disabled', $this->normalizeBoolean($disabled));
+        return $this->reallySet('disabled', DbDataFormatter::normalizeBoolean($disabled));
     }
 
     public function isDisabled()
