@@ -3,6 +3,16 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use InvalidArgumentException;
+use function ctype_digit;
+use function explode;
+use function floor;
+use function implode;
+use function preg_match;
+use function preg_split;
+use function sprintf;
+use function strlen;
+use function strpos;
+use function substr;
 
 class IcingaConfigHelper
 {
@@ -15,7 +25,7 @@ class IcingaConfigHelper
         'template',
         'include',
         'include_recursive',
-        'ignore_on_error',
+        'include_zones',
         'library',
         'null',
         'true',
@@ -23,7 +33,13 @@ class IcingaConfigHelper
         'const',
         'var',
         'this',
+        'globals',
+        'locals',
         'use',
+        'default',
+        'ignore_on_error',
+        'current_filename',
+        'current_line',
         'apply',
         'to',
         'where',
@@ -32,22 +48,16 @@ class IcingaConfigHelper
         'ignore',
         'function',
         'return',
+        'break',
+        'continue',
         'for',
         'if',
         'else',
-        'in',
-        'current_filename',
-        'current_line',
-        'include_zones',
-        'globals',
-        'locals',
-        'default',
-        'break',
-        'continue',
         'while',
         'throw',
         'try',
         'except',
+        'in',
         'using',
         'namespace',
     ];
@@ -209,9 +219,9 @@ class IcingaConfigHelper
 
     public static function renderDictionary($dictionary)
     {
-        $vals = [];
+        $values = [];
         foreach ($dictionary as $key => $value) {
-            $vals[$key] = rtrim(
+            $values[$key] = rtrim(
                 self::renderKeyValue(
                     self::renderDictionaryKey($key),
                     $value
@@ -219,13 +229,13 @@ class IcingaConfigHelper
             );
         }
 
-        if (empty($vals)) {
+        if (empty($values)) {
             return '{}';
         }
-        ksort($vals, SORT_STRING);
+        ksort($values, SORT_STRING);
 
         // Prefix for toConfigString?
-        return "{\n" . implode("\n", $vals) . "\n}";
+        return "{\n" . implode("\n", $values) . "\n}";
     }
 
     public static function renderExpression($string)
