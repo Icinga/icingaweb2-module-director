@@ -77,14 +77,15 @@ class IcingaConfigHelper
     {
         if ($value === 'y' || $value === true) {
             return 'true';
-        } elseif ($value === 'n' || $value === false) {
-            return 'false';
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                '%s is not a valid boolean',
-                $value
-            ));
         }
+        if ($value === 'n' || $value === false) {
+            return 'false';
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            '%s is not a valid boolean',
+            $value
+        ));
     }
 
     protected static function renderInteger($value)
@@ -98,9 +99,9 @@ class IcingaConfigHelper
         // implementations:
         if ((string) (int) $value === (string) $value) {
             return static::renderInteger((int) $value);
-        } else {
-            return sprintf('%F', $value);
         }
+
+        return sprintf('%F', $value);
     }
 
     protected static function renderNull()
@@ -143,35 +144,40 @@ class IcingaConfigHelper
     {
         if (is_null($value)) {
             return static::renderNull();
-        } elseif (is_bool($value)) {
+        }
+        if (is_bool($value)) {
             return static::renderBoolean($value);
-        } elseif (is_integer($value)) {
+        }
+        if (is_int($value)) {
             return static::renderInteger($value);
-        } elseif (is_float($value)) {
+        }
+        if (is_float($value)) {
             return static::renderFloat($value);
+        }
         // TODO:
-        // } elseif (is_object($value) || static::isAssocArray($value)) {
+        // if (is_object($value) || static::isAssocArray($value)) {
         //     return static::renderHash($value, $prefix)
         // TODO: also check array
-        } elseif (is_array($value)) {
+        if (is_array($value)) {
             return static::renderArray($value);
-        } elseif (is_string($value)) {
-            return static::renderString($value);
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                'Unexpected type %s',
-                var_export($value, 1)
-            ));
         }
+        if (is_string($value)) {
+            return static::renderString($value);
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            'Unexpected type %s',
+            var_export($value, 1)
+        ));
     }
 
     public static function renderDictionaryKey($key)
     {
         if (preg_match('/^[a-z_]+[a-z0-9_]*$/i', $key)) {
             return static::escapeIfReserved($key);
-        } else {
-            return static::renderString($key);
         }
+
+        return static::renderString($key);
     }
 
     // Requires an array
@@ -241,9 +247,9 @@ class IcingaConfigHelper
     {
         if (self::isReserved($string)) {
             return '@' . $string;
-        } else {
-            return $string;
         }
+
+        return $string;
     }
 
     public static function isValidInterval($interval)
@@ -339,13 +345,12 @@ class IcingaConfigHelper
                     } else {
                         if ($macroName === null) {
                             return true;
-                        } else {
-                            if ($macroName === substr($string, $start + 1, $i - $start - 1)) {
-                                return true;
-                            } else {
-                                $start = false;
-                            }
                         }
+                        if ($macroName === substr($string, $start + 1, $i - $start - 1)) {
+                            return true;
+                        }
+
+                        $start = false;
                     }
                 }
             }
@@ -362,7 +367,7 @@ class IcingaConfigHelper
      */
     public static function isValidMacroName($name)
     {
-        return preg_match('/^[A-z_][A-z_\.\d]+$/', $name)
+        return preg_match('/^[A-z_][A-z_.\d]+$/', $name)
             && ! preg_match('/\.$/', $name);
     }
 
@@ -408,8 +413,8 @@ class IcingaConfigHelper
 
         if (! empty($parts)) {
             return implode(' + ', $parts);
-        } else {
-            return '""';
         }
+
+        return '""';
     }
 }
