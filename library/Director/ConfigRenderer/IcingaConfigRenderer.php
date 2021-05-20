@@ -32,27 +32,36 @@ class IcingaConfigRenderer
     {
         $dynamicName = static::eventuallyGetDynamicNameProperty($object);
 
-        $string = self::renderObjectDeclaration(
-            static::getObjectTypeName($object),
-            static::getObjectType($object),
-            $dynamicName ? null : $object->getObjectName()
-        ) . static::eventuallyRenderApplyToHeader($object) . " {\n";
+        return self::renderObjectDeclaration($object, $dynamicName === null)
+            . static::eventuallyRenderApplyForHeader($object)
+            . static::eventuallyRenderApplyToHeader($object)
+            . " {\n"
+            . static::renderDynamicNameProperty($dynamicName)
+            . static::renderSpecialIcingaImports($object);
+    }
 
-        if ($dynamicName) {
-            $string .= c::renderKeyValue('name', $dynamicName);
+    // assign_filter: service, hostgroup, service_group, notification, dependency, scheduled_downtime
+    //                service_set (=service)
+
+    protected static function renderDynamicNameProperty($dynamicName)
+    {
+        if ($dynamicName === null) {
+            return '';
         }
+
+        return c::renderKeyValue('name', $dynamicName);
+    }
+
+    protected static function renderSpecialIcingaImports(IcingaObject $object)
+    {
         if ($object instanceof IcingaTimePeriod) {
-            $string .= static::renderAdditionalImport('legacy-timeperiod');
-        } elseif ($object instanceof IcingaCommand) {
-            if ($execute = $object->get('methods_execute')) {
-                $string .= static::renderAdditionalImport(self::$hiddenExecuteTemplates[$execute]);
-            }
+            return static::renderAdditionalImport('legacy-timeperiod');
+        }
+        if (($object instanceof IcingaCommand) && $execute = $object->get('methods_execute')) {
+            return static::renderAdditionalImport(self::$hiddenExecuteTemplates[$execute]);
         }
 
-        /*
-assign_filter: service, hostgroup, service_group, notification, dependency, scheduled_downtime; service_set (=service)
-        */
-        return $string;
+        return '';
     }
 
     protected static function eventuallyRenderApplyToHeader(IcingaObject $object)
@@ -154,11 +163,11 @@ assign_filter: service, hostgroup, service_group, notification, dependency, sche
         return 'object';
     }
 
-    protected static function renderObjectDeclaration($objectTypeName, $objectType, $objectName)
+    protected static function renderObjectDeclaration(IcingaObject $object, $renderName)
     {
-        $header = "$objectTypeName $objectType";
-        if ($objectName !== null) {
-            $header .= ' ' . c::renderString($objectName);
+        $header = static::getObjectTypeName($object) . ' ' . static::getObjectType($object);
+        if ($renderName) {
+            $header .= ' ' . c::renderString($object->getObjectName());
         }
 
         return $header;
