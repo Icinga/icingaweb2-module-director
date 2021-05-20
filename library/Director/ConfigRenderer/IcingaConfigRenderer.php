@@ -5,9 +5,7 @@ namespace Icinga\Module\Director\ConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaDependency;
-use Icinga\Module\Director\Objects\IcingaNotification;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Objects\IcingaScheduledDowntime;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
 
@@ -32,25 +30,16 @@ class IcingaConfigRenderer
 
     public static function renderObject(IcingaObject $object)
     {
-        if ($object instanceof IcingaCommand) {
-            $type = self::getCommandSpecificObjectType($object);
-        } else {
-            $type = static::getObjectType($object);
-        }
-        if ($altName = static::eventuallyGetVariableNameProperty($object)) {
-            $objectName = null;
-        } else {
-            $objectName = $object->getObjectName();
-        }
+        $dynamicName = static::eventuallyGetDynamicNameProperty($object);
 
         $string = self::renderObjectDeclaration(
             static::getObjectTypeName($object),
-            $type,
-            $objectName
+            static::getObjectType($object),
+            $dynamicName ? null : $object->getObjectName()
         ) . static::eventuallyRenderApplyToHeader($object) . " {\n";
 
-        if ($altName) {
-            $string .= c::renderKeyValue('name', $altName);
+        if ($dynamicName) {
+            $string .= c::renderKeyValue('name', $dynamicName);
         }
         if ($object instanceof IcingaTimePeriod) {
             $string .= static::renderAdditionalImport('legacy-timeperiod');
@@ -121,6 +110,15 @@ assign_filter: service, hostgroup, service_group, notification, dependency, sche
 
     protected static function getObjectType(IcingaObject $object)
     {
+        if ($object instanceof IcingaCommand) {
+            return self::getCommandSpecificObjectType($object);
+        }
+
+        return static::determineObjectType($object);
+    }
+
+    protected static function determineObjectType(IcingaObject $object)
+    {
         $class = \get_class($object);
         if (! isset(self::$classTypeMap[$class])) {
             $parts = \explode('\\', $class);
@@ -166,7 +164,7 @@ assign_filter: service, hostgroup, service_group, notification, dependency, sche
         return $header;
     }
 
-    protected static function eventuallyGetVariableNameProperty(IcingaObject $object)
+    protected static function eventuallyGetDynamicNameProperty(IcingaObject $object)
     {
         if ($object instanceof IcingaService) {
             if ($object->isApplyRule()
