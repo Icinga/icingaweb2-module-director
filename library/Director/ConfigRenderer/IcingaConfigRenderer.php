@@ -80,7 +80,7 @@ class IcingaConfigRenderer
             return '';
         }
 
-        if ($object instanceof IcingaDependency && $object->renderForArray) { // TODO: this is the clone?!
+        if ($object instanceof IcingaDependency && $object->isApplyForArrayClone()) {
             return sprintf(
                 " for (host_parent_name in %s)",
                 $object->get('parent_host_var')
