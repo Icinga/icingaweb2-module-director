@@ -28,6 +28,12 @@ class IcingaConfigRenderer
     // TODO: Consider using a static map
     protected static $classTypeMap = [];
 
+    /**
+     * Main object rendering
+     *
+     * @param IcingaObject $object
+     * @return string
+     */
     public static function renderObject(IcingaObject $object)
     {
         $dynamicName = static::eventuallyGetDynamicNameProperty($object);
@@ -36,21 +42,12 @@ class IcingaConfigRenderer
             . static::eventuallyRenderApplyForHeader($object)
             . static::eventuallyRenderApplyToHeader($object)
             . " {\n"
-            . static::renderDynamicNameProperty($dynamicName)
+            . static::renderOptionalValue('name', $dynamicName)
             . static::renderSpecialIcingaImports($object);
     }
 
     // assign_filter: service, hostgroup, service_group, notification, dependency, scheduled_downtime
     //                service_set (=service)
-
-    protected static function renderDynamicNameProperty($dynamicName)
-    {
-        if ($dynamicName === null) {
-            return '';
-        }
-
-        return c::renderKeyValue('name', $dynamicName);
-    }
 
     protected static function renderSpecialIcingaImports(IcingaObject $object)
     {
@@ -188,5 +185,21 @@ class IcingaConfigRenderer
         }
 
         return null;
+    }
+
+    /**
+     * Renders a key/value combination, but only vor values !== null
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return string
+     */
+    protected static function renderOptionalValue($key, $value)
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return c::renderKeyValue($key, $value);
     }
 }
