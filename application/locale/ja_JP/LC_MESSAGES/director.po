@@ -3058,7 +3058,7 @@ msgstr "マージポリシー"
 
 #: ../../../../modules/director/application/forms/IcingaTimePeriodRangeForm.php:23
 msgid ""
-"Might be, monday, tuesday, 2016-01-28 - have a look at the documentation for "
+"Might be monday, tuesday or 2016-01-28 - have a look at the documentation for "
 "more examples"
 msgstr "monday, tuesday, 2016-01-28といった書式で指定します。"
 "より多くの例についてはドキュメントを見てください"
