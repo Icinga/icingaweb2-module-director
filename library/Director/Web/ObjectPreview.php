@@ -141,9 +141,13 @@ class ObjectPreview
             return $match[1] . $match[2] . $match[3];
         }
 
+        $urlObjectType = $this->object->getShortTableName();
+        if ($urlObjectType === 'service_set') {
+            $urlObjectType = 'service';
+        }
         return $match[1] . Link::create(
             $match[2],
-            sprintf('director/' . $this->object->getShortTableName()),
+            sprintf("director/$urlObjectType"),
             ['name' => $match[2]]
         )->render() . $match[3];
     }
