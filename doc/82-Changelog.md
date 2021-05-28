@@ -26,6 +26,7 @@ next (will be 1.9.0)
 * FIX: allow switching DB config while connection is failing (#2300)
 * FIX: show Override button when all Fields belong to Field Categories (#2303)
 * FIX: show Services applied with Rules involving applied Hostgroups (#2313)
+* FIX: Overrides for Services belonging to Sets on root Host Templates (#2333)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 * FEATURE: Service Template for single Host services provides auto-completion (#1974)
 

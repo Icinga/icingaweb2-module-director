@@ -22,7 +22,11 @@ class OverriddenVarsResolver
 
     public function fetchForHost(IcingaHost $host)
     {
+        $overrides = [];
         $parents = $host->listFlatResolvedImportNames();
+        if (empty($parents)) {
+            return $overrides;
+        }
         $query = $this->db->select()
             ->from(['hv' => 'icinga_host_var'], [
                 'host_name' => 'h.object_name',
@@ -36,7 +40,6 @@ class OverriddenVarsResolver
             ->where('hv.varname = ?', $this->overrideVarName)
             ->where('h.object_name IN (?)', $parents);
 
-        $overrides = [];
         foreach ($this->db->fetchAll($query) as $row) {
             if ($row->varvalue === null) {
                 continue;
