@@ -41,7 +41,7 @@ class BasketSnapshot extends DbObject
         'ServiceTemplate' => IcingaService::class,
         'ServiceSet'      => IcingaServiceSet::class,
         'NotificationTemplate' => IcingaNotification::class,
-        'Notification'    => IcingaNotification::class,
+        'Notification'    => [IcingaNotification::class, ['object_type' => 'apply']],
         'DataList'        => DirectorDatalist::class,
         'Dependency'      => IcingaDependency::class,
         'ImportSource'    => ImportSource::class,

@@ -16,6 +16,7 @@ next (will be 1.9.0)
 * FEATURE: there is now a simple "group by" Property Modifier (#2317)
 
 ### Configuration Baskets
+* FIX: Notification Apply Rules have not been exported (#2335)
 * FEATURE: it's now possible to purge objects of specific types (#2201)
 
 ### Permissions and Restrictions
