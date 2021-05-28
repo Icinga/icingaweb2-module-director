@@ -15,6 +15,7 @@ next (will be 1.8.1)
 * FIX: show Override button when all Fields belong to Field Categories (#2303)
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
 * FIX: deal with inherited values which are invalid for a select box (#2288)
+* FIX: Service Set preview inline Service Template links (#2334)
 
 ### Icinga Configuration
 * FIX: rare race condition, where generated config might miss some files (#2351)
