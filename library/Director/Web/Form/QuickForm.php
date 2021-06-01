@@ -240,7 +240,7 @@ abstract class QuickForm extends QuickBaseForm
         if ($this->isApiRequest === null) {
             if ($this->request === null) {
                 throw new RuntimeException(
-                    'Early acess to isApiRequest(). This is not possible, sorry'
+                    'Early access to isApiRequest(). This is not possible, sorry'
                 );
             }
 
