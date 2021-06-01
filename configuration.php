@@ -3,6 +3,7 @@
 use Icinga\Application\Icinga;
 use Icinga\Web\Window;
 
+/** @var \Icinga\Application\Modules\Module $this */
 if ($this->getConfig()->get('frontend', 'disabled', 'no') === 'yes') {
     return;
 }
