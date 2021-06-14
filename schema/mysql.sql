@@ -41,12 +41,31 @@ CREATE TABLE director_activity_log (
   change_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   checksum VARBINARY(20) NOT NULL,
   parent_checksum VARBINARY(20) DEFAULT NULL,
+  live_modification ENUM('scheduled', 'succeeded', 'failed', 'impossible', 'disabled') NOT NULL,
   PRIMARY KEY (id),
   INDEX sort_idx (change_time),
   INDEX search_idx (object_name),
   INDEX search_idx2 (object_type(32), object_name(64), change_time),
   INDEX search_author (author),
   INDEX checksum (checksum)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE icinga_modified_attribute (
+    id BIGINT(20) UNSIGNED AUTO_INCREMENT NOT NULL,
+    activity_id BIGINT(20) UNSIGNED DEFAULT NULL,
+    state ENUM('scheduled_for_reset', 'scheduled', 'applied') NOT NULL,
+    action ENUM('create', 'delete', 'modify') NOT NULL,
+    icinga_object_type VARCHAR(64) NOT NULL,
+    icinga_object_name VARCHAR(255) NOT NULL,
+    modification MEDIUMTEXT NOT NULL,
+    ts_scheduled BIGINT(20) NOT NULL,
+    ts_applied BIGINT(20) DEFAULT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY activity_log_id (activity_id)
+        REFERENCES director_activity_log (id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    INDEX sort_idx (ts_scheduled)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE director_basket (
@@ -2397,4 +2416,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (176, NOW());
+  VALUES (178, NOW());

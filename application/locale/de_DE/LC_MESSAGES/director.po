@@ -7449,6 +7449,48 @@ msgstr "warning"
 msgid "yes"
 msgstr "ja"
 
+msgid "scheduled"
+msgstr "Geplant"
+
+msgid "succeeded"
+msgstr "Erfolgreicht ausgeführt"
+
+msgid "failed"
+msgstr "Fehler während der Liveaktualisierung"
+
+msgid "impossible"
+msgstr "Liveaktualisierung nicht möglich"
+
+msgid " (This change cannot be automatically applied on monitored object. Please deploy to align configuration.)"
+msgstr " (Diese Änderung kann nicht automatisch auf das gemonitorte Object angewendet werden. Damit diese Änderung aktiv wird, muss die Konfiguration manuell ausgerollt werden.)"
+
+msgid "There are %d pending live modifications"
+msgstr "Es gibt %d ausstehende Liveänderungen"
+
+msgid "Template is not supported by Live Modification"
+msgstr "Das Template wird von der Liveaktualisierung nicht unterstützt"
+
+msgid "Live Modification not supported: the host belongs to a modified group"
+msgstr "Liveaktualisierung nicht möglich: Der Host geört zu einer geänderten Gruppe"
+
+msgid "The host property %s is not supported by Live Modification"
+msgstr "Liveaktualisierung für die Hosteigenschaft %s wird nicht unterstützt"
+
+msgid "Service related to Host Template is not supported by Live Modification"
+msgstr "Liveaktualisierung ist für Services von Hosttemplates nicht unterstützt"
+
+msgid "Object not supported by Live Modification"
+msgstr "Liveaktualisierung für dieses Objekt nicht möglich"
+
+msgid "Live Modification enabled"
+msgstr "Liveaktualisierung aktiviert"
+
+msgid "Live Modification"
+msgstr "Liveaktualisierung"
+
+msgid "Disabled Services are not supported by Live Modification"
+msgstr "Deaktivierte Dienste werden von Liveaktualisierung nicht unterstützt"
+
 #~ msgid "Blacklist"
 #~ msgstr "Blacklist"
 

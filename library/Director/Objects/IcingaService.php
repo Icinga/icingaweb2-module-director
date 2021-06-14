@@ -14,6 +14,7 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
+use Icinga\Util\Translator;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -167,6 +168,19 @@ class IcingaService extends IcingaObject implements ExportInterface
                 'getUniqueIdentifier() is supported by Service Templates only'
             );
         }
+    }
+
+    public function getIcingaObjectName()
+    {
+        if ($this->isApplyRule()) {
+            return 'host_name!' . $this->getObjectName();
+        }
+
+        if ($host = $this->get('host')) {
+            return "$host!" . $this->getObjectName();
+        }
+
+        throw new RuntimeException('Cannot determine an Icinga Object Name for a Service not bound to a host');
     }
 
     /**
@@ -423,6 +437,27 @@ class IcingaService extends IcingaObject implements ExportInterface
         } else {
             return $str;
         }
+    }
+
+    public function toApiObject($resolved = false, $skipDefaults = false)
+    {
+        $plainObj = parent::toApiObject($resolved, $skipDefaults);
+
+        $propertiesToBeRemoved = array(
+            'id',
+            'object_name',
+            'object_type',
+            'use_agent',
+            'host'
+        );
+
+        foreach ((array)$plainObj as $prop => $value) {
+            if (in_array($prop, $propertiesToBeRemoved)) {
+                unset($plainObj->$prop);
+            }
+        }
+
+        return $plainObj;
     }
 
     /**
@@ -815,5 +850,35 @@ class IcingaService extends IcingaObject implements ExportInterface
     {
         $this->servicegroupMembershipResolver = $resolver;
         return $this;
+    }
+
+    protected function canBeAppliedLive()
+    {
+        $liveModificationAvailability = new IcingaObjectLiveModificationAvailability();
+        $liveModificationAvailability->setResult(true);
+
+        if ($this->isTemplate()) {
+            $liveModificationAvailability->setErrorMessage(
+                Translator::translate('Template is not supported by Live Modification', 'director')
+            );
+            $liveModificationAvailability->setResult(false);
+        } elseif ($this->hasBeenAssignedToHostTemplate()) {
+            $liveModificationAvailability->setErrorMessage(
+                Translator::translate(
+                    'Service related to Host Template is not supported by Live Modification',
+                    'director'
+                )
+            );
+            $liveModificationAvailability->setResult(false);
+        }
+
+        if ($this->isDisabled()) {
+            $liveModificationAvailability->setErrorMessage(
+                Translator::translate('Disabled Services are not supported by Live Modification', 'director')
+            );
+            $liveModificationAvailability->setResult(false);
+        }
+
+        return $liveModificationAvailability;
     }
 }

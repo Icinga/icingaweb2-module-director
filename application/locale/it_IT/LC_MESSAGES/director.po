@@ -7429,3 +7429,45 @@ msgstr "per es."
 
 msgid "start using"
 msgstr "inizia ad utilizzare"
+
+msgid "scheduled"
+msgstr "Schedulata"
+
+msgid "succeeded"
+msgstr "Applicata con successo"
+
+msgid "failed"
+msgstr "Errore nell'aggiornamento live"
+
+msgid "impossible"
+msgstr "Impossibile effettuare l'aggiornamento live"
+
+msgid " (This change cannot be automatically applied on monitored object. Please deploy to align configuration.)"
+msgstr " (Questa modifica non puo' essere automaticamente applicata all'oggetto monitorato. Prego effettuare un deploy manuale della configurazione.)"
+
+msgid "There are %d pending live modifications"
+msgstr "Ci sono %d modifiche live in attesa di essere applicate"
+
+msgid "Template is not supported by Live Modification"
+msgstr "Il Template non è supportato dall'aggiornamento live"
+
+msgid "Live Modification not supported: the host belongs to a modified group"
+msgstr "L'aggiornamento live non è supportato: è stata modificata l'appartenenza dell'host ad uno o più gruppi"
+
+msgid "The host property %s is not supported by Live Modification"
+msgstr "La proprietà %s dell'host non è supportata dall'aggiornamento live"
+
+msgid "Service related to Host Template is not supported by Live Modification"
+msgstr "Un servizio associato ad un template non è supportato dall'aggiornamento live"
+
+msgid "Object not supported by Live Modification"
+msgstr "Oggetto non supportato dall'aggiornamento live"
+
+msgid "Live Modification enabled"
+msgstr "Aggiornamento live abilitato"
+
+msgid "Live Modification"
+msgstr "Aggiornamento live"
+
+msgid "Disabled Services are not supported by Live Modification"
+msgstr "I servizi didabilitati non sono supportati dall'aggiornamento live"

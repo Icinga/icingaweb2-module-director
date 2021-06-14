@@ -12,12 +12,27 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Util\Translator;
 use InvalidArgumentException;
 use RuntimeException;
 
 class IcingaHost extends IcingaObject implements ExportInterface
 {
     use FlappingSupport;
+
+    const LIVE_DENIED_PROPERTIES_EDIT_MODE = [
+        'zone_id',
+        'has_agent',
+        'master_should_connect',
+        'accept_config',
+        'disabled',
+    ];
+
+    const LIVE_DENIED_PROPERTIES_CREATION_MODE = [
+        'has_agent',
+        'disabled',
+    ];
 
     protected $table = 'icinga_host';
 
@@ -314,6 +329,36 @@ class IcingaHost extends IcingaObject implements ExportInterface
         ksort($props);
 
         return (object) $props;
+    }
+
+    public function toApiObject($resolved = false, $skipDefaults = false)
+    {
+        $plainObj = parent::toApiObject($resolved, $skipDefaults);
+
+        $propertiesToBeRemoved = array(
+            'id',
+            'object_name',
+            'object_type',
+            'disabled',
+            'check_command_id',
+            'check_period_id',
+            'event_command_id',
+            'zone_id',
+            'command_endpoint_id',
+            'has_agent',
+            'master_should_connect',
+            'accept_config',
+            'api_key',
+            'template_choice_id'
+        );
+
+        foreach ((array)$plainObj as $prop => $value) {
+            if (in_array($prop, $propertiesToBeRemoved)) {
+                unset($plainObj->$prop);
+            }
+        }
+
+        return $plainObj;
     }
 
     /**
@@ -651,5 +696,97 @@ class IcingaHost extends IcingaObject implements ExportInterface
         }
 
         return current($result);
+    }
+
+    protected function canBeAppliedLive()
+    {
+        $liveModificationAvailability = new IcingaObjectLiveModificationAvailability();
+        $liveModificationAvailability->setResult(true);
+
+        if ($this->isTemplate()) {
+            $liveModificationAvailability->setErrorMessage(
+                Translator::translate('Template is not supported by Live Modification', 'director')
+            );
+            $liveModificationAvailability->setResult(false);
+        } elseif ($this->hasBeenModified()) {
+            $modifiedProperties = $this->getModifiedProperties();
+            if ($this->hasBeenLoadedFromDb()) {
+                // check if groups has been modified
+                if ($this->groups()->hasBeenModified()) {
+                    $liveModificationAvailability->setErrorMessage(
+                        Translator::translate(
+                            'Live Modification not supported: the host belongs to a modified group',
+                            'director'
+                        )
+                    );
+                    $liveModificationAvailability->setResult(false);
+                }
+                $this->checkModifiedDeniedProperty(
+                    self::LIVE_DENIED_PROPERTIES_EDIT_MODE,
+                    $modifiedProperties,
+                    $liveModificationAvailability
+                );
+            } else {
+                $this->checkModifiedDeniedProperty(
+                    self::LIVE_DENIED_PROPERTIES_CREATION_MODE,
+                    $modifiedProperties,
+                    $liveModificationAvailability
+                );
+            }
+        }
+
+        return $liveModificationAvailability;
+    }
+
+    protected function checkModifiedDeniedProperty(
+        $deniedProperties,
+        $modifiedProperties,
+        $liveModificationAvailability
+    ) {
+        foreach ($deniedProperties as $deniedProperty) {
+            if (array_key_exists($deniedProperty, $modifiedProperties)) {
+                $liveModificationAvailability->setErrorMessage(sprintf(
+                    Translator::translate('The host property %s is not supported by Live Modification', 'director'),
+                    $deniedProperty
+                ));
+                $liveModificationAvailability->setResult(false);
+                break;
+            }
+        }
+    }
+
+    protected function deleteRelatedObjectsModification()
+    {
+        /** @var IcingaHost[] $parents */
+        $parents = IcingaTemplateRepository::instanceByObject($this)
+            ->getTemplatesFor($this, true);
+        foreach ($parents as $parent) {
+            $services = $parent->fetchServices();
+            foreach ($services as $service) {
+                $id = $this->getId();
+                $service->set('host', $id);
+                $properties = $service->getProperties();
+                $newService = IcingaService::create($properties, $this->connection);
+                $newService->markForRemoval(true);
+                $newService->scheduleLiveModification();
+            }
+        }
+    }
+
+    protected function insertRelatedObjectsModification($activityLog = null)
+    {
+        /** @var IcingaHost[] $parents */
+        $parents = IcingaTemplateRepository::instanceByObject($this)
+            ->getTemplatesFor($this, true);
+        foreach ($parents as $parent) {
+            $services = $parent->fetchServices();
+            foreach ($services as $service) {
+                $id = $this->getId();
+                $service->set('host', $id);
+                $properties = $service->getProperties();
+                $newService = IcingaService::create($properties, $this->connection);
+                $newService->scheduleLiveModification($activityLog);
+            }
+        }
     }
 }
