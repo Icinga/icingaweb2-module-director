@@ -34,9 +34,13 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
     {
         $matcher = HostApplyMatches::prepare($host);
         $connection = $host->getConnection();
-        foreach (static::fetchServiceSetApplyRulesByServiceName($connection, $serviceName) as $rule) {
+        foreach (static::fetchServiceSetApplyRulesByServiceName($connection, $host->get('id'), $serviceName) as $rule) {
             if ($matcher->matchesFilter($rule->filter)) {
-                return new static($host->getObjectName(), $serviceName, $rule->service_set_name);
+                return new static(
+                    $host->getObjectName(),
+                    $serviceName,
+                    $rule->service_set_name
+                );
             }
         }
 
@@ -75,7 +79,7 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
         return true;
     }
 
-    protected static function fetchServiceSetApplyRulesByServiceName(Db $connection, $serviceName)
+    protected static function fetchServiceSetApplyRulesByServiceName(Db $connection, $hostId, $serviceName)
     {
         $db = $connection->getDbAdapter();
         $query = $db->select()
@@ -91,7 +95,13 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
                 []
             )
             ->where('s.object_name = ?', $serviceName)
-            ->where('ss.assign_filter IS NOT NULL');
+            ->where('ss.assign_filter IS NOT NULL')
+            ->where( // Ignore deactivated Services:
+                'NOT EXISTS (SELECT 1 FROM icinga_host_service_blacklist hsb'
+                . ' WHERE hsb.host_id = ? AND hsb.service_id = s.id)',
+                (int) $hostId
+            );
+        ;
 
         $allRules = $db->fetchAll($query);
         foreach ($allRules as $rule) {

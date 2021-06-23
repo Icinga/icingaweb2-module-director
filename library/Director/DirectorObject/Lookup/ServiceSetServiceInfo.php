@@ -54,7 +54,12 @@ class ServiceSetServiceInfo implements ServiceInfo
                 'hs.id = hsi.service_set_id',
                 []
             )->where('hs.host_id IN (?)', $ids)
-            ->where('s.object_name = ?', $serviceName);
+            ->where('s.object_name = ?', $serviceName)
+            ->where( // Ignore deactivated Services:
+                'NOT EXISTS (SELECT 1 FROM icinga_host_service_blacklist hsb'
+                . ' WHERE hsb.host_id = ? AND hsb.service_id = s.id)',
+                (int) $host->get('id')
+            );
 
         if ($row = $db->fetchRow($query)) {
             return new static($host->getObjectName(), $serviceName, $row->service_set_name);
