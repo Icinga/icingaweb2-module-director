@@ -17,6 +17,7 @@ next (will be 1.8.1)
 * FIX: deal with inherited values which are invalid for a select box (#2288)
 * FIX: Service Set preview inline Service Template links (#2334)
 * FIX: show Services applied with Rules involving applied Hostgroups (#2313)
+* FIX: show "deactivated" services as such also for read-only users (#2344)
 
 ### Icinga Configuration
 * FIX: rare race condition, where generated config might miss some files (#2351)
