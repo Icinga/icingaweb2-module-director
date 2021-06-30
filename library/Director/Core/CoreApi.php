@@ -123,15 +123,38 @@ class CoreApi implements DeploymentApiInterface
         return $res[$name];
     }
 
-    public function getTicketSalt()
+    /**
+     * Get a PKI ticket for CSR auto-signing
+     *
+     * @param string $cn The host’s common name for which the ticket should be generated
+     *
+     * @return string|null
+     */
+    public function getTicket($cn)
     {
-        // TODO: api must not be the name!
-        $api = $this->getObject('api', 'ApiListeners', array('ticket_salt'));
-        if (isset($api->attrs->ticket_salt)) {
-            return $api->attrs->ticket_salt;
+        $r = $this->client()->post(
+            'actions/generate-ticket',
+            ['cn' => $cn]
+        );
+        if (! $r->succeeded()) {
+            throw new RuntimeException($r->getErrorMessage());
         }
 
-        return null;
+        $ticket = $r->getRaw('ticket');
+        if ($ticket === null) {
+            // RestApiResponse::succeeded() returns true if Icinga 2 reports an error in the results key, e.g.
+            // {
+            //     "results": [
+            //         {
+            //             "code": 500.0,
+            //             "status": "Ticket salt is not configured in ApiListener object"
+            //         }
+            //     ]
+            // }
+            throw new RuntimeException($r->getRaw('status', 'Ticket is empty'));
+        }
+
+        return $ticket;
     }
 
     public function checkHostNow($host)
