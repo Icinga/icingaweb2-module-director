@@ -136,12 +136,7 @@ class SelfServiceController extends ActionController
                 throw new NotFoundError('The host "%s" is not an agent', $name);
             }
 
-            $this->sendPowerShellResponse(
-                Util::getIcingaTicket(
-                    $name,
-                    $this->api()->getTicketSalt()
-                )
-            );
+            $this->sendPowerShellResponse($this->api()->getTicket($name));
         } catch (Exception $e) {
             if ($e instanceof NotFoundError) {
                 $this->sendPowerShellError($e->getMessage(), 404);

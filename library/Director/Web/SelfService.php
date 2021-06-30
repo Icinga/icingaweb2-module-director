@@ -226,9 +226,9 @@ class SelfService
         $certname = $host->getObjectName();
 
         try {
-            $ticket = Util::getIcingaTicket($certname, $this->api->getTicketSalt());
+            $ticket = $this->api->getTicket($host->getObjectName());
             $wizard = new AgentWizard($host);
-            $wizard->setTicketSalt($this->api->getTicketSalt());
+            $wizard->setTicket($ticket);
         } catch (Exception $e) {
             $c->add(Hint::error(sprintf(
                 $this->translate(
@@ -278,7 +278,7 @@ class SelfService
     public function handleLegacyAgentDownloads($os)
     {
         $wizard = new AgentWizard($this->host);
-        $wizard->setTicketSalt($this->api->getTicketSalt());
+        $wizard->setTicket($this->api->getTicket($this->host->getObjectName()));
 
         switch ($os) {
             case 'windows-kickstart':
