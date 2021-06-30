@@ -51,6 +51,9 @@ next patch release (will be 1.8.1)
 ### Icinga Configuration
 * FIX: rare race condition, where generated config might miss some files (#2351)
 
+### Icinga API
+* FIX: use Icinga 2's generate-ticket API, required for v2.13.0 (#2348)
+
 ### Import and Sync
 * FIX: Purge didn't remove more than 1000 services at once (#2339)
 

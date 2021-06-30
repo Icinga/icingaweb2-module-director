@@ -105,12 +105,7 @@ class IcingaObjectHandler extends RequestHandler
                 throw new NotFoundError('The host "%s" is not an agent', $host->getObjectName());
             }
 
-            $this->sendJson(
-                Util::getIcingaTicket(
-                    $host->getObjectName(),
-                    $this->api->getTicketSalt()
-                )
-            );
+            $this->sendJson($this->api->getTicket($host->getObjectName()));
 
             // TODO: find a better way to shut down. Currently, this avoids
             //       "not found" errors:

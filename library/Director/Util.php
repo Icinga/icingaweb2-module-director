@@ -81,11 +81,6 @@ class Util
         return bin2hex(substr($out, 0, $length));
     }
 
-    public static function getIcingaTicket($certname, $salt)
-    {
-        return self::pbkdf2('sha1', $certname, $salt, 50000, 20);
-    }
-
     public static function auth()
     {
         if (self::$auth === null) {
