@@ -13,6 +13,7 @@ use Icinga\Module\Director\Import\ImportSourceCoreApi;
 use Icinga\Module\Director\Import\ImportSourceDirectorObject;
 use Icinga\Module\Director\Import\ImportSourceLdap;
 use Icinga\Module\Director\Import\ImportSourceRestApi;
+use Icinga\Module\Director\Import\ImportSourceGraphQL;
 use Icinga\Module\Director\Import\ImportSourceSql;
 use Icinga\Module\Director\Job\ConfigJob;
 use Icinga\Module\Director\Job\HousekeepingJob;
@@ -80,7 +81,8 @@ $directorHooks = [
         ImportSourceSql::class,
         ImportSourceLdap::class,
         ImportSourceCoreApi::class,
-        ImportSourceRestApi::class
+        ImportSourceRestApi::class,
+        ImportSourceGraphQL::class
     ],
     'director/Job' => [
         ConfigJob::class,
