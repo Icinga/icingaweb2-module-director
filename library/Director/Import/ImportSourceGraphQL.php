@@ -49,6 +49,16 @@ class ImportSourceGraphQL extends ImportSourceHook
 
         $result = (array) $this->extractProperty($result);
 
+        // sort by a key of the objects
+        if (! empty($sortKey = $this->getSetting('sort_by'))) {
+            usort($result, function ($a, $b) use ($sortKey) {
+                return strcmp(
+                    static::getSubKey($sortKey, $a, true),
+                    static::getSubKey($sortKey, $b, true)
+                );
+            });
+        }
+
         $this->data = $result;
 
         return $this->data;
@@ -91,26 +101,7 @@ class ImportSourceGraphQL extends ImportSourceHook
             return $result;
         }
 
-        $parts = preg_split('~(?<!\\\\)\.~', $property);
-
-        // iterate over parts of the attribute path
-        $data = $result;
-        foreach ($parts as $part) {
-            // un-escape any dots
-            $part = preg_replace('~\\\\.~', '.', $part);
-
-            if (property_exists($data, $part)) {
-                $data = $data->$part;
-            } else {
-                throw new \RuntimeException(sprintf(
-                    'Result has no "%s" property. Available keys: %s',
-                    $part,
-                    implode(', ', array_keys((array) $data))
-                ));
-            }
-        }
-
-        return $data;
+        return static::getSubKey($property, $result);
     }
 
     protected function buildHeaders()
@@ -243,13 +234,22 @@ class ImportSourceGraphQL extends ImportSourceHook
             'label'       => 'Extract property',
             'description' => implode("\n", [
                 $form->translate('Select the property in the JSON result, which contains the array of results.'),
-                $form->translate(''),
                 $form->translate('Also deeper keys can be specific by a dot-notation:'),
                 '"data.objects", "data.query.objects"',
                 $form->translate('Literal dots in a key name can be written in the escape notation:'),
                 '"key\.with\.dots"',
             ]),
             'required'    => true,
+        ]);
+
+        $form->addElement('text', 'sort_by', [
+            'label'       => 'Sort by property',
+            'description' => implode("\n", [
+                $form->translate('Sort the results by a property.'),
+                $form->translate('Relative to the extracted property.'),
+                $form->translate('This might be helpful when the API returns results randomly, ' .
+                    'which can confuse the change logic of Director imports.'),
+            ]),
         ]);
     }
 
@@ -400,5 +400,32 @@ class ImportSourceGraphQL extends ImportSourceHook
             $form->addElement('YesNo', $key, $options);
             $form->getElement($key)->setValue($default);
         }
+    }
+
+    protected static function getSubKey($property, $data, $allowNull = false)
+    {
+        $parts = preg_split('~(?<!\\\\)\.~', $property);
+
+        // iterate over parts of the attribute path
+        foreach ($parts as $part) {
+            // un-escape any dots
+            $part = preg_replace('~\\\\.~', '.', $part);
+
+            if ($allowNull && ! is_object($data)) {
+                return null;
+            }
+
+            if (property_exists($data, $part)) {
+                $data = $data->$part;
+            } else {
+                throw new \RuntimeException(sprintf(
+                    'data has no "%s" property. Available keys: %s',
+                    $part,
+                    implode(', ', array_keys((array) $data))
+                ));
+            }
+        }
+
+        return $data;
     }
 }
