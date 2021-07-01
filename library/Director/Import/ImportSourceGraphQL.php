@@ -10,13 +10,29 @@ use InvalidArgumentException;
 
 class ImportSourceGraphQL extends ImportSourceHook
 {
+    /** @var []object */
+    protected $data;
+
     public function getName()
     {
         return 'GraphQL';
     }
 
+    public function setSettings($settings)
+    {
+        // Reset any cached data
+        $this->data = null;
+
+        return parent::setSettings($settings);
+    }
+
     public function fetchData()
     {
+        // Use data cache to run query only once
+        if ($this->data !== null) {
+            return $this->data;
+        }
+
         $body = [
             'query' => $this->getSetting('query', ''),
         ];
@@ -31,9 +47,11 @@ class ImportSourceGraphQL extends ImportSourceHook
             $this->buildHeaders()
         );
 
-        $result = $this->extractProperty($result);
+        $result = (array) $this->extractProperty($result);
 
-        return (array) $result;
+        $this->data = $result;
+
+        return $this->data;
     }
 
     public function listColumns()
