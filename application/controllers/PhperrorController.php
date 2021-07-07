@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Application\Icinga;
 use Icinga\Application\Modules\Manager;
+use Icinga\Application\Version;
 use Icinga\Web\Controller;
 
 class PhperrorController extends Controller
@@ -24,24 +25,26 @@ class PhperrorController extends Controller
 
     public function dependenciesAction()
     {
-        $dependencies = $this->view->dependencies = $this->Module()->getDependencies();
-        $modules = $this->view->modules = Icinga::app()->getModuleManager();
-        // Hint: we're duplicating some code here
         $satisfied = true;
-        foreach ($dependencies as $module => $required) {
-            /** @var Manager $this ->modules */
-            if ($modules->hasEnabled($module)) {
-                $installed = $modules->getModule($module, false)->getVersion();
-                $installed = \ltrim($installed, 'v'); // v0.6.0 VS 0.6.0
-                if (\preg_match('/^([<>=]+)\s*v?(\d+\.\d+\.\d+)$/', $required, $match)) {
-                    $operator = $match[1];
-                    $vRequired = $match[2];
-                    if (\version_compare($installed, $vRequired, $operator)) {
-                        continue;
+        if (version_compare(Version::VERSION, '2.9.0') < 0) {
+            $dependencies = $this->view->dependencies = $this->Module()->getDependencies();
+            $modules = $this->view->modules = Icinga::app()->getModuleManager();
+            // Hint: we're duplicating some code here
+            foreach ($dependencies as $module => $required) {
+                /** @var Manager $this ->modules */
+                if ($modules->hasEnabled($module)) {
+                    $installed = $modules->getModule($module, false)->getVersion();
+                    $installed = \ltrim($installed, 'v'); // v0.6.0 VS 0.6.0
+                    if (\preg_match('/^([<>=]+)\s*v?(\d+\.\d+\.\d+)$/', $required, $match)) {
+                        $operator = $match[1];
+                        $vRequired = $match[2];
+                        if (\version_compare($installed, $vRequired, $operator)) {
+                            continue;
+                        }
                     }
                 }
+                $satisfied = false;
             }
-            $satisfied = false;
         }
 
         if ($satisfied) {
