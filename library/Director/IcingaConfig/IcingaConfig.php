@@ -411,25 +411,31 @@ class IcingaConfig
         }
 
         $activity = $this->dbBin($this->getLastActivityChecksum());
-        $this->db->insert(
-            self::$table,
-            array(
+        $this->db->beginTransaction();
+        try {
+            $this->db->insert(self::$table, [
                 'duration'                => $this->generationTime,
                 'first_activity_checksum' => $activity,
                 'last_activity_checksum'  => $activity,
                 'checksum'                => $this->dbBin($this->getChecksum()),
-            )
-        );
-        /** @var IcingaConfigFile $file */
-        foreach ($this->files as $name => $file) {
-            $this->db->insert(
-                'director_generated_config_file',
-                array(
+            ]);
+            /** @var IcingaConfigFile $file */
+            foreach ($this->files as $name => $file) {
+                $this->db->insert('director_generated_config_file', [
                     'config_checksum' => $this->dbBin($this->getChecksum()),
                     'file_checksum'   => $this->dbBin($file->getChecksum()),
                     'file_path'       => $name,
-                )
-            );
+                ]);
+            }
+            $this->db->commit();
+        } catch (\Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (\Exception $ignored) {
+                // Well...
+            }
+
+            throw $e;
         }
 
         return $this;
