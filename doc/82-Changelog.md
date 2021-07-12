@@ -48,6 +48,9 @@ next patch release (will be 1.8.1)
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
 * FIX: deal with inherited values which are invalid for a select box (#2288)
 
+### Icinga Configuration
+* FIX: rare race condition, where generated config might miss some files (#2351)
+
 ### Import and Sync
 * FIX: Purge didn't remove more than 1000 services at once (#2339)
 
