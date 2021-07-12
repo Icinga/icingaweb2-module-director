@@ -25,11 +25,7 @@ next (will be 1.9.0)
 
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
-* FIX: show Services applied with Rules involving applied Hostgroups (#2313)
-* FIX: Overrides for Services belonging to Sets on root Host Templates (#2333)
-* FIX: Service Set preview inline Service Template links (#2334)
 * FIX: Links to duplicate services in Sets didn't check for deactivation (#2323)
-* FIX: show "deactivated" services as such also for read-only users (#2344)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 * FEATURE: Service Template for single Host services provides auto-completion (#1974)
 
@@ -47,6 +43,10 @@ next patch release (will be 1.8.1)
 * FIX: show Override button when all Fields belong to Field Categories (#2303)
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
 * FIX: deal with inherited values which are invalid for a select box (#2288)
+* FIX: Service Set preview inline Service Template links (#2334)
+* FIX: show Services applied with Rules involving applied Hostgroups (#2313)
+* FIX: show "deactivated" services as such also for read-only users (#2344)
+* FIX: Overrides for Services belonging to Sets on root Host Templates (#2333)
 
 ### Icinga Configuration
 * FIX: rare race condition, where generated config might miss some files (#2351)
