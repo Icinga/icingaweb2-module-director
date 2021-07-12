@@ -15,6 +15,9 @@ next (will be 1.8.1)
 * FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
 * FIX: deal with inherited values which are invalid for a select box (#2288)
 
+### Import and Sync
+* FIX: Purge didn't remove more than 1000 services at once (#2339)
+
 ### Automation, User Interface
 * FIX: error message wording on failing related (or parent) object ref (#2224)
 
