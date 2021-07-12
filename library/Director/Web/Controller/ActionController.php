@@ -216,7 +216,8 @@ abstract class ActionController extends Controller implements ControlsAndContent
             $viewRenderer = new SimpleViewRenderer();
             $viewRenderer->replaceZendViewRenderer();
             $this->view = $viewRenderer->view;
-            if ($this->getOriginalUrl()->getParam('view') === 'compact') {
+            // Hint -> $this->view->compact is the only way since v2.8.0
+            if ($this->view->compact || $this->getOriginalUrl()->getParam('view') === 'compact') {
                 if ($this->view->controls) {
                     $this->controls()->getAttributes()->add('style', 'display: none;');
                 }

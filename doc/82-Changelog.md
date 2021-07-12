@@ -47,6 +47,7 @@ next patch release (will be 1.8.1)
 * FIX: show Services applied with Rules involving applied Hostgroups (#2313)
 * FIX: show "deactivated" services as such also for read-only users (#2344)
 * FIX: Overrides for Services belonging to Sets on root Host Templates (#2333)
+* FIX: show no header tabs for search result in web 2.8+ (#2141)
 
 ### Icinga Configuration
 * FIX: rare race condition, where generated config might miss some files (#2351)
