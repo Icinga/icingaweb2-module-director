@@ -99,7 +99,7 @@ and extract it to a folder named `director` in one of your Icinga Web 2 module p
 You might want to use a script as follows for this task:
 
 ```shell
-MODULE_VERSION="1.8.0"
+MODULE_VERSION="1.8.1"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
@@ -126,7 +126,7 @@ Just clone the repository to one of your Icinga Web 2 module path directories.
 It will be immediately ready for use:
 
 ```shell
-MODULE_VERSION="1.8.0"
+MODULE_VERSION="1.8.1"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"

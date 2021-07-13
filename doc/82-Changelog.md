@@ -32,8 +32,8 @@ next (will be 1.9.0)
 ### Documentation
 * FIX: configure the daemon with main setup instructions (#2296, #2320)
 
-next patch release (will be 1.8.1)
-----------------------------------
+1.8.1
+-----
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
