@@ -18,6 +18,7 @@ next (will be 1.9.0)
 ### Configuration Baskets
 * FIX: Notification Apply Rules have not been exported (#2335)
 * FEATURE: it's now possible to purge objects of specific types (#2201)
+* FEATURE: exporting Users, User-Templates and -Groups is now possible (#2328)
 
 ### Permissions and Restrictions
 * FEATURE: allow using monitoring module permissions (#2304)

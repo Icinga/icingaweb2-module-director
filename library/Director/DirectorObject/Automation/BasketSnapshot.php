@@ -20,6 +20,8 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\IcingaUser;
+use Icinga\Module\Director\Objects\IcingaUserGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
@@ -40,6 +42,9 @@ class BasketSnapshot extends DbObject
         'IcingaTemplateChoiceService' => IcingaTemplateChoiceService::class,
         'ServiceTemplate' => IcingaService::class,
         'ServiceSet'      => IcingaServiceSet::class,
+        'UserGroup'       => IcingaUserGroup::class,
+        'UserTemplate'    => [IcingaUser::class, ['object_type' => 'template']],
+        'User'            => [IcingaUser::class, ['object_type' => 'object']],
         'NotificationTemplate' => IcingaNotification::class,
         'Notification'    => [IcingaNotification::class, ['object_type' => 'apply']],
         'DataList'        => DirectorDatalist::class,
@@ -73,6 +78,9 @@ class BasketSnapshot extends DbObject
         'IcingaTemplateChoiceService',
         'ServiceTemplate',
         'ServiceSet',
+        'UserGroup',
+        'UserTemplate',
+        'User',
         'NotificationTemplate',
         'Notification',
         'Dependency',

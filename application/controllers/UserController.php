@@ -10,4 +10,9 @@ class UserController extends ObjectController
     {
         $this->assertPermission('director/users');
     }
+
+    protected function hasBasketSupport()
+    {
+        return true;
+    }
 }
