@@ -12,24 +12,21 @@
                    -CAServer         'icinga-master' `
                    -RunInstaller;
  .NOTES
-
 #>
 function Icinga2AgentModule {
-
     #
     # Setup parameters which can be accessed
     # with -<ParamName>
     #
     [CmdletBinding()]
     param(
-
         # This is in general the name of your Windows host. It will have to match with your Icinga configuration, as it is part of the Icinga 2 Ticket and Certificate handling to ensure a valid certificate is generated
         [string]$AgentName,
         # The Ticket you will receive from your Icinga 2 CA. In combination with the Icinga Director, it will tell you which Ticket you will require for your host
         [string]$Ticket,
         # You can either leave this parameter or add it to allow the module to install or update the Icinga 2 Agent on your system
         [string]$InstallAgentVersion,
-        # Instead of setting the Agent Name with -AgentName, the PowerShell module is capable of retreiving the information automaticly from Windows. Please note this is not the FQDN
+        # Instead of setting the Agent Name with -AgentName, the PowerShell module is capable of retreiving the information automatically from Windows. Please note this is not the FQDN
         [switch]$FetchAgentName             = $FALSE,
         # Like -FetchAgentName, this argument will ensure the hostname is set inside the script, will however include the domain to provide the FQDN internally.
         [switch]$FetchAgentFQDN             = $FALSE,
@@ -52,9 +49,8 @@ function Icinga2AgentModule {
         [array]$ParentEndpoints,
         # While -ParentEndpoints will define the name of endpoints by an array, this parameter will allow to assign IP address and port configuration, allowing the Icinga 2 Agent to directly connect to parent Icinga 2 instances. To specify IP address and port, you will have to seperate these entries by using ';' without blank spaces. The order of the config has to match the assignment of -ParentEndpoints. You can specify the IP address only without a port definition by just leaving the last part. If you wish to not specify a config for a specific endpoint, simply add an empty string to the correct location.
         [array]$EndpointsConfig,
-        # Allows to specify global zones, which will be added into the icinga2.conf. Note: In case no global zone will be defined, director-global will be added by default. If you specify zones by yourself, please ensure to add director-global as this is not done automaticly when adding custom global-zones.
+        # Allows to specify global zones, which will be added into the icinga2.conf. Note: In case no global zone will be defined, director-global will be added by default. If you specify zones by yourself, please ensure to add director-global as this is not done automatically when adding custom global-zones.
         [array]$GlobalZones                 = @(),
-
 
         # Agent installation / update
         <# This argument will allow to override the user the Icinga 2 service is running with. Windows provides some basic users already which can be configured:
@@ -107,7 +103,7 @@ function Icinga2AgentModule {
         [string]$DirectorPassword,
         # TODO
         [string]$DirectorDomain,
-        # API key for specific host templates, allowing the configuration and creation of host objects within the Icinga Director without password authentication. This is the API token assigned to a host template. Hosts created with this token, will automaticly receive the Host-Template assigned to the API key. Furthermore this token allows to access the Icinga Director Self-Service API to fetch basic arguments for the module.
+        # API key for specific host templates, allowing the configuration and creation of host objects within the Icinga Director without password authentication. This is the API token assigned to a host template. Hosts created with this token, will automatically receive the Host-Template assigned to the API key. Furthermore this token allows to access the Icinga Director Self-Service API to fetch basic arguments for the module.
         # Note: This argument requires Icinga Director API Version 1.4.0 or higher
         [string]$DirectorAuthToken,
         # This argument allows you to parse either a valid JSON-String or an hashtable / array, containing all informations for the host object to create. Please note that using arrays or hashtable objects for this argument will require PowerShell version 3 and above.
@@ -145,8 +141,10 @@ function Icinga2AgentModule {
         [switch]$IgnoreSSLErrors            = $FALSE,
 
         [switch]$DebugMode                  = $FALSE,
-        # Specify a path to either a directory or a file to write all output from the PowerShell module into a file for later debugging. In case a directory is specified, the script will automaticly create a new file with a unique name into it. If a file is specified which is not yet present, it will be created.
-        [string]$ModuleLogFile
+        # Specify a path to either a directory or a file to write all output from the PowerShell module into a file for later debugging. In case a directory is specified, the script will automatically create a new file with a unique name into it. If a file is specified which is not yet present, it will be created.
+        [string]$ModuleLogFile,
+        # Timeout for web requests in milliseconds
+        [int]$Timeout                        = 6000
     );
 
     #
@@ -201,6 +199,7 @@ function Icinga2AgentModule {
         ignore_ssl_errors       = $IgnoreSSLErrors;
         debug_mode              = $DebugMode;
         module_log_file         = $ModuleLogFile;
+        timeout                 = $Timeout;
     }
 
     #
@@ -678,7 +677,7 @@ function Icinga2AgentModule {
         if ($directorHeader) {
             $httpRequest.Headers.Add('X-Director-Accept: text/plain');
         }
-        $httpRequest.TimeOut = 6000;
+        $httpRequest.TimeOut = $this.config('timeout');
 
         # If we are using self-signed certificates for example, the HTTP request will
         # fail caused by the SSL certificate. With this we can allow even faulty
@@ -990,7 +989,7 @@ function Icinga2AgentModule {
         $this.info('Installing Icinga 2 Agent');
 
         # Start the installer process
-        $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
+        $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /norestart /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
 
         # Exit Code 0 means the Agent was installed successfully
         # Otherwise we require to throw an error
@@ -1025,7 +1024,7 @@ function Icinga2AgentModule {
 
         $this.info('Removing previous Icinga 2 Agent version');
         # Start the uninstaller process
-        $result = $this.startProcess('MsiExec.exe', $TRUE, $this.getProperty('uninstall_id') +' /q');
+        $result = $this.startProcess('MsiExec.exe', $TRUE, $this.getProperty('uninstall_id') +' /norestart /q');
 
         # Exit Code 0 means the Agent was removed successfully
         # Otherwise we require to throw an error
@@ -1040,7 +1039,7 @@ function Icinga2AgentModule {
 
         $this.info('Installing new Icinga 2 Agent version');
         # Start the installer process
-        $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
+        $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /norestart /i "{0}" {1}', $this.getInstallerPath(), $this.getIcingaAgentInstallerArguments()));
 
         # Exit Code 0 means the Agent was removed successfully
         # Otherwise we require to throw an error
@@ -1589,8 +1588,10 @@ object ApiListener "api" {' + $certificateConfig + '
 include "constants.conf"
 include <itl>
 include <plugins>
-include <nscp>
+include <plugins-contrib>
+include <manubulon>
 include <windows-plugins>
+include <nscp>
 
 /* Required for Icinga 2.8.0 and above */
 const NodeName = "' + $this.getProperty('local_hostname') + '"
@@ -1618,7 +1619,7 @@ if (PowerShellIcinga2EnableDebug) {
  * IMPORTANT: If the NSClient++ is installed newly to the system, the
  * Icinga Service has to be restarted in order to set this variable
  * correctly. If the NSClient++ is installed over the PowerShell Module,
- * the Icinga 2 Service is restarted automaticly.
+ * the Icinga 2 Service is restarted automatically.
  */
 if (!globals.contains("NscpPath")) {
   NscpPath = dirname(msi_get_component_path("{5C45463A-4AE9-4325-96DB-6E239C034F93}"))
@@ -1641,7 +1642,7 @@ object Zone "' + $this.config('parent_zone') + '" {
 }
 
 /* All of our global zones, check commands and other configuration are synced into.
- * Director global zone must be defined in case the Icinga Director is beeing used.
+ * Director global zone must be defined in case the Icinga Director is being used.
  * Default value for this is "director-global".
  * All additional zones can be configured with -GlobalZones argument.
  * IMPORTANT: If -GlobalZones argument is used, the Icinga Director global zones has
@@ -1851,12 +1852,28 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
 
             # Save Certificate
             $this.info("Storing Icinga 2 certificates");
-            $result = $this.startProcess($icingaBinary, $FALSE, [string]::Format('pki save-cert --key {0}{1}.key --trustedcert {0}trusted-master.crt --host {2}',
-                                                                                $icingaCertDir,
-                                                                                $agentName,
-                                                                                $this.config('ca_server')
-                                                                                )
-                                        );
+            # Argument --key for save-cert is deprecated starting with Icinga 2.12.0
+            if ($this.validateVersions('2.12.0', $this.getProperty('icinga2_agent_version'))) {
+                $result = $this.startProcess(
+                    $icingaBinary, $FALSE, [string]::Format(
+                        'pki save-cert --trustedcert {0}trusted-master.crt --host {1} --port {2}',
+                        $icingaCertDir,
+                        $this.config('ca_server'),
+                        $this.config('ca_port')
+                    )
+                );
+            } else {
+                $result = $this.startProcess(
+                    $icingaBinary, $FALSE, [string]::Format(
+                        'pki save-cert --key {0}{1}.key --trustedcert {0}trusted-master.crt --host {2} --port {3}',
+                        $icingaCertDir,
+                        $agentName,
+                        $this.config('ca_server'),
+                        $this.config('ca_port')
+                    )
+                );
+            }
+
             if ($result.Get_Item('exitcode') -ne 0) {
                 throw $result.Get_Item('message');
             }
@@ -3001,7 +3018,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
                     [string]$NSClientArguments = $this.getNSClientInstallerArguments();
 
                     # Start the installer process
-                    $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /i "{0}" {1}', $installerPath, $NSClientArguments));
+                    $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('/quiet /norestart /i "{0}" {1}', $installerPath, $NSClientArguments));
 
                     # Exit Code 0 means the NSClient was installed successfully
                     # Otherwise we require to throw an error
@@ -3069,7 +3086,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
         [string]$NSClientArguments = '';
 
         if ($this.config('nsclient_directory')) {
-            $NSClientArguments += [string]::Format(' INSTALLLOCATION={0}', $this.config('nsclient_directory'));
+            $NSClientArguments += [string]::Format(' INSTALLLOCATION="{0}"', $this.config('nsclient_directory'));
         }
 
         return $NSClientArguments;
@@ -3221,7 +3238,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
                     $this.installAgent();
                     $this.cleanupAgentInstaller();
                 } else {
-                    $this.warn('Icinga 2 Agent is not installed and not allowed of beeing installed.');
+                    $this.warn('Icinga 2 Agent is not installed and its install is not being allowed.');
                 }
             }
 
@@ -3281,7 +3298,7 @@ object Zone "' + $this.getProperty('local_hostname') + '" {
 
         if ($this.isAgentInstalled()) {
             $this.info('Removing Icinga 2 Agent from the system');
-            $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('{0} /q', $this.getProperty('uninstall_id')));
+            $result = $this.startProcess('MsiExec.exe', $TRUE, [string]::Format('{0} /norestart /q', $this.getProperty('uninstall_id')));
 
             if ($result.Get_Item('exitcode') -ne 0) {
                 $this.error($result.Get_Item('message'));
