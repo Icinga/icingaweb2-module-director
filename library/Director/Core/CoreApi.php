@@ -5,8 +5,11 @@ namespace Icinga\Module\Director\Core;
 use Exception;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\IcingaModifiedAttribute;
+use Icinga\Module\Director\Exception\JsonEncodeException;
 use Icinga\Module\Director\Hook\DeploymentHook;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
@@ -16,6 +19,11 @@ use RuntimeException;
 
 class CoreApi implements DeploymentApiInterface
 {
+    const OBJECT_PLURALITY = [
+        'Host' => 'hosts',
+        'Service' => 'services'
+    ];
+
     protected $client;
 
     protected $initialized = false;
@@ -936,5 +944,77 @@ constants
         }
 
         return $this->client;
+    }
+
+    public function sendModification(IcingaModifiedAttribute $modifiedAttribute)
+    {
+        $action = $modifiedAttribute->getProperty('action');
+        $objectType = $modifiedAttribute->getProperty('icinga_object_type');
+        $objectName = $modifiedAttribute->getProperty('icinga_object_name');
+        try {
+            $modification = $modifiedAttribute->getModifiedAttributes();
+        } catch (JsonEncodeException $e) {
+            return false;
+        }
+
+        switch ($action) {
+            case 'create':
+                $result = $this->createObject($objectType, $objectName, $modification);
+                break;
+            case 'modify':
+                $result = $this->modifyObject($objectType, $objectName, $modification);
+                break;
+            case 'delete':
+                $result = $this->deleteObject($objectType, $objectName);
+                break;
+            default:
+                return false;
+        }
+
+        return $result && $result->succeeded();
+    }
+
+    protected function createObject($type, $name, $attrs)
+    {
+        try {
+            return $this->client()->put(
+                'objects/' . self::OBJECT_PLURALITY[$type] . '/' . $name,
+                (object)array(
+                    'package' => 'director',
+                    'attrs' => $attrs
+                )
+            );
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    protected function modifyObject($type, $name, $attrs)
+    {
+        try {
+            return $this->client()->post(
+                'objects/' . self::OBJECT_PLURALITY[$type] . '/' . $name,
+                (object)array(
+                    'package' => 'director',
+                    'attrs' => $attrs
+                )
+            );
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    protected function deleteObject($type, $name)
+    {
+        try {
+            return $this->client()->delete(
+                'objects/' . self::OBJECT_PLURALITY[$type] . '/' . $name,
+                (object) array(
+                    'cascade' => true
+                )
+            );
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }

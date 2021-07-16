@@ -87,6 +87,22 @@ class KickstartForm extends DirectorForm
                 array($this->getElement('HINT_ready'))
             );
 
+            $this->addElement('checkbox', 'liveModification', array(
+                'label'       => $this->translate($this->translate('Live Modification enabled')),
+                'required'    => false,
+                'value'       => $this->config()->get('liveModification', 'enabled')
+            ));
+
+            $this->addDisplayGroup(['liveModification'], 'liveModificationField', [
+                'decorators' => array(
+                    'FormElements',
+                    array('HtmlTag', array('tag' => 'dl')),
+                    'Fieldset',
+                ),
+                'order' => 50,
+                'legend' => $this->translate('Live modification')
+            ]);
+
             return;
         }
 
@@ -303,6 +319,9 @@ class KickstartForm extends DirectorForm
         $value = $this->getValue('resource');
 
         $config->setSection('db', array('resource' => $value));
+
+        $liveModificationEnabled = $this->getValue('liveModification');
+        $config->setSection('liveModification', array('enabled' => $liveModificationEnabled));
 
         try {
             $config->saveIni();

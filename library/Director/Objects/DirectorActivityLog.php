@@ -11,6 +11,12 @@ use Icinga\Application\Logger;
 
 class DirectorActivityLog extends DbObject
 {
+    const LIVE_MODIFICATION_VALUE_SCHEDULED = 'scheduled';
+    const LIVE_MODIFICATION_VALUE_SUCCEEDED = 'succeeded';
+    const LIVE_MODIFICATION_VALUE_FAILED = 'failed';
+    const LIVE_MODIFICATION_VALUE_IMPOSSIBLE = 'impossible';
+    const LIVE_MODIFICATION_VALUE_DISABLED = 'disabled';
+
     protected $table = 'director_activity_log';
 
     protected $keyName = 'id';
@@ -28,6 +34,7 @@ class DirectorActivityLog extends DbObject
         'change_time'     => null,
         'checksum'        => null,
         'parent_checksum' => null,
+        'live_modification' => self::LIVE_MODIFICATION_VALUE_IMPOSSIBLE
     ];
 
     protected $binaryProperties = [
@@ -106,11 +113,17 @@ class DirectorActivityLog extends DbObject
             'object_type'     => $type,
             'new_properties'  => $newProps,
             'change_time'     => date('Y-m-d H:i:s'),
-            'parent_checksum' => $db->getLastActivityChecksum()
+            'parent_checksum' => $db->getLastActivityChecksum(),
         );
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = hex2bin($data['parent_checksum']);
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $data['live_modification'] = self::LIVE_MODIFICATION_VALUE_IMPOSSIBLE;
+        } else {
+            $data['live_modification'] = self::LIVE_MODIFICATION_VALUE_DISABLED;
+        }
+
 
         static::audit($db, array(
             'action'      => 'create',
@@ -119,7 +132,9 @@ class DirectorActivityLog extends DbObject
             'new_props'   => $newProps,
         ));
 
-        return static::create($data)->store($db);
+        $activityLog = static::create($data);
+        $activityLog->store($db);
+        return $activityLog;
     }
 
     public static function logModification(IcingaObject $object, Db $db)
@@ -142,6 +157,11 @@ class DirectorActivityLog extends DbObject
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = hex2bin($data['parent_checksum']);
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $data['live_modification'] = self::LIVE_MODIFICATION_VALUE_IMPOSSIBLE;
+        } else {
+            $data['live_modification'] = self::LIVE_MODIFICATION_VALUE_DISABLED;
+        }
 
         static::audit($db, array(
             'action'      => 'modify',
@@ -151,7 +171,10 @@ class DirectorActivityLog extends DbObject
             'new_props'   => $newProps,
         ));
 
-        return static::create($data)->store($db);
+        $activityLog = static::create($data);
+        $activityLog->store($db);
+
+        return $activityLog;
     }
 
     public static function logRemoval(IcingaObject $object, Db $db)
@@ -172,6 +195,11 @@ class DirectorActivityLog extends DbObject
 
         $data['checksum'] = sha1(json_encode($data), true);
         $data['parent_checksum'] = hex2bin($data['parent_checksum']);
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $data['live_modification'] = self::LIVE_MODIFICATION_VALUE_IMPOSSIBLE;
+        } else {
+            $data['live_modification'] = self::LIVE_MODIFICATION_VALUE_DISABLED;
+        }
 
         static::audit($db, array(
             'action'      => 'remove',
@@ -180,7 +208,9 @@ class DirectorActivityLog extends DbObject
             'old_props'   => $oldProps
         ));
 
-        return static::create($data)->store($db);
+        $activityLog = static::create($data);
+        $activityLog->store($db);
+        return $activityLog;
     }
 
     public static function audit(Db $db, $properties)

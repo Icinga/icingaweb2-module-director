@@ -88,6 +88,7 @@ class BackgroundDaemon
             ->register($this->jobRunner)
             ->register($this->logProxy)
             ->register(new DeploymentChecker($this->loop))
+            ->register(new LiveCreation($this->loop))
             ->run($this->loop);
         $this->setState('running');
     }

@@ -11,6 +11,7 @@ use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ShipConfigFilesHook;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Resolver\LiveModificationResetResolver;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
@@ -478,6 +479,14 @@ class IcingaConfig
             ->createFileFromDb('dependency')
             ->createFileFromDb('scheduledDowntime')
             ;
+
+        $resolver = new LiveModificationResetResolver($this->connection);
+        $activityId = $this->connection->fetchActivityLogIdByChecksum($this->getLastActivityChecksum());
+        $modifiedAttributes = $resolver->fetchAppliedModificationsBeforeAndIncludingActivityId($activityId);
+        $resolver->scheduleAttributesToBeReset($modifiedAttributes);
+        foreach ($modifiedAttributes as $attribute) {
+            $attribute->delete();
+        }
 
         PrefetchCache::forget();
         IcingaHost::clearAllPrefetchCaches();
