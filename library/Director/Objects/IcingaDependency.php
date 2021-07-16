@@ -124,6 +124,11 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         return $this->get('parent_host_var') !== null;
     }
 
+    protected function isServiceCustomVar($string)
+    {
+        return \preg_match('/^(?:service)\.vars\..+$/', $string);
+    }
+
     /**
      * @return string
      * @throws ConfigurationError
@@ -481,9 +486,16 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     public function renderParent_service_by_name()
     {
         // @codingStandardsIgnoreEnd
+        $var = $this->get('parent_service_by_name');
+        if ($this->isServiceCustomVar($var)) {
+            return c::renderKeyValue(
+                'parent_service_name',
+                $var
+            );
+        }
         return c::renderKeyValue(
             'parent_service_name',
-            c::renderString($this->get('parent_service_by_name'))
+            c::renderString($var)
         );
     }
 
@@ -617,7 +629,9 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         // handle special case for plain string parent service on Dependency
         // Apply rules
         if ($related === null && $key === 'parent_service'
-            && null !== $this->get('parent_service_by_name')
+            && (null !== $this->get('parent_service_by_name')
+                && !$this->isServiceCustomVar($this->get('parent_service_by_name'))
+            )
         ) {
             return $this->get('parent_service_by_name');
         }

@@ -212,11 +212,18 @@ class IcingaDependencyForm extends DirectorObjectForm
 
         if (!empty($sentParent) || $dependency->isApplyRule()) {
             $parentService = $dependency->get('parent_service');
+            if ($parentService === null) {
+                $parentServiceVar = $dependency->get('parent_service_by_name');
+                if (\strlen($parentServiceVar) > 0) {
+                    $parentService = '$' . $dependency->get('parent_service_by_name') . '$';
+                }
+            }
             $this->addElement('text', 'parent_service', [
                     'label' => $this->translate('Parent Service'),
                     'description' => $this->translate(
                         'Optional. The parent service. If omitted this dependency'
-                         . ' object is treated as host dependency.'
+                        . ' object is treated as host dependency. You might want to refer'
+                        . ' Service Custom Variables via $service.vars.varname$'
                     ),
                     'class' => "autosubmit director-suggest",
                     'data-suggestion-context' => 'servicenames',
@@ -296,6 +303,12 @@ class IcingaDependencyForm extends DirectorObjectForm
                 $values['parent_host_var'] = \trim($values['parent_host'], '$');
                 $values['parent_host'] = '';
             }
+            if (isset($values['parent_service'])
+                && $this->isCustomVar($values['parent_service'])
+            ) {
+                $values['parent_service_by_name'] = \trim($values['parent_service'], '$');
+                $values['parent_service'] = '';
+            }
         }
 
         parent::handleProperties($object, $values);
@@ -303,7 +316,7 @@ class IcingaDependencyForm extends DirectorObjectForm
 
     protected function isCustomVar($string)
     {
-        return \preg_match('/^\$(?:host)\.vars\..+\$$/', $string);
+        return \preg_match('/^\$(?:host|service)\.vars\..+\$$/', $string);
         // Eventually: return \preg_match('/^\$(?:host|service)\.vars\..+\$$/', $string);
     }
 }
