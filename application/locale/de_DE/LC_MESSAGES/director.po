@@ -3643,10 +3643,10 @@ msgstr "Zusammenführungsrichtlinie"
 #: application/forms/IcingaTimePeriodRangeForm.php:23
 #: application/forms/IcingaScheduledDowntimeRangeForm.php:24
 msgid ""
-"Might be, monday, tuesday, 2016-01-28 - have a look at the documentation for "
+"Might be monday, tuesday or 2016-01-28 - have a look at the documentation for "
 "more examples"
 msgstr ""
-"Mögliche Werte sind z.B. monday, tuesday, 2016-01-28 - Mehr Beispiele finden "
+"Mögliche Werte sind z.B. monday, tuesday oder 2016-01-28 - Mehr Beispiele finden "
 "sich in der Dokumentation"
 
 #: application/forms/IcingaTemplateChoiceForm.php:73
