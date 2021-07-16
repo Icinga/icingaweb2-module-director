@@ -2585,7 +2585,15 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         /** @var IcingaObject $class */
         $class = self::classByType($type);
-        return $class::load($id, $db);
+        
+        /* called eg. in ObjectController::loadObject() with explicit
+         * (int) $id
+         */
+        if (is_int($id)) {
+            return $class::loadWithAutoIncId($id, $db);
+        } else {
+            return $class::load($id, $db);
+        }
     }
 
     /**

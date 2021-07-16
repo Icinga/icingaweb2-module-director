@@ -1063,6 +1063,9 @@ abstract class DbObject
     }
 
     /**
+     * Cache lookup for $key. If $key is a string, look for the object
+     * key. Otherwise, look for the auto increment id.
+     *
      * @param $key
      * @return static|bool
      */
@@ -1070,13 +1073,19 @@ abstract class DbObject
     {
         $class = get_called_class();
         if (static::hasPrefetched($key)) {
-            if (is_string($key)
-                && array_key_exists($class, self::$prefetchedNames)
-                && array_key_exists($key, self::$prefetchedNames[$class])
-            ) {
-                return self::$prefetched[$class][
-                    self::$prefetchedNames[$class][$key]
-                ];
+            if (is_string($key)) {
+                if (array_key_exists($class, self::$prefetchedNames)
+                    && array_key_exists($key, self::$prefetchedNames[$class])
+                ) {
+                    return self::$prefetched[$class][
+                        self::$prefetchedNames[$class][$key]
+                    ];
+                } else {
+                    throw new IcingaException(
+                        'hasPrefetched() reported $key to exist, '
+                            . 'but it does not'
+                    );
+                }
             } else {
                 return self::$prefetched[$class][$key];
             }
@@ -1085,6 +1094,10 @@ abstract class DbObject
         }
     }
 
+    /* Checks if $key is in the prefetch cache and tracks prefetch
+     * statistics as a side effect. Object key/auto increment id
+     * distinction like getPrefetched()
+     */
     protected static function hasPrefetched($key)
     {
         $class = get_called_class();
@@ -1103,12 +1116,16 @@ abstract class DbObject
         }
 
         if (array_key_exists($class, self::$prefetched)) {
-            if (is_string($key)
-                && array_key_exists($class, self::$prefetchedNames)
-                && array_key_exists($key, self::$prefetchedNames[$class])
-            ) {
-                self::$prefetchStats[$class]->hitNames++;
-                return true;
+            if (is_string($key)) {
+                if (array_key_exists($class, self::$prefetchedNames)
+                    && array_key_exists($key, self::$prefetchedNames[$class])
+                ) {
+                    self::$prefetchStats[$class]->hitNames++;
+                    return true;
+                } else {
+                    self::$prefetchStats[$class]->miss++;
+                    return false;
+                }
             } elseif (array_key_exists($key, self::$prefetched[$class])) {
                 self::$prefetchStats[$class]->hits++;
                 return true;
@@ -1125,6 +1142,38 @@ abstract class DbObject
     public static function getPrefetchStats()
     {
         return self::$prefetchStats;
+    }
+
+    /**
+     * Returns whether getAutoincKeyName() === getKeyName(), without
+     * creating a dummy object. Needs prefetch cache to be
+     * available; if it isn't, returns null.
+     *
+     */
+    private static function prefetchKeyAutoIncKey()
+    {
+        $class = get_called_class();
+        if (isset(self::$prefetched[$class])) {
+            return !isset(self::$prefetchedNames[$class]);
+        } else {
+            return null;
+        }
+    }
+
+    /* Normalizes the key for prefetching. If prefetch cache is empty,
+     * return as is (it'll be a cache miss anyway). Same goes for arrays.
+     * If getAutoincKeyName() === getKeyName(), then convert to int,
+     * otherweise to string.
+     */
+    private static function normalizePrefetchKey($id)
+    {
+        if (is_array($id) || ($keyAutoIncKey = static::prefetchKeyAutoIncKey()) === null) {
+            return $id;
+        } elseif ($keyAutoIncKey) {
+            return (int) $id;
+        } else {
+            return (string) $id;
+        }
     }
 
     /**
@@ -1157,6 +1206,11 @@ abstract class DbObject
     }
 
     /**
+     * Loads objects with key $id. Note that $id may be an auto
+     * increment id only if getAutoincKeyName() === getKeyName().
+     * If you need to load by auto increment id in other cases,
+     * use loadWithAutoIncId() instead
+     *
      * @param $id
      * @param DbConnection $connection
      * @return static
@@ -1164,7 +1218,8 @@ abstract class DbObject
      */
     public static function load($id, DbConnection $connection)
     {
-        if ($prefetched = static::getPrefetched($id)) {
+        $normId = static::normalizePrefetchKey($id);
+        if ($prefetched = static::getPrefetched($normId)) {
             return $prefetched;
         }
 
@@ -1225,6 +1280,11 @@ abstract class DbObject
         if ($force || ! array_key_exists($class, self::$prefetched)) {
             self::$prefetched[$class] = static::loadAll($connection, null, $autoInc);
             if (! is_array($keyName) && $keyName !== $autoInc) {
+                /* need the next line so we can know if $keyName === $autoInc
+                 * later on without creating a dummy object, even if
+                 * no objects of the type exist.
+                 */
+                self::$prefetchedNames[$class] = array();
                 foreach (self::$prefetched[$class] as $k => $v) {
                     self::$prefetchedNames[$class][$v->$keyName] = $k;
                 }
@@ -1260,7 +1320,8 @@ abstract class DbObject
      */
     public static function exists($id, DbConnection $connection)
     {
-        if (static::getPrefetched($id)) {
+        $normId = static::normalizePrefetchKey($id);
+        if (static::getPrefetched($normId)) {
             return true;
         } elseif (static::classWasPrefetched()) {
             return false;
