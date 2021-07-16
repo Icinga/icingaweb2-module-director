@@ -1,0 +1,47 @@
+name: PHP Tests
+
+on:
+  push:
+    branches:
+      - master
+      - release/*
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    name: Static analysis for php ${{ matrix.php }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0']
+        os: ['ubuntu-latest']
+        include:
+          - php: '5.6'
+            allow_failure: true
+          - php: '7.0'
+            allow_failure: true
+
+    steps:
+      - name: Checkout code base
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: phpcs
+
+      - name: Setup dependencies
+        run: composer require -n --no-progress overtrue/phplint
+
+      - name: PHP Lint
+        if: success() || matrix.allow_failure
+        run: ./vendor/bin/phplint -n --exclude={^vendor/.*} -- .
+
+      - name: PHP CodeSniffer
+        if: success() || matrix.allow_failure
+        run: phpcs
