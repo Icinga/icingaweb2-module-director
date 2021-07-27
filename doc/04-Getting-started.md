@@ -25,7 +25,7 @@ Create an API user
 ```icinga2
 object ApiUser "director" {
   password = "***"
-  permissions = [ "*" ]
+  permissions = [ "config/modify", "config/query", "console", "objects/query/*", "status/query", "actions/generate-ticket" ]
   //client_cn = ""
 }
 ```
