@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Import;
 
 use Icinga\Application\Config;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Hook\ImportSourceHook;
@@ -30,7 +31,7 @@ class ImportSourceDirectorObject extends ImportSourceHook
         $objectClass = $this->getSetting('object_class');
         $objectType = $this->getSetting('object_type');
         /** @var IcingaObject $class fake type hint, it's a string */
-        $class = IcingaObject::classByType($objectClass);
+        $class = DbObjectTypeRegistry::classByType($objectClass);
         if ($objectType) {
             $dummy = $class::create();
             $query = $db->getDbAdapter()->select()

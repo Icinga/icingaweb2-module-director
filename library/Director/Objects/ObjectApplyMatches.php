@@ -8,6 +8,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\AssignFilterHelper;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use stdClass;
@@ -127,7 +128,7 @@ abstract class ObjectApplyMatches
         Benchmark::measure("ObjectApplyMatches: prefetching $type");
         PrefetchCache::initialize($db);
         /** @var IcingaObject $class */
-        $class = IcingaObject::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         $all = $class::prefetchAll($db);
         Benchmark::measure("ObjectApplyMatches: related objects for $type");
         $class::prefetchAllRelationsByType($type, $db);

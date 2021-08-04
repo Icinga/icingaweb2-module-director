@@ -9,6 +9,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -359,7 +360,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public static function prefetchAllRelationsByType($type, Db $db)
     {
         /** @var static $class */
-        $class = self::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         /** @var static $dummy */
         $dummy = $class::create([], $db);
         $dummy->prefetchAllRelatedTypes();
@@ -2521,42 +2522,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ));
     }
 
+    /**
+     * @deprecated use DbObjectTypeRegistry::classByType()
+     * @param $type
+     * @return string
+     */
     public static function classByType($type)
     {
-        // allow for icinga_host and host
-        $type = lcfirst(preg_replace('/^icinga_/', '', $type));
-
-        // Hint: Sync/Import are not IcingaObjects, this should be reconsidered:
-        if (strpos($type, 'import') === 0 || strpos($type, 'sync') === 0) {
-            $prefix = '';
-        } elseif (strpos($type, 'data') === false) {
-            $prefix = 'Icinga';
-        } else {
-            $prefix = 'Director';
-        }
-
-        // TODO: Provide a more sophisticated solution
-        if ($type === 'hostgroup') {
-            $type = 'hostGroup';
-        } elseif ($type === 'usergroup') {
-            $type = 'userGroup';
-        } elseif ($type === 'timeperiod') {
-            $type = 'timePeriod';
-        } elseif ($type === 'servicegroup') {
-            $type = 'serviceGroup';
-        } elseif ($type === 'service_set') {
-            $type = 'serviceSet';
-        } elseif ($type === 'apiuser') {
-            $type = 'apiUser';
-        } elseif ($type === 'host_template_choice') {
-            $type = 'templateChoiceHost';
-        } elseif ($type === 'service_template_choice') {
-            $type = 'TemplateChoiceService';
-        } elseif ($type === 'scheduled_downtime' || $type === 'scheduled-downtime') {
-            $type = 'ScheduledDowntime';
-        }
-
-        return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
+        return DbObjectTypeRegistry::classByType($type);
     }
 
     /**
@@ -2569,7 +2542,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public static function createByType($type, $properties = [], Db $db = null)
     {
         /** @var IcingaObject $class */
-        $class = self::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         return $class::create($properties, $db);
     }
 
@@ -2584,7 +2557,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public static function loadByType($type, $id, Db $db)
     {
         /** @var IcingaObject $class */
-        $class = self::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         return $class::load($id, $db);
     }
 
@@ -2598,7 +2571,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public static function existsByType($type, $id, Db $db)
     {
         /** @var IcingaObject $class */
-        $class = self::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         return $class::exists($id, $db);
     }
 
@@ -2610,7 +2583,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public static function loadAllByType($type, Db $db, $query = null, $keyColumn = null)
     {
         /** @var DbObject $class */
-        $class = self::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
 
         if ($keyColumn === null) {
             if (method_exists($class, 'getKeyColumnName')) {
@@ -2645,7 +2618,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public static function loadAllExternalObjectsByType($type, Db $db)
     {
         /** @var IcingaObject $class */
-        $class = self::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         $dummy = $class::create();
 
         if (is_array($dummy->getKeyName())) {

@@ -3,6 +3,7 @@
 namespace Tests\Icinga\Module\Director\Objects;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -83,7 +84,7 @@ class HostGroupMembershipResolverTest extends BaseTestCase
     protected function objects($type)
     {
         /** @var IcingaObject $class */
-        $class = IcingaObject::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
 
         /** @var IcingaObject $dummy */
         $dummy = $class::create();
