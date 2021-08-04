@@ -6,6 +6,8 @@ use InvalidArgumentException;
 use function array_diff;
 use function array_key_exists;
 use function implode;
+use function is_array;
+use function is_object;
 
 class DataArrayHelper
 {
@@ -13,7 +15,8 @@ class DataArrayHelper
     {
         if (is_object($value)) {
             return (array) $value;
-        } elseif (! is_array($value)) {
+        }
+        if (! is_array($value)) {
             throw new InvalidDataException('Object', $value);
         }
 
