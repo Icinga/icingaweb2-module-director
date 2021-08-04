@@ -44,7 +44,7 @@ class DbObjectTypeRegistry
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
     }
 
-    public static function makeObject($type, $properties = [], Db $db = null)
+    public static function newObject($type, $properties = [], Db $db = null)
     {
         /** @var DbObject $class fake hint for the IDE, it's a string */
         $class = self::classByType($type);

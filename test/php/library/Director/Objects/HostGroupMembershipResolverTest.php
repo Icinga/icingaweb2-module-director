@@ -83,11 +83,7 @@ class HostGroupMembershipResolverTest extends BaseTestCase
 
     protected function objects($type)
     {
-        /** @var IcingaObject $class */
-        $class = DbObjectTypeRegistry::classByType($type);
-
-        /** @var IcingaObject $dummy */
-        $dummy = $class::create();
+        $dummy = DbObjectTypeRegistry::newObject($type);
 
         $table = $dummy->getTableName();
         $query = $this->getDb()->getDbAdapter()->select()
@@ -97,7 +93,7 @@ class HostGroupMembershipResolverTest extends BaseTestCase
         $objects = [];
         $l = strlen(self::PREFIX);
 
-        foreach ($class::loadAll($this->getDb(), $query) as $object) {
+        foreach ($dummy::loadAll($this->getDb(), $query) as $object) {
             $key = substr($object->getObjectName(), $l);
             $objects[$key] = $object;
         }
