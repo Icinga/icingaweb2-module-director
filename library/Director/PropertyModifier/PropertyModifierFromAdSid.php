@@ -13,6 +13,10 @@ class PropertyModifierFromAdSid extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         // Strongly inspired by
         // http://www.chadsikorra.com/blog/decoding-and-encoding-active-directory-objectsid-php
         //

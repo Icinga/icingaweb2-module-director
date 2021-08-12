@@ -35,6 +35,10 @@ class PropertyModifierTrim extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         $mask = $this->getSetting('character_mask');
         $method = $this->getSetting('trim_method');
         if (in_array($method, self::VALID_METHODS)) {

@@ -31,6 +31,10 @@ class PropertyModifierUpperCaseFirst extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         if ($this->getSetting('lowerfirst', 'y') === 'y') {
             return ucwords(strtolower($value));
         } else {

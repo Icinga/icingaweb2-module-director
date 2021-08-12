@@ -13,6 +13,10 @@ class PropertyModifierToInt extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         if (is_int($value)) {
             return $value;
         }

@@ -14,6 +14,10 @@ class PropertyModifierFromLatin1 extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         return utf8_encode($value);
     }
 }

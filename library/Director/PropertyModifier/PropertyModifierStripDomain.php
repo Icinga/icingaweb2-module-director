@@ -23,6 +23,10 @@ class PropertyModifierStripDomain extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         $domain = preg_quote(ltrim($this->getSetting('domain'), '.'), '/');
 
         return preg_replace(

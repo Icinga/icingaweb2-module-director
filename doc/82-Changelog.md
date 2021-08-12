@@ -12,6 +12,7 @@ next (will be 1.9.0)
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/25?closed=1)
 
 ### Import and Sync
+* FIX: string property modifiers now preserve NULL values (#2371)
 * FEATURE: introduce 'disable' as your purge action on Sync (#2285)
 * FEATURE: there is now a simple "group by" Property Modifier (#2317)
 
