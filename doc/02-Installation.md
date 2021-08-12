@@ -20,9 +20,9 @@ Requirements
   might show smaller UI bugs and are not actively tested
 * The following Icinga modules must be installed and enabled:
   * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.5.0)
-  * If you are using Icinga Web &lt; 2.9.0, the following modules are also required
-    * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
-    * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
+  * If you are using Icinga Web &lt; 2.9.0, the following are also required
+  * [Icinga PHP Library (ipl)](https://github.com/Icinga/icinga-php-library) (>= 0.6)
+  * [Icinga PHP Thirdparty](https://github.com/Icinga/icinga-php-thirdparty) (>= 0.10)
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
   MySQL forks are also fine. Mentioned versions are the required minimum,
   for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
