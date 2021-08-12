@@ -13,6 +13,7 @@ next (will be 1.9.0)
 
 ### Import and Sync
 * FIX: string property modifiers now preserve NULL values (#2371)
+* FIX: "to int" property modifiers now fails for non-string values (#2372)
 * FEATURE: introduce 'disable' as your purge action on Sync (#2285)
 * FEATURE: there is now a simple "group by" Property Modifier (#2317)
 
