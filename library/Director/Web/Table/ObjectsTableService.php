@@ -24,7 +24,7 @@ class ObjectsTableService extends ObjectsTable
             'object_name'      => 'o.object_name',
             'disabled'         => 'o.disabled',
             'host'             => 'h.object_name',
-            'hots_object_type' => 'h.object_type',
+            'host_object_type' => 'h.object_type',
             'host_disabled'    => 'h.disabled',
             'id'               => 'o.id',
             'blacklisted'      => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
