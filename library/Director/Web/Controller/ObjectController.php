@@ -6,6 +6,7 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
@@ -452,6 +453,9 @@ abstract class ObjectController extends ActionController
 
     protected function loadObject()
     {
+        if ($this->object) {
+            throw new ProgrammingError('Loading an object twice is not very efficient');
+        }
         if ($this->object === null) {
             if ($id = $this->params->get('id')) {
                 $this->object = IcingaObject::loadByType(
