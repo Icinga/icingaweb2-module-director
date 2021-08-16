@@ -3067,9 +3067,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         if ($this->supportsCustomVars()) {
-            $props['vars'] = (object) [];
-            foreach ($this->vars()->getOriginalVars() as $name => $var) {
-                $props['vars']->$name = $var->getValue();
+            $originalVars = $this->vars()->getOriginalVars();
+            if (! empty($originalVars)) {
+                $props['vars'] = (object) [];
+                foreach ($originalVars as $name => $var) {
+                    $props['vars']->$name = $var->getValue();
+                }
             }
         }
         if ($this->supportsGroups()) {
