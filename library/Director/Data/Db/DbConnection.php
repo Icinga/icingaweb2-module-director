@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Data\Db\DbConnection as IcingaDbConnection;
+use RuntimeException;
 use Zend_Db_Expr;
 
 class DbConnection extends IcingaDbConnection
@@ -19,11 +20,24 @@ class DbConnection extends IcingaDbConnection
 
     public function quoteBinary($binary)
     {
+        if ($binary instanceof Zend_Db_Expr) {
+            throw new RuntimeException('Trying to escape binary twice');
+        }
+
         if ($this->isPgsql()) {
             return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
         }
 
         return $binary;
+    }
+
+    public function binaryDbResult($value)
+    {
+        if (is_resource($value)) {
+            return stream_get_contents($value);
+        }
+
+        return $value;
     }
 
     public function hasPgExtension($name)

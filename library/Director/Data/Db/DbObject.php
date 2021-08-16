@@ -760,12 +760,9 @@ abstract class DbObject
                 unset($properties[$this->autoincKeyName]);
             }
         }
-        // TODO: Remove this!
-        if ($this->connection->isPgsql()) {
-            foreach ($properties as $key => $value) {
-                if ($this->isBinaryColumn($key)) {
-                    $properties[$key] = Util::pgBinEscape($value);
-                }
+        foreach ($properties as $key => $value) {
+            if ($this->isBinaryColumn($key)) {
+                $properties[$key] = $this->getConnection()->quoteBinary($value);
             }
         }
 
