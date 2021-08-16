@@ -681,12 +681,17 @@ abstract class DbObject
             }
         }
 
+        $this->setBeingLoadedFromDb();
+        $this->onLoadFromDb();
+        return $this;
+    }
+
+    public function setBeingLoadedFromDb()
+    {
         $this->loadedFromDb = true;
         $this->loadedProperties = $this->properties;
         $this->hasBeenModified = false;
-        $this->modifiedProperties = array();
-        $this->onLoadFromDb();
-        return $this;
+        $this->modifiedProperties = [];
     }
 
     public function getOriginalProperties()
