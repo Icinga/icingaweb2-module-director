@@ -781,7 +781,7 @@ abstract class DbObject
      * Store object to database
      *
      * @param  DbConnection $db
-     * @return bool Whether storing succeeded
+     * @return bool Whether storing succeeded. Always true, throws otherwise
      * @throws DuplicateKeyException
      */
     public function store(DbConnection $db = null)
@@ -809,7 +809,6 @@ abstract class DbObject
         try {
             if ($this->hasBeenLoadedFromDb()) {
                 if ($this->updateDb() !== false) {
-                    $result = true;
                     $this->onUpdate();
                 } else {
                     throw new RuntimeException(sprintf(
@@ -845,7 +844,6 @@ abstract class DbObject
                     }
                     // $this->log(sprintf('New %s "%s" has been stored', $table, $id));
                     $this->onInsert();
-                    $result = true;
                 } else {
                     throw new RuntimeException(sprintf(
                         'FAILED to store new %s "%s"',
@@ -864,13 +862,14 @@ abstract class DbObject
             ));
         }
 
-        $this->modifiedProperties = array();
+        // Hint: order is differs from setBeingLoadedFromDb() as of the onStore hook
+        $this->modifiedProperties = [];
         $this->hasBeenModified = false;
         $this->loadedProperties = $this->properties;
         $this->onStore();
         $this->loadedFromDb = true;
 
-        return $result;
+        return true;
     }
 
     /**
