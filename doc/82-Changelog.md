@@ -29,6 +29,7 @@ next (will be 1.9.0)
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
 * FIX: Links to duplicate services in Sets didn't check for deactivation (#2323)
+* FIX: SQL error for Data Fields table on PostgreSQL (#2310)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 * FEATURE: Service Template for single Host services provides auto-completion (#1974)
 

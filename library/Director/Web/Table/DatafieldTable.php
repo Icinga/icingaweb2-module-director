@@ -85,7 +85,7 @@ class DatafieldTable extends ZfQueryBasedTable
             ['used_vars' => $db->select()->union($varsQueries, ZfDbSelect::SQL_UNION_ALL)],
             'used_vars.varname = df.varname',
             []
-        )->group('df.id')->group('df.varname')->order('caption ASC');
+        )->group('df.id')->group('df.varname')->group('dfc.category_name')->order('caption ASC');
     }
 
     /**
