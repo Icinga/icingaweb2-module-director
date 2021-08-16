@@ -14,7 +14,9 @@ use Icinga\Module\Director\Forms\SettingsForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Settings;
+use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Table\ActivityLogTable;
+use Icinga\Module\Director\Web\Table\BranchActivityTable;
 use Icinga\Module\Director\Web\Table\ConfigFileDiffTable;
 use Icinga\Module\Director\Web\Table\DeploymentLogTable;
 use Icinga\Module\Director\Web\Table\GeneratedConfigFileTable;
@@ -34,6 +36,8 @@ use gipfl\IcingaWeb2\Url;
 
 class ConfigController extends ActionController
 {
+    use BranchHelper;
+
     protected $isApified = true;
 
     protected function checkDirectorPermissions()
@@ -147,6 +151,10 @@ class ConfigController extends ActionController
             return;
         }
         $this->assertPermission('director/audit');
+        if ($branchUuid = $this->getBranchUuid()) {
+            $table = new BranchActivityTable($branchUuid, $this->db());
+            $this->content()->add($table);
+        }
 
         $this->setAutorefreshInterval(10);
         $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');

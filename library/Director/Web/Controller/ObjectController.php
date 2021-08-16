@@ -7,6 +7,8 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
@@ -26,11 +28,13 @@ use Icinga\Module\Director\Web\Table\ActivityLogTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
+use Icinga\Module\Director\Web\Widget\ObjectModificationBranchHint;
 use gipfl\IcingaWeb2\Link;
 
 abstract class ObjectController extends ActionController
 {
     use ObjectRestrictions;
+    use BranchHelper;
 
     /** @var IcingaObject */
     protected $object;
@@ -89,6 +93,9 @@ abstract class ObjectController extends ActionController
                     $this->getAuth(),
                     $this->object
                 ));
+            }
+            if ($this->object !== null) {
+                $this->addDeploymentLink();
             }
         }
     }
@@ -456,40 +463,36 @@ abstract class ObjectController extends ActionController
         if ($this->object) {
             throw new ProgrammingError('Loading an object twice is not very efficient');
         }
-        if ($this->object === null) {
-            if ($id = $this->params->get('id')) {
-                $this->object = IcingaObject::loadByType(
-                    $this->getType(),
-                    (int) $id,
-                    $this->db()
-                );
-            } elseif (null !== ($name = $this->params->get('name'))) {
-                $this->object = IcingaObject::loadByType(
-                    $this->getType(),
-                    $name,
-                    $this->db()
-                );
 
-                if (! $this->allowsObject($this->object)) {
-                    $this->object = null;
-                    throw new NotFoundError('No such object available');
-                }
-            } elseif ($this->getRequest()->isApiRequest()) {
-                if ($this->getRequest()->isGet()) {
-                    $this->getResponse()->setHttpResponseCode(422);
+        $isApi = $this->getRequest()->isApiRequest();
+        $store = new DbObjectStore($this->db());
+        if ($id = $this->params->get('id')) {
+            $key = (int) $id;
+        } elseif (null !== ($name = $this->params->get('name'))) {
+            $key = $name;
+        }
+        if ($key === null) {
+            if ($isApi && $this->getRequest()->isGet()) {
+                $this->getResponse()->setHttpResponseCode(422);
 
-                    throw new InvalidPropertyException(
-                        'Cannot load object, missing parameters'
-                    );
-                }
+                throw new InvalidPropertyException(
+                    'Cannot load object, missing parameters'
+                );
             }
 
-            if ($this->object !== null) {
-                $this->addDeploymentLink();
-            }
+            return;
+        }
+        $branch = $this->getBranch();
+        $store->setBranch($branch);
+        list($object, $modification) = $store->loadWithBranchModification(strtolower($this->getType()), $key);
+        if (! $this->allowsObject($object)) {
+            throw new NotFoundError('No such object available');
+        }
+        if ($branch->isBranch() && ! $isApi) {
+            $this->content()->add(new ObjectModificationBranchHint($branch, $object, $modification));
         }
 
-        return $this->object;
+        $this->object = $object;
     }
 
     protected function addDeploymentLink()
@@ -499,18 +502,32 @@ abstract class ObjectController extends ActionController
             $info->setObject($this->object);
 
             if (! $this->getRequest()->isApiRequest()) {
-                $this->actions()->add(
-                    DeploymentLinkForm::create(
-                        $this->db(),
-                        $info,
-                        $this->Auth(),
-                        $this->api()
-                    )->handleRequest()
-                );
+                if ($this->getBranch()->isBranch()) {
+                    $this->actions()->add($this->linkToMergeBranch($this->getBranch()));
+                } else {
+                    $this->actions()->add(
+                        DeploymentLinkForm::create(
+                            $this->db(),
+                            $info,
+                            $this->Auth(),
+                            $this->api()
+                        )->handleRequest()
+                    );
+                }
             }
         } catch (IcingaException $e) {
             // pass (deployment may not be set up yet)
         }
+    }
+
+    protected function linkToMergeBranch(Branch $branch)
+    {
+        $link = Branch::requireHook()->linkToBranch($branch);
+        if ($link instanceof Link) {
+            $link->addAttributes(['class' => 'icon-flapping']);
+        }
+
+        return $link;
     }
 
     protected function addBackToObjectLink()
@@ -559,6 +576,9 @@ abstract class ObjectController extends ActionController
 
         if ($object !== null) {
             $form->setObject($object);
+        }
+        if (true || $form->supportsBranches()) {
+            $form->setBranchUuid($this->getBranchUuid());
         }
 
         $this->onObjectFormLoaded($form);

@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Table;
 
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
@@ -12,6 +13,7 @@ use Icinga\Module\Director\Restriction\ObjectRestriction;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
+use Ramsey\Uuid\UuidInterface;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
@@ -21,6 +23,7 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected $columns = [
         'object_name' => 'o.object_name',
+        'object_type' => 'o.object_type',
         'disabled'    => 'o.disabled',
         'id'          => 'o.id',
     ];
@@ -32,6 +35,9 @@ class ObjectsTable extends ZfQueryBasedTable
     protected $filterObjectType = 'object';
 
     protected $type;
+
+    /** @var UuidInterface|null */
+    protected $branchUuid;
 
     protected $baseObjectUrl;
 
@@ -98,6 +104,13 @@ class ObjectsTable extends ZfQueryBasedTable
     public function addObjectRestriction(ObjectRestriction $restriction)
     {
         $this->objectRestrictions[$restriction->getName()] = $restriction;
+        return $this;
+    }
+
+    public function setBranchUuid(UuidInterface $uuid = null)
+    {
+        $this->branchUuid = $uuid;
+
         return $this;
     }
 
@@ -175,8 +188,14 @@ class ObjectsTable extends ZfQueryBasedTable
         return [];
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query)
+    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
     {
+        if ($right) {
+            $right->where(
+                'bo.object_type = ?',
+                $this->filterObjectType
+            );
+        }
         return $query->where(
             'o.object_type = ?',
             $this->filterObjectType
@@ -224,19 +243,78 @@ class ObjectsTable extends ZfQueryBasedTable
         return $this->dummyObject;
     }
 
+    protected function branchifyColumns($columns)
+    {
+        $result = [];
+        $ignore = ['o.id'];
+        foreach ($columns as $alias => $column) {
+            if (substr($column, 0, 2) === 'o.' && ! in_array($column, $ignore)) {
+                // bo.column, o.column
+                $column = "COALESCE(b$column, $column)";
+            }
+
+            $result[$alias] = $column;
+        }
+
+        return $result;
+    }
+
+    protected function stripSearchColumnAliases()
+    {
+        foreach ($this->searchColumns as &$column) {
+            $column = preg_replace('/^[a-z]+\./', '', $column);
+        }
+    }
+
     protected function prepareQuery()
     {
         $table = $this->getDummyObject()->getTableName();
+        $columns = $this->getColumns();
+        if ($this->branchUuid) {
+            $columns = $this->branchifyColumns($columns);
+            $this->stripSearchColumnAliases();
+        }
         $query = $this->applyRestrictions(
             $this->db()
                 ->select()
                 ->from(
                     ['o' => $table],
-                    $this->getColumns()
+                    $columns
                 )
-                ->order('o.object_name')->limit(100)
         );
 
-        return $this->applyObjectTypeFilter($query);
+        if ($this->branchUuid) {
+            $right = clone($query);
+            /** @var Db $conn */
+            $conn = $this->connection();
+            $query->joinLeft(
+                ['bo' => "branched_$table"],
+                // TODO: PgHexFunc
+                $this->db()->quoteInto(
+                    'bo.object_id = o.id AND bo.branch_uuid = ?',
+                    $conn->quoteBinary($this->branchUuid->getBytes())
+                ),
+                []
+            )->where("(bo.deleted IS NULL OR bo.deleted = 'n')");
+            $this->applyObjectTypeFilter($query, $right);
+            $right->joinRight(
+                ['bo' => "branched_$table"],
+                'bo.object_id = o.id',
+                []
+            )
+            ->where('o.id IS NULL')
+            ->where('bo.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
+            $query = $this->db()->select()->union([
+                'l' => new DbSelectParenthesis($query),
+                'r' => new DbSelectParenthesis($right),
+            ]);
+            $query = $this->db()->select()->from(['u' => $query]);
+            $query->order('object_name')->limit(100);
+        } else {
+            $this->applyObjectTypeFilter($query);
+            $query->order('o.object_name')->limit(100);
+        }
+
+        return $query;
     }
 }

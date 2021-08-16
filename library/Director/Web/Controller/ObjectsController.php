@@ -26,6 +26,8 @@ use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
 
 abstract class ObjectsController extends ActionController
 {
+    use BranchHelper;
+
     protected $isApified = true;
 
     /** @var ObjectsTable */
@@ -134,9 +136,12 @@ abstract class ObjectsController extends ActionController
      */
     protected function getTable()
     {
-        return ObjectsTable::create($this->getType(), $this->db())
+        $table = ObjectsTable::create($this->getType(), $this->db())
             ->setAuth($this->getAuth())
+            ->setBranchUuid($this->getBranchUuid())
             ->setBaseObjectUrl($this->getBaseObjectUrl());
+
+        return $table;
     }
 
     /**
