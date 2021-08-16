@@ -859,6 +859,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // them here on demand.
             return [];
         }
+        $id = $this->get('id');
+        if ($id === null) {
+            // Do not fail for branches. Should be handled otherwise
+            // TODO: throw an Exception, once we are able to deal with this
+            return [];
+        }
 
         $type = strtolower($this->getType());
         $query = $this->db->select()->from(
@@ -870,11 +876,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             []
         )->joinLeft(
             ['go' => "icinga_${type}group_${type}"],
-            "go.${type}group_id = gr.${type}group_id AND go.${type}_id = " . $this->id,
+            "go.${type}group_id = gr.${type}group_id AND go.${type}_id = " . (int) $id,
             []
         )->where(
             "gr.${type}_id = ?",
-            $this->id
+            (int) $id
         )->where("go.${type}_id IS NULL")->order('g.object_name');
 
         return $this->db->fetchCol($query);
