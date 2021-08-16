@@ -43,9 +43,7 @@ abstract class DirectorObjectForm extends DirectorForm
 
     protected $deleteButtonName;
 
-    protected $fieldsDisplayGroup;
-
-    protected $displayGroups = array();
+    protected $displayGroups = [];
 
     protected $resolvedImports;
 
