@@ -5,15 +5,13 @@ namespace Icinga\Module\Director\Web\Table;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use ipl\Html\Html;
-use Zend_Db_Adapter_Abstract as ZfDbAdapter;
-use Zend_Db_Select as ZfDbSelect;
 
 class DatafieldCategoryTable extends ZfQueryBasedTable
 {
-    protected $searchColumns = array(
-        'dfc.varname',
-        'dfc.caption',
-    );
+    protected $searchColumns = [
+        'dfc.category_name',
+        'dfc.description',
+    ];
 
     public function getColumns()
     {
@@ -45,10 +43,10 @@ class DatafieldCategoryTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
-        return array(
+        return [
             $this->translate('Category Name'),
             $this->translate('# Used'),
-        );
+        ];
     }
 
     public function prepareQuery()
