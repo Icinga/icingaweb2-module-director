@@ -2801,13 +2801,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
                 if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
-                    if ($v === 'y') {
-                        $props[$k] = true;
-                    } elseif ($v === 'n') {
-                        $props[$k] = false;
-                    } else {
-                        $props[$k] = $v;
-                    }
+                    $props[$k] = $this->booleanForDbValue($v);
                 } else {
                     $props[$k] = $v;
                 }
@@ -2916,6 +2910,18 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         ksort($props);
 
         return (object) $props;
+    }
+
+    protected function booleanForDbValue($value)
+    {
+        if ($value === 'y') {
+            return true;
+        }
+        if ($value === 'n') {
+            return false;
+        }
+
+        return $value; // let this fail elsewhere, if not null
     }
 
     public function listImportNames()
@@ -3052,7 +3058,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             }
 
             if ($this->differsFromDefaultValue($k, $v)) {
-                $props[$k] = $v;
+                if ($k === 'disabled' || $this->propertyIsBoolean($k)) {
+                    $props[$k] = $this->booleanForDbValue($v);
+                } else {
+                    $props[$k] = $v;
+                }
             }
         }
 
