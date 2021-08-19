@@ -10,7 +10,7 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
             'templates'  => $this->translate('Templates'),
             'objects'    => $this->translate('Objects'),
             'applyrules' => $this->translate('Apply Rules'),
-            // 'setmembers' => $this->translate('Set Members'),
+            'setmembers' => $this->translate('Set Members'),
         ];
     }
 
@@ -18,10 +18,10 @@ class ServiceTemplateUsageTable extends TemplateUsageTable
     {
         return [
             'templates'  => $this->getSummaryLine('template'),
-            'objects'    => $this->getSummaryLine('object'),
+            'objects'    => $this->getSummaryLine('object', 'o.service_set_id IS NULL AND o.host_id IS NOT NULL'),
             'applyrules' => $this->getSummaryLine('apply', 'o.service_set_id IS NULL'),
             // TODO: re-enable
-            // 'setmembers' => $this->getSummaryLine('apply', 'o.service_set_id IS NOT NULL'),
+            'setmembers' => $this->getSummaryLine('object', 'o.service_set_id IS NOT NULL'),
         ];
     }
 }
