@@ -220,7 +220,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
                         // TODO
                     case 'fail':
                         throw new ProgrammingError(
-                            'The related %s "%s" doesn\'t exists: %s',
+                            'The related %s "%s" does not exist: %s',
                             $this->getRelatedTableName(),
                             $relation,
                             $e->getMessage()
