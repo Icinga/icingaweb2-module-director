@@ -23,6 +23,7 @@ use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
+use Icinga\Module\Director\Web\Widget\BranchedObjectsHint;
 
 abstract class ObjectsController extends ActionController
 {
@@ -118,6 +119,8 @@ abstract class ObjectsController extends ActionController
             ->setAutorefreshInterval(10)
             ->addTitle($this->translate(ucfirst($this->getPluralType())))
             ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
+
+        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth()));
 
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
             $this->tabs()->activate('external');
