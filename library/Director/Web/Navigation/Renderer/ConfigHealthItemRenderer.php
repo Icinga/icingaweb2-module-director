@@ -9,7 +9,7 @@ use Icinga\Application\Web;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\Branch;
-use Icinga\Module\Director\Db\Branch\BranchActivityStore;
+use Icinga\Module\Director\Db\Branch\BranchStore;
 use Icinga\Module\Director\Db\Migrations;
 use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
@@ -104,10 +104,9 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
             return;
         }
 
-        $branch = Branch::detect();
+        $branch = Branch::detect(new BranchStore($this->db()));
         if ($branch->isBranch()) {
-            $store = new BranchActivityStore($this->db());
-            $count = $store->count($branch->getUuid());
+            $count = $branch->getActivityCount();
             if ($count > 0) {
                 $this->directorState = self::STATE_PENDING;
                 $this->count = $count;
@@ -131,8 +130,6 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
                 ),
                 $pendingChanges
             );
-
-            return;
         }
     }
 
