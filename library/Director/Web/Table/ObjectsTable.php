@@ -185,6 +185,10 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function getRowClasses($row)
     {
+        // TODO: remove isset, to figure out where it is missing
+        if (isset($row->branch_uuid) && $row->branch_uuid !== null) {
+            return ['branch_modified'];
+        }
         return [];
     }
 
@@ -269,6 +273,10 @@ class ObjectsTable extends ZfQueryBasedTable
     protected function prepareQuery()
     {
         $table = $this->getDummyObject()->getTableName();
+        if ($this->branchUuid) {
+            $this->columns['branch_uuid'] = 'bo.branch_uuid';
+        }
+
         $columns = $this->getColumns();
         if ($this->branchUuid) {
             $columns = $this->branchifyColumns($columns);
