@@ -3,15 +3,15 @@
 namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Module\Director\Db\Branch\Branch;
-use Ramsey\Uuid\UuidInterface;
+use Icinga\Module\Director\Db\Branch\BranchStore;
 
 trait BranchHelper
 {
     /** @var Branch */
     protected $branch;
 
-    /** @var UuidInterface|null */
-    protected $branchUuid;
+    /** @var BranchStore */
+    protected $branchStore;
 
     /**
      * @return false|\Ramsey\Uuid\UuidInterface
@@ -25,10 +25,22 @@ trait BranchHelper
     {
         if ($this->branch === null) {
             /** @var ActionController $this */
-            $this->branch = Branch::forRequest($this->getRequest());
+            $this->branch = Branch::forRequest($this->getRequest(), $this->getBranchStore(), $this->Auth());
         }
 
         return $this->branch;
+    }
+
+    /**
+     * @return BranchStore
+     */
+    protected function getBranchStore()
+    {
+        if ($this->branchStore === null) {
+            $this->branchStore = new BranchStore($this->db());
+        }
+
+        return $this->branchStore;
     }
 
     protected function hasBranch()
