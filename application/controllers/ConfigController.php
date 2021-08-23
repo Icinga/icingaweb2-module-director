@@ -8,6 +8,7 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
@@ -151,11 +152,7 @@ class ConfigController extends ActionController
             return;
         }
         $this->assertPermission('director/audit');
-        if ($branchUuid = $this->getBranchUuid()) {
-            $table = new BranchActivityTable($branchUuid, $this->db());
-            $this->content()->add($table);
-        }
-
+        $this->showOptionalBranchActivity();
         $this->setAutorefreshInterval(10);
         $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');
         $this->addTitle($this->translate('Activity Log'));
@@ -428,6 +425,29 @@ class ConfigController extends ActionController
                 $left->getFile($filename),
                 $right->getFile($filename)
             )));
+    }
+
+    protected function showOptionalBranchActivity()
+    {
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && (int) $this->params->get('page', '1') === 1) {
+            $table = new BranchActivityTable($branch->getUuid(), $this->db());
+            if (count($table) > 0) {
+                $this->content()->add(Hint::info(Html::sprintf($this->translate(
+                    'The following modifications are visible in this %s only...'
+                ), Branch::requireHook()->linkToBranch(
+                    $branch,
+                    $this->Auth(),
+                    $this->translate('configuration branch')
+                ))));
+                $table = new BranchActivityTable($branch->getUuid(), $this->db());
+                $this->content()->add($table);
+                $this->content()->add(Html::tag('br'));
+                $this->content()->add(Hint::ok($this->translate(
+                    '...and the modifications below are already in the main branch:'
+                )));
+            }
+        }
     }
 
     /**
