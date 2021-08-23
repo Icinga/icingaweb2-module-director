@@ -489,7 +489,7 @@ abstract class ObjectController extends ActionController
             throw new NotFoundError('No such object available');
         }
         if ($branch->isBranch() && ! $isApi) {
-            $this->content()->add(new ObjectModificationBranchHint($branch, $object, $modification));
+            $this->content()->add(new ObjectModificationBranchHint($branch, $this->Auth(), $object, $modification));
         }
 
         $this->object = $object;
@@ -522,7 +522,7 @@ abstract class ObjectController extends ActionController
 
     protected function linkToMergeBranch(Branch $branch)
     {
-        $link = Branch::requireHook()->linkToBranch($branch);
+        $link = Branch::requireHook()->linkToBranch($branch, $this->Auth(), $this->translate('Merge'));
         if ($link instanceof Link) {
             $link->addAttributes(['class' => 'icon-flapping']);
         }
