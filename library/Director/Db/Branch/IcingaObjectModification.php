@@ -102,7 +102,7 @@ class IcingaObjectModification
     {
         // TODO: dots in varnames -> throw or escape?
         if (isset($properties[$property])) {
-            foreach ($properties[$property] as $key => $value) {
+            foreach ((array) $properties[$property] as $key => $value) {
                 $properties["$property.$key"] = $value;
             }
             unset($properties[$property]);
