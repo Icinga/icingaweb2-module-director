@@ -152,12 +152,12 @@ class BranchModificationStore
         if ($objectId) {
             $existing = $this->fetchOptional($objectId, $branchUuid);
             foreach ($this->encodedDictionaries as $property) {
-                $this->extractFlatDictionary($properties, $existing, $property);
+                $this->combineAndEncodeFlatDictionaries($properties, $existing, $property);
             }
         } else {
             $existing = null;
         }
-        foreach (array_merge($this->encodedArrays, $this->encodedDictionaries) as $deepProperty) {
+        foreach ($this->encodedArrays as $deepProperty) {
             if (isset($properties[$deepProperty])) {
                 // TODO: flags
                 $properties[$deepProperty] = Json::encode($properties[$deepProperty]);
@@ -194,7 +194,7 @@ class BranchModificationStore
         });
     }
 
-    protected function extractFlatDictionary(&$properties, $existing, $prefix)
+    protected function combineAndEncodeFlatDictionaries(&$properties, $existing, $prefix)
     {
         if ($existing && ! empty($existing->$prefix)) {
             // $vars = (array) Json::decode($existing->vars);
@@ -202,18 +202,17 @@ class BranchModificationStore
         } else {
             $vars = [];
         }
+        $length = strlen($prefix) + 1;
         foreach ($properties as $key => $value) {
-            if (substr($key, 0, 5) === "$prefix.") {
-                $vars[substr($key, 5)] = $value;
+            if (substr($key, 0, $length) === "$prefix.") {
+                $vars[substr($key, $length)] = $value;
             }
         }
         if (! empty($vars)) {
             foreach (array_keys($vars) as $key) {
                 unset($properties["$prefix.$key"]);
             }
-            // This is on store only??
             $properties[$prefix] = Json::encode((object) $vars); // TODO: flags!
-            /// $properties['vars'] = (object) $vars;
         }
     }
 
