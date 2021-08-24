@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Dashboard;
 
-use gipfl\IcingaWeb2\Icon;
+use gipfl\Web\Widget\Hint;
 use Icinga\Application\Hook;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
@@ -15,10 +15,10 @@ class BranchesDashboard extends Dashboard
     {
         $branch = Branch::detect(new BranchStore($this->getDb()));
         if ($branch->isBranch()) {
-            return Html::sprintf(
-                $this->translate('Working in a Configuration Branch: %s'),
-                Html::tag('span', ['class' => 'active-branch'], $branch->getName())
-            );
+            $this->prepend(Hint::info(Html::sprintf(
+                $this->translate('You\'re currently working in a Configuration Branch: %s'),
+                Branch::requireHook()->linkToBranch($branch, $this->getAuth(), $branch->getName())
+            )));
         }
 
         return $this->translate('Prepare your configuration in a safe Environment');
