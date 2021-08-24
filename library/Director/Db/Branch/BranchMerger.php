@@ -128,12 +128,12 @@ class BranchMerger
                     throw new MergeErrorRecreateOnMerge($modification, $uuid);
                 }
             } else {
-                $object = IcingaObjectModification::applyModification($modification);
+                $object = IcingaObjectModification::applyModification($modification, null, $this->connection);
                 $object->store($this->connection);
             }
         } elseif ($modification->isDeletion()) {
             if ($exists) {
-                $object = IcingaObjectModification::applyModification($modification, $class::load($keyParams, $this->connection));
+                $object = IcingaObjectModification::applyModification($modification, $class::load($keyParams, $this->connection), $this->connection);
                 $object->setConnection($this->connection);
                 $object->delete();
             } elseif (! $this->ignoreDeleteWhenMissing && ! isset($this->ignoreUuids[$binaryUuid])) {
@@ -141,7 +141,7 @@ class BranchMerger
             }
         } else {
             if ($exists) {
-                $object = IcingaObjectModification::applyModification($modification, $class::load($keyParams, $this->connection));
+                $object = IcingaObjectModification::applyModification($modification, $class::load($keyParams, $this->connection), $this->connection);
                 // TODO: du änderst ein Objekt, und die geänderte Eigenschaften haben sich seit der Änderung geändert
                 $object->store($this->connection);
             } elseif (! $this->ignoreModificationWhenMissing && ! isset($this->ignoreUuids[$binaryUuid])) {

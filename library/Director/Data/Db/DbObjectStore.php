@@ -72,19 +72,24 @@ class DbObjectStore
                     $object->get('id'),
                     $this->branch->getUuid()
                 )) {
-                $object = IcingaObjectModification::applyModification($modification, $object);
+                $object = IcingaObjectModification::applyModification($modification, $object, $this->connection);
             }
         } catch (NotFoundError $e) {
             if ($this->branch  && $this->branch->isBranch() && is_string($key)) {
                 $branchStore = new BranchModificationStore($this->connection, $shortType);
                 $modification = $branchStore->loadOptionalModificationByName($key, $this->branch->getUuid());
                 if ($modification) {
-                    $object = IcingaObjectModification::applyModification($modification);
+                    $object = IcingaObjectModification::applyModification($modification, null, $this->connection);
+                    $object->setConnection($this->connection);
                     if ($id = $object->get('id')) { // Object has probably been renamed
                         try {
                             // TODO: can be one step I guess, but my brain is slow today ;-)
                             $renamedObject = $class::load($id, $this->connection);
-                            $object = IcingaObjectModification::applyModification($modification, $renamedObject);
+                            $object = IcingaObjectModification::applyModification(
+                                $modification,
+                                $renamedObject,
+                                $this->connection
+                            );
                         } catch (NotFoundError $e) {
                             // Well... it was worth trying
                             $object->setConnection($this->connection);

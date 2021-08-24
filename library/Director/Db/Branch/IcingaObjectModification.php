@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Db\Branch;
 
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaObject;
 
 class IcingaObjectModification
@@ -45,7 +46,7 @@ class IcingaObjectModification
         }
     }
 
-    public static function applyModification(ObjectModification $modification, DbObject $object = null)
+    public static function applyModification(ObjectModification $modification, DbObject $object = null, Db $db = null)
     {
         if ($modification->isDeletion()) {
             $object->markForRemoval();
@@ -54,7 +55,7 @@ class IcingaObjectModification
             $class = $modification->getClassName();
             $properties = $modification->getProperties()->jsonSerialize();
             self::fixForeignKeys($properties);
-            $object = $class::create((array) $properties);
+            $object = $class::create((array) $properties, $db);
         } else {
             // TODO: Add "reset Properties", those that have been nulled
             $properties = (array) $modification->getProperties()->jsonSerialize();
@@ -70,6 +71,11 @@ class IcingaObjectModification
             foreach ($properties as $key => $value) {
                 $object->set($key, $value);
             }
+        }
+
+        // Just to be on the safe side
+        if ($db) {
+            $object->setConnection($db);
         }
 
         return $object;

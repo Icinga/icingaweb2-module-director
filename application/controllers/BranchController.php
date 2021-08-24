@@ -81,7 +81,7 @@ class BranchController extends ActionController
             $existing = $class::load($keyParams, $this->db());
             $left = $existing->toSingleIcingaConfig();
             $right = clone($existing);
-            IcingaObjectModification::applyModification($modification, $right);
+            IcingaObjectModification::applyModification($modification, $right, $this->db());
             $right = $right->toSingleIcingaConfig();
         }
         $changes = $this->getConfigDiffs($left, $right);
