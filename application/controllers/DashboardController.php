@@ -36,6 +36,7 @@ class DashboardController extends ActionController
         $mainDashboards = [
             'Objects',
             'Alerts',
+            'Branches',
             'Automation',
             'Deployment',
             'Director',
