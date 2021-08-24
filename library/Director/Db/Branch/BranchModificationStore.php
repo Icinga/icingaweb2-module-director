@@ -228,7 +228,7 @@ class BranchModificationStore
             'uuid'        => Uuid::uuid4()->getBytes(),
             'object_id'   => $objectId,
             'created'     => 'y',
-        ] + $properties);
+        ] + (array) $properties);
     }
 
     protected function delete($objectId, UuidInterface $branchUuid)
@@ -247,13 +247,13 @@ class BranchModificationStore
             'branch_uuid' => $branchUuid->getBytes(),
             'uuid'        => Uuid::uuid4()->getBytes(),
             'object_id'   => $objectId,
-        ] + $properties);
+        ] + (array) $properties);
     }
 
     protected function update($binaryUuid, $properties)
     {
         $this->db->update($this->table, [
             'uuid' => Uuid::uuid4()->getBytes(),
-        ] + $properties, $this->db->quoteInto('uuid = ?', $binaryUuid));
+        ] + (array) $properties, $this->db->quoteInto('uuid = ?', $binaryUuid));
     }
 }
