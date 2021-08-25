@@ -174,6 +174,7 @@ abstract class ObjectController extends ActionController
         $this->assertTypePermission();
         $object = $this->requireObject();
         $form = IcingaCloneObjectForm::load()
+            ->setBranch($this->getBranch())
             ->setObject($object)
             ->setObjectBaseUrl($this->getObjectBaseUrl())
             ->handleRequest();

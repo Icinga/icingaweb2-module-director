@@ -2,8 +2,10 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -17,8 +19,18 @@ class IcingaCloneObjectForm extends DirectorForm
 
     protected $baseObjectUrl;
 
+    /** @var Branch */
+    protected $branch;
+
     public function setup()
     {
+        if ($this->branch->isBranch() && $this->object instanceof IcingaObject && $this->object->isTemplate()) {
+            $this->addHtml(Hint::error($this->translate(
+                'Templates cannot be cloned in Configuration Branches'
+            )));
+            $this->submitLabel = false;
+            return;
+        }
         $name = $this->object->getObjectName();
         $this->addElement('text', 'new_object_name', array(
             'label'    => $this->translate('New name'),
@@ -93,6 +105,13 @@ class IcingaCloneObjectForm extends DirectorForm
             $this->translate('Clone "%s"'),
             $name
         );
+    }
+
+    public function setBranch(Branch $branch)
+    {
+        $this->branch = $branch;
+
+        return $this;
     }
 
     public function setObjectBaseUrl($url)
