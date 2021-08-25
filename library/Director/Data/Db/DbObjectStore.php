@@ -67,7 +67,11 @@ class DbObjectStore
         }
         $modification = null;
         try {
-            $object = $class::load($key, $this->connection);
+            if (is_int($key)) {
+                $object = $class::loadWithAutoIncId($key, $this->connection);
+            } else {
+                $object = $class::load($key, $this->connection);
+            }
             if ($branchStore && $modification = $branchStore->eventuallyLoadModification(
                     $object->get('id'),
                     $this->branch->getUuid()
