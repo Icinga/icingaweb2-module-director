@@ -283,6 +283,7 @@ class ConfigController extends ActionController
             $config,
             $this->db(),
             $this->api(),
+            $this->getBranch(),
             $deploymentId
         ));
 

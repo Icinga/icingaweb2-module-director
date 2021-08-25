@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
+use Icinga\Module\Director\Db\Branch\Branch;
 use ipl\Html\HtmlDocument;
 use Icinga\Module\Director\Core\DeploymentApiInterface;
 use Icinga\Module\Director\Db;
@@ -28,15 +29,20 @@ class DeployedConfigInfoHeader extends HtmlDocument
     /** @var DeploymentApiInterface */
     protected $api;
 
+    /** @var Branch */
+    protected $branch;
+
     public function __construct(
         IcingaConfig $config,
         Db $db,
         DeploymentApiInterface $api,
+        Branch $branch,
         $deploymentId = null
     ) {
         $this->config = $config;
         $this->db     = $db;
         $this->api    = $api;
+        $this->branch = $branch;
         if ($deploymentId) {
             $this->deploymentId = (int) $deploymentId;
         }
@@ -49,13 +55,17 @@ class DeployedConfigInfoHeader extends HtmlDocument
     protected function assemble()
     {
         $config = $this->config;
-        $deployForm = DeployConfigForm::load()
-            ->setDb($this->db)
-            ->setApi($this->api)
-            ->setChecksum($config->getHexChecksum())
-            ->setDeploymentId($this->deploymentId)
-            ->setAttrib('class', 'inline')
-            ->handleRequest();
+        if ($this->branch->isBranch()) {
+            $deployForm = null;
+        } else {
+            $deployForm = DeployConfigForm::load()
+                ->setDb($this->db)
+                ->setApi($this->api)
+                ->setChecksum($config->getHexChecksum())
+                ->setDeploymentId($this->deploymentId)
+                ->setAttrib('class', 'inline')
+                ->handleRequest();
+        }
 
         $links = new NameValueTable();
         $links->addNameValueRow(
