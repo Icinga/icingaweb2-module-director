@@ -8,6 +8,7 @@ use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchModificationStore;
 use Icinga\Module\Director\Db\Branch\IcingaObjectModification;
 use Icinga\Module\Director\Exception\NestingError;
@@ -20,7 +21,6 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Web\Form\Element\ExtensibleSet;
 use Icinga\Module\Director\Web\Form\Validate\NamePattern;
-use Ramsey\Uuid\UuidInterface;
 use Zend_Form_Element as ZfElement;
 use Zend_Form_Element_Select as ZfSelect;
 
@@ -40,8 +40,8 @@ abstract class DirectorObjectForm extends DirectorForm
     /** @var IcingaObject */
     protected $object;
 
-    /** @var UuidInterface|null */
-    protected $branchUuid;
+    /** @var Branch */
+    protected $branch;
 
     protected $objectName;
 
@@ -677,7 +677,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 : $this->translate('A new %s has successfully been created'),
                 $this->translate($this->getObjectShortClassName())
             );
-            if ($this->branchUuid) {
+            if ($this->branch && $this->branch->isBranch()) {
                 if ($object->shouldBeRenamed()) {
                     $this->getElement('object_name')->addError(
                         $this->translate('Renaming objects in branches is not (yet) supported')
@@ -689,7 +689,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 $store->store(
                     IcingaObjectModification::getModification($object),
                     $object->get('id'),
-                    $this->branchUuid
+                    $this->branch->getUuid()
                 );
             } else {
                 $object->store($this->db);
@@ -933,12 +933,12 @@ abstract class DirectorObjectForm extends DirectorForm
             );
         }
 
-        if ($this->branchUuid) {
+        if ($this->branch && $this->branch->isBranch()) {
             $store = new BranchModificationStore($this->getDb(), $object->getShortTableName());
             $store->store(
                 IcingaObjectModification::delete($object),
                 $object->get('id'),
-                $this->branchUuid
+                $this->branch->getUuid()
             );
 
             $this->setSuccessUrl($url);
@@ -1730,9 +1730,11 @@ abstract class DirectorObjectForm extends DirectorForm
         return Util::hasPermission($permission);
     }
 
-    public function setBranchUuid(UuidInterface $uuid = null)
+    public function setBranch(Branch $branch)
     {
-        $this->branchUuid = $uuid;
+        $this->branch = $branch;
+
+        return $this;
     }
 
     protected function allowsExperimental()

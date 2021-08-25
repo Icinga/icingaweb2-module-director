@@ -579,7 +579,7 @@ abstract class ObjectController extends ActionController
             $form->setObject($object);
         }
         if (true || $form->supportsBranches()) {
-            $form->setBranchUuid($this->getBranchUuid());
+            $form->setBranch($this->getBranch());
         }
 
         $this->onObjectFormLoaded($form);
