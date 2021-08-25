@@ -29,6 +29,8 @@ class BranchesDashboard extends Dashboard
         /** @var BranchSupportHook $hook */
         if ($hook = Hook::first('director/BranchSupport')) {
             $this->dashlets = $hook->loadDashlets($this->getDb());
+        } else {
+            $this->dashlets = [];
         }
     }
 }
