@@ -66,13 +66,15 @@ class ConfigController extends ActionController
             // No problem, Icinga might be reloading
         }
 
-        // TODO: a form!
-        $this->actions()->add(Link::create(
-            $this->translate('Render config'),
-            'director/config/store',
-            null,
-            ['class' => 'icon-wrench']
-        ));
+        if (! $this->getBranch()->isBranch()) {
+            // TODO: a form!
+            $this->actions()->add(Link::create(
+                $this->translate('Render config'),
+                'director/config/store',
+                null,
+                ['class' => 'icon-wrench']
+            ));
+        }
 
         $this->tabs(new InfraTabs($this->Auth()))->activate('deploymentlog');
         $table = new DeploymentLogTable($this->db());
@@ -184,7 +186,7 @@ class ConfigController extends ActionController
                 ['class' => 'icon-user', 'data-base-target' => '_self']
             ));
         }
-        if ($this->hasPermission('director/deploy')) {
+        if ($this->hasPermission('director/deploy') && ! $this->getBranch()->isBranch()) {
             if ($this->db()->hasDeploymentEndpoint()) {
                 $this->actions()->add(DeployConfigForm::load()
                     ->setDb($this->db())
