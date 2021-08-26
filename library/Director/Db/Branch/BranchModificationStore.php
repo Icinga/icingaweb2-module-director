@@ -10,6 +10,11 @@ use Ramsey\Uuid\UuidInterface;
 
 class BranchModificationStore
 {
+    // TODO: Ranges is weird. key = scheduled_downtime_id, range_type, range_key
+    const ENCODED_ARRAYS = ['imports', 'groups', 'ranges'];
+
+    const ENCODED_DICTIONARIES = ['vars', 'arguments'];
+
     protected $connection;
 
     protected $db;
@@ -17,11 +22,6 @@ class BranchModificationStore
     protected $shortType;
 
     protected $table;
-
-    // TODO: Ranges is weird. key = scheduled_downtime_id, range_type, range_key
-    protected $encodedArrays = ['imports', 'groups', 'ranges'];
-
-    protected $encodedDictionaries = ['vars', 'arguments'];
 
     public function __construct(Db $connection, $shortType)
     {
@@ -127,7 +127,7 @@ class BranchModificationStore
 
     protected function decodeEncodedProperties($row)
     {
-        foreach (array_merge($this->encodedArrays, $this->encodedDictionaries) as $encodedProperty) {
+        foreach (array_merge(self::ENCODED_ARRAYS, self::ENCODED_DICTIONARIES) as $encodedProperty) {
             // vars, imports and groups might be null or not set at all (if not supported)
             if (! empty($row->$encodedProperty)) {
                 $row->$encodedProperty = Json::decode($row->$encodedProperty);
@@ -147,17 +147,25 @@ class BranchModificationStore
         } else {
             $properties = [];
         }
-        // Former properties are not needed, as they are dealt with in persistModification.
 
+        // Former properties are not needed, as they are dealt with in persistModification.
         if ($objectId) {
             $existing = $this->fetchOptional($objectId, $branchUuid);
-            foreach ($this->encodedDictionaries as $property) {
-                $this->combineAndEncodeFlatDictionaries($properties, $existing, $property);
-            }
         } else {
             $existing = null;
         }
-        foreach ($this->encodedArrays as $deepProperty) {
+        foreach (self::ENCODED_DICTIONARIES as $deepProperty) {
+            if (isset($properties[$deepProperty])) {
+                // TODO: flags
+                $properties[$deepProperty] = Json::encode($properties[$deepProperty]);
+            }
+        }
+        /* TODO: Nothing should be flat here, verify and remove this comment
+        foreach (self::ENCODED_DICTIONARIES as $property) {
+            $this->combineAndEncodeFlatDictionaries($properties, $existing, $property);
+        }
+        */
+        foreach (self::ENCODED_ARRAYS as $deepProperty) {
             if (isset($properties[$deepProperty])) {
                 // TODO: flags
                 $properties[$deepProperty] = Json::encode($properties[$deepProperty]);

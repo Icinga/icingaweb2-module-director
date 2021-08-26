@@ -59,7 +59,7 @@ class IcingaObjectModification
         } else {
             // TODO: Add "reset Properties", those that have been nulled
             $properties = (array) $modification->getProperties()->jsonSerialize();
-            foreach (['vars', 'arguments'] as $property) { // TODO: define in one place, see BranchModificationStore
+            foreach (BranchModificationStore::ENCODED_DICTIONARIES as $property) {
                 self::flattenProperty($properties, $property);
             }
             if ($object === null) {
@@ -123,10 +123,10 @@ class IcingaObjectModification
         $old = (array) $object->getPlainUnmodifiedObject();
         $new = (array) $object->toPlainObject(false, true);
         $unchangedKeys = [];
-        self::flattenProperty($old, 'vars');
-        self::flattenProperty($old, 'arguments');
-        self::flattenProperty($new, 'vars');
-        self::flattenProperty($new, 'arguments');
+        foreach (BranchModificationStore::ENCODED_DICTIONARIES as $property) {
+            self::flattenProperty($old, $property);
+            self::flattenProperty($new, $property);
+        }
         foreach ($old as $key => $value) {
             if (array_key_exists($key, $new) && $value === $new[$key]) {
                 $unchangedKeys[] = $key;
