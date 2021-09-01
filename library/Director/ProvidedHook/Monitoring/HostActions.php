@@ -46,7 +46,7 @@ class HostActions extends HostActionsHook
         $auth = Auth::getInstance();
         if (Util::hasPermission('director/monitoring/hosts')) {
             $monitoring = new Monitoring();
-            if ($monitoring->authCanEditHost($auth, $hostname)) {
+            if ($monitoring->isAvailable() && $monitoring->authCanEditHost($auth, $hostname)) {
                 $allowEdit = IcingaHost::exists($hostname, $db);
             }
         }
