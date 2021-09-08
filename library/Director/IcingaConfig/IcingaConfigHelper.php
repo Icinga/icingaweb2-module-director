@@ -381,6 +381,13 @@ class IcingaConfigHelper
             && ! preg_match('/\.$/', $name);
     }
 
+    public static function isMacroDictionary($macroName, $whiteList = null)
+    {
+        $tokens = explode('.', $macroName);
+
+        return $whiteList === null || in_array($tokens[0], $whiteList);
+    }
+
     public static function renderStringWithVariables($string, array $whiteList = null)
     {
         $len = strlen($string);
@@ -400,7 +407,7 @@ class IcingaConfigHelper
                         // We got a macro
                         $macroName = substr($string, $start + 1, $i - $start - 1);
                         if (static::isValidMacroName($macroName)) {
-                            if ($whiteList === null || in_array($macroName, $whiteList)) {
+                            if ($whiteList === null || in_array($macroName, $whiteList) || static::isMacroDictionary($macroName, $whiteList)) {
                                 if ($start > $offset) {
                                     $parts[] = static::renderString(
                                         substr($string, $offset, $start - $offset)
