@@ -52,7 +52,7 @@ class DbObjectStore
 
     /**
      * @param string $shortType
-     * @param string|array $key
+     * @param int|string|array $key
      * @return array
      * @throws NotFoundError
      */

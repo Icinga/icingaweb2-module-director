@@ -29,7 +29,7 @@ class DbObjectTypeRegistry
             $type = 'timePeriod';
         } elseif ($type === 'servicegroup') {
             $type = 'serviceGroup';
-        } elseif ($type === 'service_set') {
+        } elseif ($type === 'service_set' || $type === 'serviceset') {
             $type = 'serviceSet';
         } elseif ($type === 'apiuser') {
             $type = 'apiUser';
