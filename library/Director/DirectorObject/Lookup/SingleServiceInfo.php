@@ -57,9 +57,9 @@ class SingleServiceInfo implements ServiceInfo
 
     public function getUrl()
     {
-        return Url::fromPath('director/host/service', [
-            'name'    => $this->hostName,
-            'service' => $this->serviceName,
+        return Url::fromPath('director/service/edit', [
+            'host' => $this->hostName,
+            'name' => $this->serviceName,
         ]);
     }
 
