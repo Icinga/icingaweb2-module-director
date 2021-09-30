@@ -2826,7 +2826,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this instanceof ObjectWithArguments) {
             $props['arguments'] = $this->arguments()->toPlainObject(
-                $resolved,
+                false,
                 $skipDefaults
             );
         }
