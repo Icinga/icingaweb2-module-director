@@ -232,6 +232,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         $list = [];
         foreach ($this->listImportNames() as $name) {
+            $name = (string) $name;
             $list[$name] = $this->getObject($name);
         }
 
