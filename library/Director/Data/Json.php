@@ -52,4 +52,18 @@ class Json
 
         return $result;
     }
+
+    /**
+     * @param $string
+     * @return ?string
+     * @throws JsonEncodeException
+     */
+    public static function decodeOptional($string)
+    {
+        if ($string === null) {
+            return null;
+        }
+
+        return static::decode($string);
+    }
 }
