@@ -836,7 +836,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->assertGroupsSupport();
         if ($this->groups === null) {
-            if ($this->hasBeenLoadedFromDb()) {
+            if ($this->hasBeenLoadedFromDb() && $this->get('id')) {
                 $this->groups = IcingaObjectGroups::loadForStoredObject($this);
             } else {
                 $this->groups = new IcingaObjectGroups($this);
