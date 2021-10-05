@@ -50,9 +50,9 @@ class BranchActivity
     public function __construct(
         UuidInterface     $objectUuid,
         UuidInterface     $branchUuid,
-                          $action,
-                          $objectType,
-                          $author,
+        $action,
+        $objectType,
+        $author,
         SerializableValue $modifiedProperties,
         SerializableValue $formerProperties
     ) {
@@ -158,8 +158,8 @@ class BranchActivity
         $db = $connection->getDbAdapter();
         return $db->delete($this->getObjectTable(), $db->quoteInto(
             'uuid = ?',
-            $connection->quoteBinary($this->getObjectUuid()->getBytes()))
-        );
+            $connection->quoteBinary($this->getObjectUuid()->getBytes())
+        ));
     }
 
     public static function load($ts, Db $connection)
@@ -176,7 +176,7 @@ class BranchActivity
         throw new NotFoundError('Not found');
     }
 
-    protected static function fixPgResource(& $value)
+    protected static function fixPgResource(&$value)
     {
         if (is_resource($value)) {
             $value = stream_get_contents($value);
