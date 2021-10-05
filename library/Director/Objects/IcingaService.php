@@ -23,8 +23,11 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     protected $table = 'icinga_service';
 
+    protected $uuidColumn = 'uuid';
+
     protected $defaultProperties = [
         'id'                      => null,
+        'uuid'                    => null,
         'object_name'             => null,
         'object_type'             => null,
         'disabled'                => 'n',

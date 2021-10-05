@@ -2159,6 +2159,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return '';
     }
 
+    public function renderUuid()
+    {
+        return '';
+    }
+
     /**
      * @return string
      */
@@ -2785,6 +2790,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         foreach ($p as $k => $v) {
             // Do not ship ids for IcingaObjects:
+            if ($k === $this->getUuidColumn()) {
+                continue;
+            }
             if ($resolveIds) {
                 if ($k === 'id' && $keepId === false && $this->hasProperty('object_name')) {
                     continue;
@@ -3003,6 +3011,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getUrlParams()
     {
         $params = [];
+        if ($column = $this->getUuidColumn()) {
+            return [$column => $this->getUniqueId()->toString()];
+        }
 
         if ($this->isApplyRule() && ! $this instanceof IcingaScheduledDowntime) {
             $params['id'] = $this->get('id');
@@ -3054,6 +3065,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($this->getOriginalProperties() as $k => $v) {
             // Do not ship ids for IcingaObjects:
             if ($k === 'id' && $this->hasProperty('object_name')) {
+                continue;
+            }
+            if ($k === $this->getUuidColumn()) {
                 continue;
             }
 

@@ -10,8 +10,11 @@ class IcingaTimePeriod extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_timeperiod';
 
-    protected $defaultProperties = array(
+    protected $uuidColumn = 'uuid';
+
+    protected $defaultProperties = [
         'id'                => null,
+        'uuid'              => null,
         'zone_id'           => null,
         'object_name'       => null,
         'object_type'       => null,
@@ -19,7 +22,7 @@ class IcingaTimePeriod extends IcingaObject implements ExportInterface
         'prefer_includes'   => null,
         'display_name'      => null,
         'update_method'     => null,
-    );
+    ];
 
     protected $booleans = [
         'prefer_includes'  => 'prefer_includes',

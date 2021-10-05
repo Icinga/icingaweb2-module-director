@@ -11,6 +11,7 @@ class IcingaScheduledDowntime extends IcingaObject
 
     protected $defaultProperties = [
         'id'                => null,
+        'uuid'              => null,
         'zone_id'           => null,
         'object_name'       => null,
         'object_type'       => null,
@@ -23,6 +24,8 @@ class IcingaScheduledDowntime extends IcingaObject
         'assign_filter'     => null,
         'with_services'     => null,
     ];
+
+    protected $uuidColumn = 'uuid';
 
     protected $supportsImports = true;
 

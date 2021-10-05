@@ -10,8 +10,11 @@ class IcingaZone extends IcingaObject
 {
     protected $table = 'icinga_zone';
 
+    protected $uuidColumn = 'uuid';
+
     protected $defaultProperties = [
         'id'          => null,
+        'uuid'        => null,
         'object_name' => null,
         'object_type' => null,
         'disabled'    => 'n',
