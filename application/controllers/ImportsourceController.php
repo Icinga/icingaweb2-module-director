@@ -3,12 +3,15 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use gipfl\Web\Widget\Hint;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Forms\ImportRowModifierForm;
 use Icinga\Module\Director\Forms\ImportSourceForm;
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\ActionBar\AutomationObjectActionBar;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Objects\ImportSource;
+use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Form\CloneImportSourceForm;
 use Icinga\Module\Director\Web\Table\ImportrunTable;
 use Icinga\Module\Director\Web\Table\ImportsourceHookTable;
@@ -18,9 +21,12 @@ use Icinga\Module\Director\Web\Widget\ImportSourceDetails;
 use InvalidArgumentException;
 use gipfl\IcingaWeb2\Link;
 use ipl\Html\Error;
+use ipl\Html\Html;
 
 class ImportsourceController extends ActionController
 {
+    use BranchHelper;
+
     /** @var ImportSource|null */
     private $importSource;
 
@@ -85,6 +91,14 @@ class ImportsourceController extends ActionController
             $this->translate('Import source: %s'),
             $source->get('source_name')
         )->setAutorefreshInterval(10);
+        $branch = $this->getBranch();
+        if ($this->getBranch()->isBranch()) {
+            $this->content()->add(Hint::info(Html::sprintf($this->translate(
+                'Please note that importing data will take place in your main Branch.'
+                . ' Modifications to Import Sources are not allowed while being in a Configuration Branch.'
+                . ' To get the full functionality, please deactivate %s'
+            ), Branch::requireHook()->linkToBranch($branch, $this->getAuth(), $branch->getName()))));
+        }
         $this->content()->add(new ImportSourceDetails($source));
     }
 
