@@ -1406,7 +1406,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if (PrefetchCache::shouldBeUsed()) {
                     $this->vars = PrefetchCache::instance()->vars($this);
                 } else {
-                    $this->vars = CustomVariables::loadForStoredObject($this);
+                    if ($this->get('id')) {
+                        $this->vars = CustomVariables::loadForStoredObject($this);
+                    } else {
+                        $this->vars = new CustomVariables();
+                    }
                 }
 
                 if ($this->getShortTableName() === 'host') {
