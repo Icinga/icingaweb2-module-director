@@ -79,6 +79,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => IcingaObjectClass
     ];
 
+    /** @var IcingaObjectMultiRelations[] */
     protected $loadedMultiRelations = [];
 
     /**
@@ -250,6 +251,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $prefix . $this->relatedSets[$property];
     }
 
+    /**
+     * @param $property
+     * @return ExtensibleSet
+     */
     protected function getRelatedSet($property)
     {
         if (! array_key_exists($property, $this->loadedRelatedSets)) {
@@ -262,6 +267,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->loadedRelatedSets[$property];
     }
 
+    /**
+     * @return ExtensibleSet[]
+     */
     protected function relatedSets()
     {
         $sets = [];
