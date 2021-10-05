@@ -30,8 +30,8 @@ class Branch
     /** @var @var string */
     protected $description;
 
-    /** @var  bool */
-    protected $shouldBeMerged;
+    /** @var ?int */
+    protected $tsMergeRequest;
 
     /** @var int */
     protected $cntActivities;
@@ -39,10 +39,16 @@ class Branch
     public static function fromDbRow(stdClass $row)
     {
         $self = new static;
+        if (is_resource($row->uuid)) {
+            $row->uuid = stream_get_contents($row->uuid);
+        }
+        if (strlen($row->uuid) !== 16) {
+            throw new RuntimeException('Valid UUID expected, got ' . var_export($row->uuid, 1));
+        }
         $self->branchUuid = Uuid::fromBytes($row->uuid);
         $self->name = $row->branch_name;
         $self->owner = $row->owner;
-        $self->shouldBeMerged = $row->should_be_merged === 'y';
+        $self->tsMergeRequest = $row->ts_merge_request;
         if (isset($row->cnt_activities)) {
             $self->cntActivities = $row->cnt_activities;
         } else {
@@ -131,7 +137,7 @@ class Branch
      */
     public function shouldBeMerged()
     {
-        return $this->shouldBeMerged;
+        return $this->tsMergeRequest !== null;
     }
 
     /**
