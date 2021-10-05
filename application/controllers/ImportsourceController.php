@@ -284,7 +284,7 @@ class ImportsourceController extends ActionController
             . (int) $source->get('id');
         $this->content()->prepend(
             ImportRowModifierForm::load()->setDb($this->db())
-                ->loadObject($this->params->getRequired('id'))
+                ->loadObject((int) $this->params->getRequired('id'))
                 ->setListUrl($listUrl)
                 ->setSource($source)
                 ->handleRequest()
