@@ -6,6 +6,7 @@ use gipfl\Diff\HtmlRenderer\SideBySideDiff;
 use gipfl\Diff\PhpDiff;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Widget\Hint;
+use Icinga\Module\Director\Web\Widget\IcingaConfigDiff;
 use Icinga\Module\Director\Web\Widget\UnorderedList;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -309,7 +310,7 @@ class SyncruleController extends ActionController
                     $cfgOld = new IcingaConfig($this->db());
                     $oldObject->renderToConfig($cfgOld);
                     $object->renderToConfig($cfgNew);
-                    foreach ($this->getConfigDiffs($cfgOld, $cfgNew) as $file => $diff) {
+                    foreach (IcingaConfigDiff::getDiffs($cfgOld, $cfgNew) as $file => $diff) {
                         $names[$name . '___PRETITLE___' . $file] = Html::tag('h3', $file);
                         $names[$name . '___PREVIEW___' . $file] = $diff;
                     }
@@ -334,7 +335,7 @@ class SyncruleController extends ActionController
                     $cfgOld = new IcingaConfig($this->db());
                     $oldObject->renderToConfig($cfgOld);
                     $object->renderToConfig($cfgNew);
-                    foreach ($this->getConfigDiffs($cfgOld, $cfgNew) as $file => $diff) {
+                    foreach (IcingaConfigDiff::getDiffs($cfgOld, $cfgNew) as $file => $diff) {
                         $names[$name . '___PRETITLE___' . $file] = Html::tag('h3', $file);
                         $names[$name . '___PREVIEW___' . $file] = $diff;
                     }
@@ -362,43 +363,6 @@ class SyncruleController extends ActionController
         }
 
         return $list;
-    }
-
-    /**
-     * Stolen from elsewhere, should be de-duplicated
-     *
-     * @param IcingaConfig $oldConfig
-     * @param IcingaConfig $newConfig
-     * @return ValidHtml[]
-     */
-    protected function getConfigDiffs(IcingaConfig $oldConfig, IcingaConfig $newConfig)
-    {
-        $oldFileNames = $oldConfig->getFileNames();
-        $newFileNames = $newConfig->getFileNames();
-
-        $fileNames = array_merge($oldFileNames, $newFileNames);
-
-        $diffs = [];
-        foreach ($fileNames as $filename) {
-            if (in_array($filename, $oldFileNames)) {
-                $left = $oldConfig->getFile($filename)->getContent();
-            } else {
-                $left = '';
-            }
-
-            if (in_array($filename, $newFileNames)) {
-                $right = $newConfig->getFile($filename)->getContent();
-            } else {
-                $right = '';
-            }
-            if ($left === $right) {
-                continue;
-            }
-
-            $diffs[$filename] = new SideBySideDiff(new PhpDiff($left, $right));
-        }
-
-        return $diffs;
     }
 
     protected function listModifiedProperties($properties)

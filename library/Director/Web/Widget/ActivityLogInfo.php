@@ -127,12 +127,12 @@ class ActivityLogInfo extends HtmlDocument
         $this->add($this->getInfoTable());
         if ($tabName === 'old') {
             // $title = sprintf('%s former config', $this->entry->object_name);
-            $diffs = $this->getConfigDiffs($this->oldConfig(), $this->emptyConfig());
+            $diffs = IcingaConfigDiff::getDiffs($this->oldConfig(), $this->emptyConfig());
         } elseif ($tabName === 'new') {
             // $title = sprintf('%s new config', $this->entry->object_name);
-            $diffs = $this->getConfigDiffs($this->emptyConfig(), $this->newConfig());
+            $diffs = IcingaConfigDiff::getDiffs($this->emptyConfig(), $this->newConfig());
         } else {
-            $diffs = $this->getConfigDiffs($this->oldConfig(), $this->newConfig());
+            $diffs = IcingaConfigDiff::getDiffs($this->oldConfig(), $this->newConfig());
         }
 
         $this->addDiffs($diffs);
@@ -397,41 +397,6 @@ class ActivityLogInfo extends HtmlDocument
         }
 
         return $tabs;
-    }
-
-    /**
-     * @param IcingaConfig $oldConfig
-     * @param IcingaConfig $newConfig
-     * @return ValidHtml[]
-     */
-    protected function getConfigDiffs(IcingaConfig $oldConfig, IcingaConfig $newConfig)
-    {
-        $oldFileNames = $oldConfig->getFileNames();
-        $newFileNames = $newConfig->getFileNames();
-
-        $fileNames = array_merge($oldFileNames, $newFileNames);
-
-        $diffs = [];
-        foreach ($fileNames as $filename) {
-            if (in_array($filename, $oldFileNames)) {
-                $left = $oldConfig->getFile($filename)->getContent();
-            } else {
-                $left = '';
-            }
-
-            if (in_array($filename, $newFileNames)) {
-                $right = $newConfig->getFile($filename)->getContent();
-            } else {
-                $right = '';
-            }
-            if ($left === $right) {
-                continue;
-            }
-
-            $diffs[$filename] = new SideBySideDiff(new PhpDiff($left, $right));
-        }
-
-        return $diffs;
     }
 
     /**
