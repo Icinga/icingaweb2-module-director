@@ -84,6 +84,10 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
 
     public function set($key, $value)
     {
+        if ($value === null) {
+            return $this->remove($key);
+        }
+
         if ($value instanceof IcingaCommandArgument) {
             $argument = $value;
         } else {
