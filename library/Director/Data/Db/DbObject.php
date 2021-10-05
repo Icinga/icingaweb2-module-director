@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Data\InvalidDataException;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use InvalidArgumentException;
@@ -696,15 +697,22 @@ abstract class DbObject
     }
 
     /**
-     * @param object $row
+     * @param object|array $row
      * @param Db $db
      * @return self
      */
     public static function fromDbRow($row, Db $db)
     {
-        return (new static())
-            ->setConnection($db)
-            ->setDbProperties($row);
+         $self = (new static())->setConnection($db);
+         if (is_object($row)) {
+             return $self->setDbProperties((array) $row);
+         }
+
+         if (is_array($row)) {
+             return $self->setDbProperties($row);
+         }
+
+         throw new InvalidDataException('array or object', $row);
     }
 
     protected function setDbProperties($properties)
