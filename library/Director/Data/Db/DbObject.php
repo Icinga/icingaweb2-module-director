@@ -5,9 +5,10 @@ namespace Icinga\Module\Director\Data\Db;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
-use Icinga\Module\Director\Util;
 use InvalidArgumentException;
 use LogicException;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use Zend_Db_Adapter_Abstract;
 use Zend_Db_Exception;
@@ -68,6 +69,9 @@ abstract class DbObject
      * Set this to an eventual autoincrementing column. May equal $keyName
      */
     protected $autoincKeyName;
+
+    /** @var string optional uuid column */
+    protected $uuidColumn;
 
     /** @var bool forbid updates to autoinc values */
     protected $protectAutoinc = true;
@@ -307,6 +311,9 @@ abstract class DbObject
             $value = null;
         }
 
+        if (is_resource($value)) {
+            $value = stream_get_contents($value);
+        }
         $func = 'validate' . ucfirst($key);
         if (method_exists($this, $func) && $this->$func($value) !== true) {
             throw new InvalidArgumentException(sprintf(
@@ -530,6 +537,44 @@ abstract class DbObject
         return $this->autoincKeyName;
     }
 
+    /**
+     * @return ?string
+     */
+    public function getUuidColumn()
+    {
+        return $this->uuidColumn;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasUuidColumn()
+    {
+        return $this->uuidColumn !== null;
+    }
+
+    /**
+     * @return \Ramsey\Uuid\UuidInterface
+     */
+    public function getUniqueId()
+    {
+        if ($this->hasUuidColumn()) {
+            $binaryValue = $this->properties[$this->uuidColumn];
+            if (is_resource($binaryValue)) {
+                throw new RuntimeException('Properties contain binary UUID, probably a programming error');
+            }
+            if ($binaryValue === null) {
+                $uuid = Uuid::uuid4();
+                $this->reallySet($this->uuidColumn, $uuid->getBytes());
+                return $uuid;
+            }
+
+            return Uuid::fromBytes($binaryValue);
+        }
+
+        throw new InvalidArgumentException(sprintf('%s has no UUID column', $this->getTableName()));
+    }
+
     public function getKeyParams()
     {
         $params = array();
@@ -737,6 +782,7 @@ abstract class DbObject
             // Fake true, we might have manually set this to "modified"
             return true;
         }
+        $this->quoteBinaryProperties($properties);
 
         // TODO: Remember changed data for audit and log
         return $this->db->update(
@@ -760,18 +806,23 @@ abstract class DbObject
                 unset($properties[$this->autoincKeyName]);
             }
         }
+        $this->quoteBinaryProperties($properties);
+
+        return $this->db->insert($this->table, $properties);
+    }
+
+    protected function quoteBinaryProperties(&$properties)
+    {
         foreach ($properties as $key => $value) {
             if ($this->isBinaryColumn($key)) {
                 $properties[$key] = $this->getConnection()->quoteBinary($value);
             }
         }
-
-        return $this->db->insert($this->table, $properties);
     }
 
     protected function isBinaryColumn($column)
     {
-        return in_array($column, $this->binaryProperties);
+        return in_array($column, $this->binaryProperties) || $this->getUuidColumn() === $column;
     }
 
     /**
@@ -1271,6 +1322,69 @@ abstract class DbObject
         $obj = new static;
         $obj->setConnection($connection)->setKey($id);
         return $obj->existsInDb();
+    }
+
+    public static function uniqueIdExists(UuidInterface $uuid, DbConnection $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $obj = new static;
+        $column = $obj->getUuidColumn();
+        $query = $db->select()
+            ->from($obj->getTableName(), $column)
+            ->where("$column = ?", $connection->quoteBinary($uuid->getBytes()));
+
+        $result = $db->fetchRow($query);
+
+        return $result !== false;
+    }
+
+    public static function requireWithUniqueId(UuidInterface $uuid, DbConnection $connection)
+    {
+        if ($object = static::loadWithUniqueId($uuid, $connection)) {
+            return $object;
+        }
+
+        throw new NotFoundError(sprintf(
+            'No %s with UUID=%s has been found',
+            (new static)->getTableName(),
+            $uuid->toString()
+        ));
+    }
+
+    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection)
+    {
+        $db = $connection->getDbAdapter();
+        $obj = new static;
+        $query = $db->select()
+            ->from($obj->getTableName())
+            ->where($obj->getUuidColumn() . ' = ?', $connection->quoteBinary($uuid->getBytes()));
+
+        $result = $db->fetchRow($query);
+
+        if ($result) {
+            return $obj->setConnection($connection)->setDbProperties($result);
+        }
+
+        return null;
+    }
+
+    public function setUniqueId(UuidInterface $uuid)
+    {
+        if ($column = $this->getUuidColumn()) {
+            $binary = $uuid->getBytes();
+            $current = $this->get($column);
+            if ($current === null) {
+                $this->set($column, $binary);
+            } else {
+                if ($current !== $binary) {
+                    throw new RuntimeException(sprintf(
+                        'Changing the UUID (from %s to %s) is not allowed',
+                        Uuid::fromBytes($current)->toString(),
+                        Uuid::fromBytes($binary)->toString()
+                    ));
+                }
+            }
+        }
     }
 
     public function __destruct()
