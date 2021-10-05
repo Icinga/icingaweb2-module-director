@@ -28,7 +28,9 @@ class ServiceController extends ObjectController
     {
         if ($this->hasPermission('director/monitoring/services')) {
             $monitoring = new Monitoring();
-            return $monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'));
+            if ($monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'))) {
+                return;
+            }
         }
         $this->assertPermission('director/hosts');
     }
