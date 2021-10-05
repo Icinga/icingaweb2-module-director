@@ -3070,6 +3070,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             if ($k === $this->getUuidColumn()) {
                 continue;
             }
+            if ($k === 'disabled' && $v === null) {
+                continue;
+            }
 
             if ('_id' === substr($k, -3)) {
                 $relKey = substr($k, 0, -3);
