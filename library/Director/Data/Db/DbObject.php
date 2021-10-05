@@ -747,6 +747,16 @@ abstract class DbObject
         $this->modifiedProperties = [];
     }
 
+    public function setLoadedProperty($key, $value)
+    {
+        if ($this->hasBeenLoadedFromDb()) {
+            $this->set($key, $value);
+            $this->loadedProperties[$key] = $this->get($key);
+        } else {
+            throw new RuntimeException('Cannot set loaded property for new object');
+        }
+    }
+
     public function getOriginalProperties()
     {
         return $this->loadedProperties;
