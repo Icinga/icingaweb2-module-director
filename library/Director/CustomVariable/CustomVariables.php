@@ -181,7 +181,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
         $vars->refreshIndex();
-        $vars->setUnmodified();
+        $vars->setBeingLoadedFromDb();
         return $vars;
     }
 
@@ -192,7 +192,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
         $vars->refreshIndex();
-        $vars->setUnmodified();
+        $vars->setBeingLoadedFromDb();
 
         return $vars;
     }
@@ -237,7 +237,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             }
         }
 
-        $this->setUnmodified();
+        $this->setBeingLoadedFromDb();
     }
 
     public function get($key)
@@ -264,14 +264,16 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return false;
     }
 
-    public function setUnmodified()
+    public function setBeingLoadedFromDb()
     {
         $this->modified = false;
         $this->storedVars = array();
         foreach ($this->vars as $key => $var) {
             $this->storedVars[$key] = clone($var);
             $var->setUnmodified();
+            $var->setLoadedFromDb();
         }
+
         return $this;
     }
 

@@ -288,8 +288,6 @@ class ExtensibleSet
                     array_merge($props, array('property' => $value))
                 );
             }
-
-            $this->fromDb['override'] = $this->ownValues;
         }
 
         if (! empty($this->plusValues)) {
@@ -300,8 +298,6 @@ class ExtensibleSet
                     array_merge($props, array('property' => $value))
                 );
             }
-
-            $this->fromDb['extend'] = $this->ownValues;
         }
 
         if (! empty($this->minusValues)) {
@@ -312,9 +308,18 @@ class ExtensibleSet
                     array_merge($props, array('property' => $value))
                 );
             }
-
-            $this->fromDb['blacklist'] = $this->ownValues;
         }
+
+        $this->setBeingLoadedFromDb();
+    }
+
+    public function setBeingLoadedFromDb()
+    {
+        $this->fromDb = [
+            'override'  => $this->ownValues ?: [],
+            'extend'    => $this->plusValues ?: [],
+            'blacklist' => $this->minusValues ?: [],
+        ];
     }
 
     public function override($values)

@@ -216,13 +216,18 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         /** @var IcingaTimePeriodRange $class */
         $class = $this->getClass();
         $this->ranges = $class::loadAll($connection, $query, 'range_key');
-        $this->storedRanges = array();
+        $this->setBeingLoadedFromDb();
+
+        return $this;
+    }
+
+    public function setBeingLoadedFromDb()
+    {
+        $this->storedRanges = [];
 
         foreach ($this->ranges as $key => $range) {
             $this->storedRanges[$key] = clone($range);
         }
-
-        return $this;
     }
 
     public function store()

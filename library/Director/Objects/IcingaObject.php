@@ -1489,6 +1489,35 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             && $this->get('object_type') === 'apply';
     }
 
+    public function setBeingLoadedFromDb()
+    {
+        if ($this instanceof ObjectWithArguments && $this->gotArguments()) {
+            $this->arguments()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsImports() && $this->gotImports()) {
+            $this->imports()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsCustomVars() && $this->vars !== null) {
+            $this->vars()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsGroups() && $this->groups !== null) {
+            $this->groups()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsRanges() && $this->ranges === null) {
+            $this->ranges()->setBeingLoadedFromDb();
+        }
+
+        foreach ($this->loadedRelatedSets as $set) {
+            $set->setBeingLoadedFromDb();
+        }
+
+        foreach ($this->loadedMultiRelations as $multiRelation) {
+            $multiRelation->setBeingLoadedFromDb();
+        }
+
+        parent::setBeingLoadedFromDb();
+    }
+
     /**
      * @throws NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException

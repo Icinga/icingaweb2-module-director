@@ -341,6 +341,15 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return $arguments->loadFromDb();
     }
 
+    public function setBeingLoadedFromDb()
+    {
+        foreach ($this->arguments as $argument) {
+            $argument->setBeingLoadedFromDb();
+        }
+        $this->refreshIndex();
+        $this->cloneStored();
+    }
+
     /**
      * @return $this
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
@@ -353,8 +362,14 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             if ($argument->shouldBeRemoved()) {
                 $deleted[] = $key;
             } else {
-                $argument->set('command_id', $this->object->get('id'));
-                $argument->store($db);
+                if ($argument->hasBeenModified()) {
+                    if ($argument->hasBeenLoadedFromDb()) {
+                        $argument->setLoadedProperty('command_id', $this->object->get('id'));
+                    } else {
+                        $argument->set('command_id', $this->object->get('id'));
+                    }
+                    $argument->store($db);
+                }
             }
         }
 
