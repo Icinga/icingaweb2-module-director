@@ -3,9 +3,14 @@
 namespace Icinga\Module\Director\Data\Db;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\IcingaObject;
 
 class DbObjectTypeRegistry
 {
+    /**
+     * @param $type
+     * @return string|DbObject Fake typehint for IDE
+     */
     public static function classByType($type)
     {
         // allow for icinga_host and host
@@ -42,6 +47,23 @@ class DbObjectTypeRegistry
         }
 
         return 'Icinga\\Module\\Director\\Objects\\' . $prefix . ucfirst($type);
+    }
+
+    public static function tableNameByType($type)
+    {
+        $class = static::classByType($type);
+        $dummy = $class::create([]);
+
+        return $dummy->getTableName();
+    }
+
+    public static function shortTypeForObject(DbObject $object)
+    {
+        if ($object instanceof IcingaObject) {
+            return $object->getShortTableName();
+        }
+
+        return $object->getTableName();
     }
 
     public static function newObject($type, $properties = [], Db $db = null)
