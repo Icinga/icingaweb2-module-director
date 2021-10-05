@@ -124,6 +124,13 @@ class Branch
         return $this->branchUuid !== null;
     }
 
+    public function assertBranch()
+    {
+        if ($this->isMain()) {
+            throw new RuntimeException('Branch expected, but working in main branch');
+        }
+    }
+
     /**
      * @return bool
      */
