@@ -107,6 +107,7 @@ class HostController extends ObjectController
         $this->addTitle($this->translate('Add Service to %s'), $host->getObjectName());
         $this->content()->add(
             IcingaAddServiceForm::load()
+                ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setDb($this->db())
                 ->handleRequest()
@@ -199,12 +200,21 @@ class HostController extends ObjectController
     public function servicesAction()
     {
         $this->addServicesHeader();
-        $db = $this->db();
         $host = $this->getHostObject();
         $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && $host->get('id') === null) {
+            $this->content()->add(Hint::info(
+                $this->translate('Managing services on new Hosts is possible only after they have been merged.')
+            ));
+            return;
+        }
         $content = $this->content();
         $table = IcingaHostServiceTable::load($host)
             ->setTitle($this->translate('Individual Service objects'));
+        if ($branch->isBranch()) {
+            $table->setBranchUuid($branch->getUuid());
+        }
 
         if (count($table)) {
             $content->add($table);
@@ -598,7 +608,7 @@ class HostController extends ObjectController
      */
     protected function getHostObject()
     {
-        /** @var IcingaHost $this->object */
+        assert($this->object instanceof IcingaHost);
         return $this->object;
     }
 }
