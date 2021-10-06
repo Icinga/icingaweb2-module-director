@@ -56,8 +56,7 @@ class ServiceActions extends ServiceActionsHook
             $title = mt('director', 'Modify');
         } elseif (Util::hasPermission('director/monitoring/services')) {
             $monitoring = new Monitoring();
-            if (
-                $monitoring->isAvailable()
+            if ($monitoring->isAvailable()
                 && $monitoring->authCanEditService(Auth::getInstance(), $hostname, $serviceName)
             ) {
                 $title = mt('director', 'Modify');

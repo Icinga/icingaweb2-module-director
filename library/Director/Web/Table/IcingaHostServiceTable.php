@@ -6,6 +6,7 @@ use ipl\Html\Html;
 use Icinga\Module\Director\Objects\IcingaHost;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use Ramsey\Uuid\UuidInterface;
 
 class IcingaHostServiceTable extends ZfQueryBasedTable
 {
@@ -22,6 +23,9 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
 
     /** @var string|null */
     protected $highlightedService;
+
+    /** @var ?UuidInterface */
+    protected $branchUuid;
 
     protected $searchColumns = [
         'service',
@@ -42,6 +46,12 @@ class IcingaHostServiceTable extends ZfQueryBasedTable
     public function setTitle($title)
     {
         $this->title = $title;
+        return $this;
+    }
+
+    public function setBranchUuid(UuidInterface $uuid)
+    {
+        $this->branchUuid = $uuid;
         return $this;
     }
 

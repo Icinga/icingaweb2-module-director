@@ -16,6 +16,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
 
     protected $defaultProperties = [
         'id'                     => null,
+        'uuid'                   => null,
         'object_name'            => null,
         'object_type'            => null,
         'disabled'               => 'n',
@@ -33,6 +34,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'assign_filter'          => null,
         'parent_service_by_name' => null,
     ];
+
+    protected $uuidColumn = 'uuid';
 
     protected $supportsCustomVars = false;
 

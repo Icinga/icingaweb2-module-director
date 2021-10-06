@@ -12,10 +12,13 @@ class BranchModificationInspection
 {
     use TranslationHelper;
 
+    protected $connection;
+
     protected $db;
 
     public function __construct(Db $connection)
     {
+        $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
     }
 
@@ -74,10 +77,10 @@ class BranchModificationInspection
     public function loadSingleTableStats($table, UuidInterface $uuid)
     {
         $query = $this->db->select()->from($table, [
-            'cnt_created'  => "SUM(CASE WHEN created = 'y' THEN 1 ELSE 0 END)",
-            'cnt_deleted'  => "SUM(CASE WHEN deleted = 'y' THEN 1 ELSE 0 END)",
-            'cnt_modified' => "SUM(CASE WHEN deleted = 'n' AND created = 'n' THEN 1 ELSE 0 END)",
-        ])->where('branch_uuid = ?', $uuid->getBytes());
+            'cnt_created'  => "SUM(CASE WHEN branch_created = 'y' THEN 1 ELSE 0 END)",
+            'cnt_deleted'  => "SUM(CASE WHEN branch_deleted = 'y' THEN 1 ELSE 0 END)",
+            'cnt_modified' => "SUM(CASE WHEN branch_deleted = 'n' AND branch_created = 'n' THEN 1 ELSE 0 END)",
+        ])->where('branch_uuid = ?', $this->connection->quoteBinary($uuid->getBytes()));
 
         return $this->db->fetchRow($query);
     }

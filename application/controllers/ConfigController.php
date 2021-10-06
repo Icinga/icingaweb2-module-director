@@ -432,6 +432,9 @@ class ConfigController extends ActionController
 
     protected function showOptionalBranchActivity()
     {
+        if ($this->url()->hasParam('idRangeEx')) {
+            return;
+        }
         $branch = $this->getBranch();
         if ($branch->isBranch() && (int) $this->params->get('page', '1') === 1) {
             $table = new BranchActivityTable($branch->getUuid(), $this->db());
@@ -443,12 +446,12 @@ class ConfigController extends ActionController
                     $this->Auth(),
                     $this->translate('configuration branch')
                 ))));
-                $table = new BranchActivityTable($branch->getUuid(), $this->db());
                 $this->content()->add($table);
                 $this->content()->add(Html::tag('br'));
                 $this->content()->add(Hint::ok($this->translate(
                     '...and the modifications below are already in the main branch:'
                 )));
+                $this->content()->add(Html::tag('br'));
             }
         }
     }

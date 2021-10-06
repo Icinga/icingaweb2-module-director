@@ -2,12 +2,10 @@
 
 namespace Icinga\Module\Director\Data\Db;
 
-use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\Branch;
-use Icinga\Module\Director\Db\Branch\BranchModificationStore;
-use Icinga\Module\Director\Db\Branch\IcingaObjectModification;
-use function in_array;
+use Icinga\Module\Director\Db\Branch\BranchActivity;
+use Icinga\Module\Director\Db\Branch\BranchedObject;
 
 /**
  * Loader for Icinga/DbObjects
@@ -21,96 +19,46 @@ class DbObjectStore
     /** @var Db */
     protected $connection;
 
-    /** @var Branch */
+    /** @var ?Branch */
     protected $branch;
 
-    public function __construct(Db $connection)
+    public function __construct(Db $connection, Branch $branch = null)
     {
         $this->connection = $connection;
-    }
-
-    public function setBranch(Branch $branch)
-    {
         $this->branch = $branch;
     }
 
-    protected function typeSupportsBranches($type)
+    public function store(DbObject $object)
     {
-        return in_array($type, ['host', 'user', 'zone', 'timeperiod']);
-    }
+        if ($this->branch && $this->branch->isBranch()) {
+            $activity = BranchActivity::forDbObject($object, $this->branch);
+            $this->connection->runFailSafeTransaction(function () use ($activity) {
+                $activity->store($this->connection);
+                BranchedObject::withActivity($activity, $this->connection)->store($this->connection);
+            });
 
-    /**
-     * @param string $shortType
-     * @param string|array $key
-     * @return DbObject
-     * @throws NotFoundError
-     */
-    public function load($shortType, $key)
-    {
-        return $this->loadWithBranchModification($shortType, $key)[0];
-    }
-
-    /**
-     * @param string $shortType
-     * @param int|string|array $key
-     * @return array
-     * @throws NotFoundError
-     */
-    public function loadWithBranchModification($shortType, $key)
-    {
-        /** @var string|DbObject $class */
-        $class = DbObjectTypeRegistry::classByType($shortType);
-        if ($this->branch && $this->branch->isBranch() && $this->typeSupportsBranches($shortType) && is_string($key)) {
-            $branchStore = new BranchModificationStore($this->connection, $shortType);
+            return true;
         } else {
-            $branchStore = null;
+            return $object->store($this->connection);
         }
-        $modification = null;
-        try {
-            if (is_int($key)) {
-                $object = $class::loadWithAutoIncId($key, $this->connection);
-            } else {
-                $object = $class::load($key, $this->connection);
-            }
-            if ($branchStore && $modification = $branchStore->eventuallyLoadModification(
-                    $object->get('id'),
-                    $this->branch->getUuid()
-                )) {
-                $object = IcingaObjectModification::applyModification($modification, $object, $this->connection);
-            }
-        } catch (NotFoundError $e) {
-            if ($this->branch  && $this->branch->isBranch() && is_string($key)) {
-                $branchStore = new BranchModificationStore($this->connection, $shortType);
-                $modification = $branchStore->loadOptionalModificationByName($key, $this->branch->getUuid());
-                if ($modification) {
-                    $object = IcingaObjectModification::applyModification($modification, null, $this->connection);
-                    $object->setConnection($this->connection);
-                    if ($id = $object->get('id')) { // Object has probably been renamed
-                        try {
-                            // TODO: can be one step I guess, but my brain is slow today ;-)
-                            $renamedObject = $class::load($id, $this->connection);
-                            $object = IcingaObjectModification::applyModification(
-                                $modification,
-                                $renamedObject,
-                                $this->connection
-                            );
-                        } catch (NotFoundError $e) {
-                            // Well... it was worth trying
-                            $object->setConnection($this->connection);
-                            $object->setBeingLoadedFromDb();
-                        }
-                    } else {
-                        $object->setConnection($this->connection);
-                        $object->setBeingLoadedFromDb();
-                    }
-                } else {
-                    throw $e;
-                }
-            } else {
-                throw $e;
-            }
+    }
+
+    public function delete(DbObject $object)
+    {
+        if ($this->branch && $this->branch->isBranch()) {
+            $activity = BranchActivity::deleteObject($object, $this->branch);
+            $this->connection->runFailSafeTransaction(function () use ($activity) {
+                $activity->store($this->connection);
+                BranchedObject::load(
+                    $this->connection,
+                    $activity->getObjectTable(),
+                    $activity->getObjectUuid(),
+                    $this->branch
+                )->delete($this->connection);
+            });
+            return true;
         }
 
-        return [$object, $modification];
+        return $object->delete();
     }
 }

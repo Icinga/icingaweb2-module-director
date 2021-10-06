@@ -211,13 +211,18 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
             ->order('o.range_key');
 
         $this->ranges = IcingaScheduledDowntimeRange::loadAll($connection, $query, 'range_key');
-        $this->storedRanges = array();
+        $this->setBeingLoadedFromDb();
+
+        return $this;
+    }
+
+    public function setBeingLoadedFromDb()
+    {
+        $this->storedRanges = [];
 
         foreach ($this->ranges as $key => $range) {
             $this->storedRanges[$key] = clone($range);
         }
-
-        return $this;
     }
 
     public function store()

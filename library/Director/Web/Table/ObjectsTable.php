@@ -13,6 +13,7 @@ use Icinga\Module\Director\Restriction\ObjectRestriction;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Zend_Db_Select as ZfSelect;
 
@@ -25,7 +26,7 @@ class ObjectsTable extends ZfQueryBasedTable
         'object_name' => 'o.object_name',
         'object_type' => 'o.object_type',
         'disabled'    => 'o.disabled',
-        'id'          => 'o.id',
+        'uuid'        => 'o.uuid',
     ];
 
     protected $searchColumns = ['o.object_name'];
@@ -43,6 +44,10 @@ class ObjectsTable extends ZfQueryBasedTable
 
     /** @var IcingaObject */
     protected $dummyObject;
+
+    protected $leftSubQuery;
+
+    protected $rightSubQuery;
 
     /** @var Auth */
     private $auth;
@@ -147,7 +152,7 @@ class ObjectsTable extends ZfQueryBasedTable
     {
         $type = $this->baseObjectUrl;
         $url = Url::fromPath("director/${type}", [
-            'name' => $row->object_name
+            'uuid' => Uuid::fromBytes($row->uuid)->toString()
         ]);
 
         return static::td(Link::create($this->getMainLinkLabel($row), $url));
@@ -167,6 +172,9 @@ class ObjectsTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
+        if (isset($row->uuid) && is_resource($row->uuid)) {
+            $row->uuid = stream_get_contents($row->uuid);
+        }
         $tr = static::tr([
             $this->renderObjectNameColumn($row),
             $this->renderExtraColumns($row)
@@ -226,6 +234,7 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function loadRestrictions()
     {
+        /** @var Db $db */
         $db = $this->connection();
         $auth = $this->getAuth();
 
@@ -249,12 +258,19 @@ class ObjectsTable extends ZfQueryBasedTable
 
     protected function branchifyColumns($columns)
     {
-        $result = [];
+        $result = [
+            'uuid' => 'COALESCE(o.uuid, bo.uuid)'
+        ];
         $ignore = ['o.id'];
         foreach ($columns as $alias => $column) {
             if (substr($column, 0, 2) === 'o.' && ! in_array($column, $ignore)) {
                 // bo.column, o.column
                 $column = "COALESCE(b$column, $column)";
+            }
+
+            // Used in Service Tables:
+            if ($column === 'h.object_name' && $alias = 'host') {
+                $column = "COALESCE(bo.host, $column)";
             }
 
             $result[$alias] = $column;
@@ -299,19 +315,21 @@ class ObjectsTable extends ZfQueryBasedTable
                 ['bo' => "branched_$table"],
                 // TODO: PgHexFunc
                 $this->db()->quoteInto(
-                    'bo.object_id = o.id AND bo.branch_uuid = ?',
+                    'bo.uuid = o.uuid AND bo.branch_uuid = ?',
                     $conn->quoteBinary($this->branchUuid->getBytes())
                 ),
                 []
-            )->where("(bo.deleted IS NULL OR bo.deleted = 'n')");
+            )->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
             $this->applyObjectTypeFilter($query, $right);
             $right->joinRight(
                 ['bo' => "branched_$table"],
-                'bo.object_id = o.id',
+                'bo.uuid = o.uuid',
                 []
             )
-            ->where('o.id IS NULL')
+            ->where('o.uuid IS NULL')
             ->where('bo.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
+            $this->leftSubQuery = $query;
+            $this->rightSubQuery = $right;
             $query = $this->db()->select()->union([
                 'l' => new DbSelectParenthesis($query),
                 'r' => new DbSelectParenthesis($right),

@@ -22,6 +22,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
     protected $defaultProperties = array(
         'id'                      => null,
+        'uuid'                    => null,
         'object_name'             => null,
         'object_type'             => null,
         'disabled'                => 'n',
@@ -100,6 +101,8 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
     /** @var HostGroupMembershipResolver */
     protected $hostgroupMembershipResolver;
+
+    protected $uuidColumn = 'uuid';
 
     public static function enumProperties(
         DbConnection $connection = null,

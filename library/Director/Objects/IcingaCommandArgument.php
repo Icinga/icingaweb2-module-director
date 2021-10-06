@@ -7,7 +7,9 @@ use RuntimeException;
 
 class IcingaCommandArgument extends IcingaObject
 {
-    protected $keyName = 'id';
+    protected $keyName = ['command_id', 'argument_name'];
+
+    protected $autoincKeyName = 'id';
 
     protected $table = 'icinga_command_argument';
 
@@ -129,6 +131,7 @@ class IcingaCommandArgument extends IcingaObject
         }
 
         $this->transformPlainArgumentValue($plain);
+        unset($plain->command_id);
 
         // Will happen only combined with $skipDefaults
         if (array_keys((array) $plain) === ['value']) {

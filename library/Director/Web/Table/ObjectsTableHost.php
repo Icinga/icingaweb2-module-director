@@ -21,7 +21,7 @@ class ObjectsTableHost extends ObjectsTable
         'display_name' => 'o.display_name',
         'address'      => 'o.address',
         'disabled'     => 'o.disabled',
-        'id'           => 'o.id',
+        'uuid'         => 'o.uuid',
     ];
 
     protected $showColumns = [
@@ -34,7 +34,7 @@ class ObjectsTableHost extends ObjectsTable
         $this->enableMultiSelect(
             'director/hosts/edit',
             'director/hosts',
-            ['name']
+            ['uuid']
         );
     }
 }
