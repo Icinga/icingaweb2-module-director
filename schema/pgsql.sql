@@ -311,6 +311,7 @@ CREATE TABLE director_setting (
 
 CREATE TABLE icinga_zone (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   parent_id integer DEFAULT NULL,
   object_name character varying(255) NOT NULL UNIQUE,
   object_type enum_object_type_all NOT NULL,
@@ -325,6 +326,7 @@ CREATE TABLE icinga_zone (
 );
 
 CREATE INDEX zone_parent ON icinga_zone (parent_id);
+CREATE UNIQUE INDEX zone_uuid ON icinga_zone (uuid);
 
 
 CREATE TABLE icinga_zone_inheritance (
@@ -351,6 +353,7 @@ CREATE INDEX zone_inheritance_zone_parent ON icinga_zone_inheritance (parent_zon
 
 CREATE TABLE icinga_timeperiod (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   display_name character varying(255) DEFAULT NULL,
   update_method character varying(64) DEFAULT NULL,
@@ -366,6 +369,7 @@ CREATE TABLE icinga_timeperiod (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX timeperiod_uuid ON icinga_timeperiod (uuid);
 CREATE UNIQUE INDEX timeperiod_object_name ON icinga_timeperiod (object_name, zone_id);
 CREATE INDEX timeperiod_zone ON icinga_timeperiod (zone_id);
 COMMENT ON COLUMN icinga_timeperiod.update_method IS 'Usually LegacyTimePeriod';
@@ -453,6 +457,7 @@ CREATE INDEX director_job_setting_job ON director_job_setting (job_id);
 
 CREATE TABLE icinga_command (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -470,6 +475,7 @@ CREATE TABLE icinga_command (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX command_uuid ON icinga_command (uuid);
 CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 CREATE INDEX command_zone ON icinga_command (zone_id);
 COMMENT ON COLUMN icinga_command.object_type IS 'external_object is an attempt to work with existing commands';
@@ -567,6 +573,7 @@ CREATE INDEX command_var_checksum ON icinga_command_var (checksum);
 
 CREATE TABLE icinga_apiuser (
   id BIGSERIAL,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name CHARACTER VARYING(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -576,11 +583,13 @@ CREATE TABLE icinga_apiuser (
   PRIMARY KEY (id)
 );
 
+CREATE UNIQUE INDEX apiuser_uuid ON icinga_apiuser (uuid);
 COMMENT ON COLUMN icinga_apiuser.permissions IS 'JSON-encoded permissions';
 
 
 CREATE TABLE icinga_endpoint (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   zone_id integer DEFAULT NULL,
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
@@ -602,6 +611,7 @@ CREATE TABLE icinga_endpoint (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX endpoint_uuid ON icinga_endpoint (uuid);
 CREATE UNIQUE INDEX endpoint_object_name ON icinga_endpoint (object_name);
 CREATE INDEX endpoint_zone ON icinga_endpoint (zone_id);
 COMMENT ON COLUMN icinga_endpoint.host IS 'IP address / hostname of remote node';
@@ -647,6 +657,7 @@ CREATE INDEX host_template_choice_required_template ON icinga_host_template_choi
 
 CREATE TABLE icinga_host (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -715,6 +726,7 @@ CREATE TABLE icinga_host (
 );
 
 
+CREATE UNIQUE INDEX host_uuid ON icinga_host (uuid);
 CREATE UNIQUE INDEX object_name_host ON icinga_host (object_name, zone_id);
 CREATE UNIQUE INDEX host_api_key ON icinga_host (api_key);
 CREATE INDEX host_zone ON icinga_host (zone_id);
@@ -834,6 +846,7 @@ CREATE INDEX service_template_choice_required_template ON icinga_service_templat
 
 CREATE TABLE icinga_service (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean DEFAULT 'n',
@@ -912,6 +925,7 @@ CREATE TABLE icinga_service (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX service_uuid ON icinga_service (uuid);
 CREATE INDEX service_zone ON icinga_service (zone_id);
 CREATE INDEX service_timeperiod ON icinga_service (check_period_id);
 CREATE INDEX service_check_command ON icinga_service (check_command_id);
@@ -1076,6 +1090,7 @@ CREATE INDEX service_set_var_checksum ON icinga_service_set_var (checksum);
 
 CREATE TABLE icinga_hostgroup (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -1084,6 +1099,7 @@ CREATE TABLE icinga_hostgroup (
   PRIMARY KEY (id)
 );
 
+CREATE UNIQUE INDEX hostgroup_uuid ON icinga_hostgroup (uuid);
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
 CREATE INDEX hostgroup_search_idx ON icinga_hostgroup (display_name);
 
@@ -1113,6 +1129,7 @@ CREATE INDEX hostgroup_inheritance_hostgroup_parent ON icinga_hostgroup_inherita
 
 CREATE TABLE icinga_servicegroup (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -1121,6 +1138,7 @@ CREATE TABLE icinga_servicegroup (
   PRIMARY KEY (id)
 );
 
+CREATE UNIQUE INDEX servicegroup_uuid ON icinga_servicegroup (uuid);
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);
 CREATE INDEX servicegroup_search_idx ON icinga_servicegroup (display_name);
 
@@ -1248,6 +1266,7 @@ CREATE INDEX hostgroup_parent_parent ON icinga_hostgroup_parent (parent_hostgrou
 
 CREATE TABLE icinga_user (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -1270,6 +1289,7 @@ CREATE TABLE icinga_user (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX user_uuid ON icinga_user (uuid);
 CREATE UNIQUE INDEX user_object_name ON icinga_user (object_name, zone_id);
 CREATE INDEX user_zone ON icinga_user (zone_id);
 
@@ -1373,6 +1393,7 @@ COMMENT ON COLUMN icinga_user_field.user_id IS 'Makes only sense for templates';
 
 CREATE TABLE icinga_usergroup (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -1386,6 +1407,7 @@ CREATE TABLE icinga_usergroup (
       ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX usergroup_uuid ON icinga_usergroup (uuid);
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
 CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name);
 CREATE INDEX usergroup_zone ON icinga_usergroup (zone_id);
@@ -1455,6 +1477,7 @@ CREATE INDEX usergroup_parent_parent ON icinga_usergroup_parent (parent_usergrou
 
 CREATE TABLE icinga_notification (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name CHARACTER VARYING(255) DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean NOT NULL DEFAULT 'n',
@@ -1495,6 +1518,8 @@ CREATE TABLE icinga_notification (
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
+
+CREATE UNIQUE INDEX notification_uuid ON icinga_notification (uuid);
 
 
 CREATE TABLE icinga_notification_user (
@@ -2004,6 +2029,7 @@ CREATE INDEX user_resolved_var_schecksum ON icinga_user_resolved_var (checksum);
 
 CREATE TABLE icinga_dependency (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   object_type enum_object_type_all NOT NULL,
   disabled enum_boolean DEFAULT 'n',
@@ -2053,6 +2079,7 @@ CREATE TABLE icinga_dependency (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX dependency_uuid ON icinga_dependency (uuid);
 CREATE INDEX dependency_parent_host ON icinga_dependency (parent_host_id);
 CREATE INDEX dependency_parent_service ON icinga_dependency (parent_service_id);
 CREATE INDEX dependency_child_host ON icinga_dependency (child_host_id);
@@ -2133,6 +2160,7 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 CREATE TABLE icinga_scheduled_downtime (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   object_name character varying(255) NOT NULL,
   zone_id integer DEFAULT NULL,
   object_type enum_object_type_all NOT NULL,
@@ -2152,6 +2180,7 @@ CREATE TABLE icinga_scheduled_downtime (
     ON UPDATE CASCADE
 );
 
+CREATE UNIQUE INDEX scheduled_downtime_uuid ON icinga_scheduled_downtime (uuid);
 CREATE UNIQUE INDEX scheduled_downtime_object_name ON icinga_scheduled_downtime (object_name);
 CREATE INDEX scheduled_downtime_zone ON icinga_scheduled_downtime (zone_id);
 
@@ -2201,4 +2230,4 @@ COMMENT ON COLUMN icinga_scheduled_downtime_range.merge_behaviour IS 'set -> = {
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (173, NOW());
+  VALUES (174, NOW());

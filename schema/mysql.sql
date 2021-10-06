@@ -231,12 +231,14 @@ CREATE TABLE director_setting (
 
 CREATE TABLE icinga_zone (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   parent_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   is_global ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_zone_parent
     FOREIGN KEY parent_zone (parent_id)
@@ -265,6 +267,7 @@ CREATE TABLE icinga_zone_inheritance (
 
 CREATE TABLE icinga_timeperiod (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   display_name VARCHAR(255) DEFAULT NULL,
   update_method VARCHAR(64) DEFAULT NULL COMMENT 'Usually LegacyTimePeriod',
@@ -273,6 +276,7 @@ CREATE TABLE icinga_timeperiod (
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   prefer_includes ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_timeperiod_zone
     FOREIGN KEY zone (zone_id)
@@ -349,6 +353,7 @@ CREATE TABLE director_job_setting (
 
 CREATE TABLE icinga_command (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL
     COMMENT 'external_object is an attempt to work with existing commands',
@@ -361,6 +366,7 @@ CREATE TABLE icinga_command (
   timeout SMALLINT UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_command_zone
     FOREIGN KEY zone (zone_id)
@@ -447,17 +453,20 @@ CREATE TABLE icinga_command_var (
 
 CREATE TABLE icinga_apiuser (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   password VARCHAR(255) DEFAULT NULL,
   client_dn VARCHAR(64) DEFAULT NULL,
   permissions TEXT DEFAULT NULL COMMENT 'JSON-encoded permissions',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_endpoint (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
@@ -467,6 +476,7 @@ CREATE TABLE icinga_endpoint (
   log_duration VARCHAR(32) DEFAULT NULL COMMENT '1d if not set',
   apiuser_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_endpoint_zone
     FOREIGN KEY zone (zone_id)
@@ -512,6 +522,7 @@ CREATE TABLE icinga_host_template_choice (
 
 CREATE TABLE icinga_host (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -547,6 +558,7 @@ CREATE TABLE icinga_host (
   api_key VARCHAR(40) DEFAULT NULL,
   template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   UNIQUE INDEX api_key (api_key),
   KEY search_idx (display_name),
@@ -671,6 +683,7 @@ CREATE TABLE icinga_service_template_choice (
 
 CREATE TABLE icinga_service (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -706,6 +719,7 @@ CREATE TABLE icinga_service (
   assign_filter TEXT DEFAULT NULL,
   template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_host
     FOREIGN KEY host (host_id)
@@ -876,12 +890,14 @@ CREATE TABLE icinga_service_set_var (
 
 CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -907,12 +923,14 @@ CREATE TABLE icinga_hostgroup_inheritance (
 
 CREATE TABLE icinga_servicegroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1017,6 +1035,7 @@ CREATE TABLE icinga_hostgroup_parent (
 
 CREATE TABLE icinga_user (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1027,6 +1046,7 @@ CREATE TABLE icinga_user (
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_user_zone
     FOREIGN KEY zone (zone_id)
@@ -1137,12 +1157,14 @@ CREATE TABLE icinga_user_field (
 
 CREATE TABLE icinga_usergroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name),
   CONSTRAINT icinga_usergroup_zone
@@ -1204,6 +1226,7 @@ CREATE TABLE icinga_usergroup_parent (
 
 CREATE TABLE icinga_notification (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1218,6 +1241,7 @@ CREATE TABLE icinga_notification (
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_notification_host
     FOREIGN KEY host (host_id)
     REFERENCES icinga_host (id)
@@ -1707,6 +1731,7 @@ CREATE TABLE icinga_user_resolved_var (
 
 CREATE TABLE icinga_dependency (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1724,6 +1749,7 @@ CREATE TABLE icinga_dependency (
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY parent_host (parent_host_id)
     REFERENCES icinga_host (id)
@@ -1828,6 +1854,7 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 CREATE TABLE icinga_scheduled_downtime (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
@@ -1840,6 +1867,7 @@ CREATE TABLE icinga_scheduled_downtime (
   duration INT(10) UNSIGNED DEFAULT NULL,
   with_services ENUM('y', 'n') NULL DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_scheduled_downtime_zone
   FOREIGN KEY zone (zone_id)
@@ -1884,4 +1912,4 @@ CREATE TABLE icinga_scheduled_downtime_range (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (173, NOW());
+  VALUES (174, NOW());
