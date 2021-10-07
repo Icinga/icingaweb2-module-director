@@ -16,9 +16,8 @@ class NotificationApplyDashlet extends Dashlet
     public function getSummary()
     {
         return $this->translate(
-            'Apply notifications with specific properties according to given'
-            . ' rules.' . ' ' . $this->getApplySummaryText('notification')
-        );
+            'Apply notifications with specific properties according to given rules.'
+        ) . ' ' . $this->getApplySummaryText('notification');
     }
 
     public function shouldBeShown()
