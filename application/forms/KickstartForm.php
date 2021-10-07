@@ -12,6 +12,7 @@ use Icinga\Module\Director\KickstartHelper;
 use Icinga\Module\Director\Web\Form\DirectorForm;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\TemplateString;
 
 class KickstartForm extends DirectorForm
 {
@@ -72,14 +73,17 @@ class KickstartForm extends DirectorForm
         }
 
         if (! $this->endpoint && $this->getDb()->hasDeploymentEndpoint()) {
-            $hint = Html::sprintf(
-                $this->translate('Your database looks good, you are ready to %s'),
-                Link::create(
-                    'start working with the Icinga Director',
+            $hint = TemplateString::create(
+                $this->translate(
+                    'Your database looks good, you are ready to'
+                    . ' {{#link}}start working with the Icinga Director{{/link}}'
+                ),
+                ['link' => Link::create(
+                    null,
                     'director',
                     null,
                     ['data-base-target' => '_main']
-                )
+                )]
             );
 
             $this->addHtmlHint($hint, ['name' => 'HINT_ready']);
