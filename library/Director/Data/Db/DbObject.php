@@ -824,6 +824,9 @@ abstract class DbObject
                 unset($properties[$this->autoincKeyName]);
             }
         }
+        if ($column = $this->getUuidColumn()) {
+            $properties[$column] = $this->getUniqueId()->getBytes();
+        }
         $this->quoteBinaryProperties($properties);
 
         return $this->db->insert($this->table, $properties);
