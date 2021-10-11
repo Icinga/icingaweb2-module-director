@@ -1503,7 +1503,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($this->supportsGroups() && $this->groups !== null) {
             $this->groups()->setBeingLoadedFromDb();
         }
-        if ($this->supportsRanges() && $this->ranges === null) {
+        if ($this->supportsRanges() && $this->ranges !== null) {
             $this->ranges()->setBeingLoadedFromDb();
         }
 
