@@ -53,8 +53,7 @@ class ServiceController extends ObjectController
                 $host = (int) $host;
             } else {
                 $host = $this->object->get('host');
-                var_dump($host);
-                exit;
+                // We reach this when accessing Service Template Fields
             }
         }
 
