@@ -578,7 +578,7 @@ abstract class ObjectController extends ActionController
     protected function addBackToObjectLink()
     {
         $params = [
-            'name' => $this->object->getObjectName(),
+            'uuid' => $this->object->getUniqueId()->toString(),
         ];
 
         if ($this->object instanceof IcingaService) {

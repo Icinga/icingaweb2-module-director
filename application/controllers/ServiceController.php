@@ -145,7 +145,7 @@ class ServiceController extends ObjectController
             $this->actions()->add(Link::create(
                 $this->translate('back'),
                 'director/host/services',
-                ['name' => $this->host->getObjectName()],
+                ['uuid' => $this->host->getUniqueId()->toString()],
                 ['class' => 'icon-left-big']
             ));
         }
