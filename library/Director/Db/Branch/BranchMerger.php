@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\Db\Branch;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchMerger
@@ -128,7 +127,6 @@ class BranchMerger
             }
         } else {
             if ($exists) {
-                $current = $class::requireWithUniqueId($uuid, $this->connection);
                 $activity->applyToDbObject($class::requireWithUniqueId($uuid, $this->connection))->store();
                 // TODO: you modified an object, and related properties have been changed in the meantime.
                 //       We're able to detect this with the given data, and might want to offer a rebase.
