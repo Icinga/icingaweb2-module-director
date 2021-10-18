@@ -61,7 +61,7 @@ class HostServiceBlacklist
 
     public function fetchMappingsForService(IcingaService $service)
     {
-        if (! $service->hasBeenLoadedFromDb()) {
+        if (! $service->hasBeenLoadedFromDb() || $service->get('id') === null) {
             return [];
         }
 
