@@ -126,11 +126,6 @@ class AgentWizard
         $this->ticket = $ticket;
     }
 
-    protected function getCertName()
-    {
-        return $this->host->getObjectName();
-    }
-
     protected function loadPowershellModule()
     {
         return $this->getContribFile('windows-agent-installer/Icinga2Agent.psm1');
@@ -142,7 +137,7 @@ class AgentWizard
             . "\n\n"
             . 'exit Icinga2AgentModule `' . "\n    "
             . $this->renderPowershellParameters([
-                'AgentName'       => $this->getCertName(),
+                'AgentName'       => $this->host->getEndpointName(),
                 'Ticket'          => $this->getTicket(),
                 'ParentZone'      => $this->getParentZone()->getObjectName(),
                 'ParentEndpoints' => array_keys($this->getParentEndpoints()),
@@ -272,7 +267,7 @@ class AgentWizard
         }
 
         return $this->replaceBashTemplate($script, [
-            'ICINGA2_NODENAME'         => $this->getCertName(),
+            'ICINGA2_NODENAME'         => $this->host->getEndpointName(),
             'ICINGA2_CA_TICKET'        => $this->getTicket(),
             'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
             'ICINGA2_PARENT_ENDPOINTS' => $endpoints,

@@ -9,6 +9,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Objects\Extension\FlappingSupport;
 use InvalidArgumentException;
@@ -55,6 +56,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
         'has_agent'               => null,
         'master_should_connect'   => null,
         'accept_config'           => null,
+        'custom_endpoint_name'    => null,
         'api_key'                 => null,
         'template_choice_id'      => null,
     );
@@ -215,7 +217,8 @@ class IcingaHost extends IcingaObject implements ExportInterface
             return;
         }
 
-        $name = $this->object_name;
+        $name = $this->getEndpointName();
+
         if (IcingaEndpoint::exists($name, $this->connection)) {
             return;
         }
@@ -247,6 +250,37 @@ class IcingaHost extends IcingaObject implements ExportInterface
         $pre = 'zones.d/' . $this->getRenderingZone($config) . '/';
         $config->configFile($pre . 'agent_endpoints')->addObject($endpoint);
         $config->configFile($pre . 'agent_zones')->addObject($zone);
+    }
+
+    protected function renderCustom_endpoint_name()
+    {
+        // When feature flag feature_custom_endpoint is enabled, render custom var
+        if ($this->connection->settings()->get('feature_custom_endpoint') === 'y') {
+            return c::renderKeyValue(
+                'vars._director_custom_endpoint_name',
+                c::renderPhpValue($this->get('custom_endpoint_name'))
+            );
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns the hostname or custom endpoint name of the Icinga agent
+     *
+     * @return string
+     */
+    public function getEndpointName()
+    {
+        $name = $this->getObjectName();
+
+        if ($this->connection->settings()->get('feature_custom_endpoint') === 'y') {
+            if (($customName = $this->get('custom_endpoint_name')) !== null) {
+                $name = $customName;
+            }
+        }
+
+        return $name;
     }
 
     public function getAgentListenPort()

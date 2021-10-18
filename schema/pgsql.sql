@@ -690,6 +690,7 @@ CREATE TABLE icinga_host (
   has_agent enum_boolean DEFAULT NULL,
   master_should_connect enum_boolean DEFAULT NULL,
   accept_config enum_boolean DEFAULT NULL,
+  custom_endpoint_name character varying(255) DEFAULT NULL,
   api_key character varying(40) DEFAULT NULL,
   template_choice_id int DEFAULT NULL,
   PRIMARY KEY (id),
@@ -2298,6 +2299,7 @@ CREATE TABLE branched_icinga_host (
   has_agent enum_boolean DEFAULT NULL,
   master_should_connect enum_boolean DEFAULT NULL,
   accept_config enum_boolean DEFAULT NULL,
+  custom_endpoint_name character varying(255) DEFAULT NULL,
   api_key character varying(40) DEFAULT NULL,
   -- template_choice character varying(255) DEFAULT NULL, -- TODO: Forbid them!
 
@@ -2739,4 +2741,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (175, NOW());
+  VALUES (176, NOW());

@@ -223,10 +223,9 @@ class SelfService
         )));
 
         $cc->addTitle('Agent deployment instructions');
-        $certname = $host->getObjectName();
 
         try {
-            $ticket = $this->api->getTicket($host->getObjectName());
+            $ticket = $this->api->getTicket($host->getEndpointName());
             $wizard = new AgentWizard($host);
             $wizard->setTicket($ticket);
         } catch (Exception $e) {
@@ -278,7 +277,7 @@ class SelfService
     public function handleLegacyAgentDownloads($os)
     {
         $wizard = new AgentWizard($this->host);
-        $wizard->setTicket($this->api->getTicket($this->host->getObjectName()));
+        $wizard->setTicket($this->api->getTicket($this->host->getEndpointName()));
 
         switch ($os) {
             case 'windows-kickstart':
