@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use ipl\Html\Html;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Hook\ImportSourceHook;
@@ -108,6 +109,8 @@ class SuggestController extends ActionController
         if ($type !== null) {
             $query->where('object_type = ?', $type);
         }
+        $restriction = new HostgroupRestriction($this->db(), $this->Auth());
+        $restriction->filterHostsQuery($query);
 
         return $db->fetchCol($query);
     }
