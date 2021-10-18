@@ -97,6 +97,17 @@ class IcingaHostForm extends DirectorObjectForm
 
             $this->addHidden('command_endpoint_id', null);
             $this->setSentValue('command_endpoint_id', null);
+
+            $settings = $this->object->getConnection()->settings();
+            if ($settings->get('feature_custom_endpoint') === 'y' && ! $this->isTemplate()) {
+                $this->addElement('text', 'custom_endpoint_name', [
+                    'label'       => $this->translate('Custom Endpoint Name'),
+                    'description' => $this->translate(
+                        'Use a different name for the generated endpoint object than the host name'
+                        . ' and add a custom variable to allow services setting the correct command endpoint.'
+                    ),
+                ]);
+            }
         } else {
             if ($this->isTemplate()) {
                 $this->addElement('select', 'command_endpoint_id', [
@@ -123,6 +134,7 @@ class IcingaHostForm extends DirectorObjectForm
             'master_should_connect',
             'accept_config',
             'command_endpoint_id',
+            'custom_endpoint_name',
             'api_key',
         ];
         $this->addDisplayGroup($elements, 'clustering', [

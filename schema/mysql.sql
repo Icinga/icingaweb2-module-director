@@ -555,6 +555,7 @@ CREATE TABLE icinga_host (
   has_agent ENUM('y', 'n') DEFAULT NULL,
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
+  custom_endpoint_name VARCHAR(255) DEFAULT NULL,
   api_key VARCHAR(40) DEFAULT NULL,
   template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
@@ -1977,6 +1978,7 @@ CREATE TABLE branched_icinga_host (
   has_agent ENUM('y', 'n') DEFAULT NULL,
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
+  custom_endpoint_name VARCHAR(255) DEFAULT NULL,
   api_key VARCHAR(40) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
@@ -2393,4 +2395,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (175, NOW());
+  VALUES (176, NOW());

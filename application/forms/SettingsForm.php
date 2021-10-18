@@ -105,6 +105,18 @@ class SettingsForm extends DirectorForm
             ));
         }
 
+        $this->addBoolean('feature_custom_endpoint', [
+            'label'       => $this->translate('Feature: Custom Endpoint Name'),
+            'description' => $this->translate(
+                'Enabled the feature for custom endpoint names,'
+                . ' where you can choose a different name for the generated endpoint object.'
+                . ' This uses some Icinga config snippets and a special custom variable.'
+                . ' Please do NOT enable this, unless you really need divergent endpoint names!'
+            ),
+            'value'      => $settings->getStoredValue('feature_custom_endpoint')
+        ]);
+
+
         $this->addElement('select', 'config_format', array(
             'label'        => $this->translate('Configuration format'),
             'multiOptions' => $this->eventuallyConfiguredEnum(
