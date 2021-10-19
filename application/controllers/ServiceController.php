@@ -141,6 +141,9 @@ class ServiceController extends ObjectController
         $object = $this->object;
         $this->addTitle($object->getObjectName());
 
+        $form = IcingaServiceForm::load()->setDb($this->db());
+        $form->setBranch($this->getBranch());
+
         if ($this->host) {
             $this->actions()->add(Link::create(
                 $this->translate('back'),
@@ -148,9 +151,8 @@ class ServiceController extends ObjectController
                 ['uuid' => $this->host->getUniqueId()->toString()],
                 ['class' => 'icon-left-big']
             ));
+            $form->setHost($this->host);
         }
-
-        $form = IcingaServiceForm::load()->setDb($this->db());
 
         if ($this->set) {
             $form->setServiceSet($this->set);
