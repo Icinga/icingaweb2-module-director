@@ -252,14 +252,11 @@ class IcingaHost extends IcingaObject implements ExportInterface
         $config->configFile($pre . 'agent_zones')->addObject($zone);
     }
 
-    protected function renderCustom_endpoint_name()
+    protected function renderCustom_endpoint_name($value)
     {
         // When feature flag feature_custom_endpoint is enabled, render custom var
         if ($this->connection->settings()->get('feature_custom_endpoint') === 'y') {
-            return c::renderKeyValue(
-                'vars._director_custom_endpoint_name',
-                c::renderPhpValue($this->get('custom_endpoint_name'))
-            );
+            return c::renderKeyValue('vars._director_custom_endpoint_name', c::renderString($value));
         }
 
         return '';
