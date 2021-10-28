@@ -19,12 +19,15 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     protected $defaultProperties = array(
         'id'                    => null,
+        'uuid'                  => null,
         'host_id'               => null,
         'object_name'           => null,
         'object_type'           => null,
         'description'           => null,
         'assign_filter'         => null,
     );
+
+    protected $uuidColumn = 'uuid';
 
     protected $keyName = array('host_id', 'object_name');
 
