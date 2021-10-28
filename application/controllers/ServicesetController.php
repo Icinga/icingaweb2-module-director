@@ -12,6 +12,7 @@ use Icinga\Module\Director\Web\Table\IcingaHostsMatchingFilterTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetHostTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use gipfl\IcingaWeb2\Link;
+use Ramsey\Uuid\Uuid;
 
 class ServicesetController extends ObjectController
 {
@@ -102,11 +103,11 @@ class ServicesetController extends ObjectController
         $name = $this->object->getObjectName();
         $tabs->add('services', [
             'url'       => 'director/serviceset/services',
-            'urlParams' => ['name' => $name],
+            'urlParams' => ['uuid' => $this->object->getUniqueId()],
             'label'     => 'Services'
         ])->add('hosts', [
             'url'       => 'director/serviceset/hosts',
-            'urlParams' => ['name' => $name],
+            'urlParams' => ['uuid' => $this->object->getUniqueId()],
             'label'     => 'Hosts'
         ]);
 

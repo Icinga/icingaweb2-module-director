@@ -656,12 +656,14 @@ ALTER TABLE icinga_host_template_choice
 
 CREATE TABLE icinga_service_set (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(128) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
   description TEXT DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_set_host
     FOREIGN KEY host (host_id)
