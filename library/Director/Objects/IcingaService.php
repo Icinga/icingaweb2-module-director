@@ -23,8 +23,11 @@ class IcingaService extends IcingaObject implements ExportInterface
 
     protected $table = 'icinga_service';
 
+    protected $uuidColumn = 'uuid';
+
     protected $defaultProperties = [
         'id'                      => null,
+        'uuid'                    => null,
         'object_name'             => null,
         'object_type'             => null,
         'disabled'                => 'n',
@@ -568,7 +571,22 @@ class IcingaService extends IcingaObject implements ExportInterface
         }
 
         if ($this->get('use_agent') === 'y') {
-            return $output . c::renderKeyValue('command_endpoint', 'host_name');
+            // When feature flag feature_custom_endpoint is enabled, render additional code
+            if ($this->connection->settings()->get('feature_custom_endpoint') === 'y') {
+                return $output . "
+    // Set command_endpoint dynamically with Director
+    if (!host) {
+        var host = get_host(host_name)
+    }
+    if (host.vars._director_custom_endpoint_name) {
+        command_endpoint = host.vars._director_custom_endpoint_name
+    } else {
+        command_endpoint = host_name
+    }
+";
+            } else {
+                return $output . c::renderKeyValue('command_endpoint', 'host_name');
+            }
         } elseif ($this->get('use_agent') === 'n') {
             return $output . c::renderKeyValue('command_endpoint', c::renderPhpValue(null));
         } else {

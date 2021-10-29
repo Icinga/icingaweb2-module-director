@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Web\Controller;
 
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
+use Icinga\Module\Director\Web\Widget\NotInBranchedHint;
 
 trait BranchHelper
 {
@@ -46,5 +47,19 @@ trait BranchHelper
     protected function hasBranch()
     {
         return $this->getBranchUuid() !== null;
+    }
+
+    /**
+     * @param string $subject
+     * @return bool
+     */
+    protected function showNotInBranch($subject)
+    {
+        if ($this->getBranch()->isBranch()) {
+            $this->content()->add(new NotInBranchedHint($subject, $this->getBranch(), $this->Auth()));
+            return true;
+        }
+
+        return false;
     }
 }

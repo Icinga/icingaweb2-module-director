@@ -6,7 +6,7 @@ use Zend_Db_Select as ZfSelect;
 
 class ObjectsTableZone extends ObjectsTable
 {
-    protected function applyObjectTypeFilter(ZfSelect $query)
+    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
     {
         return $query;
     }

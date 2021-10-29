@@ -3,9 +3,8 @@
 namespace Icinga\Module\Director\Db\Branch;
 
 use Icinga\Module\Director\Data\Db\DbObject;
-use Icinga\Module\Director\Data\InvalidDataException;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
-use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchMerger
@@ -20,7 +19,7 @@ class BranchMerger
     protected $db;
 
     /** @var array */
-    protected $ignoreUuids = [];
+    protected $ignoreActivities = [];
 
     /** @var bool */
     protected $ignoreDeleteWhenMissing = false;
@@ -64,88 +63,75 @@ class BranchMerger
     }
 
     /**
-     * @param array $uuids
+     * @param int $key
      */
-    public function ignoreUuids(array $uuids)
+    public function ignoreActivity($key)
     {
-        foreach ($uuids as $uuid) {
-            $this->ignoreUuid($uuid);
-        }
+        $this->ignoreActivities[$key] = true;
     }
 
     /**
-     * @param UuidInterface|string $uuid
+     * @param BranchActivity $activity
+     * @return bool
      */
-    public function ignoreUuid($uuid)
+    public function ignoresActivity(BranchActivity $activity)
     {
-        if (is_string($uuid)) {
-            $uuid = Uuid::fromString($uuid);
-        } elseif (! ($uuid instanceof UuidInterface)) {
-            throw new InvalidDataException('UUID', $uuid);
-        }
-        $binary = $uuid->getBytes();
-        $this->ignoreUuids[$binary] = $binary;
+        return isset($this->ignoreActivities[$activity->getTimestampNs()]);
     }
 
     /**
      * @throws MergeError
-     * @throws \Exception
      */
     public function merge()
     {
         $this->connection->runFailSafeTransaction(function () {
-            $activities = new BranchActivityStore($this->connection);
-            $rows = $activities->loadAll($this->branchUuid);
+            $query = $this->db->select()
+                ->from(BranchActivity::DB_TABLE)
+                ->where('branch_uuid = ?', $this->connection->quoteBinary($this->branchUuid->getBytes()))
+                ->order('timestamp_ns ASC');
+            $rows = $this->db->fetchAll($query);
             foreach ($rows as $row) {
-                $modification = BranchActivityStore::objectModificationForDbRow($row);
-                $this->applyModification($modification, Uuid::fromBytes($row->uuid));
+                $activity = BranchActivity::fromDbRow($row);
+                $this->applyModification($activity);
             }
-            $this->db->delete('director_branch', $this->db->quoteInto('uuid = ?', $this->branchUuid->getBytes()));
+            (new BranchStore($this->connection))->deleteByUuid($this->branchUuid);
         });
     }
 
     /**
-     * @param ObjectModification $modification
-     * @param UuidInterface $uuid
+     * @param BranchActivity $activity
      * @throws MergeError
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
-    protected function applyModification(ObjectModification $modification, UuidInterface $uuid)
+    protected function applyModification(BranchActivity $activity)
     {
-        $binaryUuid = $uuid->getBytes();
         /** @var string|DbObject $class */
-        $class = $modification->getClassName();
-        $keyParams = (array) $modification->getKeyParams();
-        if (array_keys($keyParams) === ['object_name']) {
-            $keyParams = $keyParams['object_name'];
-        }
+        $class = DbObjectTypeRegistry::classByType($activity->getObjectTable());
+        $uuid = $activity->getObjectUuid();
 
-        $exists = $class::exists($keyParams, $this->connection);
-        if ($modification->isCreation()) {
+        $exists = $class::uniqueIdExists($uuid, $this->connection);
+        if ($activity->isActionCreate()) {
             if ($exists) {
-                if (! isset($this->ignoreUuids[$uuid->getBytes()])) {
-                    throw new MergeErrorRecreateOnMerge($modification, $uuid);
+                if (! $this->ignoresActivity($activity)) {
+                    throw new MergeErrorRecreateOnMerge($activity);
                 }
             } else {
-                $object = IcingaObjectModification::applyModification($modification, null, $this->connection);
-                $object->store($this->connection);
+                $activity->createDbObject()->store($this->connection);
             }
-        } elseif ($modification->isDeletion()) {
+        } elseif ($activity->isActionDelete()) {
             if ($exists) {
-                $object = IcingaObjectModification::applyModification($modification, $class::load($keyParams, $this->connection), $this->connection);
-                $object->setConnection($this->connection);
-                $object->delete();
-            } elseif (! $this->ignoreDeleteWhenMissing && ! isset($this->ignoreUuids[$binaryUuid])) {
-                throw new MergeErrorDeleteMissingObject($modification, $uuid);
+                $activity->deleteDbObject($this->connection);
+            } elseif (! $this->ignoreDeleteWhenMissing && ! $this->ignoresActivity($activity)) {
+                throw new MergeErrorDeleteMissingObject($activity);
             }
         } else {
             if ($exists) {
-                $object = IcingaObjectModification::applyModification($modification, $class::load($keyParams, $this->connection), $this->connection);
-                // TODO: du änderst ein Objekt, und die geänderte Eigenschaften haben sich seit der Änderung geändert
-                $object->store($this->connection);
-            } elseif (! $this->ignoreModificationWhenMissing && ! isset($this->ignoreUuids[$binaryUuid])) {
-                throw new MergeErrorModificationForMissingObject($modification, $uuid);
+                $activity->applyToDbObject($class::requireWithUniqueId($uuid, $this->connection))->store();
+                // TODO: you modified an object, and related properties have been changed in the meantime.
+                //       We're able to detect this with the given data, and might want to offer a rebase.
+            } elseif (! $this->ignoreModificationWhenMissing && ! $this->ignoresActivity($activity)) {
+                throw new MergeErrorModificationForMissingObject($activity);
             }
         }
     }

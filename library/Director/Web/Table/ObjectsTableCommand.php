@@ -13,6 +13,7 @@ class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
     ];
 
     protected $columns = [
+        'uuid'        => 'o.uuid',
         'object_name' => 'o.object_name',
         'object_type' => 'o.object_type',
         'disabled'    => 'o.disabled',

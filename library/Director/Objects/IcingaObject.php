@@ -79,6 +79,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         // property => IcingaObjectClass
     ];
 
+    /** @var IcingaObjectMultiRelations[] */
     protected $loadedMultiRelations = [];
 
     /**
@@ -250,6 +251,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $prefix . $this->relatedSets[$property];
     }
 
+    /**
+     * @param $property
+     * @return ExtensibleSet
+     */
     protected function getRelatedSet($property)
     {
         if (! array_key_exists($property, $this->loadedRelatedSets)) {
@@ -262,6 +267,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return $this->loadedRelatedSets[$property];
     }
 
+    /**
+     * @return ExtensibleSet[]
+     */
     protected function relatedSets()
     {
         $sets = [];
@@ -828,7 +836,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         $this->assertGroupsSupport();
         if ($this->groups === null) {
-            if ($this->hasBeenLoadedFromDb()) {
+            if ($this->hasBeenLoadedFromDb() && $this->get('id')) {
                 $this->groups = IcingaObjectGroups::loadForStoredObject($this);
             } else {
                 $this->groups = new IcingaObjectGroups($this);
@@ -1398,7 +1406,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 if (PrefetchCache::shouldBeUsed()) {
                     $this->vars = PrefetchCache::instance()->vars($this);
                 } else {
-                    $this->vars = CustomVariables::loadForStoredObject($this);
+                    if ($this->get('id')) {
+                        $this->vars = CustomVariables::loadForStoredObject($this);
+                    } else {
+                        $this->vars = new CustomVariables();
+                    }
                 }
 
                 if ($this->getShortTableName() === 'host') {
@@ -1475,6 +1487,35 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     {
         return $this->hasProperty('object_type')
             && $this->get('object_type') === 'apply';
+    }
+
+    public function setBeingLoadedFromDb()
+    {
+        if ($this instanceof ObjectWithArguments && $this->gotArguments()) {
+            $this->arguments()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsImports() && $this->gotImports()) {
+            $this->imports()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsCustomVars() && $this->vars !== null) {
+            $this->vars()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsGroups() && $this->groups !== null) {
+            $this->groups()->setBeingLoadedFromDb();
+        }
+        if ($this->supportsRanges() && $this->ranges !== null) {
+            $this->ranges()->setBeingLoadedFromDb();
+        }
+
+        foreach ($this->loadedRelatedSets as $set) {
+            $set->setBeingLoadedFromDb();
+        }
+
+        foreach ($this->loadedMultiRelations as $multiRelation) {
+            $multiRelation->setBeingLoadedFromDb();
+        }
+
+        parent::setBeingLoadedFromDb();
     }
 
     /**
@@ -2147,6 +2188,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return '';
     }
 
+    public function renderUuid()
+    {
+        return '';
+    }
+
     /**
      * @return string
      */
@@ -2773,6 +2819,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         foreach ($p as $k => $v) {
             // Do not ship ids for IcingaObjects:
+            if ($k === $this->getUuidColumn()) {
+                continue;
+            }
             if ($resolveIds) {
                 if ($k === 'id' && $keepId === false && $this->hasProperty('object_name')) {
                     continue;
@@ -2826,7 +2875,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
         if ($this instanceof ObjectWithArguments) {
             $props['arguments'] = $this->arguments()->toPlainObject(
-                $resolved,
+                false,
                 $skipDefaults
             );
         }
@@ -2991,6 +3040,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function getUrlParams()
     {
         $params = [];
+        if ($column = $this->getUuidColumn()) {
+            return [$column => $this->getUniqueId()->toString()];
+        }
 
         if ($this->isApplyRule() && ! $this instanceof IcingaScheduledDowntime) {
             $params['id'] = $this->get('id');
@@ -3042,6 +3094,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($this->getOriginalProperties() as $k => $v) {
             // Do not ship ids for IcingaObjects:
             if ($k === 'id' && $this->hasProperty('object_name')) {
+                continue;
+            }
+            if ($k === $this->getUuidColumn()) {
+                continue;
+            }
+            if ($k === 'disabled' && $v === null) {
                 continue;
             }
 

@@ -15,8 +15,11 @@ class IcingaEndpoint extends IcingaObject
 
     protected $supportsImports = true;
 
+    protected $uuidColumn = 'uuid';
+
     protected $defaultProperties = [
         'id'           => null,
+        'uuid'         => null,
         'zone_id'      => null,
         'object_name'  => null,
         'object_type'  => null,

@@ -14,6 +14,7 @@ class IcingaNotification extends IcingaObject implements ExportInterface
 
     protected $defaultProperties = [
         'id'                    => null,
+        'uuid'                  => null,
         'object_name'           => null,
         'object_type'           => null,
         'disabled'              => 'n',
@@ -30,6 +31,8 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         'zone_id'               => null,
         'assign_filter'         => null,
     ];
+
+    protected $uuidColumn = 'uuid';
 
     protected $supportsCustomVars = true;
 

@@ -12,6 +12,7 @@ class IcingaUser extends IcingaObject implements ExportInterface
 
     protected $defaultProperties = array(
         'id'                    => null,
+        'uuid'                  => null,
         'object_name'           => null,
         'object_type'           => null,
         'disabled'              => 'n',
@@ -22,6 +23,8 @@ class IcingaUser extends IcingaObject implements ExportInterface
         'period_id'             => null,
         'zone_id'               => null,
     );
+
+    protected $uuidColumn = 'uuid';
 
     protected $supportsGroups = true;
 

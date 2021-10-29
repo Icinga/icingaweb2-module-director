@@ -18,8 +18,11 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
 
     protected $type = 'CheckCommand';
 
+    protected $uuidColumn = 'uuid';
+
     protected $defaultProperties = [
         'id'              => null,
+        'uuid'            => null,
         'object_name'     => null,
         'object_type'     => null,
         'disabled'        => 'n',

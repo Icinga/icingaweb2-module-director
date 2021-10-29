@@ -134,16 +134,22 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
         $cmd = $this->commandObject;
 
         $msg = sprintf(
-            '%s argument "%s" has been removed',
+            $this->translate('%s argument "%s" has been removed'),
             $this->translate($this->getObjectShortClassName()),
             $object->argument_name
         );
 
-        $url = $this->getSuccessUrl()->without('argument_id');
+        // TODO: remove argument_id, once verified that it is no longer in use
+        $url = $this->getSuccessUrl()->without('argument_id')->without('argument');
 
         $cmd->arguments()->remove($object->argument_name);
-        if ($cmd->store()) {
+        if ($this->branch->isBranch()) {
+            $this->getDbObjectStore()->store($cmd);
             $this->setSuccessUrl($url);
+        } else {
+            if ($cmd->store()) {
+                $this->setSuccessUrl($url);
+            }
         }
 
         $this->redirectOnSuccess($msg);
@@ -167,20 +173,17 @@ class IcingaCommandArgumentForm extends DirectorObjectForm
                 $this->translate('The argument %s has successfully been stored'),
                 $object->get('argument_name')
             );
-            $cmd->store($this->db);
+            $this->getDbObjectStore()->store($cmd);
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
             }
             $msg = $this->translate('No action taken, object has not been modified');
         }
-        $this->setSuccessUrl(
-            'director/command/arguments',
-            [
-                'argument_id' => $object->get('id'),
-                'name' => $cmd->getObjectName()
-            ]
-        );
+        $this->setSuccessUrl('director/command/arguments', [
+            'argument' => $object->get('argument_name'),
+            'name' => $cmd->getObjectName()
+        ]);
 
         $this->redirectOnSuccess($msg);
     }

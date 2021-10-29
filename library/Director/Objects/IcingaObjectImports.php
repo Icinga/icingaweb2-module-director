@@ -232,6 +232,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         $list = [];
         foreach ($this->listImportNames() as $name) {
+            $name = (string) $name;
             $list[$name] = $this->getObject($name);
         }
 
@@ -307,7 +308,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             $this->imports = array_combine($keys, $keys);
         }
 
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
         return $this;
     }
 
@@ -354,12 +355,12 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             ]);
         }
 
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return true;
     }
 
-    protected function cloneStored()
+    public function setBeingLoadedFromDb()
     {
         $this->storedNames = $this->listImportNames();
         $this->modified = false;

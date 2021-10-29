@@ -120,7 +120,7 @@ abstract class TemplateController extends CompatController
             Link::create(
                 $this->translate('Modify'),
                 "director/$type/edit",
-                ['name' => $templateName],
+                ['uuid' => $template->getUniqueId()->toString()],
                 ['class' => 'icon-edit']
             )
         ]);

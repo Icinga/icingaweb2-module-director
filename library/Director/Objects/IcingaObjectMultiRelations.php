@@ -323,7 +323,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
         $class = $this->getRelatedClassName();
         $this->relations = $class::loadAll($connection, $query, 'object_name');
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return $this;
     }
@@ -331,13 +331,10 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
     public function store()
     {
         $db = $this->getDb();
-
         $stored = array_keys($this->stored);
         $relations = array_keys($this->relations);
 
         $objectId = $this->object->id;
-        $type = $this->getType();
-
         $type = $this->getType();
         $objectCol = $type . '_id';
         $relationCol = $this->getRelationIdColumn() . '_id';
@@ -369,12 +366,12 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
                 )
             );
         }
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return true;
     }
 
-    protected function cloneStored()
+    public function setBeingLoadedFromDb()
     {
         $this->stored = array();
         foreach ($this->relations as $k => $v) {

@@ -274,7 +274,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         $class = $this->getGroupClass();
         $this->groups = $class::loadAll($connection, $query, 'object_name');
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return $this;
     }
@@ -314,12 +314,12 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                 )
             );
         }
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return true;
     }
 
-    protected function cloneStored()
+    public function setBeingLoadedFromDb()
     {
         $this->storedGroups = array();
         foreach ($this->groups as $k => $v) {
@@ -341,7 +341,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         if (PrefetchCache::shouldBeUsed()) {
             $groups->groups = PrefetchCache::instance()->groups($object);
-            $groups->cloneStored();
+            $groups->setBeingLoadedFromDb();
         } else {
             $groups->loadFromDb();
         }

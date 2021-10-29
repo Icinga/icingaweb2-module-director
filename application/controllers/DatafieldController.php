@@ -19,17 +19,11 @@ class DatafieldController extends ActionController
 
     public function indexAction()
     {
-        $edit = false;
-
-        if ($id = $this->params->get('id')) {
-            $edit = true;
-        }
-
         $form = DirectorDatafieldForm::load()
             ->setDb($this->db());
 
-        if ($edit) {
-            $form->loadObject($id);
+        if ($id = $this->params->get('id')) {
+            $form->loadObject((int) $id);
             $this->addTitle(
                 $this->translate('Modify %s'),
                 $form->getObject()->varname

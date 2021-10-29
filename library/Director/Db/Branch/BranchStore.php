@@ -43,6 +43,9 @@ class BranchStore
     protected function newFromDbResult($query)
     {
         if ($row = $this->db->fetchRow($query)) {
+            if (is_resource($row->uuid)) {
+                $row->uuid = stream_get_contents($row->uuid);
+            }
             return Branch::fromDbRow($row);
         }
 
@@ -52,7 +55,7 @@ class BranchStore
     public function setReadyForMerge(Branch $branch)
     {
         $update = [
-            'should_be_merged' => 'y'
+            'ts_merge_request' => (int) floor(microtime(true) * 1000000)
         ];
 
         $name = $branch->getName();
@@ -72,8 +75,8 @@ class BranchStore
             'owner'            => 'b.owner',
             'branch_name'      => 'b.branch_name',
             'description'      => 'b.description',
-            'should_be_merged' => 'b.should_be_merged',
-            'cnt_activities'   => 'COUNT(ba.change_time)',
+            'ts_merge_request' => 'b.ts_merge_request',
+            'cnt_activities'   => 'COUNT(ba.timestamp_ns)',
         ])->joinLeft(
             ['ba' => 'director_branch_activity'],
             'b.uuid = ba.branch_uuid',
@@ -103,16 +106,36 @@ class BranchStore
      */
     public function createBranchByName($branchName, $owner)
     {
-        $this->uuid = Uuid::uuid4();
+        $uuid = Uuid::uuid4();
         $properties = [
-            'uuid'        => $this->uuid->getBytes(),
+            'uuid'        => $this->connection->quoteBinary($uuid->getBytes()),
             'branch_name' => $branchName,
             'owner'       => $owner,
             'description' => null,
-            'should_be_merged' => 'n',
+            'ts_merge_request' => null,
         ];
         $this->db->insert($this->table, $properties);
 
-        return Branch::fromDbRow((object) $properties);
+        if ($branch = static::fetchBranchByUuid($uuid)) {
+            return $branch;
+        }
+
+        throw new \RuntimeException(sprintf(
+            'Branch with UUID=%s has been created, but could not be fetched from DB',
+            $uuid->toString()
+        ));
+    }
+
+    public function deleteByUuid(UuidInterface $uuid)
+    {
+        return $this->db->delete($this->table, $this->db->quoteInto(
+            'uuid = ?',
+            $this->connection->quoteBinary($uuid->getBytes())
+        ));
+    }
+
+    public function delete(Branch $branch)
+    {
+        return $this->deleteByUuid($branch->getUuid());
     }
 }

@@ -5,12 +5,11 @@ namespace Icinga\Module\Director\Web\Form;
 use Exception;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db\Branch\Branch;
-use Icinga\Module\Director\Db\Branch\BranchModificationStore;
-use Icinga\Module\Director\Db\Branch\IcingaObjectModification;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
@@ -677,23 +676,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 : $this->translate('A new %s has successfully been created'),
                 $this->translate($this->getObjectShortClassName())
             );
-            if ($this->branch && $this->branch->isBranch()) {
-                if ($object->shouldBeRenamed()) {
-                    $this->getElement('object_name')->addError(
-                        $this->translate('Renaming objects in branches is not (yet) supported')
-                    );
-                    return;
-                }
-                $store = new BranchModificationStore($this->getDb(), $object->getShortTableName());
-
-                $store->store(
-                    IcingaObjectModification::getModification($object),
-                    $object->get('id'),
-                    $this->branch->getUuid()
-                );
-            } else {
-                $object->store($this->db);
-            }
+            $this->getDbObjectStore()->store($object);
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -933,20 +916,19 @@ abstract class DirectorObjectForm extends DirectorForm
             );
         }
 
-        if ($this->branch && $this->branch->isBranch()) {
-            $store = new BranchModificationStore($this->getDb(), $object->getShortTableName());
-            $store->store(
-                IcingaObjectModification::delete($object),
-                $object->get('id'),
-                $this->branch->getUuid()
-            );
-
-            $this->setSuccessUrl($url);
-        } elseif ($object->delete()) {
+        if ($this->getDbObjectStore()->delete($object)) {
             $this->setSuccessUrl($url);
         }
-        // TODO: show object name and so
         $this->redirectOnSuccess($msg);
+    }
+
+    /**
+     * @return DbObjectStore
+     */
+    protected function getDbObjectStore()
+    {
+        $store = new DbObjectStore($this->getDb(), $this->branch);
+        return $store;
     }
 
     protected function addDeleteButton($label = null)
@@ -1076,18 +1058,20 @@ abstract class DirectorObjectForm extends DirectorForm
 
     public function loadObject($id)
     {
+        if ($this->branch && $this->branch->isBranch()) {
+            throw new \RuntimeException('Calling loadObject from form in a branch');
+        }
         /** @var DbObject $class */
         $class = $this->getObjectClassname();
         if (is_int($id)) {
             $this->object = $class::loadWithAutoIncId($id, $this->db);
+            if ($this->object->getKeyName() === 'id') {
+                $this->addHidden('id', $id);
+            }
         } else {
             $this->object = $class::load($id, $this->db);
         }
 
-        // TODO: hmmmm...
-        if (! is_array($id) && $this->object->getKeyName() === 'id') {
-            $this->addHidden('id', $id);
-        }
 
         return $this;
     }
