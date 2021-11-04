@@ -68,7 +68,7 @@ CREATE TABLE branched_icinga_host (
   api_key VARCHAR(40) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
-  groups TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -175,7 +175,7 @@ CREATE TABLE branched_icinga_user (
   types TEXT DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
-  groups TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
@@ -362,7 +362,7 @@ CREATE TABLE branched_icinga_service (
   -- template_choice VARCHAR(255) DEFAULT NULL,
 
   imports TEXT DEFAULT NULL,
-  groups TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
   vars MEDIUMTEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
