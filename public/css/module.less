@@ -89,7 +89,7 @@ div.action-bar > ul ul {
   min-width: 10em;
   position: absolute;
   display: none;
-  color: white;
+  color: @text-color-inverted;
   background-color: @icinga-blue;
 
   a {
@@ -97,7 +97,7 @@ div.action-bar > ul ul {
     padding: 0.3em 2em 0.3em 2em;
     margin: 0;
     outline: none;
-    color: white;
+    color: @text-color-inverted;
 
     &:hover {
       text-decoration: underline;
@@ -118,7 +118,7 @@ div.action-bar > ul > li > a {
 div.action-bar > ul > li:hover {
   background-color: @icinga-blue;
   & > a {
-    color: white;
+    color: @text-color-inverted;
     text-decoration: none;
   }
 }
@@ -211,9 +211,8 @@ span.disabled {
   }
 }
 
-
 pre.disabled {
-  color: @gray;
+  color: @disabled-gray;
 }
 
 form i.link-color::before {
@@ -227,19 +226,19 @@ input[disabled] {
 /* END OF TODO */
 
 pre {
-  background: none;
+  background: @gray-lighter;
 }
 
 pre.logfile {
   font-size: 0.875em;
   padding: 1em;
-  background-color: #222;
-  color: #ddd;
+  color: @text-color;
   overflow: auto;
   white-space: pre;
+  opacity: .7;
 
   a {
-    color: #fff;
+    color: @text-color;
   }
 
   .loglevel, .application {
@@ -259,7 +258,7 @@ pre.logfile {
   }
 
   .notice {
-    // color: @color-ok;
+    // color, @color-ok);
   }
 
   .debug {
@@ -267,7 +266,7 @@ pre.logfile {
   }
 
   .error-hint {
-    color: #fff;
+    color: @text-color;
     font-weight: 900;
   }
 }
@@ -279,9 +278,8 @@ pre.generated-config {
       font-weight: bold;
     }
 
-
   .highlight {
-    border-bottom: 1px dashed @gray-light;
+    border-bottom: 1px dashed @gray-lighter;
     &::before {
       // icon: right-big
       font-family: 'ifont';
@@ -332,7 +330,7 @@ table.avp th {
 }
 
 form input[type=file] {
-  background-color: white;
+  background-color: @text-color;
   padding-right: 1em;
 }
 
@@ -345,7 +343,7 @@ form input[type=submit] {
   &:disabled {
     border-color: @gray-light;
     background-color: @gray-light;
-    color: #fff;
+    color: @text-color;
   }
 }
 
@@ -394,7 +392,7 @@ form ul.form-errors {
         background: @color-critical;
         font-weight: bold;
         padding: 0.5em 1em;
-        color: white;
+        color: @text-color;
     }
 }
 
@@ -403,7 +401,7 @@ select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
 }
 
 select {
-    border: 1px solid #ddd;
+    border: 1px solid @gray-light;
     cursor: pointer;
     background: none;
 }
@@ -419,7 +417,7 @@ input[type=text], input[type=password], textarea, select {
     border-color: transparent;
     border-bottom-color: @gray-lighter;
     border-width: 1px 1px 1px 3px;
-    background-color: white;
+    background-color: @low-sat-blue;
 
     &.search {
         background: transparent url("../img/icons/search.png") no-repeat scroll 0.5em center / 1em 1em;
@@ -470,7 +468,7 @@ div.filter > form.search, div.filter > a {
 }
 
 div.filter form.editor > ul.tree ul li.active {
-  background-color: @tr-hover-color !important;
+  background-color: @tr-hover-color;
 }
 
 div.filter form.editor {
@@ -483,7 +481,7 @@ div.filter form.editor {
 
 form.editor {
   select, input[type=text] {
-    background: white;
+    background: @low-sat-blue;
     max-width: unset;
     min-width: unset;
     width: auto;
@@ -591,9 +589,9 @@ dd.active ul.extensible-set, ul.extensible-set.sortable {
     }
 
     input[type=text] {
-        background-color: white;
+        background-color: @low-sat-blue;
         .rounded-corners(0);
-        border: 1px solid white;
+        border: 1px solid @gray-light;
         padding: 0.25em 0.5em;
         margin: 0;
     }
@@ -632,20 +630,19 @@ select, input[type=text], textarea {
 }
 
 select[value=""] {
-    color: blue;
-    border: 1px solid #666;
-    background-color: white;
+    color: @menu-active-bg-color;
+    border: 1px solid @gray-light;
+    background-color: @low-sat-blue;
 }
 
 select option {
     color: inherit;
     padding-left: 0.5em;
-    background-color: white;
 }
 
 select option[value=""] {
-    color: #aaa;
-    background-color: white;
+  color: @text-color;
+  background-color: @low-sat-blue;
 }
 
 a {
@@ -670,24 +667,24 @@ a {
     }
 }
 ul.tabs a.state-critical {
-  background-color: @colorCritical;
+  background-color: @color-critical;
   font-weight: bold;
-  color: white;
+  color: @text-color;
 }
 ul.tabs a.state-warning {
-  background-color: @colorWarning;
+  background-color: @color-warning;
   font-weight: bold;
-  color: white;
+  color: @text-color;
 }
 ul.tabs a.state-ok {
-  background-color: @colorOk;
+  background-color: @color-ok;
   font-weight: bold;
-  color: white;
+  color: @text-color;
 }
 ul.tabs a.state-unknown {
-  background-color: @colorUnknown;
+  background-color: @color-unknown;
   font-weight: bold;
-  color: white;
+  color: @text-color;
 }
 
 a:hover::before {
@@ -718,6 +715,8 @@ ul.main-actions {
         float: left;
         line-height: 1em;
         margin-right: 0.3em;
+        color: @text-color;
+        opacity: .7;
       }
 
       &.state-critical i {
@@ -742,7 +741,7 @@ ul.main-actions {
 
       border-left: 0.5em solid transparent;
       padding: 1em;
-      color: #666;
+      color: @text-color;
       font-weight: bold;
       display: block;
       text-decoration: none;
@@ -751,19 +750,16 @@ ul.main-actions {
       overflow: hidden;
 
       &.active {
-        color: inherit;
         border-color: @icinga-blue;
         background-color: @tr-active-color;
       }
 
       &:hover {
-        background-color: #666;
-        color: white;
+        background-color: @tr-hover-color;
         text-decoration: none;
       }
 
       &:active, &:focus {
-        color: inherit;
         background-color: @tr-hover-color;
         outline: none;
       }
@@ -773,6 +769,8 @@ ul.main-actions {
       font-weight: normal;
       margin-bottom: 0.5em;
       padding-left: 4.5em;
+      color: @text-color;
+      opacity: .7;
     }
   }
 }
@@ -845,8 +843,8 @@ ul.main-actions {
     }
 
     input[type=text] {
-      background-color: white;
-      border: 1px solid white;
+      background-color: @low-sat-blue;
+      border: 1px solid @gray-light;
     }
   }
 
@@ -1046,7 +1044,7 @@ form dd ul.errors {
     padding-left: 0.3em;
 
     li {
-        color: @colorCritical;
+        color: @color-critical;
         padding: 0.3em;
     }
 }
@@ -1060,7 +1058,7 @@ form div.hint {
 
     pre {
         font-style: normal;
-        background-color: white;
+        background-color: @body-bg-color;
         margin: 0;
         padding: 1em;
     }
@@ -1109,17 +1107,17 @@ li.state {
 }
 
 span.error {
-  color: @colorCritical;
+  color: @color-critical;
 
   a {
-    color: inherit;
+    color: @color-critical;
   }
 }
 
 p.legacy-error {
-  color: white;
+  color: @text-color;
   padding: 1em 2em;
-  background-color: @colorCritical;
+  background-color: @color-critical;
 
 }
 
@@ -1490,6 +1488,14 @@ input[type=submit].icon-button {
 }
 
 /** BEGIN breadcrumb **/
+
+@breadcrumb-hover-bg-color: #2B5366;
+@breadcrumb-hover-bg-color-light: #B8EBF6;
+
+@media (min-height: @prefer-light-color-scheme), (prefers-color-scheme: light) and (min-height: @enable-color-preference) {
+    --breadcrumb-hover-bg-color: @breadcrumb-hover-bg-color-light;
+}
+
 // Hint: .badges is unused right now
 .breadcrumb {
   list-style: none;
@@ -1502,30 +1508,30 @@ input[type=submit].icon-button {
     .badge {
       line-height: 1.25em;
       font-size: 0.8em;
-      border: 1px solid white;
+      border: 1px solid @text-color;
       margin: -0.25em 1px 0 0;
     }
   }
 }
 
 .breadcrumb {
-  > .critical            a { background: @colorCritical; }
-  > .critical.handled    a { background: @colorCriticalHandled; }
-  > .unknown             a { background: @colorUnknown; }
-  > .unknown.handled     a { background: @colorUnknownHandled; }
-  > .warning             a { background: @colorWarning; }
-  > .warning.handled     a { background: @colorWarningHandled; }
-  > .ok                  a { background: @colorOk; }
+  > .critical            a { color: @text-color; background: @color-critical; }
+  > .critical.handled    a { color: @text-color; background: @color-critical-handled; }
+  > .unknown             a { color: @text-color; background: @color-unknown; }
+  > .unknown.handled     a { color: @text-color; background: @color-unknown-handled; }
+  > .warning             a { color: @text-color; background: @color-warning; }
+  > .warning.handled     a { color: @text-color; background: @color-warning-handled; }
+  > .ok                  a { color: @text-color; background: @color-ok; }
 }
 
 .breadcrumb {
-  > .critical            a:after { border-left-color: @colorCritical; }
-  > .critical.handled    a:after { border-left-color: @colorCriticalHandled; }
-  > .unknown             a:after { border-left-color: @colorUnknown; }
-  > .unknown.handled     a:after { border-left-color: @colorUnknownHandled; }
-  > .warning             a:after { border-left-color: @colorWarning; }
-  > .warning.handled     a:after { border-left-color: @colorWarningHandled; }
-  > .ok                  a:after { border-left-color: @colorOk; }
+  > .critical            a:after { border-left-color: @color-critical; }
+  > .critical.handled    a:after { border-left-color: @color-critical-handled; }
+  > .unknown             a:after { border-left-color: @color-unknown; }
+  > .unknown.handled     a:after { border-left-color: @color-unknown-handled; }
+  > .warning             a:after { border-left-color: @color-warning; }
+  > .warning.handled     a:after { border-left-color: @color-warning-handled; }
+  > .ok                  a:after { border-left-color: @color-ok; }
 }
 
 .breadcrumb:after {
@@ -1537,23 +1543,24 @@ input[type=submit].icon-button {
   float: left;
   cursor: pointer;
   user-select: none;
+  background: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
 
 }
 .breadcrumb li a {
-  // color: white;
+  // color, "white");
   color: @icinga-blue;
   margin: 0;
   // font-size: 1.2em;
   text-decoration: none;
   padding-left: 2em;
   // line-height: 1.5em;
-  // background: @icinga-blue;
-  border: 1px solid @icinga-blue;
-  border-top: none;
-  border-bottom: none;
+  // background, icinga-blue);
+  border: 1px none @icinga-blue;
+  border-right-style: solid;
+  border-left-style: solid;
   position: relative;
   display: block;
   float: left;
@@ -1582,15 +1589,13 @@ input[type=submit].icon-button {
 }
 
 .breadcrumb li a:before {
-  border-left: 1.2em solid white;
   border-left: 1.2em solid @icinga-blue;
   margin-left: 1px;
   z-index: 1;
 }
 
 .breadcrumb li a:after {
-  border-left: 1.2em solid @icinga-blue;
-  border-left: 1.2em solid white;
+  border-left: 1.2em solid @body-bg-color;
   z-index: 2;
 }
 
@@ -1600,13 +1605,13 @@ input[type=submit].icon-button {
 }
 .breadcrumb li:last-child a {
   cursor: default;
-}
-.breadcrumb li:last-child a:hover {
-
+  color: @text-color;
 }
 
-.breadcrumb li:not(:last-child) a:hover { background: @text-color; color: white; }
-.breadcrumb li:not(:last-child) a:hover:after { border-left-color: @text-color; }
+.breadcrumb li:not(:last-child) a:hover { background: @tr-active-color; }
+.breadcrumb li:not(:last-child) a:hover:after { border-left-color: @breadcrumb-hover-bg-color; }
+
+.breadcrumb li:last-child:hover, .breadcrumb li:last-child a:hover { background: transparent; }
 
 .breadcrumb li a:focus {
   text-decoration: underline;
@@ -1735,29 +1740,28 @@ ul.director-suggestions {
   max-height: 25em;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid @icinga-blue;
+  border: 1px solid @gray-lighter;
   border-top: none;
   position: absolute;
   z-index: 2000;
   padding: 0;
   margin: 0;
   list-style-type: none;
-  background-color: rgba(255, 255, 255, 100);
+  background-color: @body-bg-color;
   li {
     margin: 0;
     padding: 0.5em 1em;
   }
 
   li:hover {
-    background-color: @gray-lighter;
+    background-color: @breadcrumb-hover-bg-color;
     cursor: pointer;
   }
 
   li.active {
-    background-color: @icinga-blue;
-    color: white;
+    color: @text-color;
     &:hover {
-      color: inherit;
+      color: @text-color;
     }
   }
 
@@ -1789,8 +1793,7 @@ table.pivot {
     text-decoration: none;
     color: @icinga-blue;
     &:hover {
-      background: @icinga-blue;
-      color: white;
+      background: @tr-active-color;
       text-decoration: none;
     }
   }
@@ -1801,7 +1804,7 @@ table.pivot {
   padding-left: 2.4em;
   line-height: 2em;
   text-decoration: none;
-  color: #777;
+  color: @text-color;
   outline: 0;
   background-repeat: no-repeat;
   background-position: 0.8em 0.4em;
