@@ -46,7 +46,7 @@ class CustomVariableString extends CustomVariable
     public function toConfigString($renderExpressions = false)
     {
         if ($renderExpressions) {
-            return c::renderStringWithVariables($this->getValue(), ['config']);
+            return c::renderStringWithVariables($this->getValue());
         } else {
             return c::renderString($this->getValue());
         }
