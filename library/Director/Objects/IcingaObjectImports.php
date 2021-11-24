@@ -36,11 +36,13 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $this->object = $object;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->imports);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -61,6 +63,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
      * @return IcingaObject|null
      * @throws \Icinga\Exception\NotFoundError
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -72,16 +75,19 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         );
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);

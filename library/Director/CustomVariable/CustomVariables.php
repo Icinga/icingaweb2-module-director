@@ -69,6 +69,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         $count = 0;
@@ -81,11 +82,13 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $count;
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -95,16 +98,19 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this->vars[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);

@@ -55,7 +55,7 @@ class ActivityLogTable extends ZfQueryBasedTable
 
         return $this::tr([
             $this::td($this->makeLink($row))->setSeparator(' '),
-            $this::td(strftime('%H:%M:%S', $row->ts_change_time))
+            $this::td(date('H:i:s', $row->ts_change_time))
         ])->addAttributes(['class' => $action]);
     }
 

@@ -60,7 +60,7 @@ class DaemonProcessState
     protected function refreshMessage()
     {
         $messageParts = [];
-        if (\strlen($this->state)) {
+        if ($this->state !== null && \strlen($this->state)) {
             $messageParts[] = $this->state;
         }
         foreach ($this->components as $component => $message) {

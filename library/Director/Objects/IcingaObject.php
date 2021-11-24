@@ -782,7 +782,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     private function setUnresolvedRelation($key, $value)
     {
-        if (strlen($value) === 0) {
+        if ($value === null || strlen($value) === 0) {
             unset($this->unresolvedRelatedProperties[$key . '_id']);
             return parent::set($key . '_id', null);
         }

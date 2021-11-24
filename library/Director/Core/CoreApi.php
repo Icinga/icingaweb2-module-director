@@ -47,8 +47,8 @@ class CoreApi implements DeploymentApiInterface
     {
         $version = $this->getVersion();
 
-        if (version_compare($version, '2.8.2', '>=')
-            && version_compare($version, '2.10.2', '<')
+        if ($version === null || (version_compare($version, '2.8.2', '>=')
+            && version_compare($version, '2.10.2', '<'))
         ) {
             $this->client->disconnect();
             $this->client->setKeepAlive(false);
