@@ -240,8 +240,7 @@ class SelfService
             return;
         }
 
-        // TODO: move to CSS
-        $codeStyle = ['style' => 'background: black; color: white; height: 14em; overflow: scroll;'];
+        $class = ['class' => 'agent-deployment-instructions'];
         $c->add([
             Html::tag('h2', null, $this->translate('For manual configuration')),
             Html::tag('p', null, [$this->translate('Ticket'), ': ', Html::tag('code', null, $ticket)]),
@@ -252,7 +251,7 @@ class SelfService
                 null,
                 ['class' => 'icon-download', 'target' => '_blank']
             ),
-            Html::tag('pre', $codeStyle, $wizard->renderWindowsInstaller()),
+            Html::tag('pre', $class, $wizard->renderWindowsInstaller()),
             Html::tag('p', null, $this->translate(
                 'This requires the Icinga Agent to be installed. It generates and signs'
                 . ' it\'s certificate and it also generates a minimal icinga2.conf to get'
@@ -266,7 +265,7 @@ class SelfService
                 ['class' => 'icon-download', 'target' => '_blank']
             ),
             Html::tag('p', null, $this->translate('Just download and run this script on your Linux Client Machine:')),
-            Html::tag('pre', $codeStyle, $wizard->renderLinuxInstaller())
+            Html::tag('pre', $class, $wizard->renderLinuxInstaller())
         ]);
     }
 
