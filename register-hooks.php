@@ -58,11 +58,13 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierURLEncode;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUuidBinToHex;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierXlsNumericIp;
 use Icinga\Module\Director\ProvidedHook\CubeLinks;
+use Icinga\Module\Director\ProvidedHook\IcingaDbCubeLinks;
 
 /** @var Module $this */
 $this->provideHook('monitoring/HostActions');
 $this->provideHook('monitoring/ServiceActions');
 $this->provideHook('cube/Actions', CubeLinks::class);
+$this->provideHook('cube/Icingadb', IcingaDbCubeLinks::class);
 
 $directorHooks = [
     'director/DataType' => [
