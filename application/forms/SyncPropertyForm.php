@@ -93,7 +93,8 @@ class SyncPropertyForm extends DirectorObjectForm
                 $this->setElementValue('use_filter', $useFilter = 'n');
             }
         } else {
-            $useFilter = strlen($this->getObject()->filter_expression) ? 'y' : 'n';
+            $expression = $this->getObject()->filter_expression;
+            $useFilter = ($expression === null || strlen($expression) === 0) ? 'n' : 'y';
             $this->setElementValue('use_filter', $useFilter);
         }
 

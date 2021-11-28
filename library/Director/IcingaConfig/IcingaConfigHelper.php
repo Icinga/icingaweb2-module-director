@@ -284,7 +284,7 @@ class IcingaConfigHelper
             return null;
         }
 
-        if (ctype_digit($interval)) {
+        if (is_int($interval) || ctype_digit($interval)) {
             return (int) $interval;
         }
 

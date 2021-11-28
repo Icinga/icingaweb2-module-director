@@ -184,7 +184,7 @@ class Sync
                 $this->hasPropertyDisabled = true;
             }
 
-            if (! strlen($prop->get('filter_expression'))) {
+            if ($prop->get('filter_expression') === null || strlen($prop->get('filter_expression')) === 0) {
                 continue;
             }
 

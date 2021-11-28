@@ -30,11 +30,13 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         $this->object = $object;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->arguments);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -45,6 +47,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return $this->modified;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -54,16 +57,19 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         return $this->arguments[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);

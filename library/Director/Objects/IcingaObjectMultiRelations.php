@@ -57,11 +57,13 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->relations;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->relations);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -72,6 +74,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->modified;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -81,16 +84,19 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->relations[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);

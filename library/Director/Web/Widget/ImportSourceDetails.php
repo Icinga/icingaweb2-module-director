@@ -25,7 +25,7 @@ class ImportSourceDetails extends HtmlDocument
     {
         $source = $this->source;
         $description = $source->get('description');
-        if (strlen($description)) {
+        if ($description !== null && strlen($description)) {
             $this->add(Html::tag('p', null, $description));
         }
 
