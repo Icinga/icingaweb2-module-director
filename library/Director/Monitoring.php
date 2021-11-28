@@ -63,6 +63,10 @@ class Monitoring
 
     public function authCanEditService(Auth $auth, $hostname, $service)
     {
+        if ($hostname === null || $service === null) {
+            // TODO: UUID support!
+            return false;
+        }
         if ($auth->hasPermission('director/monitoring/services')) {
             $restriction = null;
             foreach ($auth->getRestrictions('director/monitoring/rw-object-filter') as $restriction) {
