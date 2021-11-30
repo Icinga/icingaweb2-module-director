@@ -813,6 +813,7 @@ ALTER TABLE icinga_host_template_choice
 
 CREATE TABLE icinga_service_set (
   id serial,
+  uuid bytea UNIQUE CHECK(LENGTH(uuid) = 16),
   host_id integer DEFAULT NULL,
   object_name character varying(128) NOT NULL,
   object_type enum_object_type_all NOT NULL,
@@ -828,6 +829,7 @@ CREATE TABLE icinga_service_set (
 
 CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id);
 CREATE INDEX service_set_host ON icinga_service_set (host_id);
+CREATE UNIQUE INDEX service_set_uuid ON icinga_service_set (uuid);
 
 
 CREATE TABLE icinga_service_template_choice (
