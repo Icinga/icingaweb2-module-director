@@ -8,6 +8,7 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
+use Ramsey\Uuid\Uuid;
 
 class ObjectSetTable extends ZfQueryBasedTable
 {
@@ -47,7 +48,10 @@ class ObjectSetTable extends ZfQueryBasedTable
         if ($row->object_type === 'apply') {
             $params['id'] = $row->id;
         } else {
-            $params = array('name' => $row->object_name);
+            $params = [
+                'uuid' => Uuid::fromBytes($row->uuid)->toString(),
+                'name' => $row->object_name
+                ];
         }
 
         $url = Url::fromPath("director/${type}set", $params);
@@ -70,6 +74,7 @@ class ObjectSetTable extends ZfQueryBasedTable
 
         $columns = [
             'id'             => 'os.id',
+            'uuid'           => 'os.uuid',
             'object_name'    => 'os.object_name',
             'object_type'    => 'os.object_type',
             'assign_filter'  => 'os.assign_filter',
