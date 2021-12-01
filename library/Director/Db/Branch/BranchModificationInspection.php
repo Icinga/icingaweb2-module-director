@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Db\Branch;
 
+use gipfl\Translation\StaticTranslator;
 use gipfl\Translation\TranslationHelper;
 use Icinga\Module\Director\Db;
 use ipl\Html\Html;
@@ -56,7 +57,7 @@ class BranchModificationInspection
 
     public static function describeModificationStatistics($stats)
     {
-        $t = TranslationHelper::getTranslator();
+        $t = StaticTranslator::get();
         $relevantStats = [];
         if ($stats->cnt_created > 0) {
             $relevantStats[] = sprintf($t->translate('%d created'), $stats->cnt_created);

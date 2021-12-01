@@ -82,6 +82,7 @@ class SerializableValue implements Serializable
         return gettype($var);
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return $this->value;

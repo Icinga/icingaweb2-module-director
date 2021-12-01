@@ -212,6 +212,7 @@ abstract class QuickTable implements Paginatable, ValidHtml
         return $paginator;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         $db = $this->db();
