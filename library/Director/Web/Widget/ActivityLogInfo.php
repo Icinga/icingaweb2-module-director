@@ -2,8 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Widget;
 
-use gipfl\Diff\HtmlRenderer\SideBySideDiff;
-use gipfl\Diff\PhpDiff;
+use gipfl\Json\JsonString;
 use ipl\Html\HtmlDocument;
 use ipl\Html\HtmlElement;
 use Icinga\Date\DateFormatter;
@@ -21,7 +20,6 @@ use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
 use gipfl\IcingaWeb2\Widget\Tabs;
-use ipl\Html\ValidHtml;
 
 class ActivityLogInfo extends HtmlDocument
 {
@@ -223,7 +221,7 @@ class ActivityLogInfo extends HtmlDocument
     {
         if ($this->oldProperties === null) {
             if (property_exists($this->entry, 'old_properties')) {
-                $this->oldProperties = json_decode($this->entry->old_properties);
+                $this->oldProperties = JsonString::decodeOptional($this->entry->old_properties);
             }
             if ($this->oldProperties === null) {
                 $this->oldProperties = new \stdClass;
@@ -237,7 +235,7 @@ class ActivityLogInfo extends HtmlDocument
     {
         if ($this->newProperties === null) {
             if (property_exists($this->entry, 'new_properties')) {
-                $this->newProperties = json_decode($this->entry->new_properties);
+                $this->newProperties = JsonString::decodeOptional($this->entry->new_properties);
             }
             if ($this->newProperties === null) {
                 $this->newProperties = new \stdClass;

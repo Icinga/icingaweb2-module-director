@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use gipfl\Format\LocalTimeFormat;
 use Icinga\Module\Director\Util;
 use ipl\Html\BaseHtmlElement;
 use gipfl\IcingaWeb2\Link;
@@ -32,6 +33,15 @@ class ActivityLogTable extends ZfQueryBasedTable
         'action',
     );
 
+    /** @var LocalTimeFormat */
+    protected $timeFormat;
+
+    public function __construct($db)
+    {
+        parent::__construct($db);
+        $this->timeFormat = new LocalTimeFormat();
+    }
+
     public function assemble()
     {
         $this->getAttributes()->add('class', 'activity-log');
@@ -55,7 +65,7 @@ class ActivityLogTable extends ZfQueryBasedTable
 
         return $this::tr([
             $this::td($this->makeLink($row))->setSeparator(' '),
-            $this::td(date('H:i:s', $row->ts_change_time))
+            $this::td($this->timeFormat->getTime($row->ts_change_time))
         ])->addAttributes(['class' => $action]);
     }
 

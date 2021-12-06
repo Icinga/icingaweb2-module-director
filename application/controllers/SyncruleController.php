@@ -546,7 +546,7 @@ class SyncruleController extends ActionController
             $run = SyncRun::load($runId, $this->db());
             $this->content()->add(new SyncRunDetails($run));
         }
-        SyncRunTable::create($rule)->renderTo($this);
+        (new SyncRunTable($rule))->renderTo($this);
     }
 
     /**

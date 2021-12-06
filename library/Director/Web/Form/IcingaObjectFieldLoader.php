@@ -329,7 +329,7 @@ class IcingaObjectFieldLoader
             if (array_key_exists($col, $elements)) {
                 $el = $elements[$col];
                 $existingClass = $el->getAttrib('class');
-                if (strlen($existingClass)) {
+                if ($existingClass !== null && strlen($existingClass)) {
                     $el->setAttrib('class', $existingClass . ' autosubmit');
                 } else {
                     $el->setAttrib('class', 'autosubmit');
