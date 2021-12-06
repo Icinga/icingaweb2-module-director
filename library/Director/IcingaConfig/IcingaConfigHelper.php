@@ -401,11 +401,13 @@ class IcingaConfigHelper
                         $macroName = substr($string, $start + 1, $i - $start - 1);
                         if (static::isValidMacroName($macroName)) {
                             $whiteListMatch = false;
+                            // If matchRegex, match macro with parameter
                             if ($whiteList !== null || $matchRegex) {
                                 foreach ($whiteList as $entry) {
                                     $pattern = "/^(" . $entry . "|" . $entry . "\..*)$/i";
                                     $whiteListMatch = preg_match($pattern, $macroName);
                                 }
+                            // Otherwise simply match against array entries
                             } elseif ($whiteList !== null) {
                                 $whiteListMatch = in_array($macroName, $whiteList);
                             }
