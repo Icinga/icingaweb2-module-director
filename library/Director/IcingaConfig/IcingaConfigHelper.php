@@ -402,7 +402,7 @@ class IcingaConfigHelper
                         if (static::isValidMacroName($macroName)) {
                             $whiteListMatch = false;
                             if ($whiteList !== null || $matchRegex) {
-                                foreach ($array as $entry) {
+                                foreach ($whiteList as $entry) {
                                     $pattern = "/^(" . $entry . "|" . $entry . "\..*)$/i";
                                     $whiteListMatch = preg_match($pattern, $macroName);
                                 }
