@@ -381,7 +381,7 @@ class IcingaConfigHelper
             && ! preg_match('/\.$/', $name);
     }
 
-    public static function renderStringWithVariables($string, array $whiteList = null)
+    public static function renderStringWithVariables($string, array $whiteList = null, bool $matchRegex = false)
     {
         $len = strlen($string);
         $start = false;
@@ -400,7 +400,16 @@ class IcingaConfigHelper
                         // We got a macro
                         $macroName = substr($string, $start + 1, $i - $start - 1);
                         if (static::isValidMacroName($macroName)) {
-                            if ($whiteList === null || in_array($macroName, $whiteList)) {
+                            $whiteListMatch = false;
+                            if ($whiteList !== null || $matchRegex) {
+                                foreach ($array as $entry) {
+                                    $pattern = "/^(" . $entry . "|" . $entry . "\..*)$/i";
+                                    $whiteListMatch = preg_match($pattern, $macroName);
+                                }
+                            } elseif ($whiteList !== null) {
+                                $whiteListMatch = in_array($macroName, $whiteList);
+                            }
+                            if ($whiteList === null || $whiteListMatch) {
                                 if ($start > $offset) {
                                     $parts[] = static::renderString(
                                         substr($string, $offset, $start - $offset)
