@@ -6,6 +6,7 @@ use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -73,9 +74,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
-        if (isset($row->uuid) && is_resource($row->uuid)) {
-            $row->uuid = stream_get_contents($row->uuid);
-        }
+        $row->uuid = DbUtil::binaryResult($row->uuid);
         if ($this->linkWithName) {
             $params = ['name' => $row->object_name];
         } else {

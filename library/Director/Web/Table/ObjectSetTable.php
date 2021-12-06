@@ -49,7 +49,7 @@ class ObjectSetTable extends ZfQueryBasedTable
             $params['id'] = $row->id;
         } else {
             $params = [
-                'uuid' => Uuid::fromBytes($row->uuid)->toString(),
+                'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
                 'name' => $row->object_name
                 ];
         }

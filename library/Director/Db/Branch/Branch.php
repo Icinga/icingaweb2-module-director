@@ -45,7 +45,7 @@ class Branch
         if (strlen($row->uuid) !== 16) {
             throw new RuntimeException('Valid UUID expected, got ' . var_export($row->uuid, 1));
         }
-        $self->branchUuid = Uuid::fromBytes($row->uuid);
+        $self->branchUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid));
         $self->name = $row->branch_name;
         $self->owner = $row->owner;
         $self->tsMergeRequest = $row->ts_merge_request;

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Db\DbUtil;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use gipfl\IcingaWeb2\Link;
@@ -50,7 +51,7 @@ class ObjectsTableService extends ObjectsTable
     public function renderRow($row)
     {
         $params = [
-            'uuid' => Uuid::fromBytes($row->uuid)->toString(),
+            'uuid' => Uuid::fromBytes(DbUtil::binaryResult($row->uuid))->toString(),
         ];
         if ($row->host !== null) {
             $params['host'] = $row->host;
@@ -59,7 +60,7 @@ class ObjectsTableService extends ObjectsTable
         /*
         if ($this->branchUuid) {
             $url = Url::fromPath('director/service/edit', [
-                'uuid' => Uuid::fromBytes($row->uuid)->toString(),
+                'uuid' => Uuid::fromBytes(DbUtil::binaryResult($row->uuid))->toString(),
                 'host' => $row->host,
             ]);
         } else {
