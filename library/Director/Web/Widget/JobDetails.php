@@ -44,12 +44,12 @@ class JobDetails extends HtmlDocument
         }
 
         $tsLastAttempt = $job->get('ts_last_attempt');
-        $ts = \strtotime($tsLastAttempt);
-        $timeAgo = Html::tag('span', [
-            'class' => 'time-ago',
-            'title' => DateFormatter::formatDateTime($ts)
-        ], DateFormatter::timeAgo($ts));
         if ($tsLastAttempt) {
+            $ts = \strtotime($tsLastAttempt);
+            $timeAgo = Html::tag('span', [
+                'class' => 'time-ago',
+                'title' => DateFormatter::formatDateTime($ts)
+            ], DateFormatter::timeAgo($ts));
             if ($job->get('last_attempt_succeeded') === 'y') {
                 $this->add(Hint::ok(Html::sprintf(
                     $this->translate('The last attempt succeeded %s'),
