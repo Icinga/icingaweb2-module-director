@@ -405,7 +405,9 @@ class IcingaConfigHelper
                             if ($whiteList !== null || $matchRegex) {
                                 foreach ($whiteList as $entry) {
                                     $pattern = "/^(" . $entry . "|" . $entry . "\..*)$/i";
-                                    $whiteListMatch = preg_match($pattern, $macroName);
+                                    if (preg_match($pattern, $macroName)) {
+                                        $whiteListMatch = true;
+                                    }
                                 }
                             // Otherwise simply match against array entries
                             } elseif ($whiteList !== null) {
