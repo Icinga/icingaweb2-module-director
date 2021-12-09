@@ -33,6 +33,10 @@ class PropertyModifierSubstring extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         $length = $this->getSetting('length');
         if (is_numeric($length)) {
             return substr(

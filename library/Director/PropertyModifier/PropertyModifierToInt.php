@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\PropertyModifier;
 
+use Icinga\Module\Director\Data\InvalidDataException;
 use Icinga\Module\Director\Hook\PropertyModifierHook;
 
 class PropertyModifierToInt extends PropertyModifierHook
@@ -13,6 +14,10 @@ class PropertyModifierToInt extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         if (is_int($value)) {
             return $value;
         }
@@ -20,5 +25,7 @@ class PropertyModifierToInt extends PropertyModifierHook
         if (is_string($value)) {
             return (int) $value;
         }
+
+        throw new InvalidDataException('String, integer or null', $value);
     }
 }

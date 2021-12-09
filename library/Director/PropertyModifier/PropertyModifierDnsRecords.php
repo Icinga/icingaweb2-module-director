@@ -52,6 +52,10 @@ class PropertyModifierDnsRecords extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         $type = self::$types[$this->getSetting('record_type')];
         $response = dns_get_record($value, $type);
 

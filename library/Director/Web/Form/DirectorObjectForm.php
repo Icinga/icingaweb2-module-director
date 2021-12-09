@@ -5,9 +5,11 @@ namespace Icinga\Module\Director\Web\Form;
 use Exception;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Hook\IcingaObjectFormHook;
 use Icinga\Module\Director\IcingaConfig\StateFilterSet;
@@ -37,15 +39,16 @@ abstract class DirectorObjectForm extends DirectorForm
     /** @var IcingaObject */
     protected $object;
 
+    /** @var Branch */
+    protected $branch;
+
     protected $objectName;
 
     protected $className;
 
     protected $deleteButtonName;
 
-    protected $fieldsDisplayGroup;
-
-    protected $displayGroups = array();
+    protected $displayGroups = [];
 
     protected $resolvedImports;
 
@@ -623,16 +626,16 @@ abstract class DirectorObjectForm extends DirectorForm
             return;
         }
 
-        $txtInherited = ' ' . $this->translate(' (inherited from "%s")');
+        $txtInherited = sprintf($this->translate(' (inherited from "%s")'), $inheritedFrom);
         if ($el instanceof ZfSelect) {
             $multi = $el->getMultiOptions();
             if (is_bool($inherited)) {
                 $inherited = $inherited ? 'y' : 'n';
             }
-            if (array_key_exists($inherited, $multi)) {
-                $multi[null] = $multi[$inherited] . sprintf($txtInherited, $inheritedFrom);
+            if (is_scalar($inherited) && array_key_exists($inherited, $multi)) {
+                $multi[null] = $multi[$inherited] . $txtInherited;
             } else {
-                $multi[null] = $this->translate($this->translate('- inherited -'));
+                $multi[null] = $this->stringifyInheritedValue($inherited) . $txtInherited;
             }
             $el->setMultiOptions($multi);
         } elseif ($el instanceof ExtensibleSet) {
@@ -640,12 +643,17 @@ abstract class DirectorObjectForm extends DirectorForm
             $el->setAttrib('inheritedFrom', $inheritedFrom);
         } else {
             if (is_string($inherited) || is_int($inherited)) {
-                $el->setAttrib('placeholder', $inherited . sprintf($txtInherited, $inheritedFrom));
+                $el->setAttrib('placeholder', $inherited . $txtInherited);
             }
         }
 
         // We inherited a value, so no need to require the field
         $el->setRequired(false);
+    }
+
+    protected function stringifyInheritedValue($value)
+    {
+        return is_scalar($value) ? $value : substr(json_encode($value), 0, 40);
     }
 
     public function setListUrl($url)
@@ -668,7 +676,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 : $this->translate('A new %s has successfully been created'),
                 $this->translate($this->getObjectShortClassName())
             );
-                $object->store($this->db);
+            $this->getDbObjectStore()->store($object);
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
@@ -908,11 +916,19 @@ abstract class DirectorObjectForm extends DirectorForm
             );
         }
 
-        if ($object->delete()) {
+        if ($this->getDbObjectStore()->delete($object)) {
             $this->setSuccessUrl($url);
         }
-        // TODO: show object name and so
         $this->redirectOnSuccess($msg);
+    }
+
+    /**
+     * @return DbObjectStore
+     */
+    protected function getDbObjectStore()
+    {
+        $store = new DbObjectStore($this->getDb(), $this->branch);
+        return $store;
     }
 
     protected function addDeleteButton($label = null)
@@ -1042,18 +1058,20 @@ abstract class DirectorObjectForm extends DirectorForm
 
     public function loadObject($id)
     {
+        if ($this->branch && $this->branch->isBranch()) {
+            throw new \RuntimeException('Calling loadObject from form in a branch');
+        }
         /** @var DbObject $class */
         $class = $this->getObjectClassname();
         if (is_int($id)) {
             $this->object = $class::loadWithAutoIncId($id, $this->db);
+            if ($this->object->getKeyName() === 'id') {
+                $this->addHidden('id', $id);
+            }
         } else {
             $this->object = $class::load($id, $this->db);
         }
 
-        // TODO: hmmmm...
-        if (! is_array($id) && $this->object->getKeyName() === 'id') {
-            $this->addHidden('id', $id);
-        }
 
         return $this;
     }
@@ -1180,9 +1198,25 @@ abstract class DirectorObjectForm extends DirectorForm
 
         $connection = $this->getDb();
         $choiceType = 'TemplateChoice' . ucfirst($type);
+        $table = "icinga_$type";
         $choices = IcingaObject::loadAllByType($choiceType, $connection);
+        $chosenTemplates = $this->getSentOrObjectValue('imports');
+        $db = $connection->getDbAdapter();
+        if (empty($chosenTemplates)) {
+            $importedIds = [];
+        } else {
+            $importedIds = $db->fetchCol(
+                $db->select()->from($table, 'id')
+                    ->where('object_name in (?)', (array)$chosenTemplates)
+                    ->where('object_type = ?', 'template')
+            );
+        }
+
         foreach ($choices as $choice) {
-            $this->addChoiceElement($choice);
+            $required = $choice->get('required_template_id');
+            if ($required === null || in_array($required, $importedIds, false)) {
+                $this->addChoiceElement($choice);
+            }
         }
 
         return $this;
@@ -1678,6 +1712,13 @@ abstract class DirectorObjectForm extends DirectorForm
     public function hasPermission($permission)
     {
         return Util::hasPermission($permission);
+    }
+
+    public function setBranch(Branch $branch)
+    {
+        $this->branch = $branch;
+
+        return $this;
     }
 
     protected function allowsExperimental()

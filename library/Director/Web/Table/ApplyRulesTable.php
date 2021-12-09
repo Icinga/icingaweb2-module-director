@@ -6,6 +6,7 @@ use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -14,6 +15,7 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
+use Ramsey\Uuid\Uuid;
 use Zend_Db_Select as ZfSelect;
 
 class ApplyRulesTable extends ZfQueryBasedTable
@@ -72,10 +74,11 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
+        $row->uuid = DbUtil::binaryResult($row->uuid);
         if ($this->linkWithName) {
             $params = ['name' => $row->object_name];
         } else {
-            $params = ['id' => $row->id];
+            $params = ['uuid' => Uuid::fromBytes($row->uuid)->toString()];
         }
         $url = Url::fromPath("director/{$this->baseObjectUrl}/edit", $params);
 
@@ -138,6 +141,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
 
     public function createActionLinks($row)
     {
+        $params = ['uuid' => Uuid::fromBytes($row->uuid)->toString()];
         $baseUrl = 'director/' . $this->baseObjectUrl;
         $links = [];
         $links[] = Link::create(
@@ -150,21 +154,21 @@ class ApplyRulesTable extends ZfQueryBasedTable
         $links[] = Link::create(
             Icon::create('edit'),
             "$baseUrl/edit",
-            ['id' => $row->id],
+            $params,
             ['title' => $this->translate('Modify this Apply Rule')]
         );
 
         $links[] = Link::create(
             Icon::create('doc-text'),
             "$baseUrl/render",
-            ['id' => $row->id],
+            $params,
             ['title' => $this->translate('Apply Rule rendering preview')]
         );
 
         $links[] = Link::create(
             Icon::create('history'),
             "$baseUrl/history",
-            ['id' => $row->id],
+            $params,
             ['title' => $this->translate('Apply rule history')]
         );
 
@@ -175,6 +179,10 @@ class ApplyRulesTable extends ZfQueryBasedTable
     {
         $auth = Auth::getInstance();
         $type = $this->type;
+        // TODO: Centralize this logic
+        if ($type === 'scheduledDowntime') {
+            $type = 'scheduled-downtime';
+        }
         $restrictions = $auth->getRestrictions("director/$type/apply/filter-by-name");
         if (empty($restrictions)) {
             return $query;
@@ -206,6 +214,7 @@ class ApplyRulesTable extends ZfQueryBasedTable
         $table = $this->getDummyObject()->getTableName();
         $columns = [
             'id'            => 'o.id',
+            'uuid'          => 'o.uuid',
             'object_name'   => 'o.object_name',
             'disabled'      => 'o.disabled',
             'assign_filter' => 'o.assign_filter',

@@ -2,12 +2,17 @@
 
 namespace Icinga\Module\Director\Objects;
 
-class IcingaUser extends IcingaObject
+use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
+use Icinga\Module\Director\Exception\DuplicateKeyException;
+
+class IcingaUser extends IcingaObject implements ExportInterface
 {
     protected $table = 'icinga_user';
 
     protected $defaultProperties = array(
         'id'                    => null,
+        'uuid'                  => null,
         'object_name'           => null,
         'object_type'           => null,
         'disabled'              => 'n',
@@ -18,6 +23,8 @@ class IcingaUser extends IcingaObject
         'period_id'             => null,
         'zone_id'               => null,
     );
+
+    protected $uuidColumn = 'uuid';
 
     protected $supportsGroups = true;
 
@@ -40,4 +47,46 @@ class IcingaUser extends IcingaObject
         'period' => 'IcingaTimePeriod',
         'zone'   => 'IcingaZone',
     );
+
+    public function export()
+    {
+        return ImportExportHelper::simpleExport($this);
+    }
+
+    /**
+     * @param $plain
+     * @param Db $db
+     * @param bool $replace
+     * @return IcingaUser
+     * @throws DuplicateKeyException
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public static function import($plain, Db $db, $replace = false)
+    {
+        $properties = (array) $plain;
+        $key = $properties['object_name'];
+
+        if ($replace && static::exists($key, $db)) {
+            $object = static::load($key, $db);
+        } elseif (static::exists($key, $db)) {
+            throw new DuplicateKeyException(
+                'Cannot import, %s "%s" already exists',
+                static::create([])->getShortTableName(),
+                $key
+            );
+        } else {
+            $object = static::create([], $db);
+        }
+
+        // $object->newFields = $properties['fields'];
+        unset($properties['fields']);
+        $object->setProperties($properties);
+
+        return $object;
+    }
+
+    public function getUniqueIdentifier()
+    {
+        return $this->getObjectName();
+    }
 }

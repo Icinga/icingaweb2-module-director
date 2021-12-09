@@ -47,8 +47,8 @@ class CoreApi implements DeploymentApiInterface
     {
         $version = $this->getVersion();
 
-        if (version_compare($version, '2.8.2', '>=')
-            && version_compare($version, '2.10.2', '<')
+        if ($version === null || (version_compare($version, '2.8.2', '>=')
+            && version_compare($version, '2.10.2', '<'))
         ) {
             $this->client->disconnect();
             $this->client->setKeepAlive(false);
@@ -123,15 +123,38 @@ class CoreApi implements DeploymentApiInterface
         return $res[$name];
     }
 
-    public function getTicketSalt()
+    /**
+     * Get a PKI ticket for CSR auto-signing
+     *
+     * @param string $cn The host’s common name for which the ticket should be generated
+     *
+     * @return string|null
+     */
+    public function getTicket($cn)
     {
-        // TODO: api must not be the name!
-        $api = $this->getObject('api', 'ApiListeners', array('ticket_salt'));
-        if (isset($api->attrs->ticket_salt)) {
-            return $api->attrs->ticket_salt;
+        $r = $this->client()->post(
+            'actions/generate-ticket',
+            ['cn' => $cn]
+        );
+        if (! $r->succeeded()) {
+            throw new RuntimeException($r->getErrorMessage());
         }
 
-        return null;
+        $ticket = $r->getRaw('ticket');
+        if ($ticket === null) {
+            // RestApiResponse::succeeded() returns true if Icinga 2 reports an error in the results key, e.g.
+            // {
+            //     "results": [
+            //         {
+            //             "code": 500.0,
+            //             "status": "Ticket salt is not configured in ApiListener object"
+            //         }
+            //     ]
+            // }
+            throw new RuntimeException($r->getRaw('status', 'Ticket is empty'));
+        }
+
+        return $ticket;
     }
 
     public function checkHostNow($host)
@@ -677,6 +700,12 @@ constants
             $deployment->set('stage_collected', 'y');
 
             $deployment->store();
+
+            /** @var DeploymentHook[] $hooks */
+            $hooks = Hook::all('director/Deployment');
+            foreach ($hooks as $hook) {
+                $hook->onCollect($deployment);
+            }
         }
 
         foreach ($missing as $deployment) {

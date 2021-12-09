@@ -3,6 +3,16 @@
 namespace Icinga\Module\Director\IcingaConfig;
 
 use InvalidArgumentException;
+use function ctype_digit;
+use function explode;
+use function floor;
+use function implode;
+use function preg_match;
+use function preg_split;
+use function sprintf;
+use function strlen;
+use function strpos;
+use function substr;
 
 class IcingaConfigHelper
 {
@@ -15,7 +25,7 @@ class IcingaConfigHelper
         'template',
         'include',
         'include_recursive',
-        'ignore_on_error',
+        'include_zones',
         'library',
         'null',
         'true',
@@ -23,7 +33,13 @@ class IcingaConfigHelper
         'const',
         'var',
         'this',
+        'globals',
+        'locals',
         'use',
+        'default',
+        'ignore_on_error',
+        'current_filename',
+        'current_line',
         'apply',
         'to',
         'where',
@@ -32,22 +48,16 @@ class IcingaConfigHelper
         'ignore',
         'function',
         'return',
+        'break',
+        'continue',
         'for',
         'if',
         'else',
-        'in',
-        'current_filename',
-        'current_line',
-        'include_zones',
-        'globals',
-        'locals',
-        'default',
-        'break',
-        'continue',
         'while',
         'throw',
         'try',
         'except',
+        'in',
         'using',
         'namespace',
     ];
@@ -77,14 +87,15 @@ class IcingaConfigHelper
     {
         if ($value === 'y' || $value === true) {
             return 'true';
-        } elseif ($value === 'n' || $value === false) {
-            return 'false';
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                '%s is not a valid boolean',
-                $value
-            ));
         }
+        if ($value === 'n' || $value === false) {
+            return 'false';
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            '%s is not a valid boolean',
+            $value
+        ));
     }
 
     protected static function renderInteger($value)
@@ -98,9 +109,9 @@ class IcingaConfigHelper
         // implementations:
         if ((string) (int) $value === (string) $value) {
             return static::renderInteger((int) $value);
-        } else {
-            return sprintf('%F', $value);
         }
+
+        return sprintf('%F', $value);
     }
 
     protected static function renderNull()
@@ -143,35 +154,40 @@ class IcingaConfigHelper
     {
         if (is_null($value)) {
             return static::renderNull();
-        } elseif (is_bool($value)) {
+        }
+        if (is_bool($value)) {
             return static::renderBoolean($value);
-        } elseif (is_integer($value)) {
+        }
+        if (is_int($value)) {
             return static::renderInteger($value);
-        } elseif (is_float($value)) {
+        }
+        if (is_float($value)) {
             return static::renderFloat($value);
+        }
         // TODO:
-        // } elseif (is_object($value) || static::isAssocArray($value)) {
+        // if (is_object($value) || static::isAssocArray($value)) {
         //     return static::renderHash($value, $prefix)
         // TODO: also check array
-        } elseif (is_array($value)) {
+        if (is_array($value)) {
             return static::renderArray($value);
-        } elseif (is_string($value)) {
-            return static::renderString($value);
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                'Unexpected type %s',
-                var_export($value, 1)
-            ));
         }
+        if (is_string($value)) {
+            return static::renderString($value);
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            'Unexpected type %s',
+            var_export($value, 1)
+        ));
     }
 
     public static function renderDictionaryKey($key)
     {
         if (preg_match('/^[a-z_]+[a-z0-9_]*$/i', $key)) {
             return static::escapeIfReserved($key);
-        } else {
-            return static::renderString($key);
         }
+
+        return static::renderString($key);
     }
 
     // Requires an array
@@ -203,9 +219,9 @@ class IcingaConfigHelper
 
     public static function renderDictionary($dictionary)
     {
-        $vals = [];
+        $values = [];
         foreach ($dictionary as $key => $value) {
-            $vals[$key] = rtrim(
+            $values[$key] = rtrim(
                 self::renderKeyValue(
                     self::renderDictionaryKey($key),
                     $value
@@ -213,13 +229,13 @@ class IcingaConfigHelper
             );
         }
 
-        if (empty($vals)) {
+        if (empty($values)) {
             return '{}';
         }
-        ksort($vals, SORT_STRING);
+        ksort($values, SORT_STRING);
 
         // Prefix for toConfigString?
-        return "{\n" . implode("\n", $vals) . "\n}";
+        return "{\n" . implode("\n", $values) . "\n}";
     }
 
     public static function renderExpression($string)
@@ -241,9 +257,9 @@ class IcingaConfigHelper
     {
         if (self::isReserved($string)) {
             return '@' . $string;
-        } else {
-            return $string;
         }
+
+        return $string;
     }
 
     public static function isValidInterval($interval)
@@ -268,7 +284,7 @@ class IcingaConfigHelper
             return null;
         }
 
-        if (ctype_digit($interval)) {
+        if (is_int($interval) || ctype_digit($interval)) {
             return (int) $interval;
         }
 
@@ -339,13 +355,12 @@ class IcingaConfigHelper
                     } else {
                         if ($macroName === null) {
                             return true;
-                        } else {
-                            if ($macroName === substr($string, $start + 1, $i - $start - 1)) {
-                                return true;
-                            } else {
-                                $start = false;
-                            }
                         }
+                        if ($macroName === substr($string, $start + 1, $i - $start - 1)) {
+                            return true;
+                        }
+
+                        $start = false;
                     }
                 }
             }
@@ -362,7 +377,7 @@ class IcingaConfigHelper
      */
     public static function isValidMacroName($name)
     {
-        return preg_match('/^[A-z_][A-z_\.\d]+$/', $name)
+        return preg_match('/^[A-z_][A-z_.\d]+$/', $name)
             && ! preg_match('/\.$/', $name);
     }
 
@@ -408,8 +423,8 @@ class IcingaConfigHelper
 
         if (! empty($parts)) {
             return implode(' + ', $parts);
-        } else {
-            return '""';
         }
+
+        return '""';
     }
 }

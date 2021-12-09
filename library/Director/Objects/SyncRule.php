@@ -29,6 +29,7 @@ class SyncRule extends DbObject implements ExportInterface
         'object_type'        => null,
         'update_policy'      => null,
         'purge_existing'     => null,
+        'purge_action'       => null,
         'filter_expression'  => null,
         'sync_state'         => 'unknown',
         'last_error_message' => null,

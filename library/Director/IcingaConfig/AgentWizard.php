@@ -8,6 +8,7 @@ use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use Icinga\Module\Director\Util;
+use LogicException;
 
 class AgentWizard
 {
@@ -15,11 +16,12 @@ class AgentWizard
 
     protected $host;
 
-    protected $salt;
-
     protected $parentZone;
 
     protected $parentEndpoints;
+
+    /** @var string PKI ticket */
+    protected $ticket;
 
     public function __construct(IcingaHost $host)
     {
@@ -96,34 +98,32 @@ class AgentWizard
         );
     }
 
-    public function setTicketSalt($salt)
-    {
-        $this->salt = $salt;
-        return $this;
-    }
-
+    /**
+     * Get the PKI ticket
+     *
+     * @return string
+     *
+     * @throws LogicException If ticket has not been set
+     */
     protected function getTicket()
     {
-        return Util::getIcingaTicket(
-            $this->getCertName(),
-            $this->getTicketSalt()
-        );
-    }
-
-    protected function getTicketSalt()
-    {
-        if ($this->salt === null) {
-            throw new ProgrammingError('Requesting salt, but got none');
-            // TODO: No API, not yet. Pass in constructor or throw, still tbd
-            // $this->salt = $this->api()->getTicketSalt();
+        if ($this->ticket === null) {
+            throw new LogicException('Ticket is null');
         }
 
-        return $this->salt;
+        return $this->ticket;
     }
 
-    protected function getCertName()
+    /**
+     * Set the PKI ticket
+     *
+     * @param string $ticket
+     *
+     * @return $this
+     */
+    public function setTicket($ticket)
     {
-        return $this->host->getObjectName();
+        $this->ticket = $ticket;
     }
 
     protected function loadPowershellModule()
@@ -137,7 +137,7 @@ class AgentWizard
             . "\n\n"
             . 'exit Icinga2AgentModule `' . "\n    "
             . $this->renderPowershellParameters([
-                'AgentName'       => $this->getCertName(),
+                'AgentName'       => $this->host->getEndpointName(),
                 'Ticket'          => $this->getTicket(),
                 'ParentZone'      => $this->getParentZone()->getObjectName(),
                 'ParentEndpoints' => array_keys($this->getParentEndpoints()),
@@ -267,7 +267,7 @@ class AgentWizard
         }
 
         return $this->replaceBashTemplate($script, [
-            'ICINGA2_NODENAME'         => $this->getCertName(),
+            'ICINGA2_NODENAME'         => $this->host->getEndpointName(),
             'ICINGA2_CA_TICKET'        => $this->getTicket(),
             'ICINGA2_PARENT_ZONE'      => $this->getParentZone()->getObjectName(),
             'ICINGA2_PARENT_ENDPOINTS' => $endpoints,

@@ -37,11 +37,13 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         }
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->groups);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -52,6 +54,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return $this->modified;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -61,16 +64,19 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
         return $this->groups[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);
@@ -274,7 +280,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         $class = $this->getGroupClass();
         $this->groups = $class::loadAll($connection, $query, 'object_name');
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return $this;
     }
@@ -314,12 +320,12 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
                 )
             );
         }
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return true;
     }
 
-    protected function cloneStored()
+    public function setBeingLoadedFromDb()
     {
         $this->storedGroups = array();
         foreach ($this->groups as $k => $v) {
@@ -341,7 +347,7 @@ class IcingaObjectGroups implements Iterator, Countable, IcingaConfigRenderer
 
         if (PrefetchCache::shouldBeUsed()) {
             $groups->groups = PrefetchCache::instance()->groups($object);
-            $groups->cloneStored();
+            $groups->setBeingLoadedFromDb();
         } else {
             $groups->loadFromDb();
         }

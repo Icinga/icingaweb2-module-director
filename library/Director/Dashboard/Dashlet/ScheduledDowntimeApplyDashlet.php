@@ -13,6 +13,11 @@ class ScheduledDowntimeApplyDashlet extends Dashlet
         return $this->translate('Scheduled Downtimes');
     }
 
+    public function listRequiredPermissions()
+    {
+        return array('director/scheduled-downtimes');
+    }
+
     public function getUrl()
     {
         return 'director/scheduled-downtimes/applyrules';

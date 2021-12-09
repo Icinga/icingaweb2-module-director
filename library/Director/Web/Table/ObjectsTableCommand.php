@@ -13,7 +13,9 @@ class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
     ];
 
     protected $columns = [
+        'uuid'        => 'o.uuid',
         'object_name' => 'o.object_name',
+        'object_type' => 'o.object_type',
         'disabled'    => 'o.disabled',
         'command'     => 'o.command',
     ];
@@ -58,7 +60,7 @@ class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
         );
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query)
+    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
     {
         return $query;
     }

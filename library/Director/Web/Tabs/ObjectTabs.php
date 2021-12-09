@@ -138,7 +138,7 @@ class ObjectTabs extends Tabs
             ]);
         }
 
-        if ($object->getShortTableName() === 'host') {
+        if ($object->getShortTableName() === 'host' && $auth->hasPermission('director/hosts')) {
             $this->add('agent', [
                 'url' => 'director/host/agent',
                 'urlParams' => $params,

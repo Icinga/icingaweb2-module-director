@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
+use Icinga\Module\Director\Monitoring;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -10,6 +11,7 @@ use gipfl\IcingaWeb2\Widget\Tabs;
 use Exception;
 use Icinga\Module\Director\CustomVariable\CustomVariableDictionary;
 use Icinga\Module\Director\Db\AppliedServiceSetLoader;
+use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Forms\IcingaAddServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Forms\IcingaServiceSetForm;
@@ -24,21 +26,64 @@ use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
 use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
-use Icinga\Module\Director\Web\Widget\HostServiceRedirector;
 
 class HostController extends ObjectController
 {
     protected function checkDirectorPermissions()
     {
-        if (in_array($this->getRequest()->getActionName(), [
+        if ($this->isServiceAction() && (new Monitoring())->authCanEditService(
+            $this->Auth(),
+            $this->getParam('name'),
+            $this->getParam('service')
+        )) {
+            return;
+        }
+
+        if ($this->isServicesReadOnlyAction()) {
+            $this->assertPermission('director/monitoring/services-ro');
+            return;
+        }
+
+        if ($this->hasPermission('director/hosts')) { // faster
+            return;
+        }
+
+        if ($this->canModifyHostViaMonitoringPermissions($this->getParam('name'))) {
+            return;
+        }
+
+        $this->assertPermission('director/hosts'); // complain about default hosts permission
+    }
+
+    protected function isServicesReadOnlyAction()
+    {
+        return in_array($this->getRequest()->getActionName(), [
             'servicesro',
             'findservice',
-            'invalidservice'
-        ])) {
-            $this->assertPermission('director/monitoring/services-ro');
-        } else {
-            $this->assertPermission('director/hosts');
+            'invalidservice',
+        ]);
+    }
+
+    protected function isServiceAction()
+    {
+        return in_array($this->getRequest()->getActionName(), [
+            'servicesro',
+            'findservice',
+            'invalidservice',
+            'servicesetservice',
+            'appliedservice',
+            'inheritedservice',
+        ]);
+    }
+
+    protected function canModifyHostViaMonitoringPermissions($hostname)
+    {
+        if ($this->hasPermission('director/monitoring/hosts')) {
+            $monitoring = new Monitoring();
+            return $monitoring->authCanEditHost($this->Auth(), $hostname);
         }
+
+        return false;
     }
 
     /**
@@ -62,6 +107,7 @@ class HostController extends ObjectController
         $this->addTitle($this->translate('Add Service to %s'), $host->getObjectName());
         $this->content()->add(
             IcingaAddServiceForm::load()
+                ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setDb($this->db())
                 ->handleRequest()
@@ -100,15 +146,12 @@ class HostController extends ObjectController
         ));
     }
 
-    /**
-     * @throws \Icinga\Exception\NotFoundError
-     */
     public function findserviceAction()
     {
         $host = $this->getHostObject();
-        $redirector = new HostServiceRedirector($host, $this->getAuth());
         $this->redirectNow(
-            $redirector->getRedirectionUrl($this->params->get('service'))
+            (new ServiceFinder($host, $this->getAuth()))
+                ->getRedirectionUrl($this->params->get('service'))
         );
     }
 
@@ -157,12 +200,21 @@ class HostController extends ObjectController
     public function servicesAction()
     {
         $this->addServicesHeader();
-        $db = $this->db();
         $host = $this->getHostObject();
         $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && $host->get('id') === null) {
+            $this->content()->add(Hint::info(
+                $this->translate('Managing services on new Hosts is possible only after they have been merged.')
+            ));
+            return;
+        }
         $content = $this->content();
         $table = IcingaHostServiceTable::load($host)
             ->setTitle($this->translate('Individual Service objects'));
+        if ($branch->isBranch()) {
+            $table->setBranchUuid($branch->getUuid());
+        }
 
         if (count($table)) {
             $content->add($table);
@@ -556,7 +608,7 @@ class HostController extends ObjectController
      */
     protected function getHostObject()
     {
-        /** @var IcingaHost $this->object */
+        assert($this->object instanceof IcingaHost);
         return $this->object;
     }
 }

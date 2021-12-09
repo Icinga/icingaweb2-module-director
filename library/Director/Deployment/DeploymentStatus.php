@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Deployment;
 
+use Exception;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;

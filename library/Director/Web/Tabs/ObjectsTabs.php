@@ -20,6 +20,7 @@ class ObjectsTabs extends Tabs
         $shortName = $object->getShortTableName();
 
         $plType = strtolower(preg_replace('/cys$/', 'cies', $shortName . 's'));
+        $plType = str_replace('_', '-', $plType);
         if ($auth->hasPermission("director/${plType}")) {
             $this->add('index', array(
                 'url'   => sprintf('director/%s', $plType),
@@ -38,6 +39,9 @@ class ObjectsTabs extends Tabs
         if ($auth->hasPermission('director/admin') || (
             $object->getShortTableName() === 'notification'
             && $auth->hasPermission('director/notifications')
+        ) || (
+            $object->getShortTableName() === 'scheduled_downtime'
+            && $auth->hasPermission('director/scheduled-downtimes')
         )) {
             if ($object->supportsApplyRules()) {
                 $this->add('applyrules', array(

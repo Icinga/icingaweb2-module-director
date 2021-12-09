@@ -56,7 +56,8 @@ class HostgroupRestriction extends ObjectRestriction
             return true;
         }
 
-        if (! $host->hasBeenLoadedFromDb()) {
+        // Hint: branched hosts have no id
+        if (! $host->hasBeenLoadedFromDb() || $host->hasModifiedGroups() || $host->get('id') === null) {
             foreach ($this->listRestrictedHostgroups() as $group) {
                 if ($host->hasGroup($group)) {
                     return true;

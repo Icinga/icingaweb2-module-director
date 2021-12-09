@@ -2,10 +2,12 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Db\DbUtil;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
+use Ramsey\Uuid\Uuid;
 
 class ObjectsTableService extends ObjectsTable
 {
@@ -13,30 +15,28 @@ class ObjectsTableService extends ObjectsTable
 
     protected $type = 'service';
 
+    protected $columns = [
+        'object_name'      => 'o.object_name',
+        'disabled'         => 'o.disabled',
+        'host'             => 'h.object_name',
+        'host_object_type' => 'h.object_type',
+        'host_disabled'    => 'h.disabled',
+        'id'               => 'o.id',
+        'uuid'            => 'o.uuid',
+        'blacklisted'      => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
+    ];
+
     protected $searchColumns = [
         'o.object_name',
         'h.object_name'
     ];
-
-    public function getColumns()
-    {
-        return [
-            'object_name'      => 'o.object_name',
-            'disabled'         => 'o.disabled',
-            'host'             => 'h.object_name',
-            'hots_object_type' => 'h.object_type',
-            'host_disabled'    => 'h.disabled',
-            'id'               => 'o.id',
-            'blacklisted'      => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
-        ];
-    }
 
     public function assemble()
     {
         $this->enableMultiSelect(
             'director/services/edit',
             'director/services',
-            ['id']
+            ['uuid']
         );
     }
 
@@ -50,11 +50,27 @@ class ObjectsTableService extends ObjectsTable
 
     public function renderRow($row)
     {
-        $url = Url::fromPath('director/service/edit', [
-            'name' => $row->object_name,
-            'host' => $row->host,
-            'id'   => $row->id,
-        ]);
+        $params = [
+            'uuid' => Uuid::fromBytes(DbUtil::binaryResult($row->uuid))->toString(),
+        ];
+        if ($row->host !== null) {
+            $params['host'] = $row->host;
+        }
+        $url = Url::fromPath('director/service/edit', $params);
+        /*
+        if ($this->branchUuid) {
+            $url = Url::fromPath('director/service/edit', [
+                'uuid' => Uuid::fromBytes(DbUtil::binaryResult($row->uuid))->toString(),
+                'host' => $row->host,
+            ]);
+        } else {
+            $url = Url::fromPath('director/service/edit', [
+                'name' => $row->object_name,
+                'host' => $row->host,
+                'id'   => $row->id,
+            ]);
+        }
+        */
 
         $caption = $row->host === null
             ? Html::tag('span', ['class' => 'error'], '- none -')
@@ -70,27 +86,40 @@ class ObjectsTableService extends ObjectsTable
         ]);
 
         $attributes = $tr->getAttributes();
+        $classes = $this->getRowClasses($row);
         if ($row->host_disabled === 'y' || $row->disabled === 'y') {
-            $attributes->add('class', 'disabled');
+            $classes[] = 'disabled';
         }
         if ($row->blacklisted === 'y') {
-            $attributes->add('class', 'strike-links');
+            $classes[] = 'strike-links';
         }
+        $attributes->add('class', $classes);
 
         return $tr;
     }
 
     public function prepareQuery()
     {
-        return parent::prepareQuery()->joinLeft(
-            ['h' => 'icinga_host'],
-            'o.host_id = h.id',
-            []
-        )->joinLeft(
-            ['hsb' => 'icinga_host_service_blacklist'],
-            'hsb.service_id = o.id AND hsb.host_id = o.host_id',
-            []
-        )->where('o.service_set_id IS NULL')
-            ->order('o.object_name')->order('h.object_name');
+        $query = parent::prepareQuery();
+        if ($this->branchUuid) {
+            $queries = [$this->leftSubQuery, $this->rightSubQuery];
+        } else {
+            $queries = [$query];
+        }
+
+        foreach ($queries as $subQuery) {
+            $subQuery->joinLeft(
+                ['h' => 'icinga_host'],
+                'o.host_id = h.id',
+                []
+            )->joinLeft(
+                ['hsb' => 'icinga_host_service_blacklist'],
+                'hsb.service_id = o.id AND hsb.host_id = o.host_id',
+                []
+            )->where('o.service_set_id IS NULL')
+                ->order('o.object_name')->order('h.object_name');
+        }
+
+        return $query;
     }
 }

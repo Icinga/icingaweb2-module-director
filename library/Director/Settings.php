@@ -26,6 +26,7 @@ class Settings
         'self-service/resolve_parent_host' => '0',
         'self-service/global_zones'        => ['director-global'],
         'ignore_bug7530'                   => 'n',
+        'feature_custom_endpoint'          => 'n',
         // 'experimental_features'        => null, // 'allow'
         // 'master_zone'                  => null,
     ];

@@ -8,13 +8,16 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Deployment\DeploymentStatus;
 use Icinga\Module\Director\Forms\DeployConfigForm;
 use Icinga\Module\Director\Forms\SettingsForm;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\DirectorDeploymentLog;
 use Icinga\Module\Director\Settings;
+use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Table\ActivityLogTable;
+use Icinga\Module\Director\Web\Table\BranchActivityTable;
 use Icinga\Module\Director\Web\Table\ConfigFileDiffTable;
 use Icinga\Module\Director\Web\Table\DeploymentLogTable;
 use Icinga\Module\Director\Web\Table\GeneratedConfigFileTable;
@@ -34,6 +37,8 @@ use gipfl\IcingaWeb2\Url;
 
 class ConfigController extends ActionController
 {
+    use BranchHelper;
+
     protected $isApified = true;
 
     protected function checkDirectorPermissions()
@@ -61,13 +66,15 @@ class ConfigController extends ActionController
             // No problem, Icinga might be reloading
         }
 
-        // TODO: a form!
-        $this->actions()->add(Link::create(
-            $this->translate('Render config'),
-            'director/config/store',
-            null,
-            ['class' => 'icon-wrench']
-        ));
+        if (! $this->getBranch()->isBranch()) {
+            // TODO: a form!
+            $this->actions()->add(Link::create(
+                $this->translate('Render config'),
+                'director/config/store',
+                null,
+                ['class' => 'icon-wrench']
+            ));
+        }
 
         $this->tabs(new InfraTabs($this->Auth()))->activate('deploymentlog');
         $table = new DeploymentLogTable($this->db());
@@ -147,7 +154,7 @@ class ConfigController extends ActionController
             return;
         }
         $this->assertPermission('director/audit');
-
+        $this->showOptionalBranchActivity();
         $this->setAutorefreshInterval(10);
         $this->tabs(new InfraTabs($this->Auth()))->activate('activitylog');
         $this->addTitle($this->translate('Activity Log'));
@@ -179,7 +186,7 @@ class ConfigController extends ActionController
                 ['class' => 'icon-user', 'data-base-target' => '_self']
             ));
         }
-        if ($this->hasPermission('director/deploy')) {
+        if ($this->hasPermission('director/deploy') && ! $this->getBranch()->isBranch()) {
             if ($this->db()->hasDeploymentEndpoint()) {
                 $this->actions()->add(DeployConfigForm::load()
                     ->setDb($this->db())
@@ -276,6 +283,7 @@ class ConfigController extends ActionController
             $config,
             $this->db(),
             $this->api(),
+            $this->getBranch(),
             $deploymentId
         ));
 
@@ -420,6 +428,32 @@ class ConfigController extends ActionController
                 $left->getFile($filename),
                 $right->getFile($filename)
             )));
+    }
+
+    protected function showOptionalBranchActivity()
+    {
+        if ($this->url()->hasParam('idRangeEx')) {
+            return;
+        }
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && (int) $this->params->get('page', '1') === 1) {
+            $table = new BranchActivityTable($branch->getUuid(), $this->db());
+            if (count($table) > 0) {
+                $this->content()->add(Hint::info(Html::sprintf($this->translate(
+                    'The following modifications are visible in this %s only...'
+                ), Branch::requireHook()->linkToBranch(
+                    $branch,
+                    $this->Auth(),
+                    $this->translate('configuration branch')
+                ))));
+                $this->content()->add($table);
+                $this->content()->add(Html::tag('br'));
+                $this->content()->add(Hint::ok($this->translate(
+                    '...and the modifications below are already in the main branch:'
+                )));
+                $this->content()->add(Html::tag('br'));
+            }
+        }
     }
 
     /**

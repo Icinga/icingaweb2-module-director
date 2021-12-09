@@ -4,7 +4,9 @@ namespace Icinga\Module\Director\ProvidedHook\Monitoring;
 
 use Exception;
 use Icinga\Application\Config;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Util;
 use Icinga\Module\Monitoring\Hook\ServiceActionsHook;
@@ -36,6 +38,7 @@ class ServiceActions extends ServiceActionsHook
         }
 
         $hostname = $service->host_name;
+        $serviceName = $service->service_description;
         if (Util::hasPermission('director/inspect')) {
             $actions[mt('director', 'Inspect')] = Url::fromPath('director/inspect/object', [
                 'type'   => 'service',
@@ -43,23 +46,29 @@ class ServiceActions extends ServiceActionsHook
                 'name'   => sprintf(
                     '%s!%s',
                     $hostname,
-                    $service->service_description
+                    $serviceName
                 )
             ]);
         }
 
+        $title = null;
         if (Util::hasPermission('director/hosts')) {
             $title = mt('director', 'Modify');
+        } elseif (Util::hasPermission('director/monitoring/services')) {
+            $monitoring = new Monitoring();
+            if ($monitoring->isAvailable()
+                && $monitoring->authCanEditService(Auth::getInstance(), $hostname, $serviceName)
+            ) {
+                $title = mt('director', 'Modify');
+            }
         } elseif (Util::hasPermission('director/monitoring/services-ro')) {
             $title = mt('director', 'Configuration');
-        } else {
-            return $actions;
         }
 
-        if (IcingaHost::exists($hostname, $db)) {
+        if ($title && IcingaHost::exists($hostname, $db)) {
             $actions[$title] = Url::fromPath('director/host/findservice', [
                 'name'    => $hostname,
-                'service' => $service->service_description
+                'service' => $serviceName
             ]);
         }
 

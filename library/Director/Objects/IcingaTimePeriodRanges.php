@@ -30,11 +30,13 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         $this->object = $object;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->ranges);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -45,6 +47,7 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         return $this->modified;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -54,16 +57,19 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         return $this->ranges[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);
@@ -216,13 +222,18 @@ class IcingaTimePeriodRanges implements Iterator, Countable, IcingaConfigRendere
         /** @var IcingaTimePeriodRange $class */
         $class = $this->getClass();
         $this->ranges = $class::loadAll($connection, $query, 'range_key');
-        $this->storedRanges = array();
+        $this->setBeingLoadedFromDb();
+
+        return $this;
+    }
+
+    public function setBeingLoadedFromDb()
+    {
+        $this->storedRanges = [];
 
         foreach ($this->ranges as $key => $range) {
             $this->storedRanges[$key] = clone($range);
         }
-
-        return $this;
     }
 
     public function store()

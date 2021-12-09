@@ -115,7 +115,7 @@ Icinga Objects
 
 #### Resolve object properties
 
-In case you add the `resolve` parameter to your URL, all inherited object
+In case you add the `resolved` parameter to your URL, all inherited object
 properties will be resolved. Such a URL could look as follows:
 
     director/host?name=hostname.example.com&resolved

@@ -5,6 +5,7 @@ use Icinga\Module\Director\DataType\DataTypeArray;
 use Icinga\Module\Director\DataType\DataTypeBoolean;
 use Icinga\Module\Director\DataType\DataTypeDatalist;
 use Icinga\Module\Director\DataType\DataTypeDirectorObject;
+use Icinga\Module\Director\DataType\DataTypeDictionary;
 use Icinga\Module\Director\DataType\DataTypeNumber;
 use Icinga\Module\Director\DataType\DataTypeSqlQuery;
 use Icinga\Module\Director\DataType\DataTypeString;
@@ -44,6 +45,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRejectOrSelect;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRenameColumn;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierReplace;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierSimpleGroupBy;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSkipDuplicates;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierStripDomain;
@@ -56,17 +58,20 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierURLEncode;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierUuidBinToHex;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierXlsNumericIp;
 use Icinga\Module\Director\ProvidedHook\CubeLinks;
+use Icinga\Module\Director\ProvidedHook\IcingaDbCubeLinks;
 
 /** @var Module $this */
 $this->provideHook('monitoring/HostActions');
 $this->provideHook('monitoring/ServiceActions');
 $this->provideHook('cube/Actions', CubeLinks::class);
+$this->provideHook('cube/Icingadb', IcingaDbCubeLinks::class);
 
 $directorHooks = [
     'director/DataType' => [
         DataTypeArray::class,
         DataTypeBoolean::class,
         DataTypeDatalist::class,
+        DataTypeDictionary::class,
         DataTypeNumber::class,
         DataTypeDirectorObject::class,
         DataTypeSqlQuery::class,
@@ -113,6 +118,7 @@ $directorHooks = [
         PropertyModifierRejectOrSelect::class,
         PropertyModifierRenameColumn::class,
         PropertyModifierReplace::class,
+        PropertyModifierSimpleGroupBy::class,
         PropertyModifierSkipDuplicates::class,
         PropertyModifierSplit::class,
         PropertyModifierStripDomain::class,

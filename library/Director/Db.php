@@ -15,14 +15,10 @@ use Zend_Db_Select;
 
 class Db extends DbConnection
 {
-    protected $modules = array();
-
-    protected static $zoneCache;
-
-    protected static $commandCache;
-
+    /** @var Settings */
     protected $settings;
 
+    /** @var string */
     protected $masterZoneName;
 
     protected function db()

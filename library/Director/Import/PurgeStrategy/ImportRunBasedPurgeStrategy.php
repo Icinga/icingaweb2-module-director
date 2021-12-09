@@ -71,14 +71,14 @@ class ImportRunBasedPurgeStrategy extends PurgeStrategy
             $columns = SyncUtils::getRootVariables(
                 SyncUtils::extractVariableNames($pattern)
             );
-
+            $resultForCombinedKey = array();
             foreach (array_chunk($result, 1000) as $keys) {
                 $rows = $runA->fetchRows($columns, null, $keys);
-                $result = array();
                 foreach ($rows as $row) {
-                    $result[] = SyncUtils::fillVariables($pattern, $row);
+                    $resultForCombinedKey[] = SyncUtils::fillVariables($pattern, $row);
                 }
             }
+            $result = $resultForCombinedKey;
         }
 
         if (empty($result)) {

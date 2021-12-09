@@ -257,7 +257,7 @@ class DirectorDatafield extends DbObjectWithSettings
 
         if ($form instanceof IcingaServiceForm && $form->providesOverrides()) {
             $resolver = new OverriddenVarsResolver($form->getDb());
-            $vars = $resolver->resolveFor($form->getHost(), $object);
+            $vars = $resolver->fetchForServiceName($form->getHost(), $object->getObjectName());
             foreach ($vars as $host => $values) {
                 if (\property_exists($values, $varName)) {
                     $inherited = $values->$varName;

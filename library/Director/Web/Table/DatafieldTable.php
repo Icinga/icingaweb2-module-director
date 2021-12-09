@@ -9,22 +9,23 @@ use Zend_Db_Select as ZfDbSelect;
 
 class DatafieldTable extends ZfQueryBasedTable
 {
-    protected $searchColumns = array(
+    protected $searchColumns = [
         'df.varname',
         'df.caption',
-    );
+    ];
 
     public function getColumns()
     {
-        return array(
+        return [
             'id'              => 'df.id',
             'varname'         => 'df.varname',
             'caption'         => 'df.caption',
             'description'     => 'df.description',
             'datatype'        => 'df.datatype',
+            'category'        => 'dfc.category_name',
             'assigned_fields' => 'SUM(used_fields.cnt)',
             'assigned_vars'   => 'SUM(used_vars.cnt)',
-        );
+        ];
     }
 
     public function renderRow($row)
@@ -36,6 +37,7 @@ class DatafieldTable extends ZfQueryBasedTable
                 ['id' => $row->id]
             )),
             $this::td($row->varname),
+            $this::td($row->category),
             $this::td($row->assigned_fields),
             $this::td($row->assigned_vars)
         ]);
@@ -43,42 +45,47 @@ class DatafieldTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
-        return array(
+        return [
             $this->translate('Label'),
             $this->translate('Field name'),
+            $this->translate('Category'),
             $this->translate('# Used'),
             $this->translate('# Vars'),
-        );
+        ];
     }
 
     public function prepareQuery()
     {
         $db = $this->db();
-        $fieldTypes = array('command', 'host', 'notification', 'service', 'user');
-        $varsTypes  = array('command', 'host', 'notification', 'service', 'service_set', 'user');
+        $fieldTypes = ['command', 'host', 'notification', 'service', 'user'];
+        $varsTypes  = ['command', 'host', 'notification', 'service', 'service_set', 'user'];
 
-        $fieldsQueries = array();
+        $fieldsQueries = [];
         foreach ($fieldTypes as $type) {
             $fieldsQueries[] = $this->makeDatafieldSub($type, $db);
         }
 
-        $varsQueries = array();
+        $varsQueries = [];
         foreach ($varsTypes as $type) {
             $varsQueries[] = $this->makeVarSub($type, $db);
         }
 
         return $db->select()->from(
-            array('df' => 'director_datafield'),
+            ['df' => 'director_datafield'],
             $this->getColumns()
         )->joinLeft(
-            array('used_fields' => $db->select()->union($fieldsQueries, ZfDbSelect::SQL_UNION_ALL)),
-            'used_fields.datafield_id = df.id',
-            array()
+            ['dfc' => 'director_datafield_category'],
+            'df.category_id = dfc.id',
+            []
         )->joinLeft(
-            array('used_vars' => $db->select()->union($varsQueries, ZfDbSelect::SQL_UNION_ALL)),
+            ['used_fields' => $db->select()->union($fieldsQueries, ZfDbSelect::SQL_UNION_ALL)],
+            'used_fields.datafield_id = df.id',
+            []
+        )->joinLeft(
+            ['used_vars' => $db->select()->union($varsQueries, ZfDbSelect::SQL_UNION_ALL)],
             'used_vars.varname = df.varname',
-            array()
-        )->group('df.id')->group('df.varname')->order('caption ASC');
+            []
+        )->group('df.id')->group('df.varname')->group('dfc.category_name')->order('caption ASC');
     }
 
     /**
@@ -89,14 +96,10 @@ class DatafieldTable extends ZfQueryBasedTable
      */
     protected function makeDatafieldSub($type, ZfDbAdapter $db)
     {
-        return $db->select()
-            ->from(
-                sprintf('icinga_%s_field', $type),
-                array(
-                    'cnt' => 'COUNT(*)',
-                    'datafield_id'
-                )
-            )->group('datafield_id');
+        return $db->select()->from("icinga_${type}_field", [
+            'cnt' => 'COUNT(*)',
+            'datafield_id'
+        ])->group('datafield_id');
     }
 
     /**
@@ -107,13 +110,9 @@ class DatafieldTable extends ZfQueryBasedTable
      */
     protected function makeVarSub($type, ZfDbAdapter $db)
     {
-        return $db->select()
-            ->from(
-                sprintf('icinga_%s_var', $type),
-                array(
-                    'cnt' => 'COUNT(*)',
-                    'varname'
-                )
-            )->group('varname');
+        return $db->select()->from("icinga_${type}_var", [
+            'cnt' => 'COUNT(*)',
+            'varname'
+        ])->group('varname');
     }
 }

@@ -105,10 +105,10 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
     {
         if ($this->readonly) {
             if ($this->highlightedService === $row->service) {
-                return Html::tag('span', ['class' => 'icon-right-big'], $row->service);
-            } else {
-                return $row->service;
+                return Html::tag('span', ['class' => 'ro-service icon-right-big'], $row->service);
             }
+
+            return Html::tag('span', ['class' => 'ro-service'], $row->service);
         }
 
         if ($this->affectedHost) {

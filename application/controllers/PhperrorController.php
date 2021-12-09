@@ -3,7 +3,8 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Application\Icinga;
-use Icinga\Application\Modules\Manager;
+use Icinga\Module\Director\Application\DependencyChecker;
+use Icinga\Module\Director\Web\Table\Dependency\DependencyInfoTable;
 use Icinga\Web\Controller;
 
 class PhperrorController extends Controller
@@ -24,39 +25,19 @@ class PhperrorController extends Controller
 
     public function dependenciesAction()
     {
-        $dependencies = $this->view->dependencies = $this->Module()->getDependencies();
-        $modules = $this->view->modules = Icinga::app()->getModuleManager();
-        // Hint: we're duplicating some code here
-        $satisfied = true;
-        foreach ($dependencies as $module => $required) {
-            /** @var Manager $this ->modules */
-            if ($modules->hasEnabled($module)) {
-                $installed = $modules->getModule($module, false)->getVersion();
-                $installed = \ltrim($installed, 'v'); // v0.6.0 VS 0.6.0
-                if (\preg_match('/^([<>=]+)\s*v?(\d+\.\d+\.\d+)$/', $required, $match)) {
-                    $operator = $match[1];
-                    $vRequired = $match[2];
-                    if (\version_compare($installed, $vRequired, $operator)) {
-                        continue;
-                    }
-                }
-            }
-            $satisfied = false;
-        }
-
-        if ($satisfied) {
+        $checker = new DependencyChecker(Icinga::app());
+        if ($checker->satisfiesDependencies($this->Module())) {
             $this->redirectNow('director');
         }
-
         $this->setAutorefreshInterval(15);
-        $this->getTabs()->add('error', array(
+        $this->getTabs()->add('error', [
             'label' => $this->translate('Error'),
             'url'   => $this->getRequest()->getUrl()
-        ))->activate('error');
-        $msg = $this->translate(
+        ])->activate('error');
+        $this->view->title = $this->translate('Unsatisfied dependencies');
+        $this->view->table = (new DependencyInfoTable($checker, $this->Module()))->render();
+        $this->view->message = $this->translate(
             "Icinga Director depends on the following modules, please install/upgrade as required"
         );
-        $this->view->title = $this->translate('Unsatisfied dependencies');
-        $this->view->message = sprintf($msg, PHP_VERSION);
     }
 }

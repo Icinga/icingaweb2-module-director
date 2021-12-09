@@ -37,9 +37,9 @@ class Zend_View_Helper_FormStoredPassword extends Zend_View_Helper_FormElement
             'value' => 'y'
         ]));
 
-        if (\strlen($sentValue)) {
+        if ($sentValue !== null && \strlen($sentValue)) {
             $el->getAttributes()->set('value', $sentValue);
-        } elseif (\strlen($value) > 0) {
+        } elseif ($value !== null && \strlen($value) > 0) {
             $el->getAttributes()->set('value', '__UNCHANGED_VALUE__');
         }
 

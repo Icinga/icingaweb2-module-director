@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Countable;
 use Exception;
+use Icinga\Exception\NotFoundError;
 use Iterator;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
@@ -35,11 +36,13 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $this->object = $object;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->imports);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -60,6 +63,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
      * @return IcingaObject|null
      * @throws \Icinga\Exception\NotFoundError
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -71,16 +75,19 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         );
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);
@@ -231,6 +238,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
     {
         $list = [];
         foreach ($this->listImportNames() as $name) {
+            $name = (string) $name;
             $list[$name] = $this->getObject($name);
         }
 
@@ -251,14 +259,23 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         $connection = $this->object->getConnection();
         /** @var IcingaObject $class */
         $class = $this->getImportClass();
-        if (is_array($this->object->getKeyName())) {
-            // Services only
-            $import = $class::load([
-                'object_name' => $name,
-                'object_type' => 'template'
-            ], $connection);
-        } else {
-            $import = $class::load($name, $connection);
+        try {
+            if (is_array($this->object->getKeyName())) {
+                // Services only
+                $import = $class::load([
+                    'object_name' => $name,
+                    'object_type' => 'template'
+                ], $connection);
+            } else {
+                $import = $class::load($name, $connection);
+            }
+        } catch (NotFoundError $e) {
+            throw new NotFoundError(sprintf(
+                'Unable to load parent referenced from %s "%s", %s',
+                $this->object->getShortTableName(),
+                $this->object->getObjectName(),
+                lcfirst($e->getMessage())
+            ), $e->getCode(), $e);
         }
 
         return $this->objects[$import->getObjectName()] = $import;
@@ -297,7 +314,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             $this->imports = array_combine($keys, $keys);
         }
 
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
         return $this;
     }
 
@@ -344,12 +361,12 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
             ]);
         }
 
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return true;
     }
 
-    protected function cloneStored()
+    public function setBeingLoadedFromDb()
     {
         $this->storedNames = $this->listImportNames();
         $this->modified = false;

@@ -50,4 +50,16 @@ abstract class DeploymentHook
         $this->onSuccessfulDump($deploymentLog);
         $this->onSuccessfullDump($deploymentLog);
     }
+
+    /**
+     * Please override this method if you want to trigger custom actions
+     * once success (or failure) information have been collected for a deployed
+     * stage. startup_succeeded will then be filled, and startup_log might be
+     * available
+     *
+     * @param DirectorDeploymentLog $deployment
+     */
+    public function onCollect(DirectorDeploymentLog $deployment)
+    {
+    }
 }

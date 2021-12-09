@@ -11,6 +11,11 @@ class ScheduledDowntimeController extends ObjectController
 {
     protected $objectBaseUrl = 'director/scheduled-downtime';
 
+    protected function checkDirectorPermissions()
+    {
+        $this->assertPermission('director/scheduled-downtimes');
+    }
+
     public function rangesAction()
     {
         /** @var IcingaScheduledDowntime $object */

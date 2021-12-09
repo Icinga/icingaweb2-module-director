@@ -23,9 +23,12 @@ use Icinga\Module\Director\Web\Tabs\ObjectsTabs;
 use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
+use Icinga\Module\Director\Web\Widget\BranchedObjectsHint;
 
 abstract class ObjectsController extends ActionController
 {
+    use BranchHelper;
+
     protected $isApified = true;
 
     /** @var ObjectsTable */
@@ -117,6 +120,8 @@ abstract class ObjectsController extends ActionController
             ->addTitle($this->translate(ucfirst($this->getPluralType())))
             ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
 
+        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth()));
+
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
             $this->tabs()->activate('external');
         }
@@ -134,9 +139,12 @@ abstract class ObjectsController extends ActionController
      */
     protected function getTable()
     {
-        return ObjectsTable::create($this->getType(), $this->db())
+        $table = ObjectsTable::create($this->getType(), $this->db())
             ->setAuth($this->getAuth())
+            ->setBranchUuid($this->getBranchUuid())
             ->setBaseObjectUrl($this->getBaseObjectUrl());
+
+        return $table;
     }
 
     /**

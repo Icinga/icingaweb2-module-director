@@ -18,6 +18,7 @@ class ImportsourceHookTable extends SimpleQueryBasedTable
 
     protected $columnCache;
 
+    /** @var ImportSourceHook */
     protected $sourceHook;
 
     protected function assemble()

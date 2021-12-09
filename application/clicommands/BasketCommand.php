@@ -4,8 +4,10 @@ namespace Icinga\Module\Director\Clicommands;
 
 use Icinga\Date\DateFormatter;
 use Icinga\Module\Director\Cli\Command;
+use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
+use Icinga\Module\Director\DirectorObject\ObjectPurgeHelper;
 
 /**
  * Export Director Config Objects
@@ -79,12 +81,41 @@ class BasketCommand extends Command
      * icingacli director basket restore < basket-dump.json
      *
      * OPTIONS
+     *   --purge <ObjectType>[,<ObjectType] Purge objects of the
+     *     Given types. WARNING: this removes ALL objects that are
+     *     not shipped with the given basket
+     *   --force Purge refuses to purge Objects in case there are
+     *     no Objects of a given ObjectType in the provided basket
+     *     unless forced to do so
      */
     public function restoreAction()
     {
+        if ($purge = $this->params->get('purge')) {
+            $purge = explode(',', $purge);
+            ObjectPurgeHelper::assertObjectTypesAreEligibleForPurge($purge);
+        }
         $json = file_get_contents('php://stdin');
         BasketSnapshot::restoreJson($json, $this->db());
+        if ($purge) {
+            $this->purgeObjectTypes(Json::decode($json), $purge, $this->params->get('force'));
+        }
         echo "Objects from Basket Snapshot have been restored\n";
+    }
+
+    protected function purgeObjectTypes($objects, array $types, $force = false)
+    {
+        $helper = new ObjectPurgeHelper($this->db());
+        if ($force) {
+            $helper->force();
+        }
+        foreach ($types as $type) {
+            list($className, $typeFilter) = BasketSnapshot::getClassAndObjectTypeForType($type);
+            $helper->purge(
+                isset($objects->$type) ? (array) $objects->$type : [],
+                $className,
+                $typeFilter
+            );
+        }
     }
 
     /**

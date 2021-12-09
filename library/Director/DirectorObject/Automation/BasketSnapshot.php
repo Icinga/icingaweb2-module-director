@@ -20,6 +20,8 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceHost;
 use Icinga\Module\Director\Objects\IcingaTemplateChoiceService;
 use Icinga\Module\Director\Objects\IcingaTimePeriod;
+use Icinga\Module\Director\Objects\IcingaUser;
+use Icinga\Module\Director\Objects\IcingaUserGroup;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\SyncRule;
 use InvalidArgumentException;
@@ -40,8 +42,11 @@ class BasketSnapshot extends DbObject
         'IcingaTemplateChoiceService' => IcingaTemplateChoiceService::class,
         'ServiceTemplate' => IcingaService::class,
         'ServiceSet'      => IcingaServiceSet::class,
+        'UserGroup'       => IcingaUserGroup::class,
+        'UserTemplate'    => [IcingaUser::class, ['object_type' => 'template']],
+        'User'            => [IcingaUser::class, ['object_type' => 'object']],
         'NotificationTemplate' => IcingaNotification::class,
-        'Notification'    => IcingaNotification::class,
+        'Notification'    => [IcingaNotification::class, ['object_type' => 'apply']],
         'DataList'        => DirectorDatalist::class,
         'Dependency'      => IcingaDependency::class,
         'ImportSource'    => ImportSource::class,
@@ -73,6 +78,9 @@ class BasketSnapshot extends DbObject
         'IcingaTemplateChoiceService',
         'ServiceTemplate',
         'ServiceSet',
+        'UserGroup',
+        'UserTemplate',
+        'User',
         'NotificationTemplate',
         'Notification',
         'Dependency',
@@ -111,9 +119,18 @@ class BasketSnapshot extends DbObject
 
         if (is_array(self::$typeClasses[$type])) {
             return self::$typeClasses[$type][0];
-        } else {
+        }
+
+        return self::$typeClasses[$type];
+    }
+
+    public static function getClassAndObjectTypeForType($type)
+    {
+        if (is_array(self::$typeClasses[$type])) {
             return self::$typeClasses[$type];
         }
+
+        return [self::$typeClasses[$type], null];
     }
 
     /**
@@ -259,7 +276,7 @@ class BasketSnapshot extends DbObject
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      * @throws \Zend_Db_Adapter_Exception
      */
-    protected function restoreType(
+    public function restoreType(
         &$all,
         $typeName,
         BasketSnapshotFieldResolver $fieldResolver,
@@ -357,9 +374,9 @@ class BasketSnapshot extends DbObject
     {
         if ($this->hasBeenLoadedFromDb()) {
             return $this->getContent()->get('summary');
-        } else {
-            return Json::encode($this->getSummary(), JSON_PRETTY_PRINT);
         }
+
+        return Json::encode($this->getSummary(), JSON_PRETTY_PRINT);
     }
 
     /**
@@ -370,14 +387,14 @@ class BasketSnapshot extends DbObject
     {
         if ($this->hasBeenLoadedFromDb()) {
             return Json::decode($this->getContent()->get('summary'));
-        } else {
-            $summary = [];
-            foreach (array_keys($this->objects) as $key) {
-                $summary[$key] = count($this->objects[$key]);
-            }
-
-            return $summary;
         }
+
+        $summary = [];
+        foreach (array_keys($this->objects) as $key) {
+            $summary[$key] = count($this->objects[$key]);
+        }
+
+        return $summary;
     }
 
     /**
@@ -388,19 +405,15 @@ class BasketSnapshot extends DbObject
     {
         if ($this->hasBeenLoadedFromDb()) {
             return $this->getContent()->get('content');
-        } else {
-            return Json::encode($this->objects, JSON_PRETTY_PRINT);
         }
+
+        return Json::encode($this->objects, JSON_PRETTY_PRINT);
     }
 
     protected function addAll($typeName)
     {
-        $class = static::getClassForType($typeName);
-        if (is_array(self::$typeClasses[$typeName])) {
-            $filter = self::$typeClasses[$typeName][1];
-        } else {
-            $filter = null;
-        }
+        list($class, $filter) = static::getClassAndObjectTypeForType($typeName);
+
         /** @var IcingaObject $dummy */
         $dummy = $class::create();
         /** @var ExportInterface $object */

@@ -8,6 +8,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\AssignFilterHelper;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use stdClass;
@@ -127,7 +128,7 @@ abstract class ObjectApplyMatches
         Benchmark::measure("ObjectApplyMatches: prefetching $type");
         PrefetchCache::initialize($db);
         /** @var IcingaObject $class */
-        $class = IcingaObject::classByType($type);
+        $class = DbObjectTypeRegistry::classByType($type);
         $all = $class::prefetchAll($db);
         Benchmark::measure("ObjectApplyMatches: related objects for $type");
         $class::prefetchAllRelationsByType($type, $db);
@@ -171,7 +172,7 @@ abstract class ObjectApplyMatches
         $col = $filter->getColumn();
         $type = static::$type;
 
-        if (substr($col, 0, strlen($type) + 1) === "${type}.") {
+        if ($type && substr($col, 0, strlen($type) + 1) === "${type}.") {
             $filter->setColumn($col = substr($col, strlen($type) + 1));
         }
 
@@ -213,10 +214,26 @@ abstract class ObjectApplyMatches
     protected function __construct(IcingaObject $object)
     {
         $this->object = $object;
-        $this->flatObject = $object->toPlainObject(true, false);
+        $flat = $object->toPlainObject(true, false);
         // Sure, we are flat - but we might still want to match templates.
-        unset($this->flatObject->imports);
-        $this->flatObject->templates = $object->listFlatResolvedImportNames();
-        static::flattenVars($this->flatObject);
+        unset($flat->imports);
+        $flat->templates = $object->listFlatResolvedImportNames();
+        $this->addAppliedGroupsToFlatObject($flat, $object);
+        static::flattenVars($flat);
+        $this->flatObject = $flat;
+    }
+
+    protected function addAppliedGroupsToFlatObject($flat, IcingaObject $object)
+    {
+        if ($object instanceof IcingaHost) {
+            $appliedGroups = $object->getAppliedGroups();
+            if (! empty($appliedGroups)) {
+                if (isset($flat->groups)) {
+                    $flat->groups = array_merge($flat->groups, $appliedGroups);
+                } else {
+                    $flat->groups = $appliedGroups;
+                }
+            }
+        }
     }
 }

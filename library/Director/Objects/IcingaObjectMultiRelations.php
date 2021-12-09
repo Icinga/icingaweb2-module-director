@@ -57,11 +57,13 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->relations;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->relations);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -72,6 +74,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->modified;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -81,16 +84,19 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
         return $this->relations[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);
@@ -323,7 +329,7 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
 
         $class = $this->getRelatedClassName();
         $this->relations = $class::loadAll($connection, $query, 'object_name');
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return $this;
     }
@@ -331,13 +337,10 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
     public function store()
     {
         $db = $this->getDb();
-
         $stored = array_keys($this->stored);
         $relations = array_keys($this->relations);
 
         $objectId = $this->object->id;
-        $type = $this->getType();
-
         $type = $this->getType();
         $objectCol = $type . '_id';
         $relationCol = $this->getRelationIdColumn() . '_id';
@@ -369,12 +372,12 @@ class IcingaObjectMultiRelations implements Iterator, Countable, IcingaConfigRen
                 )
             );
         }
-        $this->cloneStored();
+        $this->setBeingLoadedFromDb();
 
         return true;
     }
 
-    protected function cloneStored()
+    public function setBeingLoadedFromDb()
     {
         $this->stored = array();
         foreach ($this->relations as $k => $v) {

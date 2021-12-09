@@ -3,9 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Icinga\Module\Director\Web\Tabs\MainTabs;
-use Icinga\Module\Director\Web\Widget\HealthCheckPluginOutput;
 use Icinga\Module\Director\Dashboard\Dashboard;
-use Icinga\Module\Director\Health;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Web\Form\DbSelectorForm;
 
@@ -38,6 +36,7 @@ class DashboardController extends ActionController
         $mainDashboards = [
             'Objects',
             'Alerts',
+            'Branches',
             'Automation',
             'Deployment',
             'Director',

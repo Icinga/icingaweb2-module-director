@@ -23,6 +23,10 @@ class PropertyModifierReplace extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         return str_replace(
             $this->getSetting('string'),
             $this->getSetting('replacement'),

@@ -57,6 +57,7 @@ class CoreApiFieldsTable extends Table
             $this->makeBooleanColumn($attrs->state),
             $this->makeBooleanColumn($attrs->config),
             $this->makeBooleanColumn($attrs->required),
+            $this->makeBooleanColumn(isset($attrs->deprecated) ? $attrs->deprecated : null),
             $this->makeBooleanColumn($attrs->no_user_modify),
             $this->makeBooleanColumn($attrs->no_user_view),
             $this->makeBooleanColumn($attrs->navigation),
@@ -65,6 +66,10 @@ class CoreApiFieldsTable extends Table
 
     protected function makeBooleanColumn($value)
     {
+        if ($value === null) {
+            return $this::td('-');
+        }
+
         return $this::td($value ? Html::tag('strong', 'true') : 'false');
     }
 
@@ -79,6 +84,7 @@ class CoreApiFieldsTable extends Table
             $this->translate('State'),
             $this->translate('Config'),
             $this->translate('Required'),
+            $this->translate('Deprecated'),
             $this->translate('Protected'),
             $this->translate('Hidden'),
             $this->translate('Nav'),

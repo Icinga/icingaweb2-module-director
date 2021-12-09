@@ -32,6 +32,10 @@ class PropertyModifierRegexReplace extends PropertyModifierHook
 
     public function transform($value)
     {
+        if ($value === null) {
+            return null;
+        }
+
         return preg_replace(
             $this->getSetting('pattern'),
             $this->getSetting('replacement'),

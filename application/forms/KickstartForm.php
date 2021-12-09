@@ -47,6 +47,10 @@ class KickstartForm extends DirectorForm
             }
         }
 
+        if (!$this->hasBeenSent() && !$this->tryDbConnection()) {
+            return;
+        }
+
         if (!$this->migrations()->hasSchema()) {
             $this->addHtmlHint($this->translate(
                 'No database schema has been created yet'
@@ -194,35 +198,8 @@ class KickstartForm extends DirectorForm
             // Do not hinder the form from being stored
             return;
         }
-        if ($resourceName = $this->getResourceName()) {
-            $resourceConfig = ResourceFactory::getResourceConfig($resourceName);
-            if (! isset($resourceConfig->charset)
-                || ! in_array($resourceConfig->charset, array('utf8', 'utf8mb4', 'UTF8', 'UTF-8'))
-            ) {
-                if ($resource = $this->getElement('resource')) {
-                    $resource->addError('Please change the encoding for the director database to utf8');
-                } else {
-                    $this->addError('Please change the encoding for the director database to utf8');
-                }
-            }
 
-            $resource = $this->getResource();
-            $db = $resource->getDbAdapter();
-
-            try {
-                $db->fetchOne('SELECT 1');
-            } catch (Exception $e) {
-                $this->getElement('resource')
-                    ->addError('Could not connect to database: ' . $e->getMessage());
-
-                $hint = $this->translate(
-                    'Please make sure that your database exists and your user has'
-                    . ' been granted enough permissions'
-                );
-
-                $this->addHtmlHint($hint, array('name' => 'HINT_db_perms'));
-            }
-        }
+        $this->tryDbConnection();
     }
 
     /**
@@ -465,5 +442,41 @@ class KickstartForm extends DirectorForm
         }
 
         return $resources;
+    }
+
+    protected function tryDbConnection()
+    {
+        if ($resourceName = $this->getResourceName()) {
+            $resourceConfig = ResourceFactory::getResourceConfig($resourceName);
+            if (!isset($resourceConfig->charset)
+                || !in_array($resourceConfig->charset, array('utf8', 'utf8mb4', 'UTF8', 'UTF-8'))
+            ) {
+                if ($resource = $this->getElement('resource')) {
+                    $resource->addError('Please change the encoding for the director database to utf8');
+                } else {
+                    $this->addError('Please change the encoding for the director database to utf8');
+                }
+            }
+
+            $resource = $this->getResource();
+            $db = $resource->getDbAdapter();
+
+            try {
+                $db->fetchOne('SELECT 1');
+                return true;
+            } catch (Exception $e) {
+                $this->getElement('resource')
+                    ->addError('Could not connect to database: ' . $e->getMessage());
+
+                $hint = $this->translate(
+                    'Please make sure that your database exists and your user has'
+                    . ' been granted enough permissions'
+                );
+
+                $this->addHtmlHint($hint, array('name' => 'HINT_db_perms'));
+            }
+        }
+
+        return false;
     }
 }

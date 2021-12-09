@@ -9,23 +9,12 @@ use Icinga\Exception\NotImplementedError;
 use Icinga\Exception\ProgrammingError;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
-use RuntimeException;
-use Zend_Db_Expr;
 
 class Util
 {
     protected static $auth;
 
     protected static $allowedResources;
-
-    public static function pgBinEscape($binary)
-    {
-        if ($binary instanceof Zend_Db_Expr) {
-            throw new RuntimeException('Trying to escape binary twice');
-        }
-
-        return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
-    }
 
     /**
      * PBKDF2 - Password-Based Cryptography Specification (RFC2898)
@@ -79,11 +68,6 @@ class Util
         }
 
         return bin2hex(substr($out, 0, $length));
-    }
-
-    public static function getIcingaTicket($certname, $salt)
-    {
-        return self::pbkdf2('sha1', $certname, $salt, 50000, 20);
     }
 
     public static function auth()

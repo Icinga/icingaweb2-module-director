@@ -19,13 +19,14 @@ Requirements
 * Icinga Web 2 (&gt;= 2.6.0). All versions since 2.2 should also work fine, but
   might show smaller UI bugs and are not actively tested
 * The following Icinga modules must be installed and enabled:
-  * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
   * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.5.0)
-  * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
+  * If you are using Icinga Web &lt; 2.9.0, the following modules are also required
+    * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
+    * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
   MySQL forks are also fine. Mentioned versions are the required minimum,
   for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
-* PHP (>= 5.6.3). For best performance please consider use 7.x or 8.x
+* PHP (>= 5.6.3). For best performance please use 7.x or 8.x
 * php-pdo-mysql and/or php-pdo-pgsql
 * php-curl
 * php-iconv
@@ -58,12 +59,11 @@ In case your MySQL root user is password-protected, please add `-p` to this
 command.
 
 #### PostgreSQL
+psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8'";
+psql director -q -c "CREATE USER director WITH PASSWORD 'some-password'";
+psql -q -c "GRANT ALL PRIVILEGES ON DATABASE director TO director";
+psql -q -c "CREATE EXTENSION pgcrypto";
 
-
-    psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8'";
-    psql director -q -c "CREATE USER director WITH PASSWORD 'some-password'";
-    psql -q -c "GRANT ALL PRIVILEGES ON DATABASE director TO director";
-    psql -q -c "CREATE EXTENSION pgcrypto";
 
 Hint: pgcrypto helps to boost performance, but is currently optional. In case you
 do not have it available on your platform and/or do not know how to solve this
@@ -99,15 +99,26 @@ and extract it to a folder named `director` in one of your Icinga Web 2 module p
 
 You might want to use a script as follows for this task:
 
-    ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
-    REPO_URL="https://github.com/icinga/icingaweb2-module-director"
-    TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
-    MODULE_VERSION="1.7.1"
-    URL="${REPO_URL}/archive/v${MODULE_VERSION}.tar.gz"
-    install -d -m 0755 "${TARGET_DIR}"
-    wget -q -O - "$URL" | tar xfz - -C "${TARGET_DIR}" --strip-components 1
+```shell
+MODULE_VERSION="1.8.1"
+ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
+REPO_URL="https://github.com/icinga/icingaweb2-module-director"
+TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
+URL="${REPO_URL}/archive/v${MODULE_VERSION}.tar.gz"
 
-Proceed to enabling the module.
+useradd -r -g icingaweb2 -d /var/lib/icingadirector -s /bin/false icingadirector
+install -d -o icingadirector -g icingaweb2 -m 0750 /var/lib/icingadirector
+install -d -m 0755 "${TARGET_DIR}"
+wget -q -O - "$URL" | tar xfz - -C "${TARGET_DIR}" --strip-components 1
+cp "${TARGET_DIR}/contrib/systemd/icinga-director.service" /etc/systemd/system/
+
+icingacli module enable director
+systemctl daemon-reload
+systemctl enable icinga-director.service
+systemctl start icinga-director.service
+```
+
+Proceed to running the kickstart wizard.
 
 #### Installation from GIT repository
 
@@ -115,27 +126,24 @@ Another convenient method is the installation directly from our GIT repository.
 Just clone the repository to one of your Icinga Web 2 module path directories.
 It will be immediately ready for use:
 
+```shell
+MODULE_VERSION="1.8.1"
+ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
+REPO_URL="https://github.com/icinga/icingaweb2-module-director"
+TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
 
-    ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
-    REPO_URL="https://github.com/icinga/icingaweb2-module-director"
-    TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
-    MODULE_VERSION="1.7.1"
-    git clone "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
+useradd -r -g icingaweb2 -d /var/lib/icingadirector -s /bin/false icingadirector
+install -d -o icingadirector -g icingaweb2 -m 0750 /var/lib/icingadirector
+git clone "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
+cp "${TARGET_DIR}/contrib/systemd/icinga-director.service" /etc/systemd/system/
 
-You can now directly use our current GIT master or check out a specific version.
+icingacli module enable director
+systemctl daemon-reload
+systemctl enable icinga-director.service
+systemctl start icinga-director.service
+```
 
-    cd "${TARGET_DIR}" && git checkout "v${MODULE_VERSION}"
-
-Proceed to enabling the module.
-
-#### Enable the newly installed module
-
-Enable the `director` module either on the CLI by running
-
-    icingacli module enable director
-
-Or go to your Icinga Web 2 frontend, choose `Configuration / Modules`,
-select the `director` module and choose `State: enable`.
+Proceed to running the kickstart wizard.
 
 ### Run the graphical kickstart wizard
 
@@ -143,5 +151,5 @@ Choose either `Icinga Director` directly from the main menu or
 navigate into `Configuration / Modules / director` and select the `Configuration`
 tab.
 
-Either way you'll reach the kickstart wizards. Follow the instructions and
+Either way you'll reach the kickstart wizards. Follow the instructions, and
 you're all done!

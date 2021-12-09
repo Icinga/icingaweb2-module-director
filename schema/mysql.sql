@@ -231,12 +231,14 @@ CREATE TABLE director_setting (
 
 CREATE TABLE icinga_zone (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   parent_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   is_global ENUM('y', 'n') NOT NULL DEFAULT 'n',
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_zone_parent
     FOREIGN KEY parent_zone (parent_id)
@@ -265,6 +267,7 @@ CREATE TABLE icinga_zone_inheritance (
 
 CREATE TABLE icinga_timeperiod (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   display_name VARCHAR(255) DEFAULT NULL,
   update_method VARCHAR(64) DEFAULT NULL COMMENT 'Usually LegacyTimePeriod',
@@ -273,6 +276,7 @@ CREATE TABLE icinga_timeperiod (
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   prefer_includes ENUM('y', 'n') DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_timeperiod_zone
     FOREIGN KEY zone (zone_id)
@@ -349,6 +353,7 @@ CREATE TABLE director_job_setting (
 
 CREATE TABLE icinga_command (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL
     COMMENT 'external_object is an attempt to work with existing commands',
@@ -361,6 +366,7 @@ CREATE TABLE icinga_command (
   timeout SMALLINT UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_command_zone
     FOREIGN KEY zone (zone_id)
@@ -447,17 +453,20 @@ CREATE TABLE icinga_command_var (
 
 CREATE TABLE icinga_apiuser (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   password VARCHAR(255) DEFAULT NULL,
   client_dn VARCHAR(64) DEFAULT NULL,
   permissions TEXT DEFAULT NULL COMMENT 'JSON-encoded permissions',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE icinga_endpoint (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
@@ -467,6 +476,7 @@ CREATE TABLE icinga_endpoint (
   log_duration VARCHAR(32) DEFAULT NULL COMMENT '1d if not set',
   apiuser_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_endpoint_zone
     FOREIGN KEY zone (zone_id)
@@ -512,6 +522,7 @@ CREATE TABLE icinga_host_template_choice (
 
 CREATE TABLE icinga_host (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -544,9 +555,11 @@ CREATE TABLE icinga_host (
   has_agent ENUM('y', 'n') DEFAULT NULL,
   master_should_connect ENUM('y', 'n') DEFAULT NULL,
   accept_config ENUM('y', 'n') DEFAULT NULL,
+  custom_endpoint_name VARCHAR(255) DEFAULT NULL,
   api_key VARCHAR(40) DEFAULT NULL,
   template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   UNIQUE INDEX api_key (api_key),
   KEY search_idx (display_name),
@@ -643,12 +656,14 @@ ALTER TABLE icinga_host_template_choice
 
 CREATE TABLE icinga_service_set (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(128) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   host_id INT(10) UNSIGNED DEFAULT NULL,
   description TEXT DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_set_host
     FOREIGN KEY host (host_id)
@@ -671,6 +686,7 @@ CREATE TABLE icinga_service_template_choice (
 
 CREATE TABLE icinga_service (
   id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -706,6 +722,7 @@ CREATE TABLE icinga_service (
   assign_filter TEXT DEFAULT NULL,
   template_choice_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE KEY object_key (object_name, host_id),
   CONSTRAINT icinga_service_host
     FOREIGN KEY host (host_id)
@@ -876,12 +893,14 @@ CREATE TABLE icinga_service_set_var (
 
 CREATE TABLE icinga_hostgroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template', 'external_object') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -907,12 +926,14 @@ CREATE TABLE icinga_hostgroup_inheritance (
 
 CREATE TABLE icinga_servicegroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1017,6 +1038,7 @@ CREATE TABLE icinga_hostgroup_parent (
 
 CREATE TABLE icinga_user (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1027,6 +1049,7 @@ CREATE TABLE icinga_user (
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name, zone_id),
   CONSTRAINT icinga_user_zone
     FOREIGN KEY zone (zone_id)
@@ -1137,12 +1160,14 @@ CREATE TABLE icinga_user_field (
 
 CREATE TABLE icinga_usergroup (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   object_type ENUM('object', 'template') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
   display_name VARCHAR(255) DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   KEY search_idx (display_name),
   CONSTRAINT icinga_usergroup_zone
@@ -1204,6 +1229,7 @@ CREATE TABLE icinga_usergroup_parent (
 
 CREATE TABLE icinga_notification (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1218,6 +1244,7 @@ CREATE TABLE icinga_notification (
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_notification_host
     FOREIGN KEY host (host_id)
     REFERENCES icinga_host (id)
@@ -1526,6 +1553,7 @@ CREATE TABLE sync_rule (
   ) NOT NULL,
   update_policy ENUM('merge', 'override', 'ignore', 'update-only') NOT NULL,
   purge_existing ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  purge_action ENUM('delete', 'disable') NULL DEFAULT NULL,
   filter_expression TEXT DEFAULT NULL,
   sync_state ENUM(
     'unknown',
@@ -1706,6 +1734,7 @@ CREATE TABLE icinga_user_resolved_var (
 
 CREATE TABLE icinga_dependency (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
   disabled ENUM('y', 'n') NOT NULL DEFAULT 'n',
@@ -1723,6 +1752,7 @@ CREATE TABLE icinga_dependency (
   assign_filter TEXT DEFAULT NULL,
   parent_service_by_name VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   CONSTRAINT icinga_dependency_parent_host
     FOREIGN KEY parent_host (parent_host_id)
     REFERENCES icinga_host (id)
@@ -1827,6 +1857,7 @@ CREATE TABLE icinga_timeperiod_exclude (
 
 CREATE TABLE icinga_scheduled_downtime (
   id INT(10) UNSIGNED AUTO_INCREMENT NOT NULL,
+  uuid VARBINARY(16) NOT NULL,
   object_name VARCHAR(255) NOT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
   object_type ENUM('object', 'template', 'apply') NOT NULL,
@@ -1839,6 +1870,7 @@ CREATE TABLE icinga_scheduled_downtime (
   duration INT(10) UNSIGNED DEFAULT NULL,
   with_services ENUM('y', 'n') NULL DEFAULT NULL,
   PRIMARY KEY (id),
+  UNIQUE INDEX uuid (uuid),
   UNIQUE INDEX object_name (object_name),
   CONSTRAINT icinga_scheduled_downtime_zone
   FOREIGN KEY zone (zone_id)
@@ -1881,6 +1913,488 @@ CREATE TABLE icinga_scheduled_downtime_range (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE director_branch (
+  uuid VARBINARY(16) NOT NULL,
+  owner VARCHAR(255) NOT NULL,
+  branch_name VARCHAR(255) NOT NULL,
+  description TEXT DEFAULT NULL,
+  ts_merge_request BIGINT DEFAULT NULL,
+  PRIMARY KEY(uuid),
+  UNIQUE KEY (branch_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE director_branch_activity (
+  timestamp_ns BIGINT(20) NOT NULL,
+  object_uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  action ENUM ('create', 'modify', 'delete') NOT NULL,
+  object_table VARCHAR(64) NOT NULL,
+  author VARCHAR(255) NOT NULL,
+  former_properties LONGTEXT NOT NULL, -- json-encoded
+  modified_properties LONGTEXT NOT NULL,
+  PRIMARY KEY (timestamp_ns),
+  INDEX object_uuid (object_uuid),
+  INDEX branch_uuid (branch_uuid),
+  CONSTRAINT branch_activity_branch
+    FOREIGN KEY branch (branch_uuid)
+      REFERENCES director_branch (uuid)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_host (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+  address VARCHAR(255) DEFAULT NULL,
+  address6 VARCHAR(45) DEFAULT NULL,
+  check_command VARCHAR(255) DEFAULT NULL,
+  max_check_attempts MEDIUMINT UNSIGNED DEFAULT NULL,
+  check_period VARCHAR(255) DEFAULT NULL,
+  check_interval VARCHAR(8) DEFAULT NULL,
+  retry_interval VARCHAR(8) DEFAULT NULL,
+  check_timeout SMALLINT UNSIGNED DEFAULT NULL,
+  enable_notifications ENUM('y', 'n') DEFAULT NULL,
+  enable_active_checks ENUM('y', 'n') DEFAULT NULL,
+  enable_passive_checks ENUM('y', 'n') DEFAULT NULL,
+  enable_event_handler ENUM('y', 'n') DEFAULT NULL,
+  enable_flapping ENUM('y', 'n') DEFAULT NULL,
+  enable_perfdata ENUM('y', 'n') DEFAULT NULL,
+  event_command VARCHAR(255) DEFAULT NULL,
+  flapping_threshold_high SMALLINT UNSIGNED DEFAULT NULL,
+  flapping_threshold_low SMALLINT UNSIGNED DEFAULT NULL,
+  volatile ENUM('y', 'n') DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  command_endpoint VARCHAR(255) DEFAULT NULL,
+  notes TEXT DEFAULT NULL,
+  notes_url VARCHAR(255) DEFAULT NULL,
+  action_url VARCHAR(255) DEFAULT NULL,
+  icon_image VARCHAR(255) DEFAULT NULL,
+  icon_image_alt VARCHAR(255) DEFAULT NULL,
+  has_agent ENUM('y', 'n') DEFAULT NULL,
+  master_should_connect ENUM('y', 'n') DEFAULT NULL,
+  accept_config ENUM('y', 'n') DEFAULT NULL,
+  custom_endpoint_name VARCHAR(255) DEFAULT NULL,
+  api_key VARCHAR(40) DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
+  vars MEDIUMTEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_host_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_hostgroup (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_hostgroup_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_servicegroup (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_servicegroup_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_usergroup (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_usergroup_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_user (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+  email VARCHAR(255) DEFAULT NULL,
+  pager VARCHAR(255) DEFAULT NULL,
+  enable_notifications ENUM('y', 'n') DEFAULT NULL,
+  period VARCHAR(255) DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  states TEXT DEFAULT NULL,
+  types TEXT DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
+  vars MEDIUMTEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_user_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_zone (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  parent VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  is_global ENUM('y', 'n') DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_zone_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_timeperiod (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+  update_method VARCHAR(64) DEFAULT NULL COMMENT 'Usually LegacyTimePeriod',
+  zone VARCHAR(255) DEFAULT NULL,
+  prefer_includes ENUM('y', 'n') DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  ranges TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_timeperiod_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_command (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  methods_execute VARCHAR(64) DEFAULT NULL,
+  command TEXT DEFAULT NULL,
+  is_string ENUM('y', 'n') NULL,
+  timeout SMALLINT UNSIGNED DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  arguments TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_command_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_apiuser (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  password VARCHAR(255) DEFAULT NULL,
+  client_dn VARCHAR(64) DEFAULT NULL,
+  permissions TEXT DEFAULT NULL COMMENT 'JSON-encoded permissions',
+
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_apiuser_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_endpoint (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'external_object') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  host VARCHAR(255) DEFAULT NULL,
+  port SMALLINT UNSIGNED DEFAULT NULL,
+  log_duration VARCHAR(32) DEFAULT NULL,
+  apiuser VARCHAR(255) DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_endpoint_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_service (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'apply') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  display_name VARCHAR(255) DEFAULT NULL,
+  host VARCHAR(255) DEFAULT NULL,
+  service_set VARCHAR(255) DEFAULT NULL,
+  check_command VARCHAR(255) DEFAULT NULL,
+  max_check_attempts MEDIUMINT UNSIGNED DEFAULT NULL,
+  check_period VARCHAR(255) DEFAULT NULL,
+  check_interval VARCHAR(8) DEFAULT NULL,
+  retry_interval VARCHAR(8) DEFAULT NULL,
+  check_timeout SMALLINT UNSIGNED DEFAULT NULL,
+  enable_notifications ENUM('y', 'n') DEFAULT NULL,
+  enable_active_checks ENUM('y', 'n') DEFAULT NULL,
+  enable_passive_checks ENUM('y', 'n') DEFAULT NULL,
+  enable_event_handler ENUM('y', 'n') DEFAULT NULL,
+  enable_flapping ENUM('y', 'n') DEFAULT NULL,
+  enable_perfdata ENUM('y', 'n') DEFAULT NULL,
+  event_command VARCHAR(255) DEFAULT NULL,
+  flapping_threshold_high SMALLINT UNSIGNED DEFAULT NULL,
+  flapping_threshold_low SMALLINT UNSIGNED DEFAULT NULL,
+  volatile ENUM('y', 'n') DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  command_endpoint VARCHAR(255) DEFAULT NULL,
+  notes TEXT DEFAULT NULL,
+  notes_url VARCHAR(255) DEFAULT NULL,
+  action_url VARCHAR(255) DEFAULT NULL,
+  icon_image VARCHAR(255) DEFAULT NULL,
+  icon_image_alt VARCHAR(255) DEFAULT NULL,
+  use_agent ENUM('y', 'n') DEFAULT NULL,
+  apply_for VARCHAR(255) DEFAULT NULL,
+  use_var_overrides ENUM('y', 'n') DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+  -- template_choice VARCHAR(255) DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  `groups` TEXT DEFAULT NULL,
+  vars MEDIUMTEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  INDEX search_object_name (object_name),
+  INDEX search_display_name (display_name),
+  CONSTRAINT icinga_service_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_notification (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'apply') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  apply_to ENUM('host', 'service') DEFAULT NULL,
+  host VARCHAR(255) DEFAULT NULL,
+  service VARCHAR(255) DEFAULT NULL,
+  times_begin INT(10) UNSIGNED DEFAULT NULL,
+  times_end INT(10) UNSIGNED DEFAULT NULL,
+  notification_interval INT(10) UNSIGNED DEFAULT NULL,
+  command VARCHAR(255) DEFAULT NULL,
+  period VARCHAR(255) DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+
+  states TEXT DEFAULT NULL,
+  types TEXT DEFAULT NULL,
+  users TEXT DEFAULT NULL,
+  usergroups TEXT DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  vars MEDIUMTEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_notification_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_scheduled_downtime (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'apply') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  apply_to ENUM('host', 'service') DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+  author VARCHAR(255) DEFAULT NULL,
+  comment TEXT DEFAULT NULL,
+  fixed ENUM('y', 'n') DEFAULT NULL,
+  duration INT(10) UNSIGNED DEFAULT NULL,
+  with_services ENUM('y', 'n') NULL DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  ranges TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_scheduled_downtime_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE branched_icinga_dependency (
+  uuid VARBINARY(16) NOT NULL,
+  branch_uuid VARBINARY(16) NOT NULL,
+  branch_created ENUM('y', 'n') NOT NULL DEFAULT 'n',
+  branch_deleted ENUM('y', 'n') NOT NULL DEFAULT 'n',
+
+  object_name VARCHAR(255) DEFAULT NULL,
+  object_type ENUM('object', 'template', 'apply') DEFAULT NULL,
+  disabled ENUM('y', 'n') DEFAULT NULL,
+  apply_to ENUM('host', 'service') DEFAULT NULL,
+  parent_host VARCHAR(255) DEFAULT NULL,
+  parent_host_var VARCHAR(128) DEFAULT NULL,
+  parent_service VARCHAR(255) DEFAULT NULL,
+  child_host VARCHAR(255) DEFAULT NULL,
+  child_service VARCHAR(255) DEFAULT NULL,
+  disable_checks ENUM('y', 'n') DEFAULT NULL,
+  disable_notifications ENUM('y', 'n') DEFAULT NULL,
+  ignore_soft_states ENUM('y', 'n') DEFAULT NULL,
+  period VARCHAR(255) DEFAULT NULL,
+  zone VARCHAR(255) DEFAULT NULL,
+  assign_filter TEXT DEFAULT NULL,
+  parent_service_by_name VARCHAR(255) DEFAULT NULL,
+
+  imports TEXT DEFAULT NULL,
+  set_null TEXT DEFAULT NULL,
+  PRIMARY KEY (branch_uuid, uuid),
+  UNIQUE INDEX branch_object_name (branch_uuid, object_name),
+  INDEX search_object_name (object_name),
+  CONSTRAINT icinga_dependency_branch
+    FOREIGN KEY branch (branch_uuid)
+    REFERENCES director_branch (uuid)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (170, NOW());
+  VALUES (176, NOW());

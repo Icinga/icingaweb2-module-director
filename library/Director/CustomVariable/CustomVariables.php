@@ -69,6 +69,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         }
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         $count = 0;
@@ -81,11 +82,13 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $count;
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -95,16 +98,19 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return $this->vars[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);
@@ -181,7 +187,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
         $vars->refreshIndex();
-        $vars->setUnmodified();
+        $vars->setBeingLoadedFromDb();
         return $vars;
     }
 
@@ -192,7 +198,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             $vars->vars[$row->varname] = CustomVariable::fromDbRow($row);
         }
         $vars->refreshIndex();
-        $vars->setUnmodified();
+        $vars->setBeingLoadedFromDb();
 
         return $vars;
     }
@@ -237,7 +243,7 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
             }
         }
 
-        $this->setUnmodified();
+        $this->setBeingLoadedFromDb();
     }
 
     public function get($key)
@@ -264,14 +270,16 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
         return false;
     }
 
-    public function setUnmodified()
+    public function setBeingLoadedFromDb()
     {
         $this->modified = false;
         $this->storedVars = array();
         foreach ($this->vars as $key => $var) {
             $this->storedVars[$key] = clone($var);
             $var->setUnmodified();
+            $var->setLoadedFromDb();
         }
+
         return $this;
     }
 

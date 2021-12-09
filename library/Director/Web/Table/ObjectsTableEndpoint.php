@@ -26,6 +26,7 @@ class ObjectsTableEndpoint extends ObjectsTable
     public function getColumns()
     {
         return [
+            'uuid'        => 'o.uuid',
             'object_name' => 'o.object_name',
             'object_type' => 'o.object_type',
             'disabled'    => 'o.disabled',
@@ -61,7 +62,7 @@ class ObjectsTableEndpoint extends ObjectsTable
         }
     }
 
-    protected function applyObjectTypeFilter(ZfSelect $query)
+    protected function applyObjectTypeFilter(ZfSelect $query, ZfSelect $right = null)
     {
         return $query->where("o.object_type IN ('object', 'external_object')");
     }

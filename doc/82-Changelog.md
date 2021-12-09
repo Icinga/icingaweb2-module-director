@@ -4,6 +4,72 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+next (will be 1.9.0)
+--------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/25?closed=1)
+
+### Import and Sync
+* FIX: string property modifiers now preserve NULL values (#2371)
+* FIX: "to int" property modifiers now fails for non-string values (#2372)
+* FEATURE: introduce 'disable' as your purge action on Sync (#2285)
+* FEATURE: there is now a simple "group by" Property Modifier (#2317)
+
+### Configuration Baskets
+* FIX: Notification Apply Rules have not been exported (#2335)
+* FEATURE: it's now possible to purge objects of specific types (#2201)
+* FEATURE: exporting Users, User-Templates and -Groups is now possible (#2328)
+
+### Permissions and Restrictions
+* FEATURE: allow using monitoring module permissions (#2304)
+* FEATURE: it's now possible to grant (global) access to scheduled downtimes (#2086)
+
+### User Interface
+* FIX: allow switching DB config while connection is failing (#2300)
+* FIX: Links to duplicate services in Sets didn't check for deactivation (#2323)
+* FIX: SQL error for Data Fields table on PostgreSQL (#2310)
+* FIX: SQL error when searching for Data Field Categories (#2367)
+* FEATURE: show "deprecated" flag on object attribute inspection (#2312)
+* FEATURE: Service Template for single Host services provides auto-completion (#1974)
+
+### Documentation
+* FIX: configure the daemon with main setup instructions (#2296, #2320)
+
+1.8.1
+-----
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/24?closed=1)
+
+### User Interface
+* FIX: show Override button when all Fields belong to Field Categories (#2303)
+* FIX: don't fail when showing a Host overriding multiple inherited groups (#2253)
+* FIX: deal with inherited values which are invalid for a select box (#2288)
+* FIX: Service Set preview inline Service Template links (#2334)
+* FIX: show Services applied with Rules involving applied Hostgroups (#2313)
+* FIX: show "deactivated" services as such also for read-only users (#2344)
+* FIX: Overrides for Services belonging to Sets on root Host Templates (#2333)
+* FIX: show no header tabs for search result in web 2.8+ (#2141)
+* FIX: show and link dependencies for web 2.9+ (#2354)
+
+### Icinga Configuration
+* FIX: rare race condition, where generated config might miss some files (#2351)
+
+### Icinga API
+* FIX: use Icinga 2's generate-ticket API, required for v2.13.0 (#2348)
+
+### Import and Sync
+* FIX: Purge didn't remove more than 1000 services at once (#2339)
+
+### Automation, User Interface
+* FIX: error message wording on failing related (or parent) object ref (#2224)
+
+### REST API
+* FIX: creating scheduled downtime via api failed (#1879)
+
 1.8.0
 -----
 
@@ -73,6 +139,7 @@ before switching to a new version.
 
 ### Authentication and Permissions
 * FIX: Users restricted to Hostgroups can now use related Templates (#2020, #2101)
+* FEATURE: Optionally, restricted users can be allowed to set Groups (#2252)
 
 ### Kickstart
 * FEATURE: Friendlier message if object to be removed is still in use (#2206)
@@ -86,6 +153,7 @@ before switching to a new version.
 ### Icinga Agent handling
 * FIX: Linux Agent installer now fails when unable to retrieve a certificate
 * FEATURE: Linux Agent installer now supports Alpine Linux (#2216)
+* FEATURE: Icinga for Windows support (#2147)
 
 ### REST API
 * FEATURE: Self Service API ignores empty/missing properties (e.g. no address)

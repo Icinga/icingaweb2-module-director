@@ -3,6 +3,7 @@
 use Icinga\Application\Icinga;
 use Icinga\Web\Window;
 
+/** @var \Icinga\Application\Modules\Module $this */
 if ($this->getConfig()->get('frontend', 'disabled', 'no') === 'yes') {
     return;
 }
@@ -22,7 +23,11 @@ $this->providePermission('director/services', $this->translate('Allow to configu
 $this->providePermission('director/servicesets', $this->translate('Allow to configure service sets'));
 $this->providePermission('director/service_set/apply', $this->translate('Allow to define Service Set Apply Rules'));
 $this->providePermission('director/users', $this->translate('Allow to configure users'));
-$this->providePermission('director/notifications', $this->translate('Allow to configure notifications'));
+$this->providePermission('director/notifications', $this->translate('Allow to configure notifications (unrestricted)'));
+$this->providePermission(
+    'director/scheduled-downtimes',
+    $this->translate('Allow to configure notifications (unrestricted)')
+);
 $this->providePermission(
     'director/inspect',
     $this->translate(
@@ -33,6 +38,14 @@ $this->providePermission(
     'director/monitoring/services-ro',
     $this->translate('Allow readonly users to see where a Service came from')
 );
+$this->providePermission(
+    'director/monitoring/hosts',
+    $this->translate('Allow users to modify Hosts they are allowed to see in the monitoring module')
+);
+$this->providePermission(
+    'director/monitoring/services',
+    $this->translate('Allow users to modify Service they are allowed to see in the monitoring module')
+);
 $this->providePermission('director/*', $this->translate('Allow unrestricted access to Icinga Director'));
 
 $this->provideRestriction(
@@ -40,6 +53,18 @@ $this->provideRestriction(
     $this->translate(
         'Limit access to the given comma-separated list of hostgroups'
     )
+);
+
+$this->provideRestriction(
+    'director/monitoring/rw-object-filter',
+    $this->translate(
+        'Additional (monitoring module) object filter to further restrict write access'
+    )
+);
+
+$this->providePermission(
+    'director/groups-for-restricted-hosts',
+    $this->translate('Allow users with Hostgroup restrictions to access the Groups field')
 );
 
 $this->provideRestriction(
@@ -53,6 +78,13 @@ $this->provideRestriction(
     'director/notification/apply/filter-by-name',
     $this->translate(
         'Filter available notification apply rules'
+    )
+);
+
+$this->provideRestriction(
+    'director/scheduled-downtime/apply/filter-by-name',
+    $this->translate(
+        'Filter available scheduled downtime rules'
     )
 );
 

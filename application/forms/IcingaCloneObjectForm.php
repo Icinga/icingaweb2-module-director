@@ -2,8 +2,11 @@
 
 namespace Icinga\Module\Director\Forms;
 
+use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -17,8 +20,20 @@ class IcingaCloneObjectForm extends DirectorForm
 
     protected $baseObjectUrl;
 
+    /** @var Branch */
+    protected $branch;
+
     public function setup()
     {
+        $isBranch = $this->branch && $this->branch->isBranch();
+        $branchOnly = $this->object->get('id') === null;
+        if ($isBranch && $this->object instanceof IcingaObject && $this->object->isTemplate()) {
+            $this->addHtml(Hint::error($this->translate(
+                'Templates cannot be cloned in Configuration Branches'
+            )));
+            $this->submitLabel = false;
+            return;
+        }
         $name = $this->object->getObjectName();
         $this->addElement('text', 'new_object_name', array(
             'label'    => $this->translate('New name'),
@@ -26,7 +41,7 @@ class IcingaCloneObjectForm extends DirectorForm
             'value'    => $name,
         ));
 
-        if (Acl::instance()->hasPermission('director/admin')) {
+        if (!$branchOnly && Acl::instance()->hasPermission('director/admin')) {
             $this->addElement('select', 'clone_type', array(
                 'label'        => 'Clone type',
                 'required'     => true,
@@ -37,8 +52,8 @@ class IcingaCloneObjectForm extends DirectorForm
             ));
         }
 
-        if ($this->object instanceof IcingaHost
-            || $this->object instanceof IcingaServiceSet
+        if (!$branchOnly && ($this->object instanceof IcingaHost
+            || $this->object instanceof IcingaServiceSet)
         ) {
             $this->addBoolean('clone_services', [
                 'label'       => $this->translate('Clone Services'),
@@ -48,7 +63,7 @@ class IcingaCloneObjectForm extends DirectorForm
             ], 'y');
         }
 
-        if ($this->object instanceof IcingaHost) {
+        if (!$branchOnly && $this->object instanceof IcingaHost) {
             $this->addBoolean('clone_service_sets', [
                 'label'       => $this->translate('Clone Service Sets'),
                 'description' => $this->translate(
@@ -95,6 +110,13 @@ class IcingaCloneObjectForm extends DirectorForm
         );
     }
 
+    public function setBranch(Branch $branch)
+    {
+        $this->branch = $branch;
+
+        return $this;
+    }
+
     public function setObjectBaseUrl($url)
     {
         $this->baseObjectUrl = $url;
@@ -119,6 +141,10 @@ class IcingaCloneObjectForm extends DirectorForm
             $newName,
             $object->getObjectName()
         );
+
+        if ($object->isTemplate() && $this->branch && $this->branch->isBranch()) {
+            throw new IcingaException('Cloning templates is not available for Branches');
+        }
 
         if ($object->isTemplate() && $object->getObjectName() === $newName) {
             throw new IcingaException(
@@ -169,7 +195,8 @@ class IcingaCloneObjectForm extends DirectorForm
             $fields = [];
         }
 
-        if ($new->store()) {
+        $store = new DbObjectStore($connection, $this->branch);
+        if ($store->store($new)) {
             $newId = $new->get('id');
             foreach ($services as $service) {
                 $clone = IcingaService::fromPlainObject(
@@ -182,14 +209,15 @@ class IcingaCloneObjectForm extends DirectorForm
                 } elseif ($new instanceof IcingaServiceSet) {
                     $clone->set('service_set_id', $newId);
                 }
-                $clone->store();
+                $store->store($clone);
             }
 
             foreach ($sets as $set) {
-                IcingaServiceSet::fromPlainObject(
+                $newSet = IcingaServiceSet::fromPlainObject(
                     $set->toPlainObject(),
                     $connection
-                )->set('host_id', $newId)->store();
+                )->set('host_id', $newId);
+                $store->store($newSet);
             }
 
             foreach ($fields as $row) {

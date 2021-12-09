@@ -52,6 +52,11 @@ class NotificationController extends ObjectController
         }
     }
 
+    protected function hasBasketSupport()
+    {
+        return $this->object->isTemplate() || $this->object->isApplyRule();
+    }
+
     protected function loadObject()
     {
         if ($this->object === null) {

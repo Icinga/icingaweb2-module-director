@@ -6,6 +6,11 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\InvalidPropertyException;
 use Icinga\Exception\NotFoundError;
+use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Db\Branch\BranchedObject;
+use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\NestingError;
@@ -22,14 +27,20 @@ use Icinga\Module\Director\Web\Controller\Extension\ObjectRestrictions;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Web\ObjectPreview;
 use Icinga\Module\Director\Web\Table\ActivityLogTable;
+use Icinga\Module\Director\Web\Table\BranchActivityTable;
 use Icinga\Module\Director\Web\Table\GroupMemberTable;
 use Icinga\Module\Director\Web\Table\IcingaObjectDatafieldTable;
 use Icinga\Module\Director\Web\Tabs\ObjectTabs;
+use Icinga\Module\Director\Web\Widget\BranchedObjectHint;
 use gipfl\IcingaWeb2\Link;
+use ipl\Html\Html;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 abstract class ObjectController extends ActionController
 {
     use ObjectRestrictions;
+    use BranchHelper;
 
     /** @var IcingaObject */
     protected $object;
@@ -55,7 +66,7 @@ abstract class ObjectController extends ActionController
         if ($this->getRequest()->isApiRequest()) {
             $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
             try {
-                $this->eventuallyLoadObject();
+                $this->loadOptionalObject();
             } catch (NotFoundError $e) {
                 // Silently ignore the error, the handler will complain
                 $handler->sendJsonError($e, 404);
@@ -75,7 +86,7 @@ abstract class ObjectController extends ActionController
             // now.
             exit;
         } else {
-            $this->eventuallyLoadObject();
+            $this->loadOptionalObject();
             if ($this->getRequest()->getActionName() === 'add') {
                 $this->addSingleTab(
                     sprintf($this->translate('Add %s'), ucfirst($this->getType())),
@@ -88,6 +99,9 @@ abstract class ObjectController extends ActionController
                     $this->getAuth(),
                     $this->object
                 ));
+            }
+            if ($this->object !== null) {
+                $this->addDeploymentLink();
             }
         }
     }
@@ -166,6 +180,7 @@ abstract class ObjectController extends ActionController
         $this->assertTypePermission();
         $object = $this->requireObject();
         $form = IcingaCloneObjectForm::load()
+            ->setBranch($this->getBranch())
             ->setObject($object)
             ->setObjectBaseUrl($this->getObjectBaseUrl())
             ->handleRequest();
@@ -251,6 +266,7 @@ abstract class ObjectController extends ActionController
         if ($host = $this->params->get('host')) {
             $table->filterHost($host);
         }
+        $this->showOptionalBranchActivity($table);
         $table->renderTo($this);
     }
 
@@ -434,54 +450,94 @@ abstract class ObjectController extends ActionController
 
     protected function assertTypePermission()
     {
-        return $this->assertPermission(
-            'director/' . strtolower($this->getPluralType())
-        );
+        $type = strtolower($this->getPluralType());
+        // TODO: Check getPluralType usage, fix it there.
+        if ($type === 'scheduleddowntimes') {
+            $type = 'scheduled-downtimes';
+        }
+
+        return $this->assertPermission("director/$type");
     }
 
-    protected function eventuallyLoadObject()
+    protected function loadOptionalObject()
     {
-        if (null !== $this->params->get('name') || $this->params->get('id')) {
+        if ($this->params->get('uuid') || null !== $this->params->get('name') || $this->params->get('id')) {
             $this->loadObject();
         }
     }
 
-    protected function loadObject()
+    /**
+     * @return ?UuidInterface
+     * @throws InvalidPropertyException
+     * @throws NotFoundError
+     */
+    protected function getUuidFromUrl()
     {
-        if ($this->object === null) {
-            if ($id = $this->params->get('id')) {
-                $this->object = IcingaObject::loadByType(
-                    $this->getType(),
-                    (int) $id,
-                    $this->db()
-                );
-            } elseif (null !== ($name = $this->params->get('name'))) {
-                $this->object = IcingaObject::loadByType(
-                    $this->getType(),
-                    $name,
-                    $this->db()
-                );
+        $key = null;
+        if ($uuid = $this->params->get('uuid')) {
+            $key = Uuid::fromString($uuid);
+        } elseif ($id = $this->params->get('id')) {
+            $key = (int) $id;
+        } elseif (null !== ($name = $this->params->get('name'))) {
+            $key = $name;
+        }
+        if ($key === null) {
+            $request = $this->getRequest();
+            if ($request->isApiRequest() && $request->isGet()) {
+                $this->getResponse()->setHttpResponseCode(422);
 
-                if (! $this->allowsObject($this->object)) {
-                    $this->object = null;
-                    throw new NotFoundError('No such object available');
-                }
-            } elseif ($this->getRequest()->isApiRequest()) {
-                if ($this->getRequest()->isGet()) {
-                    $this->getResponse()->setHttpResponseCode(422);
-
-                    throw new InvalidPropertyException(
-                        'Cannot load object, missing parameters'
-                    );
-                }
+                throw new InvalidPropertyException(
+                    'Cannot load object, missing parameters'
+                );
             }
 
-            if ($this->object !== null) {
-                $this->addDeploymentLink();
+            return null;
+        }
+
+        return $this->requireUuid($key);
+    }
+
+    protected function loadObject()
+    {
+        if ($this->object) {
+            throw new ProgrammingError('Loading an object twice is not very efficient');
+        }
+
+        $this->object = $this->loadSpecificObject($this->getTableName(), $this->getUuidFromUrl(), true);
+    }
+
+    protected function loadSpecificObject($tableName, $key, $showHint = false)
+    {
+        $branch = $this->getBranch();
+        $branchedObject = BranchedObject::load($this->db(), $tableName, $key, $branch);
+        $object = $branchedObject->getBranchedDbObject($this->db());
+        assert($object instanceof IcingaObject);
+        $object->setBeingLoadedFromDb();
+        if (! $this->allowsObject($object)) {
+            throw new NotFoundError('No such object available');
+        }
+        if ($showHint && $branch->isBranch() && ! $this->getRequest()->isApiRequest()) {
+            $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), $branchedObject));
+        }
+
+        return $object;
+    }
+
+    protected function requireUuid($key)
+    {
+        if (! $key instanceof UuidInterface) {
+            $key = UuidLookup::findUuidForKey($key, $this->getTableName(), $this->db(), $this->getBranch());
+            if ($key === null) {
+                throw new NotFoundError('No such object available');
             }
         }
 
-        return $this->object;
+        return $key;
+    }
+
+    protected function getTableName()
+    {
+        return DbObjectTypeRegistry::tableNameByType($this->getType());
     }
 
     protected function addDeploymentLink()
@@ -491,24 +547,38 @@ abstract class ObjectController extends ActionController
             $info->setObject($this->object);
 
             if (! $this->getRequest()->isApiRequest()) {
-                $this->actions()->add(
-                    DeploymentLinkForm::create(
-                        $this->db(),
-                        $info,
-                        $this->Auth(),
-                        $this->api()
-                    )->handleRequest()
-                );
+                if ($this->getBranch()->isBranch()) {
+                    $this->actions()->add($this->linkToMergeBranch($this->getBranch()));
+                } else {
+                    $this->actions()->add(
+                        DeploymentLinkForm::create(
+                            $this->db(),
+                            $info,
+                            $this->Auth(),
+                            $this->api()
+                        )->handleRequest()
+                    );
+                }
             }
         } catch (IcingaException $e) {
             // pass (deployment may not be set up yet)
         }
     }
 
+    protected function linkToMergeBranch(Branch $branch)
+    {
+        $link = Branch::requireHook()->linkToBranch($branch, $this->Auth(), $this->translate('Merge'));
+        if ($link instanceof Link) {
+            $link->addAttributes(['class' => 'icon-flapping']);
+        }
+
+        return $link;
+    }
+
     protected function addBackToObjectLink()
     {
         $params = [
-            'name' => $this->object->getObjectName(),
+            'uuid' => $this->object->getUniqueId()->toString(),
         ];
 
         if ($this->object instanceof IcingaService) {
@@ -552,6 +622,9 @@ abstract class ObjectController extends ActionController
         if ($object !== null) {
             $form->setObject($object);
         }
+        if (true || $form->supportsBranches()) {
+            $form->setBranch($this->getBranch());
+        }
 
         $this->onObjectFormLoaded($form);
 
@@ -588,5 +661,31 @@ abstract class ObjectController extends ActionController
         }
 
         return $this->object;
+    }
+
+    protected function showOptionalBranchActivity($activityTable)
+    {
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && (int) $this->params->get('page', '1') === 1) {
+            $table = new BranchActivityTable($branch->getUuid(), $this->db(), $this->object->getUniqueId());
+            if (count($table) > 0) {
+                $this->content()->add(Hint::info(Html::sprintf($this->translate(
+                    'The following modifications are visible in this %s only...'
+                ), Branch::requireHook()->linkToBranch(
+                    $branch,
+                    $this->Auth(),
+                    $this->translate('configuration branch')
+                ))));
+                $this->content()->add($table);
+                if (count($activityTable) === 0) {
+                    return;
+                }
+                $this->content()->add(Html::tag('br'));
+                $this->content()->add(Hint::ok($this->translate(
+                    '...and the modifications below are already in the main branch:'
+                )));
+                $this->content()->add(Html::tag('br'));
+            }
+        }
     }
 }

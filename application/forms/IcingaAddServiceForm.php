@@ -100,15 +100,12 @@ class IcingaAddServiceForm extends DirectorObjectForm
 
             return $this;
         }
-
-        $this->addElement('select', 'imports', [
+        $this->addElement('text', 'imports', [
             'label'        => $this->translate('Service'),
-            'description'  => $this->translate(
-                'Choose a service template'
-            ),
+            'description'  => $this->translate('Choose a service template'),
             'required'     => true,
-            'multiOptions' => $this->optionalEnum($enum),
-            'class'        => 'autosubmit'
+            'data-suggestion-context' => 'servicetemplates',
+            'class'        => 'autosubmit director-suggest'
         ]);
 
         return $this;
@@ -164,10 +161,11 @@ class IcingaAddServiceForm extends DirectorObjectForm
         $plain = $this->object->toPlainObject();
         $db = $this->object->getConnection();
 
+        // TODO: Test this:
         foreach ($this->hosts as $host) {
-            IcingaService::fromPlainObject($plain, $db)
-                ->set('host_id', $host->get('id'))
-                ->store();
+            $service = IcingaService::fromPlainObject($plain, $db)
+                ->set('host_id', $host->get('id'));
+            $this->getDbObjectStore()->store($service);
         }
 
         $msg = sprintf(

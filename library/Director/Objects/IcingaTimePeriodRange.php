@@ -29,7 +29,7 @@ class IcingaTimePeriodRange extends DbObject
             return false;
         }
 
-        if ((int) strftime('%w', $now) !== $weekDay) {
+        if ((int) date('w', $now) !== $weekDay) {
             return false;
         }
 

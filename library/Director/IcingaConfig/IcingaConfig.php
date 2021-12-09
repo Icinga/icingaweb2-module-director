@@ -11,7 +11,6 @@ use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\ShipConfigFilesHook;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Util;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaZone;
 use InvalidArgumentException;
@@ -270,7 +269,7 @@ class IcingaConfig
         $checksum = $this->calculateChecksum();
         $activity = $this->getLastActivityChecksum();
 
-        $lastActivity = $this->binFromDb(
+        $lastActivity = $this->connection->binaryDbResult(
             $this->db->fetchOne(
                 $this->db->select()->from(
                     self::$table,
@@ -310,20 +309,7 @@ class IcingaConfig
 
     protected function dbBin($binary)
     {
-        if ($this->connection->isPgsql()) {
-            return Util::pgBinEscape($binary);
-        } else {
-            return $binary;
-        }
-    }
-
-    protected function binFromDb($value)
-    {
-        if (is_resource($value)) {
-            return stream_get_contents($value);
-        }
-
-        return $value;
+        return $this->connection->quoteBinary($binary);
     }
 
     protected function calculateChecksum()
@@ -411,25 +397,31 @@ class IcingaConfig
         }
 
         $activity = $this->dbBin($this->getLastActivityChecksum());
-        $this->db->insert(
-            self::$table,
-            array(
+        $this->db->beginTransaction();
+        try {
+            $this->db->insert(self::$table, [
                 'duration'                => $this->generationTime,
                 'first_activity_checksum' => $activity,
                 'last_activity_checksum'  => $activity,
                 'checksum'                => $this->dbBin($this->getChecksum()),
-            )
-        );
-        /** @var IcingaConfigFile $file */
-        foreach ($this->files as $name => $file) {
-            $this->db->insert(
-                'director_generated_config_file',
-                array(
+            ]);
+            /** @var IcingaConfigFile $file */
+            foreach ($this->files as $name => $file) {
+                $this->db->insert('director_generated_config_file', [
                     'config_checksum' => $this->dbBin($this->getChecksum()),
                     'file_checksum'   => $this->dbBin($file->getChecksum()),
                     'file_path'       => $name,
-                )
-            );
+                ]);
+            }
+            $this->db->commit();
+        } catch (\Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (\Exception $ignored) {
+                // Well...
+            }
+
+            throw $e;
         }
 
         return $this;
@@ -593,9 +585,9 @@ if (! globals.contains(DirectorOverrideTemplate)) {
             throw new NotFoundError('Got no config for %s', bin2hex($checksum));
         }
 
-        $this->checksum = $this->binFromDb($result->checksum);
+        $this->checksum = $this->connection->binaryDbResult($result->checksum);
         $this->generationTime = $result->duration;
-        $this->lastActivityChecksum = $this->binFromDb($result->last_activity_checksum);
+        $this->lastActivityChecksum = $this->connection->binaryDbResult($result->last_activity_checksum);
 
         $query = $this->db->select()->from(
             array('cf' => 'director_generated_config_file'),

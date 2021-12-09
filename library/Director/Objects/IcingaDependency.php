@@ -16,6 +16,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
 
     protected $defaultProperties = [
         'id'                     => null,
+        'uuid'                   => null,
         'object_name'            => null,
         'object_type'            => null,
         'disabled'               => 'n',
@@ -34,6 +35,8 @@ class IcingaDependency extends IcingaObject implements ExportInterface
         'parent_service_by_name' => null,
     ];
 
+    protected $uuidColumn = 'uuid';
+
     protected $supportsCustomVars = false;
 
     protected $supportsImports = true;
@@ -44,7 +47,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
      * @internal
      * @var bool
      */
-    protected $renderForArray = false;
+    protected $renderApplyForArray = false;
 
     protected $relatedSets = [
         'states' => 'StateFilterSet',
@@ -138,14 +141,14 @@ class IcingaDependency extends IcingaObject implements ExportInterface
                 );
             }
 
-            if ($this->renderForArray) {
+            if ($this->renderApplyForArray) {
                 return $this->renderArrayObjectHeader($to);
-            } else {
-                return $this->renderSingleObjectHeader($to);
             }
-        } else {
-            return parent::renderObjectHeader();
+
+            return $this->renderSingleObjectHeader($to);
         }
+
+        return parent::renderObjectHeader();
     }
 
     protected function renderSingleObjectHeader($to)
@@ -180,27 +183,31 @@ class IcingaDependency extends IcingaObject implements ExportInterface
             return parent::renderSuffix();
         }
 
-        if (\strlen($this->get('assign_filter')) > 0) {
+        if ((string) $this->get('assign_filter') !== '') {
             $suffix = parent::renderSuffix();
         } else {
             $suffix = '    assign where ' . $this->renderAssignFilterExtension('')
                 . "\n" . parent::renderSuffix();
         }
 
-
-        if ($this->renderForArray) {
+        if ($this->renderApplyForArray) {
             return $suffix;
-        } else {
-            return $suffix . $this->renderCloneForArray();
         }
+
+        return $suffix . $this->renderApplyForArrayClone();
     }
 
-    protected function renderCloneForArray()
+    protected function renderApplyForArrayClone()
     {
         $clone = clone($this);
-        $clone->renderForArray = true;
+        $clone->renderApplyForArray = true;
 
         return $clone->toConfigString();
+    }
+
+    public function isApplyForArrayClone()
+    {
+        return $this->renderApplyForArray;
     }
 
     /**
@@ -214,19 +221,19 @@ class IcingaDependency extends IcingaObject implements ExportInterface
                 $this->renderAssignFilterExtension() . "\n",
                 parent::renderAssign_Filter()
             );
-        } else {
-            return parent::renderAssign_Filter();
         }
+
+        return parent::renderAssign_Filter();
     }
 
     protected function renderAssignFilterExtension($pre = ' && ')
     {
         $varName = $this->get('parent_host_var');
-        if ($this->renderForArray) {
+        if ($this->renderApplyForArray) {
             return sprintf('%stypeof(%s) == Array', $pre, $varName);
-        } else {
-            return sprintf('%stypeof(%s) == String', $pre, $varName);
         }
+
+        return sprintf('%stypeof(%s) == String', $pre, $varName);
     }
 
     protected function setKey($key)
@@ -408,7 +415,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     public function renderParent_host_var()
     {
         // @codingStandardsIgnoreEnd
-        if ($this->renderForArray) {
+        if ($this->renderApplyForArray) {
             return c::renderKeyValue(
                 'parent_host_name',
                 'host_parent_name'
@@ -598,14 +605,11 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     protected function fetchAllApplyRules()
     {
         $db = $this->connection->getDbAdapter();
-        $query = $db->select()->from(
-            array('s' => 'icinga_service'),
-            array(
-                'id'            => 's.id',
-                'name'          => 's.object_name',
-                'assign_filter' => 's.assign_filter',
-            )
-        )->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
+        $query = $db->select()->from(['s' => 'icinga_service'], [
+            'id'            => 's.id',
+            'name'          => 's.object_name',
+            'assign_filter' => 's.assign_filter',
+        ])->where('object_type = ? AND assign_filter IS NOT NULL', 'apply');
 
         return $db->fetchAll($query);
     }

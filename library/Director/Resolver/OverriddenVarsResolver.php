@@ -2,10 +2,9 @@
 
 namespace Icinga\Module\Director\Resolver;
 
+use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaHost;
-use Icinga\Module\Director\Objects\IcingaService;
-use Icinga\Util\Json;
 
 class OverriddenVarsResolver
 {
@@ -13,26 +12,34 @@ class OverriddenVarsResolver
     protected $db;
 
     /** @var string */
-    protected $varName;
+    protected $overrideVarName;
 
     public function __construct(Db $connection)
     {
-        $this->varName = $connection->settings()->override_services_varname;
+        $this->overrideVarName = $connection->settings()->get('override_services_varname');
         $this->db = $connection->getDbAdapter();
     }
 
-    public function resolveFor(IcingaHost $host, IcingaService $service = null)
+    public function fetchForHost(IcingaHost $host)
     {
-        $parents = $host->listFlatResolvedImportNames();
-        $query = $this->db->select()->from(['hv' => 'icinga_host_var'], [
-            'host_name' => 'h.object_name',
-            'varvalue'  => 'hv.varvalue',
-        ])->join(
-            ['h' => 'icinga_host'],
-            'h.id = hv.host_id',
-            []
-        )->where('hv.varname = ?', $this->varName)->where('h.object_name IN (?)', $parents);
         $overrides = [];
+        $parents = $host->listFlatResolvedImportNames();
+        if (empty($parents)) {
+            return $overrides;
+        }
+        $query = $this->db->select()
+            ->from(['hv' => 'icinga_host_var'], [
+                'host_name' => 'h.object_name',
+                'varvalue'  => 'hv.varvalue',
+            ])
+            ->join(
+                ['h' => 'icinga_host'],
+                'h.id = hv.host_id',
+                []
+            )
+            ->where('hv.varname = ?', $this->overrideVarName)
+            ->where('h.object_name IN (?)', $parents);
+
         foreach ($this->db->fetchAll($query) as $row) {
             if ($row->varvalue === null) {
                 continue;
@@ -42,15 +49,26 @@ class OverriddenVarsResolver
             }
         }
 
-        if ($service) {
-            $name = $service->getObjectName();
-            if (isset($overrides[$name])) {
-                return $overrides[$name];
-            } else {
-                return [];
-            }
+        return $overrides;
+    }
+
+    public function fetchForServiceName(IcingaHost $host, $serviceName)
+    {
+        $overrides = $this->fetchForHost($host);
+        if (isset($overrides[$serviceName])) {
+            return $overrides[$serviceName];
         }
 
-        return $overrides;
+        return [];
+    }
+
+    public function fetchVarForServiceName(IcingaHost $host, $serviceName, $varName)
+    {
+        $overrides = $this->fetchForHost($host);
+        if (isset($overrides[$serviceName][$varName])) {
+            return $overrides[$serviceName][$varName];
+        }
+
+        return null;
     }
 }

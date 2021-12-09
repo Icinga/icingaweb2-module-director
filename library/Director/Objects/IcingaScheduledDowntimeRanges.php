@@ -27,11 +27,13 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
         $this->object = $object;
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->ranges);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = 0;
@@ -42,6 +44,7 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
         return $this->modified;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (! $this->valid()) {
@@ -51,16 +54,19 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
         return $this->ranges[$this->idx[$this->position]];
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->idx[$this->position];
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         ++$this->position;
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return array_key_exists($this->position, $this->idx);
@@ -211,13 +217,18 @@ class IcingaScheduledDowntimeRanges implements Iterator, Countable, IcingaConfig
             ->order('o.range_key');
 
         $this->ranges = IcingaScheduledDowntimeRange::loadAll($connection, $query, 'range_key');
-        $this->storedRanges = array();
+        $this->setBeingLoadedFromDb();
+
+        return $this;
+    }
+
+    public function setBeingLoadedFromDb()
+    {
+        $this->storedRanges = [];
 
         foreach ($this->ranges as $key => $range) {
             $this->storedRanges[$key] = clone($range);
         }
-
-        return $this;
     }
 
     public function store()
