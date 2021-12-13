@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Web\Table\ObjectsTableService;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
@@ -24,7 +25,6 @@ use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Web\SelfService;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedForServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
-use Icinga\Module\Director\Web\Table\IcingaHostServiceTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 
 class HostController extends ObjectController
@@ -210,7 +210,7 @@ class HostController extends ObjectController
             return;
         }
         $content = $this->content();
-        $table = IcingaHostServiceTable::load($host)
+        $table = (new ObjectsTableService($this->db()))->setAuth($this->Auth())->setHost($host)
             ->setTitle($this->translate('Individual Service objects'));
         if ($branch->isBranch()) {
             $table->setBranchUuid($branch->getUuid());
@@ -224,7 +224,10 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = IcingaHostServiceTable::load($parent)->setInheritedBy($host);
+            $table = (new ObjectsTableService($this->db()))
+                ->setAuth($this->Auth())
+                ->setHost($parent)
+                ->setInheritedBy($host);
             if (count($table)) {
                 $content->add(
                     $table->setTitle(sprintf(
@@ -279,7 +282,10 @@ class HostController extends ObjectController
         $this->addSingleTab($this->translate('Configuration (read-only)'));
         $this->addTitle($this->translate('Services on %s'), $host->getObjectName());
         $content = $this->content();
-        $table = IcingaHostServiceTable::load($host)
+
+        $table = (new ObjectsTableService($db))
+            ->setAuth($this->Auth())
+            ->setHost($host)
             ->setReadonly()
             ->highlightService($service)
             ->setTitle($this->translate('Individual Service objects'));
@@ -292,8 +298,9 @@ class HostController extends ObjectController
         $parents = IcingaTemplateRepository::instanceByObject($this->object)
             ->getTemplatesFor($this->object, true);
         foreach ($parents as $parent) {
-            $table = IcingaHostServiceTable::load($parent)
+            $table = (new ObjectsTableService($db))
                 ->setReadonly()
+                ->setHost($parent)
                 ->highlightService($service)
                 ->setInheritedBy($host);
             if (count($table)) {
