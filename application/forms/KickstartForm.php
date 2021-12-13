@@ -75,7 +75,7 @@ class KickstartForm extends DirectorForm
             $hint = Html::sprintf(
                 $this->translate('Your database looks good, you are ready to %s'),
                 Link::create(
-                    'start working with the Icinga Director',
+                    $this->translate('start working with the Icinga Director'),
                     'director',
                     null,
                     ['data-base-target' => '_main']
