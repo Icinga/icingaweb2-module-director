@@ -2,11 +2,14 @@
 
 namespace Icinga\Module\Director\Web\Controller;
 
+use Exception;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
+use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -189,24 +192,31 @@ abstract class ObjectsController extends ActionController
         }
 
         $objects = $this->loadMultiObjectsFromParams();
-        $formName = 'icinga' . $type;
-        $form = IcingaMultiEditForm::load()
-            ->setObjects($objects)
-            ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
-        if ($type === 'Service') {
-            $form->setListUrl('director/services');
-        } elseif ($type === 'Host') {
-            $form->setListUrl('director/hosts');
+
+        if ($objects) {
+            $formName = 'icinga' . $type;
+            $form = IcingaMultiEditForm::load()
+                ->setObjects($objects)
+                ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
+            if ($type === 'Service') {
+                $form->setListUrl('director/services');
+            } elseif ($type === 'Host') {
+                $form->setListUrl('director/hosts');
+            }
+
+            $form->handleRequest();
+
+            $this
+                ->addSingleTab($this->translate('Multiple objects'))
+                ->addTitle(
+                    $this->translate('Modify %d objects'),
+                    count($objects)
+                )->content()->add($form);
+        } else {
+            throw new Exception(
+                'No objects found.'
+            );
         }
-
-        $form->handleRequest();
-
-        $this
-            ->addSingleTab($this->translate('Multiple objects'))
-            ->addTitle(
-                $this->translate('Modify %d objects'),
-                count($objects)
-            )->content()->add($form);
     }
 
     /**
@@ -370,8 +380,9 @@ abstract class ObjectsController extends ActionController
     {
         $filter = Filter::fromQueryString($this->params->toString());
         $type = $this->getType();
-        $objects = array();
         $db = $this->db();
+        $nameCol = [];
+        $idCol = [];
         /** @var $filter FilterChain */
         foreach ($filter->filters() as $sub) {
             /** @var $sub FilterChain */
@@ -380,21 +391,53 @@ abstract class ObjectsController extends ActionController
                 $col = $ex->getColumn();
                 if ($ex->isExpression()) {
                     if ($col === 'name') {
-                        $name = $ex->getExpression();
-                        if ($type === 'service') {
-                            $key = [
-                                'object_type' => 'template',
-                                'object_name' => $name
-                            ];
-                        } else {
-                            $key = $name;
-                        }
-                        $objects[$name] = IcingaObject::loadByType($type, $key, $db);
+                        $nameCol[] = $ex->getExpression();
                     } elseif ($col === 'id') {
-                        $name = $ex->getExpression();
-                        $objects[$name] = IcingaObject::loadByType($type, ['id' => $name], $db);
+                        $idCol[] = $ex->getExpression();
                     }
                 }
+            }
+        }
+
+        $query = $db->select()
+            ->from(DbObjectTypeRegistry::tableNameByType($type), ['*']);
+
+        $objectsWihIDKey = [];
+        if (count($idCol) > 0 ) {
+            $query->where('id', $idCol);
+            $objectsWihIDKey = IcingaObject::loadAllByType($type, $db, $query, 'id');
+        }
+
+        $objectsWihNameKey = [];
+        if (count($nameCol) > 0) {
+            if ($type === 'service') {
+                $query ->where('object_type', 'template');
+            }
+
+            $query->where('object_name', $nameCol);
+
+            $objectsWihNameKey = IcingaObject::loadAllByType($type, $db, $query, 'object_name');
+        }
+
+        $objects = array_merge($objectsWihIDKey, $objectsWihNameKey);
+
+        $missingObjects = array_diff(array_merge($idCol, $nameCol), array_keys($objects));
+
+        if (count($missingObjects) > 0) {
+            if (count($missingObjects) === count(array_merge($idCol, $nameCol))) {
+                throw new Exception(
+                    'These objects have not been found.'
+                );
+            } else {
+                $this->content()->prepend(
+                    Hint::warning(
+                        $this->translate(
+                            sprintf(
+                                'All these object(s) have not been found %s: ',
+                                implode(', ', $missingObjects))
+                        )
+                    )
+                );
             }
         }
 

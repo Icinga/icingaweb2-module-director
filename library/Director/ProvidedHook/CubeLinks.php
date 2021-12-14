@@ -34,7 +34,7 @@ class CubeLinks extends ActionsHook
 
             $title = $view->translate('Modify a host');
             $description = sprintf(
-                $view->translate('This allows you to modify properties for "%s"'),
+                $view->translate('This allows you to modify properties for "%s" (deployed from director)'),
                 $hosts[0]
             );
         } else {
@@ -49,9 +49,9 @@ class CubeLinks extends ActionsHook
 
             $url = 'director/hosts/edit?' . $filter->toQueryString();
 
-            $title = sprintf($view->translate('Modify %d hosts'), $count);
+            $title = sprintf($view->translate('Modify %d hosts'), count($hosts));
             $description = $view->translate(
-                'This allows you to modify properties for all chosen hosts at once'
+                'This allows you to modify properties for all chosen hosts (deployed from director) at once'
             );
         }
 
