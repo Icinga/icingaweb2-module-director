@@ -14,6 +14,7 @@ use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use gipfl\IcingaWeb2\Zf1\Db\FilterRenderer;
+use Ramsey\Uuid\Uuid;
 use Zend_Db_Select as ZfSelect;
 
 class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
@@ -76,7 +77,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
                     'imports' => $name
                 ]),
                 new Link(new Icon('history'), "director/$type/history", [
-                    'name' => $name
+                    'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
                 ])
             ]
         ]);
@@ -139,6 +140,7 @@ class TemplatesTable extends ZfQueryBasedTable implements FilterableByUsage
 
         $columns = [
             'object_name' => 'o.object_name',
+            'uuid'    => 'o.uuid',
             'id'      => 'o.id',
             'is_used' => $used,
         ];
