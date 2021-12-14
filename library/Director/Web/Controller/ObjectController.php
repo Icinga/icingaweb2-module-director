@@ -132,6 +132,11 @@ abstract class ObjectController extends ActionController
         }
 
         if ($oType === 'template') {
+            if ($this->showNotInBranch($this->translate('Creating Templates'))) {
+                $this->addTitle($this->translate('Create a new Template'));
+                return;
+            }
+
             $this->addTemplate();
         } else {
             $this->addObject();
@@ -148,8 +153,15 @@ abstract class ObjectController extends ActionController
     {
         $object = $this->requireObject();
         $this->tabs()->activate('modify');
-        $this->addObjectTitle()
-             ->addObjectForm($object)
+        $this->addObjectTitle();
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
+            return;
+        }
+        if ($object->isApplyRule() && $this->showNotInBranch($this->translate('Modifying Apply Rules'))) {
+            return;
+        }
+
+        $this->addObjectForm($object)
              ->addActionClone()
              ->addActionUsage()
              ->addActionBasket();
@@ -179,6 +191,17 @@ abstract class ObjectController extends ActionController
     {
         $this->assertTypePermission();
         $object = $this->requireObject();
+        $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
+            ->addBackToObjectLink();
+
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Templates'))) {
+            return;
+        }
+
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Cloning Apply Rules'))) {
+            return;
+        }
+
         $form = IcingaCloneObjectForm::load()
             ->setBranch($this->getBranch())
             ->setObject($object)
@@ -190,9 +213,7 @@ abstract class ObjectController extends ActionController
         } else {
             $this->tabs()->activate('modify');
         }
-        $this->addTitle($this->translate('Clone: %s'), $object->getObjectName())
-            ->addBackToObjectLink()
-            ->content()->add($form);
+        $this->content()->add($form);
     }
 
     /**
@@ -210,6 +231,10 @@ abstract class ObjectController extends ActionController
             $object->getObjectName()
         );
         $this->tabs()->activate('fields');
+        if ($this->showNotInBranch($this->translate('Managing Fields'))) {
+            return;
+        }
+
         try {
             $this->addFieldsFormAndTable($object, $type);
         } catch (NestingError $e) {
@@ -516,7 +541,7 @@ abstract class ObjectController extends ActionController
         if (! $this->allowsObject($object)) {
             throw new NotFoundError('No such object available');
         }
-        if ($showHint && $branch->isBranch() && ! $this->getRequest()->isApiRequest()) {
+        if ($showHint && $branch->isBranch() && $object->isObject() && ! $this->getRequest()->isApiRequest()) {
             $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), $branchedObject));
         }
 

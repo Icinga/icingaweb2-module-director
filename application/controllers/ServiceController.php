@@ -140,6 +140,9 @@ class ServiceController extends ObjectController
         /** @var IcingaService $object */
         $object = $this->object;
         $this->addTitle($object->getObjectName());
+        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
+            return;
+        }
 
         $form = IcingaServiceForm::load()->setDb($this->db());
         $form->setBranch($this->getBranch());
