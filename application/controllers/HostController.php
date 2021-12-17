@@ -235,7 +235,7 @@ class HostController extends ObjectController
             if (count($table)) {
                 $content->add(
                     $table->setTitle(sprintf(
-                        'Inherited from %s',
+                        $this->translate('Inherited from %s'),
                         $parent->getObjectName()
                     ))
                 );
