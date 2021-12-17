@@ -298,17 +298,16 @@ class ObjectsTable extends ZfQueryBasedTable
             $columns = $this->branchifyColumns($columns);
             $this->stripSearchColumnAliases();
         }
-        $query = $this->applyRestrictions(
-            $this->db()
-                ->select()
-                ->from(
-                    ['o' => $table],
-                    $columns
-                )
-        );
+        $query = $this->db()->select()->from(['o' => $table], $columns);
 
         if ($this->branchUuid) {
             $right = clone($query);
+            // Hint: Right part has only those with object = null
+            //       This means that restrictions on $right would hide all
+            //       new rows. Dedicated restriction logic for the branch-only
+            //       part of thw union are not required, we assume that restrictions
+            //       for new objects have been checked once they have been created
+            $query = $this->applyRestrictions($query);
             /** @var Db $conn */
             $conn = $this->connection();
             $query->joinLeft(
