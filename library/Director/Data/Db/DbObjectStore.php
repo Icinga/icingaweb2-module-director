@@ -6,6 +6,7 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchActivity;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * Loader for Icinga/DbObjects
@@ -26,6 +27,30 @@ class DbObjectStore
     {
         $this->connection = $connection;
         $this->branch = $branch;
+    }
+
+    /**
+     * @param $tableName
+     * @param UuidInterface $uuid
+     * @return DbObject|null
+     * @throws \Icinga\Exception\NotFoundError
+     */
+    public function load($tableName, UuidInterface $uuid)
+    {
+        $branchedObject = BranchedObject::load($this->connection, $tableName, $uuid, $this->branch);
+        $object = $branchedObject->getBranchedDbObject($this->connection);
+        if ($object === null) {
+            return null;
+        }
+
+        $object->setBeingLoadedFromDb();
+
+        return $object;
+    }
+
+    public function exists($tableName, UuidInterface $uuid)
+    {
+        return BranchedObject::exists($this->connection, $tableName, $uuid, $this->branch->getUuid());
     }
 
     public function store(DbObject $object)
@@ -60,5 +85,10 @@ class DbObjectStore
         }
 
         return $object->delete();
+    }
+
+    public function getBranch()
+    {
+        return $this->branch;
     }
 }

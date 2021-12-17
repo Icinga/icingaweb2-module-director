@@ -31,7 +31,7 @@ class UuidLookup
     ) {
         $db = $connection->getDbAdapter();
         $query = $db->select()->from('icinga_service', 'uuid')->where('object_type = ?', $objectType);
-        $query = self::addKeyToQuery($query, $key);
+        $query = self::addKeyToQuery($connection, $query, $key);
         if ($host) {
             $query->add('host_id = ?', $host->get('id'));
         }
@@ -43,7 +43,7 @@ class UuidLookup
         if ($uuid === null && $branch->isBranch()) {
             // TODO: use different tables?
             $query = $db->select()->from('branched_icinga_service', 'uuid')->where('object_type = ?', $objectType);
-            $query = self::addKeyToQuery($query, $key);
+            $query = self::addKeyToQuery($connection, $query, $key);
             if ($host) {
                 // TODO: uuid?
                 $query->add('host = ?', $host->getObjectName());
@@ -60,7 +60,7 @@ class UuidLookup
     public static function findUuidForKey($key, $table, Db $connection, Branch $branch)
     {
         $db = $connection->getDbAdapter();
-        $query = self::addKeyToQuery($db->select()->from($table, 'uuid'), $key);
+        $query = self::addKeyToQuery($connection, $db->select()->from($table, 'uuid'), $key);
         $uuid = self::fetchOptionalUuid($connection, $query);
         if ($uuid === null && $branch->isBranch()) {
             $query = $db->select()->from("branched_$table", 'uuid')->where('object_name = ?', $key);
@@ -70,14 +70,16 @@ class UuidLookup
         return $uuid;
     }
 
-    protected static function addKeyToQuery($query, $key)
+    protected static function addKeyToQuery(Db $connection, $query, $key)
     {
         if (is_int($key)) {
             $query->where('id = ?', $key);
         } elseif (is_string($key)) {
             $query->where('object_name = ?', $key);
         } else {
-            throw new RuntimeException('Cannot deal with non-int/string keys for UUID fallback');
+            foreach ($key as $k => $v) {
+                $query->where($connection->getDbAdapter()->quoteIdentifier($k) . ' = ?', $v);
+            }
         }
 
         return $query;

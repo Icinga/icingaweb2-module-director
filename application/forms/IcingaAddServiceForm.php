@@ -153,7 +153,11 @@ class IcingaAddServiceForm extends DirectorObjectForm
     public function onSuccess()
     {
         if ($this->host !== null) {
-            $this->object->set('host_id', $this->host->get('id'));
+            if ($id = $this->host->get('id')) {
+                $this->object->set('host_id', $this->host->get('id'));
+            } else {
+                $this->object->set('host', $this->host->getObjectName());
+            }
             parent::onSuccess();
             return;
         }

@@ -9,6 +9,7 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -528,6 +529,25 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this;
+    }
+
+    public function getUnresolvedRelated($property)
+    {
+        if ($this->hasRelation($property)) {
+            $property .= '_id';
+            if (isset($this->unresolvedRelatedProperties[$property])) {
+                return $this->unresolvedRelatedProperties[$property];
+            }
+
+            return null;
+        }
+
+        throw new RuntimeException(sprintf(
+            '%s "%s" has no %s reference',
+            $this->getShortTableName(),
+            $this->getObjectName(),
+            $property
+        ));
     }
 
     /**
@@ -1695,11 +1715,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         try {
             $object->renderToConfig($config);
         } catch (Exception $e) {
+            $message = $e->getMessage();
+            $showTrace = false;
+            if ($showTrace) {
+                $message .= "\n" . $e->getTraceAsString();
+            }
             $config->configFile(
                 'failed-to-render'
             )->prepend(
                 "/** Failed to render this object **/\n"
-                . '/*  ' . $e->getMessage() . ' */'
+                . '/*  ' . $message . ' */'
             );
         }
         if ($wasExternal) {
