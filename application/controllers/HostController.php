@@ -207,12 +207,7 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addTitle($this->translate('Services: %s'), $host->getObjectName());
         $branch = $this->getBranch();
-        if ($branch->isBranch() && $host->get('id') === null) {
-            $this->content()->add(Hint::info(
-                $this->translate('Managing services on new Hosts is possible only after they have been merged.')
-            ));
-            return;
-        }
+        $hostHasBeenCreatedInBranch = $branch->isBranch() && $host->get('id');
         $content = $this->content();
         $table = (new ObjectsTableService($this->db()))->setAuth($this->Auth())->setHost($host)
             ->setTitle($this->translate('Individual Service objects'));
@@ -242,7 +237,9 @@ class HostController extends ObjectController
             }
         }
 
-        $this->addHostServiceSetTables($host);
+        if (! $hostHasBeenCreatedInBranch) {
+            $this->addHostServiceSetTables($host);
+        }
         foreach ($parents as $parent) {
             $this->addHostServiceSetTables($parent, $host);
         }
@@ -355,6 +352,9 @@ class HostController extends ObjectController
         $db = $this->db();
         if ($affectedHost === null) {
             $affectedHost = $host;
+        }
+        if ($host->get('id') === null) {
+            return;
         }
 
         $query = $db->getDbAdapter()->select()
