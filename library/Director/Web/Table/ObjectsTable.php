@@ -343,38 +343,4 @@ class ObjectsTable extends ZfQueryBasedTable
 
         return $query;
     }
-
-    protected static function branchifyQuery(Db $connection, $query, $table, UuidInterface $branchUuid)
-    {
-        $right = clone($query);
-        /** @var Db $conn */
-        $conn = $connection;
-        $db = $connection->getDbAdapter();
-        $query->joinLeft(
-            ['bo' => "branched_$table"],
-            // TODO: PgHexFunc
-            $db->quoteInto(
-                'bo.uuid = o.uuid AND bo.branch_uuid = ?',
-                $conn->quoteBinary($branchUuid->getBytes())
-            ),
-            []
-        )->where("(bo.branch_deleted IS NULL OR bo.branch_deleted = 'n')");
-        $this->applyObjectTypeFilter($query, $right);
-        $right->joinRight(
-            ['bo' => "branched_$table"],
-            'bo.uuid = o.uuid',
-            []
-        )
-            ->where('o.uuid IS NULL')
-            ->where('bo.branch_uuid = ?', $conn->quoteBinary($branchUuid->getBytes()));
-        $this->leftSubQuery = $query;
-        $this->rightSubQuery = $right;
-        $query = $db->select()->union([
-            'l' => new DbSelectParenthesis($query),
-            'r' => new DbSelectParenthesis($right),
-        ]);
-        $query = $db->select()->from(['u' => $query]);
-        $query->order('object_name')->limit(100);
-
-    }
 }
