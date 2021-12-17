@@ -344,6 +344,23 @@ class BranchedObject
         return $self;
     }
 
+    public static function exists(
+        Db $connection,
+           $table,
+        UuidInterface $uuid,
+        UuidInterface $branchUuid = null
+    ) {
+        if (static::optionalTableRowByUuid($connection, $table, $uuid)) {
+            return true;
+        }
+
+        if ($branchUuid && static::optionalBranchedTableRowByUuid($connection, $table, $uuid, $branchUuid)) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * @param Db $connection
      * @param string $table

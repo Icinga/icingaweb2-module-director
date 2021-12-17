@@ -7,6 +7,7 @@ use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Monitoring;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -49,11 +50,13 @@ class ServiceController extends ObjectController
     {
         $host = $this->params->get('host', $this->params->get('host_id'));
         if ($host === null && $this->object) {
-            if ($host = $this->object->get('host_id')) {
-                $host = (int) $host;
-            } else {
-                $host = $this->object->get('host');
-                // We reach this when accessing Service Template Fields
+            if (null === $host = $this->object->getUnresolvedRelated('host')) {
+                if ($host = $this->object->get('host_id')) {
+                    $host = (int) $host;
+                } else {
+                    $host = $this->object->get('host');
+                    // We reach this when accessing Service Template Fields
+                }
             }
         }
 

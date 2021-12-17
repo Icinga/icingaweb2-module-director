@@ -62,6 +62,7 @@ abstract class ObjectController extends ActionController
     public function init()
     {
         parent::init();
+        $this->enableStaticObjectLoader($this->getTableName());
 
         if ($this->getRequest()->isApiRequest()) {
             $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());

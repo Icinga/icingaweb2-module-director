@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Data\Db;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\InvalidDataException;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use InvalidArgumentException;
 use LogicException;
@@ -90,6 +91,9 @@ abstract class DbObject
     protected static $prefetchedNames = array();
 
     protected static $prefetchStats = array();
+
+    /** @var ?DbObjectStore */
+    protected static $dbObjectStore;
 
     /**
      * Constructor is not accessible and should not be overridden
@@ -223,6 +227,11 @@ abstract class DbObject
         $this->db = $connection->getDbAdapter();
 
         return $this;
+    }
+
+    public static function setDbObjectStore(DbObjectStore $store)
+    {
+        self::$dbObjectStore = $store;
     }
 
     /**
@@ -992,6 +1001,12 @@ abstract class DbObject
 
     public function createWhere()
     {
+        if ($this->hasUuidColumn() && $this->properties[$this->uuidColumn] !== null) {
+            return $this->db->quoteInto(
+                sprintf('%s = ?', $this->getUuidColumn()),
+                $this->connection->quoteBinary($this->getUniqueId()->getBytes())
+            );
+        }
         if ($id = $this->getAutoincId()) {
             if ($originalId = $this->getOriginalProperty($this->autoincKeyName)) {
                 return $this->db->quoteInto(
@@ -1220,8 +1235,15 @@ abstract class DbObject
             return $prefetched;
         }
 
-        /** @var DbObject $obj */
         $obj = new static;
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+
+            return self::$dbObjectStore->load($table, $uuid);
+        }
+
         $obj->setConnection($connection)
             ->set($obj->autoincKeyName, $id)
             ->loadFromDb();
@@ -1240,9 +1262,17 @@ abstract class DbObject
         if ($prefetched = static::getPrefetched($id)) {
             return $prefetched;
         }
-
         /** @var DbObject $obj */
         $obj = new static;
+
+        if (self::$dbObjectStore !== null) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+
+            return self::$dbObjectStore->load($table, $uuid);
+        }
+
         $obj->setConnection($connection)->setKey($id)->loadFromDb();
 
         return $obj;
@@ -1341,6 +1371,14 @@ abstract class DbObject
 
         /** @var DbObject $obj */
         $obj = new static;
+        if (self::$dbObjectStore !== null) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+
+            return self::$dbObjectStore->exists($table, $uuid);
+        }
+
         $obj->setConnection($connection)->setKey($id);
         return $obj->existsInDb();
     }
@@ -1376,6 +1414,13 @@ abstract class DbObject
     {
         $db = $connection->getDbAdapter();
         $obj = new static;
+
+        if (self::$dbObjectStore !== null) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            return self::$dbObjectStore->load($table, $uuid);
+        }
+
         $query = $db->select()
             ->from($obj->getTableName())
             ->where($obj->getUuidColumn() . ' = ?', $connection->quoteBinary($uuid->getBytes()));

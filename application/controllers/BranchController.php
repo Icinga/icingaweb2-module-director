@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Controllers;
 use gipfl\Diff\HtmlRenderer\SideBySideDiff;
 use gipfl\Diff\PhpDiff;
 use gipfl\IcingaWeb2\Widget\NameValueTable;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\BranchActivity;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
@@ -18,6 +19,12 @@ use ipl\Html\Html;
 class BranchController extends ActionController
 {
     use BranchHelper;
+
+    public function init()
+    {
+        parent::init();
+        IcingaObject::setDbObjectStore(new DbObjectStore($this->db(), $this->getBranch()));
+    }
 
     protected function checkDirectorPermissions()
     {
