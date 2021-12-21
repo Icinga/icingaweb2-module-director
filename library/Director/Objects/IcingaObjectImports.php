@@ -198,7 +198,7 @@ class IcingaObjectImports implements Iterator, Countable, IcingaConfigRenderer
         if (is_array($import)) {
             foreach ($import as $i) {
                 // Gracefully ignore null members or empty strings
-                if (! $i instanceof $class && strlen($i) === 0) {
+                if (! $i instanceof $class && ($i === null || strlen($i) === 0)) {
                     continue;
                 }
 
