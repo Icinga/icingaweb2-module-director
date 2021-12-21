@@ -712,16 +712,16 @@ abstract class DbObject
      */
     public static function fromDbRow($row, Db $db)
     {
-         $self = (new static())->setConnection($db);
-         if (is_object($row)) {
-             return $self->setDbProperties((array) $row);
-         }
+        $self = (new static())->setConnection($db);
+        if (is_object($row)) {
+            return $self->setDbProperties((array) $row);
+        }
 
-         if (is_array($row)) {
-             return $self->setDbProperties($row);
-         }
+        if (is_array($row)) {
+            return $self->setDbProperties($row);
+        }
 
-         throw new InvalidDataException('array or object', $row);
+        throw new InvalidDataException('array or object', $row);
     }
 
     protected function setDbProperties($properties)
