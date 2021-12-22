@@ -22,7 +22,7 @@ class IcingaDbCubeLinks extends IcingadbHook
      */
     public function prepareActionLinks(BaseCube $cube, View $view)
     {
-        if ( ! $cube instanceof HostCube) {
+        if (! $cube instanceof HostCube) {
             return;
         }
 
@@ -46,7 +46,6 @@ class IcingaDbCubeLinks extends IcingadbHook
                     $chosenHosts[0]
                 );
             }
-
         } else {
             $params = null;
 

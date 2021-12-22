@@ -346,7 +346,7 @@ class BranchedObject
 
     public static function exists(
         Db $connection,
-           $table,
+        $table,
         UuidInterface $uuid,
         UuidInterface $branchUuid = null
     ) {
