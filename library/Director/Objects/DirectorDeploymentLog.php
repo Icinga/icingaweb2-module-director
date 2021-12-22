@@ -91,6 +91,9 @@ class DirectorDeploymentLog extends DbObject
 
     public static function getConfigChecksumForStageName(Db $connection, $stage)
     {
+        if ($stage === null) {
+            return null;
+        }
         $db = $connection->getDbAdapter();
         $query = $db->select()
             ->from(
