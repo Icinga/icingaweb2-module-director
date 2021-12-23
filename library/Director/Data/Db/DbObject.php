@@ -1375,8 +1375,11 @@ abstract class DbObject
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            if ($uuid) {
+                return self::$dbObjectStore->exists($table, $uuid);
+            }
 
-            return self::$dbObjectStore->exists($table, $uuid);
+            return false;
         }
 
         $obj->setConnection($connection)->setKey($id);
