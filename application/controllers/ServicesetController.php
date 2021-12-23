@@ -12,7 +12,6 @@ use Icinga\Module\Director\Web\Table\IcingaHostsMatchingFilterTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetHostTable;
 use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use gipfl\IcingaWeb2\Link;
-use Ramsey\Uuid\Uuid;
 
 class ServicesetController extends ObjectController
 {
@@ -90,7 +89,7 @@ class ServicesetController extends ObjectController
             $table->renderTo($this);
         }
         $filter = $set->get('assign_filter');
-        if (\strlen($filter) > 0) {
+        if ($filter !== null && \strlen($filter) > 0) {
             $this->content()->add(
                 IcingaHostsMatchingFilterTable::load(Filter::fromQueryString($filter), $this->db())
             );
