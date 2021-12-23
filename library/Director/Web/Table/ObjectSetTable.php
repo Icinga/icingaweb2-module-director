@@ -39,20 +39,15 @@ class ObjectSetTable extends ZfQueryBasedTable
 
     public function getColumnsToBeRendered()
     {
-        return ['Name'];
+        return [$this->translate('Name')];
     }
 
     public function renderRow($row)
     {
         $type = $this->getType();
-        if ($row->object_type === 'apply') {
-            $params['id'] = $row->id;
-        } else {
-            $params = [
-                'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
-                'name' => $row->object_name
-                ];
-        }
+        $params = [
+            'uuid' => Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid))->toString(),
+        ];
 
         $url = Url::fromPath("director/${type}set", $params);
 
