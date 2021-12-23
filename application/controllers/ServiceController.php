@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
 use Icinga\Module\Director\Monitoring;
@@ -40,44 +41,56 @@ class ServiceController extends ObjectController
     public function init()
     {
         // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
-        $this->loadOptionalHost();
-        $this->loadOptionalSet();
+        $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
+        $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');
         parent::init();
+        if ($this->object) {
+            if ($this->host === null) {
+                $this->host = $this->loadOptionalRelatedObject($this->object, 'host');
+            }
+            if ($this->set === null) {
+                $this->set = $this->loadOptionalRelatedObject($this->object, 'service_set');
+            }
+        }
         $this->addOptionalHostTabs();
         $this->addOptionalSetTabs();
     }
 
-    protected function loadOptionalHost()
+    protected function getOptionalRelatedObjectFromParams($type, $parameter)
     {
-        $host = $this->params->get('host', $this->params->get('host_id'));
-        if ($host === null && $this->object) {
-            if (null === $host = $this->object->getUnresolvedRelated('host')) {
-                if ($host = $this->object->get('host_id')) {
-                    $host = (int) $host;
-                } else {
-                    $host = $this->object->get('host');
-                    // We reach this when accessing Service Template Fields
-                }
+        if ($id = $this->params->get("${parameter}_id")) {
+            $key = (int) $id;
+        } else {
+            $key = $this->params->get($parameter);
+        }
+        if ($key !== null) {
+            $table = DbObjectTypeRegistry::tableNameByType($type);
+            $key = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
+            return $this->loadSpecificObject($table, $key);
+        }
+
+        return null;
+    }
+
+    protected function loadOptionalRelatedObject(IcingaObject $object, $relation)
+    {
+        $key = $object->getUnresolvedRelated($relation);
+        if ($key === null) {
+            if ($key = $object->get("${relation}_id")) {
+                $key = (int) $key;
+            } else {
+                $key = $object->get($relation);
+                // We reach this when accessing Service Template Fields
             }
         }
 
-        if ($host !== null) {
-            $key = UuidLookup::findUuidForKey($host, 'icinga_host', $this->db(), $this->getBranch());
-            $this->host = $this->loadSpecificObject('icinga_host', $key);
-        }
-    }
-
-    protected function loadOptionalSet()
-    {
-        $key = $this->params->get('set', $this->params->get('service_set_id'));
-        if ($key === null && $this->object && $key = $this->object->get('service_set_id')) {
-            $key = (int) $key;
+        if ($key === null) {
+            return null;
         }
 
-        if ($key !== null) {
-            $uuid = UuidLookup::findUuidForKey($key, 'icinga_service_set', $this->db(), $this->getBranch());
-            $this->set = $this->loadSpecificObject('icinga_service_set', $uuid);
-        }
+        $table = "icinga_$relation"; // TODO: ask object?
+        $uuid = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
+        return $this->loadSpecificObject($table, $uuid);
     }
 
     /**
