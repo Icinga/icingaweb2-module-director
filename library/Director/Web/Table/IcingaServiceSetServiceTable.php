@@ -113,7 +113,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 
         if ($this->affectedHost) {
             $params = [
-                'name'    => $this->affectedHost->getObjectName(),
+                'uuid'    => $this->affectedHost->getUniqueId()->toString(),
                 'service' => $row->service,
                 'set'     => $row->service_set
             ];
