@@ -39,9 +39,10 @@ class ServiceController extends ObjectController
 
     public function init()
     {
-        parent::init();
+        // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
         $this->loadOptionalHost();
         $this->loadOptionalSet();
+        parent::init();
         $this->addOptionalHostTabs();
         $this->addOptionalSetTabs();
     }

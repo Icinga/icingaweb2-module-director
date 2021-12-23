@@ -33,10 +33,10 @@ class UuidLookup
         $query = $db->select()->from('icinga_service', 'uuid')->where('object_type = ?', $objectType);
         $query = self::addKeyToQuery($connection, $query, $key);
         if ($host) {
-            $query->add('host_id = ?', $host->get('id'));
+            $query->where('host_id = ?', $host->get('id'));
         }
         if ($set) {
-            $query->add('service_set_id = ?', $set->get('id'));
+            $query->where('service_set_id = ?', $set->get('id'));
         }
         $uuid = self::fetchOptionalUuid($connection, $query);
 
