@@ -4,7 +4,7 @@ namespace Icinga\Module\Director\Dashboard\Dashlet;
 
 class NotificationsDashlet extends Dashlet
 {
-    protected $icon = 'megaphone';
+    protected $icon = 'bell';
 
     protected $requiredStats = array('notification');
 
