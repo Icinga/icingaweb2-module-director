@@ -380,7 +380,10 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
         }
 
         foreach ($deleted as $key) {
-            $this->arguments[$key]->delete();
+            $argument = $this->arguments[$key];
+            $argument->setLoadedProperty('command_id', $this->object->get('id'));
+            $argument->setConnection($this->object->getConnection());
+            $argument->delete();;
             unset($this->arguments[$key]);
         }
 
