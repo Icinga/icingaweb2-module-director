@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\IcingaConfig;
 
+use gipfl\Json\JsonString;
 use Icinga\Data\Filter\Filter;
 use Icinga\Data\Filter\FilterAnd;
 use Icinga\Data\Filter\FilterChain;
@@ -17,6 +18,7 @@ use Icinga\Data\Filter\FilterMatch;
 use Icinga\Data\Filter\FilterMatchNot;
 use Icinga\Data\Filter\FilterNotEqual;
 use Icinga\Exception\QueryException;
+use Icinga\Module\Director\Data\Json;
 use InvalidArgumentException;
 
 class AssignRenderer
@@ -126,14 +128,14 @@ class AssignRenderer
         }
 
         $column = $filter->getColumn();
-        $rawExpression = json_decode($filter->getExpression());
+        $rawExpression = Json::decode($filter->getExpression());
         $expression = $this->renderExpressionValue($rawExpression);
 
         if (is_array($rawExpression) && $filter instanceof FilterMatch) {
             return $this->renderInArray($column, $expression);
         }
 
-        if (ctype_digit($rawExpression)) {
+        if (is_string($rawExpression) && ctype_digit($rawExpression)) {
             // TODO: doing this for compat reasons, should work for all filters
             if ($filter instanceof FilterEqualOrGreaterThan
                 || $filter instanceof FilterGreaterThan

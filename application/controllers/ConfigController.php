@@ -395,7 +395,7 @@ class ConfigController extends ActionController
             )),
         ]));
 
-        if (! strlen($rightSum) || ! strlen($leftSum)) {
+        if ($rightSum === null || $leftSum === null || ! strlen($rightSum) || ! strlen($leftSum)) {
             return;
         }
         ConfigFileDiffTable::load($leftSum, $rightSum, $this->db())->renderTo($this);
