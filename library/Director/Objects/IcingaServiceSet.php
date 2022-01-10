@@ -6,11 +6,13 @@ use Exception;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Resolver\HostServiceBlacklist;
 use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 use RuntimeException;
 
 class IcingaServiceSet extends IcingaObject implements ExportInterface
@@ -108,20 +110,16 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         if ($set->get('id') === null) {
             return array();
         }
-
         $connection = $this->getConnection();
         $db = $this->getDb();
-        $ids = $db->fetchCol(
-            $db->select()->from('icinga_service', 'id')
+        $uuids = $db->fetchCol(
+            $db->select()->from('icinga_service', 'uuid')
                 ->where('service_set_id = ?', $set->get('id'))
         );
 
         $services = array();
-        foreach ($ids as $id) {
-            $service = IcingaService::load(array(
-                'id' => $id,
-                'object_type' => 'template'
-            ), $connection);
+        foreach ($uuids as $uuid) {
+            $service = IcingaService::loadWithUniqueId(Uuid::fromBytes(DbUtil::binaryResult($uuid)), $connection);
             $service->set('service_set', null);
 
             $services[$service->getObjectName()] = $service;
