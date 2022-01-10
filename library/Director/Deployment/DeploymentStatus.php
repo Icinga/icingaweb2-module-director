@@ -41,7 +41,7 @@ class DeploymentStatus
                     'activity' => null
                 ];
             } else {
-                $lastActivityLogChecksum = bin2hex($activityLogChecksum->last_activity_checksum);
+                $lastActivityLogChecksum = bin2hex($activityLogChecksum->get('last_activity_checksum'));
                 $configChecksum = $this->getConfigChecksumForStageName($stageName);
                 $activeConfiguration = [
                     'stage_name' => $stageName,
@@ -149,9 +149,8 @@ class DeploymentStatus
     }
 
     /**
-     * @param $db
      * @param array $binaryConfigChecksums
-     * @return mixed
+     * @return array
      */
     public function getDeployedConfigs(array $binaryConfigChecksums)
     {
