@@ -473,7 +473,7 @@ abstract class QuickTable implements Paginatable, ValidHtml
     protected function valueToTimestamp($value)
     {
         // We consider integers as valid timestamps. Does not work for URL params
-        if (ctype_digit($value)) {
+        if (! is_string($value) || ctype_digit($value)) {
             return $value;
         }
         $value = strtotime($value);

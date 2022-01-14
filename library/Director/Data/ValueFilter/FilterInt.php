@@ -8,11 +8,11 @@ class FilterInt implements ValueFilter
 {
     public function filter($value)
     {
-        if ($value === '') {
+        if ($value === '' || $value === null) {
             return null;
         }
 
-        if (! ctype_digit($value)) {
+        if (is_string($value) && ! ctype_digit($value)) {
             return $value;
         }
 
