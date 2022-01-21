@@ -123,34 +123,38 @@ class IcingaConfigHelper
     //       Parameter? Dedicated method? Always if \n is found?
     public static function renderString($string)
     {
-        $special = [
-            '/\\\/',
-            '/"/',
-            '/\$/',
-            '/\t/',
-            '/\r/',
-            '/\n/',
-            // '/\b/', -> doesn't work
-            '/\f/',
-        ];
-
-        $replace = [
-            '\\\\\\',
-            '\\"',
-            '\\$',
-            '\\t',
-            '\\r',
-            '\\n',
-            // '\\b',
-            '\\f',
-        ];
-
-        $string = preg_replace($special, $replace, $string);
-
         if(substr($string, 0, 2) === "@@"){
+
             return substr($string, 2);
+
         } else {
+
+            $special = [
+                '/\\\/',
+                '/"/',
+                '/\$/',
+                '/\t/',
+                '/\r/',
+                '/\n/',
+                // '/\b/', -> doesn't work
+                '/\f/',
+            ];
+
+            $replace = [
+                '\\\\\\',
+                '\\"',
+                '\\$',
+                '\\t',
+                '\\r',
+                '\\n',
+                // '\\b',
+                '\\f',
+            ];
+
+            $string = preg_replace($special, $replace, $string);
+
             return '"' . $string . '"';
+
         }
     }
 
