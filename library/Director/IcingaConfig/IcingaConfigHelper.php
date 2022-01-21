@@ -147,7 +147,11 @@ class IcingaConfigHelper
 
         $string = preg_replace($special, $replace, $string);
 
-        return '"' . $string . '"';
+        if(substr($string, 0, 2) === "@@"){
+            return substr($string, 2);
+        } else {
+            return '"' . $string . '"';
+        }
     }
 
     public static function renderPhpValue($value)
