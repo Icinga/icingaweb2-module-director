@@ -149,7 +149,7 @@ abstract class Dashboard extends HtmlDocument
         ]);
     }
 
-    public function count()
+    public function count(): int
     {
         return count($this->dashlets());
     }
