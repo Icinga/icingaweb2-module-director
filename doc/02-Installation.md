@@ -16,17 +16,15 @@ Requirements
   * Some features require newer Icinga 2 releases
     * Flapping requires 2.8 for the thresholds to work - and at least 2.7 on all
       nodes
-* Icinga Web 2 (&gt;= 2.6.0). All versions since 2.2 should also work fine, but
-  might show smaller UI bugs and are not actively tested
+* Icinga Web 2 (&gt;= 2.9.0)
+* [Icinga PHP Library (ipl)](https://github.com/Icinga/icinga-php-library) (>= 0.9)
+* [Icinga PHP Thirdparty](https://github.com/Icinga/icinga-php-thirdparty) (>= 0.11)
 * The following Icinga modules must be installed and enabled:
   * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.12.0)
-  * If you are using Icinga Web &lt; 2.9.0, the following modules are also required
-    * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.5.0)
-    * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.9.0)
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
   MySQL forks are also fine. Mentioned versions are the required minimum,
   for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
-* PHP (>= 5.6.3). For best performance please use 7.x or 8.x
+* PHP (>= 7.2)
 * php-pdo-mysql and/or php-pdo-pgsql
 * php-curl
 * php-iconv
