@@ -545,6 +545,19 @@ class ActivityLogInfo extends HtmlDocument
             );
         }
 
+        $liveModification = $this->translate($entry->live_modification);
+        if ($entry->live_modification === 'failed' || $entry->live_modification === 'impossible') {
+            $liveModification .= $this->translate(
+                ' (This change cannot be automatically applied on monitored object.' .
+                ' Please deploy to align configuration.)'
+            );
+        }
+
+        $table->addNameValueRow(
+            $this->translate('Live Modification'),
+            $liveModification
+        );
+
         return $table;
     }
 

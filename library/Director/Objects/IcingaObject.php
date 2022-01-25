@@ -11,6 +11,7 @@ use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
+use Icinga\Module\Director\DirectorObject\IcingaModifiedAttribute;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
@@ -22,6 +23,9 @@ use Icinga\Module\Director\IcingaConfig\IcingaConfigRenderer;
 use Icinga\Module\Director\IcingaConfig\IcingaConfigHelper as c;
 use Icinga\Module\Director\IcingaConfig\IcingaLegacyConfigHelper as c1;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Util\Translator;
+use Icinga\Web\Notification;
+use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
 
@@ -134,6 +138,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     private $templateResolver;
 
     protected static $tree;
+
+    /* @var IcingaObjectLiveModificationAvailability */
+    protected $liveModificationAvailability;
 
     /**
      * @return Db
@@ -1538,6 +1545,57 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         parent::setBeingLoadedFromDb();
     }
 
+    protected function canBeAppliedLive()
+    {
+        $liveModificationAvailability = new IcingaObjectLiveModificationAvailability();
+        $liveModificationAvailability->setResult(false);
+        $liveModificationAvailability->setErrorMessage(
+            Translator::translate('Object not supported by Live Modification', 'director')
+        );
+        return $liveModificationAvailability;
+    }
+
+    protected function insertSingleObjectModification($activityLog)
+    {
+        $activityLogId = null;
+        if (! is_null($activityLog)) {
+            $activityLogId = $activityLog->getId();
+            $activityLog->set('live_modification', DirectorActivityLog::LIVE_MODIFICATION_VALUE_SCHEDULED);
+            $activityLog->store($this->connection);
+        }
+
+        $modifiedAttribute = IcingaModifiedAttribute::prepareIcingaModifiedAttributeForSingleObject(
+            $this,
+            $activityLogId
+        );
+        $modifiedAttribute->store($this->connection);
+    }
+
+    protected function insertRelatedObjectsModification($activityLog = null)
+    {
+    }
+
+    protected function deleteRelatedObjectsModification()
+    {
+    }
+
+    protected function scheduleLiveModification($activityLog = null)
+    {
+        // This check is needed when related objects are created
+        if (!$this->liveModificationAvailability) {
+            $this->liveModificationAvailability = $this->canBeAppliedLive();
+        }
+
+        if ($this->liveModificationAvailability->getResult()) {
+            $this->insertSingleObjectModification($activityLog);
+            if (!$this->shouldBeRemoved()) {
+                $this->insertRelatedObjectsModification($activityLog);
+            }
+        } else {
+            Notification::warning($this->liveModificationAvailability->getErrorMessage());
+        }
+    }
+
     /**
      * @throws NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
@@ -1564,6 +1622,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         if ($this->gotImports()) {
             $this->imports()->getObjects();
         }
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $this->liveModificationAvailability = $this->canBeAppliedLive();
+            if ($this->liveModificationAvailability->getResult() && $this->hasBeenLoadedFromDb()) {
+                $this->deleteRelatedObjectsModification();
+            }
+        }
     }
 
     /**
@@ -1573,8 +1637,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function onInsert()
     {
-        DirectorActivityLog::logCreation($this, $this->connection);
+        $activityLog = DirectorActivityLog::logCreation($this, $this->connection);
         $this->storeRelatedObjects();
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $this->scheduleLiveModification($activityLog);
+        }
     }
 
     /**
@@ -1584,8 +1651,11 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function onUpdate()
     {
-        DirectorActivityLog::logModification($this, $this->connection);
+        $activityLog = DirectorActivityLog::logModification($this, $this->connection);
         $this->storeRelatedObjects();
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $this->scheduleLiveModification($activityLog);
+        }
     }
 
     public function onStore()
@@ -1689,6 +1759,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
     public function beforeDelete()
     {
         $this->cachedPlainUnmodified = $this->getPlainUnmodifiedObject();
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $this->markForRemoval(true);
+            $this->liveModificationAvailability = $this->canBeAppliedLive();
+        }
     }
 
     public function getCachedUnmodifiedObject()
@@ -1698,7 +1772,10 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
 
     public function onDelete()
     {
-        DirectorActivityLog::logRemoval($this, $this->connection);
+        $activityLog = DirectorActivityLog::logRemoval($this, $this->connection);
+        if (IcingaObjectLiveModificationAvailability::isEnabled()) {
+            $this->scheduleLiveModification($activityLog);
+        }
     }
 
     public function toSingleIcingaConfig()
@@ -2562,6 +2639,16 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         return false;
     }
 
+    public function getIcingaObjectType()
+    {
+        return $this->getType();
+    }
+
+    public function getIcingaObjectName()
+    {
+        return $this->getObjectName();
+    }
+
     protected function getType()
     {
         if ($this->type === null) {
@@ -2810,6 +2897,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         }
 
         return $this;
+    }
+
+    public function toApiObject(
+        $resolved = false,
+        $skipDefaults = false
+    ) {
+        $plainObj = $this->toPlainObject($resolved, $skipDefaults);
+        return $plainObj;
     }
 
     /**

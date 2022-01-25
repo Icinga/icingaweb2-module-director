@@ -92,6 +92,17 @@ class Db extends DbConnection
         $db->query($db->quoteInto('SET TIME ZONE INTERVAL ? HOUR TO MINUTE', $this->getTimezoneOffset()));
     }
 
+
+    public function countPendingLiveModifications()
+    {
+        $db = $this->db();
+        $query = 'SELECT COUNT(*) FROM icinga_modified_attribute';
+        $query .= $db->quoteInto(' WHERE state = ?', 'scheduled');
+        $query .= $db->quoteInto(' OR state = ?', 'scheduled_for_reset');
+
+        return (int) $db->fetchOne($query);
+    }
+
     public function countActivitiesSinceLastDeployedConfig(IcingaObject $object = null)
     {
         $db = $this->db();
@@ -292,7 +303,7 @@ class Db extends DbConnection
         $sql = 'SELECT id, object_type, object_name, action_name,'
              . ' old_properties, new_properties, author, change_time,'
              . ' UNIX_TIMESTAMP(change_time) AS change_time_ts,'
-             . ' %s AS checksum, %s AS parent_checksum'
+             . ' %s AS checksum, %s AS parent_checksum, live_modification'
              . ' FROM director_activity_log WHERE id = %d';
 
         $sql = sprintf(
@@ -337,7 +348,7 @@ class Db extends DbConnection
         $sql = 'SELECT id, object_type, object_name, action_name,'
              . ' old_properties, new_properties, author, change_time,'
              . ' UNIX_TIMESTAMP(change_time) AS change_time_ts,'
-             . ' %s AS checksum, %s AS parent_checksum'
+             . ' %s AS checksum, %s AS parent_checksum, live_modification'
              . ' FROM director_activity_log WHERE checksum = ?';
 
         $sql = sprintf(

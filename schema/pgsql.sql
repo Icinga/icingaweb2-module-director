@@ -47,6 +47,8 @@ CREATE TYPE enum_sync_state AS ENUM(
 );
 CREATE TYPE enum_host_service AS ENUM('host', 'service');
 CREATE TYPE enum_owner_type AS ENUM('user', 'usergroup', 'role');
+CREATE TYPE enum_live_modification_state AS ENUM('scheduled', 'succeeded', 'failed', 'impossible', 'disabled');
+CREATE TYPE enum_icinga_modified_attribute_state AS ENUM('scheduled_for_reset', 'scheduled', 'applied');
 CREATE DOMAIN d_smallint AS integer CHECK (VALUE >= 0) CHECK (VALUE < 65536);
 
 CREATE OR REPLACE FUNCTION unix_timestamp(timestamp with time zone) RETURNS bigint AS '
@@ -87,6 +89,7 @@ CREATE TABLE director_activity_log (
   change_time timestamp with time zone NOT NULL,
   checksum bytea NOT NULL UNIQUE CHECK(LENGTH(checksum) = 20),
   parent_checksum bytea DEFAULT NULL CHECK(parent_checksum IS NULL OR LENGTH(checksum) = 20),
+  live_modification enum_live_modification_state NOT NULL,
   PRIMARY KEY (id)
 );
 
@@ -96,6 +99,26 @@ CREATE INDEX activity_log_search_idx2 ON director_activity_log (object_type, obj
 CREATE INDEX activity_log_author ON director_activity_log (author);
 COMMENT ON COLUMN director_activity_log.old_properties IS 'Property hash, JSON';
 COMMENT ON COLUMN director_activity_log.new_properties IS 'Property hash, JSON';
+
+
+CREATE TABLE icinga_modified_attribute (
+    id bigserial,
+    activity_id integer DEFAULT NULL,
+    state enum_icinga_modified_attribute_state NOT NULL,
+    action enum_activity_action NOT NULL,
+    icinga_object_type VARCHAR(64) NOT NULL,
+    icinga_object_name VARCHAR(255) NOT NULL,
+    modification MEDIUMTEXT NOT NULL,
+    ts_scheduled bigint NOT NULL,
+    ts_applied bigint DEFAULT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (activity_id)
+        REFERENCES director_activity_log (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE INDEX icinga_modified_attribute_sort_idx ON icinga_modified_attribute (ts_scheduled);
 
 
 CREATE TABLE director_basket (
@@ -2743,4 +2766,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (176, NOW());
+  VALUES (178, NOW());

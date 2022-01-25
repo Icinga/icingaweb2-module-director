@@ -115,8 +115,17 @@ class ConfigHealthItemRenderer extends BadgeNavigationItemRenderer
                     $count
                 );
             }
-
             return;
+        }
+
+        $pendingLiveModifications = $db->countPendingLiveModifications();
+        if ($pendingLiveModifications > 0) {
+            $this->directorState = self::STATE_PENDING;
+            $this->count = $pendingLiveModifications;
+            $this->message = sprintf(
+                $this->translate('There are %d pending live modifications'),
+                $pendingLiveModifications
+            );
         }
 
         $pendingChanges = $db->countActivitiesSinceLastDeployedConfig();
