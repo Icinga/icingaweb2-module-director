@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Exception;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -104,6 +105,55 @@ class DirectorDatalist extends DbObject implements ExportInterface
         ksort($this->storedEntries);
 
         return $this;
+    }
+
+    protected function beforeDelete()
+    {
+        if ($this->hasBeenUsed()) {
+            throw new Exception(
+                sprintf(
+                    "Cannot delete '%s', as the datalist '%s' is currently being used.",
+                    $this->get('list_name'),
+                    $this->get('list_name')
+                )
+            );
+        }
+    }
+
+    protected function hasBeenUsed()
+    {
+        $datalistType = 'Icinga\\Module\\Director\\DataType\\DataTypeDatalist';
+        $db = $this->getDb();
+
+        $dataFieldsCheck = $db->select()
+            ->from(['df' =>'director_datafield'], ['varname'])
+            ->join(
+                ['dfs' => 'director_datafield_setting'],
+                'dfs.datafield_id = df.id AND dfs.setting_name = \'datalist_id\'',
+                []
+            )
+            ->join(
+                ['l' => 'director_datalist'],
+                'l.id = dfs.setting_value',
+                []
+            )
+            ->where('datatype = ?', $datalistType)
+            ->where('setting_value = ?', $this->get('id'));
+
+        if ($db->fetchOne($dataFieldsCheck)) {
+            return true;
+        }
+
+        $syncCheck = $db->select()
+            ->from(['sp' =>'sync_property'], ['source_expression'])
+            ->where('sp.destination_field = ?', 'list_id')
+            ->where('sp.source_expression = ?', $this->get('id'));
+
+        if ($db->fetchOne($syncCheck)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
