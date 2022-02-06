@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Widget;
 use gipfl\Translation\TranslationHelper;
 use gipfl\Web\Widget\Hint;
 use Icinga\Authentication\Auth;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
 use ipl\Html\Html;
@@ -38,10 +39,12 @@ class BranchedObjectHint extends HtmlDocument
         }
 
         if ($object->hasBeenDeletedByBranch()) {
-            $this->add(Hint::info(Html::sprintf(
-                $this->translate('This object has been deleted in %s'),
-                $link
-            )));
+            throw new NotFoundError('No such object available');
+            // Alternative, requires hiding other actions:
+            // $this->add(Hint::info(Html::sprintf(
+            //     $this->translate('This object has been deleted in %s'),
+            //     $link
+            // )));
         } elseif ($object->hasBeenCreatedByBranch()) {
             $this->add(Hint::info(Html::sprintf(
                 $this->translate('This object has been created in %s'),
