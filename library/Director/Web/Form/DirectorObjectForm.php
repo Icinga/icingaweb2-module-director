@@ -141,9 +141,6 @@ abstract class DirectorObjectForm extends DirectorForm
             }
 
             $this->object = $class::create($values, $this->db);
-            foreach ($values as $key => $value) {
-                $this->object->$key = $value;
-            }
         } else {
             if (! $this->object->hasConnection()) {
                 $this->object->setConnection($this->db);
