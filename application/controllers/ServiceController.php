@@ -93,23 +93,6 @@ class ServiceController extends ObjectController
         return $this->loadSpecificObject($table, $uuid);
     }
 
-    /**
-     * TODO: Is this still a thing? It's unused.
-     *
-     * @throws \Icinga\Exception\NotFoundError
-     */
-    protected function loadOptionalApplyRule()
-    {
-        if ($apply = $this->params->get('apply')) {
-            // Hint: doesn't work, DbObjectStore::load does no longer exist
-            $store = new DbObjectStore($this->db(), $this->getBranch());
-            $this->apply = $store->load('service', [
-                'object_name' => $apply,
-                'object_type' => 'template'
-            ]);
-        }
-    }
-
     protected function addParamToTabs($name, $value)
     {
         foreach ($this->tabs()->getTabs() as $tab) {
