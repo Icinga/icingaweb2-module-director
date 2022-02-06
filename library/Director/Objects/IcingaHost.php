@@ -135,6 +135,8 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
             $hostProperties[$prefix . $prop] = $prop;
         }
+        unset($hostProperties[$prefix . 'uuid']);
+        unset($hostProperties[$prefix . 'custom_endpoint_name']);
 
         $hostVars = array();
 
