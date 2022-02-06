@@ -451,18 +451,6 @@ abstract class DirectorObjectForm extends DirectorForm
         }
     }
 
-    protected function removeEmptyProperties($props)
-    {
-        $result = array();
-        foreach ($props as $k => $v) {
-            if ($v !== null && $v !== '' && $v !== array()) {
-                $result[$k] = $v;
-            }
-        }
-
-        return $result;
-    }
-
     protected function prepareFields($object)
     {
         if ($this->assertResolvedImports()) {
