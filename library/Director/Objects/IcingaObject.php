@@ -1314,7 +1314,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $getInherited = 'getInherited' . $what;
         $getOrigins   = 'getOrigins'  . $what;
 
-        $blacklist = ['id', 'object_type', 'object_name', 'disabled'];
+        $blacklist = ['id', 'uuid', 'object_type', 'object_name', 'disabled'];
         foreach ($objects as $name => $object) {
             $origins = $object->$getOrigins();
 
