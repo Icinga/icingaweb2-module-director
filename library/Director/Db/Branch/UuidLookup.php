@@ -90,7 +90,7 @@ class UuidLookup
         $query = self::addKeyToQuery($connection, $db->select()->from($table, 'uuid'), $key);
         $uuid = self::fetchOptionalUuid($connection, $query);
         if ($uuid === null && $branch->isBranch()) {
-            $query = $db->select()->from("branched_$table", 'uuid')->where('object_name = ?', $key);
+            $query = self::addKeyToQuery($connection, $db->select()->from("branched_$table", 'uuid'), $key);
             $uuid = self::fetchOptionalUuid($connection, $query);
         }
 
