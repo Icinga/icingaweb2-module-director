@@ -742,10 +742,11 @@ class IcingaServiceForm extends DirectorObjectForm
     public function onSuccess()
     {
         if ($this->providesOverrides()) {
-            return $this->succeedForOverrides();
+            $this->succeedForOverrides();
+            return;
         }
 
-        return parent::onSuccess();
+        parent::onSuccess();
     }
 
     /**
