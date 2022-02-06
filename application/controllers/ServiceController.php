@@ -88,7 +88,7 @@ class ServiceController extends ObjectController
             return null;
         }
 
-        $table = "icinga_$relation"; // TODO: ask object?
+        $table = DbObjectTypeRegistry::tableNameByType($relation);
         $uuid = UuidLookup::findUuidForKey($key, $table, $this->db(), $this->getBranch());
         return $this->loadSpecificObject($table, $uuid);
     }
