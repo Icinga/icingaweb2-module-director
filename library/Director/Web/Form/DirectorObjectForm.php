@@ -588,7 +588,7 @@ abstract class DirectorObjectForm extends DirectorForm
             }
         }
 
-        return $this->setElementValue($name, $value);
+        $this->setElementValue($name, $value);
     }
 
     public function setElementValue($name, $value = null)
