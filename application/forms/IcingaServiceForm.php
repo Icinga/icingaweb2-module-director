@@ -727,7 +727,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->translate($host->getObjectName())
             );
 
-            $host->store();
+            $this->getDbObjectStore()->store($host);
         } else {
             if ($this->isApiRequest()) {
                 $this->setHttpResponseCode(304);
