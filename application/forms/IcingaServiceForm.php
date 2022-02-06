@@ -333,7 +333,7 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function setupServiceElements()
     {
         if ($this->object) {
-            $objectType = $this->object->object_type;
+            $objectType = $this->object->get('object_type');
         } elseif ($this->preferredObjectType) {
             $objectType = $this->preferredObjectType;
         } else {
@@ -422,10 +422,6 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->addHtmlHint($hint, ['name' => 'inheritance_hint']);
     }
 
-    /**
-     * @throws IcingaException
-     * @throws ProgrammingError
-     */
     protected function setupOnHostForSet()
     {
         $msg = $this->translate(
@@ -723,10 +719,6 @@ class IcingaServiceForm extends DirectorObjectForm
         return $db->fetchPairs($select);
     }
 
-    /**
-     * @throws IcingaException
-     * @throws ProgrammingError
-     */
     protected function succeedForOverrides()
     {
         $vars = array();
@@ -759,10 +751,6 @@ class IcingaServiceForm extends DirectorObjectForm
         $this->redirectOnSuccess($msg);
     }
 
-    /**
-     * @throws IcingaException
-     * @throws ProgrammingError
-     */
     public function onSuccess()
     {
         if ($this->providesOverrides()) {
