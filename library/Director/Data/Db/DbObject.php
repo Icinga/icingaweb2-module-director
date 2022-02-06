@@ -1239,7 +1239,7 @@ abstract class DbObject
         if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
-            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            $uuid = UuidLookup::requireUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
 
             return self::$dbObjectStore->load($table, $uuid);
         }
@@ -1268,7 +1268,7 @@ abstract class DbObject
         if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
-            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            $uuid = UuidLookup::requireUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
 
             return self::$dbObjectStore->load($table, $uuid);
         }

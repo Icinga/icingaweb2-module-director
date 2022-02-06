@@ -2,10 +2,12 @@
 
 namespace Icinga\Module\Director\Db\Branch;
 
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use RuntimeException;
 use function is_int;
 use function is_resource;
@@ -57,6 +59,31 @@ class UuidLookup
         return $uuid;
     }
 
+    /**
+     * @param int|string|array $key
+     * @param string $table
+     * @param Db $connection
+     * @param Branch $branch
+     * @return UuidInterface
+     * @throws NotFoundError
+     */
+    public static function requireUuidForKey($key, $table, Db $connection, Branch $branch)
+    {
+        $uuid = self::findUuidForKey($key, $table, $connection, $branch);
+        if ($uuid === null) {
+            throw new NotFoundError('No such object available');
+        }
+
+        return $uuid;
+    }
+
+    /**
+     * @param int|string|array $key
+     * @param string $table
+     * @param Db $connection
+     * @param Branch $branch
+     * @return ?UuidInterface
+     */
     public static function findUuidForKey($key, $table, Db $connection, Branch $branch)
     {
         $db = $connection->getDbAdapter();
