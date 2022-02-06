@@ -532,6 +532,7 @@ abstract class DirectorObjectForm extends DirectorForm
         }
         $elements = array_merge($elements, [
             'display_name',
+            'host',
             'host_id',
             'address',
             'address6',
