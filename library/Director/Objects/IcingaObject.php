@@ -573,8 +573,12 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
             ), $e->getCode(), $e);
         }
 
-        $this->reallySet($name, $object->get('id'));
-        unset($this->unresolvedRelatedProperties[$name]);
+        $id = $object->get('id');
+        // Happens when load() get's a branched object, created in the branch
+        if ($id !== null) {
+            $this->reallySet($name, $id);
+            unset($this->unresolvedRelatedProperties[$name]);
+        }
     }
 
     /**
