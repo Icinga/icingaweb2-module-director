@@ -497,13 +497,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addExtraInfoElements()
              ->setButtons();
 
-        if ($this->hasBeenSent()) {
-            $name = $this->getSentOrObjectValue('object_name');
-            if (!strlen($name)) {
-                $this->setElementValue('object_name', end($imports));
-                $this->object->object_name = end($imports);
-            }
-        }
+        $this->setDefaultNameFromTemplate($imports);
     }
 
     /**
@@ -547,13 +541,7 @@ class IcingaServiceForm extends DirectorObjectForm
                 ->addExtraInfoElements();
         }
 
-        if ($this->hasBeenSent()) {
-            $name = $this->getSentOrObjectValue('object_name');
-            if (!strlen($name)) {
-                $this->setElementValue('object_name', end($imports));
-                $this->object->object_name = end($imports);
-            }
-        }
+        $this->setDefaultNameFromTemplate($imports);
     }
 
     public function setServiceSet(IcingaServiceSet $set)
@@ -758,5 +746,19 @@ class IcingaServiceForm extends DirectorObjectForm
         }
 
         return parent::onSuccess();
+    }
+
+    /**
+     * @param array $imports
+     */
+    protected function setDefaultNameFromTemplate($imports)
+    {
+        if ($this->hasBeenSent()) {
+            $name = $this->getSentOrObjectValue('object_name');
+            if (!strlen($name)) {
+                $this->setElementValue('object_name', end($imports));
+                $this->object->set('object_name', end($imports));
+            }
+        }
     }
 }
