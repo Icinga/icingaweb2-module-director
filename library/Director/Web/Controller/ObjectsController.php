@@ -7,6 +7,8 @@ use Icinga\Data\Filter\FilterChain;
 use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Forms\IcingaMultiEditForm;
 use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -24,6 +26,8 @@ use Icinga\Module\Director\Web\Tree\TemplateTreeRenderer;
 use gipfl\IcingaWeb2\Link;
 use Icinga\Module\Director\Web\Widget\AdditionalTableActions;
 use Icinga\Module\Director\Web\Widget\BranchedObjectsHint;
+use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 
 abstract class ObjectsController extends ActionController
 {
@@ -189,8 +193,12 @@ abstract class ObjectsController extends ActionController
         }
 
         $objects = $this->loadMultiObjectsFromParams();
+        if (empty($objects)) {
+            throw new NotFoundError('No "%s" instances have been loaded', $type);
+        }
         $formName = 'icinga' . $type;
         $form = IcingaMultiEditForm::load()
+            ->setBranch($this->getBranch())
             ->setObjects($objects)
             ->pickElementsFrom($this->loadForm($formName), $this->multiEdit);
         if ($type === 'Service') {
@@ -372,6 +380,10 @@ abstract class ObjectsController extends ActionController
         $type = $this->getType();
         $objects = array();
         $db = $this->db();
+        $class = DbObjectTypeRegistry::classByType($type);
+        $table = DbObjectTypeRegistry::tableNameByType($type);
+        $store = new DbObjectStore($db, $this->getBranch());
+
         /** @var $filter FilterChain */
         foreach ($filter->filters() as $sub) {
             /** @var $sub FilterChain */
@@ -389,10 +401,15 @@ abstract class ObjectsController extends ActionController
                         } else {
                             $key = $name;
                         }
-                        $objects[$name] = IcingaObject::loadByType($type, $key, $db);
+                        $objects[$name] = $class::load($key, $db);
                     } elseif ($col === 'id') {
                         $name = $ex->getExpression();
-                        $objects[$name] = IcingaObject::loadByType($type, ['id' => $name], $db);
+                        $objects[$name] = $class::load($name, $db);
+                    } elseif ($col === 'uuid') {
+                        $object = $store->load($table, Uuid::fromString($ex->getExpression()));
+                        $objects[$object->getObjectName()] = $object;
+                    } else {
+                        throw new InvalidArgumentException("'$col' is no a valid key component for '$type'");
                     }
                 }
             }
