@@ -9,7 +9,6 @@ use Icinga\Data\Filter\FilterExpression;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Data\Db\DbDataFormatter;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\IcingaConfig\AssignRenderer;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -1354,7 +1353,6 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 continue;
             }
 
-            // $vals[$this->object_name]->$key = $value;
             $vals['_MERGED_']->$key = $value;
         }
 
