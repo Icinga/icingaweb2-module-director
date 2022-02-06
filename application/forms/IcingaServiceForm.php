@@ -12,6 +12,7 @@ use Icinga\Module\Director\Web\Form\DirectorObjectForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
+use Icinga\Module\Director\Web\Table\ObjectsTableHost;
 use ipl\Html\Html;
 use gipfl\IcingaWeb2\Link;
 use RuntimeException;
@@ -474,7 +475,7 @@ class IcingaServiceForm extends DirectorObjectForm
      */
     protected function setupHostRelatedElements()
     {
-        $this->addHidden('host_id', $this->host->id);
+        $this->addHidden('host', $this->host->getObjectName());
         $this->addHidden('object_type', 'object');
         $this->addImportsElement();
         $imports = $this->getSentOrObjectValue('imports');
@@ -578,14 +579,14 @@ class IcingaServiceForm extends DirectorObjectForm
     protected function addHostObjectElement()
     {
         if ($this->isObject()) {
-            $this->addElement('select', 'host_id', array(
+            $this->addElement('select', 'host', [
                 'label'       => $this->translate('Host'),
                 'required'    => true,
                 'multiOptions' => $this->optionalEnum($this->enumHostsAndTemplates()),
                 'description' => $this->translate(
                     'Choose the host this single service should be assigned to'
                 )
-            ));
+            ]);
         }
 
         return $this;
@@ -687,10 +688,36 @@ class IcingaServiceForm extends DirectorObjectForm
 
     protected function enumHostsAndTemplates()
     {
-        return array(
-            $this->translate('Templates') => $this->db->enumHostTemplates(),
-            $this->translate('Hosts')     => $this->db->enumHosts(),
-        );
+        if ($this->branch && $this->branch->isBranch()) {
+            return $this->enumHosts();
+        }
+
+        return [
+            $this->translate('Templates') => $this->enumHostTemplates(),
+            $this->translate('Hosts')     => $this->enumHosts(),
+        ];
+    }
+
+    protected function enumHostTemplates()
+    {
+        $names = array_values($this->db->enumHostTemplates());
+        return array_combine($names, $names);
+    }
+
+    protected function enumHosts()
+    {
+        $db = $this->db->getDbAdapter();
+        $table = new ObjectsTableHost($this->db);
+        $table->setAuth($this->getAuth());
+        if ($this->branch && $this->branch->isBranch()) {
+            $table->setBranchUuid($this->branch->getUuid());
+        }
+        $result = [];
+        foreach ($db->fetchAll($table->getQuery()) as $row) {
+            $result[$row->object_name] = $row->object_name;
+        }
+
+        return $result;
     }
 
     protected function enumServicegroups()
