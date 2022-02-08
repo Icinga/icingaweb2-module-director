@@ -83,7 +83,7 @@ class BranchMerger
     /**
      * @throws MergeError
      */
-    public function merge($comment)
+    public function merge($comment = null)
     {
         $this->connection->runFailSafeTransaction(function () use ($comment) {
             $formerActivityId = (int) DirectorActivityLog::loadLatest($this->connection)->get('id');
