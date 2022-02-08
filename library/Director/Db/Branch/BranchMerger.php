@@ -121,7 +121,7 @@ class BranchMerger
             }
         } elseif ($activity->isActionDelete()) {
             if ($exists) {
-                $activity->deleteDbObject($this->connection);
+                $activity->deleteDbObject($class::requireWithUniqueId($uuid, $this->connection));
             } elseif (! $this->ignoreDeleteWhenMissing && ! $this->ignoresActivity($activity)) {
                 throw new MergeErrorDeleteMissingObject($activity);
             }

@@ -149,17 +149,13 @@ class BranchActivity
         return $object;
     }
 
-    public function deleteDbObject(Db $connection)
+    public function deleteDbObject(DbObject $object)
     {
         if (!$this->isActionDelete()) {
             throw new RuntimeException('Only BranchActivity instances with action=delete can delete objects');
         }
 
-        $db = $connection->getDbAdapter();
-        return $db->delete($this->getObjectTable(), $db->quoteInto(
-            'uuid = ?',
-            $connection->quoteBinary($this->getObjectUuid()->getBytes())
-        ));
+        return $object->delete();
     }
 
     public static function load($ts, Db $connection)
