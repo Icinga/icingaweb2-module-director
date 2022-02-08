@@ -101,11 +101,13 @@ class BranchMerger
             $firstActivityId = (int) $this->db->fetchOne(
                 $this->db->select()->from('director_activity_log', 'MIN(id)')->where('id > ?', $formerActivityId)
             );
-            $this->db->insert('director_activity_log_remark', [
-                'first_related_activity' => $firstActivityId,
-                'last_related_activity' => $currentActivityId,
-                'remark' => $comment,
-            ]);
+            if ($comment && strlen($comment)) {
+                $this->db->insert('director_activity_log_remark', [
+                    'first_related_activity' => $firstActivityId,
+                    'last_related_activity' => $currentActivityId,
+                    'remark' => $comment,
+                ]);
+            }
         });
     }
 
