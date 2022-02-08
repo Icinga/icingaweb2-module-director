@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Db\Branch;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchMerger
@@ -82,9 +83,10 @@ class BranchMerger
     /**
      * @throws MergeError
      */
-    public function merge()
+    public function merge($comment)
     {
-        $this->connection->runFailSafeTransaction(function () {
+        $this->connection->runFailSafeTransaction(function () use ($comment) {
+            $formerActivityId = (int) DirectorActivityLog::loadLatest($this->connection)->get('id');
             $query = $this->db->select()
                 ->from(BranchActivity::DB_TABLE)
                 ->where('branch_uuid = ?', $this->connection->quoteBinary($this->branchUuid->getBytes()))
@@ -95,6 +97,15 @@ class BranchMerger
                 $this->applyModification($activity);
             }
             (new BranchStore($this->connection))->deleteByUuid($this->branchUuid);
+            $currentActivityId = (int) DirectorActivityLog::loadLatest($this->connection)->get('id');
+            $firstActivityId = (int) $this->db->fetchOne(
+                $this->db->select()->from('director_activity_log', 'MIN(id)')->where('id > ?', $formerActivityId)
+            );
+            $this->db->insert('director_activity_log_remark', [
+                'first_related_activity' => $firstActivityId,
+                'last_related_activity' => $currentActivityId,
+                'remark' => $comment,
+            ]);
         });
     }
 

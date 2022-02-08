@@ -1297,6 +1297,9 @@ th.table-header-day {
 }
 
 table.activity-log {
+    td {
+      max-height: 2em;
+    }
     tr th:first-child {
         padding-left: 2em;
     }
@@ -1304,6 +1307,7 @@ table.activity-log {
     tr td:last-child {
         text-align: right;
         white-space: nowrap;
+        width:10%;
     }
 
     tr td:first-child {
@@ -1361,6 +1365,57 @@ table.activity-log {
 
     tr.undeployed td:first-child::before {
         color: @gray;
+    }
+
+    div.range-comment-container {
+      width: 100%;
+      position: absolute;
+      height: 100%;
+      background: @body-bg-color;
+      border-radius: 0.5em;
+    }
+    a.range-comment {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 0.5em;
+      padding: 0.2em 1em;
+      vertical-align: middle;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      overflow-y:auto;
+      overflow-x:hidden;
+      &:hover {
+        text-decoration: none;
+      }
+      background: fade(@color-warning-handled, 40%);
+      &:hover {
+        background: fade(@color-warning-handled, 60%);
+      }
+    }
+    td.comment-cell {
+      padding: 0;
+      min-width: 10em;
+      position: relative;
+      &.continuing div.range-comment-container {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        a.range-comment {
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+      &.continued div.range-comment-container {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        a.range-comment {
+          border-top-left-radius: 0;
+          border-top-right-radius: 0;
+        }
+      }
     }
 }
 

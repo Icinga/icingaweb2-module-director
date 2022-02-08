@@ -97,6 +97,26 @@ CREATE INDEX activity_log_author ON director_activity_log (author);
 COMMENT ON COLUMN director_activity_log.old_properties IS 'Property hash, JSON';
 COMMENT ON COLUMN director_activity_log.new_properties IS 'Property hash, JSON';
 
+CREATE TABLE director_activity_log_remark (
+  first_related_activity bigint NOT NULL,
+  last_related_activity bigint NOT NULL,
+  remark TEXT NOT NULL,
+  PRIMARY KEY (first_related_activity, last_related_activity),
+  CONSTRAINT activity_log_remark_begin
+    FOREIGN KEY (first_related_activity)
+      REFERENCES director_activity_log (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE,
+  CONSTRAINT activity_log_remark_end
+    FOREIGN KEY (last_related_activity)
+      REFERENCES director_activity_log (id)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+);
+
+CREATE INDEX first_related_activity ON director_activity_log_remark (first_related_activity);
+CREATE INDEX last_related_activity ON director_activity_log_remark (last_related_activity);
+
 
 CREATE TABLE director_basket (
   uuid bytea CHECK(LENGTH(uuid) = 16) NOT NULL,
@@ -2743,4 +2763,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (176, NOW());
+  VALUES (178, NOW());
