@@ -172,7 +172,10 @@ class ActivityLogTable extends ZfQueryBasedTable
         // This can be replaced once we get theme-safe colors for such messages
         return Html::tag('div', [
             'class' => 'range-comment-container',
-        ], Link::create($this->continueRange ? '' : $range->remark, '#', null, ['class' => 'range-comment']));
+        ], Link::create($this->continueRange ? '' : $range->remark, '#', null, [
+            'title' => $range->remark,
+            'class' => 'range-comment'
+        ]));
     }
 
     protected function growCurrentRange()

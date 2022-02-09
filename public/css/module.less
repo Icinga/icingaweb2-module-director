@@ -1388,6 +1388,8 @@ table.activity-log {
       -ms-overflow-style: none;
       overflow-y:auto;
       overflow-x:hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
       &:hover {
         text-decoration: none;
       }
@@ -1399,6 +1401,7 @@ table.activity-log {
     td.comment-cell {
       padding: 0;
       min-width: 10em;
+      width: 40%;
       position: relative;
       &.continuing div.range-comment-container {
         border-bottom-left-radius: 0;
