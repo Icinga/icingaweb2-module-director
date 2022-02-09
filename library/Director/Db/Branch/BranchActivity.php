@@ -133,14 +133,21 @@ class BranchActivity
         return $object;
     }
 
-    public function createDbObject()
+    /**
+     * Hint: $connection is required, because setting groups triggered loading them.
+     *       Should be investigated, as in theory $hostWithoutConnection->groups = 'group'
+     *       is expected to work
+     * @param Db $connection
+     * @return DbObject|string
+     */
+    public function createDbObject(Db $connection)
     {
         if (!$this->isActionCreate()) {
             throw new RuntimeException('Only BranchActivity instances with action=create can create objects');
         }
 
         $class = DbObjectTypeRegistry::classByType($this->getObjectTable());
-        $object = $class::create();
+        $object = $class::create([], $connection);
         $object->setUniqueId($this->getObjectUuid());
         foreach ($this->getModifiedProperties()->jsonSerialize() as $key => $value) {
             $object->set($key, $value);

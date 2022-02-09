@@ -130,7 +130,7 @@ class BranchMerger
                     throw new MergeErrorRecreateOnMerge($activity);
                 }
             } else {
-                $activity->createDbObject()->store($this->connection);
+                $activity->createDbObject($this->connection)->store($this->connection);
             }
         } elseif ($activity->isActionDelete()) {
             if ($exists) {
