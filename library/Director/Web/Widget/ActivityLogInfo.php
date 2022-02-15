@@ -522,6 +522,13 @@ class ActivityLogInfo extends HtmlDocument
             );
         }
 
+        if ($comment = $this->getOptionalRangeComment()) {
+            $table->addNameValueRow(
+                $this->translate('Remark'),
+                $comment
+            );
+        }
+
         if ($this->hasBeenEnabled()) {
             $table->addNameValueRow(
                 $this->translate('Rendering'),
@@ -582,6 +589,21 @@ class ActivityLogInfo extends HtmlDocument
         }
 
         return sprintf($msg, $this->typeName, $this->entry->object_name);
+    }
+
+    protected function getOptionalRangeComment()
+    {
+        if ($this->id) {
+            $db = $this->db->getDbAdapter();
+            return $db->fetchOne(
+                $db->select()
+                    ->from('director_activity_log_remark', 'remark')
+                    ->where('first_related_activity <= ?', $this->id)
+                    ->where('last_related_activity >= ?', $this->id)
+            );
+        }
+
+        return null;
     }
 
     /**
