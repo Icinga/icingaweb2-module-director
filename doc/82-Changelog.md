@@ -19,6 +19,7 @@ next (will be 1.9.0)
 
 ### Configuration Baskets
 * FIX: Notification Apply Rules have not been exported (#2335)
+* FIX: Restore now supports the set_if_format switch (#2291)
 * FEATURE: it's now possible to purge objects of specific types (#2201)
 * FEATURE: exporting Users, User-Templates and -Groups is now possible (#2328)
 
@@ -26,16 +27,32 @@ next (will be 1.9.0)
 * FEATURE: allow using monitoring module permissions (#2304)
 * FEATURE: it's now possible to grant (global) access to scheduled downtimes (#2086)
 
+### Configuration / Templating
+* FEATURE: offering choices based on a specific imports is now possible (#1178)
+
 ### User Interface
 * FIX: allow switching DB config while connection is failing (#2300)
 * FIX: Links to duplicate services in Sets didn't check for deactivation (#2323)
 * FIX: SQL error for Data Fields table on PostgreSQL (#2310)
 * FIX: SQL error when searching for Data Field Categories (#2367)
+* FIX: Icon used for Notifications has been changed (#2455)
 * FEATURE: show "deprecated" flag on object attribute inspection (#2312)
 * FEATURE: Service Template for single Host services provides auto-completion (#1974)
 
+### CLI
+* FEATURE: config deployment now allows to --wait for an Icinga restart (#2314)
+
+### Activity log
+* FEATURE: Activity log now allows for remarks (addon module required, #2471)
+
 ### Documentation
 * FIX: configure the daemon with main setup instructions (#2296, #2320)
+
+### Internals
+* FEATURE: PHP 8.1 is now supported, works once available in Icinga Web (#2435)
+* FEATURE: Config Branches have been implemented, leveraged via Hook/Addon (#2376)
+* FEATURE: UUIDs have been implemented for most Icinga objects, more to come
+* FEATURE: new Deployment Hook, triggers onCollect(ing) Icinga startup info (#2315)
 
 1.8.1
 -----
