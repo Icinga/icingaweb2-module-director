@@ -55,6 +55,7 @@ class BasketSnapshotFieldResolver
      */
     public function storeNewFields()
     {
+        $this->targetFields = null; // Clear Cache
         foreach ($this->getTargetFields() as $id => $field) {
             if ($field->hasBeenModified()) {
                 $field->store();
@@ -171,7 +172,7 @@ class BasketSnapshotFieldResolver
     protected function getObjectsByType($type)
     {
         if (isset($this->objects->$type)) {
-            return $this->objects->$type;
+            return (array) $this->objects->$type;
         } else {
             return [];
         }
@@ -210,6 +211,7 @@ class BasketSnapshotFieldResolver
         $this->idMap = [];
         $this->targetFields = [];
         foreach ($this->getObjectsByType('Datafield') as $id => $object) {
+            unset($object->category_id); // Fix old baskets
             // Hint: import() doesn't store!
             $new = DirectorDatafield::import($object, $this->targetDb);
             if ($new->hasBeenLoadedFromDb()) {

@@ -6,6 +6,7 @@ use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
+use Icinga\Module\Director\Objects\DirectorDatafieldCategory;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -30,6 +31,7 @@ use RuntimeException;
 class BasketSnapshot extends DbObject
 {
     protected static $typeClasses = [
+        'DatafieldCategory' => DirectorDatafieldCategory::class,
         'Datafield'       => DirectorDatafield::class,
         'TimePeriod'      => IcingaTimePeriod::class,
         'CommandTemplate' => [IcingaCommand::class, ['object_type' => 'template']],
@@ -160,12 +162,19 @@ class BasketSnapshot extends DbObject
         $fieldResolver = new BasketSnapshotFieldResolver($this->objects, $db);
         /** @var DirectorDatafield[] $fields */
         $fields = $fieldResolver->loadCurrentFields($db);
+        $categories = [];
         if (! empty($fields)) {
             $plain = [];
             foreach ($fields as $id => $field) {
                 $plain[$id] = $field->export();
+                if ($category = $field->getCategory()) {
+                    $categories[$category->get('category_name')] = $category->export();
+                }
             }
             $this->objects['Datafield'] = $plain;
+        }
+        if (! empty($categories)) {
+            $this->objects['DatafieldCategory'] = $categories;
         }
     }
 
@@ -259,6 +268,7 @@ class BasketSnapshot extends DbObject
         $db->beginTransaction();
         $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
         $this->restoreType($all, 'DataList', $fieldResolver, $connection, $replace);
+        $this->restoreType($all, 'DatafieldCategory', $fieldResolver, $connection, $replace);
         $fieldResolver->storeNewFields();
         foreach ($this->restoreOrder as $typeName) {
             $this->restoreType($all, $typeName, $fieldResolver, $connection, $replace);

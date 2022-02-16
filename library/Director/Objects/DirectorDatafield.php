@@ -87,7 +87,7 @@ class DirectorDatafield extends DbObjectWithSettings
     public function getCategoryName()
     {
         $category = $this->getCategory();
-        if ($this->category === null) {
+        if ($category === null) {
             return null;
         } else {
             return $category->get('category_name');
@@ -105,7 +105,13 @@ class DirectorDatafield extends DbObjectWithSettings
             }
             $this->category = $category;
         } else {
-            $this->setCategory(DirectorDatafieldCategory::load($category, $this->getConnection()));
+            if (DirectorDatafieldCategory::exists($category, $this->getConnection())) {
+                $this->setCategory(DirectorDatafieldCategory::load($category, $this->getConnection()));
+            } else {
+                $this->setCategory(DirectorDatafieldCategory::create([
+                    'category_name' => $category
+                ], $this->getConnection()));
+            }
         }
 
         return $this;
@@ -128,6 +134,10 @@ class DirectorDatafield extends DbObjectWithSettings
                 $this->getConnection()
             )->get('list_name');
             unset($plain->settings->datalist_id);
+        }
+        if (property_exists($plain, 'category_id')) {
+            $plain->category = $this->getCategoryName();
+            unset($plain->category_id);
         }
 
         return $plain;
@@ -191,6 +201,16 @@ class DirectorDatafield extends DbObjectWithSettings
         }
 
         return static::create($properties, $db);
+    }
+
+    protected function beforeStore()
+    {
+        if ($this->category) {
+            if (!$this->category->hasBeenLoadedFromDb()) {
+                throw new \RuntimeException('Trying to store a datafield with an unstored Category');
+            }
+            $this->set('category_id', $this->category->get('id'));
+        }
     }
 
     protected function setObject(IcingaObject $object)

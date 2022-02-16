@@ -22,6 +22,7 @@ next (will be 1.9.0)
 * FIX: Restore now supports the set_if_format switch (#2291)
 * FEATURE: it's now possible to purge objects of specific types (#2201)
 * FEATURE: exporting Users, User-Templates and -Groups is now possible (#2328)
+* FEATURE: Data Field Categories are now supported (#2256)
 
 ### Permissions and Restrictions
 * FEATURE: allow using monitoring module permissions (#2304)
