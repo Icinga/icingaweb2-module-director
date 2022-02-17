@@ -19,10 +19,10 @@ Requirements
 * Icinga Web 2 (&gt;= 2.6.0). All versions since 2.2 should also work fine, but
   might show smaller UI bugs and are not actively tested
 * The following Icinga modules must be installed and enabled:
-  * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.5.0)
+  * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.12.0)
   * If you are using Icinga Web &lt; 2.9.0, the following modules are also required
-    * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.3.0)
-    * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.7.0)
+    * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.5.0)
+    * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.9.0)
 * A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
   MySQL forks are also fine. Mentioned versions are the required minimum,
   for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
@@ -100,7 +100,7 @@ and extract it to a folder named `director` in one of your Icinga Web 2 module p
 You might want to use a script as follows for this task:
 
 ```shell
-MODULE_VERSION="1.8.1"
+MODULE_VERSION="1.9.0"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
@@ -127,7 +127,7 @@ Just clone the repository to one of your Icinga Web 2 module path directories.
 It will be immediately ready for use:
 
 ```shell
-MODULE_VERSION="1.8.1"
+MODULE_VERSION="1.9.0"
 ICINGAWEB_MODULEPATH="/usr/share/icingaweb2/modules"
 REPO_URL="https://github.com/icinga/icingaweb2-module-director"
 TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"

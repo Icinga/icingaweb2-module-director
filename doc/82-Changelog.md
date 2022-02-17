@@ -7,6 +7,10 @@ before switching to a new version.
 next (will be 1.9.0)
 --------------------
 
+### Breaking Changes
+* Module dependencies have been raised, [Upgrading](05-Upgrading.md) and
+  [Installation](02-Installation.md) documentations contain related details
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/25?closed=1)

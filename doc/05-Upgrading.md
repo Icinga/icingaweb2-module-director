@@ -15,6 +15,7 @@ you will be told so in your frontend.
 Please read more about:
 
 * [Database Backup](#backup-first)
+* [Upgrading to 1.9.x](#upgrade-to-1.9.x)
 * [Upgrading to 1.8.x](#upgrade-to-1.8.x)
 * [Upgrading to 1.7.x](#upgrade-to-1.7.x)
 * [Upgrading to 1.6.x](#upgrade-to-1.6.x)
@@ -38,6 +39,13 @@ All you need for backing up your Director is a snapshot of your database. Please
 use the tools provided by your database backend, like `mysqldump` or `pg_dump`.
 Restoring from a backup is trivial, and Director will always be able to apply
 pending database migrations to an imported old database snapshot.
+
+<a name="upgrade-to-1.9.x"></a>Upgrading to 1.9.x
+-------------------------------------------------
+
+Please check module dependencies, we raised some of them. In case you're missing
+one of them, the Web UI will tell you after the upgrade. You'll then be prompted
+to apply pending Database Migrations.
 
 <a name="upgrade-to-1.8.x"></a>Upgrading to 1.8.x
 -------------------------------------------------
