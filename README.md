@@ -42,9 +42,6 @@ or code.
 * Make sure your code conforms to the [PSR-2: Coding Style Guide](http://www.php-fig.org/psr/psr-2/)
 * [Unit-Tests](doc/93-Testing.md) would be great
 * Send a [Pull Request](https://github.com/Icinga/icingaweb2-module-director/pulls)
- (it will automatically be tested on Travis-CI)
-* We try hard to keep our master always green: [![Build Status](https://travis-ci.org/Icinga/icingaweb2-module-director.svg?branch=master)](https://travis-ci.org/Icinga/icingaweb2-module-director)
-
 
 Addons
 ------
