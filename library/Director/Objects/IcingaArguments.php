@@ -387,7 +387,7 @@ class IcingaArguments implements Iterator, Countable, IcingaConfigRenderer
             $argument = $this->arguments[$key];
             $argument->setLoadedProperty('command_id', $this->object->get('id'));
             $argument->setConnection($this->object->getConnection());
-            $argument->delete();;
+            $argument->delete();
             unset($this->arguments[$key]);
         }
 
