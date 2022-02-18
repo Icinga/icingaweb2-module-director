@@ -5,7 +5,6 @@ namespace Icinga\Module\Director\ProvidedHook;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Cube\Cube;
 use Icinga\Module\Cube\Hook\ActionsHook;
-use Icinga\Module\Cube\Ido\IdoHostStatusCube;
 use Icinga\Web\View;
 
 class CubeLinks extends ActionsHook
@@ -15,17 +14,11 @@ class CubeLinks extends ActionsHook
      */
     public function prepareActionLinks(Cube $cube, View $view)
     {
-        if (! $cube instanceof IdoHostStatusCube) {
+        if (! method_exists($cube, 'getHostNames')) {
             return;
         }
 
-        $cube->finalizeInnerQuery();
-        $query = $cube->innerQuery()
-            ->reset('columns')
-            ->columns(array('host' => 'o.name1'))
-            ->reset('group');
-
-        $hosts = $cube->db()->fetchCol($query);
+        $hosts = $cube->getHostNames();
 
         $count = count($hosts);
         if ($count === 1) {
