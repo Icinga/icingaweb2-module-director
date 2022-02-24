@@ -4,8 +4,18 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-next (will be 1.9.0)
+next (will be 1.9.1)
 --------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/28?closed=1)
+
+### User Interface
+* FIX: DataList-backed fields failed to validate (#2475)
+
+1.9.0
+-----
 
 ### Breaking Changes
 * Module dependencies have been raised, [Upgrading](05-Upgrading.md) and

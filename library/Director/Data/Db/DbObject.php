@@ -1371,7 +1371,7 @@ abstract class DbObject
 
         /** @var DbObject $obj */
         $obj = new static;
-        if (self::$dbObjectStore !== null) {
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
@@ -1418,7 +1418,7 @@ abstract class DbObject
         $db = $connection->getDbAdapter();
         $obj = new static;
 
-        if (self::$dbObjectStore !== null) {
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
             $table = $obj->getTableName();
             assert($connection instanceof Db);
             return self::$dbObjectStore->load($table, $uuid);
