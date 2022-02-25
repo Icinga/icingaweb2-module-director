@@ -14,6 +14,9 @@ next (will be 1.9.1)
 ### User Interface
 * FIX: DataList-backed fields failed to validate (#2475)
 
+### DB Schema
+* FIX: applying DB Schema migrations failed on PostgreSQL (#2482)
+
 1.9.0
 -----
 
