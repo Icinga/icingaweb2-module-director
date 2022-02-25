@@ -346,7 +346,6 @@ CREATE TABLE icinga_zone (
 );
 
 CREATE INDEX zone_parent ON icinga_zone (parent_id);
-CREATE UNIQUE INDEX zone_uuid ON icinga_zone (uuid);
 
 
 CREATE TABLE icinga_zone_inheritance (
@@ -389,7 +388,6 @@ CREATE TABLE icinga_timeperiod (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX timeperiod_uuid ON icinga_timeperiod (uuid);
 CREATE UNIQUE INDEX timeperiod_object_name ON icinga_timeperiod (object_name, zone_id);
 CREATE INDEX timeperiod_zone ON icinga_timeperiod (zone_id);
 COMMENT ON COLUMN icinga_timeperiod.update_method IS 'Usually LegacyTimePeriod';
@@ -495,7 +493,6 @@ CREATE TABLE icinga_command (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX command_uuid ON icinga_command (uuid);
 CREATE UNIQUE INDEX command_object_name ON icinga_command (object_name);
 CREATE INDEX command_zone ON icinga_command (zone_id);
 COMMENT ON COLUMN icinga_command.object_type IS 'external_object is an attempt to work with existing commands';
@@ -603,7 +600,6 @@ CREATE TABLE icinga_apiuser (
   PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX apiuser_uuid ON icinga_apiuser (uuid);
 COMMENT ON COLUMN icinga_apiuser.permissions IS 'JSON-encoded permissions';
 
 
@@ -631,7 +627,6 @@ CREATE TABLE icinga_endpoint (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX endpoint_uuid ON icinga_endpoint (uuid);
 CREATE UNIQUE INDEX endpoint_object_name ON icinga_endpoint (object_name);
 CREATE INDEX endpoint_zone ON icinga_endpoint (zone_id);
 COMMENT ON COLUMN icinga_endpoint.host IS 'IP address / hostname of remote node';
@@ -747,7 +742,6 @@ CREATE TABLE icinga_host (
 );
 
 
-CREATE UNIQUE INDEX host_uuid ON icinga_host (uuid);
 CREATE UNIQUE INDEX object_name_host ON icinga_host (object_name, zone_id);
 CREATE UNIQUE INDEX host_api_key ON icinga_host (api_key);
 CREATE INDEX host_zone ON icinga_host (zone_id);
@@ -849,7 +843,6 @@ CREATE TABLE icinga_service_set (
 
 CREATE UNIQUE INDEX service_set_name ON icinga_service_set (object_name, host_id);
 CREATE INDEX service_set_host ON icinga_service_set (host_id);
-CREATE UNIQUE INDEX service_set_uuid ON icinga_service_set (uuid);
 
 
 CREATE TABLE icinga_service_template_choice (
@@ -948,7 +941,6 @@ CREATE TABLE icinga_service (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX service_uuid ON icinga_service (uuid);
 CREATE INDEX service_zone ON icinga_service (zone_id);
 CREATE INDEX service_timeperiod ON icinga_service (check_period_id);
 CREATE INDEX service_check_command ON icinga_service (check_command_id);
@@ -1122,7 +1114,6 @@ CREATE TABLE icinga_hostgroup (
   PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX hostgroup_uuid ON icinga_hostgroup (uuid);
 CREATE UNIQUE INDEX hostgroup_object_name ON icinga_hostgroup (object_name);
 CREATE INDEX hostgroup_search_idx ON icinga_hostgroup (display_name);
 
@@ -1161,7 +1152,6 @@ CREATE TABLE icinga_servicegroup (
   PRIMARY KEY (id)
 );
 
-CREATE UNIQUE INDEX servicegroup_uuid ON icinga_servicegroup (uuid);
 CREATE UNIQUE INDEX servicegroup_object_name ON icinga_servicegroup (object_name);
 CREATE INDEX servicegroup_search_idx ON icinga_servicegroup (display_name);
 
@@ -1312,7 +1302,6 @@ CREATE TABLE icinga_user (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX user_uuid ON icinga_user (uuid);
 CREATE UNIQUE INDEX user_object_name ON icinga_user (object_name, zone_id);
 CREATE INDEX user_zone ON icinga_user (zone_id);
 
@@ -1430,7 +1419,6 @@ CREATE TABLE icinga_usergroup (
       ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX usergroup_uuid ON icinga_usergroup (uuid);
 CREATE UNIQUE INDEX usergroup_search_idx ON icinga_usergroup (display_name);
 CREATE INDEX usergroup_object_name ON icinga_usergroup (object_name);
 CREATE INDEX usergroup_zone ON icinga_usergroup (zone_id);
@@ -1541,8 +1529,6 @@ CREATE TABLE icinga_notification (
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
-
-CREATE UNIQUE INDEX notification_uuid ON icinga_notification (uuid);
 
 
 CREATE TABLE icinga_notification_user (
@@ -2102,7 +2088,6 @@ CREATE TABLE icinga_dependency (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX dependency_uuid ON icinga_dependency (uuid);
 CREATE INDEX dependency_parent_host ON icinga_dependency (parent_host_id);
 CREATE INDEX dependency_parent_service ON icinga_dependency (parent_service_id);
 CREATE INDEX dependency_child_host ON icinga_dependency (child_host_id);
@@ -2203,7 +2188,6 @@ CREATE TABLE icinga_scheduled_downtime (
     ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX scheduled_downtime_uuid ON icinga_scheduled_downtime (uuid);
 CREATE UNIQUE INDEX scheduled_downtime_object_name ON icinga_scheduled_downtime (object_name);
 CREATE INDEX scheduled_downtime_zone ON icinga_scheduled_downtime (zone_id);
 
