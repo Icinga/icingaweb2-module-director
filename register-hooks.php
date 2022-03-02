@@ -64,7 +64,7 @@ use Icinga\Module\Director\ProvidedHook\IcingaDbCubeLinks;
 $this->provideHook('monitoring/HostActions');
 $this->provideHook('monitoring/ServiceActions');
 $this->provideHook('cube/Actions', CubeLinks::class);
-$this->provideHook('cube/Icingadb', IcingaDbCubeLinks::class);
+$this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
 
 $directorHooks = [
     'director/DataType' => [
