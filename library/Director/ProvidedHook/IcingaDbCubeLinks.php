@@ -2,81 +2,58 @@
 
 namespace Icinga\Module\Director\ProvidedHook;
 
-use Icinga\Application\Config;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Cube\BaseCube;
-use Icinga\Module\Cube\Hook\IcingadbHook;
-use Icinga\Module\Cube\HostCube;
-use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Web\View;
+use Icinga\Module\Cube\Hook\IcingaDbActionsHook;
+use Icinga\Module\Cube\IcingaDb\IcingaDbCube;
+use Icinga\Module\Cube\IcingaDb\IcingaDbHostStatusCube;
 
-class IcingaDbCubeLinks extends IcingadbHook
+class IcingaDbCubeLinks extends IcingaDbActionsHook
 {
     /**
      * @inheritDoc
-     * @param BaseCube $cube
-     * @param View $view
+     * @param IcingaDbCube $cube
      * @throws ProgrammingError
      */
-    public function prepareActionLinks(BaseCube $cube, View $view)
+    public function createActionLinks(IcingaDbCube $cube)
     {
-        if (! $cube instanceof HostCube) {
+        if (! $cube instanceof IcingaDbHostStatusCube) {
             return;
         }
 
-        $directorHosts = array_keys(IcingaObject::loadAllByType('Host', $this->directorDb()));
+        $filterChain = $cube->getObjectsFilter();
 
-        $hosts = [];
-        foreach ($cube->getQuery()->getHostNames($cube->getSlices()) as $host) {
-            $hosts[] = $host;
-        }
+        if ($filterChain->count() === 1) {
+            $url = 'director/host/edit?';
+            $params = ['name' => $filterChain->getIterator()->current()->getValue()];
 
-        $count = count($hosts);
-        $chosenHosts = [];
-        if ($count === 1) {
-            $url = 'director/host/edit';
-            if (in_array($hosts[0], $directorHosts)) {
-                $chosenHosts[] = $hosts[0];
-                $params = array('name' => $hosts[0]);
-                $title = $view->translate('Modify a host');
-                $description = sprintf(
-                    $view->translate('This allows you to modify properties for "%s" (deployed from director)'),
-                    $chosenHosts[0]
-                );
-            }
+            $title = t('Modify a host');
+            $description = sprintf(
+                t('This allows you to modify properties for "%s"'),
+                $filterChain->getIterator()->current()->getValue()
+            );
         } else {
             $params = null;
 
-            $filter = Filter::matchAny();
-            foreach ($hosts as $host) {
-                if (in_array($host, $directorHosts)) {
-                    $chosenHosts[] = $host;
-                    $filter->addFilter(
-                        Filter::matchAny(Filter::expression('name', '=', $host))
-                    );
-                }
-            }
-
-            $url = 'director/hosts/edit?' . $filter->toQueryString();
-
-            if (count($chosenHosts) == 1) {
-                $title = $view->translate('Modify a host');
-                $description = sprintf(
-                    $view->translate('This allows you to modify properties for "%s" (deployed from director)'),
-                    $chosenHosts[0]
-                );
-            } else {
-                $title = sprintf($view->translate('Modify %d hosts'), count($chosenHosts));
-                $description = $view->translate(
-                    'This allows you to modify properties for all chosen hosts (deployed from director) at once'
+            $urlFilter = Filter::matchAny();
+            foreach ($filterChain as $filter) {
+                $urlFilter->addFilter(
+                    Filter::matchAny(
+                        Filter::expression(
+                            'name',
+                            '=',
+                            $filter->getValue()
+                        )
+                    )
                 );
             }
-        }
 
-        if (! (count($chosenHosts) > 0)) {
-            return;
+            $url = 'director/hosts/edit?' . $urlFilter->toQueryString();
+
+            $title = sprintf(t('Modify %d hosts'), $filterChain->count());
+            $description = t(
+                'This allows you to modify properties for all chosen hosts at once'
+            );
         }
 
         $this->addActionLink(
@@ -85,15 +62,5 @@ class IcingaDbCubeLinks extends IcingadbHook
             $description,
             'wrench'
         );
-    }
-
-    protected function directorDb()
-    {
-        $resourceName = Config::module('director')->get('db', 'resource');
-        if (! $resourceName) {
-            return false;
-        }
-
-        return Db::fromResourceName($resourceName);
     }
 }
