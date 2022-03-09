@@ -199,6 +199,7 @@ class BasketSnapshot extends DbObject
             throw new RuntimeException('A basket snapshot cannot be modified');
         }
         $json = $this->getJsonDump();
+        $json = preg_replace('/,\n\s\+uuid.\*$/', "\n", $json);
         $checksum = sha1($json, true);
         if (! BasketContent::exists($checksum, $this->getConnection())) {
             BasketContent::create([
@@ -417,7 +418,7 @@ class BasketSnapshot extends DbObject
             return $this->getContent()->get('content');
         }
 
-        return Json::encode($this->objects, JSON_PRETTY_PRINT);
+        return Json::encode($this->objects, JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     protected function addAll($typeName)
