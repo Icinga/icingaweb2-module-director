@@ -713,7 +713,7 @@ class IcingaServiceForm extends DirectorObjectForm
             $table->setBranchUuid($this->branch->getUuid());
         }
         $result = [];
-        foreach ($db->fetchAll($table->getQuery()) as $row) {
+        foreach ($db->fetchAll($table->getQuery()->reset(\Zend_Db_Select::LIMIT_COUNT)) as $row) {
             $result[$row->object_name] = $row->object_name;
         }
 
