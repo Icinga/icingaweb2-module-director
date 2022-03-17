@@ -315,10 +315,6 @@ class SyncRule extends DbObject implements ExportInterface
         $object->newSyncProperties = $properties['properties'];
         unset($properties['properties']);
         $object->setProperties($properties);
-        if ($id !== null && (int) $id !== (int) $object->get('id')) {
-            $object->originalId = $object->get('id');
-            $object->reallySet('id', $id);
-        }
 
         return $object;
     }
