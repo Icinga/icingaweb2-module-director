@@ -456,7 +456,22 @@ Config with checksum b330febd0820493fb12921ad8f5ea42102a5c871 already exists
 
 ### Config deployment
 
-You do not need to explicitely render your config before deploying it to your
+#### Usage
+
+`icingacli director config deploy [options]`
+
+#### Options
+
+| Option                     | Description                                                      |
+|----------------------------|------------------------------------------------------------------|
+| `checksum <checksum>`      | Optionally deploy a specific configuration                       |
+| `--force`                  | Force a deployment, even when the configuration hasn't changed   |
+| `--wait <seconds>`         | Optionally wait until Icinga completed it's restart              |
+| `--grace-period <seconds>` | Do not deploy if a deployment took place less than <seconds> ago |
+
+#### Examples
+
+You do not need to explicitly render your config before deploying it to your
 Icinga 2 master node. Just trigger a deployment, it will re-render the current
 config:
 
@@ -488,6 +503,13 @@ version the `deploy` command allows you to provide a specific checksum:
 
 ```shell
 icingacli director config deploy --checksum b330febd0820493fb12921ad8f5ea42102a5c871
+```
+
+When using `icingacli` deployments in an automated way, and want to avoid fast
+consecutive deployments, you can provide a grace period:
+
+```shell
+icingacli director config deploy --grace-period 300
 ```
 
 ### Deployments status

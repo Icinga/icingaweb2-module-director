@@ -83,30 +83,4 @@ abstract class JobHook
     {
         return $this->db;
     }
-
-    /**
-     * printf helper method
-     *
-     * @param  string $message Format string
-     * @param  mixed  ...$arg  Format string argument
-     *
-     * @return self
-     */
-    protected function info($message)
-    {
-        call_user_func_array(array('Icinga\\Application\\Logger', 'info'), func_get_args());
-        return $this;
-    }
-
-    protected function warning($message)
-    {
-        call_user_func_array(array('Icinga\\Application\\Logger', 'warn'), func_get_args());
-        return $this;
-    }
-
-    protected function error($message)
-    {
-        call_user_func_array(array('Icinga\\Application\\Logger', 'error'), func_get_args());
-        return $this;
-    }
 }
