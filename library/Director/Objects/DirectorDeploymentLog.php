@@ -121,6 +121,19 @@ class DirectorDeploymentLog extends DbObject
     }
 
     /**
+     * @param Db $connection
+     * @return ?DirectorDeploymentLog
+     */
+    public static function optionalLatest(Db $connection)
+    {
+        try {
+            return static::loadLatest($connection);
+        } catch (NotFoundError $exception) {
+            return null;
+        }
+    }
+
+    /**
      * @param CoreApi $api
      * @param Db $connection
      * @return DirectorDeploymentLog

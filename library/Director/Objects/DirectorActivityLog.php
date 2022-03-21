@@ -84,6 +84,11 @@ class DirectorActivityLog extends DbObject
         }
     }
 
+    /**
+     * @param Db $connection
+     * @return DirectorActivityLog
+     * @throws \Icinga\Exception\NotFoundError
+     */
     public static function loadLatest(Db $connection)
     {
         $db = $connection->getDbAdapter();

@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Cli;
 
+use gipfl\Json\JsonString;
 use Icinga\Cli\Command as CliCommand;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
@@ -21,7 +22,7 @@ class Command extends CliCommand
 
     protected function renderJson($object, $pretty = true)
     {
-        return json_encode($object, $pretty ? JSON_PRETTY_PRINT : null) . "\n";
+        return JsonString::encode($object, $pretty ? JSON_PRETTY_PRINT : null) . "\n";
     }
 
     /**
