@@ -226,19 +226,19 @@ input[disabled] {
 /* END OF TODO */
 
 pre {
-  background: @gray-lighter;
+  background: none;
 }
 
 pre.logfile {
   font-size: 0.875em;
   padding: 1em;
-  color: @text-color;
+  background: @gray-lighter;
+  color: @gray;
   overflow: auto;
   white-space: pre;
-  opacity: .7;
 
   a {
-    color: @text-color;
+    color: @link-color;
   }
 
   .loglevel, .application {
@@ -258,7 +258,7 @@ pre.logfile {
   }
 
   .notice {
-    // color, @color-ok);
+    // color: @color-ok;
   }
 
   .debug {
@@ -273,13 +273,13 @@ pre.logfile {
 
 pre.generated-config {
 
-    a {
-      color: inherit;
-      font-weight: bold;
-    }
+  a {
+    color: @link-color;
+    font-weight: bold;
+  }
 
   .highlight {
-    border-bottom: 1px dashed @gray-lighter;
+    border-bottom: 1px dashed @gray-light;
     &::before {
       // icon: right-big
       font-family: 'ifont';
@@ -342,7 +342,7 @@ form input[type=submit] {
   &:disabled {
     border-color: @gray-light;
     background-color: @gray-light;
-    color: @text-color;
+    color: @disabled-gray;
   }
 }
 
@@ -391,7 +391,7 @@ form ul.form-errors {
         background: @color-critical;
         font-weight: bold;
         padding: 0.5em 1em;
-        color: @text-color;
+        color: @text-color-inverted;
     }
 }
 
@@ -537,7 +537,7 @@ ul.extensible-set {
     }
 
     input[type=text] {
-        background-color: @tr-active-color;
+        background-color: @low-sat-blue;
         .rounded-corners(0.5em);
         border: 1px solid transparent;
         padding: 0.1em 0.3em;
@@ -564,7 +564,6 @@ ul.extensible-set {
 
     select.extend-set, input.extend-set {
         display: none;
-        background-color: @gray-lighter;
     }
 }
 
@@ -628,19 +627,12 @@ select, input[type=text], textarea {
     }
 }
 
-select[value=""] {
-    color: @menu-active-bg-color;
-    border: 1px solid @gray-light;
-    background-color: @low-sat-blue;
-}
-
 select option {
-    color: inherit;
     padding-left: 0.5em;
 }
 
 select option[value=""] {
-  color: @text-color;
+  color: @disabled-gray;
   background-color: @low-sat-blue;
 }
 
@@ -668,22 +660,22 @@ a {
 ul.tabs a.state-critical {
   background-color: @color-critical;
   font-weight: bold;
-  color: @text-color;
+  color: @text-color-inverted;
 }
 ul.tabs a.state-warning {
   background-color: @color-warning;
   font-weight: bold;
-  color: @text-color;
+  color: @text-color-inverted;
 }
 ul.tabs a.state-ok {
   background-color: @color-ok;
   font-weight: bold;
-  color: @text-color;
+  color: @text-color-inverted;
 }
 ul.tabs a.state-unknown {
   background-color: @color-unknown;
   font-weight: bold;
-  color: @text-color;
+  color: @text-color-inverted;
 }
 
 a:hover::before {
@@ -714,8 +706,7 @@ ul.main-actions {
         float: left;
         line-height: 1em;
         margin-right: 0.3em;
-        color: @text-color;
-        opacity: .7;
+        color: @text-color-light;
       }
 
       &.state-critical i {
@@ -768,8 +759,7 @@ ul.main-actions {
       font-weight: normal;
       margin-bottom: 0.5em;
       padding-left: 4.5em;
-      color: @text-color;
-      opacity: .7;
+      color: @text-color-light;
     }
   }
 }
@@ -1114,7 +1104,7 @@ span.error {
 }
 
 p.legacy-error {
-  color: @text-color;
+  color: @text-color-inverted;
   padding: 1em 2em;
   background-color: @color-critical;
 
@@ -1488,13 +1478,6 @@ input[type=submit].icon-button {
 
 /** BEGIN breadcrumb **/
 
-@breadcrumb-hover-bg-color: #29586B;
-@breadcrumb-hover-bg-color-light: #B8EBF6;
-
-@media (min-height: @prefer-light-color-scheme), (prefers-color-scheme: light) and (min-height: @enable-color-preference) {
-    --breadcrumb-hover-bg-color: @breadcrumb-hover-bg-color-light;
-}
-
 // Hint: .badges is unused right now
 .breadcrumb {
   list-style: none;
@@ -1514,13 +1497,13 @@ input[type=submit].icon-button {
 }
 
 .breadcrumb {
-  > .critical            a { color: @text-color; background: @color-critical; }
-  > .critical.handled    a { color: @text-color; background: @color-critical-handled; }
-  > .unknown             a { color: @text-color; background: @color-unknown; }
-  > .unknown.handled     a { color: @text-color; background: @color-unknown-handled; }
-  > .warning             a { color: @text-color; background: @color-warning; }
-  > .warning.handled     a { color: @text-color; background: @color-warning-handled; }
-  > .ok                  a { color: @text-color; background: @color-ok; }
+  > .critical            a { color: @text-color-inverted; background: @color-critical; }
+  > .critical.handled    a { color: @text-color-inverted; background: @color-critical-handled; }
+  > .unknown             a { color: @text-color-inverted; background: @color-unknown; }
+  > .unknown.handled     a { color: @text-color-inverted; background: @color-unknown-handled; }
+  > .warning             a { color: @text-color-inverted; background: @color-warning; }
+  > .warning.handled     a { color: @text-color-inverted; background: @color-warning-handled; }
+  > .ok                  a { color: @text-color-inverted; background: @color-ok; }
 }
 
 .breadcrumb {
@@ -1549,14 +1532,14 @@ input[type=submit].icon-button {
 
 }
 .breadcrumb li a {
-  // color, "white");
+  // color: white;
   color: @icinga-blue;
   margin: 0;
   // font-size: 1.2em;
   text-decoration: none;
   padding-left: 2em;
   // line-height: 1.5em;
-  // background, icinga-blue);
+  // background: @icinga-blue;
   border: 1px none @icinga-blue;
   border-right-style: solid;
   border-left-style: solid;
@@ -1603,14 +1586,12 @@ input[type=submit].icon-button {
   padding-right: 0.5em;
 }
 .breadcrumb li:last-child a {
-  cursor: default;
   color: @text-color;
 }
 
-.breadcrumb li:not(:last-child) a:hover { background: @tr-active-color; }
-.breadcrumb li:not(:last-child) a:hover:after { border-left-color: @breadcrumb-hover-bg-color; }
-
-.breadcrumb li:last-child:hover, .breadcrumb li:last-child a:hover { background: transparent; }
+.breadcrumb li:not(:last-child) a:hover { background: @icinga-blue; color: @text-color-on-icinga-blue; }
+.breadcrumb li:not(:last-child) a:hover:after { border-left-color: @icinga-blue; }
+.breadcrumb li:last-child:hover, .breadcrumb li:last-child a:hover { background: transparent; text-decoration: underline; }
 
 .breadcrumb li a:focus {
   text-decoration: underline;
@@ -1739,21 +1720,21 @@ ul.director-suggestions {
   max-height: 25em;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid @gray-lighter;
+  border: 1px solid @icinga-blue;
   border-top: none;
   position: absolute;
   z-index: 2000;
   padding: 0;
   margin: 0;
   list-style-type: none;
-  background-color: @body-bg-color;
+  background-color: @low-sat-blue;
   li {
     margin: 0;
     padding: 0.5em 1em;
   }
 
   li:hover {
-    background-color: @breadcrumb-hover-bg-color;
+    background-color: @tr-hover-color;
     cursor: pointer;
   }
 
