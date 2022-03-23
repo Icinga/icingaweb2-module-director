@@ -126,17 +126,17 @@ Use this command to modify specific properties of an existing Icinga object.
 
 #### Options
 
-| Option            | Description                                           |
-|-------------------|-------------------------------------------------------|
-| `--<key> <value>` | Provide all properties as single command line options |
-| `--append-<key> <value>` | Appends to array values, like `imports`,       |
-|                   | `groups` or `vars.system_owners`                      |
-| `--remove-<key> [<value>]` | Remove a specific property, eventually only  |
-|                   | when matching `value`. In case the property is an     |
-|                   | array it will remove just `value` when given          |
-| `--json`          | Otherwise provide all options as a JSON string        |
-| `--replace`       | Replace all object properties with the given ones     |
-| `--auto-create`   | Create the object in case it does not exist           |
+| Option                     | Description                                           |
+|----------------------------|-------------------------------------------------------|
+| `--<key> <value>`          | Provide all properties as single command line options |
+| `--append-<key> <value>`   | Appends to array values, like `imports`,              |
+|                            | `groups` or `vars.system_owners`                      |
+| `--remove-<key> [<value>]` | Remove a specific property, eventually only           |
+|                            | when matching `value`. In case the property is an     |
+|                            | array it will remove just `value` when given          |
+| `--json`                   | Otherwise provide all options as a JSON string        |
+| `--replace`                | Replace all object properties with the given ones     |
+| `--auto-create`            | Create the object in case it does not exist           |
 
 
 #### Examples
@@ -281,7 +281,7 @@ on this object would have been removed.
 
 The Icinga Director distincts between the following object types:
 
-| Type              | Description
+| Type              | Description                                                 |
 |-------------------|-------------------------------------------------------------|
 | `object`          | The default object type. A host, a command and similar      |
 | `template`        | An Icinga template                                          |
