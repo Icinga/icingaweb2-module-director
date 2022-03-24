@@ -3,9 +3,21 @@
 namespace Icinga\Module\Director\Web\Table;
 
 use Zend_Db_Select as ZfSelect;
+use gipfl\IcingaWeb2\Table\Extension\MultiSelect;
 
 class ObjectsTableCommand extends ObjectsTable implements FilterableByUsage
 {
+    use MultiSelect;
+
+    public function assemble()
+    {
+        $this->enableMultiSelect(
+            'director/commands/edit',
+            'director/commands',
+            ['uuid']
+        );
+    }
+
     // TODO: Notifications separately?
     protected $searchColumns = [
         'o.object_name',

@@ -8,6 +8,13 @@ class CommandsController extends ObjectsController
 {
     public function indexAction()
     {
+        protected $multiEdit = array(
+          'imports',
+          'timeout',
+          'is_string',
+          'disabled'
+        );
+
         parent::indexAction();
         $validTypes = ['object', 'external_object'];
         $type = $this->params->get('type', 'object');
