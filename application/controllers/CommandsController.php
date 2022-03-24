@@ -8,15 +8,15 @@ use gipfl\IcingaWeb2\Link;
 
 class CommandsController extends ObjectsController
 {
+    protected $multiEdit = array(
+        'imports',
+        'timeout',
+        'is_string',
+        'disabled'
+    );
+
     public function indexAction()
     {
-        protected $multiEdit = array(
-          'imports',
-          'timeout',
-          'is_string',
-          'disabled'
-        );
-
         parent::indexAction();
         $validTypes = ['object', 'external_object'];
         $type = $this->params->get('type', 'object');
