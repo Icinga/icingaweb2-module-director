@@ -564,7 +564,16 @@ class IcingaServiceForm extends DirectorObjectForm
                 'Name for the Icinga service you are going to create'
             )
         ));
-
+        
+        if ($this->isObject()) {
+            $this->addElement('text', 'display_name', array(
+                'label'       => $this->translate('Display name'),
+                'description' => $this->translate(
+                    'Name for the Icinga service you are going to create'
+                )
+            ));
+	    }
+        
         if ($this->object()->isApplyRule()) {
             $this->eventuallyAddNameRestriction('director/service/apply/filter-by-name');
         }
