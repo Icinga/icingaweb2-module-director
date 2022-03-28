@@ -63,7 +63,7 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
         // Special, internal:
         'IcingaCheck'      => 'icinga-check-command',
         'ClusterCheck'     => 'cluster-check-command',
-        'ClusterZoneCheck' => 'plugin-check-command',
+        'ClusterZoneCheck' => 'cluster-zone-check-command',
         'IdoCheck'         => 'ido-check-command',
         'RandomCheck'      => 'random-check-command',
         'CrlCheck'         => 'clr-check-command',
