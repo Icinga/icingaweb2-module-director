@@ -62,7 +62,7 @@ class ActivityLogTable extends ZfQueryBasedTable
     {
         $rows = parent::fetchQueryRows();
         // Hint -> DESC, that's why they are inverted
-        if( empty($rows)){
+        if (empty($rows)) {
             return $rows;
         }
         $last = $rows[0]->id;
