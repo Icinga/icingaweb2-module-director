@@ -783,7 +783,7 @@ class IcingaServiceForm extends DirectorObjectForm
     {
         if ($this->hasBeenSent()) {
             $name = $this->getSentOrObjectValue('object_name');
-            if (!strlen($name)) {
+            if ($name === null || !strlen($name)) {
                 $this->setElementValue('object_name', end($imports));
                 $this->object->set('object_name', end($imports));
             }
