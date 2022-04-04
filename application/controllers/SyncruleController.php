@@ -2,8 +2,6 @@
 
 namespace Icinga\Module\Director\Controllers;
 
-use gipfl\Diff\HtmlRenderer\SideBySideDiff;
-use gipfl\Diff\PhpDiff;
 use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Widget\Hint;
 use Icinga\Module\Director\Web\Widget\IcingaConfigDiff;
@@ -30,7 +28,6 @@ use Icinga\Module\Director\Web\Tabs\SyncRuleTabs;
 use Icinga\Module\Director\Web\Widget\SyncRunDetails;
 use ipl\Html\Form;
 use ipl\Html\Html;
-use ipl\Html\ValidHtml;
 
 class SyncruleController extends ActionController
 {
