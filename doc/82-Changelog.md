@@ -15,6 +15,9 @@ next (will be 1.9.1)
 * FIX: DataList-backed fields failed to validate (#2475)
 * FIX: No Host list limit when adding a single service globally (#2481)
 
+### Configuration Baskets
+* FIX: failed to export Baskets with Service Sets (#2488)
+
 ### DB Schema
 * FIX: applying DB Schema migrations failed on PostgreSQL (#2482)
 
