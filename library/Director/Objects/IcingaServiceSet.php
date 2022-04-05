@@ -140,10 +140,13 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     public function export()
     {
         if ($this->get('host_id')) {
-            return $this->exportSetOnHost();
+            $result = $this->exportSetOnHost();
         } else {
-            return $this->exportTemplate();
+            $result = $this->exportTemplate();
         }
+
+        unset($result->uuid);
+        return $result;
     }
 
     protected function exportSetOnHost()
