@@ -315,7 +315,7 @@ class CoreApi implements DeploymentApiInterface
 
     public function supportsRuntimeCreationFor(IcingaObject $object)
     {
-        $valid = array('host');
+        $valid = array('host', 'service');
         return in_array($object->getShortTableName(), $valid);
     }
 
@@ -336,13 +336,34 @@ class CoreApi implements DeploymentApiInterface
 
         $key = $object->getShortTableName();
 
+        switch ($key) {
+            case 'host':
+                $objectGetter = sprintf(
+                    'get_%s("%s")',
+                    $key,
+                    $object->getObjectName()
+                );
+                break;
+            case 'service':
+                $objectGetter = sprintf(
+                    'get_%s("%s","%s")',
+                    $key,
+                    $object->getRelated('host')->getObjectName(),
+                    $object->getObjectName()
+                );
+                break;
+            default:
+                throw new RuntimeException(sprintf(
+                    'Object creation at runtime is not supported for "%s"',
+                    $key
+                ));
+        }
+
         $command = sprintf(
             "f = function() {\n"
-            . '  existing = get_%s("%s")'
+            . "  existing = " . $objectGetter
             . "\n  if (existing) { return false }"
             . "\n%s\n}\nInternal.run_with_activation_context(f)\n",
-            $key,
-            $object->get('object_name'),
             (string) $object
         );
 
