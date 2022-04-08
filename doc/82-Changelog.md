@@ -15,6 +15,7 @@ before switching to a new version.
 * FIX: DataList-backed fields failed to validate (#2475)
 * FIX: No Host list limit when adding a single service globally (#2481)
 * FIX: Cleared activity log caused exception (#2505, #2506)
+* FEATURE: Icinga Web 2.10 dark mode support (#2433)
 
 ### Configuration Baskets
 * FIX: failed to export Baskets with Service Sets (#2488)
