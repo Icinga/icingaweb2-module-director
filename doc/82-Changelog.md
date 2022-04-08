@@ -4,8 +4,8 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-next (will be 1.9.1)
---------------------
+1.9.1
+-----
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
@@ -14,9 +14,19 @@ next (will be 1.9.1)
 ### User Interface
 * FIX: DataList-backed fields failed to validate (#2475)
 * FIX: No Host list limit when adding a single service globally (#2481)
+* FIX: Cleared activity log caused exception (#2505, #2506)
+* FEATURE: Icinga Web 2.10 dark mode support (#2433)
 
 ### Configuration Baskets
 * FIX: failed to export Baskets with Service Sets (#2488)
+* FIX: Sync Rule restore from snapshot on name change (#2467)
+* FIX: Do not export UUIDs with Service Sets (#2488)
+
+### CLI
+* FEATURE: Allow to define deployment grace period on CLI (#2499)
+
+### Integrations
+* FIX: Cleanup IcingaDbCubeLinks (#2484)
 
 ### DB Schema
 * FIX: applying DB Schema migrations failed on PostgreSQL (#2482)
