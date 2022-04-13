@@ -132,6 +132,7 @@ class ConfigCommand extends Command
             printf("Config '%s' has been deployed\n", $checksum);
         } else {
             echo $deployer->getNoDeploymentReason() . "\n";
+            return;
         }
 
         if ($timeout = $this->getWaitTime()) {

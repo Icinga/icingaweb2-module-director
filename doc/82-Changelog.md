@@ -11,6 +11,9 @@ v1.10.0 (unreleased)
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/27?closed=1)
 
+### CLI
+* FIX: config deploy doesn't try to wait in case of no deployment (#2522)
+
 1.9.1
 -----
 
