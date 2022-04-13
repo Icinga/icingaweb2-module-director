@@ -95,14 +95,14 @@ class ConditionalDeployment implements LoggerAwareInterface
                 continue;
             }
             if ($stageCollected === 'n') {
-                return 'stage has not been collected';
+                return 'stage has not been collected (Icinga "lost" the deployment)';
             }
             if ($deploymentFromDB->get('startup_succeeded') === 'y') {
                 return true;
             }
-            return 'deployment failed during startup';
+            return 'deployment failed during startup (usually a Configuration Error)';
         }
-        return 'deployment timed out';
+        return 'deployment timed out (while waiting for an Icinga restart)';
     }
 
     /**
