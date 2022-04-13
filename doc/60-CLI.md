@@ -464,7 +464,7 @@ Config with checksum b330febd0820493fb12921ad8f5ea42102a5c871 already exists
 
 | Option                     | Description                                                      |
 |----------------------------|------------------------------------------------------------------|
-| `checksum <checksum>`      | Optionally deploy a specific configuration                       |
+| `--checksum <checksum>`    | Optionally deploy a specific configuration                       |
 | `--force`                  | Force a deployment, even when the configuration hasn't changed   |
 | `--wait <seconds>`         | Optionally wait until Icinga completed it's restart              |
 | `--grace-period <seconds>` | Do not deploy if a deployment took place less than <seconds> ago |
