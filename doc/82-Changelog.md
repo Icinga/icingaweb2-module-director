@@ -4,6 +4,13 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.10.0 (unreleased)
+--------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/27?closed=1)
+
 1.9.1
 -----
 
