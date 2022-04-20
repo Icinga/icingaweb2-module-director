@@ -45,6 +45,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierRegexSplit;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRejectOrSelect;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierRenameColumn;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierReplace;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierReplaceNull;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSimpleGroupBy;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSkipDuplicates;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierSplit;
@@ -118,6 +119,7 @@ $directorHooks = [
         PropertyModifierRejectOrSelect::class,
         PropertyModifierRenameColumn::class,
         PropertyModifierReplace::class,
+        PropertyModifierReplaceNull::class,
         PropertyModifierSimpleGroupBy::class,
         PropertyModifierSkipDuplicates::class,
         PropertyModifierSplit::class,
