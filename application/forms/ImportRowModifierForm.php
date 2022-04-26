@@ -163,10 +163,10 @@ class ImportRowModifierForm extends DirectorObjectForm
 
         if ($class !== null) {
             if (! class_exists($class)) {
-                throw new RuntimeException(
+                throw new RuntimeException(sprintf(
                     'The hooked class "%s" for this property modifier does no longer exist',
                     $class
-                );
+                ));
             }
 
             $class::addSettingsFormFields($this);
