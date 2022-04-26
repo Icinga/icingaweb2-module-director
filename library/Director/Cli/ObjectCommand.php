@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Params;
 use Icinga\Exception\MissingParameterException;
+use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 
@@ -55,7 +56,12 @@ class ObjectCommand extends Command
             $data = $object->toPlainObject(false, $noDefaults);
             echo $this->renderJson($data, !$this->params->shift('no-pretty'));
         } else {
-            echo $object;
+            $config = new IcingaConfig($db);
+            $object->renderToConfig($config);
+            foreach ($config->getFiles() as $filename => $content) {
+                printf("/** %s **/\n\n", $filename);
+                echo $content;
+            }
         }
     }
 
