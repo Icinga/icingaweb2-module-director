@@ -241,6 +241,8 @@ COMMENT ON COLUMN director_deployment_log.duration_connection IS 'The time it to
 COMMENT ON COLUMN director_deployment_log.duration_dump IS 'Time spent dumping the config (ms)';
 COMMENT ON COLUMN director_deployment_log.username IS 'The user that triggered this deployment';
 
+CREATE INDEX start_time_idx ON director_deployment_log (start_time);
+
 
 CREATE TABLE director_datalist (
   id serial,
@@ -2747,4 +2749,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (178, NOW());
+  VALUES (179, NOW());

@@ -167,6 +167,7 @@ CREATE TABLE director_deployment_log (
   username VARCHAR(64) DEFAULT NULL COMMENT 'The user that triggered this deployment',
   startup_log MEDIUMTEXT DEFAULT NULL,
   PRIMARY KEY (id),
+  INDEX (start_time),
   CONSTRAINT config_checksum
     FOREIGN KEY config_checksum (config_checksum)
     REFERENCES director_generated_config (checksum)
@@ -2414,4 +2415,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (178, NOW());
+  VALUES (179, NOW());
