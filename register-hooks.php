@@ -24,6 +24,7 @@ use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayToRow;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierArrayUnique;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierBitmask;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierCombine;
+use Icinga\Module\Director\PropertyModifier\PropertyModifierDictionaryToRow;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierDnsRecords;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierExtractFromDN;
 use Icinga\Module\Director\PropertyModifier\PropertyModifierFromAdSid;
@@ -98,6 +99,7 @@ $directorHooks = [
         PropertyModifierArrayUnique::class,
         PropertyModifierBitmask::class,
         PropertyModifierCombine::class,
+        PropertyModifierDictionaryToRow::class,
         PropertyModifierDnsRecords::class,
         PropertyModifierExtractFromDN::class,
         PropertyModifierFromAdSid::class,

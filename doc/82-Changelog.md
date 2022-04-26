@@ -14,6 +14,9 @@ v1.10.0 (unreleased)
 ### User Interface
 * FIX: links from Service Previews (Icinga DSL) to templates (#2554)
 
+### Import and Sync
+* FEATURE: clone a row for nested Dictionary/Hash entries (#2555)
+
 ### REST API
 * FIX: addressing service templates by name has been fixed (#2487)
 
