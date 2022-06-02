@@ -30,4 +30,9 @@ class TimeperiodController extends ObjectController
         $this->content()->add($form->handleRequest());
         IcingaTimePeriodRangeTable::load($object)->renderTo($this);
     }
+
+    protected function hasBasketSupport()
+    {
+        return true;
+    }
 }
