@@ -46,6 +46,14 @@ class SyncJob extends JobHook
         return $settings;
     }
 
+    public function cleanupSettingsBeforeImport($settings)
+    {
+        $settings = (array) $settings;
+        $settings['apply_changes'] = $settings['apply_changes'] ? 'y' : 'n';
+
+        return (object) $settings;
+    }
+
     /**
      * @param SyncRule $rule
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException

@@ -37,6 +37,11 @@ abstract class JobHook
         return $this->jobDefinition->getSetting($key, $default);
     }
 
+    public function cleanupSettingsBeforeImport($settings)
+    {
+        return $settings;
+    }
+
     public function getName()
     {
         $parts = explode('\\', get_class($this));

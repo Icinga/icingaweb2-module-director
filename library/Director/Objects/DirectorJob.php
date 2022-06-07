@@ -242,6 +242,12 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
         }
 
         $object->setProperties($properties);
+
+        if (isset($properties['settings'])) {
+            $settings = $object->job()->cleanupSettingsBeforeImport($properties['settings']);
+            $object->setSettings($settings);
+        }
+
         if ($id !== null) {
             $object->reallySet($idCol, $id);
         }
