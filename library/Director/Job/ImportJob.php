@@ -16,7 +16,7 @@ class ImportJob extends JobHook
     public function run()
     {
         $db = $this->db();
-        $id = $this->getSetting('source');
+        $id = $this->getSetting('source_id');
         if ($id === '__ALL__') {
             foreach (ImportSource::loadAll($db) as $source) {
                 $this->runForSource($source);
@@ -32,7 +32,20 @@ class ImportJob extends JobHook
      */
     public function exportSettings()
     {
-        return parent::exportSettings();
+        $settings = parent::exportSettings();
+        if (array_key_exists('source_id', $settings)) {
+            $id = $settings['source_id'];
+            if ($id !== '__ALL__') {
+                $settings['source'] = ImportSource::loadWithAutoIncId(
+                    $id,
+                    $this->db()
+                )->get('source_name');
+            }
+
+            unset($settings['source_id']);
+        }
+
+        return $settings;
     }
 
     /**
@@ -63,7 +76,7 @@ class ImportJob extends JobHook
     {
         $rules = self::enumImportSources($form);
 
-        $form->addElement('select', 'source', array(
+        $form->addElement('select', 'source_id', array(
             'label'        => $form->translate('Import source'),
             'description'  => $form->translate(
                 'Please choose your import source that should be executed.'
@@ -97,7 +110,7 @@ class ImportJob extends JobHook
         $db = $form->getDb();
         $query = $db->select()->from(
             'import_source',
-            array('source_name', 'source_name')
+            array('id', 'source_name')
         )->order('source_name');
 
         $res = $db->fetchPairs($query);

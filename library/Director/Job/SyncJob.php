@@ -18,13 +18,13 @@ class SyncJob extends JobHook
     public function run()
     {
         $db = $this->db();
-        $id = $this->getSetting('rule');
+        $id = $this->getSetting('rule_id');
         if ($id === '__ALL__') {
             foreach (SyncRule::loadAll($db) as $rule) {
                 $this->runForRule($rule);
             }
         } else {
-            $this->runForRule(SyncRule::load($id, $db));
+            $this->runForRule(SyncRule::loadWithAutoIncId((int) $id, $db));
         }
     }
 
@@ -37,7 +37,12 @@ class SyncJob extends JobHook
         $settings = [
             'apply_changes' => $this->getSetting('apply_changes') === 'y'
         ];
-        $settings['rule'] = $this->getSetting('rule');
+        $id = $this->getSetting('rule_id');
+        if ($id !== '__ALL__') {
+            $settings['rule'] = SyncRule::loadWithAutoIncId((int) $id, $this->db())
+                ->get('rule_name');
+        }
+
         return $settings;
     }
 
@@ -71,7 +76,7 @@ class SyncJob extends JobHook
         /** @var DirectorObjectForm $form */
         $rules = self::enumSyncRules($form);
 
-        $form->addElement('select', 'rule', array(
+        $form->addElement('select', 'rule_id', array(
             'label'        => $form->translate('Synchronization rule'),
             'description'  => $form->translate(
                 'Please choose your synchronization rule that should be executed.'
@@ -99,7 +104,7 @@ class SyncJob extends JobHook
         ));
 
         if (! strlen($form->getSentOrObjectValue('job_name'))) {
-            if (($ruleId = $form->getSentValue('rule')) && array_key_exists($ruleId, $rules)) {
+            if (($ruleId = $form->getSentValue('rule_id')) && array_key_exists($ruleId, $rules)) {
                 $name = sprintf('Sync job: %s', $rules[$ruleId]);
                 $form->getElement('job_name')->setValue($name);
                 ///$form->getObject()->set('job_name', $name);
@@ -113,7 +118,7 @@ class SyncJob extends JobHook
     {
         /** @var DirectorObjectForm $form */
         $db = $form->getDb();
-        $query = $db->select()->from('sync_rule', array('rule_name', 'rule_name'))->order('rule_name');
+        $query = $db->select()->from('sync_rule', array('id', 'rule_name'))->order('rule_name');
         $res = $db->fetchPairs($query);
         return array(
             null      => $form->translate('- please choose -'),
