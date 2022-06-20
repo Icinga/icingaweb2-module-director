@@ -56,6 +56,7 @@ class IcingaTimePeriod extends IcingaObject implements ExportInterface
     }
 
     /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @return object
      * @throws \Icinga\Exception\NotFoundError
      */

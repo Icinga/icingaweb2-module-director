@@ -12,7 +12,7 @@ use Icinga\Module\Director\Hook\JobHook;
 use Exception;
 use InvalidArgumentException;
 
-class DirectorJob extends DbObjectWithSettings implements ExportInterface
+class DirectorJob extends DbObjectWithSettings implements ExportInterface, InstantiatedViaHook
 {
     /** @var JobHook */
     protected $job;
@@ -55,9 +55,18 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
     }
 
     /**
+     * @deprecated please use JobHook::getInstance()
      * @return JobHook
      */
     public function job()
+    {
+        return $this->getInstance();
+    }
+
+    /**
+     * @return JobHook
+     */
+    public function getInstance()
     {
         if ($this->job === null) {
             $class = $this->get('job_class');
@@ -74,7 +83,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
      */
     public function run()
     {
-        $job = $this->job();
+        $job = $this->getInstance();
         $this->set('ts_last_attempt', date('Y-m-d H:i:s'));
 
         try {
@@ -186,6 +195,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
 
     /**
      * @return object
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @throws \Icinga\Exception\NotFoundError
      */
     public function export()
@@ -201,7 +211,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
         foreach ($this->stateProperties as $key) {
             unset($plain->$key);
         }
-        $plain->settings = $this->job()->exportSettings();
+        $plain->settings = $this->getInstance()->exportSettings();
 
         return $plain;
     }
@@ -272,9 +282,10 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface
     }
 
     /**
+     * @api internal Exporter only
      * @return IcingaTimePeriod
      */
-    protected function timeperiod()
+    public function timeperiod()
     {
         try {
             return IcingaTimePeriod::loadWithAutoIncId($this->get('timeperiod_id'), $this->connection);

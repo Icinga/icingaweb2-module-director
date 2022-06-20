@@ -185,6 +185,10 @@ class DirectorDatalist extends DbObject implements ExportInterface
         }
     }
 
+    /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
+     * @return object
+     */
     public function export()
     {
         $plain = (object) $this->getProperties();

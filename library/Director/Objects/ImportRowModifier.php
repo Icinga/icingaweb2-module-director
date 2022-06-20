@@ -7,7 +7,7 @@ use Icinga\Module\Director\Hook\PropertyModifierHook;
 use Icinga\Module\Director\Objects\Extension\PriorityColumn;
 use RuntimeException;
 
-class ImportRowModifier extends DbObjectWithSettings
+class ImportRowModifier extends DbObjectWithSettings implements InstantiatedViaHook
 {
     use PriorityColumn;
 
@@ -56,6 +56,7 @@ class ImportRowModifier extends DbObjectWithSettings
     }
 
     /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @return \stdClass
      */
     public function export()

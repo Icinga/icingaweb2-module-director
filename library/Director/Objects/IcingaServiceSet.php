@@ -135,6 +135,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     /**
      * @return object
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @throws \Icinga\Exception\NotFoundError
      */
     public function export()
@@ -157,6 +158,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     /**
      * @return object
+     * @deprecated
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function exportTemplate()

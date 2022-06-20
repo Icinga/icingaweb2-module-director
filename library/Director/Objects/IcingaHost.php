@@ -312,6 +312,7 @@ class IcingaHost extends IcingaObject implements ExportInterface
 
     /**
      * @return object
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
      * @throws \Icinga\Exception\NotFoundError
      */
     public function export()
@@ -363,6 +364,10 @@ class IcingaHost extends IcingaObject implements ExportInterface
         return $object;
     }
 
+    /**
+     * @deprecated please use \Icinga\Module\Director\Data\FieldReferenceLoader
+     * @return array
+     */
     protected function loadFieldReferences()
     {
         $db = $this->getDb();

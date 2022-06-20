@@ -17,6 +17,10 @@ v1.10.0 (unreleased)
 ### Import and Sync
 * FEATURE: clone a row for nested Dictionary/Hash entries (#2555)
 
+### Configuration Baskets
+* BREAKING: configuration baskets no longer contain originalId (#2549)
+* FEATURE: exporting/snapshot-logic has been centralized (#2549)
+
 ### REST API
 * FIX: addressing service templates by name has been fixed (#2487)
 
