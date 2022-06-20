@@ -47,9 +47,6 @@ class SyncRule extends DbObject implements ExportInterface
 
     private $purgeStrategy;
 
-    /** @var  int */
-    private $currentSyncRunId;
-
     private $filter;
 
     private $hasCombinedKey;
@@ -161,7 +158,6 @@ class SyncRule extends DbObject implements ExportInterface
                 if ($apply && $runId = $sync->apply()) {
                     Benchmark::measure('Successfully synced rule ' . $this->get('rule_name'));
                     $this->set('sync_state', 'in-sync');
-                    $this->currentSyncRunId = $runId;
                 }
 
                 $hadChanges = true;
@@ -200,11 +196,6 @@ class SyncRule extends DbObject implements ExportInterface
     public function applyChanges()
     {
         return $this->checkForChanges(true);
-    }
-
-    public function getCurrentSyncRunId()
-    {
-        return $this->currentSyncRunId;
     }
 
     public function getSourceKeyPattern()
