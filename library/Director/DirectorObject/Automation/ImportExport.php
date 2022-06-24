@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
+use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
@@ -15,23 +16,26 @@ use Icinga\Module\Director\Objects\SyncRule;
 
 class ImportExport
 {
+    /** @var Db */
     protected $connection;
+
+    /** @var Exporter */
+    protected $exporter;
 
     public function __construct(Db $connection)
     {
         $this->connection = $connection;
+        $this->exporter = new Exporter($connection);
     }
 
     public function serializeAllServiceSets()
     {
-        // TODO: Export host templates in Inheritance order
         $res = [];
-        $related = [];
         foreach (IcingaServiceSet::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
-            foreach ($object->exportRelated() as $key => $relatedObject) {
-                $related[$key] = $relatedObject;
+            if ($object->get('host_id')) {
+                continue;
             }
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;
@@ -41,7 +45,7 @@ class ImportExport
     {
         $res = [];
         foreach (IcingaTemplateChoiceHost::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;
@@ -71,7 +75,7 @@ class ImportExport
     {
         $res = [];
         foreach (DirectorDatafield::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;
@@ -81,7 +85,7 @@ class ImportExport
     {
         $res = [];
         foreach (DirectorDatalist::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;
@@ -91,7 +95,7 @@ class ImportExport
     {
         $res = [];
         foreach (DirectorJob::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;
@@ -101,7 +105,7 @@ class ImportExport
     {
         $res = [];
         foreach (ImportSource::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;
@@ -111,7 +115,7 @@ class ImportExport
     {
         $res = [];
         foreach (SyncRule::loadAll($this->connection) as $object) {
-            $res[] = $object->export();
+            $res[] = $this->exporter->export($object);
         }
 
         return $res;

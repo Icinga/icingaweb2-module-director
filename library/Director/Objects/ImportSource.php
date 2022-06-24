@@ -53,6 +53,7 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
     private $newRowModifiers;
 
     /**
+     * @deprecated please use \Icinga\Module\Director\Data\FieldReferenceLoader
      * @return \stdClass
      */
     public function export()
@@ -203,6 +204,10 @@ class ImportSource extends DbObjectWithSettings implements ExportInterface
         );
     }
 
+    /**
+     * @deprecated please use \Icinga\Module\Director\Data\FieldReferenceLoader
+     * @return array
+     */
     protected function exportRowModifiers()
     {
         $modifiers = [];

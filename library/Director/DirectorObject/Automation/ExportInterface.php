@@ -7,6 +7,7 @@ use Icinga\Module\Director\Db;
 interface ExportInterface
 {
     /**
+     * @deprecated
      * @return \stdClass
      */
     public function export();

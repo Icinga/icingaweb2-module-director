@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Module\Director\Data\Exporter;
 use ipl\Html\Form;
 use ipl\Html\FormDecorator\DdDtDecorator;
 use gipfl\Translation\TranslationHelper;
@@ -48,14 +49,15 @@ class CloneImportSourceForm extends Form
      */
     public function onSuccess()
     {
-        $export = $this->source->export();
+        $db = $this->getTargetDb();
+        $export = (new Exporter($db))->export($this->source);
         $newName = $this->getElement('source_name')->getValue();
         $export->source_name = $newName;
         unset($export->originalId);
-        if (ImportSource::existsWithName($newName, $this->source->getConnection())) {
+        if (ImportSource::existsWithName($newName, $db)) {
             $this->getElement('source_name')->addMessage('Name already exists');
         }
-        $this->newSource = ImportSource::import($export, $this->getTargetDb());
+        $this->newSource = ImportSource::import($export, $db);
         $this->newSource->store();
     }
 

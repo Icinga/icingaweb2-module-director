@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Form;
 
+use Icinga\Module\Director\Data\Exporter;
 use ipl\Html\Form;
 use ipl\Html\FormDecorator\DdDtDecorator;
 use gipfl\Translation\TranslationHelper;
@@ -49,15 +50,18 @@ class CloneSyncRuleForm extends Form
      */
     public function onSuccess()
     {
-        $export = $this->rule->export();
+        $db = $this->getTargetDb();
+        $exporter = new Exporter($db);
+
+        $export = $exporter->export($this->rule);
         $newName = $this->getValue('rule_name');
         $export->rule_name = $newName;
         unset($export->originalId);
 
-        if (SyncRule::existsWithName($newName, $this->getTargetDb())) {
+        if (SyncRule::existsWithName($newName, $db)) {
             $this->getElement('rule_name')->addMessage('Name already exists');
         }
-        $this->newRule = SyncRule::import($export, $this->getTargetDb());
+        $this->newRule = SyncRule::import($export, $db);
         $this->newRule->store();
     }
 

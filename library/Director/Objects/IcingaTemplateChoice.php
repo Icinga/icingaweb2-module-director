@@ -69,6 +69,10 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         return $object;
     }
 
+    /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
+     * @return array|object|\stdClass
+     */
     public function export()
     {
         $plain = (object) $this->getProperties();
@@ -78,14 +82,10 @@ class IcingaTemplateChoice extends IcingaObject implements ExportInterface
         unset($plain->required_template_id);
         if ($requiredId) {
             $db = $this->getDb();
-            $query = $db->select()->from(
-                ['o' => $this->getObjectTableName()],
-                ['o.id', 'o.object_name']
-            )->where("o.object_type = 'template'")
-                ->where('o.template_choice_id = ?', $this->get('id'))
-                ->order('o.object_name');
-
-            return $db->fetchPairs($query);
+            $query = $db->select()
+                ->from(['o' => $this->getObjectTableName()], 'o.object_name')->where("o.object_type = 'template'")
+                ->where('o.id = ?', $this->get('id'));
+            $plain->required_template = $db->fetchOne($query);
         }
 
         $plain->members = array_values($this->getMembers());

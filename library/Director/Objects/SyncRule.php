@@ -256,6 +256,10 @@ class SyncRule extends DbObject implements ExportInterface
         }
     }
 
+    /**
+     * @deprecated please use \Icinga\Module\Director\Data\Exporter
+     * @return object
+     */
     public function export()
     {
         $plain = $this->getProperties();
@@ -347,7 +351,11 @@ class SyncRule extends DbObject implements ExportInterface
         }
     }
 
-    public function exportSyncProperties()
+    /**
+     * @deprecated
+     * @return array
+     */
+    protected function exportSyncProperties()
     {
         $all = [];
         $db = $this->getDb();

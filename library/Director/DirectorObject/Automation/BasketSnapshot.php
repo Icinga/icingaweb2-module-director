@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
 use Icinga\Module\Director\Core\Json;
+use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Objects\DirectorDatafield;
@@ -423,10 +424,11 @@ class BasketSnapshot extends DbObject
     protected function addAll($typeName)
     {
         list($class, $filter) = static::getClassAndObjectTypeForType($typeName);
+        $connection = $this->getConnection();
+        assert($connection instanceof Db);
 
         /** @var IcingaObject $dummy */
         $dummy = $class::create();
-        /** @var ExportInterface $object */
         if ($dummy instanceof IcingaObject && $dummy->supportsImports()) {
             $db = $this->getDb();
             $select = $db->select()->from($dummy->getTableName());
@@ -441,12 +443,13 @@ class BasketSnapshot extends DbObject
             ) {
                 $select->where('object_type = ?', 'template');
             }
-            $all = $class::loadAll($this->getConnection(), $select);
+            $all = $class::loadAll($connection, $select);
         } else {
-            $all = $class::loadAll($this->getConnection());
+            $all = $class::loadAll($connection);
         }
+        $exporter = new Exporter($connection);
         foreach ($all as $object) {
-            $this->objects[$typeName][$object->getUniqueIdentifier()] = $object->export();
+            $this->objects[$typeName][$object->getUniqueIdentifier()] = $exporter->export($object);
         }
     }
 
@@ -461,7 +464,7 @@ class BasketSnapshot extends DbObject
      * @param $typeName
      * @param $identifier
      * @param Db $connection
-     * @return ExportInterface|null
+     * @return ExportInterface|DbObject|null
      */
     public static function instanceByIdentifier($typeName, $identifier, Db $connection)
     {
@@ -490,13 +493,14 @@ class BasketSnapshot extends DbObject
     {
         /** @var Db $connection */
         $connection = $this->getConnection();
+        $exporter = new Exporter($connection);
         $object = static::instanceByIdentifier(
             $typeName,
             $identifier,
             $connection
         );
         if ($object !== null) {
-            $this->objects[$typeName][$identifier] = $object->export();
+            $this->objects[$typeName][$identifier] = $exporter->export($object);
         }
     }
 }
