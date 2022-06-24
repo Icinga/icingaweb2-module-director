@@ -8,7 +8,6 @@ use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use RuntimeException;
 use function is_int;
 use function is_resource;
 use function is_string;
@@ -22,17 +21,21 @@ class UuidLookup
      * @param int|string $key
      * @param IcingaHost|null $host
      * @param IcingaServiceSet $set
+     * @return ?UuidInterface
      */
     public static function findServiceUuid(
         Db $connection,
         Branch $branch,
-        $objectType,
+        $objectType = null,
         $key = null,
         IcingaHost $host = null,
         IcingaServiceSet $set = null
     ) {
         $db = $connection->getDbAdapter();
-        $query = $db->select()->from('icinga_service', 'uuid')->where('object_type = ?', $objectType);
+        $query = $db->select()->from('icinga_service', 'uuid');
+        if ($objectType) {
+            $query->where('object_type = ?', $objectType);
+        }
         $query = self::addKeyToQuery($connection, $query, $key);
         if ($host) {
             $query->where('host_id = ?', $host->get('id'));
