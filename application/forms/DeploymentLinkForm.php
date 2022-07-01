@@ -82,7 +82,7 @@ class DeploymentLinkForm extends DirectorForm
             );
         }
 
-        $this->setAttrib('class', 'inline');
+        $this->setAttrib('class', 'gipfl-inline-form');
         $this->addHtml(Icon::create('wrench'));
         try {
             // As this is shown for single objects, ignore errors caused by an
