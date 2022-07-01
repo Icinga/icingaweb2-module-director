@@ -7,6 +7,8 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
@@ -76,13 +78,18 @@ class Sync
     /** @var HostGroupMembershipResolver|bool */
     protected $hostGroupMembershipResolver;
 
+    /** @var ?DbObjectStore */
+    protected $store;
+
     /**
      * @param SyncRule $rule
+     * @param ?DbObjectStore $store
      */
-    public function __construct(SyncRule $rule)
+    public function __construct(SyncRule $rule, DbObjectStore $store = null)
     {
         $this->rule = $rule;
         $this->db = $rule->getConnection();
+        $this->store = $store;
     }
 
     /**
@@ -388,11 +395,13 @@ class Sync
         if ($this->rule->hasCombinedKey()) {
             $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
+            if ($this->store) {
+                $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType));
+            } else {
+                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+            }
 
-            foreach (IcingaObject::loadAllByType(
-                $ruleObjectType,
-                $this->db
-            ) as $object) {
+            foreach ($objects as $object) {
                 if ($object instanceof IcingaService) {
                     if (strstr($destinationKeyPattern, '${host}')
                         && $object->get('host_id') === null
@@ -421,10 +430,11 @@ class Sync
                 $this->objects[$key] = $object;
             }
         } else {
-            $this->objects = IcingaObject::loadAllByType(
-                $ruleObjectType,
-                $this->db
-            );
+            if ($this->store) {
+                $this->objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
+            } else {
+                $this->objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+            }
         }
 
         // TODO: should be obsoleted by a better "loadFiltered" method
@@ -759,7 +769,9 @@ class Sync
         $objects = $this->prepare();
         $db = $this->db;
         $dba = $db->getDbAdapter();
-        $dba->beginTransaction();
+        if (! $this->store) { // store has it's own transaction
+            $dba->beginTransaction();
+        }
 
         $object = null;
         $updateOnly = $this->rule->get('update_policy') === 'update-only';
@@ -777,7 +789,11 @@ class Sync
             foreach ($objects as $object) {
                 $this->setResolver($object);
                 if (! $updateOnly && $object->shouldBeRemoved()) {
-                    $object->delete();
+                    if ($this->store) {
+                        $this->store->delete($object);
+                    } else {
+                        $object->delete();
+                    }
                     $deleted++;
                     continue;
                 }
@@ -785,10 +801,18 @@ class Sync
                 if ($object->hasBeenModified()) {
                     $existing = $object->hasBeenLoadedFromDb();
                     if ($existing) {
-                        $object->store($db);
+                        if ($this->store) {
+                            $this->store->store($object);
+                        } else {
+                            $object->store($db);
+                        }
                         $modified++;
                     } elseif ($allowCreate) {
-                        $object->store($db);
+                        if ($this->store) {
+                            $this->store->store($object);
+                        } else {
+                            $object->store($db);
+                        }
                         $created++;
                     }
                 }
@@ -810,7 +834,9 @@ class Sync
 
             $this->run->setProperties($runProperties)->store();
             $this->notifyResolvers();
-            $dba->commit();
+            if (! $this->store) {
+                $dba->commit();
+            }
 
             // Store duration after commit, as the commit might take some time
             $this->run->set('duration_ms', (int) round(
@@ -819,13 +845,15 @@ class Sync
 
             Benchmark::measure('Done applying objects');
         } catch (Exception $e) {
-            $dba->rollBack();
+            if (! $this->store) {
+                $dba->rollBack();
+            }
 
-            if ($object !== null && $object instanceof IcingaObject) {
+            if ($object instanceof IcingaObject) {
                 throw new IcingaException(
                     'Exception while syncing %s %s: %s',
                     get_class($object),
-                    $object->get('object_name'),
+                    $object->getObjectName(),
                     $e->getMessage(),
                     $e
                 );
@@ -839,6 +867,9 @@ class Sync
 
     protected function prepareCache()
     {
+        if ($this->store) {
+            return $this;
+        }
         PrefetchCache::initialize($this->db);
         IcingaTemplateRepository::clear();
 

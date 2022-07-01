@@ -6,6 +6,10 @@ use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchActivity;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
+use Icinga\Module\Director\Db\Branch\MergeErrorDeleteMissingObject;
+use Icinga\Module\Director\Db\Branch\MergeErrorModificationForMissingObject;
+use Icinga\Module\Director\Db\Branch\MergeErrorRecreateOnMerge;
+use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -46,6 +50,75 @@ class DbObjectStore
         $object->setBeingLoadedFromDb();
 
         return $object;
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $arrayIdx
+     * @return DbObject[]|IcingaObject[]
+     * @throws MergeErrorRecreateOnMerge
+     * @throws MergeErrorDeleteMissingObject
+     * @throws MergeErrorModificationForMissingObject
+     */
+    public function loadAll($tableName, $arrayIdx = 'uuid')
+    {
+        $db = $this->connection->getDbAdapter();
+        $class = DbObjectTypeRegistry::classByType($tableName);
+        $query = $db->select()->from($tableName)->order('uuid');
+        $result = [];
+        foreach ($db->fetchAll($query) as $row) {
+            $result[$row->uuid] = $class::create((array) $row, $this->connection);
+            $result[$row->uuid]->setBeingLoadedFromDb();
+        }
+        if ($this->branch && $this->branch->isBranch()) {
+            $query = $db->select()
+                ->from(BranchActivity::DB_TABLE)
+                ->where('branch_uuid = ?', $this->connection->quoteBinary($this->branch->getUuid()->getBytes()))
+                ->order('timestamp_ns ASC');
+            $rows = $db->fetchAll($query);
+            foreach ($rows as $row) {
+                $activity = BranchActivity::fromDbRow($row);
+                if ($activity->getObjectTable() !== $tableName) {
+                    continue;
+                }
+                $uuid = $activity->getObjectUuid();
+                $binaryUuid = $uuid->getBytes();
+
+                $exists = isset($result[$binaryUuid]);
+                if ($activity->isActionCreate()) {
+                    if ($exists) {
+                        throw new MergeErrorRecreateOnMerge($activity);
+                    } else {
+                        $new = $activity->createDbObject($this->connection);
+                        $new->setBeingLoadedFromDb();
+                        $result[$binaryUuid] = $new;
+                    }
+                } elseif ($activity->isActionDelete()) {
+                    if ($exists) {
+                        unset($result[$binaryUuid]);
+                    } else {
+                        throw new MergeErrorDeleteMissingObject($activity);
+                    }
+                } else {
+                    if ($exists) {
+                        $activity->applyToDbObject($result[$binaryUuid])->setBeingLoadedFromDb();
+                    } else {
+                        throw new MergeErrorModificationForMissingObject($activity);
+                    }
+                }
+            }
+        }
+
+        if ($arrayIdx === 'uuid') {
+            return $result;
+        }
+
+        $indexedResult = [];
+        foreach ($result as $object) {
+            $indexedResult[$object->get($arrayIdx)] = $object;
+        }
+
+        return $indexedResult;
     }
 
     public function exists($tableName, UuidInterface $uuid)

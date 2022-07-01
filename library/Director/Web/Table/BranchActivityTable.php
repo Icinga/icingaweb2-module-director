@@ -23,6 +23,8 @@ class BranchActivityTable extends ZfQueryBasedTable
     /** @var LocalTimeFormat */
     protected $timeFormat;
 
+    protected $linkToObject = true;
+
     public function __construct(UuidInterface $branchUuid, $db, UuidInterface $objectUuid = null)
     {
         $this->branchUuid = $branchUuid;
@@ -38,7 +40,7 @@ class BranchActivityTable extends ZfQueryBasedTable
 
     public function renderRow($row)
     {
-        $ts = (int) floor($row->timestamp_ns / 1000000);
+        $ts = (int) floor(BranchActivity::fixFakeTimestamp($row->timestamp_ns) / 1000000);
         $this->splitByDay($ts);
         $activity = BranchActivity::fromDbRow($row);
         return $this::tr([
@@ -47,8 +49,17 @@ class BranchActivityTable extends ZfQueryBasedTable
         ])->addAttributes(['class' => ['action-' . $activity->getAction(), 'branched']]);
     }
 
+    public function disableObjectLink()
+    {
+        $this->linkToObject = false;
+        return $this;
+    }
+
     protected function linkObject(BranchActivity $activity)
     {
+        if (! $this->linkToObject) {
+            return $activity->getObjectName();
+        }
         // $type, UuidInterface $uuid
         // Later on replacing, service_set -> serviceset
         $type = preg_replace('/^icinga_/', '', $activity->getObjectTable());
