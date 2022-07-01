@@ -33,11 +33,11 @@ a:before {
   text-decoration: none;
 }
 
-form {
+form.director-form {
   max-width: 68em;
 }
 
-form:focus {
+form.director-form:focus {
   outline: none;
 }
 
@@ -59,7 +59,7 @@ div.action-bar {
     vertical-align: middle;
   }
 
-  form input {
+  form.director-form input {
     margin: 0;
   }
   input {
@@ -198,14 +198,14 @@ span.disabled {
     color: @icinga-blue;
     margin-right: 1em;
   }
-  form {
+  form.director-form {
     display: inline;
     margin-right: 1em;
   }
 }
 
 .action-bar {
-  form {
+  form.director-form {
     display: inline;
     margin-right: 1em;
   }
@@ -215,12 +215,12 @@ pre.disabled {
   color: @disabled-gray;
 }
 
-form i.link-color::before {
+form.director-form i.link-color::before {
   color: @icinga-blue;
 }
 
 /* TODO: remove this, but autosubmit looks ugly otherwise */
-input[disabled] {
+form.director-form input[disabled] {
   background: inherit;
 }
 /* END OF TODO */
@@ -311,12 +311,12 @@ table.avp th {
     font-size: inherit;
 }
 
-.content form {
+.content form.director-form {
   margin-top: 0.5em;
   margin-bottom: 2em;
 }
 
-.content form.inline {
+.content form.director-form.inline {
   margin: 0;
 
   i.icon::before {
@@ -329,12 +329,12 @@ table.avp th {
     left: -100%;
 }
 
-form input[type=file] {
+form.director-form input[type=file] {
   padding-right: 1em;
 }
 
 
-form input[type=submit] {
+form.director-form input[type=submit] {
   .button();
   border-width: 1px;
   margin-top: 0.5em;
@@ -346,11 +346,11 @@ form input[type=submit] {
   }
 }
 
-form input[type=submit]:first-of-type {
+form.director-form input[type=submit]:first-of-type {
     border-width: 2px;
 }
 
-form input[type=submit].link-button {
+form.director-form input[type=submit].link-button {
   color: @icinga-blue;
   background: none;
   border: none;
@@ -365,19 +365,21 @@ form input[type=submit].link-button {
   }
 }
 
-form p.description {
+form.director-form p.description {
   padding: 1em 1em;
   margin: 0;
   font-style: italic;
   width: 100%;
 }
 
-input[type=text], input[type=button], select, select option, textarea {
+form.director-form {
+  input[type=text], input[type=button], select, select option, textarea {
     -webkit-appearance: none;
     -moz-appearance: none;
+  }
 }
 
-form ul.form-errors {
+form.director-form ul.form-errors {
     list-style-type: none;
     margin-bottom: 0.5em;
     padding: 0;
@@ -395,17 +397,18 @@ form ul.form-errors {
     }
 }
 
-select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
+form.director-form {
+  select::-ms-expand, input::-ms-expand, textarea::-ms-expand { /* for IE 11 */
     display: none;
-}
+  }
 
-select {
+  select {
     border: 1px solid @gray-light;
     cursor: pointer;
     background: none;
-}
+  }
 
-input[type=text], input[type=password], textarea, select {
+  input[type=text], input[type=password], textarea, select {
     max-width: 36em;
     min-width: 20em;
     width: 100%;
@@ -419,33 +422,34 @@ input[type=text], input[type=password], textarea, select {
     background-color: @low-sat-blue;
 
     &.search {
-        background: transparent url("../img/icons/search.png") no-repeat scroll 0.5em center / 1em 1em;
-        padding-left: 2em;
+      background: transparent url("../img/icons/search.png") no-repeat scroll 0.5em center / 1em 1em;
+      padding-left: 2em;
     }
-}
+  }
 
-textarea {
-  max-width: 100%;
-}
+  textarea {
+    max-width: 100%;
+  }
 
-select[multiple] {
+  select[multiple] {
     height: auto;
-}
+  }
 
-select option {
+  select option {
     height: 2em;
     padding-top: 0.3em;
-}
+  }
 
-select[multiple=multiple] {
-  height: auto;
-}
+  select[multiple=multiple] {
+    height: auto;
+  }
 
-label {
+  label {
     line-height: 2em;
+  }
 }
 
-form dl {
+form.director-form dl {
     margin: 0;
     padding: 0;
 }
@@ -478,7 +482,7 @@ div.filter form.editor {
   }
 }
 
-form.editor {
+form.director-form.editor {
   select, input[type=text] {
     background: @low-sat-blue;
     max-width: unset;
@@ -567,14 +571,14 @@ ul.extensible-set {
     }
 }
 
-form {
+form.director-form {
     #_FAKE_SUBMIT {
         position: absolute;
         left: -100%;
     }
 }
 
-dd.active ul.extensible-set, ul.extensible-set.sortable {
+form.director-form dd.active ul.extensible-set, ul.extensible-set.sortable {
 
     li {
         display: list-item;
@@ -595,7 +599,7 @@ dd.active ul.extensible-set, ul.extensible-set.sortable {
     }
 }
 
-dd.active ul.extensible-set {
+form.director-form dd.active ul.extensible-set {
     border: 1px solid @icinga-blue;
 
     input[type=submit]:first-of-type {
@@ -607,33 +611,37 @@ dd.active ul.extensible-set {
     }
 }
 
-select::-moz-focus-inner { border: 0; }
+form.director-form {
+  select::-moz-focus-inner {
+    border: 0;
+  }
 
-select:-moz-focusring {
+  select:-moz-focusring {
     color: transparent;
     text-shadow: 0 0 0 #000;
-}
+  }
 
-select, input[type=text], textarea {
+  select, input[type=text], textarea {
     &:hover {
-        border-style: dotted solid dotted solid;
-        border-color: @gray-light;
+      border-style: dotted solid dotted solid;
+      border-color: @gray-light;
     }
 
     &:focus, &:focus:hover {
-        border-style: solid;
-        border-color: @icinga-blue;
-        outline: none;
+      border-style: solid;
+      border-color: @icinga-blue;
+      outline: none;
     }
-}
+  }
 
-select option {
+  select option {
     padding-left: 0.5em;
-}
+  }
 
-select option[value=""] {
-  color: @disabled-gray;
-  background-color: @low-sat-blue;
+  select option[value=""] {
+    color: @disabled-gray;
+    background-color: @low-sat-blue;
+  }
 }
 
 a {
@@ -785,7 +793,7 @@ ul.main-actions {
   }
 }
 
-#layout.minimal-layout div.content form {
+#layout.minimal-layout div.content form.director-form  {
   dt, dd {
     display: block;
     width: auto;
@@ -839,7 +847,7 @@ ul.main-actions {
 
 }
 
-fieldset {
+form.director-form fieldset {
     margin: 0;
     padding: 0 0 1.5em 0;
     border: none;
@@ -895,7 +903,7 @@ fieldset {
 
 
 /* BEGIN Forms */
-form dt label {
+form.director-form dt label {
     width: auto;
     font-weight: normal;
     font-size: inherit;
@@ -912,19 +920,19 @@ form dt label {
     }
 }
 
-form fieldset {
+form.director-form fieldset {
     min-width: 36em;
 }
 
-form dd input.related-action[type='submit'] {
+form.director-form dd input.related-action[type='submit'] {
     display: none;
 }
 
-form dd.active li.active input.related-action[type='submit'] {
+form.director-form dd.active li.active input.related-action[type='submit'] {
     display: inline-block;
 }
 
-form {
+form.director-form {
   p.description {
     color: @gray;
     font-style: italic;
@@ -942,7 +950,7 @@ form {
   }
 }
 
-form.db-selector {
+form.director-form.db-selector {
   padding: 0;
   margin: 0;
   select {
@@ -972,21 +980,21 @@ form.db-selector {
   flex-grow: 1;
 }
 
-form dd {
+form.director-form dd {
   padding: 0.3em 0.5em;
   margin: 0;
 }
 
-form dt {
+form.director-form dt {
   padding: 0.5em 0.5em;
   margin: 0;
 }
 
-form dt.active, form dd.active {
+form.director-form dt.active, form.director-form dd.active {
     background-color: @tr-active-color;
 }
 
-form dt {
+form.director-form dt {
     display: inline-block;
     vertical-align: top;
     min-width: 12em;
@@ -997,11 +1005,11 @@ form dt {
     }
 }
 
-form .errors label {
+form.director-form .errors label {
     color: @color-critical;
 }
 
-form dd {
+form.director-form dd {
     display: inline-block;
     width: 63%;
     min-height: 2.5em;
@@ -1019,16 +1027,16 @@ form dd {
     }
 }
 
-form dd:after {
+form.director-form dd:after {
     display: block;
     content: '';
 }
 
-form textarea {
+form.director-form textarea {
     height: auto;
 }
 
-form dd ul.errors {
+form.director-form dd ul.errors {
     list-style-type: none;
     padding-left: 0.3em;
 
@@ -1038,7 +1046,7 @@ form dd ul.errors {
     }
 }
 
-form div.hint {
+form.director-form div.hint {
     padding: 1em;
     background-color: @tr-hover-color;
     margin: 1em 0;
