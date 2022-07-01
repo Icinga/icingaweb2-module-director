@@ -20,15 +20,19 @@ class DbConnection extends IcingaDbConnection
 
     public function quoteBinary($binary)
     {
-        if ($binary instanceof Zend_Db_Expr) {
-            throw new RuntimeException('Trying to escape binary twice');
+        if ($binary === '') {
+            return '';
+        }
+
+        if (is_array($binary)) {
+            return array_map([$this, 'quoteBinary'], $binary);
         }
 
         if ($this->isPgsql()) {
             return new Zend_Db_Expr("'\\x" . bin2hex($binary) . "'");
         }
 
-        return $binary;
+        return new Zend_Db_Expr('0x' . bin2hex($binary));
     }
 
     public function binaryDbResult($value)
