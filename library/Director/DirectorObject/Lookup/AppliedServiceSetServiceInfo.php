@@ -7,6 +7,7 @@ use Icinga\Data\Filter\Filter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * A Service that makes part of a Service Set Apply Rule matching this Host,
@@ -23,11 +24,15 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
     /** @var string */
     protected $serviceSetName;
 
-    public function __construct($hostName, $serviceName, $serviceSetName)
+    /** @var UuidInterface */
+    protected $uuid;
+
+    public function __construct($hostName, $serviceName, $serviceSetName, UuidInterface $uuid)
     {
         $this->hostName = $hostName;
         $this->serviceName = $serviceName;
         $this->serviceSetName = $serviceSetName;
+        $this->uuid = $uuid;
     }
 
     public static function find(IcingaHost $host, $serviceName)
@@ -39,7 +44,8 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
                 return new static(
                     $host->getObjectName(),
                     $serviceName,
-                    $rule->service_set_name
+                    $rule->service_set_name,
+                    $rule->uuid
                 );
             }
         }
@@ -50,6 +56,11 @@ class AppliedServiceSetServiceInfo implements ServiceInfo
     public function getHostName()
     {
         return $this->hostName;
+    }
+
+    public function getUuid()
+    {
+        return $this->uuid;
     }
 
     /**
