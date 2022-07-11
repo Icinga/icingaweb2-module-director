@@ -2,12 +2,12 @@
 
 namespace Icinga\Module\Director\Cli;
 
+use gipfl\Json\JsonDecodeException;
 use gipfl\Json\JsonString;
 use Icinga\Cli\Command as CliCommand;
 use Icinga\Module\Director\Application\MemoryLimit;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Db;
-use Icinga\Module\Director\Exception\JsonException;
 use Icinga\Module\Director\Objects\IcingaEndpoint;
 use Icinga\Application\Config;
 use RuntimeException;
@@ -31,13 +31,11 @@ class Command extends CliCommand
      */
     protected function parseJson($json)
     {
-        $res = json_decode($json);
-
-        if ($res === null) {
-            $this->fail('Invalid JSON: %s', $this->getLastJsonError());
+        try {
+            return JsonString::decode($json);
+        } catch (JsonDecodeException $e) {
+            $this->fail('Invalid JSON: %s', $e->getMessage());
         }
-
-        return $res;
     }
 
     public function fail($msg)
@@ -49,14 +47,6 @@ class Command extends CliCommand
         }
 
         throw new RuntimeException($msg);
-    }
-
-    /**
-     * @return string
-     */
-    protected function getLastJsonError()
-    {
-        return JsonException::getJsonErrorMessage(json_last_error());
     }
 
     /**
