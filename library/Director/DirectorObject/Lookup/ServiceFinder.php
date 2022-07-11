@@ -6,13 +6,14 @@ use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Objects\HostApplyMatches;
 use Icinga\Module\Director\Objects\IcingaHost;
+use RuntimeException;
 
 class ServiceFinder
 {
     /** @var IcingaHost */
     protected $host;
 
-    /** @var Auth */
+    /** @var ?Auth */
     protected $auth;
 
     /** @var IcingaHost[] */
@@ -24,7 +25,7 @@ class ServiceFinder
     /** @var \Icinga\Module\Director\Db */
     protected $db;
 
-    public function __construct(IcingaHost $host, Auth $auth)
+    public function __construct(IcingaHost $host, Auth $auth = null)
     {
         $this->host = $host;
         $this->auth = $auth;
@@ -55,6 +56,9 @@ class ServiceFinder
      */
     public function getRedirectionUrl($serviceName)
     {
+        if ($this->auth === null) {
+            throw new RuntimeException('Auth is required for ServiceFinder when dealing when asking for URLs');
+        }
         if ($this->auth->hasPermission('director/host')) {
             if ($info = $this::find($this->host, $serviceName)) {
                 return $info->getUrl();
