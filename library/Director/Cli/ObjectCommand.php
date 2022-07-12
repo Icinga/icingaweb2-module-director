@@ -4,6 +4,8 @@ namespace Icinga\Module\Director\Cli;
 
 use Icinga\Cli\Params;
 use Icinga\Exception\MissingParameterException;
+use Icinga\Module\Director\Data\Db\DbObject;
+use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
@@ -208,12 +210,17 @@ class ObjectCommand extends Command
 
         $this->appendToArrayProperties($object, $appends);
         $this->removeProperties($object, $remove);
+        $this->persistChanges($object, $this->getType(), $name, $action);
+    }
+
+    protected function persistChanges(DbObject $object, $type, $name, $action)
+    {
         if ($object->hasBeenModified() && $object->store()) {
-            printf("%s '%s' has been %s\n", $this->getType(), $this->name, $action);
+            printf("%s '%s' has been %s\n", $type, $name, $action);
             exit(0);
         }
 
-        printf("%s '%s' has not been modified\n", $this->getType(), $name);
+        printf("%s '%s' has not been modified\n", $type, $name);
         exit(0);
     }
 

@@ -137,6 +137,7 @@ Use this command to modify specific properties of an existing Icinga object.
 | `--json`                   | Otherwise provide all options as a JSON string        |
 | `--replace`                | Replace all object properties with the given ones     |
 | `--auto-create`            | Create the object in case it does not exist           |
+| `--allow-overrides`        | Set variable overrides for virtual Services           |
 
 
 #### Examples
