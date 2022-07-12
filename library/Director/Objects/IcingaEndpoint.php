@@ -8,6 +8,7 @@ use Icinga\Module\Director\Core\RestApiClient;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use InvalidArgumentException;
+use RuntimeException;
 
 class IcingaEndpoint extends IcingaObject
 {
@@ -42,10 +43,12 @@ class IcingaEndpoint extends IcingaObject
 
     public function getApiUser()
     {
-        return $this->getRelatedObject(
-            'apiuser',
-            $this->getResolvedProperty('apiuser_id')
-        );
+        $id = $this->getResolvedProperty('apiuser_id');
+        if ($id === null) {
+            throw new RuntimeException('Trying to get API User for Endpoint without such: ' . $this->getObjectName());
+        }
+
+        return $this->getRelatedObject('apiuser', $id);
     }
 
     /**
