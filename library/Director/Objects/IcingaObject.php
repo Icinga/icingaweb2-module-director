@@ -1536,6 +1536,8 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         foreach ($this->loadedMultiRelations as $multiRelation) {
             $multiRelation->setBeingLoadedFromDb();
         }
+        // This might trigger DB requests and 404's:
+        $this->resolveUnresolvedRelatedProperties();
 
         parent::setBeingLoadedFromDb();
     }
