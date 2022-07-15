@@ -85,7 +85,7 @@ abstract class ObjectsController extends ActionController
             $table->filterObjectType('apply');
         }
         $search = $this->params->get('q');
-        if (\strlen($search) > 0) {
+        if ($search !== null && \strlen($search) > 0) {
             $table->search($search);
         }
 

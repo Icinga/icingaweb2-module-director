@@ -89,7 +89,7 @@ class IcingaObjectsHandler extends RequestHandler
         $resolved = (bool) $params->get('resolved', false);
         $withNull = ! $params->shift('withNull');
         $properties = $params->shift('properties');
-        if (strlen($properties)) {
+        if ($properties !== null && strlen($properties)) {
             $properties = preg_split('/\s*,\s*/', $properties, -1, PREG_SPLIT_NO_EMPTY);
         } else {
             $properties = null;
