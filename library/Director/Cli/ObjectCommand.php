@@ -7,6 +7,7 @@ use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 
@@ -49,17 +50,32 @@ class ObjectCommand extends Command
     {
         $db = $this->db();
         $object = $this->getObject();
-        if ($this->params->shift('resolved')) {
-            $object = $object::fromPlainObject($object->toPlainObject(true), $db);
+        $exporter = new Exporter($db);
+        $resolve = (bool) $this->params->shift('resolved');
+        $withServices = (bool) $this->params->get('with-services');
+        if ($withServices) {
+            if (!$object instanceof IcingaHost) {
+                $this->fail('--with-services is available for Hosts only');
+            }
+            $exporter->enableHostServices();
         }
 
+        $exporter->resolveObjects($resolve);
+        $exporter->showDefaults($this->params->shift('no-defaults', false));
+
         if ($this->params->shift('json')) {
-            $noDefaults = $this->params->shift('no-defaults', false);
-            $data = $object->toPlainObject(false, $noDefaults);
-            echo $this->renderJson($data, !$this->params->shift('no-pretty'));
+            echo $this->renderJson($exporter->export($object), !$this->params->shift('no-pretty'));
         } else {
             $config = new IcingaConfig($db);
+            if ($resolve) {
+                $object = $object::fromPlainObject($object->toPlainObject(true, false, null, false), $db);
+            }
             $object->renderToConfig($config);
+            if ($withServices) {
+                foreach ($exporter->fetchServicesForHost($object) as $service) {
+                    $service->renderToConfig($config);
+                }
+            }
             foreach ($config->getFiles() as $filename => $content) {
                 printf("/** %s **/\n\n", $filename);
                 echo $content;

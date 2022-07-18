@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Data;
 
 use gipfl\ZfDb\Adapter\Adapter;
+use gipfl\ZfDb\Select;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
@@ -11,13 +12,17 @@ use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorDatalistEntry;
 use Icinga\Module\Director\Objects\DirectorJob;
 use Icinga\Module\Director\Objects\IcingaCommand;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
 use Icinga\Module\Director\Objects\ImportRowModifier;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\InstantiatedViaHook;
 use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Module\Director\Web\Table\ObjectsTableService;
+use Ramsey\Uuid\Uuid;
 use RuntimeException;
 
 class Exporter
@@ -52,8 +57,21 @@ class Exporter
     /** @var FieldReferenceLoader */
     protected $fieldReferenceLoader;
 
+    /** @var bool */
+    protected $exportHostServices = false;
+
+    protected $showDefaults = false;
+
+    protected $resolveObjects = false;
+
+    /**
+     * @var Db
+     */
+    protected $connection;
+
     public function __construct(Db $connection)
     {
+        $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
         $this->fieldReferenceLoader = new FieldReferenceLoader($connection);
     }
@@ -69,6 +87,24 @@ class Exporter
 
         ksort($props);
         return (object) $props;
+    }
+
+    public function enableHostServices($enable = true)
+    {
+        $this->exportHostServices = $enable;
+        return $this;
+    }
+
+    public function showDefaults($show = true)
+    {
+        $this->showDefaults = $show;
+        return $this;
+    }
+
+    public function resolveObjects($resolve = true)
+    {
+        $this->resolveObjects = $resolve;
+        return $this;
     }
 
     protected function appendTypeSpecificRelations(array &$props, DbObject $object)
@@ -120,7 +156,34 @@ class Exporter
                 $props['services'][$serviceObject->getObjectName()] = $this->export($serviceObject);
             }
             ksort($props['services']);
+        } elseif ($object instanceof IcingaHost) {
+            if ($this->exportHostServices) {
+                $services = [];
+                foreach ($this->fetchServicesForHost($object) as $service) {
+                    $services[] = $this->export($service);
+                }
+
+                $props['services'] = $services;
+            }
         }
+    }
+
+    public function fetchServicesForHost(IcingaHost $host)
+    {
+        $table = (new ObjectsTableService($this->connection))->setHost($host);
+        $query = $table->getQuery();
+        $query->reset(Select::LIMIT_COUNT);
+        $query->reset(Select::LIMIT_OFFSET);
+        $services = [];
+        foreach ($this->db->fetchAll($query) as $row) {
+            $service = IcingaService::loadWithUniqueId(Uuid::fromBytes($row->uuid), $this->connection);
+            if ($this->resolveObjects) {
+                $service = $service::fromPlainObject($service->toPlainObject(true), $this->connection);
+            }
+            $services[] = $service;
+        }
+
+        return $services;
     }
 
     protected function loadTemplateName($table, $id)
@@ -158,7 +221,6 @@ class Exporter
                 unset($props[$key]);
             }
         }
-
     }
 
     protected function exportRowModifiers(ImportSource $object)
@@ -171,7 +233,6 @@ class Exporter
 
         return $modifiers;
     }
-
 
     public function exportSyncProperties(SyncRule $object)
     {
@@ -208,6 +269,14 @@ class Exporter
                 $props['settings'] = (object) $object->getSettings(); // Already sorted
             }
         }
+        if (! $this->showDefaults) {
+            foreach ($props as $key => $value) {
+                // We assume NULL as a default value for all non-IcingaObject properties
+                if ($value === null) {
+                    unset($props[$key]);
+                }
+            }
+        }
 
         return $props;
     }
@@ -219,7 +288,7 @@ class Exporter
      */
     protected function exportIcingaObject(IcingaObject $object)
     {
-        $props = (array) $object->toPlainObject();
+        $props = (array) $object->toPlainObject($this->resolveObjects, !$this->showDefaults);
         if ($object->supportsFields()) {
             $props['fields'] = $this->fieldReferenceLoader->loadFor($object);
         }
