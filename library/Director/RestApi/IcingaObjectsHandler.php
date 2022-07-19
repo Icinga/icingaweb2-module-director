@@ -21,8 +21,7 @@ class IcingaObjectsHandler extends RequestHandler
         try {
             $this->streamJsonResult();
         } catch (Exception $e) {
-            // NONO
-            $this->sendJsonError($e->getTraceAsString());
+            $this->sendJsonError($e);
         }
     }
 
