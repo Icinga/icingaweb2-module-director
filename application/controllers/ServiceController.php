@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Controllers;
 
 use Exception;
+use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
@@ -252,6 +253,9 @@ class ServiceController extends ObjectController
         $key = $this->getLegacyKey();
         // Hint: not passing 'object' as type, we still have name-based links in previews and similar
         $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), null, $key, $this->host, $this->set);
+        if ($uuid === null) {
+            throw new NotFoundError('Not found');
+        }
         $this->params->set('uuid', $uuid->toString());
         parent::loadObject();
     }
