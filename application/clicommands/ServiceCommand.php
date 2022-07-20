@@ -28,15 +28,15 @@ class ServiceCommand extends ObjectCommand
 
     protected function setServiceProperties($hostname)
     {
-        $name = $this->getName();
+        $serviceName = $this->getName();
         $host = IcingaHost::load($hostname, $this->db());
-        $service = ServiceFinder::find($host, $name);
+        $service = ServiceFinder::find($host, $serviceName);
         if ($service->requiresOverrides()) {
-            $this->params->shift('host');
             self::checkForOverrideSafety($this->params);
             $properties = $this->remainingParams();
-            OverrideHelper::applyOverriddenVars($host, $name, $properties);
-            $this->persistChanges($host, 'Host', $host->getObjectName() . " (Overrides for $name)", 'modified');
+            unset($properties['host']);
+            OverrideHelper::applyOverriddenVars($host, $serviceName, $properties);
+            $this->persistChanges($host, 'Host', $hostname . " (Overrides for $serviceName)", 'modified');
         }
     }
 
