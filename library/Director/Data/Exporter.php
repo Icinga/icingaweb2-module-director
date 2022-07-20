@@ -2,11 +2,14 @@
 
 namespace Icinga\Module\Director\Data;
 
+use gipfl\IcingaWeb2\Table\QueryBasedTable;
 use gipfl\ZfDb\Adapter\Adapter;
 use gipfl\ZfDb\Select;
+use Icinga\Data\SimpleQuery;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectWithSettings;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\AppliedServiceSetLoader;
 use Icinga\Module\Director\Objects\DirectorDatafield;
 use Icinga\Module\Director\Objects\DirectorDatalist;
 use Icinga\Module\Director\Objects\DirectorDatalistEntry;
@@ -21,9 +24,13 @@ use Icinga\Module\Director\Objects\ImportRowModifier;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\InstantiatedViaHook;
 use Icinga\Module\Director\Objects\SyncRule;
+use Icinga\Module\Director\Repository\IcingaTemplateRepository;
+use Icinga\Module\Director\Web\Table\IcingaHostAppliedServicesTable;
+use Icinga\Module\Director\Web\Table\IcingaServiceSetServiceTable;
 use Icinga\Module\Director\Web\Table\ObjectsTableService;
 use Ramsey\Uuid\Uuid;
 use RuntimeException;
+use Zend_Db_Select;
 
 class Exporter
 {
@@ -58,6 +65,7 @@ class Exporter
     protected $fieldReferenceLoader;
 
     protected $exportHostServices = false;
+    protected $resolveHostServices = false;
     protected $showDefaults = false;
     protected $showIds = false;
     protected $resolveObjects = false;
@@ -102,6 +110,12 @@ class Exporter
     public function enableHostServices($enable = true)
     {
         $this->exportHostServices = $enable;
+        return $this;
+    }
+
+    public function resolveHostServices($enable = true)
+    {
+        $this->resolveHostServices = $enable;
         return $this;
     }
 
@@ -193,15 +207,70 @@ class Exporter
     public function fetchServicesForHost(IcingaHost $host)
     {
         $table = (new ObjectsTableService($this->connection))->setHost($host);
+        $services = $this->fetchServicesForTable($table);
+        if ($this->resolveHostServices) {
+            foreach ($this->fetchRelatedServicesForHost($host) as $service) {
+                $services[] = $service;
+            }
+        }
+
+        return $services;
+    }
+
+    protected function fetchServicesForTable(QueryBasedTable $table)
+    {
         $query = $table->getQuery();
-        $query->reset(Select::LIMIT_COUNT);
-        $query->reset(Select::LIMIT_OFFSET);
+        if ($query instanceof Select || $query instanceof Zend_Db_Select) {
+            // What about SimpleQuery? IcingaHostAppliedServicesTable with branch in place?
+            $query->reset(Select::LIMIT_COUNT);
+            $query->reset(Select::LIMIT_OFFSET);
+            $rows = $this->db->fetchAll($query);
+        } elseif ($query instanceof SimpleQuery) {
+            $rows = $query->fetchAll();
+        }
         $services = [];
-        foreach ($this->db->fetchAll($query) as $row) {
+        foreach ($rows as $row) {
             $service = IcingaService::loadWithUniqueId(Uuid::fromBytes($row->uuid), $this->connection);
             if ($this->resolveObjects) {
                 $service = $service::fromPlainObject($service->toPlainObject(true), $this->connection);
             }
+            $services[] = $service;
+        }
+
+        return $services;
+    }
+
+    protected function fetchRelatedServicesForHost(IcingaHost $host)
+    {
+        $services = [];
+        /** @var IcingaHost[] $parents */
+        $parents = IcingaTemplateRepository::instanceByObject($host)->getTemplatesFor($host, true);
+        foreach ($parents as $parent) {
+            $table = (new ObjectsTableService($this->connection))
+                ->setHost($parent)
+                ->setInheritedBy($host);
+            foreach ($this->fetchServicesForTable($table) as $service) {
+                $services[] = $service;
+            }
+        }
+/*
+        $this->addHostServiceSetTables($host);
+        foreach ($parents as $parent) {
+            $this->addHostServiceSetTables($parent, $host);
+        }
+*/
+        $appliedSets = AppliedServiceSetLoader::fetchForHost($host);
+        foreach ($appliedSets as $set) {
+            $table = IcingaServiceSetServiceTable::load($set)
+                // ->setHost($host)
+                ->setAffectedHost($host);
+            foreach ($this->fetchServicesForTable($table) as $service) {
+                $services[] = $service;
+            }
+        }
+
+        $table = IcingaHostAppliedServicesTable::load($host);
+        foreach ($this->fetchServicesForTable($table) as $service) {
             $services[] = $service;
         }
 

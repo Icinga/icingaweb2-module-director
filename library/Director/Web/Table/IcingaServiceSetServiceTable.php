@@ -234,6 +234,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
             ['s' => 'icinga_service'],
             [
                 'id'             => 's.id',
+                'uuid'           => 's.uuid',
                 'service_set_id' => 's.service_set_id',
                 'host_id'        => 'ss.host_id',
                 'service_set'    => 'ss.object_name',

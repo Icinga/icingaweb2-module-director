@@ -39,14 +39,16 @@ class ObjectCommand extends Command
      *
      * OPTIONS
      *
-     *   --resolved       Resolve all inherited properties and show a flat
-     *                    object
-     *   --json           Use JSON format
-     *   --no-pretty      JSON is pretty-printed per default (for PHP >= 5.4)
-     *                    Use this flag to enforce unformatted JSON
-     *   --no-defaults    Per default JSON output ships null or default values
-     *                    With this flag you will skip those properties
-     *   --with-services  For hosts only, also shows attached services
+     *   --resolved          Resolve all inherited properties and show a flat
+     *                       object
+     *   --json              Use JSON format
+     *   --no-pretty         JSON is pretty-printed per default. Use this flag
+     *                       to enforce un-formatted JSON
+     *   --no-defaults       Per default JSON output ships null or default
+     *                       values. This flag skips those properties
+     *   --with-services     For hosts only, also shows attached services
+     *   --resolve-services  For hosts only, show applied and inherited services
+     *                       too
      */
     public function showAction()
     {
@@ -55,11 +57,18 @@ class ObjectCommand extends Command
         $exporter = new Exporter($db);
         $resolve = (bool) $this->params->shift('resolved');
         $withServices = (bool) $this->params->get('with-services');
+        $resolveServices = (bool) $this->params->get('resolve-services');
         if ($withServices) {
             if (!$object instanceof IcingaHost) {
                 $this->fail('--with-services is available for Hosts only');
             }
             $exporter->enableHostServices();
+        }
+        if ($resolveServices) {
+            if (!$object instanceof IcingaHost) {
+                $this->fail('--resolve-services is available for Hosts only');
+            }
+            $exporter->resolveHostServices();
         }
 
         $exporter->resolveObjects($resolve);
