@@ -6,6 +6,7 @@ use Icinga\Cli\Params;
 use Icinga\Exception\MissingParameterException;
 use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Data\PropertyMangler;
 use Icinga\Module\Director\IcingaConfig\IcingaConfig;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
@@ -225,8 +226,8 @@ class ObjectCommand extends Command
             $object->setProperties($this->remainingParams());
         }
 
-        $this->appendToArrayProperties($object, $appends);
-        $this->removeProperties($object, $remove);
+        PropertyMangler::appendToArrayProperties($object, $appends);
+        PropertyMangler::removeProperties($object, $remove);
         $this->persistChanges($object, $this->getType(), $name, $action);
     }
 
@@ -354,57 +355,6 @@ class ObjectCommand extends Command
         }
 
         exit(0);
-    }
-
-    protected function appendToArrayProperties(IcingaObject $object, $properties)
-    {
-        foreach ($properties as $key => $value) {
-            $current = $object->$key;
-            if ($current === null) {
-                $current = [$value];
-            } elseif (is_array($current)) {
-                $current[] = $value;
-            } else {
-                throw new InvalidArgumentException(sprintf(
-                    'I can only append to arrays, %s is %s',
-                    $key,
-                    var_export($current, 1)
-                ));
-            }
-
-            $object->$key = $current;
-        }
-    }
-
-    protected function removeProperties(IcingaObject $object, $properties)
-    {
-        foreach ($properties as $key => $value) {
-            if ($value === true) {
-                $object->$key = null;
-            }
-            $current = $object->$key;
-            if ($current === null) {
-                continue;
-            } elseif (is_array($current)) {
-                $new = [];
-                foreach ($current as $item) {
-                    if ($item !== $value) {
-                        $new[] = $item;
-                    }
-                }
-                $object->$key = $new;
-            } elseif (is_string($current)) {
-                if ($current === $value) {
-                    $object->$key = null;
-                }
-            } else {
-                throw new InvalidArgumentException(sprintf(
-                    'I can only remove strings or from arrays, %s is %s',
-                    $key,
-                    var_export($current, 1)
-                ));
-            }
-        }
     }
 
     protected static function stripPrefixedProperties(Params $params, $prefix = 'append-')
