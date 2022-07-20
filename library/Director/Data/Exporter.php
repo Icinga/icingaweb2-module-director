@@ -57,17 +57,16 @@ class Exporter
     /** @var FieldReferenceLoader */
     protected $fieldReferenceLoader;
 
-    /** @var bool */
     protected $exportHostServices = false;
-
     protected $showDefaults = false;
-
+    protected $showIds = false;
     protected $resolveObjects = false;
 
-    /**
-     * @var Db
-     */
+    /** @var Db */
     protected $connection;
+
+    /** @var ?array */
+    protected $chosenProperties = null;
 
     public function __construct(Db $connection)
     {
@@ -85,6 +84,17 @@ class Exporter
         $this->stripDeniedProperties($props, $object);
         $this->appendTypeSpecificRelations($props, $object);
 
+        if ($this->chosenProperties !== null) {
+            $chosen = [];
+            foreach ($this->chosenProperties as $k) {
+                if (array_key_exists($k, $props)) {
+                    $chosen[$k] = $props[$k];
+                }
+            }
+
+            $props = $chosen;
+        }
+
         ksort($props);
         return (object) $props;
     }
@@ -101,9 +111,21 @@ class Exporter
         return $this;
     }
 
+    public function showIds($show = true)
+    {
+        $this->showIds = $show;
+        return $this;
+    }
+
     public function resolveObjects($resolve = true)
     {
         $this->resolveObjects = $resolve;
+        return $this;
+    }
+
+    public function filterProperties(array $properties)
+    {
+        $this->chosenProperties = $properties;
         return $this;
     }
 
@@ -214,7 +236,9 @@ class Exporter
     {
         // TODO: this used to exist. Double-check all imports to verify it's not in use
         // $originalId = $props['id'];
-        unset($props['id']);
+        if (! $this->showIds) {
+            unset($props['id']);
+        }
         $class = get_class($object);
         if (isset(self::$denyProperties[$class])) {
             foreach (self::$denyProperties[$class] as $key) {
