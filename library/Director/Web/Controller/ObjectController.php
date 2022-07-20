@@ -63,47 +63,56 @@ abstract class ObjectController extends ActionController
     {
         parent::init();
         $this->enableStaticObjectLoader($this->getTableName());
-
         if ($this->getRequest()->isApiRequest()) {
-            $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
-            try {
-                $this->loadOptionalObject();
-            } catch (NotFoundError $e) {
-                // Silently ignore the error, the handler will complain
-                $handler->sendJsonError($e, 404);
-                // TODO: nice shutdown
-                exit;
-            }
-
-            $handler->setApi($this->api());
-            if ($this->object) {
-                $handler->setObject($this->object);
-            }
-            $handler->dispatch();
-            // Hint: also here, hard exit. There is too much magic going on.
-            // Letting this bubble up smoothly would be "correct", but proved
-            // to be too fragile. Web 2, all kinds of pre/postDispatch magic,
-            // different view renderers - hard exit is the only safe bet right
-            // now.
-            exit;
+            $this->initializeRestApi();
         } else {
+            $this->initializeWebRequest();
+        }
+    }
+
+    protected function initializeRestApi()
+    {
+        $handler = new IcingaObjectHandler($this->getRequest(), $this->getResponse(), $this->db());
+        try {
             $this->loadOptionalObject();
-            if ($this->getRequest()->getActionName() === 'add') {
-                $this->addSingleTab(
-                    sprintf($this->translate('Add %s'), ucfirst($this->getType())),
-                    null,
-                    'add'
-                );
-            } else {
-                $this->tabs(new ObjectTabs(
-                    $this->getRequest()->getControllerName(),
-                    $this->getAuth(),
-                    $this->object
-                ));
-            }
-            if ($this->object !== null) {
-                $this->addDeploymentLink();
-            }
+        } catch (NotFoundError $e) {
+            // Silently ignore the error, the handler will complain
+            $handler->sendJsonError($e, 404);
+            // TODO: nice shutdown
+            exit;
+        }
+
+        $handler->setApi($this->api());
+        if ($this->object) {
+            $handler->setObject($this->object);
+        }
+        $handler->dispatch();
+        // Hint: also here, hard exit. There is too much magic going on.
+        // Letting this bubble up smoothly would be "correct", but proved
+        // to be too fragile. Web 2, all kinds of pre/postDispatch magic,
+        // different view renderers - hard exit is the only safe bet right
+        // now.
+        exit;
+    }
+
+    protected function initializeWebRequest()
+    {
+        $this->loadOptionalObject();
+        if ($this->getRequest()->getActionName() === 'add') {
+            $this->addSingleTab(
+                sprintf($this->translate('Add %s'), ucfirst($this->getType())),
+                null,
+                'add'
+            );
+        } else {
+            $this->tabs(new ObjectTabs(
+                $this->getRequest()->getControllerName(),
+                $this->getAuth(),
+                $this->object
+            ));
+        }
+        if ($this->object !== null) {
+            $this->addDeploymentLink();
         }
     }
 
