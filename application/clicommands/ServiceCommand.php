@@ -20,7 +20,9 @@ class ServiceCommand extends ObjectCommand
     public function setAction()
     {
         if (($host = $this->params->get('host')) && $this->params->shift('allow-overrides')) {
-            $this->setServiceProperties($host);
+            if ($this->setServiceProperties($host)) {
+                return;
+            }
         }
 
         parent::setAction();
@@ -37,7 +39,10 @@ class ServiceCommand extends ObjectCommand
             unset($properties['host']);
             OverrideHelper::applyOverriddenVars($host, $serviceName, $properties);
             $this->persistChanges($host, 'Host', $hostname . " (Overrides for $serviceName)", 'modified');
+            return true;
         }
+
+        return false;
     }
 
     protected static function checkForOverrideSafety(Params $params)
