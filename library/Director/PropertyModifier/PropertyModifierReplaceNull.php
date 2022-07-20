@@ -15,11 +15,11 @@ class PropertyModifierReplaceNull extends PropertyModifierHook
     
     public static function addSettingsFormFields(QuickForm $form)
     {
-        $form->addElement('text', 'string', array(
+        $form->addElement('text', 'string', [
             'label'       => 'Replacement String',
             'description' => $form->translate('Your replacement string'),
             'required'    => true,
-        ));
+        ]);
     }
 
     public function transform($value)
@@ -27,7 +27,7 @@ class PropertyModifierReplaceNull extends PropertyModifierHook
         if ($value === null) {
             return $this->getSetting('string');
         } else {
-	    return $value;
-	}  
+            return $value;
+        }
     }
 }
