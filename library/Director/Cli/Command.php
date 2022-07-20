@@ -38,6 +38,10 @@ class Command extends CliCommand
         }
     }
 
+    /**
+     * @param string $msg
+     * @return never-return
+     */
     public function fail($msg)
     {
         $args = func_get_args();
@@ -45,8 +49,8 @@ class Command extends CliCommand
         if (count($args)) {
             $msg = vsprintf($msg, $args);
         }
-
-        throw new RuntimeException($msg);
+        echo $this->screen->colorize("ERROR", 'red') . ": $msg\n";
+        exit(1);
     }
 
     /**

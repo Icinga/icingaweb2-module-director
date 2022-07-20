@@ -28,6 +28,7 @@ v1.10.0 (unreleased)
 * FIX: config deploy doesn't try to wait in case of no deployment (#2522)
 * FEATURE: improved wording for deployment error messages (#2523)
 * FEATURE: JSON can now be shipped via STDIN (#1570)
+* FEATURE: improved readability for some error messages (#2567)
 
 1.9.1
 -----
