@@ -75,6 +75,12 @@ icingacli director host create localhost \
     --json '{ "address": "127.0.0.1", "vars": { "test": [ "one", "two" ] } }'
 ```
 
+Passing JSON via STDIN is also possible:
+
+```shell
+icingacli director host create localhost --json < my-host.json
+```
+
 
 ### Delete a specific object
 

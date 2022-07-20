@@ -441,10 +441,34 @@ class ObjectCommand extends Command
     protected function remainingParams()
     {
         if ($json = $this->params->shift('json')) {
+            if ($json === true) {
+                $json = $this->readFromStdin();
+                if ($json === null) {
+                    $this->fail('Please pass JSON either via STDIN or via --json');
+                }
+            }
             return (array) $this->parseJson($json);
         } else {
             return $this->params->getParams();
         }
+    }
+
+    protected function readFromStdin()
+    {
+        if (!defined('STDIN')) {
+            define('STDIN', fopen("php://stdin","r"));
+        }
+        $inputIsTty = function_exists('posix_isatty') && posix_isatty(STDIN);
+        if ($inputIsTty) {
+            return null;
+        }
+
+        $stdin = file_get_contents('php://stdin');
+        if (strlen($stdin) === 0) {
+            return null;
+        }
+
+        return $stdin;
     }
 
     protected function exists($name)
