@@ -29,6 +29,7 @@ v1.10.0 (unreleased)
 * FEATURE: improved wording for deployment error messages (#2523)
 * FEATURE: JSON can now be shipped via STDIN (#1570)
 * FEATURE: improved readability for some error messages (#2567)
+* FEATURE: allows showing hosts with their services (#2565)
 
 1.9.1
 -----

@@ -191,16 +191,16 @@ in JSON format.
 
 #### Options
 
-| Option          | Description                                             |
-|-----------------|---------------------------------------------------------|
-| `--resolved`    | Resolve all inherited properties and show a flat object |
-|                 | object                                                  |
-| `--json`        | Use JSON format                                         |
-| `--no-pretty`   | JSON is pretty-printed per default (for PHP >= 5.4)     |
-|                 | Use this flag to enforce unformatted JSON               |
-| `--no-defaults` | Per default JSON output skips null or default values    |
-|                 | With this flag you will get all properties              |
-
+| Option            | Description                                          |
+|-------------------|------------------------------------------------------|
+| `--resolved`      | Resolve all inherited properties and show a flat     |
+|                   | object                                               |
+| `--json`          | Use JSON format                                      |
+| `--no-pretty`     | JSON is pretty-printed per default (for PHP >= 5.4)  |
+|                   | Use this flag to enforce unformatted JSON            |
+| `--no-defaults`   | Per default JSON output skips null or default values |
+|                   | With this flag you will get all properties           |
+| `--with-services` | For hosts only, also shows attached services         |
 
 ### Clone an existing object
 
