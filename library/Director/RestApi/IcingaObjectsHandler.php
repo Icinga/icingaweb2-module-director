@@ -3,8 +3,10 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Exception;
+use gipfl\Json\JsonString;
 use Icinga\Application\Benchmark;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Table\ApplyRulesTable;
@@ -61,14 +63,18 @@ class IcingaObjectsHandler extends RequestHandler
         Benchmark::measure('Ready to stream JSON result');
         $db = $connection->getDbAdapter();
         $table = $this->getTable();
+        $exporter = new Exporter($connection);
+        $type = $table->getType();
+        RestApiParams::applyParamsToExporter($exporter, $this->request, $type);
         $query = $table
             ->getQuery()
             ->reset(ZfSelect::COLUMNS)
             ->columns('*')
             ->reset(ZfSelect::LIMIT_COUNT)
             ->reset(ZfSelect::LIMIT_OFFSET);
-        $type = $table->getType();
-        $serviceApply = $type === 'service' && $table instanceof ApplyRulesTable;
+        if ($type === 'service' && $table instanceof ApplyRulesTable) {
+            $exporter->showIds();
+        }
         echo '{ "objects": [ ';
         $cnt = 0;
         $objects = [];
@@ -84,15 +90,6 @@ class IcingaObjectsHandler extends RequestHandler
         if (! ob_get_level()) {
             ob_start();
         }
-        $params = $this->request->getUrl()->getParams();
-        $resolved = (bool) $params->get('resolved', false);
-        $withNull = ! $params->shift('withNull');
-        $properties = $params->shift('properties');
-        if ($properties !== null && strlen($properties)) {
-            $properties = preg_split('/\s*,\s*/', $properties, -1, PREG_SPLIT_NO_EMPTY);
-        } else {
-            $properties = null;
-        }
 
         $first = true;
         $flushes = 0;
@@ -102,13 +99,7 @@ class IcingaObjectsHandler extends RequestHandler
                 Benchmark::measure('Fetching first row');
             }
             $object = $dummy::fromDbRow($row, $connection);
-            $objects[] = json_encode($object->toPlainObject(
-                $resolved,
-                $withNull,
-                $properties,
-                true,
-                $serviceApply
-            ), JSON_PRETTY_PRINT);
+            $objects[] = JsonString::encode($exporter->export($object), JSON_PRETTY_PRINT);
             if ($first) {
                 Benchmark::measure('Got first row');
                 $first = false;
@@ -134,7 +125,7 @@ class IcingaObjectsHandler extends RequestHandler
             echo implode(', ', $objects);
         }
 
-        if ($params->get('benchmark')) {
+        if ($this->request->getUrl()->getParams()->get('benchmark')) {
             echo "],\n";
             Benchmark::measure('All done');
             echo '"benchmark_string": ' . json_encode(Benchmark::renderToText());

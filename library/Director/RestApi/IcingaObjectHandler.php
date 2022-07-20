@@ -7,9 +7,10 @@ use Icinga\Exception\IcingaException;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
+use Icinga\Module\Director\Data\Exporter;
+use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
 use Icinga\Module\Director\Objects\IcingaObject;
-use Icinga\Module\Director\Util;
 
 class IcingaObjectHandler extends RequestHandler
 {
@@ -19,9 +20,13 @@ class IcingaObjectHandler extends RequestHandler
     /** @var CoreApi */
     protected $api;
 
+    /** @var Db */
+    protected $connection;
+
     public function setObject(IcingaObject $object)
     {
         $this->object = $object;
+        $this->connection = $object->getConnection();
         return $this;
     }
 
@@ -151,22 +156,10 @@ class IcingaObjectHandler extends RequestHandler
                 break;
 
             case 'GET':
-                $params = $this->request->getUrl()->getParams();
-                $this->requireObject();
-                $properties = $params->shift('properties');
-                if (strlen($properties)) {
-                    $properties = preg_split('/\s*,\s*/', $properties, -1, PREG_SPLIT_NO_EMPTY);
-                } else {
-                    $properties = null;
-                }
-
-                $this->sendJson(
-                    $this->requireObject()->toPlainObject(
-                        $params->shift('resolved'),
-                        ! $params->shift('withNull'),
-                        $properties
-                    )
-                );
+                $object = $this->requireObject();
+                $exporter = new Exporter($this->connection);
+                RestApiParams::applyParamsToExporter($exporter, $this->request, $object->getShortTableName());
+                $this->sendJson($exporter->export($object));
                 break;
 
             default:
