@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Clicommands;
 
+use Icinga\Cli\Params;
 use Icinga\Module\Director\Cli\ObjectCommand;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -31,39 +32,47 @@ class ServiceCommand extends ObjectCommand
         $service = ServiceFinder::find($host, $name);
         if ($service->requiresOverrides()) {
             $this->params->shift('host');
-            if ($this->params->shift('replace')) {
-                throw new RuntimeException('--replace is not available for Variable Overrides');
-            }
-            $appends = $this->stripPrefixedProperties($this->params, 'append-');
-            $remove = $this->stripPrefixedProperties($this->params, 'remove-');
+            self::checkForOverrideSafety($this->params);
             $properties = $this->remainingParams();
-            self::assertVarsForOverrides($appends);
-            self::assertVarsForOverrides($remove);
-            self::assertVarsForOverrides($properties);
-            $current = $host->getOverriddenServiceVars($name);
-            foreach ($properties as $key => $value) {
-                if ($key === 'vars') {
-                    foreach ($value as $k => $v) {
-                        $current->$k = $v;
-                    }
-                } else {
-                    $current->{substr($key, 5)} = $value;
-                }
-            }
-
-            if (!empty($appends)) {
-                throw new RuntimeException('--append- is not available for Variable Overrides');
-            }
-            if (!empty($remove)) {
-                throw new RuntimeException('--remove- is not available for Variable Overrides');
-            }
-            // Alternative, untested:
-            // $this->appendToArrayProperties($object, $appends);
-            // $this->removeProperties($object, $remove);
-
-            $host->overrideServiceVars($name, $current);
+            self::applyOverriddenVars($host, $name, $properties);
             $this->persistChanges($host, 'Host', $host->getObjectName() . " (Overrides for $name)", 'modified');
         }
+    }
+
+    protected static function applyOverriddenVars(IcingaHost $host, $serviceName, $properties)
+    {
+        self::assertVarsForOverrides($properties);
+        $current = $host->getOverriddenServiceVars($serviceName);
+        foreach ($properties as $key => $value) {
+            if ($key === 'vars') {
+                foreach ($value as $k => $v) {
+                    $current->$k = $v;
+                }
+            } else {
+                $current->{substr($key, 5)} = $value;
+            }
+        }
+        $host->overrideServiceVars($serviceName, $current);
+    }
+
+    protected static function checkForOverrideSafety(Params $params)
+    {
+        if ($params->shift('replace')) {
+            throw new RuntimeException('--replace is not available for Variable Overrides');
+        }
+        $appends = self::stripPrefixedProperties($params, 'append-');
+        $remove = self::stripPrefixedProperties($params, 'remove-');
+        self::assertVarsForOverrides($appends);
+        self::assertVarsForOverrides($remove);
+        if (!empty($appends)) {
+            throw new RuntimeException('--append- is not available for Variable Overrides');
+        }
+        if (!empty($remove)) {
+            throw new RuntimeException('--remove- is not available for Variable Overrides');
+        }
+        // Alternative, untested:
+        // $this->appendToArrayProperties($object, $appends);
+        // $this->removeProperties($object, $remove);
     }
 
     protected static function assertVarsForOverrides($properties)

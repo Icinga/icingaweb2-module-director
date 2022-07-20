@@ -215,8 +215,8 @@ class ObjectCommand extends Command
             $object = $this->getObject();
         }
 
-        $appends = $this->stripPrefixedProperties($this->params, 'append-');
-        $remove = $this->stripPrefixedProperties($this->params, 'remove-');
+        $appends = self::stripPrefixedProperties($this->params, 'append-');
+        $remove = self::stripPrefixedProperties($this->params, 'remove-');
 
         if ($this->params->shift('replace')) {
             $new = $this->create($name)->setProperties($this->remainingParams());
@@ -407,7 +407,7 @@ class ObjectCommand extends Command
         }
     }
 
-    protected function stripPrefixedProperties(Params $params, $prefix = 'append-')
+    protected static function stripPrefixedProperties(Params $params, $prefix = 'append-')
     {
         $appends = [];
         $len = strlen($prefix);
