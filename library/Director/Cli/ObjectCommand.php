@@ -456,7 +456,7 @@ class ObjectCommand extends Command
     protected function readFromStdin()
     {
         if (!defined('STDIN')) {
-            define('STDIN', fopen("php://stdin","r"));
+            define('STDIN', fopen('php://stdin', 'r'));
         }
         $inputIsTty = function_exists('posix_isatty') && posix_isatty(STDIN);
         if ($inputIsTty) {
