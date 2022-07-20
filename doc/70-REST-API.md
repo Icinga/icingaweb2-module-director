@@ -39,12 +39,15 @@ URL scheme and supported methods
 
 We support GET, POST, PUT and DELETE.
 
-| Method | Meaning
-| ------ | ------------------------------------------------------------
-| GET    | Read / fetch data. Not allowed to run operations with the potential to cause any harm
-| POST   | Trigger actions, create or modify objects. Can also be used to partially modify objects
-| PUT    | Creates or replaces objects, cannot be used to modify single object properties
-| DELETE | Remove a specific object
+| Method | Meaning                                                             |
+|--------|---------------------------------------------------------------------|
+| GET    | Read / fetch data. Not allowed to run operations with the potential |
+|        | to cause any harm                                                   |
+| POST   | Trigger actions, create or modify objects. Can also be used to      |
+|        | partially modify objects                                            |
+| PUT    | Creates or replaces objects, cannot be used to modify single object |
+|        | properties                                                          |
+| DELETE | Remove a specific object                                            |
 
 TODO: more examples showing the difference between POST and PUT
 
@@ -113,6 +116,14 @@ Icinga Objects
 
 ### Special parameters
 
+| Parameter    | Description                                                 |
+|--------------|-------------------------------------------------------------|
+| resolved     | Resolve all inherited properties and show a flat object     |
+| withNull     | Retrieve default (null) properties also                     |
+| withServices | Show services attached to a host. `resolved` and `withNull` |
+|              | are applied for services too                                |
+
+
 #### Resolve object properties
 
 In case you add the `resolved` parameter to your URL, all inherited object
@@ -121,15 +132,20 @@ properties will be resolved. Such a URL could look as follows:
     director/host?name=hostname.example.com&resolved
 
 
-#### Retrieve all properties
-
-TODO: adjust the code to fix this, current implementation has `withNull`
+#### Retrieve default (null) properties also
 
 Per default properties with `null` value are skipped when shipping a result.
-You can influence this behavior with the properties parameter. Just append
-`properties=ALL` to your URL:
+You can influence this behavior with the `properties` parameter. Just append
+`&withNull` to your URL:
 
-    director/host?name=hostname.example.com&properties=all
+    director/host?name=hostname.example.com&withNull
+
+
+#### Fetch host with it's services
+
+This is what the `withServices` parameter exists:
+
+    director/host?name=hostname.example.com&withServices
 
 
 #### Retrieve only specific properties

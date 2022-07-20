@@ -13,8 +13,7 @@ class RestApiParams
         $params = $request->getUrl()->getParams();
         $resolved = (bool) $params->get('resolved', false);
         $withNull = $params->shift('withNull');
-        $withServices = (bool) $params->get('withServices');
-        if ($withServices) {
+        if ($params->get('withServices')) {
             if ($shortObjectType !== 'host') {
                 throw new InvalidArgumentException('withServices is available for Hosts only');
             }
