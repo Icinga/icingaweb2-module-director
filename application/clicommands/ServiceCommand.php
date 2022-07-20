@@ -6,7 +6,8 @@ use Icinga\Cli\Params;
 use Icinga\Module\Director\Cli\ObjectCommand;
 use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Objects\IcingaHost;
-use RuntimeException;
+use Icinga\Module\Director\Resolver\OverrideHelper;
+use InvalidArgumentException;
 
 /**
  * Manage Icinga Services
@@ -34,58 +35,29 @@ class ServiceCommand extends ObjectCommand
             $this->params->shift('host');
             self::checkForOverrideSafety($this->params);
             $properties = $this->remainingParams();
-            self::applyOverriddenVars($host, $name, $properties);
+            OverrideHelper::applyOverriddenVars($host, $name, $properties);
             $this->persistChanges($host, 'Host', $host->getObjectName() . " (Overrides for $name)", 'modified');
         }
-    }
-
-    protected static function applyOverriddenVars(IcingaHost $host, $serviceName, $properties)
-    {
-        self::assertVarsForOverrides($properties);
-        $current = $host->getOverriddenServiceVars($serviceName);
-        foreach ($properties as $key => $value) {
-            if ($key === 'vars') {
-                foreach ($value as $k => $v) {
-                    $current->$k = $v;
-                }
-            } else {
-                $current->{substr($key, 5)} = $value;
-            }
-        }
-        $host->overrideServiceVars($serviceName, $current);
     }
 
     protected static function checkForOverrideSafety(Params $params)
     {
         if ($params->shift('replace')) {
-            throw new RuntimeException('--replace is not available for Variable Overrides');
+            throw new InvalidArgumentException('--replace is not available for Variable Overrides');
         }
         $appends = self::stripPrefixedProperties($params, 'append-');
         $remove = self::stripPrefixedProperties($params, 'remove-');
-        self::assertVarsForOverrides($appends);
-        self::assertVarsForOverrides($remove);
+        OverrideHelper::assertVarsForOverrides($appends);
+        OverrideHelper::assertVarsForOverrides($remove);
         if (!empty($appends)) {
-            throw new RuntimeException('--append- is not available for Variable Overrides');
+            throw new InvalidArgumentException('--append- is not available for Variable Overrides');
         }
         if (!empty($remove)) {
-            throw new RuntimeException('--remove- is not available for Variable Overrides');
+            throw new InvalidArgumentException('--remove- is not available for Variable Overrides');
         }
         // Alternative, untested:
         // $this->appendToArrayProperties($object, $appends);
         // $this->removeProperties($object, $remove);
-    }
-
-    protected static function assertVarsForOverrides($properties)
-    {
-        if (empty($properties)) {
-            return;
-        }
-
-        foreach ($properties as $key => $value) {
-            if ($key !== 'vars' && substr($key, 0, 5) !== 'vars.') {
-                throw new RuntimeException("Only Custom Variables can be set based on Variable Overrides");
-            }
-        }
     }
 
     protected function load($name)
