@@ -116,13 +116,13 @@ Icinga Objects
 
 ### Special parameters
 
-| Parameter    | Description                                                 |
-|--------------|-------------------------------------------------------------|
-| resolved     | Resolve all inherited properties and show a flat object     |
-| withNull     | Retrieve default (null) properties also                     |
-| withServices | Show services attached to a host. `resolved` and `withNull` |
-|              | are applied for services too                                |
-
+| Parameter      | Description                                                 |
+|----------------|-------------------------------------------------------------|
+| resolved       | Resolve all inherited properties and show a flat object     |
+| withNull       | Retrieve default (null) properties also                     |
+| withServices   | Show services attached to a host. `resolved` and `withNull` |
+|                | are applied for services too                                |
+| allowOverrides | Set variable overrides for virtual Services                 |
 
 #### Resolve object properties
 
@@ -156,6 +156,23 @@ when they have no (`null`) value:
 
     director/host?name=hostname.example.com&properties=object_name,address,vars
 
+
+#### Override vars for inherited/applied Services
+
+Enabling `allowOverrides` allows you to let Director figure out, whether your
+modified Custom Variables need to be applied to a specific individual Service,
+or whether setting Overrides at Host level is the way to go.
+
+     POST director/service?name=Uptime&host=hostname.example.com&allowOverrices
+
+```json
+{ "vars.uptime_warning": 300 }
+```
+
+In case `Uptime` is an Apply Rule, calling this without `allowOverrides` will
+trigger a 404 response. Please note that when modifying the Host object, the
+body for response 200 will show the Host object, as that's the one that has
+been modified.
 
 ### Example
 

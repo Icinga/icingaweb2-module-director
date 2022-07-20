@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Exception;
+use gipfl\Json\JsonString;
 use Icinga\Module\Director\Db;
 use Icinga\Web\Request;
 use Icinga\Web\Response;
@@ -36,7 +37,7 @@ abstract class RequestHandler
     {
         $this->response->setHeader('Content-Type', 'application/json', true);
         $this->response->sendHeaders();
-        echo json_encode($object, JSON_PRETTY_PRINT) . "\n";
+        echo JsonString::encode($object, JSON_PRETTY_PRINT) . "\n";
     }
 
     public function sendJsonError($error, $code = null)

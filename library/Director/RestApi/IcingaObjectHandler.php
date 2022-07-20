@@ -8,9 +8,13 @@ use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Core\CoreApi;
 use Icinga\Module\Director\Data\Exporter;
-use Icinga\Module\Director\Db;
+use Icinga\Module\Director\DirectorObject\Lookup\ServiceFinder;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
+use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
+use Icinga\Module\Director\Resolver\OverrideHelper;
+use InvalidArgumentException;
+use RuntimeException;
 
 class IcingaObjectHandler extends RequestHandler
 {
@@ -20,13 +24,9 @@ class IcingaObjectHandler extends RequestHandler
     /** @var CoreApi */
     protected $api;
 
-    /** @var Db */
-    protected $connection;
-
     public function setObject(IcingaObject $object)
     {
         $this->object = $object;
-        $this->connection = $object->getConnection();
         return $this;
     }
 
@@ -52,7 +52,7 @@ class IcingaObjectHandler extends RequestHandler
     /**
      * @return IcingaObject
      */
-    protected function eventuallyLoadObject()
+    protected function loadOptionalObject()
     {
         return $this->object;
     }
@@ -99,7 +99,6 @@ class IcingaObjectHandler extends RequestHandler
     protected function handleApiRequest()
     {
         $request = $this->request;
-        $response = $this->response;
         $db = $this->db;
 
         // TODO: I hate doing this:
@@ -127,8 +126,10 @@ class IcingaObjectHandler extends RequestHandler
             case 'POST':
             case 'PUT':
                 $data = (array) $this->requireJsonBody();
+                $params = $this->request->getUrl()->getParams();
+                $allowsOverrides = $params->get('allowOverrides');
                 $type = $this->getType();
-                if ($object = $this->eventuallyLoadObject()) {
+                if ($object = $this->loadOptionalObject()) {
                     if ($request->getMethod() === 'POST') {
                         $object->setProperties($data);
                     } else {
@@ -136,28 +137,26 @@ class IcingaObjectHandler extends RequestHandler
                             'object_type' => $object->get('object_type'),
                             'object_name' => $object->getObjectName()
                         ], $data);
-                        $object->replaceWith(
-                            IcingaObject::createByType($type, $data, $db)
-                        );
+                        $object->replaceWith(IcingaObject::createByType($type, $data, $db));
                     }
+                    $this->persistChanges($object);
+                    $this->sendJson($object->toPlainObject(false, true));
+                } elseif ($allowsOverrides && $type === 'service') {
+                    if ($request->getMethod() === 'PUT') {
+                        throw new InvalidArgumentException('Overrides are not (yet) available for HTTP PUT');
+                    }
+                    $this->setServiceProperties($params->getRequired('host'), $params->getRequired('name'), $data);
                 } else {
+                    $this->persistChanges($object);
                     $object = IcingaObject::createByType($type, $data, $db);
+                    $this->sendJson($object->toPlainObject(false, true));
                 }
 
-                if ($object->hasBeenModified()) {
-                    $status = $object->hasBeenLoadedFromDb() ? 200 : 201;
-                    $object->store();
-                    $response->setHttpResponseCode($status);
-                } else {
-                    $response->setHttpResponseCode(304);
-                }
-
-                $this->sendJson($object->toPlainObject(false, true));
                 break;
 
             case 'GET':
                 $object = $this->requireObject();
-                $exporter = new Exporter($this->connection);
+                $exporter = new Exporter($this->db);
                 RestApiParams::applyParamsToExporter($exporter, $this->request, $object->getShortTableName());
                 $this->sendJson($exporter->export($object));
                 break;
@@ -165,6 +164,34 @@ class IcingaObjectHandler extends RequestHandler
             default:
                 $request->getResponse()->setHttpResponseCode(400);
                 throw new IcingaException('Unsupported method ' . $request->getMethod());
+        }
+    }
+
+    protected function persistChanges(IcingaObject $object)
+    {
+        if ($object->hasBeenModified()) {
+            $status = $object->hasBeenLoadedFromDb() ? 200 : 201;
+            $object->store();
+            $this->response->setHttpResponseCode($status);
+        } else {
+            $this->response->setHttpResponseCode(304);
+        }
+    }
+
+    protected function setServiceProperties($hostname, $serviceName, $properties)
+    {
+        $host = IcingaHost::load($hostname, $this->db);
+        $service = ServiceFinder::find($host, $serviceName);
+        if ($service === false) {
+            throw new NotFoundError('Not found');
+        }
+        if ($service->requiresOverrides()) {
+            unset($properties['host']);
+            OverrideHelper::applyOverriddenVars($host, $serviceName, $properties);
+            $this->persistChanges($host);
+            $this->sendJson($host->toPlainObject(false, true));
+        } else {
+            throw new RuntimeException('Found a single service, which should have been found (and dealt with) before');
         }
     }
 }

@@ -254,10 +254,13 @@ class ServiceController extends ObjectController
         // Hint: not passing 'object' as type, we still have name-based links in previews and similar
         $uuid = UuidLookup::findServiceUuid($this->db(), $this->getBranch(), null, $key, $this->host, $this->set);
         if ($uuid === null) {
-            throw new NotFoundError('Not found');
+            if (! $this->params->get('allowOverrides')) {
+                throw new NotFoundError('Not found');
+            }
+        } else {
+            $this->params->set('uuid', $uuid->toString());
+            parent::loadObject();
         }
-        $this->params->set('uuid', $uuid->toString());
-        parent::loadObject();
     }
 
     protected function addOptionalHostTabs()
