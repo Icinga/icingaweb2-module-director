@@ -123,6 +123,7 @@ Icinga Objects
 | withServices   | Show services attached to a host. `resolved` and `withNull` |
 |                | are applied for services too                                |
 | allowOverrides | Set variable overrides for virtual Services                 |
+| showStacktrace | Returns the related stack trace, in case an error occurs    |
 
 #### Resolve object properties
 

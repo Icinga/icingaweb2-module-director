@@ -58,7 +58,11 @@ abstract class RequestHandler
         }
 
         $response->sendHeaders();
-        $this->sendJson((object) ['error' => $message]);
+        $result = ['error' => $message];
+        if ($this->request->getUrl()->getParam('showStacktrace')) {
+            $result['trace'] = $error->getTraceAsString();
+        }
+        $this->sendJson((object) $result);
     }
 
     // TODO: just return json_last_error_msg() for PHP >= 5.5.0

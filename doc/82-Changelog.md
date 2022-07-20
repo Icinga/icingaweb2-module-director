@@ -23,6 +23,7 @@ v1.10.0 (unreleased)
 
 ### REST API
 * FIX: addressing service templates by name has been fixed (#2487)
+* FEATURE: Stack traces can now be requested (#2570)
 
 ### CLI
 * FIX: config deploy doesn't try to wait in case of no deployment (#2522)
