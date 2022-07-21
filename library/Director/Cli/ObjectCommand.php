@@ -47,7 +47,7 @@ class ObjectCommand extends Command
      *   --no-defaults       Per default JSON output ships null or default
      *                       values. This flag skips those properties
      *   --with-services     For hosts only, also shows attached services
-     *   --resolve-services  For hosts only, show applied and inherited services
+     *   --all-services      For hosts only, show applied and inherited services
      *                       too
      */
     public function showAction()
@@ -57,16 +57,16 @@ class ObjectCommand extends Command
         $exporter = new Exporter($db);
         $resolve = (bool) $this->params->shift('resolved');
         $withServices = (bool) $this->params->get('with-services');
-        $resolveServices = (bool) $this->params->get('resolve-services');
+        $allServices = (bool) $this->params->get('all-services');
         if ($withServices) {
             if (!$object instanceof IcingaHost) {
                 $this->fail('--with-services is available for Hosts only');
             }
             $exporter->enableHostServices();
         }
-        if ($resolveServices) {
+        if ($allServices) {
             if (!$object instanceof IcingaHost) {
-                $this->fail('--resolve-services is available for Hosts only');
+                $this->fail('--all-services is available for Hosts only');
             }
             $exporter->resolveHostServices();
         }

@@ -65,7 +65,7 @@ class Exporter
     protected $fieldReferenceLoader;
 
     protected $exportHostServices = false;
-    protected $resolveHostServices = false;
+    protected $fetchAllHostServices = false;
     protected $showDefaults = false;
     protected $showIds = false;
     protected $resolveObjects = false;
@@ -115,7 +115,7 @@ class Exporter
 
     public function resolveHostServices($enable = true)
     {
-        $this->resolveHostServices = $enable;
+        $this->fetchAllHostServices = $enable;
         return $this;
     }
 
@@ -208,8 +208,8 @@ class Exporter
     {
         $table = (new ObjectsTableService($this->connection))->setHost($host);
         $services = $this->fetchServicesForTable($table);
-        if ($this->resolveHostServices) {
-            foreach ($this->fetchRelatedServicesForHost($host) as $service) {
+        if ($this->fetchAllHostServices) {
+            foreach ($this->fetchAllServicesForHost($host) as $service) {
                 $services[] = $service;
             }
         }
@@ -240,7 +240,7 @@ class Exporter
         return $services;
     }
 
-    protected function fetchRelatedServicesForHost(IcingaHost $host)
+    protected function fetchAllServicesForHost(IcingaHost $host)
     {
         $services = [];
         /** @var IcingaHost[] $parents */
@@ -253,12 +253,16 @@ class Exporter
                 $services[] = $service;
             }
         }
-/*
-        $this->addHostServiceSetTables($host);
-        foreach ($parents as $parent) {
-            $this->addHostServiceSetTables($parent, $host);
+
+        foreach ($this->getHostServiceSetTables($host) as $service) {
+            $services[] = $service;
         }
-*/
+        foreach ($parents as $parent) {
+            foreach ($this->getHostServiceSetTables($parent, $host) as $service) {
+                $services[] = $service;
+            }
+        }
+
         $appliedSets = AppliedServiceSetLoader::fetchForHost($host);
         foreach ($appliedSets as $set) {
             $table = IcingaServiceSetServiceTable::load($set)
@@ -275,6 +279,41 @@ class Exporter
         }
 
         return $services;
+    }
+
+    /**
+     * Duplicates Logic in HostController
+     *
+     * @param IcingaHost $host
+     * @param IcingaHost|null $affectedHost
+     * @return IcingaServiceSetServiceTable[]
+     */
+    protected function getHostServiceSetTables(IcingaHost $host, IcingaHost $affectedHost = null)
+    {
+        $tables = [];
+        $db = $this->connection;
+        if ($affectedHost === null) {
+            $affectedHost = $host;
+        }
+        if ($host->get('id') === null) {
+            return $tables;
+        }
+
+        $query = $db->getDbAdapter()->select()
+            ->from(['ss' => 'icinga_service_set'], 'ss.*')
+            ->join(['hsi' => 'icinga_service_set_inheritance'], 'hsi.parent_service_set_id = ss.id', [])
+            ->join(['hs' => 'icinga_service_set'], 'hs.id = hsi.service_set_id', [])
+            ->where('hs.host_id = ?', $host->get('id'));
+
+        $sets = IcingaServiceSet::loadAll($db, $query, 'object_name');
+        /** @var IcingaServiceSet $set*/
+        foreach ($sets as $name => $set) {
+            $tables[] = IcingaServiceSetServiceTable::load($set)
+                ->setHost($host)
+                ->setAffectedHost($affectedHost);
+        }
+
+        return $tables;
     }
 
     protected function loadTemplateName($table, $id)
