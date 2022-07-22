@@ -83,7 +83,7 @@ class BranchActivityTable extends ZfQueryBasedTable
                 $activity->getAuthor(),
                 $activity->getAction(),
                 $type,
-                'object name'
+                $activity->getObjectName()
             );
         }
     }
