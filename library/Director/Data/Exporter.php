@@ -254,12 +254,16 @@ class Exporter
             }
         }
 
-        foreach ($this->getHostServiceSetTables($host) as $service) {
-            $services[] = $service;
+        foreach ($this->getHostServiceSetTables($host) as $table) {
+            foreach ($this->fetchServicesForTable($table) as $service) {
+                $services[] = $service;
+            }
         }
         foreach ($parents as $parent) {
-            foreach ($this->getHostServiceSetTables($parent, $host) as $service) {
-                $services[] = $service;
+            foreach ($this->getHostServiceSetTables($parent, $host) as $table) {
+                foreach ($this->fetchServicesForTable($table) as $service) {
+                    $services[] = $service;
+                }
             }
         }
 
