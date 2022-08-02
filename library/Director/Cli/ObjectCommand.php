@@ -141,10 +141,11 @@ class ObjectCommand extends Command
             } else {
                 $props['object_name'] = $name;
             }
-        }
-
-        if (! array_key_exists('object_name', $props)) {
-            $this->fail('Cannot create an object with at least an object name');
+        } else {
+            if (! array_key_exists('object_name', $props)) {
+                $this->fail('Cannot create an object with at least an object name');
+            }
+            $name = $props['object_name'];
         }
 
         $object = IcingaObject::createByType(
