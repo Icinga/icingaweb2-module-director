@@ -147,11 +147,10 @@ class IcingaObjectHandler extends RequestHandler
                     }
                     $this->setServiceProperties($params->getRequired('host'), $params->getRequired('name'), $data);
                 } else {
-                    $this->persistChanges($object);
                     $object = IcingaObject::createByType($type, $data, $db);
+                    $this->persistChanges($object);
                     $this->sendJson($object->toPlainObject(false, true));
                 }
-
                 break;
 
             case 'GET':
