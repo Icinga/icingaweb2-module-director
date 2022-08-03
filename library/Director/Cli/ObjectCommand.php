@@ -68,7 +68,7 @@ class ObjectCommand extends Command
             if (!$object instanceof IcingaHost) {
                 $this->fail('--all-services is available for Hosts only');
             }
-            $exporter->resolveHostServices();
+            $exporter->serviceLoader()->resolveHostServices();
         }
 
         $exporter->resolveObjects($resolve);
@@ -83,7 +83,7 @@ class ObjectCommand extends Command
             }
             $object->renderToConfig($config);
             if ($withServices) {
-                foreach ($exporter->fetchServicesForHost($object) as $service) {
+                foreach ($exporter->serviceLoader()->fetchServicesForHost($object) as $service) {
                     $service->renderToConfig($config);
                 }
             }
