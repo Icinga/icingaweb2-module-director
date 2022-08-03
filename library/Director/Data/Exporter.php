@@ -20,7 +20,6 @@ use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
 use Icinga\Module\Director\Objects\IcingaTemplateChoice;
-use Icinga\Module\Director\Objects\ImportRowModifier;
 use Icinga\Module\Director\Objects\ImportSource;
 use Icinga\Module\Director\Objects\InstantiatedViaHook;
 use Icinga\Module\Director\Objects\SyncRule;
@@ -34,29 +33,6 @@ use Zend_Db_Select;
 
 class Exporter
 {
-    protected static $denyProperties = [
-        DirectorJob::class => [
-            'last_attempt_succeeded',
-            'last_error_message',
-            'ts_last_attempt',
-            'ts_last_error',
-        ],
-        ImportSource::class => [
-            // No state export
-            'import_state',
-            'last_error_message',
-            'last_attempt',
-        ],
-        ImportRowModifier::class => [
-            // Not state, but to be removed:
-            'source_id',
-        ],
-        SyncRule::class => [
-            'sync_state',
-            'last_error_message',
-            'last_attempt',
-        ],
-    ];
 
     /** @var Adapter|\Zend_Db_Adapter_Abstract */
     protected $db;
@@ -89,7 +65,7 @@ class Exporter
             ? $this->exportIcingaObject($object)
             : $this->exportDbObject($object);
 
-        $this->stripDeniedProperties($props, $object);
+        ImportExportDeniedProperties::strip($props, $object, $this->showIds);
         $this->appendTypeSpecificRelations($props, $object);
 
         if ($this->chosenProperties !== null) {
@@ -342,21 +318,6 @@ class Exporter
         $db = $this->db;
         $query = $db->select()->from('director_datafield_category', 'category_name')->where('id = ?', (int) $id);
         return $db->fetchOne($query);
-    }
-
-    protected function stripDeniedProperties(array &$props, DbObject $object)
-    {
-        // TODO: this used to exist. Double-check all imports to verify it's not in use
-        // $originalId = $props['id'];
-        if (! $this->showIds) {
-            unset($props['id']);
-        }
-        $class = get_class($object);
-        if (isset(self::$denyProperties[$class])) {
-            foreach (self::$denyProperties[$class] as $key) {
-                unset($props[$key]);
-            }
-        }
     }
 
     protected function exportRowModifiers(ImportSource $object)
