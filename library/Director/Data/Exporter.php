@@ -65,7 +65,7 @@ class Exporter
     protected $fieldReferenceLoader;
 
     protected $exportHostServices = false;
-    protected $fetchAllHostServices = false;
+    protected $resolveHostServices = false;
     protected $showDefaults = false;
     protected $showIds = false;
     protected $resolveObjects = false;
@@ -115,7 +115,7 @@ class Exporter
 
     public function resolveHostServices($enable = true)
     {
-        $this->fetchAllHostServices = $enable;
+        $this->resolveHostServices = $enable;
         return $this;
     }
 
@@ -208,7 +208,7 @@ class Exporter
     {
         $table = (new ObjectsTableService($this->connection))->setHost($host);
         $services = $this->fetchServicesForTable($table);
-        if ($this->fetchAllHostServices) {
+        if ($this->resolveHostServices) {
             foreach ($this->fetchAllServicesForHost($host) as $service) {
                 $services[] = $service;
             }
