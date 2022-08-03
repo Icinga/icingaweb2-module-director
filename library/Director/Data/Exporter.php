@@ -203,6 +203,8 @@ class Exporter
             $rows = $this->db->fetchAll($query);
         } elseif ($query instanceof SimpleQuery) {
             $rows = $query->fetchAll();
+        } else {
+            throw new RuntimeException('Table query needs to be either a Select or a SimpleQuery instance');
         }
         $services = [];
         foreach ($rows as $row) {
