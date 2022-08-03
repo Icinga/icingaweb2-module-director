@@ -122,32 +122,8 @@ class ObjectCommand extends Command
     public function createAction()
     {
         $type = $this->getType();
-        $name = $this->params->shift();
-
-        $props = $this->remainingParams();
-        if (! array_key_exists('object_type', $props)) {
-            $props['object_type'] = 'object';
-        }
-
-        if ($name) {
-            if (array_key_exists('object_name', $props)) {
-                if ($name !== $props['object_name']) {
-                    $this->fail(sprintf(
-                        "Name '%s' conflicts with object_name '%s'\n",
-                        $name,
-                        $props['object_name']
-                    ));
-                }
-            } else {
-                $props['object_name'] = $name;
-            }
-        } else {
-            if (! array_key_exists('object_name', $props)) {
-                $this->fail('Cannot create an object with at least an object name');
-            }
-            $name = $props['object_name'];
-        }
-
+        $props = $this->getObjectProperties();
+        $name = $props['object_name'];
         $object = IcingaObject::createByType(
             $type,
             $props,
@@ -383,6 +359,37 @@ class ObjectCommand extends Command
         }
 
         return $appends;
+    }
+
+    protected function getObjectProperties()
+    {
+        $name = $this->params->shift();
+
+        $props = $this->remainingParams();
+        if (! array_key_exists('object_type', $props)) {
+            $props['object_type'] = 'object';
+        }
+
+        // Normalize object_name, compare to given name
+        if ($name) {
+            if (array_key_exists('object_name', $props)) {
+                if ($name !== $props['object_name']) {
+                    $this->fail(sprintf(
+                        "Name '%s' conflicts with object_name '%s'\n",
+                        $name,
+                        $props['object_name']
+                    ));
+                }
+            } else {
+                $props['object_name'] = $name;
+            }
+        } else {
+            if (! array_key_exists('object_name', $props)) {
+                $this->fail('Cannot create an object with at least an object name');
+            }
+        }
+
+        return $props;
     }
 
     protected function shiftOneOrMoreNames()
