@@ -124,11 +124,7 @@ class ObjectCommand extends Command
         $type = $this->getType();
         $props = $this->getObjectProperties();
         $name = $props['object_name'];
-        $object = IcingaObject::createByType(
-            $type,
-            $props,
-            $this->db()
-        );
+        $object = IcingaObject::createByType($type, $props, $this->db());
 
         if ($object->store()) {
             printf("%s '%s' has been created\n", $type, $name);
@@ -193,10 +189,11 @@ class ObjectCommand extends Command
     public function setAction()
     {
         $name = $this->getName();
+        $type = $this->getType();
 
         if ($this->params->shift('auto-create') && ! $this->exists($name)) {
             $action = 'created';
-            $object = $this->create($name);
+            $object = $this->create($type, $name);
         } else {
             $action = 'modified';
             $object = $this->getObject();
@@ -206,15 +203,14 @@ class ObjectCommand extends Command
         $remove = self::stripPrefixedProperties($this->params, 'remove-');
 
         if ($this->params->shift('replace')) {
-            $new = $this->create($name)->setProperties($this->remainingParams());
-            $object->replaceWith($new);
+            $object->replaceWith($this->create($type, $name, $this->remainingParams()));
         } else {
             $object->setProperties($this->remainingParams());
         }
 
         PropertyMangler::appendToArrayProperties($object, $appends);
         PropertyMangler::removeProperties($object, $remove);
-        $this->persistChanges($object, $this->getType(), $name, $action);
+        $this->persistChanges($object, $type, $name, $action);
     }
 
     protected function persistChanges(DbObject $object, $type, $name, $action)
@@ -457,16 +453,12 @@ class ObjectCommand extends Command
         );
     }
 
-    protected function create($name)
+    protected function create($type, $name, $properties = [])
     {
-        return IcingaObject::createByType(
-            $this->getType(),
-            array(
-                'object_type' => 'object',
-                'object_name' => $name
-            ),
-            $this->db()
-        );
+        return IcingaObject::createByType($type, $properties + [
+            'object_type' => 'object',
+            'object_name' => $name
+        ], $this->db());
     }
 
     /**
