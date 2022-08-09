@@ -66,7 +66,6 @@ class IcingaCommand extends IcingaObject implements ObjectWithArguments, ExportI
         'ClusterZoneCheck' => 'plugin-check-command',
         'IdoCheck'         => 'ido-check-command',
         'RandomCheck'      => 'random-check-command',
-        'CrlCheck'         => 'clr-check-command',
     ];
 
     /**
