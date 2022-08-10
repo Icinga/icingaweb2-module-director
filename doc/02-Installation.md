@@ -59,11 +59,11 @@ In case your MySQL root user is password-protected, please add `-p` to this
 command.
 
 #### PostgreSQL
+psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8'";
+psql director -q -c "CREATE USER director WITH PASSWORD 'some-password'";
+psql -q -c "GRANT ALL PRIVILEGES ON DATABASE director TO director";
+psql -q -c "CREATE EXTENSION pgcrypto";
 
-    psql -q -c "CREATE DATABASE director WITH ENCODING 'UTF8';"
-    psql director -q -c "CREATE USER director WITH PASSWORD 'some-password';
-    GRANT ALL PRIVILEGES ON DATABASE director TO director;
-    CREATE EXTENSION pgcrypto;"
 
 Web-based Configuration
 -----------------------
