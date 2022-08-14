@@ -93,11 +93,7 @@ class SyncUtils
             }
 
             if (! is_object($row->$main)) {
-                throw new InvalidArgumentException(sprintf(
-                    'Data is not nested, cannot access %s: %s',
-                    $var,
-                    var_export($row, 1)
-                ));
+                return null;
             }
 
             return static::getDeepValue($row->$main, $parts);
