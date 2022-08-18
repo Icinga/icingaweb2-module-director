@@ -19,7 +19,7 @@ class UsersDashboard extends Dashboard
     {
         return $this->translate(
             'This is where you manage your Icinga 2 User (Contact) objects. Try'
-            . ' to keep your User objects simply by movin complexity to your'
+            . ' to keep your User objects simply by moving complexity to your'
             . ' templates. Bundle your users in groups and build Notifications'
             . ' based on them. Running MS Active Directory or another central'
             . ' User inventory? Stay away from fiddling with manual config, try'
