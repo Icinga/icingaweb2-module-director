@@ -130,7 +130,7 @@ TARGET_DIR="${ICINGAWEB_MODULEPATH}/director"
 
 useradd -r -g icingaweb2 -d /var/lib/icingadirector -s /bin/false icingadirector
 install -d -o icingadirector -g icingaweb2 -m 0750 /var/lib/icingadirector
-git clone "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
+git clone --depth=1 "${REPO_URL}" "${TARGET_DIR}" --branch v${MODULE_VERSION}
 cp "${TARGET_DIR}/contrib/systemd/icinga-director.service" /etc/systemd/system/
 
 icingacli module enable director
