@@ -704,7 +704,13 @@ class Sync
 
         switch ($policy) {
             case 'override':
-                $this->objects[$key]->replaceWith($object);
+                if ($object instanceof IcingaHost
+                    && !in_array('api_key', $this->rule->getSyncProperties())
+                ) {
+                    $this->objects[$key]->replaceWith($object, ['api_key']);
+                } else {
+                    $this->objects[$key]->replaceWith($object);
+                }
                 break;
 
             case 'merge':

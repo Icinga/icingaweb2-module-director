@@ -16,6 +16,7 @@ v1.10.0 (unreleased)
 
 ### Import and Sync
 * FEATURE: clone a row for nested Dictionary/Hash entries (#2555)
+* FEATURE: Sync in "override" mode now preserves Self Service API keys (#2590)
 
 ### Configuration Baskets
 * BREAKING: configuration baskets no longer contain originalId (#2549)
