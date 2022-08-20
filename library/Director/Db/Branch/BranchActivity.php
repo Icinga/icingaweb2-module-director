@@ -9,6 +9,7 @@ use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Data\Json;
 use Icinga\Module\Director\Data\SerializableValue;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Objects\DirectorActivityLog;
 use Icinga\Module\Director\Objects\IcingaObject;
 use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
@@ -19,9 +20,9 @@ class BranchActivity
 {
     const DB_TABLE = 'director_branch_activity';
 
-    const ACTION_CREATE = 'create';
-    const ACTION_MODIFY = 'modify';
-    const ACTION_DELETE = 'delete';
+    const ACTION_CREATE = DirectorActivityLog::ACTION_CREATE;
+    const ACTION_MODIFY = DirectorActivityLog::ACTION_MODIFY;
+    const ACTION_DELETE = DirectorActivityLog::ACTION_DELETE;
 
     /** @var int */
     protected $timestampNs;
