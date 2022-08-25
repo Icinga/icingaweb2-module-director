@@ -6,6 +6,7 @@ use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Widget\NotInBranchedHint;
 
@@ -16,23 +17,6 @@ trait BranchHelper
 
     /** @var BranchStore */
     protected $branchStore;
-
-    protected static $banchedTables = [
-        'icinga_apiuser',
-        'icinga_command',
-        'icinga_dependency',
-        'icinga_endpoint',
-        'icinga_host',
-        'icinga_hostgroup',
-        'icinga_notification',
-        'icinga_scheduled_downtime',
-        'icinga_service',
-        'icinga_servicegroup',
-        'icinga_timeperiod',
-        'icinga_user',
-        'icinga_usergroup',
-        'icinga_zone',
-    ];
 
     /**
      * @return false|\Ramsey\Uuid\UuidInterface
@@ -69,14 +53,9 @@ trait BranchHelper
         return $this->getBranchUuid() !== null;
     }
 
-    protected function tableHasBranchSupport($table)
-    {
-        return in_array($table, self::$banchedTables, true);
-    }
-
     protected function enableStaticObjectLoader($table)
     {
-        if ($this->tableHasBranchSupport($table)) {
+        if (BranchSupport::existsForTableName($table)) {
             IcingaObject::setDbObjectStore(new DbObjectStore($this->db(), $this->getBranch()));
         }
     }
