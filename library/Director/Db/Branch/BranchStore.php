@@ -11,23 +11,6 @@ class BranchStore
 {
     const TABLE = 'director_branch';
     const TABLE_ACTIVITY = 'director_branch_activity';
-    const OBJECT_TABLES = [
-        'branched_icinga_apiuser',
-        'branched_icinga_command',
-        'branched_icinga_dependency',
-        'branched_icinga_endpoint',
-        'branched_icinga_host',
-        'branched_icinga_hostgroup',
-        'branched_icinga_notification',
-        'branched_icinga_scheduled_downtime',
-        'branched_icinga_service',
-        'branched_icinga_service_set',
-        'branched_icinga_servicegroup',
-        'branched_icinga_timeperiod',
-        'branched_icinga_user',
-        'branched_icinga_usergroup',
-        'branched_icinga_zone',
-    ];
 
     protected $connection;
 
@@ -62,7 +45,7 @@ class BranchStore
     public function cloneBranchForSync(Branch $branch, $newName, $owner)
     {
         $this->runTransaction(function ($db) use ($branch, $newName, $owner) {
-            $tables = self::OBJECT_TABLES;
+            $tables = BranchSupport::OBJECT_TABLES;
             $tables[] = self::TABLE_ACTIVITY;
             $newBranch = $this->createBranchByName($newName, $owner);
             $oldQuotedUuid = DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db);
@@ -105,7 +88,7 @@ class BranchStore
     public function wipeBranch(Branch $branch, $after = null)
     {
         $this->runTransaction(function ($db) use ($branch, $after) {
-            $tables = self::OBJECT_TABLES;
+            $tables = BranchSupport::OBJECT_TABLES;
             $tables[] = self::TABLE_ACTIVITY;
             $quotedUuid = DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db);
             $where = $db->quoteInto('branch_uuid = ?', $quotedUuid);
