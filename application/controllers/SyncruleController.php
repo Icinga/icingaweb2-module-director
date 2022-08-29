@@ -9,6 +9,7 @@ use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Web\Controller\BranchHelper;
 use Icinga\Module\Director\Web\Form\ClickHereForm;
 use Icinga\Module\Director\Web\Table\BranchActivityTable;
@@ -123,7 +124,7 @@ class SyncruleController extends ActionController
         if ($this->hasBranch()) {
             $objectType = $rule->get('object_type');
             $table = DbObjectTypeRegistry::tableNameByType($objectType);
-            if (! $this->tableHasBranchSupport($table)) {
+            if (! BranchSupport::existsForTableName($table)) {
                 $this->showNotInBranch(sprintf($this->translate("Synchronizing '%s'"), $objectType));
                 return;
             }
@@ -173,26 +174,35 @@ class SyncruleController extends ActionController
     public function previewAction()
     {
         $rule = $this->requireSyncRule();
-        // $rule->set('update_policy', 'replace');
+        $branchSupport = BranchSupport::existsForSyncRule($rule);
         $branchStore = new BranchStore($this->db());
-        $tmpBranchName = Branch::PREFIX_SYNC_PREVIEW . '/' . $rule->get('id');
         $owner = $this->getAuth()->getUser()->getUsername();
-        if ($this->getBranch()->isBranch()) {
-            // We could keep changes for preview on branch too
-            $branchStore->deleteByName($tmpBranchName);
-            $tmpBranch = $branchStore->cloneBranchForSync($this->getBranch(), $tmpBranchName, $owner);
-            $after = 1600000000; // a date in 2020, minus 10000000
+        if ($branchSupport) {
+            if ($this->getBranch()->isBranch()) {
+                $tmpBranchName = sprintf(
+                    '%s/%s-%s',
+                    Branch::PREFIX_SYNC_PREVIEW,
+                    $this->getBranch()->getUuid()->toString(),
+                    $rule->get('id')
+                );
+                // We could keep changes for preview on branch too
+                $branchStore->deleteByName($tmpBranchName);
+                $tmpBranch = $branchStore->cloneBranchForSync($this->getBranch(), $tmpBranchName, $owner);
+                $after = 1600000000; // a date in 2020, minus 10000000
+            } else {
+                $tmpBranchName = Branch::PREFIX_SYNC_PREVIEW . '/' . $rule->get('id');
+                $tmpBranch = $branchStore->fetchOrCreateByName($tmpBranchName, $owner);
+                $after = null;
+            }
+            $store = new DbObjectStore($this->db(), $tmpBranch);
         } else {
-            $tmpBranch = $branchStore->fetchOrCreateByName($tmpBranchName, $owner);
-            $after = null;
+            $tmpBranch = $store = null;
         }
-        $store = new DbObjectStore($this->db(), $tmpBranch);
 
         $this->tabs(new SyncRuleTabs($rule))->activate('preview');
         $this->addTitle($this->translate('Sync Preview'));
         $sync = new Sync($rule, $store);
-
-        $fetchExpected = true;
+        $keepBranchPreview = false;
         if ($tmpBranch) {
             if ($lastTime = $branchStore->getLastActivityTime($tmpBranch, $after)) {
                 if ((time() - $lastTime) > 100) {
@@ -201,8 +211,9 @@ class SyncruleController extends ActionController
                     $here = (new ClickHereForm())->handleRequest($this->getServerRequest());
                     if ($here->hasBeenClicked()) {
                         $branchStore->wipeBranch($tmpBranch, $after);
+                        $this->redirectNow($this->url());
                     } else {
-                        $fetchExpected = false;
+                        $keepBranchPreview = true;
                     }
                     $this->content()->add(Hint::info(Html::sprintf(
                         $this->translate('This preview has been generated %s, please click %s to regenerate it'),
@@ -212,41 +223,40 @@ class SyncruleController extends ActionController
                 }
             }
         }
-
-        try {
-            if ($fetchExpected) {
-                $modifications = $sync->getExpectedModifications();
-                if ($tmpBranch) {
-                    $sync->apply();
-                }
-            } else {
-                return;
-            }
-        } catch (\Exception $e) {
-            $this->content()->add(Hint::error($e->getMessage()));
-
-            return;
-        }
-
-        if (empty($modifications) && $tmpBranch === null) {
-            $this->content()->add(Hint::ok($this->translate(
-                'This Sync Rule is in sync and would currently not apply any changes'
-            )));
-
-            return;
+        if (!$keepBranchPreview) {
+            $modifications = $sync->getExpectedModifications();
         }
 
         if ($tmpBranch) {
-            if (!$fetchExpected) {
-                $sync->apply();
+            try {
+                if (!$keepBranchPreview) {
+                    $sync->apply();
+                }
+            } catch (\Exception $e) {
+                $this->content()->add(Hint::error($e->getMessage()));
+                return;
             }
+
             $changes = new BranchActivityTable($tmpBranch->getUuid(), $this->db());
             $changes->disableObjectLink();
+            if (count($changes) === 0) {
+                $this->showInSync();
+            }
             $changes->renderTo($this);
-            return;
+        } else {
+            if (empty($modifications)) {
+                $this->showInSync();
+                return;
+            }
+            $this->showExpectedModificationSummary($modifications);
         }
+    }
 
-        $this->showExpectedModificationSummary($modifications);
+    protected function showInSync()
+    {
+        $this->content()->add(Hint::ok($this->translate(
+            'This Sync Rule is in sync and would currently not apply any changes'
+        )));
     }
 
     protected function showExpectedModificationSummary($modifications)
