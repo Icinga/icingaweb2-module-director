@@ -367,13 +367,13 @@ class Sync
 
         if ($listId === null) {
             throw new InvalidArgumentException(
-                'Cannot sync datalist entry without list_ist'
+                'Cannot sync datalist entry without list_id'
             );
         }
 
         $no = [];
         foreach ($this->objects as $k => $o) {
-            if ((int) $o->get('list_id') !== (int) $listId) {
+            if ((int) $o->get('list_id') !== $listId) {
                 $no[] = $k;
             }
         }
