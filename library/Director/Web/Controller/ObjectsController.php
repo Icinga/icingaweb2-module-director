@@ -407,7 +407,7 @@ abstract class ObjectsController extends ActionController
                         $objects[$name] = $class::load($name, $db);
                     } elseif ($col === 'uuid') {
                         $object = $store->load($table, Uuid::fromString($ex->getExpression()));
-                        $objects[$object->getObjectName()] = $object;
+                        $objects[$object->getUniqueId()->toString()] = $object;
                     } else {
                         throw new InvalidArgumentException("'$col' is no a valid key component for '$type'");
                     }
