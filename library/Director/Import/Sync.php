@@ -48,6 +48,9 @@ class Sync
     /** @var bool Whether we already prepared your sync */
     protected $isPrepared = false;
 
+    /** @var bool Whether we applied strtolower() to existing object keys */
+    protected $usedLowerCasedKeys = false;
+
     protected $modify = [];
 
     protected $remove = [];
@@ -313,6 +316,9 @@ class Sync
             foreach ($rows as $row) {
                 if ($combinedKey) {
                     $key = SyncUtils::fillVariables($sourceKeyPattern, $row);
+                    if ($this->usedLowerCasedKeys) {
+                        $key = strtolower($key);
+                    }
 
                     if (array_key_exists($key, $this->imported[$sourceId])) {
                         throw new InvalidArgumentException(sprintf(
@@ -341,7 +347,11 @@ class Sync
                 if ($combinedKey) {
                     $this->imported[$sourceId][$key] = $row;
                 } else {
-                    $this->imported[$sourceId][$row->$key] = $row;
+                    if ($this->usedLowerCasedKeys) {
+                        $this->imported[$sourceId][strtolower($row->$key)] = $row;
+                    } else {
+                        $this->imported[$sourceId][$row->$key] = $row;
+                    }
                 }
             }
 
@@ -391,6 +401,7 @@ class Sync
         Benchmark::measure('Begin loading existing objects');
 
         $ruleObjectType = $this->rule->get('object_type');
+        $useLowerCaseKeys = $ruleObjectType !== 'datalistEntry';
         // TODO: Make object_type (template, object...) and object_name mandatory?
         if ($this->rule->hasCombinedKey()) {
             $this->objects = [];
@@ -418,6 +429,9 @@ class Sync
                     $destinationKeyPattern,
                     $object
                 );
+                if ($useLowerCaseKeys) {
+                    $key = strtolower($key);
+                }
 
                 if (array_key_exists($key, $this->objects)) {
                     throw new InvalidArgumentException(sprintf(
@@ -431,12 +445,22 @@ class Sync
             }
         } else {
             if ($this->store) {
-                $this->objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
+                $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType), 'object_name');
             } else {
-                $this->objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+                $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
+            }
+
+            if ($useLowerCaseKeys) {
+                $this->objects = [];
+                foreach ($objects as $key => $object) {
+                    $this->objects[strtolower($key)] = $object;
+                }
+            } else {
+                $this->objects = $objects;
             }
         }
 
+        $this->usedLowerCasedKeys = $useLowerCaseKeys;
         // TODO: should be obsoleted by a better "loadFiltered" method
         if ($ruleObjectType === 'datalistEntry') {
             $this->removeForeignListEntries();
@@ -463,6 +487,9 @@ class Sync
             foreach ($this->imported[$sourceId] as $key => $row) {
                 // Workaround: $a["10"] = "val"; -> array_keys($a) = [(int) 10]
                 $key = (string) $key;
+                if ($this->usedLowerCasedKeys) {
+                    $key = strtolower($key);
+                }
                 if (! array_key_exists($key, $objects)) {
                     // Safe default values for object_type and object_name
                     if ($ruleObjectType === 'datalistEntry') {
