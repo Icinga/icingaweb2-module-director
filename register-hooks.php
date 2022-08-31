@@ -63,10 +63,12 @@ use Icinga\Module\Director\ProvidedHook\CubeLinks;
 use Icinga\Module\Director\ProvidedHook\IcingaDbCubeLinks;
 
 /** @var Module $this */
-$this->provideHook('monitoring/HostActions');
-$this->provideHook('monitoring/ServiceActions');
-$this->provideHook('cube/Actions', CubeLinks::class);
-$this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
+if ($this->getConfig()->get('frontend', 'disabled', 'no') !== 'yes') {
+    $this->provideHook('monitoring/HostActions');
+    $this->provideHook('monitoring/ServiceActions');
+    $this->provideHook('cube/Actions', CubeLinks::class);
+    $this->provideHook('cube/IcingaDbActions', IcingaDbCubeLinks::class);
+}
 
 $directorHooks = [
     'director/DataType' => [
