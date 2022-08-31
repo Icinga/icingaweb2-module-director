@@ -248,10 +248,15 @@ class IcingaMultiEditForm extends DirectorObjectForm
             $key = 'vars.' . substr($key, 4);
         }
 
-        foreach ($this->objects as $name => $object) {
+        foreach ($this->objects as $object) {
+            $name = $object->getObjectName();
             $value = json_encode($object->$key);
             if (! array_key_exists($value, $variants)) {
                 $variants[$value] = array();
+            }
+
+            if($object->getProperty("object_type") === "object" && strtolower($object->get("type")) === "service"){
+                $name = $object->get("host")."!".$name;
             }
 
             $variants[$value][] = $name;
