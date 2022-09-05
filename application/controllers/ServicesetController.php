@@ -101,14 +101,15 @@ class ServicesetController extends ObjectController
         if ($this->branch->isBranch()) {
             return $this;
         }
+        $hexUuid = $this->object->getUniqueId()->toString();
         $tabs = $this->tabs();
         $tabs->add('services', [
             'url'       => 'director/serviceset/services',
-            'urlParams' => ['uuid' => $this->object->getUniqueId()],
+            'urlParams' => ['uuid' => $hexUuid],
             'label'     => 'Services'
         ])->add('hosts', [
             'url'       => 'director/serviceset/hosts',
-            'urlParams' => ['uuid' => $this->object->getUniqueId()],
+            'urlParams' => ['uuid' => $hexUuid],
             'label'     => 'Hosts'
         ]);
 
