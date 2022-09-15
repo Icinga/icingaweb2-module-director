@@ -587,7 +587,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $config->configFile(
                 'failed-to-render'
             )->prepend(
-                "/** Failed to render this object **/\n"
+                "/** Failed to render this Service Set **/\n"
                 . '/*  ' . $e->getMessage() . ' */'
             );
         }
