@@ -94,7 +94,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             if (empty($imports)) {
                 return array();
             }
-            return $this->getServiceObjectsForSet(array_shift($imports));
+            $parent = array_shift($imports);
+            assert($parent instanceof IcingaServiceSet);
+            return $this->getServiceObjectsForSet($parent);
         } else {
             return $this->getServiceObjectsForSet($this);
         }
