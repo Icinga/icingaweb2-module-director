@@ -28,7 +28,7 @@ class AppliedServiceSetLoader
     /**
      * @return IcingaServiceSet[]
      */
-    public function fetchAppliedServiceSets()
+    protected function fetchAppliedServiceSets()
     {
         $sets = array();
         $matcher = HostApplyMatches::prepare($this->host);
