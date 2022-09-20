@@ -71,7 +71,9 @@ class ServicesetController extends ObjectController
             ['class' => 'icon-plus']
         ));
 
-        IcingaServiceSetServiceTable::load($set)->renderTo($this);
+        IcingaServiceSetServiceTable::load($set)
+            ->setBranch($this->getBranch())
+            ->renderTo($this);
     }
 
     public function hostsAction()
@@ -98,16 +100,17 @@ class ServicesetController extends ObjectController
 
     protected function addServiceSetTabs()
     {
-        if ($this->branch->isBranch()) {
-            return $this;
-        }
         $hexUuid = $this->object->getUniqueId()->toString();
         $tabs = $this->tabs();
         $tabs->add('services', [
             'url'       => 'director/serviceset/services',
             'urlParams' => ['uuid' => $hexUuid],
             'label'     => 'Services'
-        ])->add('hosts', [
+        ]);
+        if ($this->branch->isBranch()) {
+            return $this;
+        }
+        $tabs->add('hosts', [
             'url'       => 'director/serviceset/hosts',
             'urlParams' => ['uuid' => $hexUuid],
             'label'     => 'Hosts'
