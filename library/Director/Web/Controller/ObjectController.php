@@ -157,6 +157,10 @@ abstract class ObjectController extends ActionController
         } else {
             $this->addObject();
         }
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && ! $this->getRequest()->isApiRequest()) {
+            $this->content()->add(new BranchedObjectHint($branch, $this->Auth()));
+        }
 
         $form->handleRequest();
         $this->content()->add($form);
