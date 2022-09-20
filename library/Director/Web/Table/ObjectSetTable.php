@@ -93,13 +93,10 @@ class ObjectSetTable extends ZfQueryBasedTable
             'object_type'    => 'os.object_type',
             'assign_filter'  => 'os.assign_filter',
             'description'    => 'os.description',
-            'count_services' => 'COUNT(DISTINCT o.id)',
+            'count_services' => 'COUNT(DISTINCT o.uuid)',
         ];
         if ($this->branchUuid) {
-            $columns['count_services'] = 'COUNT(DISTINCT COALESCE(o.uuid))';
             $columns['branch_uuid'] = 'bos.branch_uuid';
-        }
-        if ($this->branchUuid) {
             $columns = $this->branchifyColumns($columns);
             $this->stripSearchColumnAliases();
         }
@@ -142,6 +139,11 @@ class ObjectSetTable extends ZfQueryBasedTable
             ->where('bos.branch_uuid = ?', $conn->quoteBinary($this->branchUuid->getBytes()));
             $query->group('COALESCE(os.uuid, bos.uuid)');
             $right->group('COALESCE(os.uuid, bos.uuid)');
+            if ($conn->isPgsql()) {
+                // This is ugly, might want to modify the query - even a subselect looks better
+                $query->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
+                $right->group('bos.uuid')->group('os.uuid')->group('os.id')->group('bos.branch_uuid');
+            }
 
             $query = $this->db()->select()->union([
                 'l' => new DbSelectParenthesis($query),
@@ -154,7 +156,18 @@ class ObjectSetTable extends ZfQueryBasedTable
                 ->group('uuid')
                 ->where('object_type = ?', 'template')
                 ->order('object_name');
-
+            if ($conn->isPgsql()) {
+                // BS. Drop count? Sub-select? Better query?
+                $query
+                    ->group('uuid')
+                    ->group('id')
+                    ->group('branch_uuid')
+                    ->group('object_name')
+                    ->group('object_type')
+                    ->group('assign_filter')
+                    ->group('description')
+                    ->group('count_services');
+            };
         } else {
             // Disabled for now, check for correctness:
             // $query->joinLeft(
