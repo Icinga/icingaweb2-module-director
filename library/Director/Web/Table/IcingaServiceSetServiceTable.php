@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Data\Db\ServiceSetQueryBuilder;
+use Icinga\Module\Director\Db;
 use ipl\Html\BaseHtmlElement;
 use ipl\Html\Html;
 use Icinga\Module\Director\Forms\RemoveLinkForm;
@@ -14,6 +16,8 @@ use gipfl\IcingaWeb2\Url;
 
 class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 {
+    use TableWithBranchSupport;
+
     /** @var IcingaServiceSet */
     protected $set;
 
@@ -177,44 +181,10 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
      */
     public function prepareQuery()
     {
-        $db = $this->db();
-        $query = $db->select()->from(
-            ['s' => 'icinga_service'],
-            [
-                'id'             => 's.id',
-                'uuid'           => 's.uuid',
-                'service_set_id' => 's.service_set_id',
-                'host_id'        => 'ss.host_id',
-                'service_set'    => 'ss.object_name',
-                'service'        => 's.object_name',
-                'disabled'       => 's.disabled',
-                'object_type'    => 's.object_type',
-            ]
-        )->joinLeft(
-            ['ss' => 'icinga_service_set'],
-            'ss.id = s.service_set_id',
-            []
-        )->where(
-            's.service_set_id = ?',
-            $this->set->get('id')
-        )->order('s.object_name');
-
-        if ($this->affectedHost) {
-            $query->joinLeft(
-                ['hsb' => 'icinga_host_service_blacklist'],
-                $db->quoteInto(
-                    's.id = hsb.service_id AND hsb.host_id = ?',
-                    $this->affectedHost->get('id')
-                ),
-                []
-            )->columns([
-                'blacklisted' => "CASE WHEN hsb.service_id IS NULL THEN 'n' ELSE 'y' END",
-            ]);
-        } else {
-            $query->columns(['blacklisted' => "('n')"]);
-        }
-
-        return $query;
+        $connection = $this->connection();
+        assert($connection instanceof Db);
+        $builder = new ServiceSetQueryBuilder($connection, $this->branchUuid);
+        return $builder->selectServicesForSet($this->set)->limit(100);
     }
 
     protected function createFakeRemoveLinkForReadonlyView()
