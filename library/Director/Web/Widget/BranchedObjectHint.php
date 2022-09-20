@@ -15,7 +15,7 @@ class BranchedObjectHint extends HtmlDocument
 {
     use TranslationHelper;
 
-    public function __construct(Branch $branch, Auth $auth, BranchedObject $object)
+    public function __construct(Branch $branch, Auth $auth, BranchedObject $object = null)
     {
         if (! $branch->isBranch()) {
             return;
@@ -29,6 +29,13 @@ class BranchedObjectHint extends HtmlDocument
             $label = $name;
         }
         $link = $hook->linkToBranch($branch, $auth, $label);
+        if ($object === null) {
+            $this->add(Hint::info(Html::sprintf($this->translate(
+                'This object will be created in %s. It will not be part of any deployment'
+                . ' unless being merged'
+            ), $link)));
+            return;
+        }
 
         if (! $object->hasBeenTouchedByBranch()) {
             $this->add(Hint::info(Html::sprintf($this->translate(
