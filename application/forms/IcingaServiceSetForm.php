@@ -69,7 +69,8 @@ class IcingaServiceSetForm extends DirectorObjectForm
         }
 
         $this->addHidden('object_type', 'object');
-        $this->addHidden('host_id', $this->host->id);
+        $this->addHidden('host', $this->host->getObjectName());
+        $this->groupMainProperties();
     }
 
     public function setHost(IcingaHost $host)
@@ -77,6 +78,7 @@ class IcingaServiceSetForm extends DirectorObjectForm
         $this->host = $host;
         return $this;
     }
+
     protected function addSingleImportsElement()
     {
         $enum = $this->enumAllowedTemplates();
