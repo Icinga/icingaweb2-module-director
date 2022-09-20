@@ -9,7 +9,6 @@ use ipl\Html\Html;
 use Icinga\Module\Director\Forms\RemoveLinkForm;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaServiceSet;
-use ipl\Html\HtmlElement;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
@@ -142,15 +141,26 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         $tr = $this::row([
             $this->getServiceLink($row)
         ]);
-
+        $classes = $this->getRowClasses($row);
         if ($row->disabled === 'y') {
-            $tr->getAttributes()->add('class', 'disabled');
+            $classes[] = 'disabled';
         }
         if ($row->blacklisted === 'y') {
-            $tr->getAttributes()->add('class', 'strike-links');
+            $classes[] = 'strike-links';
+        }
+        if (! empty($classes)) {
+            $tr->getAttributes()->add('class', $classes);
         }
 
         return $tr;
+    }
+
+    protected function getRowClasses($row)
+    {
+        if ($row->branch_uuid !== null) {
+            return ['branch_modified'];
+        }
+        return [];
     }
 
     protected function getTitle()
