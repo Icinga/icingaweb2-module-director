@@ -19,6 +19,7 @@ class BranchSupport
     const TABLE_ICINGA_SCHEDULED_DOWNTIME = 'icinga_scheduled_downtime';
     const TABLE_ICINGA_SERVICE            = 'icinga_service';
     const TABLE_ICINGA_SERVICEGROUP       = 'icinga_servicegroup';
+    const TABLE_ICINGA_SERVICE_SET        = 'icinga_service_set';
     const TABLE_ICINGA_TIMEPERIOD         = 'icinga_timeperiod';
     const TABLE_ICINGA_USER               = 'icinga_user';
     const TABLE_ICINGA_USERGROUP          = 'icinga_usergroup';
@@ -34,6 +35,7 @@ class BranchSupport
     const BRANCHED_TABLE_ICINGA_SCHEDULED_DOWNTIME = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_SCHEDULED_DOWNTIME;
     const BRANCHED_TABLE_ICINGA_SERVICE            = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_SERVICE;
     const BRANCHED_TABLE_ICINGA_SERVICEGROUP       = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_SERVICEGROUP;
+    const BRANCHED_TABLE_ICINGA_SERVICE_SET        = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_SERVICE_SET;
     const BRANCHED_TABLE_ICINGA_TIMEPERIOD         = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_TIMEPERIOD;
     const BRANCHED_TABLE_ICINGA_USER               = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_USER;
     const BRANCHED_TABLE_ICINGA_USERGROUP          = self::BRANCHED_TABLE_PREFIX. self::TABLE_ICINGA_USERGROUP;
@@ -50,6 +52,7 @@ class BranchSupport
         self::TABLE_ICINGA_SCHEDULED_DOWNTIME,
         self::TABLE_ICINGA_SERVICE,
         self::TABLE_ICINGA_SERVICEGROUP,
+        self::TABLE_ICINGA_SERVICE_SET,
         self::TABLE_ICINGA_TIMEPERIOD,
         self::TABLE_ICINGA_USER,
         self::TABLE_ICINGA_USERGROUP,
@@ -67,6 +70,7 @@ class BranchSupport
         self::BRANCHED_TABLE_ICINGA_SCHEDULED_DOWNTIME,
         self::BRANCHED_TABLE_ICINGA_SERVICE,
         self::BRANCHED_TABLE_ICINGA_SERVICEGROUP,
+        self::BRANCHED_TABLE_ICINGA_SERVICE_SET,
         self::BRANCHED_TABLE_ICINGA_TIMEPERIOD,
         self::BRANCHED_TABLE_ICINGA_USER,
         self::BRANCHED_TABLE_ICINGA_USERGROUP,
@@ -75,7 +79,7 @@ class BranchSupport
 
     public static function existsForTableName($table)
     {
-        return in_array($table, self::BRANCHED_TABLES, true);
+        return in_array($table, self::OBJECT_TABLES, true);
     }
 
     public static function existsForSyncRule(SyncRule $rule)

@@ -39,6 +39,7 @@ class BranchModificationInspection
             $this->translate('Hostgroups')           => BranchSupport::BRANCHED_TABLE_ICINGA_HOSTGROUP,
             $this->translate('Services')             => BranchSupport::BRANCHED_TABLE_ICINGA_NOTIFICATION,
             $this->translate('Servicegroups')        => BranchSupport::BRANCHED_TABLE_ICINGA_SCHEDULED_DOWNTIME,
+            $this->translate('Servicesets')          => BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE_SET,
             $this->translate('Users')                => BranchSupport::BRANCHED_TABLE_ICINGA_SERVICE,
             $this->translate('Usergroups')           => BranchSupport::BRANCHED_TABLE_ICINGA_SERVICEGROUP,
             $this->translate('Timeperiods')          => BranchSupport::BRANCHED_TABLE_ICINGA_TIMEPERIOD,
