@@ -128,6 +128,8 @@ class IcingaServiceForm extends DirectorObjectForm
         if (! $this->providesOverrides()) {
             return;
         }
+        $hasDeleteButton = false;
+        $isBranch = $this->branch && $this->branch->isBranch();
 
         if ($this->hasBeenBlacklisted()) {
             $this->addHtml(
@@ -135,7 +137,10 @@ class IcingaServiceForm extends DirectorObjectForm
                 ['name' => 'HINT_blacklisted']
             );
             $group = null;
-            $this->addDeleteButton($this->translate('Reactivate'));
+            if (! $isBranch) {
+                $this->addDeleteButton($this->translate('Reactivate'));
+                $hasDeleteButton = true;
+            }
             $this->setSubmitLabel(false);
         } else {
             $this->addOverrideHint();
@@ -164,10 +169,13 @@ class IcingaServiceForm extends DirectorObjectForm
                 $this->setSubmitLabel(false);
             }
 
-            $this->addDeleteButton($this->translate('Deactivate'));
+            if (! $isBranch) {
+                $this->addDeleteButton($this->translate('Deactivate'));
+                $hasDeleteButton = true;
+            }
         }
 
-        if (! $this->hasSubmitButton()) {
+        if (! $this->hasSubmitButton() && $hasDeleteButton) {
             $this->addDisplayGroup([$this->deleteButtonName], 'buttons', [
                 'decorators' => [
                     'FormElements',
