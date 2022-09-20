@@ -41,6 +41,9 @@ class ServiceController extends ObjectController
 
     public function init()
     {
+        // This happens in parent::init() too, but is required to take place before the next two lines
+        $this->enableStaticObjectLoader($this->getTableName());
+
         // Hint: having Host and Set loaded first is important for UUID lookups with legacy URLs
         $this->host = $this->getOptionalRelatedObjectFromParams('host', 'host');
         $this->set = $this->getOptionalRelatedObjectFromParams('service_set', 'set');

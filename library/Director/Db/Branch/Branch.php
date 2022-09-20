@@ -18,6 +18,8 @@ use stdClass;
  */
 class Branch
 {
+    const PREFIX_SYNC_PREVIEW = '/syncpreview';
+
     /** @var UuidInterface|null */
     protected $branchUuid;
 
@@ -185,5 +187,10 @@ class Branch
     public function getOwner()
     {
         return $this->owner;
+    }
+
+    public function isSyncPreview()
+    {
+        return (bool) preg_match('/^' . preg_quote(self::PREFIX_SYNC_PREVIEW, '/') . '\//', $this->getName());
     }
 }

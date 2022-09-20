@@ -119,12 +119,10 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addServicesHeader();
         $this->addTitle($this->translate('Add Service Set to %s'), $host->getObjectName());
-        if ($this->showNotInBranch($this->translate('Creating Service Sets'))) {
-            return;
-        }
 
         $this->content()->add(
             IcingaServiceSetForm::load()
+                ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setDb($this->db())
                 ->handleRequest()
@@ -209,11 +207,11 @@ class HostController extends ObjectController
         $branch = $this->getBranch();
         $hostHasBeenCreatedInBranch = $branch->isBranch() && $host->get('id');
         $content = $this->content();
-        $table = (new ObjectsTableService($this->db()))->setAuth($this->Auth())->setHost($host)
+        $table = (new ObjectsTableService($this->db()))
+            ->setAuth($this->Auth())
+            ->setHost($host)
+            ->setBranch($branch)
             ->setTitle($this->translate('Individual Service objects'));
-        if ($branch->isBranch()) {
-            $table->setBranchUuid($branch->getUuid());
-        }
 
         if (count($table)) {
             $content->add($table);
@@ -225,6 +223,7 @@ class HostController extends ObjectController
         foreach ($parents as $parent) {
             $table = (new ObjectsTableService($this->db()))
                 ->setAuth($this->Auth())
+                ->setBranch($branch)
                 ->setHost($parent)
                 ->setInheritedBy($host);
             if (count($table)) {
@@ -251,6 +250,7 @@ class HostController extends ObjectController
             $content->add(
                 IcingaServiceSetServiceTable::load($set)
                     // ->setHost($host)
+                    ->setBranch($branch)
                     ->setAffectedHost($host)
                     ->setTitle($title)
             );
@@ -279,6 +279,7 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $service = $this->params->getRequired('service');
         $db = $this->db();
+        $branch = $this->getBranch();
         $this->controls()->setTabs(new Tabs());
         $this->addSingleTab($this->translate('Configuration (read-only)'));
         $this->addTitle($this->translate('Services on %s'), $host->getObjectName());
@@ -287,6 +288,7 @@ class HostController extends ObjectController
         $table = (new ObjectsTableService($db))
             ->setAuth($this->Auth())
             ->setHost($host)
+            ->setBranch($branch)
             ->setReadonly()
             ->highlightService($service)
             ->setTitle($this->translate('Individual Service objects'));
@@ -301,6 +303,7 @@ class HostController extends ObjectController
         foreach ($parents as $parent) {
             $table = (new ObjectsTableService($db))
                 ->setReadonly()
+                ->setBranch($branch)
                 ->setHost($parent)
                 ->highlightService($service)
                 ->setInheritedBy($host);
@@ -326,6 +329,7 @@ class HostController extends ObjectController
             $content->add(
                 IcingaServiceSetServiceTable::load($set)
                     // ->setHost($host)
+                    ->setBranch($branch)
                     ->setAffectedHost($host)
                     ->setReadonly()
                     ->highlightService($service)
@@ -377,6 +381,7 @@ class HostController extends ObjectController
             $title = sprintf($this->translate('%s (Service set)'), $name);
             $table = IcingaServiceSetServiceTable::load($set)
                 ->setHost($host)
+                ->setBranch($this->getBranch())
                 ->setAffectedHost($affectedHost)
                 ->setTitle($title);
             if ($roService) {
@@ -413,6 +418,7 @@ class HostController extends ObjectController
         $this->content()->add(
             IcingaServiceForm::load()
                 ->setDb($db)
+                ->setBranch($this->getBranch())
                 ->setHost($host)
                 ->setApplyGenerated($parent)
                 ->setObject($service)
@@ -453,6 +459,7 @@ class HostController extends ObjectController
 
         $form = IcingaServiceForm::load()
             ->setDb($db)
+            ->setBranch($this->getBranch())
             ->setHost($host)
             ->setInheritedFrom($from->getObjectName())
             ->setObject($service)
@@ -530,6 +537,7 @@ class HostController extends ObjectController
 
         $form = IcingaServiceForm::load()
             ->setDb($db)
+            ->setBranch($this->getBranch())
             ->setHost($host)
             ->setServiceSet($set)
             ->setObject($service)

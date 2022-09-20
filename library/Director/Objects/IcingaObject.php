@@ -565,7 +565,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         } catch (NotFoundError $e) {
             // Hint: eventually a NotFoundError would be better
             throw new RuntimeException(sprintf(
-                'Unable to load object referenced from %s "%s", %s',
+                'Unable to load object (%s: %s) referenced from %s "%s", %s',
+                $short,
+                $this->unresolvedRelatedProperties[$name],
                 $this->getShortTableName(),
                 $this->getObjectName(),
                 lcfirst($e->getMessage())

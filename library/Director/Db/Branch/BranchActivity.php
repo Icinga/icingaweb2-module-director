@@ -121,6 +121,16 @@ class BranchActivity
         );
     }
 
+    public static function fixFakeTimestamp($timestampNs)
+    {
+        if ($timestampNs < 1600000000 * 1000000) {
+            // fake TS for cloned branch in sync preview
+            return (int) $timestampNs * 1000000;
+        }
+
+        return $timestampNs;
+    }
+
     public function applyToDbObject(DbObject $object)
     {
         if (!$this->isActionModify()) {
@@ -260,7 +270,7 @@ class BranchActivity
      */
     public function getTimestamp()
     {
-        return (int) floor($this->timestampNs / 1000000);
+        return (int) floor(BranchActivity::fixFakeTimestamp($this->timestampNs) / 1000000);
     }
 
     /**

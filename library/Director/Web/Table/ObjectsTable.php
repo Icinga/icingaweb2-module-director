@@ -14,11 +14,12 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 use Zend_Db_Select as ZfSelect;
 
 class ObjectsTable extends ZfQueryBasedTable
 {
+    use TableWithBranchSupport;
+
     /** @var ObjectRestriction[] */
     protected $objectRestrictions;
 
@@ -36,9 +37,6 @@ class ObjectsTable extends ZfQueryBasedTable
     protected $filterObjectType = 'object';
 
     protected $type;
-
-    /** @var UuidInterface|null */
-    protected $branchUuid;
 
     protected $baseObjectUrl;
 
@@ -109,13 +107,6 @@ class ObjectsTable extends ZfQueryBasedTable
     public function addObjectRestriction(ObjectRestriction $restriction)
     {
         $this->objectRestrictions[$restriction->getName()] = $restriction;
-        return $this;
-    }
-
-    public function setBranchUuid(UuidInterface $uuid = null)
-    {
-        $this->branchUuid = $uuid;
-
         return $this;
     }
 
@@ -254,36 +245,6 @@ class ObjectsTable extends ZfQueryBasedTable
             $this->dummyObject = IcingaObject::createByType($type);
         }
         return $this->dummyObject;
-    }
-
-    protected function branchifyColumns($columns)
-    {
-        $result = [
-            'uuid' => 'COALESCE(o.uuid, bo.uuid)'
-        ];
-        $ignore = ['o.id'];
-        foreach ($columns as $alias => $column) {
-            if (substr($column, 0, 2) === 'o.' && ! in_array($column, $ignore)) {
-                // bo.column, o.column
-                $column = "COALESCE(b$column, $column)";
-            }
-
-            // Used in Service Tables:
-            if ($column === 'h.object_name' && $alias = 'host') {
-                $column = "COALESCE(bo.host, $column)";
-            }
-
-            $result[$alias] = $column;
-        }
-
-        return $result;
-    }
-
-    protected function stripSearchColumnAliases()
-    {
-        foreach ($this->searchColumns as &$column) {
-            $column = preg_replace('/^[a-z]+\./', '', $column);
-        }
     }
 
     protected function prepareQuery()

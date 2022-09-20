@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Objects;
 
 use Exception;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Data\Db\ServiceSetQueryBuilder;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Db\DbUtil;
@@ -94,7 +95,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             if (empty($imports)) {
                 return array();
             }
-            return $this->getServiceObjectsForSet(array_shift($imports));
+            $parent = array_shift($imports);
+            assert($parent instanceof IcingaServiceSet);
+            return $this->getServiceObjectsForSet($parent);
         } else {
             return $this->getServiceObjectsForSet($this);
         }
@@ -102,30 +105,20 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
     /**
      * @param IcingaServiceSet $set
-     * @return array
+     * @return IcingaService[]
      * @throws \Icinga\Exception\NotFoundError
      */
     protected function getServiceObjectsForSet(IcingaServiceSet $set)
     {
-        if ($set->get('id') === null) {
-            return array();
-        }
         $connection = $this->getConnection();
-        $db = $this->getDb();
-        $uuids = $db->fetchCol(
-            $db->select()->from('icinga_service', 'uuid')
-                ->where('service_set_id = ?', $set->get('id'))
-        );
-
-        $services = array();
-        foreach ($uuids as $uuid) {
-            $service = IcingaService::loadWithUniqueId(Uuid::fromBytes(DbUtil::binaryResult($uuid)), $connection);
-            $service->set('service_set', null);
-
-            $services[$service->getObjectName()] = $service;
+        if (self::$dbObjectStore !== null) {
+            $branchUuid = self::$dbObjectStore->getBranch()->getUuid();
+        } else {
+            $branchUuid = null;
         }
 
-        return $services;
+        $builder = new ServiceSetQueryBuilder($connection, $branchUuid);
+        return $builder->fetchServicesWithQuery($builder->selectServicesForSet($set));
     }
 
     public function getUniqueIdentifier()
@@ -276,7 +269,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         if ($hostId) {
             $deleteIds = [];
             foreach ($this->getServiceObjects() as $service) {
-                $deleteIds[] = (int) $service->get('id');
+                if ($idToDelete = $service->get('id')) {
+                    $deleteIds[] = (int) $idToDelete;
+                }
             }
 
             if (! empty($deleteIds)) {
@@ -483,11 +478,16 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
     public function getRenderingZone(IcingaConfig $config = null)
     {
         if ($this->get('host_id') === null) {
-            return $this->connection->getDefaultGlobalZoneName();
+            if ($hostname = $this->get('host')) {
+                $host = IcingaHost::load($hostname, $this->getConnection());
+            } else {
+                return $this->connection->getDefaultGlobalZoneName();
+            }
         } else {
             $host = $this->getRelatedObject('host', $this->get('host_id'));
-            return $host->getRenderingZone($config);
         }
+
+        return $host->getRenderingZone($config);
     }
 
     public function createWhere()
@@ -507,17 +507,13 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function fetchServices()
     {
-        $connection = $this->getConnection();
-        $db = $connection->getDbAdapter();
-
-        /** @var IcingaService[] $services */
-        $services = IcingaService::loadAll(
-            $connection,
-            $db->select()->from('icinga_service')
-                ->where('service_set_id = ?', $this->get('id'))
-        );
-
-        return $services;
+        if ($store = self::$dbObjectStore) {
+            $uuid = $store->getBranch()->getUuid();
+        } else {
+            $uuid = null;
+        }
+        $builder = new ServiceSetQueryBuilder($this->getConnection(), $uuid);
+        return $builder->fetchServicesWithQuery($builder->selectServicesForSet($this));
     }
 
     /**
@@ -557,7 +553,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
 
         $name = $this->getObjectName();
 
-        if ($this->isObject() && $this->get('host_id') === null) {
+        if ($this->isObject() && $this->get('host_id') === null && $this->get('host') === null) {
             throw new InvalidArgumentException(
                 'A Service Set cannot be an object with no related host'
             );
@@ -585,7 +581,7 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             $config->configFile(
                 'failed-to-render'
             )->prepend(
-                "/** Failed to render this object **/\n"
+                "/** Failed to render this Service Set **/\n"
                 . '/*  ' . $e->getMessage() . ' */'
             );
         }

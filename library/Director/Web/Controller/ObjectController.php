@@ -140,13 +140,6 @@ abstract class ObjectController extends ActionController
         if ($oType = $this->params->get('type', 'object')) {
             $form->setPreferredObjectType($oType);
         }
-        if ($this->getTableName() === 'icinga_service_set'
-            && $this->showNotInBranch($this->translate('Creating Service Sets'))
-        ) {
-            $this->addTitle($this->translate('Create a new Service Set'));
-            return;
-        }
-
         if ($oType === 'template') {
             if ($this->showNotInBranch($this->translate('Creating Templates'))) {
                 $this->addTitle($this->translate('Create a new Template'));
@@ -156,6 +149,10 @@ abstract class ObjectController extends ActionController
             $this->addTemplate();
         } else {
             $this->addObject();
+        }
+        $branch = $this->getBranch();
+        if ($branch->isBranch() && ! $this->getRequest()->isApiRequest()) {
+            $this->content()->add(new BranchedObjectHint($branch, $this->Auth()));
         }
 
         $form->handleRequest();
@@ -170,7 +167,11 @@ abstract class ObjectController extends ActionController
         $object = $this->requireObject();
         $this->tabs()->activate('modify');
         $this->addObjectTitle();
-        if ($object->isTemplate() && $this->showNotInBranch($this->translate('Modifying Templates'))) {
+        // Hint: Service Sets are 'templates' (as long as not being assigned to a host
+        if ($this->getTableName() !== 'icinga_service_set'
+            && $object->isTemplate()
+            && $this->showNotInBranch($this->translate('Modifying Templates'))
+        ) {
             return;
         }
         if ($object->isApplyRule() && $this->showNotInBranch($this->translate('Modifying Apply Rules'))) {

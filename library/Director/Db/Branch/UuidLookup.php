@@ -47,15 +47,21 @@ class UuidLookup
 
         if ($uuid === null && $branch->isBranch()) {
             // TODO: use different tables?
-            $query = $db->select()->from('branched_icinga_service', 'uuid')->where('object_type = ?', $objectType);
+            $query = $db->select()
+                ->from('branched_icinga_service', 'uuid')
+                ->where('branch_uuid = ?', $connection->quoteBinary($branch->getUuid()->getBytes()));
+            if ($objectType) {
+                $query->where('object_type = ?', $objectType);
+            }
             $query = self::addKeyToQuery($connection, $query, $key);
             if ($host) {
                 // TODO: uuid?
-                $query->add('host = ?', $host->getObjectName());
+                $query->where('host = ?', $host->getObjectName());
             }
             if ($set) {
-                $query->add('service_set = ?', $set->getObjectName());
+                $query->where('service_set = ?', $set->getObjectName());
             }
+
             $uuid = self::fetchOptionalUuid($connection, $query);
         }
 
@@ -93,7 +99,12 @@ class UuidLookup
         $query = self::addKeyToQuery($connection, $db->select()->from($table, 'uuid'), $key);
         $uuid = self::fetchOptionalUuid($connection, $query);
         if ($uuid === null && $branch->isBranch()) {
+            if (is_array($key) && isset($key['host_id'])) {
+                $key['host'] = IcingaHost::load($key['host_id'], $connection)->getObjectName();
+                unset($key['host_id']);
+            }
             $query = self::addKeyToQuery($connection, $db->select()->from("branched_$table", 'uuid'), $key);
+            $query->where('branch_uuid = ?', $connection->quoteBinary($branch->getUuid()->getBytes()));
             $uuid = self::fetchOptionalUuid($connection, $query);
         }
 

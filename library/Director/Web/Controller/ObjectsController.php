@@ -367,7 +367,9 @@ abstract class ObjectsController extends ActionController
             )
         );
 
-        ObjectSetTable::create($type, $this->db(), $this->getAuth())->renderTo($this);
+        ObjectSetTable::create($type, $this->db(), $this->getAuth())
+            ->setBranch($this->getBranch())
+            ->renderTo($this);
     }
 
     /**

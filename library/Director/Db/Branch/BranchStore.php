@@ -3,16 +3,18 @@
 namespace Icinga\Module\Director\Db\Branch;
 
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\DbUtil;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 class BranchStore
 {
+    const TABLE = 'director_branch';
+    const TABLE_ACTIVITY = 'director_branch_activity';
+
     protected $connection;
 
     protected $db;
-
-    protected $table = 'director_branch';
 
     public function __construct(Db $connection)
     {
@@ -38,6 +40,67 @@ class BranchStore
     public function fetchBranchByName($name)
     {
         return $this->newFromDbResult($this->select()->where('b.branch_name = ?', $name));
+    }
+
+    public function cloneBranchForSync(Branch $branch, $newName, $owner)
+    {
+        $this->runTransaction(function ($db) use ($branch, $newName, $owner) {
+            $tables = BranchSupport::OBJECT_TABLES;
+            $tables[] = self::TABLE_ACTIVITY;
+            $newBranch = $this->createBranchByName($newName, $owner);
+            $oldQuotedUuid = DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db);
+            $quotedUuid = DbUtil::quoteBinaryCompat($newBranch->getUuid()->getBytes(), $db);
+            // $timestampNs = (int)floor(microtime(true) * 1000000);
+            // Hint: would love to do SELECT *, $quotedUuid AS branch_uuid FROM $table INTO $table
+            foreach ($tables as $table) {
+                $rows = $db->fetchAll($db->select()->from($table)->where('branch_uuid = ?', $oldQuotedUuid));
+                foreach ($rows as $row) {
+                    $modified = (array)$row;
+                    $modified['branch_uuid'] = $quotedUuid;
+                    if ($table === self::TABLE_ACTIVITY) {
+                        $modified['timestamp_ns'] = round($modified['timestamp_ns'] / 1000000);
+                    }
+                    $db->insert($table, $modified);
+                }
+            }
+        });
+
+        return $this->fetchBranchByName($newName);
+    }
+
+    protected function runTransaction($callback)
+    {
+        $db = $this->db;
+        $db->beginTransaction();
+        try {
+            $callback($db);
+            $db->commit();
+        } catch (\Exception $e) {
+            try {
+                $db->rollBack();
+            } catch (\Exception $ignored) {
+                //
+            }
+            throw $e;
+        }
+    }
+
+    public function wipeBranch(Branch $branch, $after = null)
+    {
+        $this->runTransaction(function ($db) use ($branch, $after) {
+            $tables = BranchSupport::OBJECT_TABLES;
+            $tables[] = self::TABLE_ACTIVITY;
+            $quotedUuid = DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db);
+            $where = $db->quoteInto('branch_uuid = ?', $quotedUuid);
+            foreach ($tables as $table) {
+                if ($after && $table === self::TABLE_ACTIVITY) {
+                    $db->delete($table, $where . ' AND timestamp_ns > ' . (int) $after);
+                } else {
+                    $db->delete($table, $where);
+                }
+            }
+        });
+
     }
 
     protected function newFromDbResult($query)
@@ -78,7 +141,7 @@ class BranchStore
             'ts_merge_request' => 'b.ts_merge_request',
             'cnt_activities'   => 'COUNT(ba.timestamp_ns)',
         ])->joinLeft(
-            ['ba' => 'director_branch_activity'],
+            ['ba' => self::TABLE_ACTIVITY],
             'b.uuid = ba.branch_uuid',
             []
         )->group('b.uuid');
@@ -114,7 +177,7 @@ class BranchStore
             'description' => null,
             'ts_merge_request' => null,
         ];
-        $this->db->insert($this->table, $properties);
+        $this->db->insert(self::TABLE, $properties);
 
         if ($branch = static::fetchBranchByUuid($uuid)) {
             return $branch;
@@ -128,14 +191,49 @@ class BranchStore
 
     public function deleteByUuid(UuidInterface $uuid)
     {
-        return $this->db->delete($this->table, $this->db->quoteInto(
+        return $this->db->delete(self::TABLE, $this->db->quoteInto(
             'uuid = ?',
             $this->connection->quoteBinary($uuid->getBytes())
+        ));
+    }
+
+    /**
+     * @param string $name
+     * @return int
+     */
+    public function deleteByName($name)
+    {
+        return $this->db->delete(self::TABLE, $this->db->quoteInto(
+            'branch_name = ?',
+            $name
         ));
     }
 
     public function delete(Branch $branch)
     {
         return $this->deleteByUuid($branch->getUuid());
+    }
+
+    /**
+     * @param Branch $branch
+     * @param ?int $after
+     * @return float|null
+     */
+    public function getLastActivityTime(Branch $branch, $after = null)
+    {
+        $db = $this->db;
+        $query = $db->select()
+            ->from(self::TABLE_ACTIVITY, 'MAX(timestamp_ns)')
+            ->where('branch_uuid = ?', DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db));
+        if ($after) {
+            $query->where('timestamp_ns > ?', (int) $after);
+        }
+
+        $last = $db->fetchOne($query);
+        if ($last) {
+            return $last / 1000000;
+        }
+
+        return null;
     }
 }
