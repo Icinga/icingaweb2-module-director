@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Web\Table;
 
+use Icinga\Module\Director\Db\Branch\Branch;
 use Ramsey\Uuid\UuidInterface;
 
 trait TableWithBranchSupport
@@ -9,6 +10,21 @@ trait TableWithBranchSupport
 
     /** @var UuidInterface|null */
     protected $branchUuid;
+
+    /**
+     * Convenience method, only UUID is required
+     *
+     * @param Branch|null $branch
+     * @return $this
+     */
+    public function setBranch(Branch $branch = null)
+    {
+        if ($branch && $branch->isBranch()) {
+            $this->setBranchUuid($branch->getUuid());
+        }
+
+        return $this;
+    }
 
     public function setBranchUuid(UuidInterface $uuid = null)
     {
