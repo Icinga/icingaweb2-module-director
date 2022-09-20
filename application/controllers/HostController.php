@@ -119,9 +119,6 @@ class HostController extends ObjectController
         $host = $this->getHostObject();
         $this->addServicesHeader();
         $this->addTitle($this->translate('Add Service Set to %s'), $host->getObjectName());
-        if ($this->showNotInBranch($this->translate('Creating Service Sets'))) {
-            return;
-        }
 
         $this->content()->add(
             IcingaServiceSetForm::load()
