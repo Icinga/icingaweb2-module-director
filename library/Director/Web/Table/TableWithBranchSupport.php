@@ -22,9 +22,13 @@ trait TableWithBranchSupport
         $result = [
             'uuid' => 'COALESCE(o.uuid, bo.uuid)'
         ];
-        $ignore = ['o.id'];
+        $ignore = ['o.id', 'os.id', 'o.service_set_id', 'os.host_id'];
         foreach ($columns as $alias => $column) {
             if (substr($column, 0, 2) === 'o.' && ! in_array($column, $ignore)) {
+                // bo.column, o.column
+                $column = "COALESCE(b$column, $column)";
+            }
+            if (substr($column, 0, 3) === 'os.' && ! in_array($column, $ignore)) {
                 // bo.column, o.column
                 $column = "COALESCE(b$column, $column)";
             }
