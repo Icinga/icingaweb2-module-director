@@ -278,7 +278,9 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         if ($hostId) {
             $deleteIds = [];
             foreach ($this->getServiceObjects() as $service) {
-                $deleteIds[] = (int) $service->get('id');
+                if ($idToDelete = $service->get('id')) {
+                    $deleteIds[] = (int) $idToDelete;
+                }
             }
 
             if (! empty($deleteIds)) {
