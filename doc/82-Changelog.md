@@ -26,6 +26,7 @@ v1.10.0 (unreleased)
 * FEATURE: Sync in "override" mode now preserves Self Service API keys (#2590)
 * FEATURE: split a row in multiple ones, based on a Dictionary (#2555)
 * FEATURE: it's now possible to sync to a configuration branch (#2552)
+* FEATURE: Sync preview now allows to navigate single changes (#2607)
 
 ### Configuration Baskets
 * BREAKING: configuration baskets no longer contain originalId (#2549)
