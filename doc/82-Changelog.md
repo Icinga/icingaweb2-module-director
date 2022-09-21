@@ -22,6 +22,9 @@ v1.10.0 (unreleased)
 * BREAKING: configuration baskets no longer contain originalId (#2549)
 * FEATURE: exporting/snapshot-logic has been centralized (#2549)
 
+### Configuration Branches
+* FEATURE: merge comments can now be proposed (#2604)
+
 ### REST API
 * FIX: addressing service templates by name has been fixed (#2487)
 * FEATURE: Stack traces can now be requested (#2570)

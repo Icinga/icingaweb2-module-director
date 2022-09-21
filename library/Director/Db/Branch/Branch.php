@@ -50,6 +50,7 @@ class Branch
         $self->branchUuid = Uuid::fromBytes(Db\DbUtil::binaryResult($row->uuid));
         $self->name = $row->branch_name;
         $self->owner = $row->owner;
+        $self->description = $row->description;
         $self->tsMergeRequest = $row->ts_merge_request;
         if (isset($row->cnt_activities)) {
             $self->cntActivities = $row->cnt_activities;
@@ -179,6 +180,25 @@ class Branch
     public function getName()
     {
         return $this->name;
+    }
+
+    /**
+     * @since v1.10.0
+     * @return string
+     */
+    public function getDescription()
+    {
+        return $this->description;
+    }
+
+    /**
+     * @since v1.10.0
+     * @param ?string $description
+     * @return void
+     */
+    public function setDescription($description)
+    {
+        $this->description = $description;
     }
 
     /**

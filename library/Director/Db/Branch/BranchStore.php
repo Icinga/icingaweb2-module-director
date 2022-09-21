@@ -118,7 +118,8 @@ class BranchStore
     public function setReadyForMerge(Branch $branch)
     {
         $update = [
-            'ts_merge_request' => (int) floor(microtime(true) * 1000000)
+            'ts_merge_request' => (int) floor(microtime(true) * 1000000),
+            'description'      => $branch->getDescription(),
         ];
 
         $name = $branch->getName();
