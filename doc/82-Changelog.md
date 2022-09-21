@@ -7,6 +7,39 @@ before switching to a new version.
 v1.10.0
 -------
 
+An advanced **Sync Preview** is one of the features I'd love to highlight in
+v1.10.0. We have been able to leverage our Configuration Branch support as
+an underlying technology for this:
+
+![Sync Preview - List](https://user-images.githubusercontent.com/553008/191472888-33849b3e-9d96-4113-b960-92708769e90d.png)
+
+In case you have lots of changes, you can browse all of them - formerly this
+hasn't been possible. Also, this now allows you to inspect every single upcoming
+change before applying the Sync:
+
+![Sync Preview - Details](https://user-images.githubusercontent.com/553008/191472900-1968691e-a758-4c99-99ce-059bc3689356.png)
+
+This has been possible based on the code we implemented to support the
+[Director Branches](https://icinga.com/docs/icinga-director-branches/latest/)
+module. In case you never heard about it,
+[here](https://icinga.com/blog/2022/07/21/releasing-icinga-director-branches/)
+you can find the related announcement.
+
+This release also contains a lot of related fixes and new Features. It is now
+possible to deal with **Service Sets** in Configuration Branches, the **commit
+remark** can be proposed with a merge request, and the Activity Log shows not
+only who has  merged the change, but also the **original author**.
+
+Powerful new features have been implemented for those who love to orchestrate
+the Director from the outside. Please check our
+[CLI](https://github.com/Icinga/icingaweb2-module-director/blob/v1.10.0/doc/60-CLI.md)
+and [REST API](https://github.com/Icinga/icingaweb2-module-director/blob/v1.10.0/doc/70-REST-API.md)
+documentation for related details, especially look for --with-services (withServices)
+and --allow-overrides (allowOverrides).
+
+CLI now supports **JSON on STDIN**, REST API can request detailed stack traces
+in case an error occurs.
+
 ### Breaking Changes
 * Module and system dependencies have been raised, [Upgrading](05-Upgrading.md)
   and [Installation](02-Installation.md) documentations contain related details
