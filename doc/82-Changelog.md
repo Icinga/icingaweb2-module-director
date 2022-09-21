@@ -7,16 +7,24 @@ before switching to a new version.
 v1.10.0 (unreleased)
 --------------------
 
+### Breaking Changes
+* Module dependencies have been raised, [Upgrading](05-Upgrading.md) and
+  [Installation](02-Installation.md) documentations contain related details
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/27?closed=1)
 
 ### User Interface
 * FIX: links from Service Previews (Icinga DSL) to templates (#2554)
+* FIX: daemon health visualization on systems w/o /proc filesystem (#2544)
 
 ### Import and Sync
+* FIX: Sync now compares keys in a case-insensitive way (#2598, #2419, #1140)
+* FIX: Sync now preserves Self Service API keys in override mode (#2590)
 * FEATURE: clone a row for nested Dictionary/Hash entries (#2555)
 * FEATURE: Sync in "override" mode now preserves Self Service API keys (#2590)
+* FEATURE: split a row in multiple ones, based on a Dictionary (#2555)
 
 ### Configuration Baskets
 * BREAKING: configuration baskets no longer contain originalId (#2549)
@@ -25,16 +33,44 @@ v1.10.0 (unreleased)
 ### Configuration Branches
 * FEATURE: merge comments can now be proposed (#2604)
 
+### Integrations
+* FIX: Monitoring Hooks are no longer provided with disable Director UI (#2597)
+* FIX: cleanup for IcingaDbCube (#2484)
+
+### Kickstart
+* FIX: breaking change in ipl/html, affected setups with ro INI files (#2595)
+* FEATURE: better explanation for missing DSL bodies fetched from core (#2557)
+
 ### REST API
 * FIX: addressing service templates by name has been fixed (#2487)
+* FIX: allow for object_name in body only (#2576)
+* FIX: notice on PHP 8.1 (#2575)
 * FEATURE: Stack traces can now be requested (#2570)
+* FEATURE: Hosts can now be exported with their services (#2568)
+* FEATURE: "magic" variable overrides are now supported (#2569)
 
 ### CLI
 * FIX: config deploy doesn't try to wait in case of no deployment (#2522)
+* FIX: renderer now shows full service sets (#2550)
 * FEATURE: improved wording for deployment error messages (#2523)
 * FEATURE: JSON can now be shipped via STDIN (#1570)
 * FEATURE: improved readability for some error messages (#2567)
 * FEATURE: allows showing hosts with their services (#2565)
+* FEATURE: allow showing resolved Host services (#2571)
+* FEATURE: "magic" variable overrides are now supported (#2560)
+* FEATURE: error messages are now friendlier (#2567)
+* FEATURE: STDIN support for --json is now available (#1570)
+
+### Activity Log
+
+* FIX: deleted objects might have been missing related properties (#2559)
+
+### Deployment Log
+* FEATURE: visualization performance has been improved (#2551)
+
+### Internals
+
+* FEATURE: there is now a centralized Exporter implementation (#2549)
 
 1.9.1
 -----
