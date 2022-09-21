@@ -33,6 +33,7 @@ v1.10.0 (unreleased)
 
 ### Configuration Branches
 * FEATURE: merge comments can now be proposed (#2604)
+* FEATURE: activity log now shows author and committer (#2606)
 
 ### Integrations
 * FIX: Monitoring Hooks are no longer provided with disable Director UI (#2597)

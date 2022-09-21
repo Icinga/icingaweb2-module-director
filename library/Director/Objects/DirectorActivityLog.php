@@ -41,6 +41,9 @@ class DirectorActivityLog extends DbObject
         'parent_checksum'
     ];
 
+    /** @var ?string */
+    protected static $overriddenUsername = null;
+
     /**
      * @param $name
      *
@@ -59,8 +62,12 @@ class DirectorActivityLog extends DbObject
         return $this->reallySet('object_name', $name);
     }
 
-    protected static function username()
+    public static function username()
     {
+        if (self::$overriddenUsername) {
+            return self::$overriddenUsername;
+        }
+
         if (Icinga::app()->isCli()) {
             return 'cli';
         }
@@ -211,5 +218,15 @@ class DirectorActivityLog extends DbObject
         }
 
         Logger::info('(director) ' . implode(' ', $log));
+    }
+
+    public static function overrideUsername($username)
+    {
+        self::$overriddenUsername = $username;
+    }
+
+    public static function restoreUsername()
+    {
+        self::$overriddenUsername = null;
     }
 }
