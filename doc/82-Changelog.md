@@ -4,8 +4,8 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-v1.10.0 (unreleased)
---------------------
+v1.10.0
+-------
 
 ### Breaking Changes
 * Module and system dependencies have been raised, [Upgrading](05-Upgrading.md)
