@@ -8,8 +8,8 @@ v1.10.0 (unreleased)
 --------------------
 
 ### Breaking Changes
-* Module dependencies have been raised, [Upgrading](05-Upgrading.md) and
-  [Installation](02-Installation.md) documentations contain related details
+* Module and system dependencies have been raised, [Upgrading](05-Upgrading.md)
+  and [Installation](02-Installation.md) documentations contain related details
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our

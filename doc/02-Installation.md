@@ -9,24 +9,24 @@ to the latest version, please [read on here](05-Upgrading.md).
 Requirements
 ------------
 
-* Icinga 2 (&gt;= 2.6.0)
+* Icinga 2 (&gt;= 2.8.0)
   * It is recommended to use the latest feature release of Icinga 2
   * All versions since 2.4.3 should also work fine, but
     we do no longer test and support them.
   * Some features require newer Icinga 2 releases
     * Flapping requires 2.8 for the thresholds to work - and at least 2.7 on all
       nodes
-* Icinga Web 2 (&gt;= 2.6.0). All versions since 2.2 should also work fine, but
+* Icinga Web 2 (&gt;= 2.8.0). All versions since 2.2 should also work fine, but
   might show smaller UI bugs and are not actively tested
 * The following Icinga modules must be installed and enabled:
-  * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.12.0)
+  * [incubator](https://github.com/Icinga/icingaweb2-module-incubator) (>=0.18.0)
   * If you are using Icinga Web &lt; 2.9.0, the following modules are also required
     * [ipl](https://github.com/Icinga/icingaweb2-module-ipl) (>=0.5.0)
     * [reactbundle](https://github.com/Icinga/icingaweb2-module-reactbundle) (>=0.9.0)
-* A database, MySQL (&gt;= 5.1) or PostgreSQL (&gt;= 9.1). MariaDB and other
-  MySQL forks are also fine. Mentioned versions are the required minimum,
-  for MySQL we suggest using at least 5.5.3, for PostgreSQL 9.4.
-* PHP (>= 5.6.3). For best performance please use 7.x or 8.x
+* A database: MariaDB (&gt;= 10.1), MySQL (&gt;= 5.7), PostgreSQL (&gt;= 9.6). Other
+  forks and older versions might work, but are neither tested not supported
+* PHP (>= 7.3)
+  * Director v1.10 is the last version with support for PHP v5.6
 * php-pdo-mysql and/or php-pdo-pgsql
 * php-curl
 * php-iconv
