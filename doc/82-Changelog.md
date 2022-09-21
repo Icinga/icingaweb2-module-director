@@ -32,6 +32,7 @@ v1.10.0 (unreleased)
 * FEATURE: exporting/snapshot-logic has been centralized (#2549)
 
 ### Configuration Branches
+* FIX: PostgreSQL now allows for the same object in multiple branches (#2605)
 * FEATURE: merge comments can now be proposed (#2604)
 * FEATURE: activity log now shows author and committer (#2606)
 
