@@ -795,7 +795,7 @@ class IcingaService extends IcingaObject implements ExportInterface
             && $this->get('host_id') === null
         ) {
             throw new InvalidArgumentException(
-                'Cannot store a Service object without a related host'
+                'Cannot store a Service object without a related host or set: ' . $this->getObjectName()
             );
         }
     }
