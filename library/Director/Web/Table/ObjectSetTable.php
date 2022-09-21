@@ -116,11 +116,11 @@ class ObjectSetTable extends ZfQueryBasedTable
             "${type}_set"
         );
         $nameFilter->applyToQuery($query, 'os');
+        /** @var Db $conn */
+        $conn = $this->connection();
         if ($this->branchUuid) {
             $right = clone($query);
 
-            /** @var Db $conn */
-            $conn = $this->connection();
             $query->joinLeft(
                 ['bos' => "branched_$table"],
                 // TODO: PgHexFunc
@@ -185,6 +185,16 @@ class ObjectSetTable extends ZfQueryBasedTable
                 ->group('os.uuid')
                 ->where('os.object_type = ?', 'template')
                 ->order('os.object_name');
+            if ($conn->isPgsql()) {
+                // BS. Drop count? Sub-select? Better query?
+                $query
+                    ->group('os.uuid')
+                    ->group('os.id')
+                    ->group('os.object_name')
+                    ->group('os.object_type')
+                    ->group('os.assign_filter')
+                    ->group('os.description');
+            };
         }
 
         return $query;
