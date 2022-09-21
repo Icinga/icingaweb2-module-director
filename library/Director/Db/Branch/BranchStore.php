@@ -45,7 +45,7 @@ class BranchStore
     public function cloneBranchForSync(Branch $branch, $newName, $owner)
     {
         $this->runTransaction(function ($db) use ($branch, $newName, $owner) {
-            $tables = BranchSupport::OBJECT_TABLES;
+            $tables = BranchSupport::BRANCHED_TABLES;
             $tables[] = self::TABLE_ACTIVITY;
             $newBranch = $this->createBranchByName($newName, $owner);
             $oldQuotedUuid = DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db);
@@ -88,7 +88,7 @@ class BranchStore
     public function wipeBranch(Branch $branch, $after = null)
     {
         $this->runTransaction(function ($db) use ($branch, $after) {
-            $tables = BranchSupport::OBJECT_TABLES;
+            $tables = BranchSupport::BRANCHED_TABLES;
             $tables[] = self::TABLE_ACTIVITY;
             $quotedUuid = DbUtil::quoteBinaryCompat($branch->getUuid()->getBytes(), $db);
             $where = $db->quoteInto('branch_uuid = ?', $quotedUuid);
