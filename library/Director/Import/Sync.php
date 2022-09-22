@@ -483,10 +483,12 @@ class Sync
 
         foreach ($this->sources as $source) {
             $sourceId = $source->id;
+            $keyColumn = $source->get('key_column');
 
             foreach ($this->imported[$sourceId] as $key => $row) {
                 // Workaround: $a["10"] = "val"; -> array_keys($a) = [(int) 10]
                 $key = (string) $key;
+                $originalKey = $row->$keyColumn;
                 if ($this->usedLowerCasedKeys) {
                     $key = strtolower($key);
                 }
@@ -497,7 +499,7 @@ class Sync
                     } else {
                         $props = [
                             'object_type' => 'object',
-                            'object_name' => $key
+                            'object_name' => $originalKey,
                         ];
                     }
 
