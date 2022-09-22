@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.10.1 (unreleased)
+--------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/30?closed=1)
+
+### Import and Sync
+* FIX: sync lower-cased all object names since v1.10 (#2608)
+
 v1.10.0
 -------
 
