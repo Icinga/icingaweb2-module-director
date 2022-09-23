@@ -2091,7 +2091,7 @@ msgstr ""
 "Benachrichtigungen und Berechtigungen können auf Gruppen basieren."
 
 #: application/forms/IcingaNotificationForm.php:199
-msgid "Delay unless the first notification should be sent"
+msgid "Delay until the first notification should be sent"
 msgstr "Verzögerung bis die erste Benachrichtigung verschickt werden soll"
 
 #: library/Director/Web/Form/DirectorObjectForm.php:925
