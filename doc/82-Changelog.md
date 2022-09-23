@@ -14,6 +14,9 @@ v1.10.1 (unreleased)
 ### Import and Sync
 * FIX: sync lower-cased all object names since v1.10 (#2608)
 
+### Database Schema
+* FIX: new DB schema failed due to duplicate line in SQL statement (#2609)
+
 v1.10.0
 -------
 

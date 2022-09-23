@@ -2323,7 +2323,6 @@ CREATE TABLE branched_icinga_service_set (
 
 
   imports TEXT DEFAULT NULL,
-  imports TEXT DEFAULT NULL,
   set_null TEXT DEFAULT NULL,
   PRIMARY KEY (branch_uuid, uuid),
   INDEX search_object_name (object_name),
