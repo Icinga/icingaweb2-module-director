@@ -1665,7 +1665,7 @@ msgstr "サービスグループを定義すると、より構造がわかりま
 "最適です。 通知と許可はグループに基づいている場合があります。"
 
 #: ../../../../modules/director/application/forms/IcingaNotificationForm.php:196
-msgid "Delay unless the first notification should be sent"
+msgid "Delay until the first notification should be sent"
 msgstr "最初の通知時間"
 
 #: ../../../../modules/director/application/forms/IcingaObjectFieldForm.php:185
