@@ -196,7 +196,7 @@ class IcingaNotificationForm extends DirectorObjectForm
             array(
                 'label' => $this->translate('First notification delay'),
                 'description' => $this->translate(
-                    'Delay unless the first notification should be sent'
+                    'Delay until the first notification should be sent'
                 ) . '. ' . $this->getTimeValueInfo()
             )
         );
