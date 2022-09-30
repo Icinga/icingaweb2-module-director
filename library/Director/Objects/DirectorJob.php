@@ -123,7 +123,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
         }
 
         return (
-            strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') * 2
+            strtotime((int) $this->get('ts_last_attempt')) + $this->get('run_interval') * 2
         ) < time();
     }
 
@@ -238,7 +238,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
         }
         $name = $properties[$keyCol];
 
-        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
+        if ($replace && $id && static::existsWithNameAndId($name, $id, $db)) {
             $object = static::loadWithAutoIncId($id, $db);
         } elseif ($replace && static::exists($name, $db)) {
             $object = static::load($name, $db);
