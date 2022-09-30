@@ -251,6 +251,21 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
             $object = static::create([], $db);
         }
 
+        $settings = (array) $properties['settings'];
+
+        if (array_key_exists('source', $settings) && ! (array_key_exists('source_id', $settings))) {
+            $val = ImportSource::load($settings['source'], $db)->get('id');
+            $settings['source_id'] = $val;
+            unset($settings['source']);
+        }
+
+        if (array_key_exists('rule', $settings) && ! (array_key_exists('rule_id', $settings))) {
+            $val = SyncRule::load($settings['rule'], $db)->get('id');
+            $settings['rule_id'] = $val;
+            unset($settings['rule']);
+        }
+
+        $properties['settings'] = (object) $settings;
         $object->setProperties($properties);
         if ($id !== null) {
             $object->reallySet($idCol, $id);

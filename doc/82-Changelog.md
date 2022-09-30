@@ -16,6 +16,7 @@ v1.10.1 (unreleased)
 
 ### Configuration Baskets
 * FIX: restore Import/Sync/Job when exported with v1.10 (#2620)
+* FIX: restoring Job with ImportSource or SyncRule (#2528)
 
 ### Database Schema
 * FIX: new DB schema failed due to duplicate line in SQL statement (#2609)
