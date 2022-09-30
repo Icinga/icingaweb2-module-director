@@ -294,7 +294,7 @@ class SyncRule extends DbObject implements ExportInterface
         }
         $name = $properties['rule_name'];
 
-        if ($replace && static::existsWithNameAndId($name, $id, $db)) {
+        if ($replace && $id && static::existsWithNameAndId($name, $id, $db)) {
             $object = static::loadWithAutoIncId($id, $db);
         } elseif ($replace && static::exists($name, $db)) {
             $object = static::load($name, $db);
