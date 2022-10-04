@@ -342,4 +342,13 @@ class ObjectsTable extends ZfQueryBasedTable
 
         return $query;
     }
+
+    public function removeQueryLimit()
+    {
+        $query = $this->getQuery();
+        $query->reset($query::LIMIT_OFFSET);
+        $query->reset($query::LIMIT_COUNT);
+
+        return $this;
+    }
 }

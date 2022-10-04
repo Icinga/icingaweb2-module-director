@@ -210,7 +210,8 @@ class HostController extends ObjectController
         $hostHasBeenCreatedInBranch = $branch->isBranch() && $host->get('id');
         $content = $this->content();
         $table = (new ObjectsTableService($this->db()))->setAuth($this->Auth())->setHost($host)
-            ->setTitle($this->translate('Individual Service objects'));
+            ->setTitle($this->translate('Individual Service objects'))
+            ->removeQueryLimit();
         if ($branch->isBranch()) {
             $table->setBranchUuid($branch->getUuid());
         }
@@ -226,7 +227,9 @@ class HostController extends ObjectController
             $table = (new ObjectsTableService($this->db()))
                 ->setAuth($this->Auth())
                 ->setHost($parent)
-                ->setInheritedBy($host);
+                ->setInheritedBy($host)
+                ->removeQueryLimit();
+
             if (count($table)) {
                 $content->add(
                     $table->setTitle(sprintf(
@@ -253,6 +256,7 @@ class HostController extends ObjectController
                     // ->setHost($host)
                     ->setAffectedHost($host)
                     ->setTitle($title)
+                    ->removeQueryLimit()
             );
         }
 
