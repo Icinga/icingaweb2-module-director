@@ -211,7 +211,8 @@ class HostController extends ObjectController
             ->setAuth($this->Auth())
             ->setHost($host)
             ->setBranch($branch)
-            ->setTitle($this->translate('Individual Service objects'));
+            ->setTitle($this->translate('Individual Service objects'))
+            ->removeQueryLimit();
 
         if (count($table)) {
             $content->add($table);
@@ -225,7 +226,9 @@ class HostController extends ObjectController
                 ->setAuth($this->Auth())
                 ->setBranch($branch)
                 ->setHost($parent)
-                ->setInheritedBy($host);
+                ->setInheritedBy($host)
+                ->removeQueryLimit();
+
             if (count($table)) {
                 $content->add(
                     $table->setTitle(sprintf(
@@ -253,6 +256,7 @@ class HostController extends ObjectController
                     ->setBranch($branch)
                     ->setAffectedHost($host)
                     ->setTitle($title)
+                    ->removeQueryLimit()
             );
         }
 

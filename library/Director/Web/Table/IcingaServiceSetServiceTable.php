@@ -247,4 +247,13 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
         $deleteLink->handleRequest();
         return $deleteLink;
     }
+
+    public function removeQueryLimit()
+    {
+        $query = $this->getQuery();
+        $query->reset($query::LIMIT_OFFSET);
+        $query->reset($query::LIMIT_COUNT);
+
+        return $this;
+    }
 }
