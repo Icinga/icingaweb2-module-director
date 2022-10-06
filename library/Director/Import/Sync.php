@@ -10,6 +10,7 @@ use Icinga\Module\Director\Data\Db\DbObject;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Cache\PrefetchCache;
 use Icinga\Module\Director\Objects\HostGroupMembershipResolver;
 use Icinga\Module\Director\Objects\IcingaHost;
@@ -406,8 +407,9 @@ class Sync
         if ($this->rule->hasCombinedKey()) {
             $this->objects = [];
             $destinationKeyPattern = $this->rule->getDestinationKeyPattern();
-            if ($this->store) {
-                $objects = $this->store->loadAll(DbObjectTypeRegistry::tableNameByType($ruleObjectType));
+            $table = DbObjectTypeRegistry::tableNameByType($ruleObjectType);
+            if ($this->store && BranchSupport::existsForTableName($table)) {
+                $objects = $this->store->loadAll($table);
             } else {
                 $objects = IcingaObject::loadAllByType($ruleObjectType, $this->db);
             }

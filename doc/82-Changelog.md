@@ -13,6 +13,7 @@ v1.10.1 (unreleased)
 
 ### Import and Sync
 * FIX: sync lower-cased all object names since v1.10 (#2608)
+* FIX: sync for Datalist entries has been fixed (#2618)
 
 ### UI
 * FIX: "Modify" Services via the monitoring module (#2615, #2619)
