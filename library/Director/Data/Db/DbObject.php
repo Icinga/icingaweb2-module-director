@@ -371,9 +371,27 @@ abstract class DbObject
         if ($value === $this->properties[$key]) {
             return $this;
         }
+        if ($key === 'id' || substr($key, -3) === '_id') {
+            if ((int) $value === (int) $this->properties[$key]) {
+                return $this;
+            }
+        }
 
-        $this->hasBeenModified = true;
-        $this->modifiedProperties[$key] = true;
+        if ($this->hasBeenLoadedFromDb()) {
+            if ($value === $this->loadedProperties[$key]) {
+                unset($this->modifiedProperties[$key]);
+                if (empty($this->modifiedProperties)) {
+                    $this->hasBeenModified = false;
+                }
+            } else {
+                $this->hasBeenModified = true;
+                $this->modifiedProperties[$key] = true;
+            }
+        } else {
+            $this->hasBeenModified = true;
+            $this->modifiedProperties[$key] = true;
+        }
+
         $this->properties[$key] = $value;
         return $this;
     }
