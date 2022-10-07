@@ -474,6 +474,11 @@ abstract class DbObject
         return array_keys($this->properties);
     }
 
+    public function getDefaultProperties()
+    {
+        return $this->defaultProperties;
+    }
+
     /**
      * Return all properties that changed since object creation
      *
