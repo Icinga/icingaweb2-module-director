@@ -64,7 +64,7 @@ class DbObjectStore
     {
         $db = $this->connection->getDbAdapter();
         $class = DbObjectTypeRegistry::classByType($tableName);
-        $query = $db->select()->from($tableName)->order('uuid');
+        $query = $db->select()->from($tableName)->order($arrayIdx);
         $result = [];
         foreach ($db->fetchAll($query) as $row) {
             $result[$row->uuid] = $class::create((array) $row, $this->connection);
