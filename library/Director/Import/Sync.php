@@ -564,22 +564,25 @@ class Sync
                         );
                     } else {
                         if ($val === null) {
-                            $this->setNull[$objectKey][] = $prop;
+                            $this->setNull[$objectKey][$prop] = $prop;
                         } else {
+                            unset($this->setNull[$objectKey][$prop]);
                             $object->vars()->$varName = $val;
                         }
                     }
                 } else {
                     if ($val === null) {
-                        $this->setNull[$objectKey][] = $prop;
+                        $this->setNull[$objectKey][$prop] = $prop;
                     } else {
+                        unset($this->setNull[$objectKey][$prop]);
                         $object->set($prop, $val);
                     }
                 }
             } else {
                 if ($val === null) {
-                    $this->setNull[$objectKey][] = $prop;
+                    $this->setNull[$objectKey][$prop] = $prop;
                 } else {
+                    unset($this->setNull[$objectKey][$prop]);
                     $object->set($prop, $val);
                 }
             }
