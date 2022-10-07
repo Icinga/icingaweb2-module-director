@@ -2439,4 +2439,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (180, NOW());
+  VALUES (182, NOW());
