@@ -4,8 +4,8 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-v1.10.1 (unreleased)
---------------------
+v1.10.1
+-------
 
 This is a minor bugfix release, addressing issues with modifying services via
 the monitoring module, Sync problems and a copy and paste error in the DB schema,
