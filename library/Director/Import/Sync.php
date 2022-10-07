@@ -882,7 +882,10 @@ class Sync
                 ));
             }
 
-            $this->run->setProperties($runProperties)->store();
+            $this->run->setProperties($runProperties);
+            if (!$this->store->getBranch()->isBranch()) {
+                $this->run->store();
+            }
             $this->notifyResolvers();
             if (! $this->store) {
                 $dba->commit();
@@ -891,7 +894,10 @@ class Sync
             // Store duration after commit, as the commit might take some time
             $this->run->set('duration_ms', (int) round(
                 (microtime(true) - $this->runStartTime) * 1000
-            ))->store();
+            ));
+            if (!$this->store->getBranch()->isBranch()) {
+                $this->run->store();
+            }
 
             Benchmark::measure('Done applying objects');
         } catch (Exception $e) {

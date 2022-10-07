@@ -2778,4 +2778,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (181, NOW());
+  VALUES (182, NOW());

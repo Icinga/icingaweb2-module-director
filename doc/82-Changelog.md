@@ -16,6 +16,9 @@ Please note that a long-standing issue for our Sync Rules has been fixed: with
 now been fixed. If in doubt, please **preview** your Sync Rules to make sure,
 that they behave as expected.
 
+This release brings a small schema migration, cleaning up invalid Sync history
+entries. If in doubt, please create a [database backup](05-Upgrading.md#backup-first) first.
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/30?closed=1)
@@ -24,6 +27,8 @@ that they behave as expected.
 * FIX: sync lower-cased all object names since v1.10 (#2608)
 * FIX: sync for Datalist entries has been fixed (#2618)
 * FIX: Sync now applied NULL values with merge policy (#2623)
+* FIX: Sync created Sync History entries for every preview (#2632)
+* FIX: "Purge" stopped working for Sync (#2627)
 
 ### UI
 * FIX: "Modify" Services via the monitoring module (#2615, #2619)
