@@ -46,6 +46,9 @@ class Sync
     /** @var IcingaObject[] Objects to work with */
     protected $objects;
 
+    /** @var array<mixed, array<int, string>> key => [property, property]*/
+    protected $setNull = [];
+
     /** @var bool Whether we already prepared your sync */
     protected $isPrepared = false;
 
@@ -513,7 +516,7 @@ class Sync
                 }
 
                 $object = $objects[$key];
-                $this->prepareNewObject($row, $object, $sourceId);
+                $this->prepareNewObject($row, $object, $key, $sourceId);
             }
         }
 
@@ -527,7 +530,7 @@ class Sync
      * @throws \Icinga\Exception\NotFoundError
      * @throws \Icinga\Module\Director\Exception\DuplicateKeyException
      */
-    protected function prepareNewObject($row, DbObject $object, $sourceId)
+    protected function prepareNewObject($row, DbObject $object, $objectKey, $sourceId)
     {
         foreach ($this->syncProperties as $propertyKey => $p) {
             if ($p->get('source_id') !== $sourceId) {
@@ -539,7 +542,6 @@ class Sync
             }
 
             $prop = $p->get('destination_field');
-
             $val = SyncUtils::fillVariables($p->get('source_expression'), $row);
 
             if ($object instanceof IcingaObject) {
@@ -561,15 +563,23 @@ class Sync
                             $this->wantArray($val)
                         );
                     } else {
-                        $object->vars()->$varName = $val;
+                        if ($val === null) {
+                            $this->setNull[$objectKey][] = $prop;
+                        } else {
+                            $object->vars()->$varName = $val;
+                        }
                     }
                 } else {
-                    if ($val !== null) {
+                    if ($val === null) {
+                        $this->setNull[$objectKey][] = $prop;
+                    } else {
                         $object->set($prop, $val);
                     }
                 }
             } else {
-                if ($val !== null) {
+                if ($val === null) {
+                    $this->setNull[$objectKey][] = $prop;
+                } else {
                     $object->set($prop, $val);
                 }
             }
@@ -774,6 +784,12 @@ class Sync
                 if (! $object->hasInitializedVars() || ! isset($object->vars()->$key)) {
                     $this->objects[$key]->vars()->restoreStoredVar($keyName);
                 }
+            }
+        }
+
+        if (isset($this->setNull[$key])) {
+            foreach ($this->setNull[$key] as $property) {
+                $this->objects[$key]->set($property, null);
             }
         }
     }
