@@ -2738,19 +2738,26 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
      */
     public function replaceWith(IcingaObject $object, $preserve = null)
     {
-        if ($preserve === null) {
-            $this->setProperties((array) $object->toPlainObject());
-        } else {
-            $plain = (array) $object->toPlainObject();
-            foreach ($preserve as $k) {
-                $v = $this->$k;
-                if ($v !== null) {
-                    $plain[$k] = $v;
-                }
-            }
+        return $this->replaceWithProperties($object->toPlainObject(), $preserve);
+    }
 
-            $this->setProperties($plain);
+    /**
+     * @param array|object $properties
+     * @param array $preserve
+     * @return $this
+     * @throws NotFoundError
+     */
+    public function replaceWithProperties($properties, $preserve = [])
+    {
+        $properties = (array) $properties;
+        foreach ($preserve as $k) {
+            $v = $this->get($k);
+            if ($v !== null) {
+                $properties[$k] = $v;
+            }
         }
+        $this->setProperties($properties);
+
         return $this;
     }
 
