@@ -7,6 +7,15 @@ before switching to a new version.
 v1.10.1 (unreleased)
 --------------------
 
+This is a minor bugfix release, addressing issues with modifying services via
+the monitoring module, Sync problems and a copy and paste error in the DB schema,
+which caused problems for fresh installations since v1.10.
+
+Please note that a long-standing issue for our Sync Rules has been fixed: with
+"merge" policy, NULL properties have been ignored for quite some time. This has
+now been fixed. If in doubt, please **preview** your Sync Rules to make sure,
+that they behave as expected.
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/30?closed=1)
@@ -14,6 +23,7 @@ v1.10.1 (unreleased)
 ### Import and Sync
 * FIX: sync lower-cased all object names since v1.10 (#2608)
 * FIX: sync for Datalist entries has been fixed (#2618)
+* FIX: Sync now applied NULL values with merge policy (#2623)
 
 ### UI
 * FIX: "Modify" Services via the monitoring module (#2615, #2619)
