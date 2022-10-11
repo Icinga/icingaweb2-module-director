@@ -503,7 +503,7 @@ class Sync
                         $props = [];
                     } else {
                         $props = [
-                            'object_type' => 'object',
+                            'object_type' => $row->object_type ?? 'object',
                             'object_name' => $originalKey,
                         ];
                     }
