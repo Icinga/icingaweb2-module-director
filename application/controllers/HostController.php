@@ -33,8 +33,8 @@ class HostController extends ObjectController
     {
         $host = $this->getHostObject();
         $auth = $this->Auth();
-        $mon = $this->monitoring();
-        if ($this->isServiceAction() && $mon->canModifyService($host, $this->getParam('service'))) {
+        $backend = $this->backend();
+        if ($this->isServiceAction() && $backend->authCanEditService($auth, $host, $this->getParam('service'))) {
             return;
         }
         if ($auth->hasPermission(Permission::MONITORING_SERVICES_RO) && $this->isServicesReadOnlyAction()) {
@@ -43,7 +43,7 @@ class HostController extends ObjectController
         if ($auth->hasPermission(Permission::HOSTS)) { // faster
             return;
         }
-        if ($mon->canModifyHost($host)) {
+        if ($backend->authCanEditHost($host)) {
             return;
         }
         $this->assertPermission(Permission::HOSTS); // complain about default hosts permission
@@ -564,13 +564,20 @@ class HostController extends ObjectController
     {
         $host = $this->object;
         try {
-            if ($host->isObject() && $host instanceof IcingaHost && $this->monitoring()->hasHost($host)) {
-                $this->actions()->add(Link::create($this->translate('Show'), 'monitoring/host/show', [
-                    'host' => $host->getObjectName()
-                ], [
-                    'class'            => 'icon-globe critical',
-                    'data-base-target' => '_next'
-                ]));
+            $backend = $this->backend();
+            if ($host instanceof IcingaHost
+                && $backend->isAvailable()
+                && $host->isObject()
+                && $backend->hasHost($host->getObjectName())
+            ) {
+                $this->actions()->add($backend->getHostLink(
+                    $this->translate('Show'),
+                    $host->getObjectName(),
+                    [
+                        'class'            => 'icon-globe critical',
+                        'data-base-target' => '_next'
+                    ]
+                ));
 
                 // Intentionally placed here, show it only for deployed Hosts
                 $this->addOptionalInspectLink();
