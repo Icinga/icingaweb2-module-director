@@ -7,7 +7,7 @@ use Icinga\Application\Benchmark;
 use Icinga\Data\Paginatable;
 use Icinga\Exception\NotFoundError;
 use Icinga\Exception\ProgrammingError;
-use Icinga\Module\Director\Integration\MonitoringModule\Monitoring;
+use Icinga\Module\Director\Backend;
 use Icinga\Module\Director\Web\Controller\Extension\CoreApi;
 use Icinga\Module\Director\Web\Controller\Extension\DirectorDb;
 use Icinga\Module\Director\Web\Controller\Extension\RestApi;
@@ -36,8 +36,8 @@ abstract class ActionController extends Controller implements ControlsAndContent
     /** @var UrlParams Hint for IDE, somehow does not work in web */
     protected $params;
 
-    /** @var Monitoring */
-    private $monitoring;
+    /** @var Backend */
+    private $backend;
 
     /**
      * @throws SecurityException
@@ -240,14 +240,14 @@ abstract class ActionController extends Controller implements ControlsAndContent
     }
 
     /**
-     * @return Monitoring
+     * @return Backend
      */
-    protected function monitoring()
+    protected function backend()
     {
-        if ($this->monitoring === null) {
-            $this->monitoring = new Monitoring($this->Auth());
+        if ($this->backend === null) {
+            $this->backend = new Backend();
         }
 
-        return $this->monitoring;
+        return $this->backend;
     }
 }
