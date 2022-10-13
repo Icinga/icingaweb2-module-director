@@ -9,6 +9,7 @@ use Icinga\Module\Director\Db\Branch\BranchedObject;
 use Icinga\Module\Director\Db\Branch\MergeErrorDeleteMissingObject;
 use Icinga\Module\Director\Db\Branch\MergeErrorModificationForMissingObject;
 use Icinga\Module\Director\Db\Branch\MergeErrorRecreateOnMerge;
+use Icinga\Module\Director\Db\DbUtil;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Ramsey\Uuid\UuidInterface;
 
@@ -67,6 +68,7 @@ class DbObjectStore
         $query = $db->select()->from($tableName)->order($arrayIdx);
         $result = [];
         foreach ($db->fetchAll($query) as $row) {
+            $row->uuid = DbUtil::binaryResult($row->uuid);
             $result[$row->uuid] = $class::create((array) $row, $this->connection);
             $result[$row->uuid]->setBeingLoadedFromDb();
         }

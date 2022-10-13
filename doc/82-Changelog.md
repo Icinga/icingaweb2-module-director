@@ -4,6 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
+v1.10.2 (unreleased)
+--------------------
+
+### Fixed issues
+* You can find issues and feature requests related to this release on our
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/31?closed=1)
+
+### Import and Sync
+* FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
+
 v1.10.1
 -------
 
