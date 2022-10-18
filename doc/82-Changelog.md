@@ -14,6 +14,9 @@ v1.10.2 (unreleased)
 ### Import and Sync
 * FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
 
+### Internals
+* FIX: issue with empty activity log, deprecate outdated method (#2630)
+
 v1.10.1
 -------
 
