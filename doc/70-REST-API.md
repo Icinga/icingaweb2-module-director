@@ -164,7 +164,7 @@ Enabling `allowOverrides` allows you to let Director figure out, whether your
 modified Custom Variables need to be applied to a specific individual Service,
 or whether setting Overrides at Host level is the way to go.
 
-     POST director/service?name=Uptime&host=hostname.example.com&allowOverrices
+     POST director/service?name=Uptime&host=hostname.example.com&allowOverrides
 
 ```json
 { "vars.uptime_warning": 300 }
