@@ -248,6 +248,7 @@ class Exporter
                 $props['settings'] = (object) $object->getSettings(); // Already sorted
             }
         }
+        unset($props['uuid']); // Not yet
         if (! $this->showDefaults) {
             foreach ($props as $key => $value) {
                 // We assume NULL as a default value for all non-IcingaObject properties
