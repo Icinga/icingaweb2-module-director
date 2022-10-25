@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\DirectorObject\Automation;
 
+use gipfl\Json\JsonEncodeException;
+use gipfl\Json\JsonString;
 use Icinga\Module\Director\Core\Json;
 use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db;
@@ -418,7 +420,34 @@ class BasketSnapshot extends DbObject
             return $this->getContent()->get('content');
         }
 
-        return Json::encode($this->objects, JSON_PRETTY_PRINT);
+        try {
+            return JsonString::encode($this->objects, JSON_PRETTY_PRINT);
+        } catch (JsonEncodeException $e) {
+            foreach ($this->objects as $type => $objects) {
+                foreach ($objects as $key => $object) {
+                    try {
+                        JsonString::encode($object);
+                    } catch (JsonEncodeException $singleError) {
+                        if ($object instanceof IcingaObject) {
+                            $name = $object->getObjectName();
+                        } else {
+                            $name = var_export($object, 1);
+                            if (function_exists('iconv')) {
+                                $name = iconv('UTF-8', 'UTF-8//IGNORE', $name);
+                            }
+                        }
+                        throw new JsonEncodeException(sprintf(
+                            'Failed to encode object ot type "%s": "%s", %s',
+                            $type,
+                            $name,
+                            $singleError->getMessage()
+                        ), $singleError->getCode());
+                    }
+                }
+            }
+
+            throw $e;
+        }
     }
 
     protected function addAll($typeName)

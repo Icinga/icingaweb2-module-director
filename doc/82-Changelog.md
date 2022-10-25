@@ -14,6 +14,9 @@ v1.10.2 (unreleased)
 ### Import and Sync
 * FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
 
+### Configuration Baskets
+* FEATURE: more details shown in error messages related to invalid characters (#2646)
+
 ### Internals
 * FIX: issue with empty activity log, deprecate outdated method (#2630)
 
