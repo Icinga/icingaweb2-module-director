@@ -424,22 +424,18 @@ class BasketSnapshot extends DbObject
             return JsonString::encode($this->objects, JSON_PRETTY_PRINT);
         } catch (JsonEncodeException $e) {
             foreach ($this->objects as $type => $objects) {
-                foreach ($objects as $key => $object) {
+                foreach ($objects as $object) {
                     try {
                         JsonString::encode($object);
                     } catch (JsonEncodeException $singleError) {
-                        if ($object instanceof IcingaObject) {
-                            $name = $object->getObjectName();
-                        } else {
-                            $name = var_export($object, 1);
-                            if (function_exists('iconv')) {
-                                $name = iconv('UTF-8', 'UTF-8//IGNORE', $name);
-                            }
+                        $dump = var_export($object, 1);
+                        if (function_exists('iconv')) {
+                            $dump = iconv('UTF-8', 'UTF-8//IGNORE', $dump);
                         }
                         throw new JsonEncodeException(sprintf(
-                            'Failed to encode object ot type "%s": "%s", %s',
+                            'Failed to encode object ot type "%s": %s, %s',
                             $type,
-                            $name,
+                            $dump,
                             $singleError->getMessage()
                         ), $singleError->getCode());
                     }
