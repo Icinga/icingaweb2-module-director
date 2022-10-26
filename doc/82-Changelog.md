@@ -11,6 +11,9 @@ v1.10.2 (unreleased)
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/31?closed=1)
 
+### UI
+* FIX: modifying single timeperiod ranges had no effect (#2525)
+
 ### Import and Sync
 * FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
 

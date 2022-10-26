@@ -141,7 +141,7 @@ abstract class IcingaRanges
         } else {
             $class = $this->getRangeClass();
             $this->ranges[$range] = $class::create([
-                $this->objectIdColumn => $this->object->id,
+                $this->objectIdColumn => $this->object->get('id'),
                 'range_key'   => $range,
                 'range_value' => $value,
             ]);
