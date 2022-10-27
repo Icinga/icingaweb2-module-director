@@ -275,7 +275,7 @@ class SelfServiceController extends ActionController
             // PluginsUrl => framework_plugins_url
         ];
         $username = $settings->get('self-service/icinga_service_user');
-        if (strlen($username)) {
+        if ($username !== null && strlen($username) > 0) {
             $params['icinga_service_user'] = $username;
         }
 

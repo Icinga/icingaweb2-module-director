@@ -21,6 +21,9 @@ v1.10.2 (unreleased)
 * FEATURE: more details shown in error messages related to invalid characters (#2646)
 * FIX: snapshots for Baskets containing Baskets failed since v1.10 (#2644)
 
+### REST API
+* FIX: Self Service API returned invalid JSON on PHP 8.1 (#2614)
+
 ### Internals
 * FIX: issue with empty activity log, deprecate outdated method (#2630)
 
