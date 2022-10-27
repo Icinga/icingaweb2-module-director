@@ -28,7 +28,7 @@ but may be needed later if you want to import from one of the listed sources:
 
 ## Installing Icinga Director Package
 
-If the [repository](https://packaages.icinga.com) is not configured yet, please add it first.
+If the [repository](https://packages.icinga.com) is not configured yet, please add it first.
 Then use your distribution's package manager to install the `icinga-director` package
 or install [from source](02-Installation.md.d/From-Source.md).
 <!-- {% endif %} -->
