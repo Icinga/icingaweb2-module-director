@@ -12,6 +12,7 @@ v1.10.2 (unreleased)
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/31?closed=1)
 
 ### UI
+* FEATURE: improve Service Set table layout (#2648)
 * FIX: modifying single timeperiod ranges had no effect (#2525)
 
 ### Import and Sync
