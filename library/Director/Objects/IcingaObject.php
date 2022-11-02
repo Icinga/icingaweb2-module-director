@@ -497,9 +497,14 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                 $type = get_class($this);
             }
 
+            if ($type === null) {
+                throw new LogicException(
+                    'Cannot set assign_filter unless object_type has been set'
+                );
+            }
             throw new LogicException(sprintf(
                 'I can only assign for applied objects or objects with native'
-                . ' support for assigments, got %s',
+                . ' support for assignments, got %s',
                 $type
             ));
         }
