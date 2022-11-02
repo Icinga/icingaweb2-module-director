@@ -192,7 +192,7 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         if ($this->isApplyRule()) {
             if (($to = $this->get('apply_to')) === null) {
                 throw new RuntimeException(sprintf(
-                    'Applied notification "%s" has no valid object type',
+                    'No "apply_to" object type has been set for Applied notification "%s"',
                     $this->getObjectName()
                 ));
             }
