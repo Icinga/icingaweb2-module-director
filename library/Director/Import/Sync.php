@@ -690,6 +690,7 @@ class Sync
         $noAction = [];
         $purgeAction = $this->rule->get('purge_action');
         foreach ($this->rule->purgeStrategy()->listObjectsToPurge() as $key) {
+            $key = strtolower($key);
             if (array_key_exists($key, $newObjects)) {
                 // Object has been touched, do not delete
                 continue;
