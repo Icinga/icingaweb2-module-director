@@ -9,6 +9,7 @@ use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Module\Director\Db\DbSelectParenthesis;
 use Icinga\Module\Director\Restriction\FilterByNameRestriction;
+use ipl\Html\Html;
 use Ramsey\Uuid\Uuid;
 
 class ObjectSetTable extends ZfQueryBasedTable
@@ -62,7 +63,7 @@ class ObjectSetTable extends ZfQueryBasedTable
                     $row->object_name,
                     $row->count_services
                 ), $url),
-                $row->description ? ': ' . $row->description : null
+                $row->description ? [Html::tag('br'), Html::tag('i', $row->description)] : null
             ])
         ]);
         if (! empty($classes)) {
