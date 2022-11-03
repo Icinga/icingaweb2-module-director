@@ -72,7 +72,8 @@ class BranchController extends ActionController
             return null;
         }
         $object = DbObjectTypeRegistry::newObject($activity->getObjectTable(), [], $this->db());
-        foreach ($activity->getFormerProperties()->jsonSerialize() as $key => $value) {
+        $properties = $this->objectTypeFirst($activity->getFormerProperties()->jsonSerialize());
+        foreach ($properties as $key => $value) {
             $object->set($key, $value);
         }
 
@@ -90,11 +91,24 @@ class BranchController extends ActionController
                 $object->set($key, $value);
             }
         }
-        foreach ($activity->getModifiedProperties()->jsonSerialize() as $key => $value) {
+        $properties = $this->objectTypeFirst($activity->getModifiedProperties()->jsonSerialize());
+        foreach ($properties as $key => $value) {
             $object->set($key, $value);
         }
 
         return $object;
+    }
+
+    protected function objectTypeFirst($properties)
+    {
+        $properties = (array) $properties;
+        if (isset($properties['object_type'])) {
+            $type = $properties['object_type'];
+            unset($properties['object_type']);
+            $properties = ['object_type' => $type] + $properties;
+        }
+
+        return $properties;
     }
 
     protected function showActivity(BranchActivity $activity)

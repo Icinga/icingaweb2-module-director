@@ -18,6 +18,7 @@ v1.10.2 (unreleased)
 ### Import and Sync
 * FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
 * FIX: purge stopped working for objects with uppercase characters (#2627)
+* FIX: Notification Apply rule is now possible (wasn't since v1.8) (#2142, #2634)
 
 ### Configuration Baskets
 * FEATURE: more details shown in error messages related to invalid characters (#2646)
