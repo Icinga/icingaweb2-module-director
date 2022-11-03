@@ -21,6 +21,7 @@ v1.10.2 (unreleased)
 * FIX: purge stopped working for objects with uppercase characters (#2627)
 * FIX: Notification Apply rule is now possible (wasn't since v1.8) (#2142, #2634)
 * FIX: nested property access with intermediate NULL values now gives NULL (#2474, #2584)
+* FIX: automated Sync jobs stopped working (#2633)
 
 ### Configuration Baskets
 * FEATURE: more details shown in error messages related to invalid characters (#2646)
