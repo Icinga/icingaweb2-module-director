@@ -13,7 +13,8 @@ v1.10.2 (unreleased)
 
 ### UI
 * FEATURE: improve Service Set table layout (#2648)
-* FIX: modifying single timeperiod ranges had no effect (#2525)
+* FIX: modifying single time-period ranges had no effect (#2525)
+* FIX: activity log pagination is now on a single line (#2649)
 
 ### Import and Sync
 * FIX: triggering Sync manually produced an error on PostgreSQL (#2636)
