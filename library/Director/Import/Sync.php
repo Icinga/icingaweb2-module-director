@@ -884,7 +884,7 @@ class Sync
             }
 
             $this->run->setProperties($runProperties);
-            if (!$this->store->getBranch()->isBranch()) {
+            if (!$this->store || !$this->store->getBranch()->isBranch()) {
                 $this->run->store();
             }
             $this->notifyResolvers();
@@ -896,7 +896,7 @@ class Sync
             $this->run->set('duration_ms', (int) round(
                 (microtime(true) - $this->runStartTime) * 1000
             ));
-            if (!$this->store->getBranch()->isBranch()) {
+            if (!$this->store || !$this->store->getBranch()->isBranch()) {
                 $this->run->store();
             }
 
