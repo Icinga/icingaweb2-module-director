@@ -4,8 +4,16 @@
 Please make sure to always read our [Upgrading](05-Upgrading.md) documentation
 before switching to a new version.
 
-v1.10.2 (unreleased)
---------------------
+v1.10.2
+-------
+
+This is a minor bugfix release, addressing some Sync-related issues: purge for
+objects with uppercase characters now works as expected, automated Sync jobs run
+again, and manually triggered Sync has been fixed on PostgreSQL.
+
+Some UI glitches have been addressed, and a few problems appearing only in
+certain conditions - related to Configuration Baskets, our Self Service REST API
+and the Activity Log.
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
