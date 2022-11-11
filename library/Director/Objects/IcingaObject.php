@@ -2845,7 +2845,7 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
         $skipDefaults = false,
         array $chosenProperties = null,
         $resolveIds = true,
-        $keepId = false
+        $keepId = true
     ) {
         $props = [];
 
