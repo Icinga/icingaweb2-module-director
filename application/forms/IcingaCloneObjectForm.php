@@ -7,6 +7,7 @@ use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\Branch;
+use Icinga\Module\Director\Objects\IcingaCommand;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -95,7 +96,9 @@ class IcingaCloneObjectForm extends DirectorForm
             }
         }
 
-        if ($this->object->isTemplate() && $this->object->supportsFields()) {
+        if (($this->object->isTemplate() || $this->object instanceof IcingaCommand)
+            && $this->object->supportsFields()
+        ) {
             $this->addBoolean('clone_fields', [
                 'label'       => $this->translate('Clone Template Fields'),
                 'description' => $this->translate(
