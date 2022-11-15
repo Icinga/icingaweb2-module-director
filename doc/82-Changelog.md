@@ -12,6 +12,9 @@ This version hasn't been released yet
 ### UI
 * FEATURE: allow to clone commands with fields (#2264)
 
+### Icinga Configuration
+* FIX: render Set Services to individual zones where required (#1589, #2356)
+
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
   [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/32?closed=1)

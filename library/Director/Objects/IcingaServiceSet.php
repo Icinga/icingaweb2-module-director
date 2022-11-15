@@ -295,8 +295,8 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
      */
     public function renderToConfig(IcingaConfig $config)
     {
-        // always print the header, so you have minimal info present
-        $file = $this->getConfigFileWithHeader($config);
+        $files = [];
+        $zone = $this->getRenderingZone($config) ;
 
         if ($this->get('assign_filter') === null && $this->isTemplate()) {
             return;
@@ -334,7 +334,14 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
             }
 
             $this->copyVarsToService($service);
+            $zone = $service->getRenderingZone($config);
+            $file = $this->getConfigFileWithHeader($config, $zone, $files);
             $file->addObject($service);
+        }
+
+        if (empty($files)) {
+            // always print the header, so you have minimal info present
+            $this->getConfigFileWithHeader($config, $zone, $files);
         }
     }
 
@@ -355,14 +362,18 @@ class IcingaServiceSet extends IcingaObject implements ExportInterface
         return $lookup->getBlacklistedHostnamesForService($service);
     }
 
-    protected function getConfigFileWithHeader(IcingaConfig $config)
+    protected function getConfigFileWithHeader(IcingaConfig $config, $zone, &$files = [])
     {
-        $file = $config->configFile(
-            'zones.d/' . $this->getRenderingZone($config) . '/servicesets'
-        );
+        if (!isset($files[$zone])) {
+            $file = $config->configFile(
+                'zones.d/' . $zone . '/servicesets'
+            );
 
-        $file->addContent($this->getConfigHeaderComment($config));
-        return $file;
+            $file->addContent($this->getConfigHeaderComment($config));
+            $files[$zone] = $file;
+        }
+
+        return $files[$zone];
     }
 
     protected function getConfigHeaderComment(IcingaConfig $config)
