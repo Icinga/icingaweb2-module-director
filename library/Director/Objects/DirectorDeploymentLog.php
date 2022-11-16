@@ -46,7 +46,11 @@ class DirectorDeploymentLog extends DbObject
 
     public function getConfigHexChecksum()
     {
-        return bin2hex($this->config_checksum);
+        $checksum = $this->get('config_checksum');
+        if ($checksum === null) {
+            return null;
+        }
+        return bin2hex($checksum);
     }
 
     public function getConfig()
