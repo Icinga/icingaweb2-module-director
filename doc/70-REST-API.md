@@ -257,7 +257,7 @@ You can of course also use the API to trigger specific actions. Deploying the co
 More
 ----
 
-Currently we do not handle Last-Modified und ETag headers. This would involve some work, but could be a cool feature. Let us know your ideas!
+Currently, we do not handle Last-Modified und ETag headers. This would involve some work, but could be a cool feature. Let us know your ideas!
 
 
 Sample scenario
