@@ -192,7 +192,7 @@ class IcingaDependencyForm extends DirectorObjectForm
         $parentHost = $dependency->get('parent_host');
         if ($parentHost === null) {
             $parentHostVar = $dependency->get('parent_host_var');
-            if (\strlen($parentHostVar) > 0) {
+            if ($parentHostVar !== null && \strlen($parentHostVar) > 0) {
                 $parentHost = '$' . $dependency->get('parent_host_var') . '$';
             }
         }
