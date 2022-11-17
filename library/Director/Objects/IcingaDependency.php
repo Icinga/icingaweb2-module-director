@@ -506,7 +506,7 @@ class IcingaDependency extends IcingaObject implements ExportInterface
     protected function resolveUnresolvedRelatedProperty($name)
     {
         $short = substr($name, 0, -3);
-        /** @var IcingaObject $class */
+        /** @var IcingaObject|string $class */
         $class = $this->getRelationClass($short);
         $objKey = $this->unresolvedRelatedProperties[$name];
 
