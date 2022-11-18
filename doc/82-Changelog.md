@@ -17,7 +17,7 @@ This version hasn't been released yet
 
 ### Fixed issues
 * You can find issues and feature requests related to this release on our
-  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/32?closed=1)
+  [roadmap](https://github.com/Icinga/icingaweb2-module-director/milestone/33?closed=1)
 
 
 v1.10.2
