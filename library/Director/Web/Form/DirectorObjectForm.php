@@ -540,7 +540,9 @@ abstract class DirectorObjectForm extends DirectorForm
             'inherited_groups',
             'applied_groups',
             'users',
+            'users_var',
             'user_groups',
+            'user_groups_var',
             'apply_to',
             'command_id', // Notification
             'notification_interval',

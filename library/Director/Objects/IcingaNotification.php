@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Objects;
 
+use Icinga\Module\Director\CustomVariable\CustomVariables;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -29,6 +30,8 @@ class IcingaNotification extends IcingaObject implements ExportInterface
         'notification_interval' => null,
         'period_id'             => null,
         'zone_id'               => null,
+        'users_var'             => null,
+        'user_groups_var'       => null,
         'assign_filter'         => null,
     ];
 
@@ -79,6 +82,64 @@ class IcingaNotification extends IcingaObject implements ExportInterface
     {
         // @codingStandardsIgnoreEnd
         return c::renderKeyValue('times.begin', c::renderInterval($this->get('times_begin')));
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     * @return string
+     */
+    protected function renderUsers_var()
+    {
+        // @codingStandardsIgnoreEnd
+        return '';
+    }
+
+    /**
+     * @codingStandardsIgnoreStart
+     * @return string
+     */
+    protected function renderUser_groups_var()
+    {
+        // @codingStandardsIgnoreEnd
+        return '';
+    }
+
+    protected function renderUserVarsSuffixFor($property)
+    {
+        $varName = $this->getResolvedProperty("{$property}_var");
+        if ($varName === null) {
+            return '';
+        }
+
+        $varSuffix = CustomVariables::renderKeySuffix($varName);
+        $indent = '    ';
+        $objectType = $this->get('apply_to');
+        if ($objectType === 'service') {
+            return "{$indent}if (service.vars$varSuffix) {\n"
+                . c::renderKeyOperatorValue($property, '+=', "service.vars$varSuffix", $indent . '    ')
+                . "$indent} else {\n"
+                . $this->getHostSnippet($indent . '    ')
+                . c::renderKeyOperatorValue($property, '+=', "host.vars$varSuffix", $indent . '    ')
+                . "$indent}\n";
+        } elseif ($objectType === 'host') {
+            return $this->getHostSnippet() . c::renderKeyOperatorValue($property, '+=', "host.vars$varSuffix");
+        }
+
+        return '';
+    }
+
+    protected function getHostSnippet($indent = '    ')
+    {
+        return "{$indent}if (! host) {\n"
+            . "$indent    var host = get_host(host_name)\n"
+            . "$indent}\n";
+    }
+
+    protected function renderSuffix()
+    {
+        return $this->renderUserVarsSuffixFor('users')
+            . $this->renderUserVarsSuffixFor('user_groups')
+            . parent::renderSuffix();
     }
 
     /**

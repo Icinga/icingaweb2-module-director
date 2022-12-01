@@ -414,10 +414,15 @@ class CustomVariables implements Iterator, Countable, IcingaConfigRenderer
 
     protected function renderKeyName($key)
     {
+        return 'vars' . self::renderKeySuffix($key);
+    }
+
+    public static function renderKeySuffix($key)
+    {
         if (preg_match('/^[a-z][a-z0-9_]*$/i', $key)) {
-            return 'vars.' . c::escapeIfReserved($key);
+            return '.' . c::escapeIfReserved($key);
         } else {
-            return 'vars[' . c::renderString($key) . ']';
+            return '[' . c::renderString($key) . ']';
         }
     }
 

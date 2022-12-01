@@ -1260,6 +1260,8 @@ CREATE TABLE icinga_notification (
   command_id INT(10) UNSIGNED DEFAULT NULL,
   period_id INT(10) UNSIGNED DEFAULT NULL,
   zone_id INT(10) UNSIGNED DEFAULT NULL,
+  users_var VARCHAR(255) DEFAULT NULL,
+  user_groups_var VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE INDEX uuid (uuid),
@@ -2439,4 +2441,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (182, NOW());
+  VALUES (183, NOW());

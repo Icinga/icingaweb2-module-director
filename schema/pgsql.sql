@@ -1503,6 +1503,8 @@ CREATE TABLE icinga_notification (
   command_id integer DEFAULT NULL,
   period_id integer DEFAULT NULL,
   zone_id integer DEFAULT NULL,
+  users_var character varying(255) DEFAULT NULL,
+  user_groups_var character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
   PRIMARY KEY (id),
   CONSTRAINT icinga_notification_host
@@ -2778,4 +2780,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (182, NOW());
+  VALUES (183, NOW());
