@@ -32,6 +32,7 @@ This version hasn't been released yet
 * FEATURE: property modifiers can now be applied based on filters (#2756)
 * FEATURE: CIDR notation (network ranges) is supported in such filters (#2757)
 * FIX: synchronizing Service (and -Set) Templates has been fixed (#2745, #2217)
+* FIX: null properties with Sync policy "ignore" are now being ignored (#2657)
 
 ### REST API
 * FIX: Commands give 304 w/o ghost changes for same properties (#2660)

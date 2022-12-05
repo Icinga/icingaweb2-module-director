@@ -49,6 +49,9 @@ class Sync
     /** @var array<mixed, array<int, string>> key => [property, property]*/
     protected $setNull = [];
 
+    /** @var array<mixed, array<string, mixed>> key => [propertyName, newValue]*/
+    protected $newProperties = [];
+
     /** @var bool Whether we already prepared your sync */
     protected $isPrepared = false;
 
@@ -535,6 +538,15 @@ class Sync
      */
     protected function prepareNewObject($row, DbObject $object, $objectKey, $sourceId)
     {
+        if (!isset($this->newProperties[$objectKey])) {
+            $this->newProperties[$objectKey] = [];
+        }
+        // TODO: some more improvements are possible here. First, no need to instantiate
+        //       all new objects, we could stick with the newProperties array. Next, we
+        //       should be more correct when respecting sync property order. Right now,
+        //       a property from another Import Source might win, even if property order
+        //       tells something different. This is a very rare case, but still incorrect.
+        $properties = &$this->newProperties[$objectKey];
         foreach ($this->syncProperties as $propertyKey => $p) {
             if ($p->get('source_id') !== $sourceId) {
                 continue;
@@ -565,30 +577,28 @@ class Sync
                             (array) $val
                         );
                     } else {
-                        if ($val === null) {
-                            $this->setNull[$objectKey][$prop] = $prop;
-                        } else {
-                            unset($this->setNull[$objectKey][$prop]);
-                            $object->vars()->$varName = $val;
-                        }
+                        $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
                     }
                 } else {
-                    if ($val === null) {
-                        $this->setNull[$objectKey][$prop] = $prop;
-                    } else {
-                        unset($this->setNull[$objectKey][$prop]);
-                        $object->set($prop, $val);
-                    }
+                    $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
                 }
             } else {
-                if ($val === null) {
-                    $this->setNull[$objectKey][$prop] = $prop;
-                } else {
-                    unset($this->setNull[$objectKey][$prop]);
-                    $object->set($prop, $val);
-                }
+                $this->setPropertyWithNullLogic($object, $objectKey, $prop, $val, $properties);
             }
         }
+    }
+
+    protected function setPropertyWithNullLogic(DbObject $object, $objectKey, $property, $value, &$allProps)
+    {
+        if ($value === null) {
+            if (! array_key_exists($property, $allProps) || $allProps[$property] === null) {
+                $this->setNull[$objectKey][$property] = $property;
+            }
+        } else {
+            unset($this->setNull[$objectKey][$property]);
+            $object->set($property, $value);
+        }
+        $allProps[$property] = $value;
     }
 
     /**
@@ -793,7 +803,11 @@ class Sync
             }
         }
 
-        if (isset($this->setNull[$key])) {
+        // Hint: in theory, NULL should be set on new objects, but this has no effect
+        //       anyway, and we also do not store vars.something = null, this would
+        //       instead delete the variable. So here we do not need to check for new
+        //       objects, and skip all null values with update policy = 'ignore'
+        if ($policy !== 'ignore' && isset($this->setNull[$key])) {
             foreach ($this->setNull[$key] as $property) {
                 $this->objects[$key]->set($property, null);
             }
