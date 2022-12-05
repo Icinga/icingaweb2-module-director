@@ -11,6 +11,7 @@ This version hasn't been released yet
 
 ### UI
 * FEATURE: allow to clone commands with fields (#2264)
+* FEATURE: Data Fields are now sorted in a case-insensitive way (#2358)
 
 ### Icinga Configuration
 * FIX: render Set Services to individual zones where required (#1589, #2356)

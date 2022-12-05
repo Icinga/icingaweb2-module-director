@@ -90,7 +90,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         // Prepare combined fields array
         $fields = array();
         if (! empty($suggestedFields)) {
-            asort($existingFields);
+            asort($suggestedFields, SORT_NATURAL | SORT_FLAG_CASE);
             $fields[$this->translate('Suggested fields')] = $suggestedFields;
         }
 
@@ -100,6 +100,7 @@ class IcingaObjectFieldForm extends DirectorObjectForm
         }
 
         if (! empty($existingFields)) {
+            asort($existingFields, SORT_NATURAL | SORT_FLAG_CASE);
             $fields[$this->translate('Other available fields')] = $existingFields;
         }
 
