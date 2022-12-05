@@ -12,6 +12,7 @@ This version hasn't been released yet
 ### UI
 * FEATURE: allow to clone commands with fields (#2264)
 * FEATURE: Data Fields are now sorted in a case-insensitive way (#2358)
+* FEATURE: Deployment Log now breaks lines (#2677)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
 
 ### Icinga Configuration
