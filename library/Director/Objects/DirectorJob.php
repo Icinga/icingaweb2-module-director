@@ -123,7 +123,7 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
         }
 
         return (
-            strtotime((int) $this->get('ts_last_attempt')) + $this->get('run_interval') * 2
+            strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') * 2
         ) < time();
     }
 
