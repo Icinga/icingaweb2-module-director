@@ -122,6 +122,10 @@ class DirectorJob extends DbObjectWithSettings implements ExportInterface, Insta
             return false;
         }
 
+        if ($this->get('ts_last_attempt') === null) {
+            return true;
+        }
+
         return (
             strtotime($this->get('ts_last_attempt')) + $this->get('run_interval') * 2
         ) < time();
