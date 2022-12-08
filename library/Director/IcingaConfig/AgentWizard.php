@@ -148,15 +148,34 @@ class AgentWizard
 
     public function renderIcinga4WindowsWizardCommand($token)
     {
-        $script = "Use-Icinga;\n"
-            . 'Start-IcingaAgentInstallWizard `' . "\n    "
+        $ifwParams = [
+            "IfW-DirectorSelfServiceKey" => [
+                "Values" => [$token],
+            ],
+            "IfW-DirectorUrl" => [
+                "Values" => [$this->getDirectorUrl()],
+            ],
+            "IfW-StableRepository" => [
+                "Values" => ["https://packages.icinga.com/IcingaForWindows/stable"],
+            ]
+        ];
+
+        $script = "[Net.ServicePointManager]::SecurityProtocol = 'tls12, tls11';\n"
+            . "\$ProgressPreference                         = 'SilentlyContinue';" . "\n"
+            . "[string]\$ScriptFile                         = 'C:\Users\Public\IcingaForWindows.ps1';\n"
+            . "\n"
+            . "Invoke-WebRequest `\n    "
             . $this->renderPowershellParameters([
-                'DirectorUrl'            => $this->getDirectorUrl(),
-                'SelfServiceAPIKey'      => $token,
-                'UseDirectorSelfService' => 1,
-                'OverrideDirectorVars'   => 0,
-                'Reconfigure',
-                'RunInstaller'
+                'UseBasicParsing',
+                'Uri'      => "https://packages.icinga.com/IcingaForWindows/IcingaForWindows.ps1",
+                'OutFile' => '$ScriptFile;',
+            ]) . "\n"
+            . "\n"
+            . "& \$ScriptFile `\n    "
+            . $this->renderPowershellParameters([
+                'ModuleDirectory'  => "C:\Program Files\WindowsPowerShell\Modules\\",
+                'InstallCommand'   => json_encode($ifwParams, JSON_UNESCAPED_SLASHES),
+                'IcingaRepository' => "https://packages.icinga.com/IcingaForWindows/stable/ifw.repo.json"
             ]);
 
         return $script;
@@ -234,6 +253,8 @@ class AgentWizard
             }
             $ret .= implode(', ', $vals);
         } elseif (is_int($value)) {
+            $ret .= $value;
+        } elseif (is_string($value) && $value[0] === '$') {
             $ret .= $value;
         } else {
             $ret .= $this->renderPowershellString($value);
