@@ -2,11 +2,11 @@
 
 namespace Icinga\Module\Director\Db\Branch;
 
+use Icinga\Application\Hook;
 use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Hook\BranchSupportHook;
-use Icinga\Web\Hook;
 use Icinga\Web\Request;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
