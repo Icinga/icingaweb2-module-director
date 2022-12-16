@@ -124,7 +124,7 @@ abstract class ObjectsController extends ActionController
             ->addTitle($this->translate(ucfirst($this->getPluralType())))
             ->actions(new ObjectsActionBar($this->getBaseObjectUrl(), $this->url()));
 
-        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth()));
+        $this->content()->add(new BranchedObjectsHint($this->getBranch(), $this->Auth(), $this->hasPreferredBranch()));
 
         if ($type === 'command' && $this->params->get('type') === 'external_object') {
             $this->tabs()->activate('external');

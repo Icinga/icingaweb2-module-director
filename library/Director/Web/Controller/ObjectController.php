@@ -10,6 +10,7 @@ use Icinga\Exception\ProgrammingError;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchedObject;
+use Icinga\Module\Director\Db\Branch\BranchSupport;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Deployment\DeploymentInfo;
 use Icinga\Module\Director\DirectorObject\Automation\ExportInterface;
@@ -151,8 +152,11 @@ abstract class ObjectController extends ActionController
             $this->addObject();
         }
         $branch = $this->getBranch();
-        if ($branch->isBranch() && ! $this->getRequest()->isApiRequest()) {
-            $this->content()->add(new BranchedObjectHint($branch, $this->Auth()));
+        if (! $this->getRequest()->isApiRequest()) {
+            $hasPreferred = $this->hasPreferredBranch();
+            if ($branch->isBranch() || $hasPreferred) {
+                $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), null, $hasPreferred));
+            }
         }
 
         $form->handleRequest();
@@ -558,8 +562,16 @@ abstract class ObjectController extends ActionController
         if (! $this->allowsObject($object)) {
             throw new NotFoundError('No such object available');
         }
-        if ($showHint && $branch->isBranch() && $object->isObject() && ! $this->getRequest()->isApiRequest()) {
-            $this->content()->add(new BranchedObjectHint($branch, $this->Auth(), $branchedObject));
+        if ($showHint) {
+            $hasPreferredBranch = $this->hasPreferredBranch();
+            if (($hasPreferredBranch || $branch->isBranch())
+                && $object->isObject()
+                && ! $this->getRequest()->isApiRequest()
+            ) {
+                $this->content()->add(
+                    new BranchedObjectHint($branch, $this->Auth(), $branchedObject, $hasPreferredBranch)
+                );
+            }
         }
 
         return $object;

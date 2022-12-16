@@ -6,6 +6,7 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Application\Hook;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
+use Icinga\Module\Director\Db\Branch\PreferredBranchSupport;
 use Icinga\Module\Director\Hook\BranchSupportHook;
 use ipl\Html\Html;
 
@@ -19,6 +20,12 @@ class BranchesDashboard extends Dashboard
                 $this->translate('You\'re currently working in a Configuration Branch: %s'),
                 Branch::requireHook()->linkToBranch($branch, $this->getAuth(), $branch->getName())
             )));
+        } else {
+            if (($implementation = Branch::optionalHook()) && $implementation instanceof PreferredBranchSupport) {
+                $this->prepend(Hint::warning(
+                    $this->translate('You\'re currently working in the main Configuration Branch'),
+                ));
+            }
         }
 
         return $this->translate('Prepare your configuration in a safe Environment');
