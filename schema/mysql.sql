@@ -2353,6 +2353,8 @@ CREATE TABLE branched_icinga_notification (
   command VARCHAR(255) DEFAULT NULL,
   period VARCHAR(255) DEFAULT NULL,
   zone VARCHAR(255) DEFAULT NULL,
+  users_var VARCHAR(255) DEFAULT NULL,
+  user_groups_var VARCHAR(255) DEFAULT NULL,
   assign_filter TEXT DEFAULT NULL,
 
   states TEXT DEFAULT NULL,
@@ -2441,4 +2443,4 @@ CREATE TABLE branched_icinga_dependency (
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (183, NOW());
+  VALUES (184, NOW());

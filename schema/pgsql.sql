@@ -2686,6 +2686,8 @@ CREATE TABLE branched_icinga_notification (
   command character varying(255) DEFAULT NULL,
   period character varying(255) DEFAULT NULL,
   zone character varying(255) DEFAULT NULL,
+  users_var character varying(255) DEFAULT NULL,
+  user_groups_var character varying(255) DEFAULT NULL,
   assign_filter text DEFAULT NULL,
 
   states TEXT DEFAULT NULL,
@@ -2780,4 +2782,4 @@ CREATE INDEX branched_dependency_search_object_name ON branched_icinga_dependenc
 
 INSERT INTO director_schema_migration
   (schema_version, migration_time)
-  VALUES (183, NOW());
+  VALUES (184, NOW());
