@@ -176,7 +176,7 @@ class IcingaNotificationForm extends DirectorObjectForm
 
         $this->addElement('select', 'user_groups_var', [
             'label' => $this->translate('User Groups Custom Variable'),
-            'multiOptions' => $this->enumDirectorObjectFields('user_group'),
+            'multiOptions' => $this->enumDirectorObjectFields('usergroup'),
             'description' => $this->translate(
                 'If defined, User Groups from this Custom Variable will be combined with single Groups chosen below. '
                 . ' e.g.: when set to notification_groups, this notification will pick User Groups from the Array'
