@@ -4,6 +4,7 @@ namespace Icinga\Module\Director\Dashboard;
 
 use gipfl\Web\Widget\Hint;
 use Icinga\Application\Hook;
+use Icinga\Authentication\Auth;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Db\Branch\BranchStore;
 use Icinga\Module\Director\Db\Branch\PreferredBranchSupport;
@@ -22,9 +23,11 @@ class BranchesDashboard extends Dashboard
             )));
         } else {
             if (($implementation = Branch::optionalHook()) && $implementation instanceof PreferredBranchSupport) {
-                $this->prepend(Hint::warning(
-                    $this->translate('You\'re currently working in the main Configuration Branch'),
-                ));
+                if ($implementation->hasPreferredBranch(Auth::getInstance())) {
+                    $this->prepend(Hint::warning(
+                        $this->translate('You\'re currently working in the main Configuration Branch'),
+                    ));
+                }
             }
         }
 
