@@ -466,7 +466,7 @@ class TemplateTree
             ['p' => $table],
             $joinCondition,
             []
-        )->order('o.id')->order('i.weight');
+        )->order('o.object_name')->order('i.weight');
 
         if ($type !== 'command') {
             $query->where(
