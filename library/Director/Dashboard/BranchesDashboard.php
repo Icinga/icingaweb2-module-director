@@ -25,7 +25,7 @@ class BranchesDashboard extends Dashboard
             if (($implementation = Branch::optionalHook()) && $implementation instanceof PreferredBranchSupport) {
                 if ($implementation->hasPreferredBranch(Auth::getInstance())) {
                     $this->prepend(Hint::warning(
-                        $this->translate('You\'re currently working in the main Configuration Branch'),
+                        $this->translate('You\'re currently working in the main Configuration Branch')
                     ));
                 }
             }
