@@ -14,7 +14,7 @@ abstract class BranchSupportHook
 {
     /**
      * @param Request $request
-     * @param BranchSTore $store
+     * @param BranchStore $store
      * @param Auth $auth
      * @return Branch
      */
