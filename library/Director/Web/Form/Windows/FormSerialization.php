@@ -76,16 +76,11 @@ class FormSerialization
     {
         $option->ensureAssembled();
         $content = $option->getContent();
-        $output = '';
-        foreach ($content as $c) {
-            $output .= $c->render();
-        }
         foreach ($content as $text) {
             if ($text instanceof Text) {
-                $label = $option->getContent()[0];
                 return (object) [
                     'Value' => $option->getValue(),
-                    'Label' => $output
+                    'Label' => $option->getContent()[0]->render()
                 ];
             }
         }
