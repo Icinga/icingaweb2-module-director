@@ -44,9 +44,11 @@ class IcingaForWindowsApi extends RequestHandler
                 $form->setAction($url->getPath());
                 $serverRequest = ServerRequest::fromGlobals(); // TODO: Not here
                 if ($this->request->isApiRequest()) {
-                    $form->handleRequest(
-                        (new ServerRequest('POST', $url))->withParsedBody(JsonString::decode($serverRequest->getBody()))
-                    );
+                    $body = (string) $serverRequest->getBody();
+                    if (strlen($body) > 0) {
+                        $serverRequest = $serverRequest->withParsedBody(JsonString::decode($body));
+                    }
+                    $form->handleRequest($serverRequest);
                 } else {
                     $form->handleRequest($serverRequest);
                 }
