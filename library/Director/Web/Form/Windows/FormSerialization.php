@@ -78,8 +78,12 @@ class FormSerialization
         $content = $option->getContent();
         foreach ($content as $text) {
             if ($text instanceof Text) {
+                $value = $option->getValue();
+                if ($value === '') {
+                    $value = null;
+                }
                 return (object) [
-                    'Value' => $option->getValue(),
+                    'Value' => $value,
                     'Label' => $option->getContent()[0]->render()
                 ];
             }
