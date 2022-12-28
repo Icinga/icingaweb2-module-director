@@ -3,8 +3,10 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Exception;
+use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
+use Icinga\Module\Director\Web\Form\Windows\JobExecutionForm;
 use Icinga\Module\Director\Windows\JobsMenu;
 use Icinga\Module\Director\Windows\MainMenu;
 use Icinga\Module\Director\Windows\RemoteApi;
@@ -29,22 +31,32 @@ class IcingaForWindowsApi extends RequestHandler
 
     public function handleApiRequest(): JsonSerializable
     {
-        $path = $this->request->getUrl()->getPath();
-        $prefix = RemoteApi::BASE_URL;
-        $length = strlen($prefix);
-
-        if (substr($path, 0, $length) === $prefix) {
-            $path = substr($path, $length + 1);
-        } else {
-            throw new NotFoundError('No such Url');
-        }
+        $url = $this->request->getUrl();
+        $path = $this->stripBaseUrl($url->getPath());
         switch ($path) {
             case '':
                 return new MainMenu();
             case 'jobs':
                 return new JobsMenu();
+            case 'job':
+                $form = new JobExecutionForm();
+                $form->setAction($url->getPath());
+                $form->handleRequest(ServerRequest::fromGlobals()); // TODO: do not instantiate here
+                return $form;
             default:
                 throw new NotFoundError('No such Url');
+        }
+    }
+
+    protected function stripBaseUrl(string $path): string
+    {
+        $prefix = RemoteApi::BASE_URL;
+        $length = strlen($prefix);
+
+        if (substr($path, 0, $length) === $prefix) {
+            return substr($path, $length + 1);
+        } else {
+            throw new NotFoundError('No such Url');
         }
     }
 }

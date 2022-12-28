@@ -2,6 +2,7 @@
 
 namespace Icinga\Module\Director\Controllers;
 
+use gipfl\Web\Form;
 use Icinga\Module\Director\RestApi\IcingaForWindowsApi;
 use Icinga\Module\Director\Web\Controller\ActionController;
 use Icinga\Module\Director\Windows\GeneratedDashboard;
@@ -24,6 +25,8 @@ class WindowsController extends ActionController
             if ($response instanceof RemoteMenu) {
                 $dashboard = GeneratedDashboard::create($response, $this->db());
                 $this->content()->add($dashboard);
+            } elseif ($response instanceof Form) {
+                $this->content()->add($response);
             }
         }
     }
@@ -34,6 +37,11 @@ class WindowsController extends ActionController
     }
 
     public function jobsAction()
+    {
+        // TODO: Remove actions
+    }
+
+    public function jobAction()
     {
         // TODO: Remove actions
     }
