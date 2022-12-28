@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\RestApi;
 
 use Exception;
+use gipfl\Json\JsonString;
 use GuzzleHttp\Psr7\ServerRequest;
 use Icinga\Exception\NotFoundError;
 use Icinga\Module\Director\Exception\DuplicateKeyException;
@@ -41,7 +42,14 @@ class IcingaForWindowsApi extends RequestHandler
             case 'job':
                 $form = new JobExecutionForm();
                 $form->setAction($url->getPath());
-                $form->handleRequest(ServerRequest::fromGlobals()); // TODO: do not instantiate here
+                $serverRequest = ServerRequest::fromGlobals(); // TODO: Not here
+                if ($this->request->isApiRequest()) {
+                    $form->handleRequest(
+                        (new ServerRequest('POST', $url))->withParsedBody(JsonString::decode($serverRequest->getBody()))
+                    );
+                } else {
+                    $form->handleRequest($serverRequest);
+                }
                 return $form;
             default:
                 throw new NotFoundError('No such Url');
