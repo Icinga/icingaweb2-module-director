@@ -31,8 +31,11 @@ abstract class Dashboard extends HtmlDocument
     /** @var  Db */
     protected $db;
 
-    final private function __construct()
+    protected function __construct()
     {
+        // This used to be final, which turned out to be too strict
+        // Please make sure to always set $this->db and $this->name
+        // Hint: some interface might help
     }
 
     /**
