@@ -119,10 +119,13 @@ class IcingaNotification extends IcingaObject implements ExportInterface
                 . c::renderKeyOperatorValue($property, '+=', "service.vars$varSuffix", $indent . '    ')
                 . "$indent} else {\n"
                 . $this->getHostSnippet($indent . '    ')
-                . c::renderKeyOperatorValue($property, '+=', "host.vars$varSuffix", $indent . '    ')
+                . "$indent    if (host.vars$varSuffix) { "
+                . c::renderKeyOperatorValue($property, '+=', "host.vars$varSuffix }", '')
                 . "$indent}\n";
         } elseif ($objectType === 'host') {
-            return $this->getHostSnippet() . c::renderKeyOperatorValue($property, '+=', "host.vars$varSuffix");
+            return $this->getHostSnippet()
+                . "{$indent}if (host.vars$varSuffix) { "
+                . c::renderKeyOperatorValue($property, '+=', "host.vars$varSuffix }");
         }
 
         return '';
