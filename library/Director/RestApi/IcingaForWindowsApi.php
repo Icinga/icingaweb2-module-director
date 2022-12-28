@@ -25,10 +25,6 @@ class IcingaForWindowsApi extends RequestHandler
         } catch (Exception $e) {
             $this->sendJsonError($e);
         }
-
-        if ($this->request->getActionName() !== 'index') {
-            throw new NotFoundError('Not found');
-        }
     }
 
     public function handleApiRequest(): JsonSerializable
