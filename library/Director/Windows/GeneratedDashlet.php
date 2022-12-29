@@ -16,22 +16,22 @@ class GeneratedDashlet extends Dashlet
         parent::__construct($db);
     }
 
-    public function getTitle()
+    public function getTitle(): string
     {
         return $this->entry->label;
     }
 
-    public function getUrl()
+    public function getUrl(): string
     {
         return $this->entry->url;
     }
 
-    public function getSummary()
+    public function getSummary(): string
     {
         return $this->entry->description;
     }
 
-    public function getIconName()
+    public function getIconName(): string
     {
         return $this->entry->icon ?? 'help';
     }

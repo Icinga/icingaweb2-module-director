@@ -4,5 +4,5 @@ namespace Icinga\Module\Director\Windows;
 
 class RemoteApi
 {
-    const BASE_URL = 'director/windows';
+    public const BASE_URL = 'director/windows';
 }
