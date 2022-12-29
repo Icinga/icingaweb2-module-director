@@ -1,9 +1,10 @@
 <?php
 
-namespace Icinga\Module\Director;
+namespace Icinga\Module\Director\Backend;
 
 use gipfl\IcingaWeb2\Link;
 use Icinga\Application\Icinga;
+use Icinga\Data\Filter\Filter;
 use Icinga\Module\Monitoring\Backend\MonitoringBackend;
 
 class MonitorBackendMonitoring implements MonitorBackend
@@ -39,6 +40,17 @@ class MonitorBackendMonitoring implements MonitorBackend
         ])->where('host_name', $hostname)->fetchOne() === $hostname;
     }
 
+    public function hasHostWithExtraFilter($hostname, Filter $filter)
+    {
+        if ($this->backend === null) {
+            return false;
+        }
+
+        return $this->backend->select()->from('hostStatus', [
+            'hostname' => 'host_name',
+            ])->where('host_name', $hostname)->applyFilter($filter)->fetchOne() === $hostname;
+    }
+
     public function hasService($hostname, $service)
     {
         if ($this->backend === null) {
@@ -49,6 +61,21 @@ class MonitorBackendMonitoring implements MonitorBackend
             'hostname' => $hostname,
             'service'  => $service,
         ];
+    }
+
+    public function hasServiceWithExtraFilter($hostname, $service, Filter $filter)
+    {
+        if ($this->backend === null) {
+            return false;
+        }
+
+        return (array) $this
+            ->prepareServiceKeyColumnQuery($hostname, $service)
+            ->applyFilter($filter)
+            ->fetchRow() === [
+                'hostname' => $hostname,
+                'service'  => $service,
+            ];
     }
 
     public function getHostLink($title, $hostname, array $attributes = null)

@@ -1,9 +1,10 @@
 <?php
 
-namespace Icinga\Module\Director;
+namespace Icinga\Module\Director\Backend;
 
 use gipfl\IcingaWeb2\Link;
 use Icinga\Application\Icinga;
+use Icinga\Data\Filter\Filter as DataFilter;
 use Icinga\Module\Icingadb\Common\Auth;
 use Icinga\Module\Icingadb\Common\Database;
 use Icinga\Module\Icingadb\Model\Host;
@@ -36,6 +37,12 @@ class MonitorBackendIcingadb implements MonitorBackend
         return ($host !== null);
     }
 
+    public function hasHostWithExtraFilter($hostname, DataFilter $filter)
+    {
+        // TODO
+        return false;
+    }
+
     public function hasService($hostname, $service)
     {
         $query = Service::on($this->getDb());
@@ -51,6 +58,12 @@ class MonitorBackendIcingadb implements MonitorBackend
         $service = $query->first();
 
         return ($service !== null);
+    }
+
+    public function hasServiceWithExtraFilter($hostname, $service, DataFilter $filter)
+    {
+        // TODO
+        return false;
     }
 
     public function getHostLink($title, $hostname, array $attributes = null)
