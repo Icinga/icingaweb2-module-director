@@ -5,6 +5,9 @@ namespace Icinga\Module\Director;
 use Icinga\Application\Icinga;
 use Icinga\Authentication\Auth;
 use Icinga\Data\Filter\Filter;
+use Icinga\Module\Director\Backend\MonitorBackend;
+use Icinga\Module\Director\Backend\MonitorBackendIcingadb;
+use Icinga\Module\Director\Backend\MonitorBackendMonitoring;
 
 class Backend implements MonitorBackend
 {
@@ -53,15 +56,26 @@ class Backend implements MonitorBackend
 
     public function hasHost($hostname)
     {
-        return (($this->backend === null) || $this->backend->hasHost($hostname));
+        return (($this->backend !== null) && $this->backend->hasHost($hostname));
+    }
+
+    public function hasHostWithExtraFilter($hostname, Filter $filter)
+    {
+        return (($this->backend !== null) && $this->backend->hasHostWithExtraFilter($hostname, $filter));
     }
 
     public function hasService($hostname, $service)
     {
-        return (($this->backend === null) || $this->backend->hasService($hostname, $service));
+        return (($this->backend !== null) && $this->backend->hasService($hostname, $service));
     }
 
-    public function authCanEditHost(Auth $auth, $hostname, $service)
+    public function hasServiceWithExtraFilter($hostname, $service, Filter $filter)
+    {
+        return (($this->backend !== null)
+            && $this->backend->hasServiceWithExtraFilter($hostname, $service, $filter));
+    }
+
+    public function authCanEditHost(Auth $auth, $hostname)
     {
         if ($auth->hasPermission('director/monitoring/hosts')) {
             $restriction = null;
@@ -99,32 +113,6 @@ class Backend implements MonitorBackend
         return false;
     }
 
-    public function hasHostWithExtraFilter($hostname, Filter $filter)
-    {
-        if ($this->backend === null) {
-            return false;
-        }
-
-        return $this->backend->select()->from('hostStatus', [
-            'hostname' => 'host_name',
-            ])->where('host_name', $hostname)->applyFilter($filter)->fetchOne() === $hostname;
-    }
-
-    public function hasServiceWithExtraFilter($hostname, $service, Filter $filter)
-    {
-        if ($this->backend === null) {
-            return false;
-        }
-
-        return (array) $this
-            ->prepareServiceKeyColumnQuery($hostname, $service)
-            ->applyFilter($filter)
-            ->fetchRow() === [
-                'hostname' => $hostname,
-                'service'  => $service,
-            ];
-    }
-
     public function getHostLink($title, $hostname, array $attributes = null)
     {
         if ($this->backend !== null) {
@@ -138,7 +126,7 @@ class Backend implements MonitorBackend
         if ($this->backend === null) {
             return (object) [
                 'hostname'     => $hostname,
-                'state'        => 'pending',
+                'state'        => '99',
                 'problem'      => '0',
                 'acknowledged' => '0',
                 'in_downtime'  => '0',
