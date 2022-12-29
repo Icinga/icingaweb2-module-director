@@ -15,6 +15,7 @@ This version hasn't been released yet
 * FEATURE: Deployment Log now breaks lines (#2677)
 * FEATURE: Sort Template trees by name (#2691)
 * FIX: do not fail for (some) Service Dependencies (#2669, #1142)
+* FIX: error when editing virtual services w/o monitoring module (#2533, #2563)
 
 ### Icinga Configuration
 * FIX: render Set Services to individual zones where required (#1589, #2356)
