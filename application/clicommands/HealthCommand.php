@@ -37,9 +37,21 @@ class HealthCommand extends Command
             $health->setDbResourceName($name);
         }
 
+        if ($this->params->get('name')){
+            $check_name = $this->params->get('name');
+        } else { 
+			$check_name = null; 
+		}
+
+
         if ($name = $this->params->get('check')) {
-            $check = $health->getCheck($name);
-            echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
+                if (is_null($check_name)){
+					$check = $health->getCheck($name);
+					echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
+                } else {
+					$check = $health->getCheck($name, $check_name);
+					echo PluginOutputBeautifier::beautify($check->getOutput(), $this->screen);
+                }
 
             exit($check->getState()->getNumeric());
         } else {
