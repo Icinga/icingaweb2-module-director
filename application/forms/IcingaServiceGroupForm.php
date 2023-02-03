@@ -2,10 +2,11 @@
 
 namespace Icinga\Module\Director\Forms;
 
-use Icinga\Module\Director\Web\Form\DirectorObjectForm;
-
-class IcingaServiceGroupForm extends DirectorObjectForm
+class IcingaServiceGroupForm extends IcingaGroupForm
 {
+    /**
+     * @throws \Zend_Form_Exception
+     */
     public function setup()
     {
         $this->addHidden('object_type', 'object');
@@ -20,21 +21,6 @@ class IcingaServiceGroupForm extends DirectorObjectForm
              ->addAssignmentElements()
              ->addZoneElements()
              ->setButtons();
-    }
-
-    protected function addZoneElements()
-    {
-        $this->addZoneElement(true);
-        $this->addDisplayGroup(['zone_id'], 'clustering', [
-            'decorators' => [
-                'FormElements',
-                ['HtmlTag', ['tag' => 'dl']],
-                'Fieldset',
-            ],
-            'order' => 80,
-            'legend' => $this->translate('Zone settings'),
-        ]);
-        return $this;
     }
 
     protected function addAssignmentElements()
