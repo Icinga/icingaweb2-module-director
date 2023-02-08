@@ -18,7 +18,7 @@ class IcingaHostGroup extends IcingaObjectGroup
     {
         if ($this->hostgroupMembershipResolver === null) {
             $this->hostgroupMembershipResolver = new HostGroupMembershipResolver(
-                $this->getConnection()
+                $this->getConnection(), 'hostgroup'
             );
         }
 

@@ -23,6 +23,9 @@ abstract class GroupMembershipResolver
     /** @var string Object type, 'host', 'service', 'user' or similar */
     protected $type;
 
+    /** @var string */
+    protected $resolverForType = '';
+
     /** @var array */
     protected $existingMappings;
 
@@ -55,10 +58,11 @@ abstract class GroupMembershipResolver
 
     protected $groupMap;
 
-    public function __construct(Db $connection)
+    public function __construct(Db $connection, $resolverForType = '')
     {
         $this->connection = $connection;
         $this->db = $connection->getDbAdapter();
+        $this->resolverForType = $resolverForType;
     }
 
     /**
@@ -82,7 +86,10 @@ abstract class GroupMembershipResolver
         }
 
         Benchmark::measure('Rechecking all objects');
-        $this->recheckAllObjects($this->getAppliedGroups());
+        // Only perform a recheck if we are not dealing with hostgroups at the beginning
+        if ($this->resolverForType !== 'hostgroup') {
+            $this->recheckAllObjects($this->getAppliedGroups());
+        }
         if (empty($this->objects) && empty($this->groups)) {
             Benchmark::measure('Nothing to check, got no qualified object');
             return $this;
