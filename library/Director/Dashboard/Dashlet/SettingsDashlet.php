@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class SettingsDashlet extends Dashlet
 {
     protected $icon = 'edit';
@@ -25,6 +27,6 @@ class SettingsDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

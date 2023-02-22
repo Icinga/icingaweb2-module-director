@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Forms;
 use gipfl\Web\Widget\Hint;
 use Icinga\Exception\IcingaException;
 use Icinga\Module\Director\Acl;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db\Branch\Branch;
 use Icinga\Module\Director\Objects\IcingaCommand;
@@ -42,7 +43,7 @@ class IcingaCloneObjectForm extends DirectorForm
             'value'    => $name,
         ));
 
-        if (!$branchOnly && Acl::instance()->hasPermission('director/admin')) {
+        if (!$branchOnly && Acl::instance()->hasPermission(Permission::ADMIN)) {
             $this->addElement('select', 'clone_type', array(
                 'label'        => 'Clone type',
                 'required'     => true,
@@ -135,7 +136,7 @@ class IcingaCloneObjectForm extends DirectorForm
         $connection = $object->getConnection();
         $db = $connection->getDbAdapter();
         $newName = $this->getValue('new_object_name');
-        $resolve = Acl::instance()->hasPermission('director/admin')
+        $resolve = Acl::instance()->hasPermission(Permission::ADMIN)
             && $this->getValue('clone_type') === 'flat';
 
         $msg = sprintf(

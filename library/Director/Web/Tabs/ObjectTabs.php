@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\Tabs;
@@ -46,10 +47,10 @@ class ObjectTabs extends Tabs
     protected function addTabsForNewObject()
     {
         $type = $this->type;
-        $this->add('add', array(
+        $this->add('add', [
             'url'       => sprintf('director/%s/add', $type),
             'label'     => sprintf($this->translate('Add %s'), ucfirst($type)),
-        ));
+        ]);
     }
 
     protected function addTabsForExistingObject()
@@ -59,14 +60,12 @@ class ObjectTabs extends Tabs
         $object = $this->object;
         $params = $object->getUrlParams();
 
-        if (! $object->isExternal()
-            || in_array($object->getShortTableName(), $this->allowedExternals)
-        ) {
-            $this->add('modify', array(
+        if (! $object->isExternal() || in_array($object->getShortTableName(), $this->allowedExternals)) {
+            $this->add('modify', [
                 'url'       => sprintf('director/%s', $type),
                 'urlParams' => $params,
                 'label'     => $this->translate(ucfirst($type))
-            ));
+            ]);
         }
         if ($object->getShortTableName() === 'host') {
             $this->add('services', [
@@ -76,19 +75,17 @@ class ObjectTabs extends Tabs
             ]);
         }
 
-        if ($auth->hasPermission('director/showconfig')) {
-            if ($object->getShortTableName() !== 'service'
-                || $object->get('service_set_id') === null
-            ) {
-                $this->add('render', array(
+        if ($auth->hasPermission(Permission::SHOW_CONFIG)) {
+            if ($object->getShortTableName() !== 'service' || $object->get('service_set_id') === null) {
+                $this->add('render', [
                     'url'       => sprintf('director/%s/render', $type),
                     'urlParams' => $params,
                     'label'     => $this->translate('Preview'),
-                ));
+                ]);
             }
         }
 
-        if ($auth->hasPermission('director/audit')) {
+        if ($auth->hasPermission(Permission::AUDIT)) {
             $this->add('history', array(
                 'url'       => sprintf('director/%s/history', $type),
                 'urlParams' => $params,
@@ -96,7 +93,7 @@ class ObjectTabs extends Tabs
             ));
         }
 
-        if ($auth->hasPermission('director/admin') && $this->hasFields()) {
+        if ($auth->hasPermission(Permission::ADMIN) && $this->hasFields()) {
             $this->add('fields', array(
                 'url'       => sprintf('director/%s/fields', $type),
                 'urlParams' => $params,
@@ -138,11 +135,11 @@ class ObjectTabs extends Tabs
             ]);
         }
 
-        if ($object->getShortTableName() === 'host' && $auth->hasPermission('director/hosts')) {
+        if ($object->getShortTableName() === 'host' && $auth->hasPermission(Permission::HOSTS)) {
             $this->add('agent', [
-                'url' => 'director/host/agent',
+                'url'       => 'director/host/agent',
                 'urlParams' => $params,
-                'label' => $this->translate('Agent')
+                'label'     => $this->translate('Agent')
             ]);
         }
     }

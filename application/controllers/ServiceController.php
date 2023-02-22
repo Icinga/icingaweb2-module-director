@@ -4,11 +4,10 @@ namespace Icinga\Module\Director\Controllers;
 
 use Exception;
 use Icinga\Exception\NotFoundError;
-use Icinga\Module\Director\Data\Db\DbObjectStore;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectTypeRegistry;
 use Icinga\Module\Director\Db\Branch\UuidLookup;
 use Icinga\Module\Director\Forms\IcingaServiceForm;
-use Icinga\Module\Director\Monitoring;
 use Icinga\Module\Director\Objects\IcingaObject;
 use Icinga\Module\Director\Web\Controller\ObjectController;
 use Icinga\Module\Director\Objects\IcingaService;
@@ -30,10 +29,11 @@ class ServiceController extends ObjectController
 
     protected function checkDirectorPermissions()
     {
-        if ($this->hasPermission('director/monitoring/services')) {
-            $monitoring = new Monitoring();
-            if ($monitoring->authCanEditService($this->Auth(), $this->getParam('host'), $this->getParam('name'))) {
-                return;
+        if ($this->hasPermission(Permission::MONITORING_SERVICES)) {
+            if ($this->host && $service = $this->object) {
+                if ($this->monitoring()->canModifyService($this->host, $service->getObjectName())) {
+                    return;
+                }
             }
         }
         $this->assertPermission('director/hosts');

@@ -3,6 +3,7 @@
 namespace Icinga\Module\Director\Web\Tabs;
 
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Objects\IcingaObject;
 use gipfl\Translation\TranslationHelper;
 use gipfl\IcingaWeb2\Widget\Tabs;
@@ -21,65 +22,66 @@ class ObjectsTabs extends Tabs
 
         $plType = strtolower(preg_replace('/cys$/', 'cies', $shortName . 's'));
         $plType = str_replace('_', '-', $plType);
-        if ($auth->hasPermission("director/${plType}")) {
-            $this->add('index', array(
+        if ($auth->hasPermission("director/{$plType}")) {
+            $this->add('index', [
                 'url'   => sprintf('director/%s', $plType),
                 'label' => $this->translate(ucfirst($plType)),
-            ));
+            ]);
         }
 
         if ($object->getShortTableName() === 'command') {
-            $this->add('external', array(
-                'url'   => sprintf('director/%s', strtolower($plType)),
+            $this->add('external', [
+                'url'       => sprintf('director/%s', strtolower($plType)),
                 'urlParams' => ['type' => 'external_object'],
-                'label' => $this->translate('External'),
-            ));
+                'label'     => $this->translate('External'),
+            ]);
         }
 
-        if ($auth->hasPermission('director/admin') || (
+        if ($auth->hasPermission(Permission::ADMIN)
+            || (
             $object->getShortTableName() === 'notification'
-            && $auth->hasPermission('director/notifications')
+            && $auth->hasPermission(Permission::NOTIFICATIONS)
         ) || (
             $object->getShortTableName() === 'scheduled_downtime'
-            && $auth->hasPermission('director/scheduled-downtimes')
+            && $auth->hasPermission(Permission::SCHEDULED_DOWNTIMES)
         )) {
             if ($object->supportsApplyRules()) {
-                $this->add('applyrules', array(
-                    'url' => sprintf('director/%s/applyrules', $plType),
+                $this->add('applyrules', [
+                    'url'   => sprintf('director/%s/applyrules', $plType),
                     'label' => $this->translate('Apply')
-                ));
+                ]);
             }
         }
 
-        if ($auth->hasPermission('director/admin') && $type !== 'zone') {
+        if ($auth->hasPermission(Permission::ADMIN) && $type !== 'zone') {
             if ($object->supportsImports()) {
-                $this->add('templates', array(
-                    'url' => sprintf('director/%s/templates', $plType),
+                $this->add('templates', [
+                    'url'   => sprintf('director/%s/templates', $plType),
                     'label' => $this->translate('Templates'),
-                ));
+                ]);
             }
 
             if ($object->supportsGroups()) {
-                $this->add('groups', array(
-                    'url' => sprintf('director/%sgroups', $typeUrl),
+                $this->add('groups', [
+                    'url'   => sprintf('director/%sgroups', $typeUrl),
                     'label' => $this->translate('Groups')
-                ));
+                ]);
             }
         }
 
-        if ($auth->hasPermission('director/admin')) {
+        if ($auth->hasPermission(Permission::ADMIN)) {
             if ($object->supportsChoices()) {
-                $this->add('choices', array(
-                    'url' => sprintf('director/templatechoices/%s', $shortName),
+                $this->add('choices', [
+                    'url'   => sprintf('director/templatechoices/%s', $shortName),
                     'label' => $this->translate('Choices')
-                ));
+                ]);
             }
         }
         if ($object->supportsSets() && $auth->hasPermission("director/${typeUrl}sets")) {
-            $this->add('sets', array(
-                'url'    => sprintf('director/%s/sets', $plType),
+            $this->add('sets', [
+                'url'   => sprintf('director/%s/sets', $plType),
                 'label' => $this->translate('Sets')
-            ));
+            ]);
         }
     }
 }

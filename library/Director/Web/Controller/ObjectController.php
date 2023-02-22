@@ -62,8 +62,11 @@ abstract class ObjectController extends ActionController
 
     public function init()
     {
-        parent::init();
         $this->enableStaticObjectLoader($this->getTableName());
+        if (! $this->getRequest()->isApiRequest()) {
+            $this->loadOptionalObject();
+        }
+        parent::init();
         if ($this->getRequest()->isApiRequest()) {
             $this->initializeRestApi();
         } else {
@@ -98,7 +101,6 @@ abstract class ObjectController extends ActionController
 
     protected function initializeWebRequest()
     {
-        $this->loadOptionalObject();
         if ($this->getRequest()->getActionName() === 'add') {
             $this->addSingleTab(
                 sprintf($this->translate('Add %s'), ucfirst($this->getType())),

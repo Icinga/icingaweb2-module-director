@@ -2,7 +2,7 @@
 
 namespace Icinga\Module\Director\Restriction;
 
-use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Db\IcingaObjectFilterHelper;
 use Icinga\Module\Director\Objects\IcingaHost;
 use Icinga\Module\Director\Objects\IcingaHostGroup;
@@ -11,7 +11,7 @@ use Zend_Db_Select as ZfSelect;
 
 class HostgroupRestriction extends ObjectRestriction
 {
-    protected $name = 'director/filter/hostgroups';
+    protected $name = Restriction::FILTER_HOSTGROUPS;
 
     public function allows(IcingaObject $object)
     {

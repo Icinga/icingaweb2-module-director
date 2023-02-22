@@ -22,6 +22,9 @@ This version hasn't been released yet
 ### Import and Sync
 * FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
 
+### Permissions and Restrictions
+* FIX: monitoring-related permission checks have been refactored (#2712)
+
 ### Configuration Branches
 * FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
 * FEATURE: users with default branches get warnings in the main branch (#2689)

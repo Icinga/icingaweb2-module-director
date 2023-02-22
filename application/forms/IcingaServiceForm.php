@@ -6,6 +6,7 @@ use gipfl\Web\Widget\Hint;
 use Icinga\Data\Filter\Filter;
 use Icinga\Exception\IcingaException;
 use Icinga\Exception\ProgrammingError;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\PropertiesFilter\ArrayCustomVariablesFilter;
 use Icinga\Module\Director\Exception\NestingError;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -355,7 +356,7 @@ class IcingaServiceForm extends DirectorObjectForm
             $objectType = 'template';
         }
         $this->addHidden('object_type', $objectType);
-        $forceCommandElements = $this->hasPermission('director/admin');
+        $forceCommandElements = $this->hasPermission(Permission::ADMIN);
 
         $this->addNameElement()
              ->addHostObjectElement()
@@ -550,7 +551,7 @@ class IcingaServiceForm extends DirectorObjectForm
              ->addGroupsElement()
              ->groupMainProperties();
 
-        if ($this->hasPermission('director/admin')) {
+        if ($this->hasPermission(Permission::ADMIN)) {
             $this->addCheckCommandElements(true)
                 ->addCheckExecutionElements(true)
                 ->addExtraInfoElements();

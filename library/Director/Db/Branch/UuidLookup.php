@@ -104,7 +104,7 @@ class UuidLookup
         $uuid = self::fetchOptionalUuid($connection, $query);
         if ($uuid === null && $branch->isBranch()) {
             if (is_array($key) && isset($key['host_id'])) {
-                $key['host'] = IcingaHost::load($key['host_id'], $connection)->getObjectName();
+                $key['host'] = IcingaHost::loadWithAutoIncId((int) $key['host_id'], $connection)->getObjectName();
                 unset($key['host_id']);
             }
             $query = self::addKeyToQuery($connection, $db->select()->from("branched_$table", 'uuid'), $key);

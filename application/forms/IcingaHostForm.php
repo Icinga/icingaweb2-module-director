@@ -3,6 +3,8 @@
 namespace Icinga\Module\Director\Forms;
 
 use Icinga\Exception\AuthenticationException;
+use Icinga\Module\Director\Auth\Permission;
+use Icinga\Module\Director\Auth\Restriction;
 use Icinga\Module\Director\Repository\IcingaTemplateRepository;
 use Icinga\Module\Director\Restriction\HostgroupRestriction;
 use Icinga\Module\Director\Web\Form\DirectorObjectForm;
@@ -162,7 +164,7 @@ class IcingaHostForm extends DirectorObjectForm
                 if ($this->hasBeenSent()) {
                     $this->addError($this->translate('No Host template has been chosen'));
                 } else {
-                    if ($this->hasPermission('director/admin')) {
+                    if ($this->hasPermission(Permission::ADMIN)) {
                         $html = sprintf(
                             $this->translate('Please define a %s first'),
                             Link::create(
@@ -208,7 +210,7 @@ class IcingaHostForm extends DirectorObjectForm
     protected function addGroupsElement()
     {
         if ($this->hasHostGroupRestriction()
-            && ! $this->getAuth()->hasPermission('director/groups-for-restricted-hosts')
+            && ! $this->getAuth()->hasPermission(Permission::GROUPS_FOR_RESTRICTED_HOSTS)
         ) {
             return $this;
         }
@@ -311,7 +313,7 @@ class IcingaHostForm extends DirectorObjectForm
 
     protected function hasHostGroupRestriction()
     {
-        return $this->getAuth()->getRestrictions('director/filter/hostgroups');
+        return $this->getAuth()->getRestrictions(Restriction::FILTER_HOSTGROUPS);
     }
 
     /**

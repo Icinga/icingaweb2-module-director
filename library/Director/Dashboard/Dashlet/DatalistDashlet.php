@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class DatalistDashlet extends Dashlet
 {
     protected $icon = 'sort-name-up';
@@ -25,6 +27,6 @@ class DatalistDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/admin');
+        return [Permission::ADMIN];
     }
 }

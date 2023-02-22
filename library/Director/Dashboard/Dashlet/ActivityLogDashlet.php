@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Director\Dashboard\Dashlet;
 
+use Icinga\Module\Director\Auth\Permission;
+
 class ActivityLogDashlet extends Dashlet
 {
     protected $icon = 'book';
@@ -30,6 +32,6 @@ class ActivityLogDashlet extends Dashlet
 
     public function listRequiredPermissions()
     {
-        return array('director/audit');
+        return [Permission::AUDIT];
     }
 }

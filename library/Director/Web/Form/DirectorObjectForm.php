@@ -5,6 +5,7 @@ namespace Icinga\Module\Director\Web\Form;
 use Exception;
 use gipfl\IcingaWeb2\Url;
 use Icinga\Authentication\Auth;
+use Icinga\Module\Director\Auth\Permission;
 use Icinga\Module\Director\Data\Db\DbObjectStore;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\Data\Db\DbObject;
@@ -1241,7 +1242,7 @@ abstract class DirectorObjectForm extends DirectorForm
                 if ($this->hasBeenSent()) {
                     $this->addError($this->translate('No template has been chosen'));
                 } else {
-                    if ($this->hasPermission('director/admin')) {
+                    if ($this->hasPermission(Permission::ADMIN)) {
                         $html = $this->translate('Please define a related template first');
                     } else {
                         $html = $this->translate('No related template has been provided yet');
