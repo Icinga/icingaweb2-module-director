@@ -31,10 +31,6 @@ class Monitoring
 
     public function hasHost($hostname)
     {
-        if ($this->backend === null) {
-            return false;
-        }
-
         return $this->backend->select()->from('hostStatus', [
             'hostname' => 'host_name',
         ])->where('host_name', $hostname)->fetchOne() === $hostname;
@@ -42,10 +38,6 @@ class Monitoring
 
     public function hasService($hostname, $service)
     {
-        if ($this->backend === null) {
-            return false;
-        }
-
         return (array) $this->prepareServiceKeyColumnQuery($hostname, $service)->fetchRow() === [
             'hostname' => $hostname,
             'service'  => $service,
@@ -92,10 +84,6 @@ class Monitoring
 
     public function hasHostWithExtraFilter($hostname, Filter $filter)
     {
-        if ($this->backend === null) {
-            return false;
-        }
-
         return $this->backend->select()->from('hostStatus', [
             'hostname' => 'host_name',
             ])->where('host_name', $hostname)->applyFilter($filter)->fetchOne() === $hostname;
@@ -103,10 +91,6 @@ class Monitoring
 
     public function hasServiceWithExtraFilter($hostname, $service, Filter $filter)
     {
-        if ($this->backend === null) {
-            return false;
-        }
-
         return (array) $this
             ->prepareServiceKeyColumnQuery($hostname, $service)
             ->applyFilter($filter)
