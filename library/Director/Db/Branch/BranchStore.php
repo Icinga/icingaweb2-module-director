@@ -56,6 +56,7 @@ class BranchStore
                 $rows = $db->fetchAll($db->select()->from($table)->where('branch_uuid = ?', $oldQuotedUuid));
                 foreach ($rows as $row) {
                     $modified = (array)$row;
+                    $this->quoteBinaryProperties($modified);
                     $modified['branch_uuid'] = $quotedUuid;
                     if ($table === self::TABLE_ACTIVITY) {
                         $modified['timestamp_ns'] = round($modified['timestamp_ns'] / 1000000);
@@ -66,6 +67,21 @@ class BranchStore
         });
 
         return $this->fetchBranchByName($newName);
+    }
+
+    protected function quoteBinaryProperties(&$properties)
+    {
+        foreach ($properties as $key => $value) {
+            if ($this->isBinaryColumn($key)) {
+                $properties[$key] = $this->connection->quoteBinary($value);
+            }
+        }
+    }
+
+    protected function isBinaryColumn($key)
+    {
+        return (strpos($key, 'uuid') !== false || strpos($key, 'checksum') !== false)
+            && strpos($key, 'hex') === false;
     }
 
     protected function runTransaction($callback)
