@@ -12,6 +12,7 @@ use Icinga\Module\Director\Objects\IcingaServiceSet;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Table\ZfQueryBasedTable;
 use gipfl\IcingaWeb2\Url;
+use Ramsey\Uuid\Uuid;
 
 class IcingaServiceSetServiceTable extends ZfQueryBasedTable
 {
@@ -123,8 +124,7 @@ class IcingaServiceSetServiceTable extends ZfQueryBasedTable
             $url = 'director/host/servicesetservice';
         } else {
             $params = [
-                'name' => $row->service,
-                'set'  => $row->service_set
+                'uuid' => Uuid::fromBytes($row->uuid)->toString(),
             ];
             $url = 'director/service';
         }
