@@ -116,7 +116,6 @@ class BranchStore
                 }
             }
         });
-
     }
 
     protected function newFromDbResult($query)

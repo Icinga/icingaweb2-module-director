@@ -51,7 +51,7 @@ class HostActions extends HostActionsHook
         }
 
         if ($allowEdit) {
-            $actions[mt('director', 'Modify')] = Url::fromPath('director/host/edit',['name' => $hostname]);
+            $actions[mt('director', 'Modify')] = Url::fromPath('director/host/edit', ['name' => $hostname]);
         }
 
         return $actions;
