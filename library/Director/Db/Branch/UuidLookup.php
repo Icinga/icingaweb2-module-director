@@ -15,18 +15,13 @@ use function is_string;
 class UuidLookup
 {
     /**
-     * @param Db $connection
-     * @param Branch $branch
-     * @param string $objectType
      * @param int|string $key
-     * @param IcingaHost|null $host
-     * @param IcingaServiceSet $set
      * @return ?UuidInterface
      */
     public static function findServiceUuid(
         Db $connection,
         Branch $branch,
-        $objectType = null,
+        ?string $objectType = null,
         $key = null,
         IcingaHost $host = null,
         IcingaServiceSet $set = null
@@ -37,11 +32,20 @@ class UuidLookup
             $query->where('object_type = ?', $objectType);
         }
         $query = self::addKeyToQuery($connection, $query, $key);
-        if ($host) {
-            $query->where('host_id = ?', $host->get('id'));
-        }
         if ($set) {
-            $query->where('service_set_id = ?', $set->get('id'));
+            $setId = $set->get('id');
+            if ($setId === null) {
+                $query->where('1 = 0');
+            } else {
+                $query->where('service_set_id = ?', $setId);
+            }
+        } elseif ($host) {
+            $hostId = $host->get('id');
+            if ($hostId === null) {
+                $query->where('1 = 0');
+            } else {
+                $query->where('host_id = ?', $hostId);
+            }
         }
         $uuid = self::fetchOptionalUuid($connection, $query);
 

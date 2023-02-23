@@ -22,6 +22,7 @@ This version hasn't been released yet
 ### Configuration Branches
 * FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
 * FEATURE: users with default branches get warnings in the main branch (#2689)
+* FIX: create a branched set, add services, modify them (#2710)
 
 ### Health Check
 * FIX: complaint about overdue jobs was not correct (#2680, #2681)
