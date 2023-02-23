@@ -19,6 +19,9 @@ This version hasn't been released yet
 ### Icinga Configuration
 * FIX: render Set Services to individual zones where required (#1589, #2356)
 
+### Import and Sync
+* FEATURE: regular expression based modifier allows explicit NULL on no match (#2705)
+
 ### Configuration Branches
 * FEATURE: with this release, directorbranches v1.3 supports a "default branch" (#2688)
 * FEATURE: users with default branches get warnings in the main branch (#2689)
