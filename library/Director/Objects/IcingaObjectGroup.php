@@ -22,6 +22,11 @@ abstract class IcingaObjectGroup extends IcingaObject implements ExportInterface
         'disabled'      => 'n',
         'display_name'  => null,
         'assign_filter' => null,
+        'zone_id'       => null,
+    ];
+
+    protected $relations = [
+        'zone' => 'IcingaZone',
     ];
 
     public function getUniqueIdentifier()
