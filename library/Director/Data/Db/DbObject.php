@@ -560,7 +560,7 @@ abstract class DbObject
     /**
      * Unique key name
      *
-     * @return string
+     * @return string|array
      */
     public function getKeyName()
     {
@@ -713,8 +713,7 @@ abstract class DbObject
      */
     protected function loadFromDb()
     {
-        $select = $this->db->select()->from($this->table)->where($this->createWhere());
-        $properties = $this->db->fetchRow($select);
+        $properties = $this->db->fetchRow($this->prepareObjectQuery());
 
         if (empty($properties)) {
             if (is_array($this->getKeyName())) {
@@ -733,6 +732,11 @@ abstract class DbObject
         }
 
         return $this->setDbProperties($properties);
+    }
+
+    public function prepareObjectQuery()
+    {
+        return $this->db->select()->from($this->table)->where($this->createWhere());
     }
 
     /**
@@ -1314,6 +1318,40 @@ abstract class DbObject
     }
 
     /**
+     * @param $id
+     * @param DbConnection $connection
+     * @return static
+     */
+    public static function loadOptional($id, DbConnection $connection): ?DbObject
+    {
+        if ($prefetched = static::getPrefetched($id)) {
+            return $prefetched;
+        }
+        /** @var DbObject $obj */
+        $obj = new static();
+
+        if (self::$dbObjectStore !== null && $obj->hasUuidColumn()) {
+            $table = $obj->getTableName();
+            assert($connection instanceof Db);
+            $uuid = UuidLookup::findUuidForKey($id, $table, $connection, self::$dbObjectStore->getBranch());
+            if ($uuid) {
+                return self::$dbObjectStore->load($table, $uuid);
+            }
+
+            return null;
+        }
+
+        $obj->setConnection($connection)->setKey($id);
+        $properties = $connection->getDbAdapter()->fetchRow($obj->prepareObjectQuery());
+        if (empty($properties)) {
+            return null;
+        }
+
+        $obj->setDbProperties($properties);
+        return $obj;
+    }
+
+    /**
      * @param DbConnection $connection
      * @param \Zend_Db_Select $query
      * @param string|null $keyColumn
@@ -1448,7 +1486,7 @@ abstract class DbObject
         ));
     }
 
-    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection)
+    public static function loadWithUniqueId(UuidInterface $uuid, DbConnection $connection): ?DbObject
     {
         $db = $connection->getDbAdapter();
         $obj = new static;
