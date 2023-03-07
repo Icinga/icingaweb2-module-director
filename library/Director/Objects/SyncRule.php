@@ -64,8 +64,6 @@ class SyncRule extends DbObject implements ExportInterface
 
     private $newSyncProperties;
 
-    private $originalId;
-
     public function listInvolvedSourceIds()
     {
         if (! $this->hasBeenLoadedFromDb()) {
@@ -333,12 +331,6 @@ class SyncRule extends DbObject implements ExportInterface
             $connection = $this->getConnection();
             $db = $connection->getDbAdapter();
             $myId = $this->get('id');
-            if ($this->originalId === null) {
-                $originalId = $myId;
-            } else {
-                $originalId = $this->originalId;
-                $this->originalId = null;
-            }
             if ($this->hasBeenLoadedFromDb()) {
                 $db->delete(
                     'sync_property',
