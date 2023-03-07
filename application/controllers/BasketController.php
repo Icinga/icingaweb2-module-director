@@ -9,13 +9,10 @@ use gipfl\IcingaWeb2\Link;
 use gipfl\Web\Table\NameValueTable;
 use gipfl\Web\Widget\Hint;
 use Icinga\Date\DateFormatter;
-use Icinga\Module\Director\Core\Json;
-use Icinga\Module\Director\Data\Exporter;
 use Icinga\Module\Director\Db;
 use Icinga\Module\Director\DirectorObject\Automation\Basket;
+use Icinga\Module\Director\DirectorObject\Automation\BasketDiff;
 use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshot;
-use Icinga\Module\Director\DirectorObject\Automation\BasketSnapshotFieldResolver;
-use Icinga\Module\Director\DirectorObject\Automation\CompareBasketObject;
 use Icinga\Module\Director\Forms\AddToBasketForm;
 use Icinga\Module\Director\Forms\BasketCreateSnapshotForm;
 use Icinga\Module\Director\Forms\BasketForm;
@@ -245,12 +242,9 @@ class BasketController extends ActionController
             $connection = $this->db();
         }
 
-        $json = $snapshot->getJsonDump();
         $this->addSingleTab($this->translate('Snapshot'));
-        $all = Json::decode($json);
-        $exporter = new Exporter($this->db());
-        $fieldResolver = new BasketSnapshotFieldResolver($all, $connection);
-        foreach ($all as $type => $objects) {
+        $diff = new BasketDiff($snapshot, $connection);
+        foreach ($diff->getBasketObjects() as $type => $objects) {
             if ($type === 'Datafield') {
                 // TODO: we should now be able to show all fields and link
                 //       to a "diff" for the ones that should be created
@@ -274,39 +268,26 @@ class BasketController extends ActionController
                     $linkParams['target_db'] = $targetDbName;
                 }
                 try {
-                    $current = BasketSnapshot::instanceByIdentifier($type, $key, $connection);
-                    if ($current === null) {
-                        $table->addNameValueRow(
-                            $key,
-                            Link::create(
-                                Html::tag('strong', ['style' => 'color: green'], $this->translate('new')),
+                    if ($diff->hasCurrentInstance($type, $key)) {
+                        if ($diff->hasChangedFor($type, $key)) {
+                            $link = Link::create(
+                                $this->translate('modified'),
                                 'director/basket/snapshotobject',
-                                $linkParams
-                            )
-                        );
-                        continue;
-                    }
-                    $currentExport = $exporter->export($current);
-                    $fieldResolver->tweakTargetIds($currentExport);
-
-                    // Ignore originalId
-                    if (isset($currentExport->originalId)) {
-                        unset($currentExport->originalId);
-                    }
-                    if (isset($object->originalId)) {
-                        unset($object->originalId);
-                    }
-                    $hasChanged = ! CompareBasketObject::equals($currentExport, $object);
-                    $table->addNameValueRow(
-                        $key,
-                        $hasChanged
-                        ? Link::create(
-                            Html::tag('strong', ['style' => 'color: orange'], $this->translate('modified')),
+                                $linkParams,
+                                ['style' => 'color: orange; font-weight: bold']
+                            );
+                        } else {
+                            $link = Html::tag('span', ['style' => 'color: green'], $this->translate('unchanged'));
+                        }
+                    } else {
+                        $link = Link::create(
+                            $this->translate('new'),
                             'director/basket/snapshotobject',
-                            $linkParams
-                        )
-                        : Html::tag('span', ['style' => 'color: green'], $this->translate('unchanged'))
-                    );
+                            $linkParams,
+                            ['style' => 'color: green; font-weight: bold']
+                        );
+                    }
+                    $table->addNameValueRow($key, $link);
                 } catch (Exception $e) {
                     $table->addNameValueRow(
                         $key,
@@ -368,39 +349,24 @@ class BasketController extends ActionController
             )
             */
         ]);
-        $exporter = new Exporter($this->db());
-        $json = $snapshot->getJsonDump();
+
         $this->addSingleTab($this->translate('Snapshot'));
-        $objects = Json::decode($json);
         $targetDbName = $this->params->get('target_db');
         if ($targetDbName === null) {
             $connection = $this->db();
         } else {
             $connection = Db::fromResourceName($targetDbName);
         }
-        $fieldResolver = new BasketSnapshotFieldResolver($objects, $connection);
-        $objectFromBasket = $objects->$type->$key;
-        unset($objectFromBasket->originalId);
-        CompareBasketObject::normalize($objectFromBasket);
-        $objectFromBasket = Json::encode($objectFromBasket, JSON_PRETTY_PRINT);
-        $current = BasketSnapshot::instanceByIdentifier($type, $key, $connection);
-        if ($current === null) {
-            $current = '';
-        } else {
-            $exported = $exporter->export($current);
-            $fieldResolver->tweakTargetIds($exported);
-            unset($exported->originalId);
-            CompareBasketObject::normalize($exported);
-            $current = Json::encode($exported, JSON_PRETTY_PRINT);
-        }
-
-        if ($current === $objectFromBasket) {
+        $diff = new BasketDiff($snapshot, $connection);
+        $currentJson = $diff->getCurrentString($type, $key);
+        $basketJson = $diff->getBasketString($type, $key);
+        if ($currentJson === $basketJson) {
             $this->content()->add([
                 Hint::ok('Basket equals current object'),
-                Html::tag('pre', $current)
+                Html::tag('pre', $currentJson)
             ]);
         } else {
-            $this->content()->add(new InlineDiff(new PhpDiff($current, $objectFromBasket)));
+            $this->content()->add(new InlineDiff(new PhpDiff($currentJson, $basketJson)));
         }
     }
 
