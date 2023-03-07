@@ -2878,6 +2878,9 @@ abstract class IcingaObject extends DbObject implements IcingaConfigRenderer
                     }
                 }
             }
+            if ($this->propertyIsInterval($k) && is_string($v) && ctype_digit($v)) {
+                $v = (int) $v;
+            }
 
             // TODO: Do not ship null properties based on flag?
             if (!$skipDefaults || $this->differsFromDefaultValue($k, $v)) {
